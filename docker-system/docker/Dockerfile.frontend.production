@@ -11,43 +11,43 @@
 # syntax=docker/dockerfile:1
 # Enable BuildKit for multi-platform builds
 
-# Stage 1: Builder
-# Using linux/arm64 for native ARM64 builds (M1/M2 Macs)
+# Stage 1: Builder - OPTIMIZED
 FROM --platform=linux/arm64 node:20-alpine AS builder
 
 WORKDIR /build
 
-# Copy package files (project uses pnpm)
+# Copy package files
 COPY agenthub-frontend/package.json ./
 
-# Install all dependencies (including dev dependencies for build)
-# Install pnpm globally
+# Install pnpm
 RUN npm install -g pnpm
 
 # Copy pnpm-lock.yaml
 COPY agenthub-frontend/pnpm-lock.yaml ./
 
-# Install dependencies with pnpm
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY agenthub-frontend/ .
 
-# Build arguments grouped by frequency of change (optimization for Docker layer caching)
-# Group 1: Static/Rarely Changed - Environment type, ports, defaults
+# ========================================
+# OPTIMIZED: Declare all ARGs in minimal statements
+# ========================================
+# Static/Config ARGs
 ARG NODE_ENV=production
 ARG VITE_ENV=production
 ARG ENV=production
 ARG FRONTEND_PORT=3800
-ARG APP_DEBUG=false
-ARG APP_LOG_LEVEL=INFO
 
-# Group 2: Feature Flags/Config - WebSocket and logging settings (change occasionally)
+# WebSocket Config ARGs
 ARG VITE_WS_MAX_RECONNECT_ATTEMPTS=5
 ARG VITE_WS_RECONNECT_DELAY=1000
 ARG VITE_WS_AI_BUFFER_TIMEOUT=500
 ARG VITE_WS_MAX_RECONNECT_DELAY=30000
 ARG VITE_WS_HEARTBEAT_INTERVAL=30000
+
+# Logging Config ARGs
 ARG VITE_LOG_ENABLED=true
 ARG VITE_LOG_LEVEL=error
 ARG VITE_LOG_SHOW_TIMESTAMP=true
@@ -60,7 +60,7 @@ ARG VITE_LOG_TO_REMOTE=false
 ARG VITE_LOG_REMOTE_ENDPOINT=
 ARG VITE_LOG_MAX_STORAGE_SIZE=1048576
 
-# Group 3: External Services - URLs and connection settings (change per deployment)
+# External Service ARGs (change per deployment)
 ARG VITE_API_URL
 ARG VITE_BACKEND_URL
 ARG VITE_WS_URL
@@ -68,101 +68,30 @@ ARG VITE_KEYCLOAK_URL
 ARG VITE_KEYCLOAK_REALM
 ARG VITE_KEYCLOAK_CLIENT_ID
 
-# Group 4: Build Metadata - Changes with every build (most frequently changed)
+# Build Metadata ARGs
 ARG VITE_BUILD_TIME
 ARG VITE_BUILD_SHA
-ARG CAPROVER_GIT_COMMIT_SHA
 
-# Build-time environment variables - use actual values or defaults
-# These are used during build but can be overridden at runtime via env-config.js
-# IMPORTANT: Use build args if provided, otherwise use localhost for local testing
-ENV VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
-ENV VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8000}
-ENV VITE_KEYCLOAK_URL=${VITE_KEYCLOAK_URL:-}
-ENV VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM:-}
-ENV VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID:-mcp-frontend}
-ENV VITE_ENV=${VITE_ENV}
-ENV VITE_BUILD_TIME=${VITE_BUILD_TIME}
-ENV VITE_BUILD_SHA=${VITE_BUILD_SHA}
-ENV NODE_ENV=${NODE_ENV}
-
-# WebSocket environment variables for build-time
-ENV VITE_WS_URL=${VITE_WS_URL:-}
-ENV VITE_WS_MAX_RECONNECT_ATTEMPTS=${VITE_WS_MAX_RECONNECT_ATTEMPTS}
-ENV VITE_WS_RECONNECT_DELAY=${VITE_WS_RECONNECT_DELAY}
-ENV VITE_WS_AI_BUFFER_TIMEOUT=${VITE_WS_AI_BUFFER_TIMEOUT}
-ENV VITE_WS_MAX_RECONNECT_DELAY=${VITE_WS_MAX_RECONNECT_DELAY}
-ENV VITE_WS_HEARTBEAT_INTERVAL=${VITE_WS_HEARTBEAT_INTERVAL}
-
-# Logging environment variables for build-time
-ENV VITE_LOG_ENABLED=${VITE_LOG_ENABLED}
-ENV VITE_LOG_LEVEL=${VITE_LOG_LEVEL}
-ENV VITE_LOG_SHOW_TIMESTAMP=${VITE_LOG_SHOW_TIMESTAMP}
-ENV VITE_LOG_SHOW_LEVEL=${VITE_LOG_SHOW_LEVEL}
-ENV VITE_LOG_SHOW_FILE_PATH=${VITE_LOG_SHOW_FILE_PATH}
-ENV VITE_LOG_COLORIZE=${VITE_LOG_COLORIZE}
-ENV VITE_LOG_TO_CONSOLE=${VITE_LOG_TO_CONSOLE}
-ENV VITE_LOG_TO_LOCALSTORAGE=${VITE_LOG_TO_LOCALSTORAGE}
-ENV VITE_LOG_TO_REMOTE=${VITE_LOG_TO_REMOTE}
-ENV VITE_LOG_REMOTE_ENDPOINT=${VITE_LOG_REMOTE_ENDPOINT}
-ENV VITE_LOG_MAX_STORAGE_SIZE=${VITE_LOG_MAX_STORAGE_SIZE}
-
-# Build the application with production optimizations
-RUN pnpm run build
-
-# Stage 2: Production Runtime with Nginx
-# Using linux/arm64 for native ARM64 builds (M1/M2 Macs)
-FROM --platform=linux/arm64 nginx:alpine
-
-# Runtime arguments grouped by frequency of change (optimization for Docker layer caching)
-# Group 1: Static/Rarely Changed - Environment type, ports, defaults
-ARG FRONTEND_PORT=3800
-ARG ENV=production
-
-# Group 2: Feature Flags/Config - WebSocket and logging settings (change occasionally)
-ARG VITE_WS_MAX_RECONNECT_ATTEMPTS=5
-ARG VITE_WS_RECONNECT_DELAY=1000
-ARG VITE_WS_AI_BUFFER_TIMEOUT=500
-ARG VITE_WS_MAX_RECONNECT_DELAY=30000
-ARG VITE_WS_HEARTBEAT_INTERVAL=30000
-ARG VITE_LOG_ENABLED=true
-ARG VITE_LOG_LEVEL=error
-ARG VITE_LOG_SHOW_TIMESTAMP=true
-ARG VITE_LOG_SHOW_LEVEL=true
-ARG VITE_LOG_SHOW_FILE_PATH=false
-ARG VITE_LOG_COLORIZE=false
-ARG VITE_LOG_TO_CONSOLE=true
-ARG VITE_LOG_TO_LOCALSTORAGE=false
-ARG VITE_LOG_TO_REMOTE=false
-ARG VITE_LOG_REMOTE_ENDPOINT=
-ARG VITE_LOG_MAX_STORAGE_SIZE=1048576
-
-# Group 3: External Services - URLs and connection settings (change per deployment)
-ARG VITE_API_URL
-ARG VITE_BACKEND_URL
-ARG VITE_WS_URL
-ARG VITE_KEYCLOAK_URL
-ARG VITE_KEYCLOAK_REALM
-ARG VITE_KEYCLOAK_CLIENT_ID
-
-# Group 4: Build Metadata - Changes with every build (most frequently changed)
-ARG CAPROVER_GIT_COMMIT_SHA
-
-# Convert build args to environment variables with defaults (consolidated for faster builds)
-# Group 1: Static environment configuration
-ENV FRONTEND_PORT=${FRONTEND_PORT} \
-    ENV=${ENV}
-
-# Group 2: WebSocket configuration
-ENV VITE_WS_URL=${VITE_WS_URL} \
+# ========================================
+# OPTIMIZED: Set ALL ENV variables in ONE statement
+# This creates only ONE layer instead of 30+
+# ========================================
+ENV NODE_ENV=${NODE_ENV} \
+    VITE_ENV=${VITE_ENV} \
+    VITE_API_URL=${VITE_API_URL:-http://localhost:8000} \
+    VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8000} \
+    VITE_KEYCLOAK_URL=${VITE_KEYCLOAK_URL:-} \
+    VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM:-} \
+    VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID:-mcp-frontend} \
+    VITE_BUILD_TIME=${VITE_BUILD_TIME} \
+    VITE_BUILD_SHA=${VITE_BUILD_SHA} \
+    VITE_WS_URL=${VITE_WS_URL:-} \
     VITE_WS_MAX_RECONNECT_ATTEMPTS=${VITE_WS_MAX_RECONNECT_ATTEMPTS} \
     VITE_WS_RECONNECT_DELAY=${VITE_WS_RECONNECT_DELAY} \
     VITE_WS_AI_BUFFER_TIMEOUT=${VITE_WS_AI_BUFFER_TIMEOUT} \
     VITE_WS_MAX_RECONNECT_DELAY=${VITE_WS_MAX_RECONNECT_DELAY} \
-    VITE_WS_HEARTBEAT_INTERVAL=${VITE_WS_HEARTBEAT_INTERVAL}
-
-# Group 3: Logging configuration
-ENV VITE_LOG_ENABLED=${VITE_LOG_ENABLED} \
+    VITE_WS_HEARTBEAT_INTERVAL=${VITE_WS_HEARTBEAT_INTERVAL} \
+    VITE_LOG_ENABLED=${VITE_LOG_ENABLED} \
     VITE_LOG_LEVEL=${VITE_LOG_LEVEL} \
     VITE_LOG_SHOW_TIMESTAMP=${VITE_LOG_SHOW_TIMESTAMP} \
     VITE_LOG_SHOW_LEVEL=${VITE_LOG_SHOW_LEVEL} \
@@ -174,15 +103,67 @@ ENV VITE_LOG_ENABLED=${VITE_LOG_ENABLED} \
     VITE_LOG_REMOTE_ENDPOINT=${VITE_LOG_REMOTE_ENDPOINT} \
     VITE_LOG_MAX_STORAGE_SIZE=${VITE_LOG_MAX_STORAGE_SIZE}
 
-# Group 4: External service URLs
-ENV VITE_API_URL=${VITE_API_URL} \
+# Build the application
+RUN pnpm run build
+
+# ========================================
+# Stage 2: Production Runtime - OPTIMIZED
+# ========================================
+FROM --platform=linux/arm64 nginx:alpine
+
+# Declare all runtime ARGs together
+ARG FRONTEND_PORT=3800
+ARG ENV=production
+ARG VITE_WS_MAX_RECONNECT_ATTEMPTS=5
+ARG VITE_WS_RECONNECT_DELAY=1000
+ARG VITE_WS_AI_BUFFER_TIMEOUT=500
+ARG VITE_WS_MAX_RECONNECT_DELAY=30000
+ARG VITE_WS_HEARTBEAT_INTERVAL=30000
+ARG VITE_LOG_ENABLED=true
+ARG VITE_LOG_LEVEL=error
+ARG VITE_LOG_SHOW_TIMESTAMP=true
+ARG VITE_LOG_SHOW_LEVEL=true
+ARG VITE_LOG_SHOW_FILE_PATH=false
+ARG VITE_LOG_COLORIZE=false
+ARG VITE_LOG_TO_CONSOLE=true
+ARG VITE_LOG_TO_LOCALSTORAGE=false
+ARG VITE_LOG_TO_REMOTE=false
+ARG VITE_LOG_REMOTE_ENDPOINT=
+ARG VITE_LOG_MAX_STORAGE_SIZE=1048576
+ARG VITE_API_URL
+ARG VITE_BACKEND_URL
+ARG VITE_WS_URL
+ARG VITE_KEYCLOAK_URL
+ARG VITE_KEYCLOAK_REALM
+ARG VITE_KEYCLOAK_CLIENT_ID
+ARG CAPROVER_GIT_COMMIT_SHA
+
+# Set ALL environment variables in ONE statement (creates only 1 layer)
+ENV FRONTEND_PORT=${FRONTEND_PORT} \
+    ENV=${ENV} \
+    VITE_WS_URL=${VITE_WS_URL} \
+    VITE_WS_MAX_RECONNECT_ATTEMPTS=${VITE_WS_MAX_RECONNECT_ATTEMPTS} \
+    VITE_WS_RECONNECT_DELAY=${VITE_WS_RECONNECT_DELAY} \
+    VITE_WS_AI_BUFFER_TIMEOUT=${VITE_WS_AI_BUFFER_TIMEOUT} \
+    VITE_WS_MAX_RECONNECT_DELAY=${VITE_WS_MAX_RECONNECT_DELAY} \
+    VITE_WS_HEARTBEAT_INTERVAL=${VITE_WS_HEARTBEAT_INTERVAL} \
+    VITE_LOG_ENABLED=${VITE_LOG_ENABLED} \
+    VITE_LOG_LEVEL=${VITE_LOG_LEVEL} \
+    VITE_LOG_SHOW_TIMESTAMP=${VITE_LOG_SHOW_TIMESTAMP} \
+    VITE_LOG_SHOW_LEVEL=${VITE_LOG_SHOW_LEVEL} \
+    VITE_LOG_SHOW_FILE_PATH=${VITE_LOG_SHOW_FILE_PATH} \
+    VITE_LOG_COLORIZE=${VITE_LOG_COLORIZE} \
+    VITE_LOG_TO_CONSOLE=${VITE_LOG_TO_CONSOLE} \
+    VITE_LOG_TO_LOCALSTORAGE=${VITE_LOG_TO_LOCALSTORAGE} \
+    VITE_LOG_TO_REMOTE=${VITE_LOG_TO_REMOTE} \
+    VITE_LOG_REMOTE_ENDPOINT=${VITE_LOG_REMOTE_ENDPOINT} \
+    VITE_LOG_MAX_STORAGE_SIZE=${VITE_LOG_MAX_STORAGE_SIZE} \
+    VITE_API_URL=${VITE_API_URL} \
     VITE_BACKEND_URL=${VITE_BACKEND_URL} \
     VITE_KEYCLOAK_URL=${VITE_KEYCLOAK_URL} \
     VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM} \
-    VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID}
-
-# Group 5: Build metadata
-ENV CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA}
+    VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID} \
+    CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA}
 
 # Install curl and setup nginx config (optimized single layer)
 RUN apk add --no-cache curl && \
