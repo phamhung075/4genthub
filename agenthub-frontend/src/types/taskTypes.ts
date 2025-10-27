@@ -46,6 +46,8 @@ export interface TaskSummary {
   has_context: boolean;
   created_at?: string;
   updated_at?: string;
+  subtask_count?: number; // Total number of subtasks
+  completed_subtasks?: number; // Number of completed subtasks
 }
 
 /**

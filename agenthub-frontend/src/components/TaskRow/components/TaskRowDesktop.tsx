@@ -40,8 +40,8 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
 
   const { getBaseClasses } = useTaskRowState();
 
-  // Calculate counts from arrays (replaces removed backend count fields)
-  const subtaskCount = fullTask?.subtasks?.length ?? 0;
+  // Use subtask_count from summary (from backend), fallback to fullTask array
+  const subtaskCount = summary.subtask_count ?? fullTask?.subtasks?.length ?? 0;
   const dependencyCount = fullTask?.dependencies?.length ?? 0;
 
   // Combine animation classes with loading state
