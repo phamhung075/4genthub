@@ -4,7 +4,8 @@ import {
   projectApiV2,
   agentApiV2,
   isAuthenticated,
-  getCurrentUserId
+  getCurrentUserId,
+  refreshTokenAndRetry
 } from '../../services/apiV2';
 
 // Mock js-cookie
@@ -17,20 +18,84 @@ jest.mock('js-cookie', () => ({
 // Mock fetch globally
 global.fetch = jest.fn();
 
+// Mock logger
+jest.mock('../../utils/logger', () => ({
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+}));
+
+// Mock request deduplication
+jest.mock('../../utils/requestDeduplication', () => ({
+  deduplicateRequest: jest.fn((fn) => fn()),
+}));
+
 // Mock import.meta.env
 (import.meta as any).env = { VITE_API_URL: 'http://test-api.com' };
 
 describe('apiV2.ts', () => {
   const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsInVzZXJfaWQiOiJ1c2VyLTEyMyIsIm5hbWUiOiJUZXN0IFVzZXIiLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+  const mockRefreshToken = 'refresh-token-123';
 
   beforeEach(() => {
     jest.clearAllMocks();
     (global.fetch as any).mockReset();
     (Cookies.get as jest.Mock).mockReset();
+    (Cookies.set as jest.Mock).mockReset();
+    (Cookies.remove as jest.Mock).mockReset();
+    // Mock window.dispatchEvent
+    window.dispatchEvent = jest.fn();
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('Token Refresh and Retry', () => {
+    describe('refreshTokenAndRetry', () => {
+      it('should refresh token and update cookies', async () => {
+        const newToken = 'new-access-token';
+        const newRefreshToken = 'new-refresh-token';
+        
+        (Cookies.get as jest.Mock).mockReturnValueOnce(mockRefreshToken);
+        (global.fetch as any).mockResolvedValue({
+          ok: true,
+          json: jest.fn().mockResolvedValue({
+            access_token: newToken,
+            refresh_token: newRefreshToken
+          })
+        });
+
+        await refreshTokenAndRetry();
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          'http://test-api.com/api/v2/auth/refresh',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refresh_token: mockRefreshToken }),
+            credentials: 'include'
+          }
+        );
+        
+        expect(Cookies.set).toHaveBeenCalledWith('access_token', newToken, expect.any(Object));
+        expect(Cookies.set).toHaveBeenCalledWith('refresh_token', newRefreshToken, expect.any(Object));
+      });
+
+      it('should handle refresh failure', async () => {
+        (Cookies.get as jest.Mock).mockReturnValueOnce(mockRefreshToken);
+        (global.fetch as any).mockResolvedValue({
+          ok: false,
+          status: 401,
+          json: jest.fn().mockResolvedValue({ detail: 'Invalid refresh token' })
+        });
+
+        await expect(refreshTokenAndRetry()).rejects.toThrow('Token refresh failed');
+      });
+    });
   });
 
   describe('Authentication Helpers', () => {
@@ -376,6 +441,25 @@ describe('apiV2.ts', () => {
         const fetchCall = (global.fetch as any).mock.calls[0];
         const body = JSON.parse(fetchCall[1].body);
         expect(body).toEqual(minimalData);
+      });
+    });
+
+    describe('deleteTask with 204 No Content', () => {
+      const taskId = 'task-456';
+
+      it('should handle 204 No Content response', async () => {
+        (global.fetch as any).mockResolvedValue({
+          ok: true,
+          status: 204,
+          json: jest.fn().mockRejectedValue(new Error('No content'))
+        });
+
+        const result = await taskApiV2.deleteTask(taskId);
+
+        expect(result).toEqual({
+          success: true,
+          message: 'Operation completed successfully'
+        });
       });
     });
   });
