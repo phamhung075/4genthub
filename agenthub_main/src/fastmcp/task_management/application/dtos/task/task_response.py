@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from .dependency_info import DependencyRelationships
+from ...exceptions import RepositoryProviderError
+import logging
 
 @dataclass
 class TaskResponse:
@@ -88,7 +90,9 @@ class TaskResponse:
 
     @classmethod
     def from_domain(cls, task, git_branch_repository=None, context_data: Optional[Dict[str, Any]] = None,
-                   dependency_relationships: Optional[DependencyRelationships] = None) -> 'TaskResponse':
+                   dependency_relationships: Optional[DependencyRelationships] = None,
+                   project_id: Optional[str] = None,
+                   completed_subtasks: Optional[int] = None) -> 'TaskResponse':
         """Create response DTO from domain entity with optional context data.
 
         Args:
@@ -96,33 +100,47 @@ class TaskResponse:
             git_branch_repository: Repository for fetching project_id via join (Option 1 - Pure DDD)
             context_data: Optional context data
             dependency_relationships: Optional dependency information
+            project_id: Optional pre-fetched project_id (batch loading optimization)
+            completed_subtasks: Optional pre-fetched completed subtask count (batch loading optimization)
 
         Returns:
-            TaskResponse with project_id populated via repository join
+            TaskResponse with project_id populated via repository join or batch loading
         """
         task_dict = task.to_dict()
 
-        # Fetch project_id via repository join (maintains database normalization)
-        project_id = None
-        if git_branch_repository and task_dict.get("git_branch_id"):
+        # BATCH LOADING OPTIMIZATION: Use provided project_id if available
+        # This eliminates N+1 query problem when processing lists of tasks
+        if project_id is not None:
+            # Fast path: project_id already provided via batch loading
+            pass
+        elif git_branch_repository and task_dict.get("git_branch_id"):
+            # Slow path: fetch individually (backward compatibility for single task operations)
             try:
                 git_branch = git_branch_repository.get_by_id(task_dict["git_branch_id"])
                 project_id = git_branch.project_id if git_branch else None
             except Exception as e:
-                # Log but don't fail - project_id is optional
-                import logging
-                logging.warning(f"Failed to fetch project_id for git_branch {task_dict.get('git_branch_id')}: {e}")
-        
+                # CRITICAL: project_id is required by frontend TypeScript contract
+                logging.error(
+                    f"CRITICAL: Failed to fetch project_id for git_branch {task_dict.get('git_branch_id')}: {e}",
+                    exc_info=True
+                )
+                raise RepositoryProviderError(
+                    f"Failed to fetch required project_id: {e}"
+                ) from e
+        else:
+            # No repository and no pre-fetched project_id
+            project_id = None
+
         # Parse datetime strings back to datetime objects if they're strings
         created_at = task_dict["created_at"]
         if isinstance(created_at, str):
             created_at = datetime.fromisoformat(created_at)
-        
-        updated_at = task_dict["updated_at"]  
+
+        updated_at = task_dict["updated_at"]
         if isinstance(updated_at, str):
             updated_at = datetime.fromisoformat(updated_at)
-        
-        
+
+
         # Get progress_history and format details for backward compatibility
         progress_history = task_dict.get("progress_history", {})
         progress_count = task_dict.get("progress_count", 0)
@@ -137,9 +155,15 @@ class TaskResponse:
         # Note: task.subtasks is a list of subtask IDs (strings), not subtask objects
         # We can count total subtasks, but cannot determine completion without loading subtask objects
         subtask_count = len(task.subtasks) if task.subtasks else 0
-        # TODO: To calculate completed_subtasks, we need to query subtask repository
-        # For now, frontend can query subtasks separately if needed
-        completed_subtasks = 0  # Cannot determine from IDs alone
+
+        # BATCH LOADING OPTIMIZATION: Use provided completed_subtasks if available
+        # This eliminates N+1 query problem when processing lists of tasks
+        if completed_subtasks is not None:
+            # Fast path: count provided via batch query
+            actual_completed = completed_subtasks
+        else:
+            # Slow path: default to 0 (backward compatibility)
+            actual_completed = 0
 
         return cls(
             id=task_dict["id"],
@@ -165,7 +189,7 @@ class TaskResponse:
             progress_history=progress_history,
             progress_count=progress_count,
             subtask_count=subtask_count,  # Fix 1: Total subtask count
-            completed_subtasks=completed_subtasks  # Fix 2: Completed subtask count
+            completed_subtasks=actual_completed  # Fix 2: Accurate completed subtask count from batch query
         )
     
     def to_dict(self) -> Dict[str, Any]:

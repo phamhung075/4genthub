@@ -609,10 +609,42 @@ class SubtaskApplicationFacade:
         return response
     
     def _create_inheritance_service(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository):
-        """Create agent inheritance service for operations."""
+        """Create agent inheritance_service for operations."""
         try:
             from ..services.agent_inheritance_service import AgentInheritanceService
             return AgentInheritanceService(task_repository, subtask_repository)
         except Exception as e:
             logger.error(f"Failed to create agent inheritance service: {e}")
             return None
+
+    # Convenience methods for common operations (used by tests and external consumers)
+    def create_subtask(self, task_id: str, title: str, description: str = None, assignees: str = None,
+                       priority: str = "medium", **kwargs) -> Dict[str, Any]:
+        """Convenience method for creating a subtask."""
+        subtask_data = {
+            "title": title,
+            "description": description,
+            "assignees": assignees,
+            "priority": priority,
+            **kwargs
+        }
+        return self.handle_manage_subtask(
+            action="create",
+            task_id=task_id,
+            subtask_data=subtask_data
+        )
+
+    def complete_subtask(self, task_id: str, subtask_id: str, completion_summary: str = None,
+                         testing_notes: str = None, **kwargs) -> Dict[str, Any]:
+        """Convenience method for completing a subtask."""
+        subtask_data = {
+            "completion_summary": completion_summary,
+            "testing_notes": testing_notes,
+            **kwargs
+        }
+        return self.handle_manage_subtask(
+            action="complete",
+            task_id=task_id,
+            subtask_id=subtask_id,
+            subtask_data=subtask_data
+        )

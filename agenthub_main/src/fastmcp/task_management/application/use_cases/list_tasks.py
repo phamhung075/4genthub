@@ -16,8 +16,9 @@ logger = logging.getLogger(__name__)
 class ListTasksUseCase:
     """Use case for listing tasks with optional filtering"""
     
-    def __init__(self, task_repository: TaskRepository):
+    def __init__(self, task_repository: TaskRepository, git_branch_repository=None):
         self._task_repository = task_repository
+        self._git_branch_repository = git_branch_repository
     
     def execute(self, request: ListTasksRequest) -> TaskListResponse:
         """Execute the list tasks use case"""
@@ -75,14 +76,10 @@ class ListTasksUseCase:
         if request.limit:
             filters_applied['limit'] = request.limit
 
-        # Get git_branch_repository for project_id lookup
-        git_branch_repo = None
-        try:
-            from ...application.services.repository_provider_service import RepositoryProviderService
-            provider = RepositoryProviderService.get_instance()
-            git_branch_repo = provider.get_git_branch_repository()
-        except Exception as e:
-            logger.warning(f"Could not get git_branch_repository for project_id lookup: {e}")
-
-        # Convert to response DTO with project_id via repository join
-        return TaskListResponse.from_domain_list(tasks, git_branch_repository=git_branch_repo, filters_applied=filters_applied) 
+        # Convert to response DTO with batch-loaded project_id and completed_subtasks
+        return TaskListResponse.from_domain_list(
+            tasks,
+            git_branch_repository=self._git_branch_repository,
+            task_repository=self._task_repository,  # NEW: Pass task_repository for completed_subtasks batch loading
+            filters_applied=filters_applied
+        ) 

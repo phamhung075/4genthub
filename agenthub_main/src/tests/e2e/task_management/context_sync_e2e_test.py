@@ -41,21 +41,19 @@ def context_service():
 
 
 @pytest.fixture
-def task_facade(task_repository, context_service):
+def task_facade(task_repository):
     """Create task application facade."""
     return TaskApplicationFacade(
-        task_repository=task_repository,
-        context_service=context_service
+        task_repository=task_repository
     )
 
 
 @pytest.fixture
-def subtask_facade(task_repository, subtask_repository, context_service):
+def subtask_facade(task_repository, subtask_repository):
     """Create subtask application facade."""
     return SubtaskApplicationFacade(
         task_repository=task_repository,
-        subtask_repository=subtask_repository,
-        context_service=context_service
+        subtask_repository=subtask_repository
     )
 
 
@@ -80,7 +78,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
             estimated_effort="2 hours"
         )
 
-        create_result = await task_facade.create_task(create_request)
+        create_result = task_facade.create_task(create_request)
         assert create_result["success"] is True
         task_id = create_result["task"]["id"]
 
@@ -102,7 +100,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
             details="Added implementation details"
         )
 
-        update_result = await task_facade.update_task(update_request)
+        update_result = task_facade.update_task(update_request)
         assert update_result["success"] is True
 
         # Verify update sync
@@ -114,7 +112,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
         assert context_data["objective"]["title"] == "Updated E2E Task"
 
         # PHASE 3: COMPLETE
-        complete_result = await task_facade.complete_task(
+        complete_result = task_facade.complete_task(
             task_id=task_id,
             completion_summary="Successfully completed all requirements",
             testing_notes="All tests passing"
@@ -140,7 +138,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
             assignees="agent-1"
         )
 
-        result = await task_facade.create_task(create_request)
+        result = task_facade.create_task(create_request)
         task_id = result["task"]["id"]
 
         # Perform 5 updates
@@ -154,7 +152,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
                 priority=priority,
                 title=f"Update {i+1}"
             )
-            await task_facade.update_task(update_request)
+            task_facade.update_task(update_request)
 
             # Verify sync after each update
             task = task_repository.find_by_id(TaskId(task_id))
@@ -180,7 +178,7 @@ class TestSubtaskWorkflowUpdatesParentContext:
             assignees="parent-agent"
         )
 
-        parent_result = await task_facade.create_task(create_request)
+        parent_result = task_facade.create_task(create_request)
         parent_id = parent_result["task"]["id"]
 
         # Initial state: 0 subtasks
@@ -190,7 +188,7 @@ class TestSubtaskWorkflowUpdatesParentContext:
         # Create 3 subtasks
         subtask_ids = []
         for i in range(3):
-            subtask_result = await subtask_facade.create_subtask(
+            subtask_result = subtask_facade.create_subtask(
                 task_id=parent_id,
                 title=f"Subtask {i+1}",
                 assignees="subtask-agent"
@@ -205,7 +203,7 @@ class TestSubtaskWorkflowUpdatesParentContext:
         assert subtasks_data["progress_percentage"] == 0.0
 
         # Complete 1 subtask
-        await subtask_facade.complete_subtask(
+        subtask_facade.complete_subtask(
             task_id=parent_id,
             subtask_id=subtask_ids[0],
             completion_summary="First subtask done"
@@ -220,7 +218,7 @@ class TestSubtaskWorkflowUpdatesParentContext:
 
         # Complete remaining subtasks
         for subtask_id in subtask_ids[1:]:
-            await subtask_facade.complete_subtask(
+            subtask_facade.complete_subtask(
                 task_id=parent_id,
                 subtask_id=subtask_id,
                 completion_summary="Subtask completed"
@@ -243,7 +241,7 @@ class TestMixedOperationsMaintainConsistency:
     ):
         """Verify context stays consistent with interleaved operations."""
         # Create parent task
-        parent_result = await task_facade.create_task(
+        parent_result = task_facade.create_task(
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Complex Workflow Task",
@@ -255,14 +253,14 @@ class TestMixedOperationsMaintainConsistency:
 
         # Interleaved operations
         # 1. Create subtask
-        subtask1 = await subtask_facade.create_subtask(
+        subtask1 = subtask_facade.create_subtask(
             task_id=parent_id,
             title="Subtask 1",
             assignees="agent-1"
         )
 
         # 2. Update parent task
-        await task_facade.update_task(
+        task_facade.update_task(
             UpdateTaskRequest(
                 task_id=parent_id,
                 status="in_progress"
@@ -270,21 +268,21 @@ class TestMixedOperationsMaintainConsistency:
         )
 
         # 3. Create another subtask
-        subtask2 = await subtask_facade.create_subtask(
+        subtask2 = subtask_facade.create_subtask(
             task_id=parent_id,
             title="Subtask 2",
             assignees="agent-2"
         )
 
         # 4. Complete first subtask
-        await subtask_facade.complete_subtask(
+        subtask_facade.complete_subtask(
             task_id=parent_id,
             subtask_id=subtask1["subtask"]["id"],
             completion_summary="Done"
         )
 
         # 5. Update parent priority
-        await task_facade.update_task(
+        task_facade.update_task(
             UpdateTaskRequest(
                 task_id=parent_id,
                 priority="urgent"
@@ -314,7 +312,7 @@ class TestConcurrentOperationsDontCorruptData:
     ):
         """Verify concurrent subtask creation maintains accurate counts."""
         # Create parent task
-        parent_result = await task_facade.create_task(
+        parent_result = task_facade.create_task(
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Concurrent Test Task",
@@ -325,7 +323,7 @@ class TestConcurrentOperationsDontCorruptData:
 
         # Create 10 subtasks concurrently
         async def create_subtask(i):
-            return await subtask_facade.create_subtask(
+            return subtask_facade.create_subtask(
                 task_id=parent_id,
                 title=f"Concurrent Subtask {i}",
                 assignees="agent"
@@ -352,7 +350,7 @@ class TestConcurrentOperationsDontCorruptData:
     ):
         """Verify concurrent task updates don't corrupt context_data."""
         # Create task
-        result = await task_facade.create_task(
+        result = task_facade.create_task(
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Concurrent Update Test",
@@ -363,7 +361,7 @@ class TestConcurrentOperationsDontCorruptData:
 
         # Concurrent updates to different fields
         async def update_status(i):
-            return await task_facade.update_task(
+            return task_facade.update_task(
                 UpdateTaskRequest(
                     task_id=task_id,
                     status="in_progress"
@@ -371,7 +369,7 @@ class TestConcurrentOperationsDontCorruptData:
             )
 
         async def update_priority(i):
-            return await task_facade.update_task(
+            return task_facade.update_task(
                 UpdateTaskRequest(
                     task_id=task_id,
                     priority="high"
@@ -407,7 +405,7 @@ class TestLargeScaleWorkflow:
     ):
         """Verify sync works correctly with large task trees."""
         # Create parent task
-        parent_result = await task_facade.create_task(
+        parent_result = task_facade.create_task(
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Large Task Tree",
@@ -419,7 +417,7 @@ class TestLargeScaleWorkflow:
         # Create 50 subtasks
         subtask_ids = []
         for i in range(50):
-            result = await subtask_facade.create_subtask(
+            result = subtask_facade.create_subtask(
                 task_id=parent_id,
                 title=f"Subtask {i+1}",
                 assignees="worker-agent"
@@ -432,7 +430,7 @@ class TestLargeScaleWorkflow:
 
         # Complete 25 subtasks
         for subtask_id in subtask_ids[:25]:
-            await subtask_facade.complete_subtask(
+            subtask_facade.complete_subtask(
                 task_id=parent_id,
                 subtask_id=subtask_id,
                 completion_summary="Done"

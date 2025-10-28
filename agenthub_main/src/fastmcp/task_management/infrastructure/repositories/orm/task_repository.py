@@ -1534,12 +1534,13 @@ class ORMTaskRepository(
         logger.debug(f"[REPOSITORY] find_by_criteria called with filters: {filters}")
         logger.debug(f"[REPOSITORY] Repository git_branch_id: {self.git_branch_id}")
         logger.debug(f"[REPOSITORY] Filters git_branch_id: {filters.get('git_branch_id')}")
-        
+
         with self.get_db_session() as session:
             query = session.query(Task).options(
                 joinedload(Task.assignees),
                 joinedload(Task.labels).joinedload(TaskLabel.label),
-                joinedload(Task.subtasks)
+                joinedload(Task.subtasks),
+                joinedload(Task.dependencies)  # FIX: Eager load dependencies to prevent N+1 queries
             )
             
             # Apply user filter for data isolation (CRITICAL)
@@ -1936,6 +1937,41 @@ class ORMTaskRepository(
             Dictionary with estimated savings percentages
         """
         return self._field_selector.estimate_savings("task", field_set)
+
+    def get_completed_subtask_counts(self, task_ids: List[str]) -> Dict[str, int]:
+        """
+        Get completed subtask counts for multiple tasks in ONE query (batch loading).
+
+        This implements the same batch loading pattern used for project_id to prevent N+1 queries.
+        Uses aggregate query with GROUP BY for efficient counting.
+
+        Args:
+            task_ids: List of task IDs to get completed subtask counts for
+
+        Returns:
+            Dictionary mapping task_id to completed subtask count
+            Example: {"task-uuid-1": 3, "task-uuid-2": 0}
+        """
+        if not task_ids:
+            return {}
+
+        try:
+            with self.get_db_session() as session:
+                # Single aggregate query with GROUP BY - only counts 'done' status
+                results = session.query(
+                    Subtask.task_id,
+                    func.count(Subtask.id).label('completed_count')
+                ).filter(
+                    Subtask.task_id.in_(task_ids),
+                    Subtask.status == 'done'  # Only count completed subtasks
+                ).group_by(Subtask.task_id).all()
+
+                # Convert to dictionary for O(1) lookup
+                return {str(task_id): int(count) for task_id, count in results}
+
+        except Exception as e:
+            logger.error(f"Failed to fetch completed subtask counts: {e}")
+            return {}  # Degrade gracefully to empty dict
 
     def invalidate_cache(self, operation: str = None) -> None:
         """

@@ -2,6 +2,11 @@
 
 from .base_entity_id import EntityId
 from .task_id import TaskId
+from .subtask_id import SubtaskId
+from .project_id import ProjectId
+from .git_branch_id import GitBranchId
+from .agent_id import AgentId
+from .template_id import TemplateId
 from .task_status import TaskStatus, TaskStatusEnum
 from .priority import Priority
 from .pagination import PaginationRequest, PaginationResult
@@ -31,6 +36,11 @@ __all__ = [
     # Entity IDs and Core Value Objects
     'EntityId',
     'TaskId',
+    'SubtaskId',
+    'ProjectId',
+    'GitBranchId',
+    'AgentId',
+    'TemplateId',
     'TaskStatus',
     'TaskStatusEnum',
     'Priority',

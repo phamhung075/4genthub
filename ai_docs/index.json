@@ -268,14 +268,14 @@
       "files": [
         {
           "hash": "f6dc3230625d78c0a47a1dded2a63628",
-          "modified": "2025-10-27T17:21:48.030288",
+          "modified": "2025-10-27T21:30:37.638424",
           "name": "Architecture_Technique.md",
           "path": "architecture-design/Architecture_Technique.md",
           "size": 47486
         },
         {
           "hash": "44b5ebd40b80e5bf64d8c6c034f51fd8",
-          "modified": "2025-10-27T17:18:45.359053",
+          "modified": "2025-10-27T21:30:37.638424",
           "name": "PRD.md",
           "path": "architecture-design/PRD.md",
           "size": 22749
@@ -1108,8 +1108,22 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 2,
+      "count": 4,
       "files": [
+        {
+          "hash": "92e5ced4af4d1fda095954c65ffec787",
+          "modified": "2025-10-28T03:00:36.010099",
+          "name": "structural-fix-complete-report.md",
+          "path": "reports-status/structural-fix-complete-report.md",
+          "size": 10457
+        },
+        {
+          "hash": "9aaf70c2a5546f1ba4224984eb827ace",
+          "modified": "2025-10-27T22:10:47.206053",
+          "name": "post-contract-alignment-comprehensive-analysis.md",
+          "path": "reports-status/post-contract-alignment-comprehensive-analysis.md",
+          "size": 21387
+        },
         {
           "hash": "2a61245ec9696bd2cdeeb5c488568a76",
           "modified": "2025-10-27T16:08:52.910246",
@@ -1291,7 +1305,7 @@
         },
         {
           "hash": "6a2639a9cbfd26dd1404f2334dd910fe",
-          "modified": "2025-10-27T19:08:53.879418",
+          "modified": "2025-10-27T21:30:37.638424",
           "name": "api-contract-test-final-report.md",
           "path": "testing-qa/api-contract-test-final-report.md",
           "size": 14963
@@ -1375,7 +1389,7 @@
         },
         {
           "hash": "113bead0fc9e3f26b4891a3befe7b481",
-          "modified": "2025-10-27T18:22:44.946101",
+          "modified": "2025-10-27T21:30:37.638424",
           "name": "backend-frontend-type-comparison-matrix.md",
           "path": "testing-qa/backend-frontend-type-comparison-matrix.md",
           "size": 17173
@@ -1508,7 +1522,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-27T19:08:54.073991",
+  "generated_at": "2025-10-28T03:00:36.169589",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1739,6 +1753,8 @@
     "reports-status": {
       "files": [
         "mcp-tool-response-analysis.md",
+        "post-contract-alignment-comprehensive-analysis.md",
+        "structural-fix-complete-report.md",
         "test-fix-session-2025-10-24.md"
       ]
     },
@@ -1801,5 +1817,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 195
+  "total_files": 197
 }
