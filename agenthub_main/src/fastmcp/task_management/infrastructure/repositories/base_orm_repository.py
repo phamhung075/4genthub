@@ -59,8 +59,29 @@ class BaseORMRepository(Generic[ModelType]):
             # Use existing session from transaction - HIGHEST PRIORITY
             yield self._session
         elif hasattr(self, 'session') and self.session:
-            # Fall back to session attribute from BaseUserScopedRepository
-            yield self.session
+            # CRITICAL BUG FIX: Validate that self.session is actually a Session object
+            # not a DatabaseConfig or other object
+            from sqlalchemy.orm import Session as SQLAlchemySession
+            if isinstance(self.session, SQLAlchemySession):
+                # Fall back to session attribute from BaseUserScopedRepository
+                yield self.session
+            else:
+                logger.warning(f"self.session is not a Session object (type: {type(self.session)}), creating new session")
+                # Create new session if self.session is invalid
+                session = get_session()
+                try:
+                    yield session
+                    session.commit()
+                except SQLAlchemyError as e:
+                    session.rollback()
+                    logger.error(f"Database error: {e}")
+                    raise DatabaseException(
+                        message=f"Database operation failed: {str(e)}",
+                        operation=self.__class__.__name__,
+                        table=self.model_class.__tablename__
+                    )
+                finally:
+                    session.close()
         else:
             # Create new session
             session = get_session()

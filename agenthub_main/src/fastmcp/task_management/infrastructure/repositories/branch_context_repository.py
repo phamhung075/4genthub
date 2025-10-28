@@ -144,6 +144,14 @@ class BranchContextRepository(CacheInvalidationMixin, BaseORMRepository):
                     'local_overrides': entity.metadata.get('local_overrides', {}),
                     'delegation_rules': entity.metadata.get('delegation_rules', {})
                 }
+
+                # Preserve custom metadata fields (e.g., auto_created, created_at, source)
+                # These are important for traceability and audit trails
+                predefined_metadata_keys = {'user_id', 'active_patterns', 'local_overrides', 'delegation_rules'}
+                for key, value in entity.metadata.items():
+                    if key not in predefined_metadata_keys:
+                        data_field[key] = value
+                        logger.debug(f"Preserved custom metadata field '{key}' in branch context data")
                 
                 db_model = BranchContextModel(
                     id=normalized_id,  # Use normalized UUID as the primary key

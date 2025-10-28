@@ -9,6 +9,7 @@ Goal: Find bugs that 120+ contract tests didn't catch by testing REAL workflows
 """
 
 import pytest
+from unittest.mock import patch
 
 from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
 from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
@@ -29,6 +30,13 @@ def task_repository(shared_test_db, user_id):
 def subtask_repository(shared_test_db, user_id):
     """Create real ORM subtask repository."""
     return ORMSubtaskRepository(session=None, user_id=user_id)
+
+
+@pytest.fixture(autouse=True)
+def mock_auth_context(user_id):
+    """Mock authentication context for all tests in this file."""
+    with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id', return_value=user_id):
+        yield
 
 
 @pytest.fixture
@@ -144,6 +152,7 @@ class TestCompleteTaskWorkflowsRealDB:
         task1 = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Single assignee test",
+            description="E2E test - Single assignee test",
             assignees="@coding-agent"
         ))
         assert isinstance(task1["task"]["assignees"], list), \
@@ -154,6 +163,7 @@ class TestCompleteTaskWorkflowsRealDB:
         task2 = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Multiple assignees test",
+            description="E2E test - Multiple assignees test",
             assignees=["@coding-agent", "@test-agent"]
         ))
         assert isinstance(task2["task"]["assignees"], list)
@@ -163,6 +173,7 @@ class TestCompleteTaskWorkflowsRealDB:
         task3 = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="No assignees test",
+            description="E2E test - No assignees test",
             assignees=[]
         ))
         assert isinstance(task3["task"]["assignees"], list), \
@@ -178,6 +189,7 @@ class TestCompleteTaskWorkflowsRealDB:
         task = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="No subtasks test",
+            description="E2E test - No subtasks test",
             assignees=["@test-agent"]
         ))
 
@@ -197,6 +209,7 @@ class TestCompleteTaskWorkflowsRealDB:
         parent = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Progress test",
+            description="E2E test: Progress test",
             status="in_progress",
             assignees=["@test-agent"]
         ))
@@ -239,6 +252,7 @@ class TestCompleteTaskWorkflowsRealDB:
         task = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Timestamp test",
+            description="E2E test - Timestamp test",
             assignees=["@test-agent"]
         ))
 
@@ -267,6 +281,7 @@ class TestCompleteTaskWorkflowsRealDB:
         task = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Context test",
+            description="E2E test - Context test",
             assignees=["@test-agent"]
         ))
 
@@ -293,6 +308,7 @@ class TestConcurrentOperations:
         parent = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Concurrent test",
+            description="E2E test - Concurrent test",
             assignees=["@test-agent"]
         ))
         task_id = parent["task"]["id"]
@@ -327,6 +343,7 @@ class TestConcurrentOperations:
         parent = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Add/delete stress test",
+            description="E2E test - Add/delete stress test",
             assignees=["@test-agent"]
         ))
         task_id = parent["task"]["id"]

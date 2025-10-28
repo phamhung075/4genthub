@@ -121,6 +121,17 @@ class ContextHierarchyValidator:
         
         # If still no project_id after auto-resolution attempt
         if not project_id:
+            # Check if this is auto-creation from task creation - allow without project_id
+            is_auto_creation = data.get("source") == "task_creation_auto_create" or data.get("auto_created") is True
+
+            if is_auto_creation:
+                logger.info(f"Allowing branch context creation without project_id for auto-creation scenario (branch_id={branch_id})")
+                return True, None, {
+                    "warning": "Branch context created without project_id for task creation auto-creation",
+                    "explanation": "Branch context auto-created to prevent foreign key violations during task creation. Project_id will be set when git branch is created.",
+                    "auto_creation": True
+                }
+
             return False, "Branch context requires project_id", {
                 "error": "Missing required field: project_id",
                 "explanation": "Branch contexts must be associated with a project. Could not auto-resolve project_id from git_branch_id.",

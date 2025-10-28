@@ -983,13 +983,22 @@ class UnifiedContextService:
                 metadata=data.get("metadata", {})
             )
         elif level == ContextLevel.BRANCH:
+            # Define predefined branch context fields
+            predefined_fields = {
+                "branch_info", "branch_workflow", "feature_flags",
+                "discovered_patterns", "branch_decisions", "branch_settings",
+                "branch_standards", "agent_assignments", "metadata",
+                "project_id", "git_branch_name", "active_patterns",
+                "local_overrides", "delegation_rules"
+            }
+
             # Extract new fields from data (matching CONTEXT_DATA_MODELS.md)
             branch_info = data.get("branch_info", {})
             branch_workflow = data.get("branch_workflow", {})
             feature_flags = data.get("feature_flags", {})
             discovered_patterns = data.get("discovered_patterns", {})
             branch_decisions = data.get("branch_decisions", {})
-            
+
             # Build branch_settings for backward compatibility
             branch_settings = data.get("branch_settings", {})
             if not branch_settings:
@@ -999,7 +1008,7 @@ class UnifiedContextService:
                     "branch_standards": data.get("branch_standards", {}),
                     "agent_assignments": data.get("agent_assignments", {})
                 }
-            
+
             # Ensure user_id is in metadata for repository
             metadata = data.get("metadata", {})
             effective_user_id = user_id or self._user_id
@@ -1009,6 +1018,18 @@ class UnifiedContextService:
             metadata["active_patterns"] = data.get("active_patterns", {})
             metadata["local_overrides"] = data.get("local_overrides", {})
             metadata["delegation_rules"] = data.get("delegation_rules", {})
+
+            # Preserve all unrecognized custom fields in metadata
+            # This ensures auto_created, created_at, source, etc. are preserved
+            custom_fields = {}
+            for key, value in data.items():
+                if key not in predefined_fields:
+                    custom_fields[key] = value
+
+            # Add custom fields to metadata if any exist
+            if custom_fields:
+                metadata.update(custom_fields)
+                logger.info(f"Preserved {len(custom_fields)} custom fields in branch metadata: {list(custom_fields.keys())}")
             
             return BranchContext(
                 id=context_id,

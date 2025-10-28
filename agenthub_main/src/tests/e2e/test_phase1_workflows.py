@@ -124,10 +124,11 @@ class TestPhase1TaskCRUDOperations:
         assert "assignees" in task, "Response must include assignees array"
         assert "dependencies" in task, "Response must include dependencies array"
 
-        # PHASE 1 VERIFICATION: NO count fields
-        assert "subtask_count" not in task, "subtask_count field must NOT exist (Phase 1)"
-        assert "assignees_count" not in task, "assignees_count field must NOT exist (Phase 1)"
-        assert "dependency_count" not in task, "dependency_count field must NOT exist (Phase 1)"
+        # PHASE 2 VERIFICATION: Count fields present
+        assert "subtask_count" in task, "subtask_count field must exist (Phase 2)"
+        assert task["subtask_count"] == 0, "New task should have 0 subtasks"
+        assert "completed_subtasks" in task, "completed_subtasks field must exist (Phase 2)"
+        assert task["completed_subtasks"] == 0, "New task should have 0 completed subtasks"
 
         # PHASE 1 VERIFICATION: NO emoji fields
         assert "priority_emoji" not in task, "priority_emoji field must NOT exist (Phase 1)"
@@ -187,9 +188,9 @@ class TestPhase1TaskCRUDOperations:
         assert result["success"] is True
         task = result["data"]["task"]
 
-        # PHASE 1 VERIFICATION: NO count fields after update
-        assert "subtask_count" not in task
-        assert "assignees_count" not in task
+        # PHASE 2 VERIFICATION: Count fields present after update
+        assert "subtask_count" in task
+        assert "completed_subtasks" in task
 
     def test_list_tasks_response_structure(self, mcp_tools, project_with_branch, mock_auth):
         """Verify list tasks returns all tasks without count fields"""
@@ -216,12 +217,12 @@ class TestPhase1TaskCRUDOperations:
         tasks = result["data"]["tasks"]
         assert len(tasks) >= 3
 
-        # PHASE 1 VERIFICATION: Check first task structure
+        # PHASE 2 VERIFICATION: Check first task structure
         if tasks:
             task = tasks[0]
-            # Must NOT have count fields
-            assert "subtask_count" not in task
-            assert "assignees_count" not in task
+            # Must have count fields
+            assert "subtask_count" in task
+            assert "completed_subtasks" in task
 
     def test_delete_task_cascade_behavior(self, mcp_tools, project_with_branch, mock_auth):
         """Verify task deletion with subtasks works correctly"""
@@ -293,10 +294,13 @@ class TestPhase1SubtaskOperations:
 
         parent_task = parent_result["data"]["task"]
 
-        # PHASE 1 VERIFICATION: Parent has subtasks array
+        # PHASE 2 VERIFICATION: Parent has subtasks array
         assert "subtasks" in parent_task
-        # PHASE 1 VERIFICATION: NO subtask_count field
-        assert "subtask_count" not in parent_task
+        # PHASE 2 VERIFICATION: Has subtask_count field
+        assert "subtask_count" in parent_task
+        assert parent_task["subtask_count"] == 1, "Should have 1 subtask"
+        assert "completed_subtasks" in parent_task
+        assert parent_task["completed_subtasks"] == 0, "Should have 0 completed"
 
     def test_list_subtasks_response_structure(self, mcp_tools, project_with_branch, mock_auth):
         """Verify subtask list has arrays without count fields"""
@@ -332,11 +336,10 @@ class TestPhase1SubtaskOperations:
         assert result["success"] is True
         subtasks = result["data"]["subtasks"]
 
-        # PHASE 1 VERIFICATION: Check subtask structure
+        # PHASE 2 VERIFICATION: Check subtask structure
         if subtasks:
             subtask = subtasks[0]
             assert "assignees" in subtask
-            assert "assignees_count" not in subtask
 
     def test_complete_subtask_updates_parent_context(self, mcp_tools, project_with_branch, mock_auth):
         """Verify completing subtask updates parent correctly"""
@@ -472,11 +475,13 @@ class TestPhase1ArrayBasedCountLogic:
 
         task = result["data"]["task"]
 
-        # PHASE 1 VERIFICATION: Array-based count
+        # PHASE 2 VERIFICATION: Count fields present
         assert "subtasks" in task
-        # Frontend would calculate: task.subtasks?.length ?? 0
-        # PHASE 1 VERIFICATION: NO subtask_count field
-        assert "subtask_count" not in task
+        assert "subtask_count" in task
+        assert task["subtask_count"] == 3, "Should have 3 subtasks"
+        assert task["subtask_count"] == len(task["subtasks"]), "Count should match array length"
+        assert "completed_subtasks" in task
+        assert task["completed_subtasks"] <= task["subtask_count"], "Completed should not exceed total"
 
     def test_task_with_zero_subtasks(self, mcp_tools, project_with_branch, mock_auth):
         """Verify empty subtasks array (not null)"""
@@ -493,11 +498,13 @@ class TestPhase1ArrayBasedCountLogic:
 
         task = result["data"]["task"]
 
-        # PHASE 1 VERIFICATION: subtasks is array (not null)
+        # PHASE 2 VERIFICATION: subtasks is array (not null) and count field present
         assert "subtasks" in task
-        # Frontend calculates: task.subtasks?.length ?? 0 = 0
-        # PHASE 1 VERIFICATION: NO subtask_count field
-        assert "subtask_count" not in task
+        assert "subtask_count" in task
+        assert task["subtask_count"] == 0, "Should have 0 subtasks"
+        assert task["subtask_count"] == len(task["subtasks"]), "Count should match array length"
+        assert "completed_subtasks" in task
+        assert task["completed_subtasks"] == 0, "Should have 0 completed"
 
     def test_empty_arrays_handled_correctly(self, mcp_tools, project_with_branch, mock_auth):
         """Verify all arrays are lists, not null"""
@@ -585,9 +592,8 @@ class TestPhase1NoRegressions:
         assert task2_result["success"] is True
         task2 = task2_result["data"]["task"]
 
-        # PHASE 1 VERIFICATION: dependencies array (not dependency_count)
+        # PHASE 2 VERIFICATION: dependencies array present
         assert "dependencies" in task2
-        assert "dependency_count" not in task2
 
 
 if __name__ == "__main__":
