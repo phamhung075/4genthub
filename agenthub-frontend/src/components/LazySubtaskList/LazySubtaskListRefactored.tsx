@@ -5,6 +5,7 @@
 import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { taskDeletionTracker } from "../../services/taskDeletionTracker";
+import { useSuccessToast, useErrorToast } from "../ui/toast";
 import logger from "../../utils/logger";
 
 // Import custom hooks (business logic)
@@ -13,6 +14,9 @@ import { useSubtaskFilters } from "./hooks/useSubtaskFilters";
 import { useSubtaskWebSocket } from "./hooks/useSubtaskWebSocket";
 import { useSubtaskExpansion } from "./hooks/useSubtaskExpansion";
 import { useSubtaskDialogs } from "./hooks/useSubtaskDialogs";
+
+// Import API functions
+import { deleteSubtask } from "../../api";
 
 // Import UI components (presentation)
 import { SubtaskListHeader } from "./components/SubtaskListHeader";
@@ -48,6 +52,10 @@ export function LazySubtaskListRefactored({
   taskTreeId,
   parentTaskId
 }: LazySubtaskListProps) {
+
+  // Toast notifications
+  const showSuccessToast = useSuccessToast();
+  const showErrorToast = useErrorToast();
 
   logger.debug('🚀 [LazySubtaskList] Component MOUNTED/RENDERING', {
     parentTaskId,
@@ -214,8 +222,32 @@ export function LazySubtaskListRefactored({
 
   // Handle delete subtask
   const handleDeleteSubtask = async (subtaskId: string) => {
-    // Implementation would go here - delegated to parent or service
-    logger.debug('Delete subtask:', subtaskId);
+    try {
+      logger.debug('[DEBUG] Delete subtask:', subtaskId);
+
+      // Call API to delete subtask from backend
+      await deleteSubtask(subtaskId);
+
+      logger.debug('[DEBUG] Subtask deleted successfully from backend:', subtaskId);
+
+      // Close the delete dialog immediately
+      closeAllDialogs();
+
+      // Show success notification
+      showSuccessToast('Subtask deleted successfully', 'The subtask has been removed from the list');
+
+      // Trigger animation and UI update
+      handleSubtaskDeleted(subtaskId);
+
+    } catch (error) {
+      logger.error('Error deleting subtask:', error);
+      // Close dialog even on error
+      closeAllDialogs();
+      // Show error notification
+      showErrorToast('Failed to delete subtask', error instanceof Error ? error.message : 'An unknown error occurred');
+      // Refresh to sync with server state
+      refreshData();
+    }
   };
 
   // Handle complete subtask

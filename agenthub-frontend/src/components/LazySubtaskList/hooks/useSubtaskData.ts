@@ -5,6 +5,7 @@ import { useState, useCallback, useRef } from "react";
 import { deleteSubtask, getSubtask, listSubtasks, Subtask } from "../../../api";
 import { getSubtaskSummaries } from "../../../api-lazy";
 import { SubtaskSummary } from "../../../types/taskTypes";
+import { taskDeletionTracker } from "../../../services/taskDeletionTracker";
 import type { UseSubtaskDataReturn } from "../../../types/subtaskTypes";
 import {
   subtaskToSummary,
@@ -43,11 +44,22 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
         subtaskIds: response.subtasks.map(s => s.id)
       });
 
-      setSubtaskSummaries(response.subtasks);
+      // Filter out subtasks that are currently being deleted (during animation)
+      const filteredSubtasks = response.subtasks.filter(
+        subtask => !taskDeletionTracker.isMarkedForDeletion(subtask.id)
+      );
 
-      // Populate fullSubtasks Map with the same data
+      logger.debug('🗑️ [SubtaskData] Filtered out deleted subtasks', {
+        original: response.subtasks.length,
+        filtered: filteredSubtasks.length,
+        removed: response.subtasks.length - filteredSubtasks.length
+      });
+
+      setSubtaskSummaries(filteredSubtasks);
+
+      // Populate fullSubtasks Map with filtered data (exclude deleted subtasks)
       const newFullSubtasks = new Map<string, Subtask>();
-      response.subtasks.forEach(subtask => {
+      filteredSubtasks.forEach(subtask => {
         newFullSubtasks.set(subtask.id, subtask as Subtask);
       });
       setFullSubtasks(newFullSubtasks);
