@@ -3,6 +3,12 @@ import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../config/environment';
 import logger from '../utils/logger';
 import { deduplicateRequest } from '../utils/requestDeduplication';
+import {
+  validateResponse,
+  detectResponseType,
+  logValidationResult,
+  ValidationStats,
+} from '../utils/responseValidator';
 
 // Get current auth token
 const getAuthToken = (): string | null => {
@@ -159,8 +165,38 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
 
     throw new Error(error.detail || `Request failed with status ${response.status}`);
   }
-  
-  return response.json();
+
+  // Parse JSON response
+  const data = await response.json();
+
+  // RESPONSE VALIDATION: Validate response structure in development
+  if (import.meta.env.DEV || import.meta.env.VITE_VALIDATE_RESPONSES === 'true') {
+    const endpoint = originalUrl || response.url;
+    const responseType = detectResponseType(endpoint);
+
+    // Handle array responses (list endpoints)
+    if (Array.isArray(data)) {
+      // Validate each item in the array
+      data.forEach((item: any, index: number) => {
+        const result = validateResponse(item, responseType, `${endpoint}[${index}]`);
+        logValidationResult(result, item);
+        ValidationStats.record(result);
+      });
+    }
+    // Handle wrapped responses (e.g., { data: {...}, success: true })
+    else if (data && typeof data === 'object') {
+      // Check if response has a data wrapper
+      const actualData = data.data?.task || data.data?.subtask || data.data?.project || data.data?.branch || data.task || data.subtask || data.project || data.branch || data;
+
+      if (actualData && typeof actualData === 'object') {
+        const result = validateResponse(actualData, responseType, endpoint);
+        logValidationResult(result, actualData);
+        ValidationStats.record(result);
+      }
+    }
+  }
+
+  return data;
 };
 
 // Token refresh function
