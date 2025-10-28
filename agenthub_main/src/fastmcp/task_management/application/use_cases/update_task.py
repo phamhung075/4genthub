@@ -18,8 +18,9 @@ logger = logging.getLogger(__name__)
 class UpdateTaskUseCase:
     """Use case for updating an existing task"""
     
-    def __init__(self, task_repository: TaskRepository):
+    def __init__(self, task_repository: TaskRepository, git_branch_repository=None):
         self._task_repository = task_repository
+        self._git_branch_repository = git_branch_repository
         self._context_sync_service = None  # Lazy initialization to avoid circular imports
     
     def execute(self, request: UpdateTaskRequest) -> UpdateTaskResponse:
@@ -119,29 +120,34 @@ class UpdateTaskUseCase:
         except Exception as e:
             logger.warning(f"Failed to dispatch task update event: {e}")
 
+        # Convert to response DTO with project_id via repository join (moved before WebSocket)
+        task_response = TaskResponse.from_domain(task, git_branch_repository=self._git_branch_repository)
+
         # Send WebSocket notification for frontend real-time updates
         try:
             from ..services.websocket_notification_service import WebSocketNotificationService
+            from ..services.websocket_payload_builder import WebSocketPayloadBuilder
+
+            # Build complete WebSocket payload using WebSocketPayloadBuilder (DRY principle)
+            task_payload = WebSocketPayloadBuilder.build_task_payload(
+                task=task,
+                task_response=task_response  # Complete data with project_id, subtask_count, etc.
+            )
+
+            # Log payload size for monitoring
+            payload_size = WebSocketPayloadBuilder.estimate_payload_size(task_payload)
+            logger.info(f"Task update WebSocket payload size: {payload_size} bytes for task {task.id.value}")
 
             # Create task update notification via WebSocket notification service
-            # CRITICAL FIX: Include progress_history in WebSocket payload for real-time dialog updates
             WebSocketNotificationService.sync_broadcast_task_event(
                 event_type="updated",
                 task_id=str(task.id.value),
                 user_id=getattr(request, 'user_id', None) or "system",
-                task_data={
-                    "id": str(task.id.value),
-                    "title": task.title,
-                    "status": str(task.status),
-                    "priority": str(task.priority),
-                    "progress_history": task.progress_history if hasattr(task, 'progress_history') else {},
-                    "progress_count": task.progress_count if hasattr(task, 'progress_count') else 0,
-                    "details": task.get_progress_history_text() if hasattr(task, 'get_progress_history_text') else ""
-                },
+                task_data=task_payload,  # Use complete payload from builder
                 git_branch_id=task.git_branch_id if hasattr(task, 'git_branch_id') else None
             )
 
-            logger.info(f"Sent WebSocket notification for task {task.id.value} update with progress_history")
+            logger.info(f"Sent WebSocket notification for task {task.id.value} update with complete payload ({len(task_payload)} fields)")
 
         except Exception as e:
             logger.warning(f"Failed to send WebSocket notification: {e}")
@@ -152,18 +158,8 @@ class UpdateTaskUseCase:
             if isinstance(event, TaskUpdated):
                 # Could trigger notifications, logging, etc.
                 pass
-        
-        # Convert to response DTO with project_id via repository join
-        # Get git_branch_repository for project_id lookup
-        git_branch_repo = None
-        try:
-            from ...application.services.repository_provider_service import RepositoryProviderService
-            provider = RepositoryProviderService.get_instance()
-            git_branch_repo = provider.get_git_branch_repository()
-        except Exception as e:
-            logger.warning(f"Could not get git_branch_repository for project_id lookup: {e}")
 
-        task_response = TaskResponse.from_domain(task, git_branch_repository=git_branch_repo)
+        # Return response (task_response already created above before WebSocket notification)
         return UpdateTaskResponse.success_response(task_response)
     
     def _convert_to_task_id(self, task_id: Union[str, int, TaskId]) -> TaskId:

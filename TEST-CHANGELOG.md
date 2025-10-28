@@ -12,6 +12,21 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 
 ### Added
 
+#### N+1 Query Performance Test Suite (TDD Phase 2) (2025-10-27) ✅
+- **Achievement**: Created comprehensive performance test suite for N+1 query problem detection
+- **File**: `agenthub_main/src/tests/performance/test_list_tasks_performance.py` (580+ lines)
+- **Purpose**: TDD Phase 2 - Write failing tests to demonstrate N+1 query problem before fix implementation
+- **Methodology**: Test-Driven Development (TDD) 5-phase approach
+
+**Test Suite Components**:
+1. **QueryCounter** - Custom context manager for counting SQL queries during test execution
+2. **Core Performance Tests** (TestTaskListNPlusOneQuery) - 5 tests detecting N+1 query problem
+3. **Regression Tests** (TestTaskListPerformanceRegression) - 2 tests ensuring fix doesn't break functionality
+
+**Expected Behavior**: Tests designed to FAIL initially (demonstrating N+1 problem), PASS after batch loading implementation
+
+**Performance Improvement Potential**: 100 tasks: 101→2 queries (50x improvement), 1000 tasks: 500x improvement
+
 #### Comprehensive Test Coverage Analysis Report (2025-10-27) ✅
 - **Achievement**: Generated comprehensive test coverage analysis across entire agenthub project
 - **Documentation**: `ai_docs/testing-qa/test-coverage-analysis-2025-10-27.md`

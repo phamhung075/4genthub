@@ -20,16 +20,18 @@ logger = logging.getLogger(__name__)
 class GetTaskUseCase:
     """Use case for retrieving a task by ID with optional context data"""
     
-    def __init__(self, task_repository: TaskRepository, context_service: Optional[Any] = None):
+    def __init__(self, task_repository: TaskRepository, context_service: Optional[Any] = None, git_branch_repository=None):
         """
         Initialize the GetTaskUseCase with required dependencies.
-        
+
         Args:
             task_repository: Repository for task data access
             context_service: Optional context service for fetching context data
+            git_branch_repository: Optional git branch repository for project_id lookup
         """
         self._task_repository = task_repository
         self._context_service = context_service
+        self._git_branch_repository = git_branch_repository
     
     async def execute(self, task_id: str, generate_rules: bool = True, force_full_generation: bool = False,
                      include_context: bool = False) -> Optional[TaskResponse]:
@@ -133,17 +135,8 @@ class GetTaskUseCase:
             )
             # Note: Event publishing would be handled by an event dispatcher in a full implementation
 
-            # Get git_branch_repository for project_id lookup
-            git_branch_repo = None
-            try:
-                from ...application.services.repository_provider_service import RepositoryProviderService
-                provider = RepositoryProviderService.get_instance()
-                git_branch_repo = provider.get_git_branch_repository()
-            except Exception as e:
-                logger.warning(f"Could not get git_branch_repository for project_id lookup: {e}")
-
             # Convert domain task to response DTO with context data and project_id
-            return TaskResponse.from_domain(task, git_branch_repository=git_branch_repo, context_data=context_data)
+            return TaskResponse.from_domain(task, git_branch_repository=self._git_branch_repository, context_data=context_data)
             
         except TaskNotFoundError:
             logger.warning(f"Task not found: {task_id}")

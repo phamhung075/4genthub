@@ -41,23 +41,31 @@ def context_service():
 @pytest.fixture
 def parent_task(task_repository):
     """Create a parent task for subtask tests."""
+    from fastmcp.task_management.domain.value_objects.task_id import TaskId
     task = Task.create(
-        git_branch_id=str(uuid4()),
+        id=TaskId.generate(),
         title="Parent Task",
+        description="Parent task for subtask tests",
+        git_branch_id=str(uuid4()),
         assignees=["parent-agent"],
         user_id=str(uuid4())
     )
+    # Initialize context_data with subtask counts (required for sync tests)
+    task._context_data = {
+        "metadata": {"status": "todo", "priority": "medium"},
+        "objective": {"title": "Parent Task"},
+        "subtasks": {"total_count": 0, "completed_count": 0, "progress_percentage": 0.0}
+    }
     task_repository.save(task)
     return task
 
 
 @pytest.fixture
-def facade(task_repository, subtask_repository, context_service):
+def facade(task_repository, subtask_repository):
     """Create subtask application facade."""
     return SubtaskApplicationFacade(
         task_repository=task_repository,
-        subtask_repository=subtask_repository,
-        context_service=context_service
+        subtask_repository=subtask_repository
     )
 
 
@@ -74,7 +82,7 @@ class TestCreateSubtaskUpdatesParentCounts:
         initial_total = parent.context_data.get("subtasks", {}).get("total_count", 0)
 
         # Act - Create subtask
-        result = await facade.create_subtask(
+        result = facade.create_subtask(
             task_id=str(parent_task.id),
             title="Subtask 1",
             assignees="subtask-agent"
@@ -97,7 +105,7 @@ class TestCreateSubtaskUpdatesParentCounts:
         """Verify creating multiple subtasks updates counts correctly."""
         # Act - Create 3 subtasks
         for i in range(3):
-            await facade.create_subtask(
+            facade.create_subtask(
                 task_id=str(parent_task.id),
                 title=f"Subtask {i+1}",
                 assignees="subtask-agent"
@@ -121,19 +129,19 @@ class TestUpdateSubtaskRecalculatesProgress:
     ):
         """Verify updating subtask status updates parent progress."""
         # Arrange - Create 2 subtasks
-        subtask1 = await facade.create_subtask(
+        subtask1 = facade.create_subtask(
             task_id=str(parent_task.id),
             title="Subtask 1",
             assignees="agent-1"
         )
-        subtask2 = await facade.create_subtask(
+        subtask2 = facade.create_subtask(
             task_id=str(parent_task.id),
             title="Subtask 2",
             assignees="agent-2"
         )
 
         # Act - Update one subtask to in_progress
-        await facade.update_subtask(
+        facade.update_subtask(
             task_id=str(parent_task.id),
             subtask_id=subtask1["subtask"]["id"],
             status="in_progress",
@@ -154,14 +162,14 @@ class TestUpdateSubtaskRecalculatesProgress:
     ):
         """Verify updating subtask progress_percentage updates parent."""
         # Arrange
-        subtask = await facade.create_subtask(
+        subtask = facade.create_subtask(
             task_id=str(parent_task.id),
             title="Subtask 1",
             assignees="agent-1"
         )
 
         # Act - Update progress to 75%
-        await facade.update_subtask(
+        facade.update_subtask(
             task_id=str(parent_task.id),
             subtask_id=subtask["subtask"]["id"],
             progress_percentage=75
@@ -184,14 +192,14 @@ class TestCompleteSubtaskUpdatesCompletedCount:
     ):
         """Verify completing a subtask increments parent completed_count."""
         # Arrange - Create 2 subtasks
-        subtask1 = await facade.create_subtask(
+        subtask1 = facade.create_subtask(
             task_id=str(parent_task.id),
             title="Subtask 1",
             assignees="agent-1"
         )
 
         # Act - Complete the subtask
-        await facade.complete_subtask(
+        facade.complete_subtask(
             task_id=str(parent_task.id),
             subtask_id=subtask1["subtask"]["id"],
             completion_summary="Completed successfully"
@@ -212,7 +220,7 @@ class TestCompleteSubtaskUpdatesCompletedCount:
         # Arrange - Create 4 subtasks
         subtask_ids = []
         for i in range(4):
-            result = await facade.create_subtask(
+            result = facade.create_subtask(
                 task_id=str(parent_task.id),
                 title=f"Subtask {i+1}",
                 assignees="agent"
@@ -221,7 +229,7 @@ class TestCompleteSubtaskUpdatesCompletedCount:
 
         # Act - Complete 2 out of 4 subtasks
         for subtask_id in subtask_ids[:2]:
-            await facade.complete_subtask(
+            facade.complete_subtask(
                 task_id=str(parent_task.id),
                 subtask_id=subtask_id,
                 completion_summary="Done"
@@ -247,7 +255,7 @@ class TestDeleteSubtaskDecrementsCount:
         # Arrange - Create 3 subtasks
         subtask_ids = []
         for i in range(3):
-            result = await facade.create_subtask(
+            result = facade.create_subtask(
                 task_id=str(parent_task.id),
                 title=f"Subtask {i+1}",
                 assignees="agent"
@@ -255,7 +263,7 @@ class TestDeleteSubtaskDecrementsCount:
             subtask_ids.append(result["subtask"]["id"])
 
         # Act - Delete one subtask
-        await facade.delete_subtask(
+        facade.delete_subtask(
             task_id=str(parent_task.id),
             subtask_id=subtask_ids[0]
         )
@@ -271,13 +279,13 @@ class TestDeleteSubtaskDecrementsCount:
     ):
         """Verify deleting a completed subtask updates both total and completed counts."""
         # Arrange - Create and complete a subtask
-        subtask = await facade.create_subtask(
+        subtask = facade.create_subtask(
             task_id=str(parent_task.id),
             title="Subtask to Delete",
             assignees="agent"
         )
 
-        await facade.complete_subtask(
+        facade.complete_subtask(
             task_id=str(parent_task.id),
             subtask_id=subtask["subtask"]["id"],
             completion_summary="Done"
@@ -289,7 +297,7 @@ class TestDeleteSubtaskDecrementsCount:
         assert parent.context_data["subtasks"]["completed_count"] == 1
 
         # Act - Delete the completed subtask
-        await facade.delete_subtask(
+        facade.delete_subtask(
             task_id=str(parent_task.id),
             subtask_id=subtask["subtask"]["id"]
         )
@@ -313,7 +321,7 @@ class TestMultipleSubtasksCountAccurately:
         # Create 5 subtasks
         subtask_ids = []
         for i in range(5):
-            result = await facade.create_subtask(
+            result = facade.create_subtask(
                 task_id=str(parent_task.id),
                 title=f"Subtask {i+1}",
                 assignees="agent"
@@ -322,14 +330,14 @@ class TestMultipleSubtasksCountAccurately:
 
         # Complete 3 subtasks
         for subtask_id in subtask_ids[:3]:
-            await facade.complete_subtask(
+            facade.complete_subtask(
                 task_id=str(parent_task.id),
                 subtask_id=subtask_id,
                 completion_summary="Done"
             )
 
         # Delete 1 completed subtask
-        await facade.delete_subtask(
+        facade.delete_subtask(
             task_id=str(parent_task.id),
             subtask_id=subtask_ids[0]
         )
@@ -349,7 +357,7 @@ class TestMultipleSubtasksCountAccurately:
         # Arrange - Create 3 subtasks
         subtask_ids = []
         for i in range(3):
-            result = await facade.create_subtask(
+            result = facade.create_subtask(
                 task_id=str(parent_task.id),
                 title=f"Subtask {i+1}",
                 assignees="agent"
@@ -358,7 +366,7 @@ class TestMultipleSubtasksCountAccurately:
 
         # Act - Complete all subtasks
         for subtask_id in subtask_ids:
-            await facade.complete_subtask(
+            facade.complete_subtask(
                 task_id=str(parent_task.id),
                 subtask_id=subtask_id,
                 completion_summary="Done"

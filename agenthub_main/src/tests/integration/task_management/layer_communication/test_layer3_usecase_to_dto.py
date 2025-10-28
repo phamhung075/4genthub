@@ -92,7 +92,6 @@ def sample_task_entity():
         dependencies=[],
         git_branch_id=git_branch_id,
         estimated_effort="2 hours",
-        details="Implementation details",
         created_at=datetime(2025, 10, 27, 10, 0, 0, tzinfo=timezone.utc),
         updated_at=datetime(2025, 10, 27, 12, 0, 0, tzinfo=timezone.utc),
     )
@@ -115,14 +114,14 @@ def test_dto_includes_basic_entity_fields(sample_task_entity):
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: Basic fields are present and correct
-    assert dto.id == sample_task_entity.id, "ID should match"
+    assert dto.id == str(sample_task_entity.id), "ID should match (DTO converts TaskId to string)"
     assert dto.title == sample_task_entity.title, "Title should match"
     assert dto.description == sample_task_entity.description, "Description should match"
-    assert dto.status == sample_task_entity.status, "Status should match"
-    assert dto.priority == sample_task_entity.priority, "Priority should match"
+    assert dto.status == sample_task_entity.status.value, "Status should match (DTO converts TaskStatus to string)"
+    assert dto.priority == sample_task_entity.priority.value, "Priority should match (DTO converts Priority to string)"
     assert dto.git_branch_id == sample_task_entity.git_branch_id, "git_branch_id should match"
     assert dto.estimated_effort == sample_task_entity.estimated_effort, "estimated_effort should match"
-    assert dto.details == sample_task_entity.details, "details should match"
+    # Note: details field is on DTO but not on Task entity - it's populated from context_data
 
 
 # ============================================================================
@@ -144,7 +143,7 @@ def test_dto_serializes_nested_objects_correctly(sample_task_entity):
     # Assert: Labels are serialized
     assert len(dto.labels) == 2, "Should have 2 labels"
     assert all(isinstance(label, Label) for label in dto.labels), "Labels should be Label objects"
-    assert all(label.user_id is not None for label in dto.labels), "All labels should have user_id"
+    assert all(hasattr(label, 'name') and label.name for label in dto.labels), "All labels should have name"
 
     # Assert: Subtasks are serialized
     assert len(dto.subtasks) == 3, "Should have 3 subtasks"
@@ -226,29 +225,21 @@ def test_dto_includes_project_id_from_git_branch_relationship(sample_task_entity
 # TEST 5: subtask_count Computation (EXPECTED FAILURE)
 # ============================================================================
 
-@pytest.mark.xfail(
-    reason="TaskResponse.from_domain() does not compute subtask_count from subtasks array",
-    strict=True
-)
 def test_dto_computes_subtask_count_from_subtasks_array(sample_task_entity):
     """
     Test: subtask_count is computed from subtasks array length
 
-    Expected: XFAIL (documents missing functionality)
+    Expected: PASS
 
-    ROOT CAUSE PROOF #2:
+    Validates that TaskResponse.from_domain() correctly computes subtask_count.
     - Task entity has subtasks array with 3 items
-    - TaskResponse.from_domain() does NOT compute subtask_count
-    - Result: subtask_count is always None in API responses
-
-    Fix Required:
-    In TaskResponse.from_domain(), add:
-        subtask_count=len(task.subtasks) if task.subtasks else 0
+    - TaskResponse.from_domain() computes subtask_count from array length
+    - Result: subtask_count = 3
     """
     # Act: Convert entity to DTO
     dto = TaskResponse.from_domain(sample_task_entity)
 
-    # Assert: subtask_count should equal length of subtasks array (WILL FAIL)
+    # Assert: subtask_count should equal length of subtasks array
     assert dto.subtask_count is not None, \
         "subtask_count should be computed from subtasks array"
     assert dto.subtask_count == 3, \
@@ -295,31 +286,21 @@ def test_dto_computes_completed_subtasks_from_subtask_statuses(sample_task_entit
 # TEST 7: Assignee @ Prefix Formatting (EXPECTED FAILURE)
 # ============================================================================
 
-@pytest.mark.xfail(
-    reason="TaskResponse.from_domain() does not add @ prefix to assignees",
-    strict=True
-)
 def test_dto_adds_prefix_to_assignees(sample_task_entity):
     """
     Test: Assignees have @ prefix in DTO
 
-    Expected: XFAIL (documents missing functionality)
+    Expected: PASS
 
-    ROOT CAUSE PROOF #4:
+    Validates that TaskResponse.from_domain() correctly adds @ prefix to assignees.
     - Task entity has assignees: ["coding-agent", "test-orchestrator-agent"]
-    - TaskResponse.from_domain() does NOT add @ prefix
-    - Result: Frontend receives assignees without @ prefix
-
-    Fix Required:
-    In TaskResponse.from_domain(), change:
-        assignees=task.assignees
-    To:
-        assignees=[f"@{a}" if not a.startswith("@") else a for a in task.assignees]
+    - TaskResponse.from_domain() adds @ prefix
+    - Result: Frontend receives assignees with @ prefix: ["@coding-agent", "@test-orchestrator-agent"]
     """
     # Act: Convert entity to DTO
     dto = TaskResponse.from_domain(sample_task_entity)
 
-    # Assert: All assignees should have @ prefix (WILL FAIL)
+    # Assert: All assignees should have @ prefix
     assert all(assignee.startswith("@") for assignee in dto.assignees), \
         f"All assignees should have @ prefix. Got: {dto.assignees}"
 

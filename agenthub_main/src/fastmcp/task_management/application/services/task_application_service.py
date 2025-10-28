@@ -35,11 +35,14 @@ class TaskApplicationService:
         self._hierarchical_context_service = FacadeService.get_unified_context_facade(user_id=user_id)
         self._context_service = context_service
         
-        # Initialize use cases with user context if repository supports it
-        self._create_task_use_case = CreateTaskUseCase(self._get_user_scoped_repository())
-        self._get_task_use_case = GetTaskUseCase(self._get_user_scoped_repository(), context_service)
-        self._update_task_use_case = UpdateTaskUseCase(self._get_user_scoped_repository())
-        self._list_tasks_use_case = ListTasksUseCase(self._get_user_scoped_repository())
+        # Get git_branch_repository for dependency injection
+        git_branch_repo = self._get_git_branch_repository()
+
+        # Initialize use cases with user context and git_branch_repository dependency injection
+        self._create_task_use_case = CreateTaskUseCase(self._get_user_scoped_repository(), git_branch_repo)
+        self._get_task_use_case = GetTaskUseCase(self._get_user_scoped_repository(), context_service, git_branch_repo)
+        self._update_task_use_case = UpdateTaskUseCase(self._get_user_scoped_repository(), git_branch_repo)
+        self._list_tasks_use_case = ListTasksUseCase(self._get_user_scoped_repository(), git_branch_repo)
         self._search_tasks_use_case = SearchTasksUseCase(self._get_user_scoped_repository())
         self._delete_task_use_case = DeleteTaskUseCase(self._get_user_scoped_repository())
         
@@ -47,6 +50,45 @@ class TaskApplicationService:
         from fastmcp.task_management.application.use_cases.complete_task import CompleteTaskUseCase
         self._complete_task_use_case = CompleteTaskUseCase(self._get_user_scoped_repository(), None, None)
     
+    def _get_git_branch_repository(self):
+        """Get git_branch_repository from RepositoryProviderService - single source of truth.
+
+        FAIL FAST: Raises RepositoryProviderError if repository provider fails.
+        This is critical infrastructure - project_id is REQUIRED by frontend contract.
+
+        Raises:
+            RepositoryProviderError: When repository provider fails or returns None
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        try:
+            from ...application.services.repository_provider_service import RepositoryProviderService
+            from ..exceptions import RepositoryProviderError
+
+            provider = RepositoryProviderService.get_instance()
+            git_branch_repo = provider.get_git_branch_repository()
+
+            if git_branch_repo is None:
+                raise RepositoryProviderError("git_branch_repository is None - cannot lookup project_id")
+
+            return git_branch_repo
+
+        except RepositoryProviderError:
+            # Re-raise our custom exception
+            raise
+        except Exception as e:
+            # Log as ERROR (not warning) with full stack trace
+            logger.error(
+                f"CRITICAL: Failed to get git_branch_repository - cannot fetch project_id: {e}",
+                exc_info=True  # Include stack trace for debugging
+            )
+            # Fail fast - raise custom exception
+            from ..exceptions import RepositoryProviderError
+            raise RepositoryProviderError(
+                f"Cannot fetch project_id without git_branch_repository: {e}"
+            ) from e
+
     def _get_user_scoped_repository(self) -> TaskRepository:
         """Get a user-scoped version of the repository if it supports user context."""
         # Debug: Check repository state

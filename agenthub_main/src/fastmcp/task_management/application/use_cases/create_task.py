@@ -20,8 +20,9 @@ from ...domain.events import TaskCreated
 class CreateTaskUseCase:
     """Use case for creating a new task"""
     
-    def __init__(self, task_repository: TaskRepository):
+    def __init__(self, task_repository: TaskRepository, git_branch_repository=None):
         self._task_repository = task_repository
+        self._git_branch_repository = git_branch_repository
         self._logger = logging.getLogger(__name__)
     
     def execute(self, request: CreateTaskRequest) -> CreateTaskResponse:
@@ -117,40 +118,7 @@ class CreateTaskUseCase:
             except Exception as e:
                 self._logger.warning(f"Failed to dispatch task creation event: {e}")
 
-            # Send WebSocket notification for frontend real-time updates
-            try:
-                from ..services.websocket_notification_service import WebSocketNotificationService
-
-                # 🚀 ENHANCED DEBUG LOGGING FOR TASK CREATION WEBSOCKET
-                self._logger.warning(f"🎯 TASK CREATE DEBUG: About to send WebSocket notification for task {task.id.value}")
-                self._logger.warning(f"🎯 Event type: 'created'")
-                self._logger.warning(f"🎯 Task ID: {str(task.id.value)}")
-                self._logger.warning(f"🎯 User ID: {user_id or 'system'}")
-                self._logger.warning(f"🎯 Git Branch ID: {request.git_branch_id}")
-
-                task_data_debug = {
-                    "id": str(task.id.value),
-                    "title": task.title,
-                    "status": str(task.status),
-                    "priority": str(task.priority)
-                }
-                self._logger.warning(f"🎯 Task data: {task_data_debug}")
-
-                # Create task creation notification via WebSocket notification service
-                WebSocketNotificationService.sync_broadcast_task_event(
-                    event_type="created",
-                    task_id=str(task.id.value),
-                    user_id=user_id or "system",
-                    task_data=task_data_debug,
-                    git_branch_id=request.git_branch_id
-                )
-
-                self._logger.warning(f"✅ 🎯 TASK CREATE DEBUG: WebSocket notification method call completed for task {task.id.value}")
-
-            except Exception as e:
-                self._logger.error(f"❌ 🎯 TASK CREATE DEBUG: Failed to send WebSocket notification for task {task.id.value}: {e}")
-                import traceback
-                self._logger.error(f"❌ 🎯 Full traceback: {traceback.format_exc()}")
+            # WebSocket notification moved after task_response creation for complete data
 
             # Handle domain events
             events = task.get_events()
@@ -177,16 +145,12 @@ class CreateTaskUseCase:
                 # Get project_id from the branch (ORM is source of truth)
                 project_id = None
                 try:
-                    from ...application.services.repository_provider_service import RepositoryProviderService
-
-                    # Get instance and use repository provider to get branch repository
-                    provider = RepositoryProviderService.get_instance()
-                    branch_repo = provider.get_git_branch_repository()
-                    branch = branch_repo.get(request.git_branch_id)
-                    
-                    if branch:
-                        project_id = branch.project_id
-                        self._logger.info(f"Found project_id '{project_id}' for branch '{request.git_branch_id}'")
+                    # Use injected git_branch_repository to get project_id
+                    if self._git_branch_repository:
+                        branch = self._git_branch_repository.get(request.git_branch_id)
+                        if branch:
+                            project_id = branch.project_id
+                            self._logger.info(f"Found project_id '{project_id}' for branch '{request.git_branch_id}'")
                 except Exception as e:
                     self._logger.warning(f"Could not get project_id from branch: {e}")
                 
@@ -253,16 +217,40 @@ class CreateTaskUseCase:
                 self._logger.warning(f"Error creating task context for {task_id_str}: {context_error}")
 
             # Convert to response DTO with project_id via repository join
-            # Get git_branch_repository for project_id lookup
-            git_branch_repo = None
-            try:
-                from ...application.services.repository_provider_service import RepositoryProviderService
-                provider = RepositoryProviderService.get_instance()
-                git_branch_repo = provider.get_git_branch_repository()
-            except Exception as e:
-                self._logger.warning(f"Could not get git_branch_repository for project_id lookup: {e}")
+            task_response = TaskResponse.from_domain(task, git_branch_repository=self._git_branch_repository)
 
-            task_response = TaskResponse.from_domain(task, git_branch_repository=git_branch_repo)
+            # Send WebSocket notification for frontend real-time updates (AFTER task_response creation for complete data)
+            try:
+                from ..services.websocket_notification_service import WebSocketNotificationService
+                from ..services.websocket_payload_builder import WebSocketPayloadBuilder
+
+                # Build complete WebSocket payload using WebSocketPayloadBuilder (DRY principle)
+                # Now we have task_response with project_id and subtask counts for complete payload
+                task_payload = WebSocketPayloadBuilder.build_task_payload(
+                    task=task,
+                    task_response=task_response  # Complete data with project_id, subtask_count, etc.
+                )
+
+                # Log payload size for monitoring
+                payload_size = WebSocketPayloadBuilder.estimate_payload_size(task_payload)
+                self._logger.info(f"Task creation WebSocket payload size: {payload_size} bytes for task {task.id.value}")
+
+                # Create task creation notification via WebSocket notification service
+                WebSocketNotificationService.sync_broadcast_task_event(
+                    event_type="created",
+                    task_id=str(task.id.value),
+                    user_id=user_id or "system",
+                    task_data=task_payload,  # Use complete payload from builder
+                    git_branch_id=request.git_branch_id
+                )
+
+                self._logger.info(f"Sent WebSocket notification for task {task.id.value} creation with complete payload ({len(task_payload)} fields)")
+
+            except Exception as e:
+                self._logger.error(f"Failed to send WebSocket notification for task {task.id.value}: {e}")
+                import traceback
+                self._logger.error(f"Full traceback: {traceback.format_exc()}")
+
             return CreateTaskResponse.success_response(task_response)
             
         except ValueError as e:

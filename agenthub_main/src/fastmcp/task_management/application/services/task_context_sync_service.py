@@ -27,7 +27,46 @@ class TaskContextSyncService:
         self._task_repository = task_repository
         # Initialize hierarchical context service using FacadeService
         self._hierarchical_context_service = FacadeService.get_unified_context_facade(user_id=user_id)
-        self._get_task_use_case = GetTaskUseCase(task_repository, context_service)
+
+        # Get git_branch_repository for dependency injection
+        git_branch_repo = self._get_git_branch_repository()
+        self._get_task_use_case = GetTaskUseCase(task_repository, context_service, git_branch_repo)
+
+    def _get_git_branch_repository(self):
+        """Get git_branch_repository from RepositoryProviderService - single source of truth.
+
+        FAIL FAST: Raises RepositoryProviderError if repository provider fails.
+        This is critical infrastructure - project_id is REQUIRED by frontend contract.
+
+        Raises:
+            RepositoryProviderError: When repository provider fails or returns None
+        """
+        try:
+            from ...application.services.repository_provider_service import RepositoryProviderService
+            from ..exceptions import RepositoryProviderError
+
+            provider = RepositoryProviderService.get_instance()
+            git_branch_repo = provider.get_git_branch_repository()
+
+            if git_branch_repo is None:
+                raise RepositoryProviderError("git_branch_repository is None - cannot lookup project_id")
+
+            return git_branch_repo
+
+        except RepositoryProviderError:
+            # Re-raise our custom exception
+            raise
+        except Exception as e:
+            # Log as ERROR (not warning) with full stack trace
+            logger.error(
+                f"CRITICAL: Failed to get git_branch_repository - cannot fetch project_id: {e}",
+                exc_info=True  # Include stack trace for debugging
+            )
+            # Fail fast - raise custom exception
+            from ..exceptions import RepositoryProviderError
+            raise RepositoryProviderError(
+                f"Cannot fetch project_id without git_branch_repository: {e}"
+            ) from e
 
     def with_user(self, user_id: str) -> 'TaskContextSyncService':
         """Create a new service instance scoped to a specific user."""

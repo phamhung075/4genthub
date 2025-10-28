@@ -61,12 +61,12 @@ class TaskApplicationFacade:
         factory = UnifiedContextFacadeFactory()
         self._hierarchical_context_service = factory.create_unified_service()
         
-        # Initialize use cases
-        self._create_task_use_case = CreateTaskUseCase(task_repository)
-        self._update_task_use_case = UpdateTaskUseCase(task_repository)
+        # Initialize use cases with git_branch_repository dependency injection
+        self._create_task_use_case = CreateTaskUseCase(task_repository, git_branch_repository)
+        self._update_task_use_case = UpdateTaskUseCase(task_repository, git_branch_repository)
         # Use the hierarchical context service instead of the passed context service
         # The passed context service might not be configured correctly for the unified context system
-        self._get_task_use_case = GetTaskUseCase(task_repository, self._hierarchical_context_service)
+        self._get_task_use_case = GetTaskUseCase(task_repository, self._hierarchical_context_service, git_branch_repository)
 
         # Pass all repositories for cascade deletion support
         self._delete_task_use_case = DeleteTaskUseCase(
@@ -96,7 +96,7 @@ class TaskApplicationFacade:
         # Subtask repository is required for proper task completion
         self._complete_task_use_case = CompleteTaskUseCase(task_repository, subtask_repository, task_context_repository)
             
-        self._list_tasks_use_case = ListTasksUseCase(task_repository)
+        self._list_tasks_use_case = ListTasksUseCase(task_repository, git_branch_repository)
         self._search_tasks_use_case = SearchTasksUseCase(task_repository)
         self._do_next_use_case = NextTaskUseCase(task_repository, context_service)
         

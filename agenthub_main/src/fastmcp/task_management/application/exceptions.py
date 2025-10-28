@@ -82,9 +82,16 @@ class BusinessRuleViolationError(TaskManagementException):
 
 class ExternalServiceError(TaskManagementException):
     """Raised when an external service call fails."""
-    
+
     def __init__(self, service: str, operation: str, message: str, details: Optional[Dict[str, Any]] = None):
         full_message = f"External service '{service}' failed during '{operation}': {message}"
         super().__init__(full_message, "EXTERNAL_SERVICE_ERROR", details)
         self.service = service
         self.operation = operation
+
+
+class RepositoryProviderError(TaskManagementException):
+    """Raised when repository provider fails to provide required repository."""
+
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        super().__init__(message, "REPOSITORY_PROVIDER_ERROR", details)
