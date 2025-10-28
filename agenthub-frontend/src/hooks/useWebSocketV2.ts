@@ -17,6 +17,11 @@ import { webSocketAnimationService } from '../services/WebSocketAnimationService
 import { initializeWebSocketIntegration } from '../services/changePoolService';
 import { notificationService } from '../services/notificationService';
 import logger from '../utils/logger';
+import {
+  validateWebSocketMessage,
+  logWSValidationResult,
+  WSValidationStats,
+} from '../utils/websocketValidator';
 
 
 // Global WebSocket instance to ensure singleton
@@ -113,6 +118,13 @@ export function useWebSocket(userId: string, token: string) {
 
     // Handle updates (both immediate and batched)
     client.on('update', (message: WSMessage) => {
+      // WEBSOCKET VALIDATION: Validate message structure in development
+      if (import.meta.env.DEV || import.meta.env.VITE_VALIDATE_RESPONSES === 'true') {
+        const validationResult = validateWebSocketMessage(message);
+        logWSValidationResult(validationResult, message);
+        WSValidationStats.record(validationResult);
+      }
+
       // Dispatch message to Redux store
       dispatch(messageReceived(message));
 
@@ -124,6 +136,13 @@ export function useWebSocket(userId: string, token: string) {
 
     // Handle user actions (immediate feedback)
     client.on('userAction', (message: WSMessage) => {
+      // WEBSOCKET VALIDATION: Validate user action messages in development
+      if (import.meta.env.DEV || import.meta.env.VITE_VALIDATE_RESPONSES === 'true') {
+        const validationResult = validateWebSocketMessage(message);
+        logWSValidationResult(validationResult, message);
+        WSValidationStats.record(validationResult);
+      }
+
       // User actions are already captured in the main update handler
     });
 

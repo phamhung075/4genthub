@@ -1112,14 +1112,14 @@
       "files": [
         {
           "hash": "92e5ced4af4d1fda095954c65ffec787",
-          "modified": "2025-10-28T03:00:36.010099",
+          "modified": "2025-10-28T10:54:36.728913",
           "name": "structural-fix-complete-report.md",
           "path": "reports-status/structural-fix-complete-report.md",
           "size": 10457
         },
         {
           "hash": "9aaf70c2a5546f1ba4224984eb827ace",
-          "modified": "2025-10-27T22:10:47.206053",
+          "modified": "2025-10-28T10:54:36.728913",
           "name": "post-contract-alignment-comprehensive-analysis.md",
           "path": "reports-status/post-contract-alignment-comprehensive-analysis.md",
           "size": 21387
@@ -1259,8 +1259,15 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 20,
+      "count": 23,
       "files": [
+        {
+          "hash": "1191f0dddee0a1005a3e9c7d1cd50aa9",
+          "modified": "2025-10-28T13:17:39.686409",
+          "name": "contract-test-gap-analysis-2025-10-28.md",
+          "path": "testing-qa/contract-test-gap-analysis-2025-10-28.md",
+          "size": 13676
+        },
         {
           "hash": "7591edb1511f4eac3a3d5f7fe3c6c68e",
           "modified": "2025-10-27T16:08:52.910246",
@@ -1295,6 +1302,13 @@
           "name": "remaining-test-tasks-implementation-guide.md",
           "path": "testing-qa/remaining-test-tasks-implementation-guide.md",
           "size": 22729
+        },
+        {
+          "hash": "469f9bf5e4747a52387478ab66b814a6",
+          "modified": "2025-10-28T14:30:47.065187",
+          "name": "response-property-issues-investigation-report.md",
+          "path": "testing-qa/response-property-issues-investigation-report.md",
+          "size": 15408
         },
         {
           "hash": "d019b3a72eaeae3c820a38b2aab260b1",
@@ -1365,6 +1379,13 @@
           "name": "fix-prompts-2025-10-22.md",
           "path": "testing-qa/fix-prompts-2025-10-22.md",
           "size": 22663
+        },
+        {
+          "hash": "2569472524f4509ef52d9363e1a90722",
+          "modified": "2025-10-28T13:23:40.476854",
+          "name": "layer-to-layer-contract-testing-guide.md",
+          "path": "testing-qa/layer-to-layer-contract-testing-guide.md",
+          "size": 53614
         },
         {
           "hash": "38a0f45176295f7b9b829f01e4a12f0c",
@@ -1522,7 +1543,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-28T03:00:36.169589",
+  "generated_at": "2025-10-28T14:30:47.190084",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1778,12 +1799,15 @@
         "agenthub-mcp-tools-test-report-2025-10-22.md",
         "api-contract-test-final-report.md",
         "backend-frontend-type-comparison-matrix.md",
+        "contract-test-gap-analysis-2025-10-28.md",
         "coverage-improvement-complete-package-2025-10-25.md",
         "coverage-improvement-plan-2025-10-25.md",
         "coverage-improvement-strategic-plan-2025-10-25.md",
         "fix-prompts-2025-10-22.md",
         "label-integration-test-coverage.md",
+        "layer-to-layer-contract-testing-guide.md",
         "remaining-test-tasks-implementation-guide.md",
+        "response-property-issues-investigation-report.md",
         "server-startup-test-implementation.md",
         "strategic-test-plan-2025-10-24.md",
         "test-coverage-analysis-2025-10-27.md",
@@ -1817,5 +1841,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 197
+  "total_files": 200
 }
