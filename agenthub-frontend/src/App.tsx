@@ -186,16 +186,25 @@ function Dashboard() {
   )
 }
 
-function App() {
+// Component to conditionally render WebSocketStatusBadge based on authentication
+// Placed inside AuthWrapper to have access to AuthContext
+function ConditionalWebSocketBadge() {
   const { isAuthenticated } = useAuth();
 
+  // Only show badge when user is authenticated
+  if (!isAuthenticated) return null;
+
+  return <WebSocketStatusBadge />;
+}
+
+function App() {
   return (
     <ReduxProvider store={store}>
       <ThemeProvider>
         <ToastProvider>
           <WebSocketToastBridge />
-          {isAuthenticated && <WebSocketStatusBadge />}
           <AuthWrapper>
+            <ConditionalWebSocketBadge />
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginForm />} />

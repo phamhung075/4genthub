@@ -25,8 +25,8 @@ from fastmcp.task_management.application.facades.subtask_application_facade impo
 from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
 from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
 from fastmcp.task_management.application.dtos.subtask.create_subtask_request import CreateSubtaskRequest
-from fastmcp.task_management.infrastructure.repositories.sqlalchemy_task_repository import SQLAlchemyTaskRepository
-from fastmcp.task_management.infrastructure.repositories.sqlalchemy_subtask_repository import SQLAlchemySubtaskRepository
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
 from fastmcp.task_management.infrastructure.database.database_config import get_db_config
 
 
@@ -39,13 +39,13 @@ def db_config():
 @pytest.fixture
 def task_repository(db_config):
     """Create real task repository."""
-    return SQLAlchemyTaskRepository(db_config)
+    return ORMTaskRepository(db_config)
 
 
 @pytest.fixture
 def subtask_repository(db_config):
     """Create real subtask repository."""
-    return SQLAlchemySubtaskRepository(db_config)
+    return ORMSubtaskRepository(db_config)
 
 
 @pytest.fixture
@@ -70,7 +70,7 @@ class TestDatabaseIntegrityConstraints:
     """Test that database constraints are properly enforced."""
 
     def test_cannot_create_task_with_invalid_git_branch_id(
-        self, task_facade, invalid_git_branch_id
+        self, task_facade
     ):
         """
         Verify foreign key constraint prevents creating task with non-existent branch.
@@ -79,6 +79,9 @@ class TestDatabaseIntegrityConstraints:
         - Foreign key constraints not properly set up
         - Invalid references slip through validation
         """
+        # Generate a non-existent git branch ID
+        invalid_git_branch_id = str(uuid4())
+
         # Try to create task with non-existent branch
         with pytest.raises(Exception) as exc_info:
             task_facade.create_task(CreateTaskRequest(
@@ -113,12 +116,11 @@ class TestDatabaseIntegrityConstraints:
             "Should reject subtask creation for non-existent parent"
 
     def test_deleting_task_cascades_to_subtasks(
-        self, task_facade, subtask_facade, test_project_data, db_config
+        self, task_facade, subtask_facade, git_branch_id, db_config
     ):
         """
         Verify ON DELETE CASCADE works for task → subtasks relationship.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent with subtasks
         parent = task_facade.create_task(CreateTaskRequest(
@@ -156,7 +158,7 @@ class TestDatabaseIntegrityConstraints:
                 "Subtasks should be cascade deleted with parent"
 
     def test_database_counts_match_application_counts(
-        self, task_facade, subtask_facade, test_project_data, db_config
+        self, task_facade, subtask_facade, git_branch_id, db_config
     ):
         """
         Verify counts in application layer match actual database counts.
@@ -166,7 +168,6 @@ class TestDatabaseIntegrityConstraints:
         - Count updates don't persist to database
         - Application and database state diverge
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create task with 5 subtasks
         parent = task_facade.create_task(CreateTaskRequest(
@@ -229,14 +230,13 @@ class TestConcurrentOperations:
     """Test system behavior under concurrent modifications."""
 
     def test_concurrent_subtask_creation_maintains_accurate_count(
-        self, task_facade, subtask_facade, test_project_data, db_config
+        self, task_facade, subtask_facade, git_branch_id, db_config
     ):
         """
         Verify parent subtask_count is accurate when multiple subtasks created concurrently.
 
         This catches race conditions in count updates.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent
         parent = task_facade.create_task(CreateTaskRequest(
@@ -291,12 +291,11 @@ class TestConcurrentOperations:
                 f"Database shows {db_count} subtasks, expected {num_subtasks}"
 
     def test_concurrent_subtask_completion_maintains_accurate_completed_count(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify completed_subtasks count is accurate when multiple subtasks completed concurrently.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent with 10 subtasks
         parent = task_facade.create_task(CreateTaskRequest(
@@ -350,14 +349,13 @@ class TestConcurrentOperations:
             f"Expected 10 completed subtasks, got {completed_count}"
 
     def test_concurrent_task_updates_dont_corrupt_data(
-        self, task_facade, test_project_data
+        self, task_facade, git_branch_id
     ):
         """
         Verify concurrent updates to same task don't corrupt data.
 
         This tests transaction isolation and locking.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create task
         parent = task_facade.create_task(CreateTaskRequest(
@@ -425,14 +423,13 @@ class TestConcurrentOperations:
             "Priority should be valid value"
 
     def test_rapid_subtask_add_delete_maintains_consistency(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify rapid add/delete operations maintain count consistency.
 
         This stresses the cascade update mechanisms.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent
         parent = task_facade.create_task(CreateTaskRequest(
