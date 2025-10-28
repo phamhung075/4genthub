@@ -187,12 +187,14 @@ function Dashboard() {
 }
 
 function App() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <ReduxProvider store={store}>
       <ThemeProvider>
         <ToastProvider>
           <WebSocketToastBridge />
-          <WebSocketStatusBadge />
+          {isAuthenticated && <WebSocketStatusBadge />}
           <AuthWrapper>
         <Routes>
           {/* Public routes */}
