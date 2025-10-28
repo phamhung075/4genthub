@@ -1108,7 +1108,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 4,
+      "count": 5,
       "files": [
         {
           "hash": "92e5ced4af4d1fda095954c65ffec787",
@@ -1130,6 +1130,13 @@
           "name": "test-fix-session-2025-10-24.md",
           "path": "reports-status/test-fix-session-2025-10-24.md",
           "size": 4039
+        },
+        {
+          "hash": "49821bbbe42bec64eeb31ac54589a518",
+          "modified": "2025-10-28T16:02:32.609171",
+          "name": "e2e-test-failure-analysis-2025-10-28.md",
+          "path": "reports-status/e2e-test-failure-analysis-2025-10-28.md",
+          "size": 9612
         },
         {
           "hash": "48556ccf55bd12d65c66a8c2ba485cfc",
@@ -1263,7 +1270,7 @@
       "files": [
         {
           "hash": "1191f0dddee0a1005a3e9c7d1cd50aa9",
-          "modified": "2025-10-28T13:17:39.686409",
+          "modified": "2025-10-28T14:42:15.450407",
           "name": "contract-test-gap-analysis-2025-10-28.md",
           "path": "testing-qa/contract-test-gap-analysis-2025-10-28.md",
           "size": 13676
@@ -1305,7 +1312,7 @@
         },
         {
           "hash": "469f9bf5e4747a52387478ab66b814a6",
-          "modified": "2025-10-28T14:30:47.065187",
+          "modified": "2025-10-28T14:42:15.450407",
           "name": "response-property-issues-investigation-report.md",
           "path": "testing-qa/response-property-issues-investigation-report.md",
           "size": 15408
@@ -1382,7 +1389,7 @@
         },
         {
           "hash": "2569472524f4509ef52d9363e1a90722",
-          "modified": "2025-10-28T13:23:40.476854",
+          "modified": "2025-10-28T14:42:15.450407",
           "name": "layer-to-layer-contract-testing-guide.md",
           "path": "testing-qa/layer-to-layer-contract-testing-guide.md",
           "size": 53614
@@ -1543,7 +1550,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-28T14:30:47.190084",
+  "generated_at": "2025-10-28T16:47:47.119264",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1773,6 +1780,7 @@
     },
     "reports-status": {
       "files": [
+        "e2e-test-failure-analysis-2025-10-28.md",
         "mcp-tool-response-analysis.md",
         "post-contract-alignment-comprehensive-analysis.md",
         "structural-fix-complete-report.md",
@@ -1841,5 +1849,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 200
+  "total_files": 201
 }

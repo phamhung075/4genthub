@@ -16,6 +16,7 @@ Related Investigation: Task 51155169-3077-4c5c-bd2a-9e086aaadd50
 import pytest
 from uuid import uuid4
 from sqlalchemy import text
+from unittest.mock import patch
 
 from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
 from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
@@ -37,6 +38,13 @@ def task_repository(shared_test_db, user_id):
 def subtask_repository(shared_test_db, user_id):
     """Create real ORM subtask repository."""
     return ORMSubtaskRepository(session=None, user_id=user_id)
+
+
+@pytest.fixture(autouse=True)
+def mock_auth_context(user_id):
+    """Mock authentication context for all tests in this file."""
+    with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id', return_value=user_id):
+        yield
 
 
 @pytest.fixture
@@ -199,7 +207,7 @@ class TestCompleteTaskLifecycleWithRealDatabase:
                 f"Database shows {db_completed_count} completed, expected 3"
 
     def test_progress_percentage_updates_with_subtask_completion(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify parent task progress updates correctly when subtasks are completed.
@@ -209,7 +217,6 @@ class TestCompleteTaskLifecycleWithRealDatabase:
         - Mixed subtask statuses = correct percentage
         - All subtasks done = 100% (if task is done)
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent task
         create_request = CreateTaskRequest(
@@ -283,7 +290,7 @@ class TestCompleteTaskLifecycleWithRealDatabase:
             f"Expected 100% progress when all done, got {final_progress}%"
 
     def test_task_update_preserves_subtask_data_integrity(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify updating parent task doesn't corrupt subtask relationships.
@@ -293,12 +300,12 @@ class TestCompleteTaskLifecycleWithRealDatabase:
         - Corrupt subtask counts
         - Break cascade updates
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create task with subtasks
         create_request = CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Original Title",
+            description="E2E test for task update data integrity",
             status="todo",
             assignees=["@test-agent"]
         )
@@ -356,19 +363,19 @@ class TestTaskFieldConsistencyAcrossLifecycle:
     """Test that critical fields remain consistent throughout task lifecycle."""
 
     def test_assignees_always_array_never_null_or_string(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify assignees field is ALWAYS an array, never null or string.
 
         User reported seeing string values instead of arrays in some scenarios.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Test 1: Single assignee (should be array with one element)
         single_assignee = CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Single assignee test",
+            description="E2E test for single assignee field consistency",
             assignees="@coding-agent"  # String input
         )
         result1 = task_facade.create_task(single_assignee)
@@ -383,6 +390,7 @@ class TestTaskFieldConsistencyAcrossLifecycle:
         multiple_assignees = CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Multiple assignees test",
+            description="E2E test for multiple assignees field consistency",
             assignees=["@coding-agent", "@test-orchestrator-agent"]
         )
         result2 = task_facade.create_task(multiple_assignees)
@@ -395,6 +403,7 @@ class TestTaskFieldConsistencyAcrossLifecycle:
         no_assignees = CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="No assignees test",
+            description="E2E test for empty assignees field consistency",
             assignees=[]
         )
         result3 = task_facade.create_task(no_assignees)
@@ -405,18 +414,17 @@ class TestTaskFieldConsistencyAcrossLifecycle:
         assert len(task3["assignees"]) == 0
 
     def test_timestamps_always_present_and_valid_iso8601(
-        self, task_facade, test_project_data
+        self, task_facade, git_branch_id
     ):
         """
         Verify created_at and updated_at are always present with valid ISO 8601 format.
         """
         from datetime import datetime
 
-        git_branch_id = test_project_data['git_branch_id']
-
         create_request = CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Timestamp test",
+            description="E2E test for timestamp field consistency",
             assignees=["@test-agent"]
         )
 
@@ -440,17 +448,17 @@ class TestTaskFieldConsistencyAcrossLifecycle:
         assert updated >= created, "updated_at should be >= created_at"
 
     def test_nested_objects_never_null(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify nested objects like subtasks and context_data are never null.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create task without subtasks
         create_request = CreateTaskRequest(
             git_branch_id=git_branch_id,
             title="Nested object test",
+            description="E2E test for nested objects field consistency",
             assignees=["@test-agent"]
         )
 

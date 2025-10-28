@@ -1311,7 +1311,7 @@ class Task(BaseTimestampEntity):
     def to_dict(self) -> dict[str, Any]:
         """Convert task to dictionary representation"""
         from fastmcp.task_management.application.use_cases.agent_mappings import resolve_agent_name
-        
+
         # Handle assignees - convert to standardized kebab-case format
         assignees_list = []
         if self.assignees is not None:
@@ -1324,7 +1324,7 @@ class Task(BaseTimestampEntity):
                     # Handle string assignees - normalize to kebab-case
                     normalized_name = resolve_agent_name(str(assignee))
                     assignees_list.append(normalized_name)
-        
+
         result = {
             "id": str(self.id),
             "title": self.title,
@@ -1339,6 +1339,8 @@ class Task(BaseTimestampEntity):
             "labels": self.labels.copy() if self.labels is not None else [],
             "dependencies": [dep.value if hasattr(dep, 'value') else str(dep) for dep in self.dependencies],
             "subtasks": self.subtasks.copy(),
+            "subtask_count": len(self.subtasks) if self.subtasks else 0,  # Total subtask count
+            "completed_subtasks": 0,  # Default to 0 - actual count provided by application layer
             "dueDate": self.due_date if self.due_date else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -1346,11 +1348,11 @@ class Task(BaseTimestampEntity):
             "overall_progress": self.overall_progress,
             "progress_percentage": self.overall_progress  # FIXED: Use overall_progress (entity field) instead of non-existent progress_percentage
         }
-        
+
         # Include progress timeline if exists
         if self.progress_timeline:
             result["progress_timeline"] = self.progress_timeline.to_dict()
-        
+
         return result
     
     def migrate_subtask_ids(self) -> None:

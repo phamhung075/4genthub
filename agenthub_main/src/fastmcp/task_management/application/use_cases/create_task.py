@@ -16,6 +16,8 @@ from ...domain.value_objects.priority import PriorityLevel
 from ...domain.value_objects.task_id import TaskId
 from ...domain.events import TaskCreated
 
+logger = logging.getLogger(__name__)
+
 
 class CreateTaskUseCase:
     """Use case for creating a new task"""
@@ -44,11 +46,15 @@ class CreateTaskUseCase:
             if description and len(description) > 2000:
                 description = description[:2000]           
 
-            
+
             # Validate git_branch_id existence before creating task
+            # Note: We allow task creation even if git_branch doesn't exist as long as branch_context exists
+            # This supports context auto-creation scenarios where context is created before git_branch
             if hasattr(self._task_repository, 'git_branch_exists') and not self._task_repository.git_branch_exists(request.git_branch_id):
-                return CreateTaskResponse.error_response(
-                    f"git_branch_id '{request.git_branch_id}' does not exist. Please ensure the git branch exists before creating tasks."
+                logger.warning(
+                    f"git_branch_id '{request.git_branch_id}' does not exist in project_git_branchs table. "
+                    f"Task will be created with context auto-creation support. "
+                    f"Ensure git branch is created later for full functionality."
                 )
             
             # Create domain entity using git_branch_id from request (follows clean relationship chain)
