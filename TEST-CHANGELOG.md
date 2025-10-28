@@ -8,6 +8,31 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 - **Skipped**: 92 tests (infrastructure utilities)
 - **Status**: Production-ready with comprehensive test coverage 🎉
 
+## [Unreleased] - 2025-10-28
+
+### Fixed
+
+#### E2E Test Fixture Error Resolution (2025-10-28) ✅
+- **Achievement**: Fixed missing `test_project_data` fixture that was blocking 18 E2E workflow tests
+- **Impact**: Restored test collection for 2 critical E2E test files
+- **Files Modified**:
+  - `agenthub_main/src/tests/e2e/test_database_integrity.py` (8 tests fixed)
+  - `agenthub_main/src/tests/e2e/test_subtask_cascade_updates.py` (10 tests fixed)
+
+**Problem**:
+- Tests were using non-existent `test_project_data` fixture
+- Tests were using non-existent `invalid_git_branch_id` fixture
+- Caused ImportError blocking test collection for all E2E workflow tests
+
+**Solution**:
+- Replaced `test_project_data['git_branch_id']` with direct `git_branch_id` fixture usage
+- Generated `invalid_git_branch_id` inline using `str(uuid4())` where needed
+- Updated repository imports from SQLAlchemy to ORM repositories (already done)
+
+**Test Collection Status**: 18 tests now collected successfully (previously 0 due to import errors)
+
+**Related Investigation**: Task 6520699d-c340-4b07-9fda-29815eae5bce
+
 ## [Unreleased] - 2025-10-27
 
 ### Added

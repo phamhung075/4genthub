@@ -24,8 +24,8 @@ from fastmcp.task_management.application.facades.subtask_application_facade impo
 from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
 from fastmcp.task_management.application.dtos.subtask.create_subtask_request import CreateSubtaskRequest
 from fastmcp.task_management.application.dtos.subtask.update_subtask_request import UpdateSubtaskRequest
-from fastmcp.task_management.infrastructure.repositories.sqlalchemy_task_repository import SQLAlchemyTaskRepository
-from fastmcp.task_management.infrastructure.repositories.sqlalchemy_subtask_repository import SQLAlchemySubtaskRepository
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
 from fastmcp.task_management.infrastructure.database.database_config import get_db_config
 
 
@@ -38,13 +38,13 @@ def db_config():
 @pytest.fixture
 def task_repository(db_config):
     """Create real task repository."""
-    return SQLAlchemyTaskRepository(db_config)
+    return ORMTaskRepository(db_config)
 
 
 @pytest.fixture
 def subtask_repository(db_config):
     """Create real subtask repository."""
-    return SQLAlchemySubtaskRepository(db_config)
+    return ORMSubtaskRepository(db_config)
 
 
 @pytest.fixture
@@ -68,7 +68,7 @@ class TestSubtaskCascadeCountUpdates:
     """Test that parent task counts cascade correctly when subtasks change."""
 
     def test_parent_subtask_count_increments_on_subtask_creation(
-        self, task_facade, subtask_facade, test_project_data, db_config
+        self, task_facade, subtask_facade, git_branch_id, db_config
     ):
         """
         Verify parent task's subtask_count increments immediately after subtask creation.
@@ -78,7 +78,6 @@ class TestSubtaskCascadeCountUpdates:
         - Count doesn't update until parent task is re-queried
         - Database triggers fail to fire
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent task
         parent = task_facade.create_task(CreateTaskRequest(
@@ -117,12 +116,11 @@ class TestSubtaskCascadeCountUpdates:
                     f"Database shows {db_count} subtasks, expected {i}"
 
     def test_parent_subtask_count_decrements_on_subtask_deletion(
-        self, task_facade, subtask_facade, test_project_data, db_config
+        self, task_facade, subtask_facade, git_branch_id, db_config
     ):
         """
         Verify parent task's subtask_count decrements when subtasks are deleted.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent with 5 subtasks
         parent = task_facade.create_task(CreateTaskRequest(
@@ -160,12 +158,11 @@ class TestSubtaskCascadeCountUpdates:
                 f"After deleting {i+1} subtasks, count is {current['subtask_count']}, expected {remaining}"
 
     def test_completed_subtasks_count_updates_on_completion(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify parent task's completed_subtasks count updates when subtasks complete.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent with 4 subtasks
         parent = task_facade.create_task(CreateTaskRequest(
@@ -208,14 +205,13 @@ class TestSubtaskCascadeCountUpdates:
             assert current["subtask_count"] == 4
 
     def test_completed_count_decrements_on_completed_subtask_deletion(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify completed_subtasks count decrements if a completed subtask is deleted.
 
         Edge case: Deleting completed subtasks should reduce both counts.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent with 3 subtasks
         parent = task_facade.create_task(CreateTaskRequest(
@@ -270,12 +266,11 @@ class TestSubtaskProgressCascade:
     """Test parent task progress updates when subtask progress changes."""
 
     def test_parent_progress_recalculates_on_subtask_status_change(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify parent progress percentage recalculates when subtask status changes.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent
         parent = task_facade.create_task(CreateTaskRequest(
@@ -330,12 +325,11 @@ class TestSubtaskProgressCascade:
             f"Expected ~80% progress, got {progress_80}%"
 
     def test_parent_progress_updates_on_subtask_progress_percentage_change(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify parent progress updates when subtask progress_percentage changes.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         parent = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
@@ -394,12 +388,11 @@ class TestSubtaskContextCascade:
     """Test context data synchronization between subtasks and parent."""
 
     def test_subtask_completion_adds_insights_to_parent_context(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify insights from subtask completion cascade to parent task context.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         parent = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
@@ -436,7 +429,7 @@ class TestSubtaskContextCascade:
         assert isinstance(parent_after["context_data"], dict)
 
     def test_parent_updated_at_timestamp_changes_on_subtask_modification(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify parent task's updated_at timestamp changes when subtasks are modified.
@@ -444,8 +437,6 @@ class TestSubtaskContextCascade:
         This is important for cache invalidation and change detection.
         """
         from time import sleep
-
-        git_branch_id = test_project_data['git_branch_id']
 
         parent = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
@@ -488,12 +479,11 @@ class TestCascadeDeletion:
     """Test cascade deletion behavior when parent task is deleted."""
 
     def test_deleting_parent_task_deletes_all_subtasks(
-        self, task_facade, subtask_facade, test_project_data, db_config
+        self, task_facade, subtask_facade, git_branch_id, db_config
     ):
         """
         Verify that deleting a parent task also deletes all its subtasks (cascade).
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         # Create parent with subtasks
         parent = task_facade.create_task(CreateTaskRequest(
@@ -536,12 +526,11 @@ class TestCascadeDeletion:
                 "Subtasks should be cascade deleted when parent is deleted"
 
     def test_cannot_access_subtasks_after_parent_deletion(
-        self, task_facade, subtask_facade, test_project_data
+        self, task_facade, subtask_facade, git_branch_id
     ):
         """
         Verify subtasks cannot be accessed after parent task is deleted.
         """
-        git_branch_id = test_project_data['git_branch_id']
 
         parent = task_facade.create_task(CreateTaskRequest(
             git_branch_id=git_branch_id,
