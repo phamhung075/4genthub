@@ -598,18 +598,17 @@ class BranchAPIController:
             DeleteResponse with deletion result
         """
         try:
-            # First, get the project_id from the branch to comply with DDD requirements
-            from ...application.services.repository_provider_service import (
-                RepositoryProviderService,
-            )
+            # DDD-compliant approach: Get project_id from branch, then use facade
+            # The facade internally uses user-scoped repositories for all operations
+            from ...infrastructure.database.models import Project, ProjectGitBranch
 
-            repo_provider = RepositoryProviderService.get_instance()
-            git_branch_repo = repo_provider.get_git_branch_repository(user_id=user_id)
+            # Step 1: Find the branch using direct DB query (no repository restrictions)
+            # This is necessary because we need project_id but don't have it yet
+            branch = session.query(ProjectGitBranch).filter(
+                ProjectGitBranch.id == branch_id
+            ).first()
 
-            # Find the branch by ID to get its project_id
-            git_branch = await git_branch_repo.find_by_id(branch_id)
-
-            if not git_branch:
+            if not branch:
                 logger.warning(f"Branch {branch_id} not found for deletion")
                 return DeleteResponse(
                     success=False,
@@ -619,12 +618,30 @@ class BranchAPIController:
                     timestamp=datetime.now(timezone.utc).isoformat(),
                 )
 
-            project_id = git_branch.project_id
+            project_id = branch.project_id
+
+            # Step 2: Verify user owns the PROJECT (security check)
+            project = session.query(Project).filter(
+                Project.id == project_id,
+                Project.user_id == user_id
+            ).first()
+
+            if not project:
+                logger.warning(f"User {user_id} does not own project {project_id}")
+                return DeleteResponse(
+                    success=False,
+                    deleted=False,
+                    error="You don't have permission to delete this branch",
+                    message="Permission denied",
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
+
             logger.info(
-                f"Found branch {branch_id} in project {project_id}, proceeding with deletion"
+                f"Found branch {branch_id} in project {project_id}, user verified as owner"
             )
 
-            # Now create the facade with the proper project_id for DDD compliance
+            # Step 3: Use facade with user_id for DDD-compliant deletion
+            # The facade creates user-scoped repositories internally
             facade = self.facade_service.get_branch_facade(
                 project_id=project_id, user_id=user_id
             )
@@ -853,11 +870,11 @@ class BranchAPIController:
                 END as progress_percentage,
                 b.updated_at as last_task_activity
             FROM project_git_branchs b
-            LEFT JOIN tasks t ON b.id = t.git_branch_id
+            LEFT JOIN tasks t ON b.id = t.git_branch_id AND t.user_id = :user_id
             WHERE 1=1
             """
 
-            params = {}
+            params = {"user_id": user_id}
 
             if project_ids:
                 # Use IN clause for multiple project IDs
@@ -956,12 +973,12 @@ class BranchAPIController:
                         END as overall_progress_percentage
                     FROM projects p
                     LEFT JOIN project_git_branchs b ON p.id = b.project_id
-                    LEFT JOIN tasks t ON b.id = t.git_branch_id
+                    LEFT JOIN tasks t ON b.id = t.git_branch_id AND t.user_id = :user_id
                     WHERE p.id IN ({project_placeholders})
                     GROUP BY p.id, p.name, p.description
                 """)
 
-                project_params = {}
+                project_params = {"user_id": user_id}
                 for i, pid in enumerate(project_ids_found):
                     project_params[f"proj{i}"] = pid
 
