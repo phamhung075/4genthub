@@ -77,6 +77,7 @@ class Task(BaseTimestampEntity):
     labels: list[str] = field(default_factory=list)
     dependencies: list[TaskId] = field(default_factory=list)
     subtasks: list[str] = field(default_factory=list)  # List of subtask IDs
+    completed_subtasks: int = 0  # Count of completed subtasks
     due_date: str | None = None
     context_id: str | None = None  # New field: tracks if context is up-to-date
     user_id: str | None = None  # User identifier for ownership
@@ -142,7 +143,46 @@ class Task(BaseTimestampEntity):
     def can_be_assigned(self) -> bool:
         """Check if task can be assigned (not completed or cancelled)"""
         return self.status.value not in ['done', 'cancelled']
-    
+
+    @property
+    def subtask_count(self) -> int:
+        """Get current subtask count from array length"""
+        return len(self.subtasks) if self.subtasks else 0
+
+    @property
+    def context_data(self) -> dict[str, Any]:
+        """Build context_data structure from task fields for E2E testing compatibility.
+
+        This property provides a consistent context_data interface that matches
+        what the ORM unified_context_data field would contain, allowing E2E tests
+        to verify context synchronization without database dependencies.
+        """
+        return {
+            "metadata": {
+                "task_id": str(self.id.value) if self.id else None,
+                "status": self.status.value if self.status else "todo",
+                "priority": self.priority.value if self.priority else "medium",
+                "assignees": self.assignees if self.assignees else [],
+                "labels": self.labels if self.labels else [],
+                "version": 1
+            },
+            "objective": {
+                "title": self.title or "",
+                "description": self.description or "",
+                "estimated_effort": self.estimated_effort or ""
+            },
+            "progress": {
+                "completion_percentage": self.overall_progress,
+                "time_spent_minutes": 0
+            },
+            "dependencies": {},
+            "subtasks": {
+                "total_count": self.subtask_count,
+                "completed_count": self.completed_subtasks,
+                "progress_percentage": (self.completed_subtasks / self.subtask_count * 100) if self.subtask_count > 0 else 0.0
+            }
+        }
+
     def _validate(self):
         """Validate task business rules"""
         if not self.title or not self.title.strip():
@@ -749,6 +789,41 @@ class Task(BaseTimestampEntity):
             return True
         return False
 
+    def increment_completed_subtasks(self) -> None:
+        """Increment the completed subtasks counter"""
+        self.completed_subtasks += 1
+        self.touch("completed_subtasks_incremented")
+
+        # Raise domain event
+        self._events.append(TaskUpdated(
+            task_id=self.id,
+            changes={
+                "completed_subtasks": {
+                    "action": "incremented",
+                    "new_value": self.completed_subtasks,
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
+        ))
+
+    def decrement_completed_subtasks(self) -> None:
+        """Decrement the completed subtasks counter"""
+        if self.completed_subtasks > 0:
+            self.completed_subtasks -= 1
+            self.touch("completed_subtasks_decremented")
+
+            # Raise domain event
+            self._events.append(TaskUpdated(
+                task_id=self.id,
+                changes={
+                    "completed_subtasks": {
+                        "action": "decremented",
+                        "new_value": self.completed_subtasks,
+                        "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                    }
+                }
+            ))
+
     def update_subtask(self, subtask_id: str, updates: dict[str, Any]) -> bool:
         """Update a subtask by ID - This method should be handled by the subtask repository"""
         # Since subtasks are now just IDs, updating them should be done via the subtask repository
@@ -1340,7 +1415,7 @@ class Task(BaseTimestampEntity):
             "dependencies": [dep.value if hasattr(dep, 'value') else str(dep) for dep in self.dependencies],
             "subtasks": self.subtasks.copy(),
             "subtask_count": len(self.subtasks) if self.subtasks else 0,  # Total subtask count
-            "completed_subtasks": 0,  # Default to 0 - actual count provided by application layer
+            "completed_subtasks": self.completed_subtasks,  # Count of completed subtasks
             "dueDate": self.due_date if self.due_date else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

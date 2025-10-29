@@ -10,6 +10,7 @@ Task: API Optimization - Cache Invalidation
 """
 
 import asyncio
+import inspect
 import logging
 from typing import Optional, Dict, Any
 from functools import wraps
@@ -245,7 +246,7 @@ def cache_invalidation_decorator(invalidation_type: str):
             return result
         
         # Return appropriate wrapper
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper

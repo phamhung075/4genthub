@@ -9,6 +9,7 @@ from ...domain.repositories.subtask_repository import SubtaskRepository
 from ...domain.entities.subtask import Subtask
 from ...domain.value_objects.priority import Priority
 import logging
+import time
 
 class AddSubtaskUseCase:
     def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository = None):
@@ -18,9 +19,36 @@ class AddSubtaskUseCase:
     def execute(self, request: AddSubtaskRequest) -> SubtaskResponse:
         logging.debug(f"[AddSubtask] Request received - priority: {request.priority}")
         task_id = self._convert_to_task_id(request.task_id)
-        task = self._task_repository.find_by_id(task_id)
-        if not task:
-            raise TaskNotFoundError(f"Task {request.task_id} not found")
+
+        # Retry task lookup on concurrent access conflicts
+        max_retries = 3
+        retry_delay = 0.01  # 10ms
+        task = None
+
+        for attempt in range(max_retries):
+            try:
+                task = self._task_repository.find_by_id(task_id)
+                if not task:
+                    raise TaskNotFoundError(f"Task {request.task_id} not found")
+                break  # Success!
+            except Exception as e:
+                error_str = str(e).lower()
+                # Check for SQLite concurrent access errors or enum validation issues during lookup
+                is_retryable = (
+                    "interfaceerror" in error_str or
+                    "bad parameter" in error_str or
+                    "database is locked" in error_str or
+                    "api misuse" in error_str
+                )
+                if is_retryable and attempt < max_retries - 1:
+                    # Exponential backoff for lookup retries too
+                    delay = retry_delay * (2 ** attempt)
+                    logging.warning(f"[AddSubtask] Concurrent access conflict on lookup attempt {attempt+1}/{max_retries}, retrying after {delay:.3f}s...")
+                    time.sleep(delay)
+                    continue
+                # Re-raise if not a concurrent access issue or out of retries
+                logging.error(f"[AddSubtask] Task lookup failed after {attempt+1} attempts: {e}")
+                raise
         
         agent_inheritance_applied = False
         inherited_assignees = []
@@ -86,9 +114,50 @@ class AddSubtaskUseCase:
 
             # Add subtask ID to parent task's subtasks list and increment count
             # This calls the domain method which does both operations atomically
-            task.add_subtask(str(subtask_id))
-            self._task_repository.save(task)
-            logging.info(f"Added subtask {subtask_id} to parent task {task_id}, subtask_count now {len(task.subtasks)}")
+            # Retry the save operation to handle concurrent updates
+            max_save_retries = 5  # Increased from 3 for higher concurrency
+            save_retry_delay = 0.02  # 20ms base delay
+
+            for save_attempt in range(max_save_retries):
+                try:
+                    # Add subtask to the task - this modifies the task entity
+                    task.add_subtask(str(subtask_id))
+                    self._task_repository.save(task)
+                    logging.info(f"Added subtask {subtask_id} to parent task {task_id}, subtask_count now {len(task.subtasks)}")
+                    break  # Success!
+                except Exception as e:
+                    error_str = str(e).lower()
+                    # Check for concurrent update conflicts (SQLAlchemy StaleDataError or refresh errors)
+                    is_concurrent_conflict = (
+                        "expected to update" in error_str or
+                        "stale" in error_str or
+                        "concurrent" in error_str or
+                        "could not refresh" in error_str or
+                        "detached" in error_str
+                    )
+
+                    if is_concurrent_conflict and save_attempt < max_save_retries - 1:
+                        # Exponential backoff
+                        delay = save_retry_delay * (2 ** save_attempt)
+                        logging.warning(
+                            f"[AddSubtask] Concurrent update conflict on save attempt {save_attempt+1}/{max_save_retries}, "
+                            f"retrying after {delay:.3f}s... Error: {e}"
+                        )
+                        time.sleep(delay)
+
+                        # Reload fresh task - the previous add_subtask call modified the old task
+                        # We need a completely fresh instance from the database
+                        task = self._task_repository.find_by_id(task_id)
+                        if not task:
+                            raise TaskNotFoundError(f"Task {request.task_id} not found during retry")
+
+                        # Important: The subtask is already saved, so if we retry we're just
+                        # updating the parent task's subtask list. The subtask itself is persisted.
+                        continue
+
+                    # Re-raise if not a concurrent conflict or out of retries
+                    logging.error(f"[AddSubtask] Failed to save parent task after {save_attempt+1} attempts: {e}")
+                    raise
 
             # Update parent task progress
             self._update_parent_task_progress(str(task_id))

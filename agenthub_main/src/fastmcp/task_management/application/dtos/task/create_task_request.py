@@ -38,7 +38,14 @@ class CreateTaskRequest:
     def __post_init__(self):
         if self.labels is None:
             self.labels = []
-        
+
+        # Ensure assignees is always a list, never a string
+        if self.assignees is None:
+            self.assignees = []
+        elif isinstance(self.assignees, str):
+            # Convert single string to list
+            self.assignees = [self.assignees] if self.assignees.strip() else []
+
         # Validate and suggest labels using CommonLabel enum
         if self.labels:
             validated_labels = []

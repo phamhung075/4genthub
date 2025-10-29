@@ -372,11 +372,18 @@ class SubtaskApplicationFacade:
 
             sync_service = TaskContextSyncService(task_repository)
             try:
-                asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask creation")
-            except RuntimeError:
-                # Already in event loop
+                # Check if we're already in an event loop
+                loop = asyncio.get_running_loop()
+                # We're in an async context - schedule as background task
+                asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
                 logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+            except RuntimeError:
+                # No event loop running - safe to use asyncio.run()
+                try:
+                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask creation")
+                except Exception as inner_error:
+                    logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
         except Exception as sync_error:
             logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
 
@@ -436,10 +443,18 @@ class SubtaskApplicationFacade:
 
             sync_service = TaskContextSyncService(task_repository)
             try:
-                asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask update")
-            except RuntimeError:
+                # Check if we're already in an event loop
+                loop = asyncio.get_running_loop()
+                # We're in an async context - schedule as background task
+                asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
                 logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+            except RuntimeError:
+                # No event loop running - safe to use asyncio.run()
+                try:
+                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask update")
+                except Exception as inner_error:
+                    logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
         except Exception as sync_error:
             logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
 
@@ -514,10 +529,18 @@ class SubtaskApplicationFacade:
 
                 sync_service = TaskContextSyncService(task_repository)
                 try:
-                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask deletion")
-                except RuntimeError:
+                    # Check if we're already in an event loop
+                    loop = asyncio.get_running_loop()
+                    # We're in an async context - schedule as background task
+                    asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
                     logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+                except RuntimeError:
+                    # No event loop running - safe to use asyncio.run()
+                    try:
+                        asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                        logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask deletion")
+                    except Exception as inner_error:
+                        logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
             except Exception as sync_error:
                 logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
 
@@ -562,11 +585,24 @@ class SubtaskApplicationFacade:
         actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
         if not actual_subtask_id:
             raise ValueError("subtask_id is required (either as parameter or in subtask_data)")
-        
+
+        # Extract completion parameters from subtask_data if available
+        user_id = subtask_data.get('user_id') if subtask_data else None
+        completion_summary = subtask_data.get('completion_summary') if subtask_data else None
+        insights_found = subtask_data.get('insights_found') if subtask_data else None
+        testing_notes = subtask_data.get('testing_notes') if subtask_data else None
+
         # Create use case with context-specific repositories
         complete_subtask_use_case = self._complete_subtask_use_case or CompleteSubtaskUseCase(task_repository, subtask_repository)
-        
-        result = complete_subtask_use_case.execute(task_id, actual_subtask_id)
+
+        result = complete_subtask_use_case.execute(
+            task_id,
+            actual_subtask_id,
+            user_id=user_id,
+            completion_summary=completion_summary,
+            insights_found=insights_found,
+            testing_notes=testing_notes
+        )
         response = {
             "success": result["success"],
             "action": "complete",
@@ -599,10 +635,18 @@ class SubtaskApplicationFacade:
 
                 sync_service = TaskContextSyncService(task_repository)
                 try:
-                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask completion")
-                except RuntimeError:
+                    # Check if we're already in an event loop
+                    loop = asyncio.get_running_loop()
+                    # We're in an async context - schedule as background task
+                    asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
                     logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+                except RuntimeError:
+                    # No event loop running - safe to use asyncio.run()
+                    try:
+                        asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                        logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask completion")
+                    except Exception as inner_error:
+                        logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
             except Exception as sync_error:
                 logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
 
@@ -618,25 +662,111 @@ class SubtaskApplicationFacade:
             return None
 
     # Convenience methods for common operations (used by tests and external consumers)
-    def create_subtask(self, task_id: str, title: str, description: str = None, assignees: str = None,
-                       priority: str = "medium", **kwargs) -> Dict[str, Any]:
-        """Convenience method for creating a subtask."""
-        subtask_data = {
-            "title": title,
-            "description": description,
-            "assignees": assignees,
-            "priority": priority,
-            **kwargs
-        }
+    def create_subtask(
+        self,
+        task_id_or_request=None,  # Optional positional for CreateSubtaskRequest
+        *,  # Force all following parameters to be keyword-only
+        task_id: str = None,
+        title: str = None,
+        description: str = None,
+        assignees: str = None,
+        priority: str = "medium",
+        user_id: str = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """Convenience method for creating a subtask with dual signature support.
+
+        Supports two calling patterns:
+        1. create_subtask(CreateSubtaskRequest(...))       # Request object as positional
+        2. create_subtask(task_id=..., title=..., ...)     # Keyword arguments
+
+        Args:
+            task_id_or_request: Optional CreateSubtaskRequest object (positional)
+            task_id: Parent task ID (keyword-only)
+            title: Subtask title (keyword-only)
+            description: Subtask description (keyword-only)
+            assignees: Comma-separated agent names (keyword-only)
+            priority: Priority level (keyword-only)
+            user_id: User performing the action (keyword-only)
+            **kwargs: Additional parameters
+
+        Returns:
+            dict: Subtask creation result
+
+        Raises:
+            TypeError: If neither task_id_or_request nor task_id is provided
+        """
+        # Pattern 1: CreateSubtaskRequest object passed as positional
+        if task_id_or_request is not None:
+            # Check if it's a CreateSubtaskRequest object
+            if hasattr(task_id_or_request, 'task_id') and hasattr(task_id_or_request, 'title'):
+                request = task_id_or_request
+                task_id = request.task_id
+                subtask_data = {
+                    "title": request.title,
+                    "description": getattr(request, 'description', None),
+                    "assignees": getattr(request, 'assignees', None),
+                    "priority": getattr(request, 'priority', 'medium'),
+                    "status": getattr(request, 'status', None),
+                }
+                # Add any other fields from request
+                for field in ['progress_notes', 'progress_percentage', 'blockers']:
+                    if hasattr(request, field):
+                        val = getattr(request, field)
+                        if val is not None:
+                            subtask_data[field] = val
+            else:
+                # Legacy: If first param is a string, treat as task_id
+                task_id = str(task_id_or_request)
+                if title is None:
+                    raise TypeError("create_subtask() missing required argument: 'title'")
+                subtask_data = {
+                    "title": title,
+                    "description": description,
+                    "assignees": assignees,
+                    "priority": priority,
+                    **kwargs
+                }
+        # Pattern 2: Keyword arguments (tests use this pattern)
+        else:
+            if task_id is None:
+                raise TypeError("create_subtask() missing required argument: 'task_id' (use task_id=... or pass CreateSubtaskRequest)")
+            if title is None:
+                raise TypeError("create_subtask() missing required argument: 'title'")
+            subtask_data = {
+                "title": title,
+                "description": description,
+                "assignees": assignees,
+                "priority": priority,
+                **kwargs
+            }
+
         return self.handle_manage_subtask(
             action="create",
             task_id=task_id,
             subtask_data=subtask_data
         )
 
-    def complete_subtask(self, task_id: str, subtask_id: str, completion_summary: str = None,
+    def complete_subtask(self, task_id: str = None, subtask_id: str = None, completion_summary: str = None,
                          testing_notes: str = None, **kwargs) -> Dict[str, Any]:
-        """Convenience method for completing a subtask."""
+        """Convenience method for completing a subtask.
+
+        Supports two calling styles:
+        1. Individual parameters: complete_subtask(task_id="...", subtask_id="...", completion_summary="...")
+        2. Dict parameter: complete_subtask({"task_id": "...", "subtask_id": "...", "completion_summary": "..."})
+        """
+        # Handle dict-style call (E2E tests use this pattern)
+        if task_id and isinstance(task_id, dict):
+            data = task_id
+            task_id = data.get("task_id")
+            subtask_id = data.get("subtask_id")
+            completion_summary = data.get("completion_summary")
+            testing_notes = data.get("testing_notes")
+            kwargs.update({k: v for k, v in data.items() if k not in ["task_id", "subtask_id", "completion_summary", "testing_notes", "action"]})
+
+        if not task_id or not subtask_id:
+            raise ValueError("task_id and subtask_id are required")
+
         subtask_data = {
             "completion_summary": completion_summary,
             "testing_notes": testing_notes,
@@ -644,6 +774,31 @@ class SubtaskApplicationFacade:
         }
         return self.handle_manage_subtask(
             action="complete",
+            task_id=task_id,
+            subtask_id=subtask_id,
+            subtask_data=subtask_data
+        )
+
+    def delete_subtask(self, task_id: str = None, subtask_id: str = None, **kwargs) -> Dict[str, Any]:
+        """Convenience method for deleting a subtask.
+
+        Supports two calling styles:
+        1. Individual parameters: delete_subtask(task_id="...", subtask_id="...")
+        2. Dict parameter: delete_subtask({"task_id": "...", "subtask_id": "..."})
+        """
+        # Handle dict-style call (E2E tests use this pattern)
+        if task_id and isinstance(task_id, dict):
+            data = task_id
+            task_id = data.get("task_id")
+            subtask_id = data.get("subtask_id")
+            kwargs.update({k: v for k, v in data.items() if k not in ["task_id", "subtask_id", "action"]})
+
+        if not task_id or not subtask_id:
+            raise ValueError("task_id and subtask_id are required")
+
+        subtask_data = kwargs
+        return self.handle_manage_subtask(
+            action="delete",
             task_id=task_id,
             subtask_id=subtask_id,
             subtask_data=subtask_data

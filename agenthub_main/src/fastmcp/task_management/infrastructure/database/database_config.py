@@ -27,71 +27,22 @@ except ImportError:
 import os
 import logging
 import sys
-import sqlite3
 from datetime import datetime, date
 from typing import Optional, Dict, Any
+from threading import local
 from sqlalchemy import create_engine, Engine, event, pool, text
-from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
+from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase, scoped_session
 from sqlalchemy.pool import NullPool, QueuePool
 
 logger = logging.getLogger(__name__)
 
-# Flag to ensure SQLite datetime adapters are registered only once
-_sqlite_adapters_registered = False
+# Thread-local storage for database sessions (Bug #2 Fix)
+_thread_local = local()
 
 # Import exception for better error handling
 from ...domain.exceptions.base_exceptions import DatabaseException
 # Import retry logic for connection resilience
 from .connection_retry import with_connection_retry, create_resilient_engine, DEFAULT_RETRY_CONFIG
-
-
-def _register_sqlite_datetime_adapters():
-    """
-    Register SQLite datetime adapters and converters for Python 3.12+.
-
-    In Python 3.12, the default datetime adapter was deprecated.
-    This function provides the recommended replacement using ISO format.
-    """
-    global _sqlite_adapters_registered
-
-    # Only register once per process
-    if _sqlite_adapters_registered:
-        return
-
-    # Only needed for Python 3.12+
-    if sys.version_info < (3, 12):
-        return
-
-    try:
-        # Register adapters (Python object -> SQLite string)
-        def adapt_datetime_iso(val):
-            """Convert datetime to ISO format string for SQLite storage."""
-            return val.isoformat()
-
-        def adapt_date_iso(val):
-            """Convert date to ISO format string for SQLite storage."""
-            return val.isoformat()
-
-        sqlite3.register_adapter(datetime, adapt_datetime_iso)
-        sqlite3.register_adapter(date, adapt_date_iso)
-
-        # Register converters (SQLite string -> Python object)
-        def convert_datetime(val):
-            """Convert ISO format string from SQLite to datetime object."""
-            return datetime.fromisoformat(val.decode())
-
-        def convert_date(val):
-            """Convert ISO format string from SQLite to date object."""
-            return date.fromisoformat(val.decode())
-
-        sqlite3.register_converter("datetime", convert_datetime)
-        sqlite3.register_converter("date", convert_date)
-
-        _sqlite_adapters_registered = True
-        logger.info("✅ SQLite datetime adapters registered for Python 3.12+ compatibility")
-
-    except Exception as e:
-        logger.warning(f"⚠️ Failed to register SQLite datetime adapters: {e}")
 
 
 class Base(DeclarativeBase):
@@ -188,19 +139,8 @@ class DatabaseConfig:
 
             self.database_type = self.database_type.lower()
 
-            # Validate database type
-            if self.database_type == "sqlite":
-                # Allow SQLite for development AND test mode
-                env_mode = os.getenv("ENV", "development").lower()
-                if env_mode == "production":
-                    raise ValueError(
-                        "SQLite is not allowed in production.\n"
-                        "Use DATABASE_TYPE=postgresql or supabase for production."
-                    )
-                logger.info("📦 SQLite mode enabled for development/testing")
-                self.database_url = None  # Will be set in _get_database_url
-
-            elif self.database_type in ["postgresql", "supabase"]:
+            # Validate database type - PostgreSQL only
+            if self.database_type in ["postgresql", "supabase"]:
                 # Get database URL from environment variables
                 self.database_url = self._get_secure_database_url()
                 if not self.database_url:
@@ -212,7 +152,7 @@ class DatabaseConfig:
             else:
                 raise ValueError(
                     f"Invalid DATABASE_TYPE: {self.database_type}\n"
-                    "Supported types: 'postgresql', 'supabase', or 'sqlite'"
+                    "Supported types: 'postgresql' or 'supabase'"
                 )
 
             logger.info(f"Database type: {self.database_type}")
@@ -283,36 +223,7 @@ class DatabaseConfig:
     
     def _get_database_url(self) -> str:
         """Get the appropriate database URL based on configuration"""
-        if self.database_type == "sqlite":
-            # Get SQLite path from environment variable - NO HARDCODED VALUES
-            sqlite_path = os.getenv("DATABASE_PATH")
-            if not sqlite_path:
-                error_msg = (
-                    "❌ DATABASE_PATH environment variable is NOT configured for SQLite!\n"
-                    "When using DATABASE_TYPE=sqlite, you MUST specify DATABASE_PATH.\n"
-                    "Please set DATABASE_PATH in your .env or .env.dev file:\n"
-                    "  Example: DATABASE_PATH=/data/agenthub.db\n"
-                    "  Or: DATABASE_PATH=./agenthub.db\n"
-                    "No hardcoded paths will be used!"
-                )
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-
-            # Expand user home directory if ~ is used
-            sqlite_path = os.path.expanduser(sqlite_path)
-
-            # CRITICAL: Preserve SQLite's special :memory: keyword
-            # :memory: creates an in-memory database (100x faster, auto-cleanup)
-            # Converting it to absolute path breaks this feature
-            if sqlite_path != ":memory:":
-                # Make absolute path if relative (but NOT for :memory:!)
-                if not os.path.isabs(sqlite_path):
-                    sqlite_path = os.path.abspath(sqlite_path)
-
-            logger.info(f"📦 Using SQLite database: {sqlite_path}")
-            return f"sqlite:///{sqlite_path}"
-
-        elif self.database_type == "supabase":
+        if self.database_type == "supabase":
             # Use Supabase configuration (PostgreSQL cloud)
             logger.info("🎯 Using Supabase PostgreSQL database (cloud-native)")
             from .supabase_config import get_supabase_config, is_supabase_configured
@@ -342,35 +253,9 @@ class DatabaseConfig:
     
     def _create_engine(self, database_url: str) -> Engine:
         """Create SQLAlchemy engine for database connection"""
-        if database_url.startswith("sqlite"):
-            # Register SQLite datetime adapters for Python 3.12+ compatibility
-            _register_sqlite_datetime_adapters()
-
-            # SQLite engine for test mode
-            logger.info("📦 Creating SQLite engine for test execution")
-            engine = create_engine(
-                database_url,
-                echo=os.getenv("SQL_DEBUG", "false").lower() == "true",
-                future=True,
-                poolclass=pool.StaticPool,  # Use StaticPool for SQLite in tests
-                connect_args={"check_same_thread": False}  # Allow multi-threaded access for tests
-            )
-
-            # Configure SQLite for better test performance
-            @event.listens_for(engine, "connect")
-            def set_sqlite_pragma(dbapi_connection, connection_record):
-                cursor = dbapi_connection.cursor()
-                cursor.execute("PRAGMA foreign_keys=ON")  # Enable foreign keys
-                cursor.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging for better concurrency
-                cursor.execute("PRAGMA synchronous=NORMAL")  # Faster writes for tests
-                cursor.close()
-
-            logger.info("✅ SQLite engine created for tests")
-            return engine
-
-        elif not database_url.startswith("postgresql"):
+        if not database_url.startswith("postgresql"):
             raise ValueError(
-                f"Invalid database URL. Expected PostgreSQL or SQLite URL but got: {database_url[:20]}..."
+                f"Invalid database URL. Expected PostgreSQL URL but got: {database_url[:20]}..."
             )
         
         # PostgreSQL/Supabase configuration optimized for cloud
@@ -438,40 +323,38 @@ class DatabaseConfig:
     def _test_connection(self, database_url: str):
         """Test database connection with retry logic"""
         with self.engine.connect() as conn:
-            if database_url.startswith("sqlite"):
-                # SQLite test query
-                result = conn.execute(text("SELECT sqlite_version()"))
-                version = result.scalar()
-                logger.info(f"📦 Connected to SQLite: {version}")
-                DatabaseConfig._connection_info = f"SQLite {version}"
-            else:
-                # PostgreSQL test query
-                result = conn.execute(text("SELECT version()"))
-                version = result.scalar()
-                logger.info(f"✅ Connected to PostgreSQL: {version}")
+            # PostgreSQL test query
+            result = conn.execute(text("SELECT version()"))
+            version = result.scalar()
+            logger.info(f"✅ Connected to PostgreSQL: {version}")
 
-                # Check if this is Supabase
-                if database_url and "supabase" in database_url.lower():
-                    result = conn.execute(text("SELECT current_database()"))
-                    db_name = result.scalar()
-                    logger.info(f"🚀 Supabase connection successful! Database: {db_name}")
-                    DatabaseConfig._connection_info = f"Supabase PostgreSQL - Database: {db_name}"
-                else:
-                    DatabaseConfig._connection_info = f"PostgreSQL {version}"
+            # Check if this is Supabase
+            if database_url and "supabase" in database_url.lower():
+                result = conn.execute(text("SELECT current_database()"))
+                db_name = result.scalar()
+                logger.info(f"🚀 Supabase connection successful! Database: {db_name}")
+                DatabaseConfig._connection_info = f"Supabase PostgreSQL - Database: {db_name}"
+            else:
+                DatabaseConfig._connection_info = f"PostgreSQL {version}"
     
     def _initialize_database(self):
         """Initialize database connection and create session factory"""
         try:
             database_url = self._get_database_url()
             self.engine = self._create_engine(database_url)
-            
-            # Create session factory
-            self.SessionLocal = sessionmaker(
+
+            # Create session factory with thread-safe scoped_session
+            # This ensures each thread gets its own session instance (Bug #2 Fix)
+            session_factory = sessionmaker(
                 autocommit=False,
                 autoflush=False,
                 bind=self.engine,
                 expire_on_commit=False  # Don't expire objects after commit
             )
+
+            # Use scoped_session for thread-local session management
+            # Each thread gets its own session, preventing cross-thread session sharing
+            self.SessionLocal = scoped_session(session_factory)
             
             # Test connection only if not already verified (caching for performance)
             if not DatabaseConfig._connection_verified:
@@ -504,30 +387,75 @@ class DatabaseConfig:
     
     @with_connection_retry(DEFAULT_RETRY_CONFIG)
     def get_session(self) -> Session:
-        """Get a new database session with retry logic"""
+        """
+        Get a thread-local database session with retry logic.
+
+        When using scoped_session, calling SessionLocal() returns the SAME session
+        for the current thread (thread-local). This prevents cross-thread session sharing.
+
+        Returns:
+            Session: Thread-local database session
+        """
         if not self.SessionLocal:
             raise RuntimeError("Database not initialized")
-        
+
+        # scoped_session ensures each thread gets its own session (Bug #2 Fix)
         session = self.SessionLocal()
-        
+
         # Test the session with a simple query to ensure it's working
         try:
             session.execute(text("SELECT 1"))
         except Exception as e:
-            session.close()
+            # Close session on error to prevent stale connections
+            self.SessionLocal.remove()  # Remove thread-local session
             raise
-        
+
         return session
     
     def create_tables(self):
         """Create all tables in the database and ensure AI columns exist"""
         if not self.engine:
             raise RuntimeError("Database not initialized")
-        
+
+        # CRITICAL: Explicitly import ALL models to ensure Base.metadata has complete registration
+        # This is especially important for context tables which can be missed in batch test runs
+        from .models import (
+            APIToken, Project, ProjectGitBranch, Task, Subtask, TaskAssignee, TaskDependency,
+            Agent, Label, TaskLabel, Template,
+            BranchContext, TaskContext, ProjectContext, GlobalContext,
+            ContextDelegation, ContextInheritanceCache
+        )  # noqa: F401
+
         logger.info("Creating database tables...")
         Base.metadata.create_all(bind=self.engine)
         logger.info("Database tables created successfully")
-        
+
+        # VERIFY critical context tables exist (for test isolation)
+        # This prevents test failures when context tables aren't created in batch test runs
+        from sqlalchemy import inspect
+        inspector = inspect(self.engine)
+        existing_tables = inspector.get_table_names()
+
+        critical_tables = ['branch_contexts', 'task_contexts', 'project_contexts', 'global_contexts']
+        missing_tables = [t for t in critical_tables if t not in existing_tables]
+
+        if missing_tables:
+            logger.warning(f"⚠️ Context tables missing after create_all(): {missing_tables}")
+            logger.info("Forcing context table creation...")
+            # Import models explicitly to ensure metadata has them
+            from .models import BranchContext, TaskContext, ProjectContext, GlobalContext
+            # Recreate metadata from models
+            Base.metadata.create_all(bind=self.engine, checkfirst=True)
+
+            # Verify again
+            inspector = inspect(self.engine)
+            existing_tables = inspector.get_table_names()
+            still_missing = [t for t in critical_tables if t not in existing_tables]
+            if still_missing:
+                logger.error(f"❌ Failed to create context tables: {still_missing}")
+            else:
+                logger.info("✅ Context tables created successfully on retry")
+
         # Ensure AI columns exist (for existing databases)
         from .ensure_ai_columns import ensure_ai_columns_exist
         logger.info("Ensuring AI columns exist in database...")
@@ -542,8 +470,22 @@ class DatabaseConfig:
             raise RuntimeError("Database not initialized")
         return self.engine
     
+    def remove_session(self):
+        """
+        Remove the current thread's session from scoped_session.
+
+        This should be called when a thread completes its work to prevent
+        session leaks and ensure clean state for thread pool reuse.
+        """
+        if self.SessionLocal:
+            self.SessionLocal.remove()
+            logger.debug("Thread-local session removed")
+
     def close(self):
         """Close database connections"""
+        if self.SessionLocal:
+            # Remove all thread-local sessions
+            self.SessionLocal.remove()
         if self.engine:
             self.engine.dispose()
             logger.info("Database connections closed")
@@ -639,8 +581,11 @@ def close_db():
     """Close database connections and reset singleton instances"""
     global _db_config
     if _db_config:
+        # Remove thread-local sessions before closing
+        if hasattr(_db_config, 'SessionLocal') and _db_config.SessionLocal:
+            _db_config.SessionLocal.remove()
         _db_config.close()
         _db_config = None
-    
+
     # Also reset the class-level singleton
     DatabaseConfig.reset_instance()

@@ -31,15 +31,27 @@ from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDComplia
 
 
 @pytest.fixture
-def mcp_tools():
-    """Initialize MCP tools with vision system disabled for faster tests"""
-    return DDDCompliantMCPTools(enable_vision_system=False)
+def user_id():
+    """Generate test user ID."""
+    return str(uuid.uuid4())
 
 
 @pytest.fixture
-def test_user_id():
-    """Generate test user ID"""
+def git_branch_id():
+    """Generate test git branch ID."""
     return str(uuid.uuid4())
+
+
+@pytest.fixture
+def test_user_id(user_id):
+    """Alias for compatibility with existing test code."""
+    return user_id
+
+
+@pytest.fixture
+def mcp_tools():
+    """Initialize MCP tools with vision system disabled for faster tests"""
+    return DDDCompliantMCPTools(enable_vision_system=False)
 
 
 @pytest.fixture
@@ -239,7 +251,7 @@ class TestPhase1TaskCRUDOperations:
         task_id = create_result["data"]["task"]["id"]
 
         # Create subtask
-        mcp_tools._subtask_controller.manage_subtask_sync(
+        mcp_tools._subtask_controller.manage_subtask(
             action="create",
             task_id=task_id,
             title="Subtask 1",
@@ -275,7 +287,7 @@ class TestPhase1SubtaskOperations:
         task_id = task_result["data"]["task"]["id"]
 
         # Create subtask
-        subtask_result = mcp_tools._subtask_controller.manage_subtask_sync(
+        subtask_result = mcp_tools._subtask_controller.manage_subtask(
             action="create",
             task_id=task_id,
             title="Test Subtask",
@@ -318,7 +330,7 @@ class TestPhase1SubtaskOperations:
 
         # Create subtasks
         for i in range(2):
-            mcp_tools._subtask_controller.manage_subtask_sync(
+            mcp_tools._subtask_controller.manage_subtask(
                 action="create",
                 task_id=task_id,
                 title=f"Subtask {i+1}",
@@ -327,14 +339,14 @@ class TestPhase1SubtaskOperations:
             )
 
         # List subtasks
-        result = mcp_tools._subtask_controller.manage_subtask_sync(
+        result = mcp_tools._subtask_controller.manage_subtask(
             action="list",
             task_id=task_id,
             user_id=mock_auth
         )
 
         assert result["success"] is True
-        subtasks = result["data"]["subtasks"]
+        subtasks = result["subtasks"]  # Direct access, not under 'data'
 
         # PHASE 2 VERIFICATION: Check subtask structure
         if subtasks:
@@ -356,17 +368,17 @@ class TestPhase1SubtaskOperations:
         task_id = task_result["data"]["task"]["id"]
 
         # Create subtask
-        subtask_result = mcp_tools._subtask_controller.manage_subtask_sync(
+        subtask_result = mcp_tools._subtask_controller.manage_subtask(
             action="create",
             task_id=task_id,
             title="Subtask to Complete",
             assignees="coding-agent",
             user_id=mock_auth
         )
-        subtask_id = subtask_result["data"]["subtask"]["id"]
+        subtask_id = subtask_result["subtask"]["id"]  # Direct access, not under 'data'
 
         # Complete subtask
-        complete_result = mcp_tools._subtask_controller.manage_subtask_sync(
+        complete_result = mcp_tools._subtask_controller.manage_subtask(
             action="complete",
             task_id=task_id,
             subtask_id=subtask_id,
@@ -458,7 +470,7 @@ class TestPhase1ArrayBasedCountLogic:
 
         # Create exactly 3 subtasks
         for i in range(3):
-            mcp_tools._subtask_controller.manage_subtask_sync(
+            mcp_tools._subtask_controller.manage_subtask(
                 action="create",
                 task_id=task_id,
                 title=f"Subtask {i+1}",

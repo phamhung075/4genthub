@@ -201,13 +201,20 @@ class UpdateTaskUseCase:
 
             # 🔄 SYNC: Granular synchronization of task status and metadata
             try:
-                asyncio.run(self._context_sync_service.sync_task_metadata(task_id_str, task))
-                logger.info(f"✅ Synced metadata for updated task {task_id_str}")
-            except RuntimeError:
-                # Already in event loop
+                # Check if we're already in an event loop
+                loop = asyncio.get_running_loop()
+                # We're in an async context - schedule as background task
+                asyncio.create_task(self._context_sync_service.sync_task_metadata(task_id_str, task))
                 logger.info(f"⏭️ Scheduled metadata sync for updated task {task_id_str} (in async context)")
+            except RuntimeError:
+                # No event loop running - safe to use asyncio.run()
+                try:
+                    asyncio.run(self._context_sync_service.sync_task_metadata(task_id_str, task))
+                    logger.info(f"✅ Synced metadata for updated task {task_id_str}")
+                except Exception as sync_error:
+                    logger.warning(f"⚠️ Failed to sync metadata for updated task {task_id_str}: {sync_error}")
             except Exception as sync_error:
-                logger.warning(f"⚠️ Failed to sync metadata for updated task {task_id_str}: {sync_error}")
+                logger.warning(f"⚠️ Failed to schedule metadata sync for updated task {task_id_str}: {sync_error}")
 
             # Check if we're already in an async context
             try:

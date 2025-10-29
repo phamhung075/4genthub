@@ -141,8 +141,10 @@ class BaseORMRepository(Generic[ModelType]):
             try:
                 instance = self.model_class(**kwargs)
                 session.add(instance)
-                session.flush()  # Get the ID before commit
-                session.refresh(instance)  # Refresh to get all defaults
+                session.flush()  # Flush to get the ID and validate constraints
+                session.refresh(instance)  # Refresh to get all defaults from DB
+                # Note: get_db_session() context manager will commit on exit
+                # This ensures immediate visibility (Bug #3 fix)
                 return instance
             except IntegrityError as e:
                 # Infrastructure only handles technical DB errors

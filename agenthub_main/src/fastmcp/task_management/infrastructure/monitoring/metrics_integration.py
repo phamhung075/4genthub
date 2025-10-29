@@ -9,6 +9,7 @@ metrics collection across all system operations.
 
 import time
 import asyncio
+import inspect
 import logging
 import functools
 from contextlib import asynccontextmanager, contextmanager
@@ -212,7 +213,7 @@ def metrics_track(
                     )
         
         # Return appropriate wrapper based on function type
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper

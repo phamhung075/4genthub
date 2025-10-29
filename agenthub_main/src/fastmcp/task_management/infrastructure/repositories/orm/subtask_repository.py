@@ -61,89 +61,138 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
     
     def save(self, subtask: SubtaskEntity) -> bool:
         """
-        Save a subtask to the database.
-        
+        Save a subtask to the database with retry logic for concurrent access.
+
         Args:
             subtask: SubtaskEntity domain entity
-            
+
         Returns:
             True if saved successfully, False otherwise
         """
+        import time
+
         logger.info(f"🔍 SUBTASK_SAVE: Starting save for user_id={self.user_id}, subtask_title='{subtask.title}'")
-        try:
-            # CRITICAL FIX: Use transaction context manager to ensure proper commit
-            with self.transaction() as session:
-                # Convert domain entity to ORM model data
-                model_data = self._entity_to_model_dict(subtask)
-                logger.info(f"🔍 SUBTASK_SAVE: Model data prepared with user_id={model_data.get('user_id')}")
-                
-                if subtask.id:
-                    # Update existing subtask
-                    existing = session.query(SubtaskModel).filter(
-                        SubtaskModel.id == subtask.id.value
-                    ).first()
-                    
-                    if existing:
-                        # Update existing record
-                        for key, value in model_data.items():
-                            if key != 'id':  # Don't update primary key
-                                setattr(existing, key, value)
-                        existing.touch("subtask_updated")
-                        session.flush()
-                        
-                        # Update the domain entity with the persisted data
-                        subtask.updated_at = existing.updated_at
-                        logger.info(f"🔍 SUBTASK_SAVE: Updated existing subtask ID={subtask.id.value}")
-                        return True
+
+        max_retries = 10  # Increased for high-concurrency scenarios
+        retry_delay = 0.02  # 20ms base delay
+
+        for attempt in range(max_retries):
+            try:
+                # CRITICAL FIX: Use transaction context manager to ensure proper commit
+                with self.transaction() as session:
+                    # Convert domain entity to ORM model data
+                    model_data = self._entity_to_model_dict(subtask)
+                    logger.info(f"🔍 SUBTASK_SAVE: Model data prepared with user_id={model_data.get('user_id')}")
+
+                    if subtask.id:
+                        # Update existing subtask
+                        existing = session.query(SubtaskModel).filter(
+                            SubtaskModel.id == subtask.id.value
+                        ).first()
+
+                        if existing:
+                            # Update existing record
+                            for key, value in model_data.items():
+                                if key != 'id':  # Don't update primary key
+                                    setattr(existing, key, value)
+                            existing.touch("subtask_updated")
+                            session.flush()
+
+                            # Update the domain entity with the persisted data
+                            subtask.updated_at = existing.updated_at
+                            logger.info(f"🔍 SUBTASK_SAVE: Updated existing subtask ID={subtask.id.value}")
+                            return True
+                        else:
+                            # ID provided but doesn't exist, create new
+                            model_data['id'] = subtask.id.value
                     else:
-                        # ID provided but doesn't exist, create new
-                        model_data['id'] = subtask.id.value
-                else:
-                    # Generate new ID if not provided
-                    if not subtask.id:
-                        new_id = self.get_next_id(subtask.parent_task_id)
-                        subtask.id = new_id
-                        model_data['id'] = new_id.value
-                
-                # Create new subtask
-                logger.info(f"🔍 SUBTASK_SAVE: Creating new subtask with data: {model_data}")
-                new_subtask = SubtaskModel(**model_data)
-                session.add(new_subtask)
-                session.flush()
-                logger.info(f"🔍 SUBTASK_SAVE: Flushed to database, ID={new_subtask.id}")
-                session.refresh(new_subtask)
-                
-                # CRITICAL DEBUG: Verify persistence before commit
-                verify = session.query(SubtaskModel).filter(SubtaskModel.id == new_subtask.id).first()
-                logger.info(f"🔍 SUBTASK_SAVE: Verification query - found subtask: {verify is not None}")
-                if verify:
-                    logger.info(f"🔍 SUBTASK_SAVE: Verified subtask - ID={verify.id}, user_id={verify.user_id}, title='{verify.title}'")
-                
-                # Update domain entity with persisted timestamps
-                subtask.created_at = new_subtask.created_at
-                subtask.updated_at = new_subtask.updated_at
+                        # Generate new ID if not provided
+                        if not subtask.id:
+                            new_id = self.get_next_id(subtask.parent_task_id)
+                            subtask.id = new_id
+                            model_data['id'] = new_id.value
 
-                logger.info(f"✅ SUBTASK_SAVE: Successfully completed save for subtask ID={new_subtask.id}")
+                    # Create new subtask
+                    logger.info(f"🔍 SUBTASK_SAVE: Creating new subtask with data: {model_data}")
+                    new_subtask = SubtaskModel(**model_data)
+                    session.add(new_subtask)
+                    session.flush()
+                    logger.info(f"🔍 SUBTASK_SAVE: Flushed to database, ID={new_subtask.id}")
 
-                # Publish domain events after successful save
-                self.publish_entity_events(subtask)
+                    # Handle refresh gracefully - can fail in concurrent scenarios
+                    try:
+                        session.refresh(new_subtask)
+                    except Exception as refresh_error:
+                        logger.warning(f"Could not refresh subtask after save (concurrent modification): {refresh_error}")
+                        # Re-query to get fresh state
+                        new_subtask = session.query(SubtaskModel).filter(SubtaskModel.id == new_subtask.id).first()
+                        if not new_subtask:
+                            raise DatabaseException(
+                                message=f"Subtask not found after successful save",
+                                operation="save_subtask",
+                                table="subtasks"
+                            )
 
-                return True
-                
-        except SQLAlchemyError as e:
-            logger.error(f"Failed to save subtask: {e}")
-            raise DatabaseException(
-                message=f"Failed to save subtask: {str(e)}",
-                operation="save_subtask",
-                table="subtasks"
-            )
-        except Exception as e:
-            logger.error(f"Unexpected error saving subtask: {e}")
-            return False
+                    # CRITICAL DEBUG: Verify persistence before commit
+                    verify = session.query(SubtaskModel).filter(SubtaskModel.id == new_subtask.id).first()
+                    logger.info(f"🔍 SUBTASK_SAVE: Verification query - found subtask: {verify is not None}")
+                    if verify:
+                        logger.info(f"🔍 SUBTASK_SAVE: Verified subtask - ID={verify.id}, user_id={verify.user_id}, title='{verify.title}'")
+
+                    # Update domain entity with persisted timestamps
+                    subtask.created_at = new_subtask.created_at
+                    subtask.updated_at = new_subtask.updated_at
+
+                    logger.info(f"✅ SUBTASK_SAVE: Successfully completed save for subtask ID={new_subtask.id}")
+
+                    # Publish domain events after successful save
+                    self.publish_entity_events(subtask)
+
+                    return True
+
+            except SQLAlchemyError as e:
+                error_str = str(e).lower()
+                # Check for concurrent access errors
+                is_retryable = (
+                    "database is locked" in error_str or
+                    "concurrent" in error_str or
+                    "identity map" in error_str or
+                    "detached" in error_str or
+                    "cannot be converted" in error_str
+                )
+
+                if is_retryable and attempt < max_retries - 1:
+                    delay = retry_delay * (2 ** attempt)
+                    logger.warning(
+                        f"[SubtaskSave] Concurrent access conflict on attempt {attempt+1}/{max_retries}, "
+                        f"retrying after {delay:.3f}s... Error: {e}"
+                    )
+                    time.sleep(delay)
+                    continue
+
+                # Not retryable or out of retries
+                logger.error(f"Failed to save subtask after {attempt+1} attempts: {e}")
+                raise DatabaseException(
+                    message=f"Failed to save subtask: {str(e)}",
+                    operation="save_subtask",
+                    table="subtasks"
+                )
+            except Exception as e:
+                logger.error(f"Unexpected error saving subtask on attempt {attempt+1}: {e}")
+                if attempt < max_retries - 1:
+                    delay = retry_delay * (2 ** attempt)
+                    time.sleep(delay)
+                    continue
+                return False
+
+        # Should never reach here but just in case
+        logger.error(f"Failed to save subtask after {max_retries} attempts")
+        return False
     
     def find_by_id(self, id: str) -> Optional[SubtaskEntity]:
         """
         Find a subtask by its ID with user filtering for multi-tenancy.
+        Includes retry logic for concurrent access scenarios.
 
         Args:
             id: SubtaskEntity ID string
@@ -151,36 +200,65 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         Returns:
             SubtaskEntity domain entity or None if not found
         """
-        try:
-            with self.get_db_session() as session:
-                query = session.query(SubtaskModel).filter(
-                    SubtaskModel.id == id
+        import time
+
+        max_retries = 5  # Increased for concurrent find operations
+        retry_delay = 0.02  # 20ms base delay
+
+        for attempt in range(max_retries):
+            try:
+                with self.get_db_session() as session:
+                    query = session.query(SubtaskModel).filter(
+                        SubtaskModel.id == id
+                    )
+
+                    # CRITICAL FIX: Apply user filter for multi-tenancy
+                    # This ensures users can only access their own subtasks
+                    if self.user_id:
+                        query = query.filter(SubtaskModel.user_id == self.user_id)
+                        logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter for user_id={self.user_id}")
+                    else:
+                        logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering - this could cause data leakage")
+
+                    model = query.first()
+
+                    if model:
+                        logger.info(f"✅ SUBTASK_FOUND: Found subtask id={id} for user_id={self.user_id}")
+                        return self._model_to_entity(model)
+                    else:
+                        logger.info(f"❌ SUBTASK_NOT_FOUND: No subtask found with id={id} for user_id={self.user_id}")
+                        return None
+
+            except SQLAlchemyError as e:
+                error_str = str(e).lower()
+                # Check for concurrent access errors
+                is_retryable = (
+                    "database is locked" in error_str or
+                    "concurrent" in error_str or
+                    "identity map" in error_str or
+                    "detached" in error_str or
+                    "cannot be converted" in error_str
                 )
 
-                # CRITICAL FIX: Apply user filter for multi-tenancy
-                # This ensures users can only access their own subtasks
-                if self.user_id:
-                    query = query.filter(SubtaskModel.user_id == self.user_id)
-                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter for user_id={self.user_id}")
-                else:
-                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering - this could cause data leakage")
+                if is_retryable and attempt < max_retries - 1:
+                    delay = retry_delay * (2 ** attempt)
+                    logger.warning(
+                        f"[SubtaskFindById] Concurrent access conflict on attempt {attempt+1}/{max_retries}, "
+                        f"retrying after {delay:.3f}s... Error: {e}"
+                    )
+                    time.sleep(delay)
+                    continue
 
-                model = query.first()
+                # Not retryable or out of retries
+                logger.error(f"Failed to find subtask by id {id} after {attempt+1} attempts: {e}")
+                raise DatabaseException(
+                    message=f"Failed to find subtask by id: {str(e)}",
+                    operation="find_by_id",
+                    table="subtasks"
+                )
 
-                if model:
-                    logger.info(f"✅ SUBTASK_FOUND: Found subtask id={id} for user_id={self.user_id}")
-                    return self._model_to_entity(model)
-                else:
-                    logger.info(f"❌ SUBTASK_NOT_FOUND: No subtask found with id={id} for user_id={self.user_id}")
-                    return None
-
-        except SQLAlchemyError as e:
-            logger.error(f"Failed to find subtask by id {id}: {e}")
-            raise DatabaseException(
-                message=f"Failed to find subtask by id: {str(e)}",
-                operation="find_by_id",
-                table="subtasks"
-            )
+        # Should never reach here
+        return None
     
     def find_by_parent_task_id(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
         """
@@ -221,9 +299,12 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 # DEBUG: Log results
                 logger.info(f"🐛 SUBTASK_DEBUG: Found {len(models)} subtask models")
                 for model in models:
-                    logger.info(f"🐛 SUBTASK_DEBUG: Model - id={model.id}, task_id={model.task_id}, user_id={model.user_id}, title={model.title}")
+                    if model:  # Safety check for None models in concurrent scenarios
+                        logger.info(f"🐛 SUBTASK_DEBUG: Model - id={model.id}, task_id={model.task_id}, user_id={model.user_id}, title={model.title}")
+                    else:
+                        logger.warning("🐛 SUBTASK_DEBUG: Found None model in results (concurrent access artifact)")
 
-                return [self._model_to_entity(model) for model in models]
+                return [self._model_to_entity(model) for model in models if model]  # Filter out None models
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks for task {parent_task_id}: {e}")

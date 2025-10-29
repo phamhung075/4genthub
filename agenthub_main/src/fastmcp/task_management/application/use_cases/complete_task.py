@@ -455,12 +455,20 @@ class CompleteTaskUseCase:
 
                         # Sync task status and metadata
                         try:
-                            asyncio.run(sync_service.sync_task_status(task_id_str, "done"))
-                            asyncio.run(sync_service.sync_task_metadata(task_id_str, task))
-                            logging.getLogger(__name__).info(f"✅ Synced status and metadata for completed task {task_id_str}")
-                        except RuntimeError:
-                            # Already in event loop
+                            # Check if we're already in an event loop
+                            loop = asyncio.get_running_loop()
+                            # We're in an async context - schedule as background tasks
+                            asyncio.create_task(sync_service.sync_task_status(task_id_str, "done"))
+                            asyncio.create_task(sync_service.sync_task_metadata(task_id_str, task))
                             logging.getLogger(__name__).info(f"⏭️ Scheduled status/metadata sync for completed task {task_id_str} (in async context)")
+                        except RuntimeError:
+                            # No event loop running - safe to use asyncio.run()
+                            try:
+                                asyncio.run(sync_service.sync_task_status(task_id_str, "done"))
+                                asyncio.run(sync_service.sync_task_metadata(task_id_str, task))
+                                logging.getLogger(__name__).info(f"✅ Synced status and metadata for completed task {task_id_str}")
+                            except Exception as inner_error:
+                                logging.getLogger(__name__).warning(f"⚠️ Failed to sync status/metadata: {inner_error}")
                     except Exception as sync_error:
                         logging.getLogger(__name__).warning(f"⚠️ Failed to sync status/metadata for completed task {task_id_str}: {sync_error}")
 

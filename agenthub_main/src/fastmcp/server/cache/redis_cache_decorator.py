@@ -12,6 +12,7 @@ Task: API Optimization - Implement Response Caching
 import json
 import hashlib
 import asyncio
+import inspect
 import logging
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Union
@@ -261,7 +262,7 @@ def redis_cache(
             return result
         
         # Return appropriate wrapper based on function type
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper

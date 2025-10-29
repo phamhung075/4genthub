@@ -22,6 +22,7 @@ Success Criteria:
 import pytest
 import time
 import asyncio
+import inspect
 from typing import Dict, List, Any
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -117,7 +118,7 @@ class Week1BaselineTester:
         """
         start_time = time.perf_counter()
 
-        if asyncio.iscoroutinefunction(operation_func):
+        if inspect.iscoroutinefunction(operation_func):
             await operation_func(*args, **kwargs)
         else:
             operation_func(*args, **kwargs)

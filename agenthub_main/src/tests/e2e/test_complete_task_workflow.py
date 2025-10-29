@@ -54,11 +54,12 @@ def task_facade(task_repository):
 
 
 @pytest.fixture
-def subtask_facade(task_repository, subtask_repository):
+def subtask_facade(task_repository, subtask_repository, user_id):
     """Create subtask facade with real repositories."""
     return SubtaskApplicationFacade(
         task_repository=task_repository,
-        subtask_repository=subtask_repository
+        subtask_repository=subtask_repository,
+        user_id=user_id
     )
 
 
@@ -68,7 +69,7 @@ class TestCompleteTaskLifecycleWithRealDatabase:
     """Test complete task workflows with actual database operations."""
 
     def test_create_task_with_subtasks_then_complete_verifies_all_counts(
-        self, task_facade, subtask_facade, git_branch_id
+        self, task_facade, subtask_facade, git_branch_id, user_id
     ):
         """
         Complete user workflow: Create task → Add 5 subtasks → Complete 3 → Verify counts.
@@ -87,7 +88,8 @@ class TestCompleteTaskLifecycleWithRealDatabase:
             status="in_progress",
             priority="high",
             assignees=["@coding-agent", "@security-auditor-agent"],
-            estimated_effort="3 days"
+            estimated_effort="3 days",
+            user_id=user_id
         )
 
         create_result = task_facade.create_task(create_request)
@@ -111,14 +113,14 @@ class TestCompleteTaskLifecycleWithRealDatabase:
 
         subtask_ids = []
         for title in subtask_titles:
-            subtask_request = CreateSubtaskRequest(
+            subtask_result = subtask_facade.create_subtask(
                 task_id=task_id,
                 title=title,
                 description=f"Implementation of {title.lower()}",
                 status="todo",
-                priority="medium"
+                priority="medium",
+                user_id=user_id
             )
-            subtask_result = subtask_facade.create_subtask(subtask_request)
             assert subtask_result["success"] is True
             subtask_ids.append(subtask_result["subtask"]["id"])
 
@@ -137,13 +139,12 @@ class TestCompleteTaskLifecycleWithRealDatabase:
 
         # === STEP 4: COMPLETE 3 SUBTASKS ===
         for i in range(3):
-            complete_request = {
-                "task_id": task_id,
-                "subtask_id": subtask_ids[i],
-                "completion_summary": f"Completed {subtask_titles[i]}",
-                "action": "complete"
-            }
-            complete_result = subtask_facade.complete_subtask(complete_request)
+            complete_result = subtask_facade.complete_subtask(
+                task_id=task_id,
+                subtask_id=subtask_ids[i],
+                completion_summary=f"Completed {subtask_titles[i]}",
+                user_id=user_id
+            )
             assert complete_result["success"] is True
 
         # === STEP 5: VERIFY COMPLETED COUNT UPDATED ===
@@ -166,12 +167,12 @@ class TestCompleteTaskLifecycleWithRealDatabase:
 
         # === STEP 6: DELETE 2 SUBTASKS ===
         for i in range(2):
-            delete_request = {
-                "task_id": task_id,
-                "subtask_id": subtask_ids[i + 3],  # Delete the last 2
-                "action": "delete"
-            }
-            delete_result = subtask_facade.delete_subtask(delete_request)
+            delete_result = subtask_facade.handle_manage_subtask(
+                action="delete",
+                task_id=task_id,
+                subtask_id=subtask_ids[i + 3],  # Delete the last 2
+                user_id=user_id
+            )
             assert delete_result["success"] is True
 
         # === STEP 7: VERIFY COUNTS AFTER DELETION ===
@@ -186,6 +187,7 @@ class TestCompleteTaskLifecycleWithRealDatabase:
 
         # === STEP 8: VERIFY DATABASE CONSISTENCY ===
         # Directly query database to ensure counts match
+        db_config = get_db_config()
         with db_config.get_session() as session:
             result = session.execute(
                 text("""
@@ -193,7 +195,7 @@ class TestCompleteTaskLifecycleWithRealDatabase:
                         COUNT(*) as total_count,
                         SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as completed_count
                     FROM subtasks
-                    WHERE parent_task_id = :task_id
+                    WHERE task_id = :task_id
                 """),
                 {"task_id": task_id}
             )
@@ -207,7 +209,7 @@ class TestCompleteTaskLifecycleWithRealDatabase:
                 f"Database shows {db_completed_count} completed, expected 3"
 
     def test_progress_percentage_updates_with_subtask_completion(
-        self, task_facade, subtask_facade, git_branch_id
+        self, task_facade, subtask_facade, git_branch_id, user_id
     ):
         """
         Verify parent task progress updates correctly when subtasks are completed.
@@ -225,7 +227,8 @@ class TestCompleteTaskLifecycleWithRealDatabase:
             description="Integrate Stripe payment processing",
             status="in_progress",
             priority="critical",
-            assignees=["@coding-agent"]
+            assignees=["@coding-agent"],
+            user_id=user_id
         )
 
         create_result = task_facade.create_task(create_request)
@@ -240,22 +243,22 @@ class TestCompleteTaskLifecycleWithRealDatabase:
         # Add 4 subtasks
         subtask_ids = []
         for i in range(4):
-            subtask_request = CreateSubtaskRequest(
+            result = subtask_facade.create_subtask(
                 task_id=task_id,
                 title=f"Payment step {i+1}",
-                description=f"Step {i+1} of integration"
+                description=f"Step {i+1} of integration",
+                user_id=user_id
             )
-            result = subtask_facade.create_subtask(subtask_request)
             subtask_ids.append(result["subtask"]["id"])
 
         # Complete 2 out of 4 subtasks (50%)
         for i in range(2):
-            subtask_facade.complete_subtask({
-                "task_id": task_id,
-                "subtask_id": subtask_ids[i],
-                "completion_summary": f"Completed step {i+1}",
-                "action": "complete"
-            })
+            subtask_facade.complete_subtask(
+                task_id=task_id,
+                subtask_id=subtask_ids[i],
+                completion_summary=f"Completed step {i+1}",
+                user_id=user_id
+            )
 
         # Verify 50% progress
         get_result_50 = task_facade.get_task(task_id)
@@ -268,12 +271,12 @@ class TestCompleteTaskLifecycleWithRealDatabase:
 
         # Complete all remaining subtasks
         for i in range(2, 4):
-            subtask_facade.complete_subtask({
-                "task_id": task_id,
-                "subtask_id": subtask_ids[i],
-                "completion_summary": f"Completed step {i+1}",
-                "action": "complete"
-            })
+            subtask_facade.complete_subtask(
+                task_id=task_id,
+                subtask_id=subtask_ids[i],
+                completion_summary=f"Completed step {i+1}",
+                user_id=user_id
+            )
 
         # Complete the parent task
         task_facade.complete_task(
@@ -290,7 +293,7 @@ class TestCompleteTaskLifecycleWithRealDatabase:
             f"Expected 100% progress when all done, got {final_progress}%"
 
     def test_task_update_preserves_subtask_data_integrity(
-        self, task_facade, subtask_facade, git_branch_id
+        self, task_facade, subtask_facade, git_branch_id, user_id
     ):
         """
         Verify updating parent task doesn't corrupt subtask relationships.
@@ -307,7 +310,8 @@ class TestCompleteTaskLifecycleWithRealDatabase:
             title="Original Title",
             description="E2E test for task update data integrity",
             status="todo",
-            assignees=["@test-agent"]
+            assignees=["@test-agent"],
+            user_id=user_id
         )
 
         create_result = task_facade.create_task(create_request)
@@ -315,10 +319,11 @@ class TestCompleteTaskLifecycleWithRealDatabase:
 
         # Add 3 subtasks
         for i in range(3):
-            subtask_facade.create_subtask(CreateSubtaskRequest(
+            subtask_facade.create_subtask(
                 task_id=task_id,
-                title=f"Subtask {i+1}"
-            ))
+                title=f"Subtask {i+1}",
+                user_id=user_id
+            )
 
         # Verify initial state
         initial_state = task_facade.get_task(task_id)["task"]
@@ -326,11 +331,13 @@ class TestCompleteTaskLifecycleWithRealDatabase:
         initial_subtask_ids = {st["id"] for st in initial_state["subtasks"]}
 
         # Update parent task multiple times
+        # Use valid status transitions: todo -> in_progress -> review -> in_progress -> review
+        status_sequence = ["in_progress", "review", "in_progress", "review", "in_progress"]
         for i in range(5):
             update_request = UpdateTaskRequest(
                 task_id=task_id,
                 title=f"Updated Title #{i+1}",
-                status="in_progress" if i % 2 == 0 else "todo",
+                status=status_sequence[i],
                 priority="high" if i > 2 else "medium",
                 details=f"Details update #{i+1}"
             )
@@ -348,11 +355,12 @@ class TestCompleteTaskLifecycleWithRealDatabase:
 
         # Verify all subtasks still accessible
         for subtask_id in initial_subtask_ids:
-            get_subtask_result = subtask_facade.get_subtask({
-                "task_id": task_id,
-                "subtask_id": subtask_id,
-                "action": "get"
-            })
+            get_subtask_result = subtask_facade.handle_manage_subtask(
+                action="get",
+                task_id=task_id,
+                subtask_id=subtask_id,
+                user_id=user_id
+            )
             assert get_subtask_result["success"] is True, \
                 f"Subtask {subtask_id} not accessible after parent updates"
 
@@ -363,7 +371,7 @@ class TestTaskFieldConsistencyAcrossLifecycle:
     """Test that critical fields remain consistent throughout task lifecycle."""
 
     def test_assignees_always_array_never_null_or_string(
-        self, task_facade, subtask_facade, git_branch_id
+        self, task_facade, subtask_facade, git_branch_id, user_id
     ):
         """
         Verify assignees field is ALWAYS an array, never null or string.
@@ -376,7 +384,8 @@ class TestTaskFieldConsistencyAcrossLifecycle:
             git_branch_id=git_branch_id,
             title="Single assignee test",
             description="E2E test for single assignee field consistency",
-            assignees="@coding-agent"  # String input
+            assignees="@coding-agent",  # String input
+            user_id=user_id
         )
         result1 = task_facade.create_task(single_assignee)
         task1 = result1["task"]
@@ -391,7 +400,8 @@ class TestTaskFieldConsistencyAcrossLifecycle:
             git_branch_id=git_branch_id,
             title="Multiple assignees test",
             description="E2E test for multiple assignees field consistency",
-            assignees=["@coding-agent", "@test-orchestrator-agent"]
+            assignees=["@coding-agent", "@test-orchestrator-agent"],
+            user_id=user_id
         )
         result2 = task_facade.create_task(multiple_assignees)
         task2 = result2["task"]
@@ -404,7 +414,8 @@ class TestTaskFieldConsistencyAcrossLifecycle:
             git_branch_id=git_branch_id,
             title="No assignees test",
             description="E2E test for empty assignees field consistency",
-            assignees=[]
+            assignees=[],
+            user_id=user_id
         )
         result3 = task_facade.create_task(no_assignees)
         task3 = result3["task"]
@@ -414,7 +425,7 @@ class TestTaskFieldConsistencyAcrossLifecycle:
         assert len(task3["assignees"]) == 0
 
     def test_timestamps_always_present_and_valid_iso8601(
-        self, task_facade, git_branch_id
+        self, task_facade, git_branch_id, user_id
     ):
         """
         Verify created_at and updated_at are always present with valid ISO 8601 format.
@@ -425,7 +436,8 @@ class TestTaskFieldConsistencyAcrossLifecycle:
             git_branch_id=git_branch_id,
             title="Timestamp test",
             description="E2E test for timestamp field consistency",
-            assignees=["@test-agent"]
+            assignees=["@test-agent"],
+            user_id=user_id
         )
 
         result = task_facade.create_task(create_request)
@@ -448,7 +460,7 @@ class TestTaskFieldConsistencyAcrossLifecycle:
         assert updated >= created, "updated_at should be >= created_at"
 
     def test_nested_objects_never_null(
-        self, task_facade, subtask_facade, git_branch_id
+        self, task_facade, subtask_facade, git_branch_id, user_id
     ):
         """
         Verify nested objects like subtasks and context_data are never null.
@@ -459,7 +471,8 @@ class TestTaskFieldConsistencyAcrossLifecycle:
             git_branch_id=git_branch_id,
             title="Nested object test",
             description="E2E test for nested objects field consistency",
-            assignees=["@test-agent"]
+            assignees=["@test-agent"],
+            user_id=user_id
         )
 
         result = task_facade.create_task(create_request)

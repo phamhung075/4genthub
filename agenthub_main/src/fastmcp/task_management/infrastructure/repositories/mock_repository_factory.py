@@ -137,7 +137,9 @@ class MockTaskRepository(TaskRepository):
         logger.info("MockTaskRepository initialized")
     
     def save(self, task: Task) -> Task:
-        self._tasks[task.id] = task
+        # Normalize key to string for consistent lookups
+        task_id_str = str(task.id.value) if hasattr(task.id, 'value') else str(task.id)
+        self._tasks[task_id_str] = task
         return task
     
     def find_by_id(self, task_id) -> Optional[Task]:
@@ -181,8 +183,10 @@ class MockTaskRepository(TaskRepository):
     
     def update(self, task: Task) -> Task:
         """Update a task"""
-        if task.id in self._tasks:
-            self._tasks[task.id] = task
+        # Normalize key to string for consistent lookups
+        task_id_str = str(task.id.value) if hasattr(task.id, 'value') else str(task.id)
+        if task_id_str in self._tasks:
+            self._tasks[task_id_str] = task
             return task
         raise ValueError(f"Task with id {task.id} not found")
     
@@ -241,6 +245,29 @@ class MockTaskRepository(TaskRepository):
         """Find task by ID across all states (active, completed, archived)"""
         return self.find_by_id(task_id)
 
+    def atomic_increment_completed_subtasks(self, task_id) -> bool:
+        """
+        Atomically increment completed_subtasks counter for mock repository.
+
+        For mock repository, this simulates atomic behavior by directly
+        incrementing the counter on the task entity.
+
+        Args:
+            task_id: ID of the task to increment counter for
+
+        Returns:
+            True if successful, False if task not found
+        """
+        task = self.find_by_id(task_id)
+        if task:
+            if hasattr(task, 'completed_subtasks'):
+                task.completed_subtasks = (task.completed_subtasks or 0) + 1
+            else:
+                task.completed_subtasks = 1
+            self.save(task)
+            return True
+        return False
+
 
 class MockSubtaskRepository(SubtaskRepository):
     """Mock subtask repository for testing and development"""
@@ -250,7 +277,9 @@ class MockSubtaskRepository(SubtaskRepository):
         logger.info("MockSubtaskRepository initialized")
     
     def save(self, subtask: Subtask) -> Subtask:
-        self._subtasks[subtask.id] = subtask
+        # Normalize key to string for consistent lookups
+        subtask_id_str = str(subtask.id.value) if hasattr(subtask.id, 'value') else str(subtask.id)
+        self._subtasks[subtask_id_str] = subtask
         return subtask
     
     def find_by_id(self, subtask_id) -> Optional[Subtask]:
@@ -281,15 +310,17 @@ class MockSubtaskRepository(SubtaskRepository):
     
     def update(self, subtask: Subtask) -> Subtask:
         """Update a subtask"""
-        if subtask.id in self._subtasks:
-            self._subtasks[subtask.id] = subtask
+        # Normalize key to string for consistent lookups
+        subtask_id_str = str(subtask.id.value) if hasattr(subtask.id, 'value') else str(subtask.id)
+        if subtask_id_str in self._subtasks:
+            self._subtasks[subtask_id_str] = subtask
             return subtask
         raise ValueError(f"Subtask with id {subtask.id} not found")
     
     def find_by_parent_task_id(self, parent_task_id) -> List[Subtask]:
         """Find all subtasks for a parent task"""
         task_id_str = str(parent_task_id)
-        return [s for s in self._subtasks.values() if str(s.task_id) == task_id_str]
+        return [s for s in self._subtasks.values() if str(s.parent_task_id) == task_id_str]
     
     def find_by_assignee(self, assignee: str) -> List[Subtask]:
         """Find subtasks by assignee"""

@@ -9,15 +9,92 @@ Goal: Find bugs that 120+ contract tests didn't catch by testing REAL workflows
 """
 
 import pytest
+from uuid import uuid4
 from unittest.mock import patch
 
 from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
 from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
 from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
 from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
-from fastmcp.task_management.application.dtos.subtask.create_subtask_request import CreateSubtaskRequest
 from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
 from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+
+
+@pytest.fixture
+def user_id():
+    """Generate test user ID."""
+    return str(uuid4())
+
+
+@pytest.fixture
+def mock_auth(user_id):
+    """Mock authentication context."""
+    mock_auth_info = {
+        'user_id': user_id,
+        'email': 'test@example.com',
+        'sub': user_id,
+        'realm_roles': ['admin', 'user'],
+        'resource_access': {}
+    }
+
+    with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info), \
+         patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id', return_value=user_id), \
+         patch('fastmcp.task_management.interface.mcp_controllers.auth_helper.get_authenticated_user_id', return_value=user_id), \
+         patch('fastmcp.task_management.interface.mcp_controllers.auth_helper.services.authentication_service.AuthenticationService.get_authenticated_user_id', return_value=user_id):
+        yield user_id
+
+
+@pytest.fixture
+def project_with_branch(shared_test_db, user_id, mock_auth):
+    """Create test project with git branch for E2E testing."""
+    from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+    from uuid import uuid4
+
+    mcp_tools = DDDCompliantMCPTools(enable_vision_system=False)
+
+    # Create project
+    project_result = mcp_tools._project_controller.manage_project(
+        action="create",
+        name=f"Real DB Test Project {uuid4().hex[:8]}",
+        description="Project for real database E2E testing",
+        user_id=user_id
+    )
+
+    assert project_result.get('success') is True, f"Project creation failed: {project_result}"
+    project_id = project_result['data']['project']['id']
+
+    # Create git branch
+    branch_name = f"test-branch-{uuid4().hex[:8]}"
+    branch_result = mcp_tools._git_branch_controller.manage_git_branch(
+        action="create",
+        project_id=project_id,
+        git_branch_name=branch_name,
+        git_branch_description="Branch for E2E testing",
+        user_id=user_id
+    )
+
+    assert branch_result.get('success') is True, f"Branch creation failed: {branch_result}"
+    git_branch_id = branch_result['data']['git_branch']['id']
+
+    yield project_id, git_branch_id
+
+    # Cleanup
+    try:
+        mcp_tools._project_controller.manage_project(
+            action="delete",
+            project_id=project_id,
+            force="true",
+            user_id=user_id
+        )
+    except:
+        pass
+
+
+@pytest.fixture
+def git_branch_id(project_with_branch):
+    """Extract git_branch_id from project_with_branch fixture."""
+    _, git_branch_id = project_with_branch
+    return git_branch_id
 
 
 @pytest.fixture
@@ -30,13 +107,6 @@ def task_repository(shared_test_db, user_id):
 def subtask_repository(shared_test_db, user_id):
     """Create real ORM subtask repository."""
     return ORMSubtaskRepository(session=None, user_id=user_id)
-
-
-@pytest.fixture(autouse=True)
-def mock_auth_context(user_id):
-    """Mock authentication context for all tests in this file."""
-    with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id', return_value=user_id):
-        yield
 
 
 @pytest.fixture
@@ -95,11 +165,11 @@ class TestCompleteTaskWorkflowsRealDB:
         # Add 5 subtasks
         subtask_ids = []
         for i in range(5):
-            result = subtask_facade.create_subtask(CreateSubtaskRequest(
+            result = subtask_facade.create_subtask(
                 task_id=task_id,
                 title=f"Auth Step {i+1}",
                 status="todo"
-            ))
+            )
             assert result["success"] is True
             subtask_ids.append(result["subtask"]["id"])
 
@@ -218,10 +288,10 @@ class TestCompleteTaskWorkflowsRealDB:
         # Add 4 subtasks for easy percentage calculation (25% each)
         subtask_ids = []
         for i in range(4):
-            result = subtask_facade.create_subtask(CreateSubtaskRequest(
+            result = subtask_facade.create_subtask(
                 task_id=task_id,
                 title=f"Step {i+1}"
-            ))
+            )
             subtask_ids.append(result["subtask"]["id"])
 
         # Complete 2 out of 4 (should be ~50%)
@@ -317,10 +387,10 @@ class TestConcurrentOperations:
         created_count = 0
         for i in range(10):
             try:
-                result = subtask_facade.create_subtask(CreateSubtaskRequest(
+                result = subtask_facade.create_subtask(
                     task_id=task_id,
                     title=f"Rapid subtask {i}"
-                ))
+                )
                 if result["success"]:
                     created_count += 1
             except Exception as e:
@@ -353,10 +423,10 @@ class TestConcurrentOperations:
             # Add 3 subtasks
             subtask_ids = []
             for i in range(3):
-                result = subtask_facade.create_subtask(CreateSubtaskRequest(
+                result = subtask_facade.create_subtask(
                     task_id=task_id,
                     title=f"Cycle {cycle} Subtask {i}"
-                ))
+                )
                 subtask_ids.append(result["subtask"]["id"])
 
             # Verify count is 3
