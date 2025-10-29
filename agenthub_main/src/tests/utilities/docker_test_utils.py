@@ -11,6 +11,7 @@ Provides utilities for real Docker container testing including:
 """
 
 import asyncio
+import inspect
 import json
 import logging
 import socket
@@ -655,7 +656,7 @@ class PerformanceMonitor:
     async def measure_response_time(self, func, *args, **kwargs) -> Tuple[any, float]:
         """Measure execution time of a function"""
         start_time = time.time()
-        result = await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
+        result = await func(*args, **kwargs) if inspect.iscoroutinefunction(func) else func(*args, **kwargs)
         end_time = time.time()
         
         response_time = end_time - start_time

@@ -4,6 +4,7 @@ import logging
 import logging.handlers
 import os
 import sys
+import inspect
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -300,8 +301,7 @@ def log_operation(operation: str):
                 raise
                 
         # Return appropriate wrapper based on function type
-        import asyncio
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper

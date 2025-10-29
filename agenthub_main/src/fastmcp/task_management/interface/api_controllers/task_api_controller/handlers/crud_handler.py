@@ -183,8 +183,8 @@ class TaskCrudHandler:
             # Set task_id in request
             request.task_id = task_id
 
-            # Delegate to facade - pass both task_id and request
-            result = task_facade.update_task(task_id, request)
+            # Delegate to facade - pass request (task_id is already in request)
+            result = task_facade.update_task(request)
 
             # Check if the update was successful
             if result.get("success"):

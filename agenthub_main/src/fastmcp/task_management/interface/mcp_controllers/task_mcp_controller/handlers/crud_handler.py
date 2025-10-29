@@ -240,7 +240,7 @@ class CRUDHandler:
                 f"Failed to create UpdateTaskRequest: {e}, request_data={request_data}"
             )
             raise
-        return facade.update_task(task_id, request)
+        return facade.update_task(request)
 
     def get_task(
         self, facade: TaskApplicationFacade, task_id: str, include_context: bool = True

@@ -32,7 +32,7 @@ class TaskResponse:
     progress_percentage: int = 0  # Task completion progress (0-100)
     progress_history: Optional[Dict[str, Any]] = None  # Full progress history structure
     progress_count: int = 0  # Number of progress entries
-    subtask_count: int = 0  # Total number of subtasks
+    # subtask_count is now a derived @property - see below
     completed_subtasks: int = 0  # Number of completed subtasks
 
     def __init__(
@@ -59,7 +59,6 @@ class TaskResponse:
             progress_percentage: int = 0,
             progress_history: Optional[Dict[str, Any]] = None,
             progress_count: int = 0,
-            subtask_count: int = 0,
             completed_subtasks: int = 0
         ):
         """Initialize TaskResponse following clean relationship chain with git_branch_id, context_id, and context_data"""
@@ -85,8 +84,21 @@ class TaskResponse:
         self.progress_percentage = progress_percentage
         self.progress_history = progress_history or {}
         self.progress_count = progress_count
-        self.subtask_count = subtask_count
+        # subtask_count is now a derived property - not stored
         self.completed_subtasks = completed_subtasks
+
+    @property
+    def subtask_count(self) -> int:
+        """Total number of subtasks (derived from subtasks array length).
+
+        This is a derived property that automatically reflects the current
+        number of subtasks by computing len(self.subtasks). This ensures
+        the count is always accurate even when subtasks are added/removed.
+
+        Returns:
+            int: Number of subtasks in the subtasks array
+        """
+        return len(self.subtasks) if self.subtasks else 0
 
     @classmethod
     def from_domain(cls, task, git_branch_repository=None, context_data: Optional[Dict[str, Any]] = None,
@@ -151,19 +163,16 @@ class TaskResponse:
         # Fix 3: Add @ prefix to assignees if not present
         assignees_with_prefix = [f"@{a}" if not a.startswith("@") else a for a in task_dict["assignees"]]
 
-        # Fix 1 & 2: Compute subtask counts
-        # Note: task.subtasks is a list of subtask IDs (strings), not subtask objects
-        # We can count total subtasks, but cannot determine completion without loading subtask objects
-        subtask_count = len(task.subtasks) if task.subtasks else 0
-
+        # Fix 2: Get completed_subtasks count
+        # Note: subtask_count is now a derived @property, not computed here
         # BATCH LOADING OPTIMIZATION: Use provided completed_subtasks if available
         # This eliminates N+1 query problem when processing lists of tasks
         if completed_subtasks is not None:
             # Fast path: count provided via batch query
             actual_completed = completed_subtasks
         else:
-            # Slow path: default to 0 (backward compatibility)
-            actual_completed = 0
+            # Fallback: Extract from task entity if available
+            actual_completed = task_dict.get("completed_subtasks", 0)
 
         return cls(
             id=task_dict["id"],
@@ -188,7 +197,7 @@ class TaskResponse:
             progress_percentage=task_dict.get("progress_percentage", 0),
             progress_history=progress_history,
             progress_count=progress_count,
-            subtask_count=subtask_count,  # Fix 1: Total subtask count
+            # subtask_count is now a derived @property - not passed to constructor
             completed_subtasks=actual_completed  # Fix 2: Accurate completed subtask count from batch query
         )
     
@@ -200,6 +209,17 @@ class TaskResponse:
             # Context data is already a dict - check if it has to_dict method through TaskContext
             # For now, keep as-is since it's already serialized
             context_data_serialized = self.context_data
+        elif not context_data_serialized:
+            # Ensure context_data is never None - always return empty dict
+            context_data_serialized = {}
+
+        # Ensure assignees is always a list, never a string
+        assignees_list = self.assignees
+        if assignees_list is None:
+            assignees_list = []
+        elif isinstance(assignees_list, str):
+            # Handle case where assignees might be a string instead of list
+            assignees_list = [assignees_list] if assignees_list else []
 
         return {
             "id": self.id,
@@ -209,10 +229,10 @@ class TaskResponse:
             "priority": self.priority,
             "details": self.details,  # Formatted progress history text for backward compatibility
             "estimatedEffort": self.estimated_effort,
-            "assignees": self.assignees,
-            "labels": self.labels,
-            "dependencies": self.dependencies,
-            "subtasks": self.subtasks,
+            "assignees": assignees_list,
+            "labels": self.labels if self.labels else [],
+            "dependencies": self.dependencies if self.dependencies else [],
+            "subtasks": self.subtasks if self.subtasks else [],
             "dueDate": self.due_date,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

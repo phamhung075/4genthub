@@ -5,6 +5,7 @@ supporting multiple notification channels and delivery mechanisms.
 """
 
 import asyncio
+import inspect
 import logging
 from typing import Any, Dict, List, Optional, Protocol, Set
 from datetime import datetime, timezone
@@ -100,7 +101,7 @@ class InMemoryNotificationChannel(NotificationChannel):
         # Trigger callbacks
         for callback in self.callbacks:
             try:
-                if asyncio.iscoroutinefunction(callback):
+                if inspect.iscoroutinefunction(callback):
                     await callback(notification)
                 else:
                     callback(notification)

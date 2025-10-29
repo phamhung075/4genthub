@@ -1128,6 +1128,42 @@ def test_data_validator():
 
 
 # =============================================
+# TEST DATABASE CLEANUP HELPERS
+# =============================================
+
+def _truncate_all_tables():
+    """Truncate all tables in the test database for complete isolation."""
+    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from sqlalchemy import text
+
+    try:
+        db_config = get_db_config()
+        with db_config.get_session() as session:
+            # Get all table names
+            result = session.execute(text("""
+                SELECT tablename FROM pg_tables
+                WHERE schemaname = 'public'
+            """))
+            tables = [row[0] for row in result.fetchall()]
+
+            if tables:
+                # Disable triggers temporarily for faster truncation
+                session.execute(text("SET session_replication_role = 'replica';"))
+
+                # Truncate all tables with CASCADE
+                for table in tables:
+                    session.execute(text(f"TRUNCATE TABLE {table} CASCADE;"))
+
+                # Re-enable triggers
+                session.execute(text("SET session_replication_role = 'origin';"))
+                session.commit()
+
+                print(f"🧹 Truncated {len(tables)} tables in test database")
+    except Exception as e:
+        print(f"⚠️ Error truncating tables: {e}")
+
+
+# =============================================
 # TEST DATABASE INITIALIZATION
 # =============================================
 
@@ -1316,17 +1352,16 @@ def pytest_runtest_teardown(item, nextitem):
     This is the LAST thing to run after each test, ensuring no fixture
     can pollute state after this cleanup.
 
-    Performs FIVE cleanup operations:
+    Performs FOUR cleanup operations:
     1. Test data file cleanup (from original line 988)
     2. DatabaseConfig singleton reset (catches pseudo-unit tests)
     3. DatabaseSourceManager singleton reset (CRITICAL for test isolation)
-    4. SQLite adapter flag reset (prevents re-registration errors)
-    5. Environment variable reset (CRITICAL for auth test isolation)
+    4. Environment variable reset (CRITICAL for auth test isolation)
 
     Overhead: <1ms per test (minimal file check + singleton resets if needed)
 
     This comprehensive cleanup prevents test pollution by resetting ALL
-    database-related singletons, flags, and environment variables after
+    database-related singletons and environment variables after
     each test execution.
     """
     # 1. Cleanup test data files (from original pytest_runtest_teardown at line 988)
@@ -1356,15 +1391,6 @@ def pytest_runtest_teardown(item, nextitem):
         # Log but don't fail - cleanup issues shouldn't break tests
         import logging
         logging.getLogger(__name__).debug(f"Could not reset DatabaseSourceManager: {e}")
-
-    # 4. Reset SQLite adapter registration flag (prevents re-registration errors)
-    try:
-        import fastmcp.task_management.infrastructure.database.database_config as db_config_module
-        db_config_module._sqlite_adapters_registered = False
-    except Exception as e:
-        # Log but don't fail - cleanup issues shouldn't break tests
-        import logging
-        logging.getLogger(__name__).debug(f"Could not reset SQLite adapter flag: {e}")
 
 
 
@@ -1429,15 +1455,13 @@ def set_mcp_db_path_for_tests(request):
         except Exception as e:
             print(f"⚠️ Error resetting AuthenticationService: {e}")
 
-        # 8. Set test database environment variables
-        # Use SQLite in-memory for complete isolation
-        os.environ["DATABASE_TYPE"] = "sqlite"
-        # Create unique in-memory database per test to prevent shared state
-        # Using a unique identifier ensures complete isolation
-        test_id = f"{request.node.name}_{id(request)}"
-        os.environ["DATABASE_PATH"] = ":memory:"
+        # 7. Set test database environment variables
+        # Use PostgreSQL test database for production-like testing
+        os.environ["DATABASE_TYPE"] = "postgresql"
+        # Use dedicated test database (agenthub_test)
+        os.environ["DATABASE_NAME"] = "agenthub_test"
 
-        # 9. Initialize the test database with schema and basic test data
+        # Initialize the test database with schema and basic test data
         from fastmcp.task_management.infrastructure.database.database_initializer import initialize_database
         initialize_database(None)
 
@@ -1456,11 +1480,11 @@ def set_mcp_db_path_for_tests(request):
             # CRITICAL: Clean up ALL database state after test
             # This prevents pollution to subsequent tests
 
-            # 1. Close database connections and dispose engine
+            # 1. Truncate all tables in test database (PostgreSQL TRUNCATE is fast)
             try:
-                close_db()
+                _truncate_all_tables()
             except Exception as e:
-                print(f"⚠️ Error closing database: {e}")
+                print(f"⚠️ Error truncating tables: {e}")
 
             # 2. Clear initialization cache
             try:
@@ -1475,14 +1499,7 @@ def set_mcp_db_path_for_tests(request):
             except Exception as e:
                 print(f"⚠️ Error clearing singletons: {e}")
 
-            # 4. Reset the global SQLite adapter flag for next test
-            try:
-                import fastmcp.task_management.infrastructure.database.database_config as db_config_module
-                db_config_module._sqlite_adapters_registered = False
-            except Exception as e:
-                print(f"⚠️ Error resetting SQLite adapter flag: {e}")
-
-            # 5. Reset AuthenticationService singleton for next test
+            # 4. Reset AuthenticationService singleton for next test
             try:
                 from fastmcp.task_management.interface.mcp_controllers.auth_helper.services import authentication_service
                 authentication_service._auth_service = None

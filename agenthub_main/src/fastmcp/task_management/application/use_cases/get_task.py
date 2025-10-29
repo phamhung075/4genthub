@@ -2,6 +2,7 @@
 
 import logging
 import asyncio
+import inspect
 from typing import Optional, Union, Any
 from datetime import datetime, timezone
 
@@ -71,7 +72,7 @@ class GetTaskUseCase:
                     if self._context_service:
                         logger.debug(f"Attempting to fetch context for task {task_id} using context service: {type(self._context_service)}")
                         # Check if it's a UnifiedContextFacade (sync) or old-style async service
-                        if hasattr(self._context_service, 'get_context') and not asyncio.iscoroutinefunction(self._context_service.get_context):
+                        if hasattr(self._context_service, 'get_context') and not inspect.iscoroutinefunction(self._context_service.get_context):
                             # UnifiedContextFacade - sync method
                             logger.debug(f"Using UnifiedContextFacade sync method for task {task_id}")
                             context_response = self._context_service.get_context(

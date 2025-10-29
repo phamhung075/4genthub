@@ -174,10 +174,11 @@ class ORMTaskRepository(
     
     def _model_to_entity(self, task: Task) -> TaskEntity:
         """Convert SQLAlchemy model to domain entity with graceful error handling"""
-        # 🔍 DEBUG: Log subtask_count from database model
+        # 🔍 DEBUG: Log subtask_count and completed_subtasks from database model
         logger.info(f"🔍 REPOSITORY _model_to_entity - Task {task.id[:8] if task.id else 'unknown'}...")
         logger.info(f"  - title: {task.title}")
         logger.info(f"  - subtask_count from DB model: {getattr(task, 'subtask_count', 'ATTRIBUTE NOT FOUND')}")
+        logger.info(f"  - completed_subtasks from DB model: {getattr(task, 'completed_subtasks', 'ATTRIBUTE NOT FOUND')}")
 
         # Get assignee IDs with error handling
         assignee_ids = []
@@ -243,6 +244,7 @@ class ORMTaskRepository(
             user_id=getattr(task, 'user_id', None),
             context_id=task.context_id,
             subtasks=subtask_ids,
+            completed_subtasks=getattr(task, 'completed_subtasks', 0),  # Map completed_subtasks from DB
             # REMOVED: subtask_count not in Task entity dataclass - count should be derived from len(subtasks)
             dependencies=dependency_ids
         )
@@ -284,6 +286,7 @@ class ORMTaskRepository(
             "estimated_effort": _ensure_estimated_effort_default(task.estimated_effort),
             "due_date": task.due_date,
             "context_id": task.context_id,
+            "completed_subtasks": task.completed_subtasks if hasattr(task, 'completed_subtasks') else 0,
             # REMOVED: subtask_count not in Task entity - count derived from len(task.subtasks)
         }
 
@@ -548,13 +551,24 @@ class ORMTaskRepository(
                 # Update assignees if provided
                 if 'assignee_ids' in updates:
                     with self.get_db_session() as session:
-                        # Remove existing assignees
-                        session.query(TaskAssignee).filter(
+                        # Get existing assignee IDs for this task
+                        existing_assignees = session.query(TaskAssignee).filter(
                             TaskAssignee.task_id == task_id
-                        ).delete()
-                        
-                        # Add new assignees
-                        for assignee_id in updates['assignee_ids']:
+                        ).all()
+                        existing_assignee_ids = {a.assignee_id for a in existing_assignees}
+                        new_assignee_ids = set(updates['assignee_ids'])
+
+                        # Remove assignees that are no longer needed
+                        to_remove = existing_assignee_ids - new_assignee_ids
+                        if to_remove:
+                            session.query(TaskAssignee).filter(
+                                TaskAssignee.task_id == task_id,
+                                TaskAssignee.assignee_id.in_(to_remove)
+                            ).delete(synchronize_session=False)
+
+                        # Add only new assignees (idempotent - prevents duplicate inserts)
+                        to_add = new_assignee_ids - existing_assignee_ids
+                        for assignee_id in to_add:
                             assignee = TaskAssignee(
                                 id=str(uuid.uuid4()),  # Generate UUID for assignee record
                                 task_id=task_id,
@@ -1003,7 +1017,17 @@ class ORMTaskRepository(
             offset = 0
             
         with self.get_db_session() as session:
-            # Query only essential fields for list view
+            # Subquery to count subtasks
+            subtask_count_subquery = (
+                session.query(
+                    Subtask.task_id,
+                    func.count(Subtask.id).label('subtask_count')
+                )
+                .group_by(Subtask.task_id)
+                .subquery()
+            )
+
+            # Query only essential fields for list view including subtask counts
             query = session.query(
                 Task.id,
                 Task.title,
@@ -1013,8 +1037,13 @@ class ORMTaskRepository(
                 Task.due_date,
                 Task.updated_at,
                 Task.git_branch_id,
-                func.count(TaskAssignee.id).label('assignees_count')
-            ).outerjoin(TaskAssignee)
+                func.count(TaskAssignee.id).label('assignees_count'),
+                func.coalesce(subtask_count_subquery.c.subtask_count, 0).label('subtask_count'),
+                Task.completed_subtasks
+            ).outerjoin(TaskAssignee).outerjoin(
+                subtask_count_subquery,
+                Task.id == subtask_count_subquery.c.task_id
+            )
             
             # Apply user filter for data isolation (CRITICAL)
             query = self.apply_user_filter(query)
@@ -1050,7 +1079,9 @@ class ORMTaskRepository(
                 Task.progress_percentage,
                 Task.due_date,
                 Task.updated_at,
-                Task.git_branch_id
+                Task.git_branch_id,
+                subtask_count_subquery.c.subtask_count,
+                Task.completed_subtasks
             )
             
             # Apply ordering and pagination
@@ -1099,6 +1130,8 @@ class ORMTaskRepository(
                         'priority': r.priority,
                         'progress_percentage': r.progress_percentage or 0,
                         'assignees_count': r.assignees_count or 0,
+                        'subtask_count': r.subtask_count or 0,
+                        'completed_subtasks': r.completed_subtasks or 0,
                         'labels': labels_by_task.get(r.id, []),
                         'due_date': r.due_date,
                         'updated_at': r.updated_at.isoformat() if r.updated_at else None,
@@ -1255,6 +1288,9 @@ class ORMTaskRepository(
                     # DDD-COMPLIANT: Convert entity to model dict instead of direct assignments
                     model_dict = self._entity_to_model_dict(task)
 
+                    # Debug: Log completed_subtasks value being saved
+                    logger.info(f"💾 SAVE DEBUG: Saving task {str(task.id)[:8]} with completed_subtasks={model_dict.get('completed_subtasks')}")
+
                     # Update ORM model with data from entity (excluding id which doesn't change)
                     for key, value in model_dict.items():
                         if key != 'id':  # Don't update the primary key
@@ -1285,7 +1321,6 @@ class ORMTaskRepository(
                         session.add(new_dependency)
 
                     from ...database.models import TaskAssignee
-                    session.query(TaskAssignee).filter(TaskAssignee.task_id == str(task.id)).delete()
 
                     # Get user_id from multiple sources (used for both assignees and labels)
                     effective_user_id = None
@@ -1298,21 +1333,45 @@ class ORMTaskRepository(
 
                     if hasattr(task, 'assignees') and task.assignees:
                         import uuid
-                        
+
                         if not effective_user_id:
                             logger.error("No user_id available for task assignee creation")
                             # Skip assignee creation if no user_id available
                         else:
-                            for assignee in task.assignees:
-                                new_assignee = TaskAssignee(
-                                    id=str(uuid.uuid4()),
-                                    task_id=str(task.id),
-                                    assignee_id=assignee,
-                                    role="agent",
-                                    user_id=effective_user_id,
-                                    assigned_at=datetime.now(timezone.utc)
-                                )
-                                session.add(new_assignee)
+                            # Get existing assignees for this task (thread-safe approach)
+                            existing_assignees = session.query(TaskAssignee).filter(
+                                TaskAssignee.task_id == str(task.id)
+                            ).all()
+                            existing_assignee_ids = {a.assignee_id for a in existing_assignees}
+                            new_assignee_ids = set(task.assignees)
+
+                            # Remove assignees no longer in the list (thread-safe delete)
+                            to_remove = existing_assignee_ids - new_assignee_ids
+                            if to_remove:
+                                session.query(TaskAssignee).filter(
+                                    TaskAssignee.task_id == str(task.id),
+                                    TaskAssignee.assignee_id.in_(to_remove)
+                                ).delete(synchronize_session=False)
+
+                            # Add only new assignees (idempotent - prevents race conditions)
+                            to_add = new_assignee_ids - existing_assignee_ids
+                            for assignee in to_add:
+                                try:
+                                    new_assignee = TaskAssignee(
+                                        id=str(uuid.uuid4()),
+                                        task_id=str(task.id),
+                                        assignee_id=assignee,
+                                        role="agent",
+                                        user_id=effective_user_id,
+                                        assigned_at=datetime.now(timezone.utc)
+                                    )
+                                    session.add(new_assignee)
+                                    session.flush()  # Flush immediately to catch constraint violations
+                                except IntegrityError:
+                                    # Assignee already exists (added by another thread), skip
+                                    logger.debug(f"Assignee {assignee} already exists for task {task.id}, skipping")
+                                    session.rollback()  # Rollback this failed insert
+                                    pass
 
                     session.query(TaskLabel).filter(TaskLabel.task_id == str(task.id)).delete()
 
@@ -1351,7 +1410,26 @@ class ORMTaskRepository(
                         session.add(task_label)
 
                     session.flush()
-                    session.refresh(existing)
+
+                    # Refresh can fail in high-concurrency scenarios - handle gracefully
+                    try:
+                        session.refresh(existing)
+                    except Exception as refresh_error:
+                        # Log the refresh error but don't fail the entire operation
+                        # The flush() already persisted the changes to the database
+                        logger.warning(f"Could not refresh task {str(task.id)[:8]} after save (concurrent modification): {refresh_error}")
+                        # Re-query to get fresh state instead
+                        try:
+                            existing = session.query(Task).filter(Task.id == str(task.id)).first()
+                            if not existing:
+                                logger.error(f"Task {str(task.id)[:8]} not found after successful flush")
+                                raise
+                        except Exception as requery_error:
+                            logger.error(f"Failed to re-query task {str(task.id)[:8]} after refresh failure: {requery_error}")
+                            # At this point the data is saved, just the entity sync failed
+                            # Return without syncing timestamps - the save was successful
+                            return task
+
                     # Ensure timestamps have timezone info when copying back
                     if existing.updated_at and not existing.updated_at.tzinfo:
                         task.updated_at = existing.updated_at.replace(tzinfo=timezone.utc)
@@ -1996,3 +2074,36 @@ class ORMTaskRepository(
             # Clear all cache
             self.optimizer._cache.clear()
             logger.info("Cleared all cache entries")
+
+    def atomic_increment_completed_subtasks(self, task_id: str) -> bool:
+        """
+        Atomically increment completed_subtasks counter at database level.
+
+        This prevents lost updates in concurrent scenarios by using a single
+        UPDATE statement instead of load-modify-save pattern.
+
+        Args:
+            task_id: ID of the task to increment counter for
+
+        Returns:
+            True if successful, False if task not found
+        """
+        try:
+            with self.get_db_session() as session:
+                # Atomic increment using database-level operation
+                result = session.query(Task).filter(Task.id == task_id).update(
+                    {Task.completed_subtasks: Task.completed_subtasks + 1},
+                    synchronize_session=False
+                )
+                session.commit()
+
+                if result > 0:
+                    logger.info(f"Atomically incremented completed_subtasks for task {task_id}")
+                    return True
+                else:
+                    logger.warning(f"Task {task_id} not found for atomic increment")
+                    return False
+
+        except Exception as e:
+            logger.error(f"Failed to atomically increment completed_subtasks for task {task_id}: {e}")
+            return False

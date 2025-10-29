@@ -18,6 +18,7 @@ class RemoveSubtaskUseCase:
         parent_task_obj = self._task_repository.find_by_id(self._convert_to_task_id(task_id))
         branch_id = parent_task_obj.git_branch_id if parent_task_obj and hasattr(parent_task_obj, 'git_branch_id') else None
         subtask_status = 'done' if subtask.is_completed else 'todo'
+        is_subtask_completed = subtask.is_completed
 
         # Remove the subtask
         success = self._subtask_repository.remove_subtask(task_id, id)
@@ -27,6 +28,11 @@ class RemoveSubtaskUseCase:
             # Remove subtask ID from parent task's subtasks list and decrement count
             # This calls the domain method which does both operations atomically
             parent_task_obj.remove_subtask(str(id))
+
+            # If the deleted subtask was completed, decrement the completed counter
+            if is_subtask_completed:
+                parent_task_obj.decrement_completed_subtasks()
+
             self._task_repository.save(parent_task_obj)
             import logging
             logging.info(f"Removed subtask {id} from parent task {task_id}, subtask_count now {parent_task_obj.subtask_count}")

@@ -1,6 +1,7 @@
 """Centralized error handler for user-friendly error messages and recovery instructions."""
 
 import sqlite3
+import inspect
 from enum import Enum
 from typing import Any
 
@@ -576,7 +577,7 @@ def handle_operation_error(operation: str):
                 return UserFriendlyErrorHandler.handle_error(e, operation, context)
 
         # Return appropriate wrapper based on function type
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper

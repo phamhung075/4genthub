@@ -523,14 +523,11 @@ class TaskApplicationFacade:
             logger.error(f"Unexpected error in create_task: {e}")
             return {"success": False, "action": "create", "error": f"Unexpected error: {str(e)}"}
     
-    def update_task(self, task_id: str, request: UpdateTaskRequest) -> Dict[str, Any]:
+    def update_task(self, request: UpdateTaskRequest) -> Dict[str, Any]:
         """Update an existing task"""
         try:
             # Validation will be performed by domain entity during update
-            
-            # Set task_id in request if not already set
-            if not hasattr(request, 'task_id') or request.task_id is None:
-                request.task_id = task_id
+            task_id = request.task_id
 
             # Get current task state for comparison (following completion deduplication pattern)
             current_task = self._get_task_for_update_comparison(task_id)
@@ -732,7 +729,30 @@ class TaskApplicationFacade:
                         logger.warning(f"Failed to process dependency relationships for task {task_id}: {e}")
                         # Add minimal dependency info to indicate processing failed
                         task_dict["dependency_relationships_error"] = str(e)
-                
+
+                # Load full subtask objects and replace IDs with dicts
+                try:
+                    from ...domain.value_objects.task_id import TaskId
+                    from ...infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+
+                    # Get subtask repository (create new instance with same user context)
+                    subtask_repo = ORMSubtaskRepository(session=None, user_id=self._task_repository._user_id if hasattr(self._task_repository, '_user_id') else None)
+
+                    # Load all subtasks for this task
+                    subtasks = subtask_repo.find_by_parent_task_id(TaskId(task_id))
+
+                    # Convert subtask entities to dicts
+                    if subtasks:
+                        task_dict["subtasks"] = [subtask.to_dict() for subtask in subtasks]
+                    else:
+                        task_dict["subtasks"] = []
+
+                except Exception as e:
+                    logger.warning(f"Failed to load subtasks for task {task_id}: {e}")
+                    # Keep the subtask IDs if loading fails
+                    if "subtasks" not in task_dict or not isinstance(task_dict["subtasks"], list):
+                        task_dict["subtasks"] = []
+
                 # Apply unified context format
                 task_dict = ContextResponseFactory.apply_to_task_response(task_dict)
                 return {
@@ -784,6 +804,30 @@ class TaskApplicationFacade:
             if task_response:
                 # Use custom to_dict() method instead of asdict() to properly handle context_data
                 task_dict = task_response.to_dict()
+
+                # Load full subtask objects and replace IDs with dicts
+                try:
+                    from ...domain.value_objects.task_id import TaskId
+                    from ...infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+
+                    # Get subtask repository (create new instance with same user context)
+                    subtask_repo = ORMSubtaskRepository(session=None, user_id=self._task_repository._user_id if hasattr(self._task_repository, '_user_id') else None)
+
+                    # Load all subtasks for this task
+                    subtasks = subtask_repo.find_by_parent_task_id(TaskId(task_id))
+
+                    # Convert subtask entities to dicts
+                    if subtasks:
+                        task_dict["subtasks"] = [subtask.to_dict() for subtask in subtasks]
+                    else:
+                        task_dict["subtasks"] = []
+
+                except Exception as e:
+                    logger.warning(f"Failed to load subtasks for task {task_id}: {e}")
+                    # Keep the subtask IDs if loading fails
+                    if "subtasks" not in task_dict or not isinstance(task_dict["subtasks"], list):
+                        task_dict["subtasks"] = []
+
                 # Apply unified context format
                 task_dict = ContextResponseFactory.apply_to_task_response(task_dict)
                 return {

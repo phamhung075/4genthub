@@ -70,7 +70,7 @@ class EventBus:
             priority: Handler priority (higher executes first)
         """
         # Check if handler is async
-        is_async = asyncio.iscoroutinefunction(handler)
+        is_async = inspect.iscoroutinefunction(handler)
         
         subscription = EventSubscription(
             event_type=event_type,
