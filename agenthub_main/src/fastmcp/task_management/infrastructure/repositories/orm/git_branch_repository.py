@@ -322,15 +322,28 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 # SECURITY FIX: Always apply user filtering for data isolation
                 if not self.user_id:
                     raise ValueError("User authentication required for branch operations")
-                
+
+                # FIX: Check project ownership instead of branch user_id
+                # Project owners can delete ANY branch in their project
+                project = session.query(Project).filter(
+                    and_(
+                        Project.id == project_id,
+                        Project.user_id == self.user_id  # Verify user owns the project
+                    )
+                ).first()
+
+                if not project:
+                    logger.warning(f"User {self.user_id} attempted to delete branch in project {project_id} they don't own")
+                    return False
+
+                # Delete branch (no user_id filter on branch itself)
                 deleted_count = session.query(ProjectGitBranch).filter(
                     and_(
                         ProjectGitBranch.id == branch_id,
-                        ProjectGitBranch.project_id == project_id,
-                        ProjectGitBranch.user_id == self.user_id  # USER ISOLATION
+                        ProjectGitBranch.project_id == project_id
                     )
                 ).delete()
-                
+
                 return deleted_count > 0
         except SQLAlchemyError as e:
             logger.error(f"Error deleting git branch {branch_id}: {e}")
@@ -346,15 +359,26 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
             with self.get_db_session() as session:
                 # SECURITY: Apply user isolation if user_id is available
                 if self.user_id:
-                    # Verify user owns this branch before allowing deletion
-                    branch_check = session.query(ProjectGitBranch).filter(
+                    # FIX: Get branch first to find its project
+                    branch = session.query(ProjectGitBranch).filter(
+                        ProjectGitBranch.id == branch_id
+                    ).first()
+
+                    if not branch:
+                        logger.warning(f"Branch {branch_id} not found")
+                        return False
+
+                    # Check project ownership instead of branch ownership
+                    # Project owners can delete ANY branch in their project
+                    project = session.query(Project).filter(
                         and_(
-                            ProjectGitBranch.id == branch_id,
-                            ProjectGitBranch.user_id == self.user_id
+                            Project.id == branch.project_id,
+                            Project.user_id == self.user_id  # Verify user owns PROJECT
                         )
                     ).first()
-                    if not branch_check:
-                        logger.warning(f"User {self.user_id} attempted to delete branch {branch_id} they don't own")
+
+                    if not project:
+                        logger.warning(f"User {self.user_id} attempted to delete branch in project they don't own")
                         return False
                 
                 logger.info(f"Starting comprehensive cascade deletion for branch {branch_id}")
@@ -485,10 +509,10 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 logger.info(f"Deleted {branch_context_count} BranchContext records for branch {branch_id}")
                 
                 # Step 13: Finally delete the branch itself
+                # Project ownership already verified at start of method (lines 373-382)
+                # No need to check branch.user_id here - project owners can delete any branch
                 branch_filter = ProjectGitBranch.id == branch_id
-                if self.user_id:
-                    branch_filter = and_(branch_filter, ProjectGitBranch.user_id == self.user_id)
-                
+
                 deleted_count = session.query(ProjectGitBranch).filter(branch_filter).delete()
                 logger.info(f"Deleted branch {branch_id}: {deleted_count > 0}")
                 

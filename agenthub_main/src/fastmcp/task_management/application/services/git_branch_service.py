@@ -157,19 +157,14 @@ class GitBranchService:
         """Delete a git branch and its associated data."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
-            # Check if branch exists using correct repository method signature
-            git_branch = await git_branch_repo.find_by_id(git_branch_id)
-            if not git_branch:
-                return {"success": False, "error": f"Git branch with ID {git_branch_id} not found", "error_code": "NOT_FOUND"}
-            
-            # Verify the branch belongs to the expected project
-            if str(git_branch.project_id) != project_id:
-                return {"success": False, "error": f"Git branch {git_branch_id} belongs to project {git_branch.project_id}, not {project_id}", "error_code": "PROJECT_MISMATCH"}
-            
-            # Delete the git branch using cascade-capable delete method
+
+            # delete_branch() handles all validation:
+            # - Checks branch exists
+            # - Verifies user owns project (not branch)
+            # - Returns False if unauthorized
             success = await git_branch_repo.delete_branch(git_branch_id)
             if not success:
-                return {"success": False, "error": f"Failed to delete git branch {git_branch_id}", "error_code": "DELETE_FAILED"}
+                return {"success": False, "error": f"Git branch with ID {git_branch_id} not found or you don't have permission", "error_code": "DELETE_FAILED"}
             
             # Delete associated branch context
             try:

@@ -332,48 +332,21 @@ class GitBranchApplicationFacade:
             return None
 
     def delete_git_branch(self, git_branch_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
-        """Delete a git branch - synchronous version for MCP controller."""
+        """Delete a git branch - synchronous version for MCP controller.
+
+        Service layer handles all validation including:
+        - Branch existence check
+        - Project ownership validation
+        - Proper error responses
+        """
         try:
             import asyncio
             import logging
             logger = logging.getLogger(__name__)
             logger.info(f"Deleting git branch: {git_branch_id}")
-            
-            # CONSISTENCY FIX: First verify the branch exists using the same lookup pattern as get_git_branch_by_id
-            # This ensures we find the branch the same way the API controller does
-            branch_result = self.get_git_branch_by_id(git_branch_id)
-            
-            if not branch_result.get("success"):
-                return {
-                    "success": False,
-                    "error": f"Git branch with ID {git_branch_id} not found",
-                    "error_code": "NOT_FOUND"
-                }
-            
-            # Get actual project_id from the found branch (for validation)
-            found_branch = branch_result.get("git_branch", {})
-            actual_project_id = found_branch.get("project_id")
 
-            # Store branch data for WebSocket notification before deletion
-            branch_data_for_notification = {
-                "id": str(git_branch_id),
-                "git_branch_name": found_branch.get("git_branch_name") or found_branch.get("name", ""),
-                "name": found_branch.get("name"),
-                "description": found_branch.get("description", ""),
-                "project_id": str(actual_project_id)
-            }
-
-            # Validate project_id if provided
-            if project_id and actual_project_id != project_id:
-                logger.warning(f"Project ID mismatch for branch {git_branch_id}: expected {project_id}, found {actual_project_id}")
-                return {
-                    "success": False,
-                    "error": f"Git branch {git_branch_id} belongs to project {actual_project_id}, not {project_id}",
-                    "error_code": "PROJECT_MISMATCH"
-                }
-
-            # Use the actual project_id from the found branch
-            target_project_id = actual_project_id or project_id or self._project_id
+            # Use provided project_id or fallback to instance project_id
+            target_project_id = project_id or self._project_id
             
             # Check if we're already in an event loop
             try:

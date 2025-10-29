@@ -1061,3 +1061,127 @@ class TestORMGitBranchRepository:
         # Verify result
         assert result["success"] is True
         assert "restored successfully" in result["message"]
+
+    @pytest.mark.asyncio
+    async def test_delete_branch_by_project_owner(self, repository, mock_session):
+        """Test that project owners can delete branches they don't own"""
+        # Create mock project owned by test-user
+        mock_project = Mock(spec=Project)
+        mock_project.id = "project-456"
+        mock_project.user_id = "test-user"
+
+        # Create mock query for project
+        mock_project_query = Mock()
+        mock_project_query.filter.return_value.first.return_value = mock_project
+
+        # Create mock query for branch deletion
+        mock_branch_query = Mock()
+        mock_branch_query.filter.return_value.delete.return_value = 1
+
+        # Setup query side effect to handle both Project and ProjectGitBranch
+        def query_side_effect(model):
+            if hasattr(model, '__name__') and model.__name__ == 'Project':
+                return mock_project_query
+            elif hasattr(model, '__name__') and model.__name__ == 'ProjectGitBranch':
+                return mock_branch_query
+            elif hasattr(model, '__name__') and model.__name__ == 'Task':
+                # Handle Task queries for _model_to_entity
+                mock_task_query = Mock()
+                mock_task_query.filter.return_value.all.return_value = []
+                return mock_task_query
+            else:
+                return mock_branch_query
+
+        mock_session.query.side_effect = query_side_effect
+
+        # Delete branch - user owns project, so should succeed even if branch.user_id differs
+        result = await repository.delete("project-456", "branch-123")
+
+        # Verify project ownership was checked
+        mock_project_query.filter.assert_called_once()
+
+        # Verify branch was deleted
+        mock_branch_query.filter.assert_called_once()
+        mock_branch_query.filter.return_value.delete.assert_called_once()
+
+        # Verify result
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_delete_branch_not_project_owner(self, repository, mock_session):
+        """Test that non-project-owners cannot delete branches"""
+        # Create mock query that returns no project (user doesn't own it)
+        mock_project_query = Mock()
+        mock_project_query.filter.return_value.first.return_value = None
+
+        # Setup query side effect
+        def query_side_effect(model):
+            if hasattr(model, '__name__') and model.__name__ == 'Project':
+                return mock_project_query
+            elif hasattr(model, '__name__') and model.__name__ == 'Task':
+                mock_task_query = Mock()
+                mock_task_query.filter.return_value.all.return_value = []
+                return mock_task_query
+            else:
+                return Mock()
+
+        mock_session.query.side_effect = query_side_effect
+
+        # Delete branch - user doesn't own project, should fail
+        result = await repository.delete("project-456", "branch-123")
+
+        # Verify project ownership was checked
+        mock_project_query.filter.assert_called_once()
+
+        # Verify result is False (deletion not allowed)
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_delete_branch_created_by_different_user(self, repository, mock_session):
+        """Test deleting branch created by different user in owned project"""
+        # Scenario: branch was created by user-A (7cc5fb20...)
+        # but project now belongs to test-user (current user)
+        # This is the real-world bug scenario
+
+        # Create mock project owned by test-user
+        mock_project = Mock(spec=Project)
+        mock_project.id = "abb4a6c0-c422-4603-a05e-b20bd832f8d7"
+        mock_project.user_id = "test-user"  # Current user owns project
+
+        # Create mock query for project
+        mock_project_query = Mock()
+        mock_project_query.filter.return_value.first.return_value = mock_project
+
+        # Create mock branch query
+        mock_branch_query = Mock()
+        mock_branch_query.filter.return_value.delete.return_value = 1
+
+        # Setup query side effect
+        def query_side_effect(model):
+            if hasattr(model, '__name__') and model.__name__ == 'Project':
+                return mock_project_query
+            elif hasattr(model, '__name__') and model.__name__ == 'ProjectGitBranch':
+                return mock_branch_query
+            elif hasattr(model, '__name__') and model.__name__ == 'Task':
+                mock_task_query = Mock()
+                mock_task_query.filter.return_value.all.return_value = []
+                return mock_task_query
+            else:
+                return mock_branch_query
+
+        mock_session.query.side_effect = query_side_effect
+
+        # Delete branch with different user_id than branch creator
+        result = await repository.delete(
+            "abb4a6c0-c422-4603-a05e-b20bd832f8d7",
+            "2a70b4b2-89b6-40ff-a114-210b0792e227"
+        )
+
+        # Verify project ownership was checked (not branch user_id)
+        mock_project_query.filter.assert_called_once()
+
+        # Verify branch was deleted (no user_id filter on branch)
+        mock_branch_query.filter.assert_called_once()
+
+        # Verify result is True (deletion allowed because user owns project)
+        assert result is True
