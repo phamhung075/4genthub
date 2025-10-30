@@ -427,16 +427,12 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
       logger.debug('Delete result:', result);
       
       if (result.success) {
-        // Success! Show success message
-        showSuccessToast(
-          'Branch deleted successfully', 
-          `Branch "${branchName}" has been removed from the project.`
-        );
+        // Success! WebSocket notification will show toast and update UI
+        // No need for duplicate notification here
         setShowDeleteBranch(null);
-        
-        // Optionally refresh data from server to ensure consistency
-        // But we don't need to since we've already optimistically updated
-        logger.debug('Branch deletion successful - UI already updated');
+
+        // UI will be updated by WebSocket event handler
+        logger.debug('Branch deletion successful - WebSocket notification will update UI');
       } else {
         // Backend deletion failed - rollback UI changes
         logger.error('Backend deletion failed, rolling back:', result);
