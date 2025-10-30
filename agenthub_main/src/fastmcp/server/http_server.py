@@ -345,6 +345,55 @@ def create_http_server_factory(
     return server_routes, server_middleware, required_scopes
 
 
+def _register_websocket_lifecycle(v2_app) -> None:
+    """
+    Register WebSocket routes and lifecycle event handlers.
+
+    This helper function eliminates code duplication by centralizing
+    WebSocket lifecycle management across different app types.
+
+    Args:
+        v2_app: FastAPI/Starlette app instance to register routes on
+    """
+    try:
+        from .routes.websocket_routes import (
+            router as websocket_router,
+            start_retry_queue_processor,
+            stop_retry_queue_processor,
+            start_notification_cleanup_task,
+            stop_notification_cleanup_task
+        )
+        v2_app.include_router(websocket_router)
+        logger.info("✅ WebSocket routes registered at /ws/realtime")
+
+        # Start the WebSocket message retry queue processor on startup
+        @v2_app.on_event("startup")
+        async def startup_websocket_retry_queue():
+            start_retry_queue_processor()
+            logger.info("✅ WebSocket retry queue processor started during app startup")
+
+        # Start the notification cleanup task on startup
+        @v2_app.on_event("startup")
+        async def startup_notification_cleanup():
+            start_notification_cleanup_task()
+            logger.info("✅ Notification cleanup task started during app startup")
+
+        # Stop the retry queue processor on shutdown
+        @v2_app.on_event("shutdown")
+        async def shutdown_websocket_retry_queue():
+            await stop_retry_queue_processor()
+            logger.info("✅ WebSocket retry queue processor stopped during app shutdown")
+
+        # Stop the notification cleanup task on shutdown
+        @v2_app.on_event("shutdown")
+        async def shutdown_notification_cleanup():
+            await stop_notification_cleanup_task()
+            logger.info("✅ Notification cleanup task stopped during app shutdown")
+
+    except ImportError as ws_e:
+        logger.warning(f"Could not import WebSocket routes: {ws_e}")
+
+
 def create_sse_app(
     server: FastMCP[LifespanResultT],
     message_path: str,
@@ -438,12 +487,7 @@ def create_sse_app(
             logger.warning(f"Could not import token routes: {token_e}")
 
         # Add WebSocket routes for real-time updates
-        try:
-            from .routes.websocket_routes import router as websocket_router
-            v2_app.include_router(websocket_router)
-            logger.info("✅ WebSocket routes registered at /ws/realtime")
-        except ImportError as ws_e:
-            logger.warning(f"Could not import WebSocket routes: {ws_e}")
+        _register_websocket_lifecycle(v2_app)
 
         # Add broadcast routes for cross-process communication
         try:
@@ -743,12 +787,7 @@ def create_streamable_http_app(
             logger.warning(f"Could not import token routes: {token_e}")
 
         # Add WebSocket routes for real-time updates
-        try:
-            from .routes.websocket_routes import router as websocket_router
-            v2_app.include_router(websocket_router)
-            logger.info("✅ WebSocket routes registered at /ws/realtime")
-        except ImportError as ws_e:
-            logger.warning(f"Could not import WebSocket routes: {ws_e}")
+        _register_websocket_lifecycle(v2_app)
 
         # Add simplified MCP registration endpoints directly to FastAPI app
         import uuid

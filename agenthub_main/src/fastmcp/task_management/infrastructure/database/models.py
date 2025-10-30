@@ -50,6 +50,35 @@ class APIToken(Base):
     token_metadata: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)  # Additional metadata
 
 
+class MissedNotification(Base):
+    """
+    Missed WebSocket Notification model for persistence and replay.
+
+    Stores notifications that were sent when the user was disconnected,
+    allowing them to be replayed when the user reconnects. Prevents
+    notification loss during page reloads, slow connections, or
+    authentication delays.
+
+    Integrates with clean timestamp management system:
+    - created_at automatically managed by timestamp_events.py
+    - UTC timezone enforcement handled by SQLAlchemy event handlers
+    """
+    __tablename__ = "missed_notifications"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    message: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    delivered: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    delivery_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    last_attempt_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    __table_args__ = (
+        Index('idx_missed_notifications_user_delivered', 'user_id', 'delivered'),
+        Index('idx_missed_notifications_created_at', 'created_at'),
+    )
+
+
 class Project(Base):
     """Project model - Core organizational structure
 
