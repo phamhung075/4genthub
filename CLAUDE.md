@@ -589,12 +589,16 @@ After: You ARE the master orchestrator with all capabilities
                                             ↓
                                        11. Decision: Complete or Continue?
                                             ↓
-                                 Complete ←─┴─→ Continue
-                                      ↓              ↓
+                                 Complete ←─┴─────────────→ Continue
+                                      ↓                          ↓
                                 12. Update Task Status   Return to Step 5B
                                     (mark complete)      (create subtask)
                                       ↓
                                 13. Report to User
+                                      ↓
+                                14. New User Request
+                                      ↓
+                                14. Return to Step 4 (Evaluate Complexity) 
 ```
 
 **Key Changes from Old Model:**
