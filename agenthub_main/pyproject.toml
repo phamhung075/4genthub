@@ -43,6 +43,8 @@ dependencies = [
     # Configuration parsing
     "toml>=0.10.2", # For reading pyproject.toml version
     "asyncpg>=0.30.0",
+    # Monitoring and metrics dependencies
+    "prometheus-client>=0.21.1", # Prometheus metrics for observability
 ]
 requires-python = ">=3.14"
 readme = "README.md"

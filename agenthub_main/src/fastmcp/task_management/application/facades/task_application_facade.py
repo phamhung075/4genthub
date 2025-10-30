@@ -119,10 +119,23 @@ class TaskApplicationFacade:
         self._manage_dependencies_use_case = ManageDependenciesUseCase(task_repository)
     
     async def _derive_context_from_git_branch_id(self, git_branch_id: str) -> Dict[str, Optional[str]]:
-        """Derive project_id and git_branch_name from git_branch_id using git branch repository"""
+        """
+        Derive project_id and git_branch_name from git_branch_id using git branch repository.
+
+        Args:
+            git_branch_id: Git branch UUID identifier
+
+        Returns:
+            Dict with project_id and git_branch_name
+
+        Raises:
+            ValueError: If git_branch_id does not exist in the system
+        """
         if not self._git_branch_repository:
-            return {"project_id": None, "git_branch_name": None}
-            
+            raise ValueError(
+                f"Cannot validate git_branch_id '{git_branch_id}': Git branch repository not available"
+            )
+
         try:
             # Try to find the branch by ID directly
             branch = await self._git_branch_repository.find_by_id(git_branch_id)
@@ -131,24 +144,34 @@ class TaskApplicationFacade:
                     "project_id": branch.project_id,
                     "git_branch_name": branch.name
                 }
-            
+
             # If not found, try the project manager as fallback
             # This provides backward compatibility
             from ..services.project_management_service import ProjectManagementService
             project_manager = ProjectManagementService()
             result = project_manager.get_git_branch_by_id(git_branch_id)
-            
+
             if result.get("success"):
                 git_branch_data = result.get("git_branch", {})
                 return {
                     "project_id": git_branch_data.get("project_id"),
                     "git_branch_name": git_branch_data.get("name")
                 }
-                    
-            return {"project_id": None, "git_branch_name": None}
+
+            # Git branch not found - raise validation error
+            raise ValueError(
+                f"git_branch_id '{git_branch_id}' not found. "
+                f"Please create the branch first using manage_git_branch(action='create') "
+                f"or use an existing branch ID from manage_git_branch(action='list')."
+            )
+        except ValueError:
+            # Re-raise ValueError (our validation error)
+            raise
         except Exception as e:
-            logger.warning(f"Failed to derive context from git_branch_id {git_branch_id}: {e}")
-            return {"project_id": None, "git_branch_name": None}
+            # Wrap other exceptions in ValueError for consistency
+            raise ValueError(
+                f"Failed to validate git_branch_id '{git_branch_id}': {str(e)}"
+            ) from e
 
     def _ensure_branch_context_exists(
         self,
