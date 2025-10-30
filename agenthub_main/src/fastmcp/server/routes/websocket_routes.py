@@ -3,18 +3,76 @@ WebSocket routes for real-time data synchronization
 """
 
 import logging
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
-from typing import Optional, Dict, Any, Set
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Response
+from typing import Optional, Dict, Any, Set, List, DefaultDict, TypedDict, NotRequired
 import json
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from collections import defaultdict
+from dataclasses import dataclass, field
 import random
 import os
+
+# Additional exception types for better error handling
+from starlette.websockets import WebSocketState
+from websockets.exceptions import ConnectionClosed, ConnectionClosedOK, ConnectionClosedError
 
 # Import authentication utilities for JWT validation
 from fastmcp.auth.keycloak_dependencies import validate_keycloak_token, validate_local_token
 from fastmcp.auth.domain.entities.user import User
+
+# Import Prometheus metrics for monitoring
+from fastmcp.server.metrics import (
+    update_connection_count,
+    update_queue_size,
+    clear_queue_metrics,
+    record_retry_attempt,
+    record_delivery_time,
+    track_broadcast_duration,
+)
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, REGISTRY
+
+# ============================================================================
+# TYPE DEFINITIONS - Structured type hints for better type safety
+# ============================================================================
+
+class SubscriptionDict(TypedDict, total=False):
+    """WebSocket subscription configuration"""
+    scope: str
+    entity_type: NotRequired[str]
+    entity_id: NotRequired[str]
+    user_id: NotRequired[str]
+
+class MessagePayloadDataDict(TypedDict, total=False):
+    """Payload data structure in broadcast messages"""
+    primary: NotRequired[Optional[Dict[str, Any]]]
+    cascade: NotRequired[Dict[str, Any]]
+
+class MessagePayloadDict(TypedDict):
+    """Payload structure in broadcast messages"""
+    entity: str
+    action: str
+    data: MessagePayloadDataDict
+
+class MessageMetadataDict(TypedDict, total=False):
+    """Metadata structure in broadcast messages"""
+    source: str
+    userId: str
+    entity_type: str
+    entity_id: str
+    event_type: str
+
+class BroadcastMessageDict(TypedDict):
+    """Complete WebSocket broadcast message structure"""
+    id: str
+    version: str
+    type: str
+    timestamp: str
+    sequence: int
+    payload: MessagePayloadDict
+    metadata: MessageMetadataDict
+
+# ============================================================================
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +81,305 @@ router = APIRouter(
     tags=["websocket"]
 )
 
-# Store active connections and subscriptions
-active_connections: Dict[str, Set[WebSocket]] = defaultdict(set)
-connection_subscriptions: Dict[WebSocket, Dict[str, Any]] = {}
-# Store user information for each WebSocket connection
-connection_users: Dict[WebSocket, User] = {}
+# Track if retry queue processor is running
+_retry_queue_task: Optional[asyncio.Task] = None
+
+# Track if notification cleanup task is running
+_cleanup_task: Optional[asyncio.Task] = None
+
+# Concurrency protection locks for shared state
+_message_queue_lock = asyncio.Lock()  # Protects user_message_queues access
+_connections_lock = asyncio.Lock()     # Protects connections dict access
+
+# ============================================================================
+# CONFIGURATION CONSTANTS - Retry, Timing, and Cleanup Settings
+# ============================================================================
+# These constants centralize all timing and retry configuration for easy tuning.
+# Consider moving to environment variables for production configurability.
+
+# Retry mechanism configuration
+RETRY_BASE_DELAY_SECONDS = 5  # Base delay for exponential backoff (5s, 10s, 20s)
+RETRY_BACKOFF_MULTIPLIER = 2  # Multiplier for exponential backoff calculation
+RETRY_MAX_ATTEMPTS = 3        # Maximum retry attempts before giving up
+
+# Background task intervals
+RETRY_QUEUE_CHECK_INTERVAL = 5    # How often to check retry queue (seconds)
+NOTIFICATION_CLEANUP_INTERVAL = 3600  # How often to cleanup old notifications (1 hour)
+NOTIFICATION_RETENTION_HOURS = 24     # How long to keep notifications before cleanup
+
+# ============================================================================
+
+# Store all WebSocket connections in single atomic data structure
+# This replaces the previous three separate dictionaries (active_connections,
+# connection_subscriptions, connection_users) which could get out of sync.
+# Key: WebSocket object, Value: Complete connection state
+connections: Dict[WebSocket, WebSocketConnection] = {}
+
+# Message queue for retry mechanism - prevents notification loss
+@dataclass
+class QueuedMessage:
+    """
+    Represents a queued WebSocket message awaiting delivery or retry.
+
+    Attributes:
+        message_id: Unique identifier for this queued message
+        message: The actual WebSocket message payload
+        user_id: User ID this message is destined for
+        timestamp: When the message was first queued
+        retry_count: Number of delivery attempts made
+        max_retries: Maximum retry attempts before giving up
+        next_retry_time: When the next retry should be attempted
+    """
+    message_id: str
+    message: Dict[str, Any]
+    user_id: str
+    timestamp: datetime
+    retry_count: int = 0
+    max_retries: int = 3
+    next_retry_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Per-user message queues with failed messages awaiting retry
+user_message_queues: DefaultDict[str, List[QueuedMessage]] = defaultdict(list)
+
+
+@dataclass
+class WebSocketConnection:
+    """
+    Represents a complete WebSocket connection state.
+
+    This dataclass consolidates all connection-related data into a single atomic unit,
+    preventing synchronization issues that occurred when tracking connection state
+    across multiple separate dictionaries.
+
+    Attributes:
+        websocket: The WebSocket connection object
+        user: Authenticated user associated with this connection
+        client_id: Unique identifier for this client connection
+        subscription: Subscription configuration (entity types, filters, etc.)
+        connected_at: Timestamp when connection was established
+        last_activity: Timestamp of last activity (for timeout detection)
+    """
+    websocket: WebSocket
+    user: User
+    client_id: str
+    subscription: Dict[str, Any]
+    connected_at: datetime
+    last_activity: datetime
+
+    def update_activity(self):
+        """Update the last activity timestamp to current time."""
+        self.last_activity = datetime.now(timezone.utc)
+
+
+async def process_message_retry_queue() -> None:
+    """
+    Background task to process queued messages and retry failed deliveries.
+
+    Runs every 5 seconds to:
+    - Check all queued messages for users
+    - Retry messages that are past their next_retry_time
+    - Remove messages that exceeded max_retries
+    - Apply exponential backoff (5s, 10s, 20s)
+
+    This ensures notifications are eventually delivered even if the
+    initial send fails due to temporary network issues or disconnections.
+    """
+    logger.info("🔄 Message retry queue processor started")
+
+    while True:
+        try:
+            await asyncio.sleep(RETRY_QUEUE_CHECK_INTERVAL)
+
+            current_time = datetime.now(timezone.utc)
+
+            # Acquire lock to safely access user_message_queues
+            async with _message_queue_lock:
+                total_queued = sum(len(msgs) for msgs in user_message_queues.values())
+
+                if total_queued > 0:
+                    logger.debug(f"📬 Processing {total_queued} queued messages across {len(user_message_queues)} users")
+
+                # Update queue size metrics for all users
+                for user_id, message_queue in user_message_queues.items():
+                    update_queue_size(user_id, len(message_queue))
+
+                # Process each user's message queue
+                    for user_id, message_queue in list(user_message_queues.items()):
+                        messages_to_remove = []
+
+                        for queued_msg in message_queue:
+                            # Check if max retries exceeded
+                            if queued_msg.retry_count >= queued_msg.max_retries:
+                                logger.warning(
+                                    f"❌ Dropping message {queued_msg.message_id} for user {user_id}: "
+                                    f"max retries ({queued_msg.max_retries}) exceeded"
+                                )
+                                # Record failed delivery metrics
+                                record_retry_attempt(success=False, attempt=queued_msg.retry_count)
+                                record_delivery_time('failed', (current_time - queued_msg.queued_at).total_seconds())
+                                messages_to_remove.append(queued_msg)
+                                continue
+
+                            # Check if it's time to retry
+                            if current_time >= queued_msg.next_retry_time:
+                                logger.info(
+                                    f"🔄 Retrying message {queued_msg.message_id} for user {user_id} "
+                                    f"(attempt {queued_msg.retry_count + 1}/{queued_msg.max_retries})"
+                                )
+
+                                # Find active websockets for this user
+                                user_websockets = []
+                                for connection in connections.values():
+                                    if connection.user.id == user_id:
+                                        user_websockets.append(connection.websocket)
+
+                                if not user_websockets:
+                                    # User not connected - will retry later
+                                    logger.debug(f"⏳ User {user_id} not connected, will retry later")
+                                    # Update next retry time
+                                    queued_msg.retry_count += 1
+                                    delay_seconds = RETRY_BASE_DELAY_SECONDS * (RETRY_BACKOFF_MULTIPLIER ** (queued_msg.retry_count - 1))
+                                    queued_msg.next_retry_time = current_time + timedelta(seconds=delay_seconds)
+                                    continue
+
+                                # Attempt delivery to all user's websockets
+                                delivery_success = False
+                                for websocket in user_websockets:
+                                    try:
+                                        await websocket.send_json(queued_msg.message)
+                                        logger.info(f"✅ Successfully delivered queued message {queued_msg.message_id}")
+                                        delivery_success = True
+                                        break  # Success - no need to try other connections
+                                    except Exception as e:
+                                        logger.warning(f"⚠️ Retry failed for message {queued_msg.message_id}: {e}")
+                                        continue
+
+                                if delivery_success:
+                                    # Remove from queue on successful delivery
+                                    # Record successful retry metrics
+                                    record_retry_attempt(success=True, attempt=queued_msg.retry_count + 1)
+                                    record_delivery_time('retry', (current_time - queued_msg.queued_at).total_seconds())
+                                    messages_to_remove.append(queued_msg)
+                                else:
+                                    # All attempts failed - update retry info
+                                    queued_msg.retry_count += 1
+                                    delay_seconds = RETRY_BASE_DELAY_SECONDS * (RETRY_BACKOFF_MULTIPLIER ** (queued_msg.retry_count - 1))
+                                    queued_msg.next_retry_time = current_time + timedelta(seconds=delay_seconds)
+                                    logger.info(
+                                        f"📬 Message {queued_msg.message_id} queued for retry #{queued_msg.retry_count} "
+                                        f"in {delay_seconds}s"
+                                    )
+
+                        # Clean up processed messages
+                        for msg in messages_to_remove:
+                            message_queue.remove(msg)
+
+                        # Clean up empty queues
+                        if not message_queue:
+                            del user_message_queues[user_id]
+                            # Clear queue metrics for this user
+                            clear_queue_metrics(user_id)
+
+        except Exception as e:
+            logger.error(f"❌ Error in message retry queue processor: {e}", exc_info=True)
+            # Continue processing despite errors
+
+
+def start_retry_queue_processor() -> None:
+    """
+    Start the background message retry queue processor.
+
+    This should be called during application startup to ensure
+    queued messages are processed and retried.
+    """
+    global _retry_queue_task
+
+    if _retry_queue_task is None or _retry_queue_task.done():
+        _retry_queue_task = asyncio.create_task(process_message_retry_queue())
+        logger.info("✅ Message retry queue processor task started")
+    else:
+        logger.warning("⚠️ Message retry queue processor already running")
+
+
+async def stop_retry_queue_processor() -> None:
+    """
+    Stop the background message retry queue processor.
+
+    This should be called during application shutdown for graceful cleanup.
+    """
+    global _retry_queue_task
+
+    if _retry_queue_task and not _retry_queue_task.done():
+        _retry_queue_task.cancel()
+        try:
+            await _retry_queue_task
+        except asyncio.CancelledError:
+            logger.info("✅ Message retry queue processor stopped")
+    _retry_queue_task = None
+
+
+async def process_notification_cleanup() -> None:
+    """
+    Background task to periodically clean up expired missed notifications.
+
+    Runs every hour and removes:
+    - Undelivered notifications older than 24 hours
+    - Delivered notifications older than 7 days
+
+    This prevents the missed_notifications table from growing indefinitely.
+    """
+    while True:
+        try:
+            # Wait 1 hour between cleanup runs
+            await asyncio.sleep(NOTIFICATION_CLEANUP_INTERVAL)
+
+            # Clean up expired notifications
+            deleted_count = cleanup_expired_notifications(older_than_hours=NOTIFICATION_RETENTION_HOURS)
+
+            if deleted_count > 0:
+                logger.info(
+                    f"🗑️ Notification cleanup completed: Removed {deleted_count} expired notifications"
+                )
+
+        except asyncio.CancelledError:
+            logger.info("✅ Notification cleanup task cancelled")
+            raise
+        except Exception as e:
+            logger.error(f"❌ Error in notification cleanup task: {e}")
+            # Continue running despite errors - don't crash the cleanup task
+
+
+def start_notification_cleanup_task() -> None:
+    """
+    Start the background notification cleanup task.
+
+    This should be called during application startup to ensure
+    old notifications are periodically removed from the database.
+    """
+    global _cleanup_task
+
+    if _cleanup_task is None or _cleanup_task.done():
+        _cleanup_task = asyncio.create_task(process_notification_cleanup())
+        logger.info("✅ Notification cleanup task started (runs every 1 hour)")
+    else:
+        logger.warning("⚠️ Notification cleanup task already running")
+
+
+async def stop_notification_cleanup_task() -> None:
+    """
+    Stop the background notification cleanup task.
+
+    This should be called during application shutdown for graceful cleanup.
+    """
+    global _cleanup_task
+
+    if _cleanup_task and not _cleanup_task.done():
+        _cleanup_task.cancel()
+        try:
+            await _cleanup_task
+        except asyncio.CancelledError:
+            logger.info("✅ Notification cleanup task stopped")
+    _cleanup_task = None
 
 
 async def validate_websocket_token(token: str) -> Optional[User]:
@@ -61,37 +413,15 @@ async def validate_websocket_token(token: str) -> Optional[User]:
                 logger.info(f"WebSocket authenticated via Keycloak: {user.id}")
                 return user
             except HTTPException as e:
-                logger.error(f"🚨 EMERGENCY: Keycloak token validation failed: {e.detail}")
-                logger.error(f"🚨 Token issuer: {issuer}")
-                logger.error(f"🚨 Keycloak URL: {keycloak_url}")
-                logger.error(f"🚨 Auth provider: {auth_provider}")
+                # Log detailed error for debugging
+                logger.error(f"❌ Keycloak token validation failed: {e.detail}")
+                logger.error(f"   Token issuer: {issuer}")
+                logger.error(f"   Keycloak URL: {keycloak_url}")
+                logger.error(f"   Auth provider: {auth_provider}")
+                logger.error(f"   Troubleshooting: Verify KEYCLOAK_URL, KEYCLOAK_REALM, and token validity")
 
-                # EMERGENCY BYPASS: For development, temporarily allow all Keycloak tokens
-                # This is NOT secure for production but fixes the immediate issue
-                logger.warning("🚨 EMERGENCY BYPASS: Extracting user from Keycloak token without validation")
-                try:
-                    # Decode without verification to extract user info
-                    unverified = jwt.decode(token, options={"verify_signature": False})
-                    user_id = unverified.get("sub")
-                    email = unverified.get("email") or unverified.get("preferred_username")
-                    username = unverified.get("preferred_username") or email
-
-                    if user_id and email:
-                        from fastmcp.auth.domain.entities.user import User
-                        user = User(
-                            id=user_id,
-                            email=email,
-                            username=username or user_id,
-                            password_hash="keycloak-bypass"
-                        )
-                        logger.warning(f"🚨 EMERGENCY BYPASS: WebSocket auth for user {user_id}")
-                        return user
-                    else:
-                        logger.error("🚨 EMERGENCY BYPASS: Failed to extract user info from token")
-                        return None
-                except Exception as bypass_e:
-                    logger.error(f"🚨 EMERGENCY BYPASS: Failed to decode token: {bypass_e}")
-                    return None
+                # Return None - connection will be rejected with proper authentication failure
+                return None
         else:
             logger.debug("Validating local JWT token for WebSocket")
             try:
@@ -110,7 +440,7 @@ async def validate_websocket_token(token: str) -> Optional[User]:
         return None
 
 @router.websocket("/realtime")
-async def realtime_updates(websocket: WebSocket):
+async def realtime_updates(websocket: WebSocket) -> None:
     """
     WebSocket endpoint for real-time data updates.
     Clients connect here to receive notifications when data changes.
@@ -151,21 +481,37 @@ async def realtime_updates(websocket: WebSocket):
 
         logger.warning(f"🔗 Authenticated client CONNECTED: {client_id}")
 
-        # Store the connection with user authentication context
-        active_connections[client_id].add(websocket)
+        # Store the connection with complete state in single atomic operation
+        # This prevents synchronization issues that occurred with three separate dictionaries
+        current_time = datetime.now(timezone.utc)
+        connection = WebSocketConnection(
+            websocket=websocket,
+            user=authenticated_user,
+            client_id=client_id,
+            subscription={
+                "client_id": client_id,
+                "user_id": authenticated_user.id,
+                "user_email": authenticated_user.email,
+                "scope": "branch",  # Default scope
+                "filters": {}
+            },
+            connected_at=current_time,
+            last_activity=current_time
+        )
+
+        # Acquire lock to safely add connection
+        async with _connections_lock:
+            connections[websocket] = connection
 
         # 🔍 ENHANCED DEBUG: Log connection state
-        total_connections = sum(len(ws_set) for ws_set in active_connections.values())
-        logger.warning(f"📊 WEBSOCKET STATS: {total_connections} total connections, {len(active_connections)} unique clients")
-        connection_subscriptions[websocket] = {
-            "client_id": client_id,
-            "user_id": authenticated_user.id,  # Store authenticated user ID
-            "user_email": authenticated_user.email,
-            "scope": "branch",  # Default scope
-            "filters": {}
-        }
-        # Store user object for authorization checks
-        connection_users[websocket] = authenticated_user
+        total_connections = len(connections)
+        unique_clients = len(set(conn.client_id for conn in connections.values()))
+        logger.warning(f"📊 WEBSOCKET STATS: {total_connections} total connections, {unique_clients} unique clients")
+
+        # Update connection metrics
+        authenticated_count = sum(1 for conn in connections.values() if conn.user.id)
+        unauthenticated_count = total_connections - authenticated_count
+        update_connection_count(total_connections, authenticated_count, unauthenticated_count)
 
         # Send welcome message with authenticated user info (v2.0 format)
         await websocket.send_json({
@@ -193,6 +539,60 @@ async def realtime_updates(websocket: WebSocket):
                 "sessionId": client_id
             }
         })
+
+        # Replay missed notifications stored while user was offline
+        try:
+            missed_notifications = fetch_missed_notifications(
+                user_id=authenticated_user.id,
+                delivered=False,
+                limit=100  # Replay up to 100 missed notifications
+            )
+
+            if missed_notifications:
+                logger.info(
+                    f"🔄 Replaying {len(missed_notifications)} missed notifications "
+                    f"for user {authenticated_user.id[:8]} (client {client_id})"
+                )
+
+                replay_success_count = 0
+                replay_failure_count = 0
+
+                for notification in missed_notifications:
+                    try:
+                        # Send the stored notification to the client
+                        await websocket.send_json(notification["message"])
+
+                        # Mark as delivered
+                        if mark_notification_delivered(notification["id"]):
+                            replay_success_count += 1
+                            logger.debug(
+                                f"✅ Replayed notification {notification['id'][:8]} "
+                                f"(created: {notification['created_at']})"
+                            )
+                        else:
+                            replay_failure_count += 1
+                            logger.warning(
+                                f"⚠️ Sent notification {notification['id'][:8]} but failed to mark as delivered"
+                            )
+
+                    except Exception as e:
+                        replay_failure_count += 1
+                        logger.warning(
+                            f"❌ Failed to replay notification {notification['id'][:8]}: {e}"
+                        )
+                        # Increment delivery attempt counter for failed replays
+                        increment_delivery_attempts(notification["id"])
+
+                logger.info(
+                    f"🔄 Replay summary for user {authenticated_user.id[:8]}: "
+                    f"{replay_success_count} succeeded, {replay_failure_count} failed"
+                )
+
+        except Exception as e:
+            logger.error(
+                f"❌ Error during notification replay for user {authenticated_user.id[:8]}: {e}"
+            )
+            # Don't disconnect user if replay fails - just log and continue
 
         # Handle incoming messages
         while True:
@@ -226,10 +626,13 @@ async def realtime_updates(websocket: WebSocket):
                     scope = data.get("scope", "branch")
                     filters = data.get("filters", {})
 
-                    connection_subscriptions[websocket].update({
-                        "scope": scope,
-                        "filters": filters
-                    })
+                    # Update subscription in the connection object
+                    if websocket in connections:
+                        connections[websocket].subscription.update({
+                            "scope": scope,
+                            "filters": filters
+                        })
+                        connections[websocket].update_activity()
 
                     await websocket.send_json({
                         "id": f"subscribed-{random.randint(100000, 999999)}",
@@ -333,23 +736,262 @@ async def realtime_updates(websocket: WebSocket):
         logger.error(f"WebSocket error: {e}")
 
     finally:
-        # Clean up connection data
-        if client_id and websocket in connection_subscriptions:
-            active_connections[client_id].discard(websocket)
-            if not active_connections[client_id]:
-                del active_connections[client_id]
-            del connection_subscriptions[websocket]
+        # Clean up connection data - single atomic deletion
+        async with _connections_lock:
+            if websocket in connections:
+                del connections[websocket]
+            remaining_connections = len(connections)
 
-        # Clean up user authentication data
-        if websocket in connection_users:
-            del connection_users[websocket]
+            # Update connection metrics after disconnect
+            authenticated_count = sum(1 for conn in connections.values() if conn.user.id)
+            unauthenticated_count = remaining_connections - authenticated_count
+            update_connection_count(remaining_connections, authenticated_count, unauthenticated_count)
 
         # 🔍 ENHANCED DEBUG: Log final connection stats
-        remaining_connections = sum(len(ws_set) for ws_set in active_connections.values())
         if authenticated_user:
             logger.warning(f"🔌 CLEANUP: Client {client_id} (user: {authenticated_user.id}) disconnected. Remaining: {remaining_connections}")
         else:
             logger.warning(f"🔌 CLEANUP: Unauthenticated connection terminated. Remaining: {remaining_connections}")
+
+
+async def log_authorization_failure(
+    websocket: WebSocket,
+    user_id: str,
+    entity_type: str,
+    entity_id: str,
+    error: Exception,
+    failure_reason: str = "database_error"
+) -> None:
+    """
+    Log authorization failures for security audit trail.
+
+    Creates structured log entries for all authorization failures to help
+    with debugging and security analysis. In production, these logs can be
+    sent to SIEM systems for monitoring.
+
+    Args:
+        websocket: The WebSocket connection that failed authorization
+        user_id: User ID that was denied access
+        entity_type: Type of entity being accessed
+        entity_id: ID of the entity
+        error: The exception that caused the failure
+        failure_reason: Categorized reason for the failure
+    """
+    # Structured logging for security audit trail
+    audit_entry = {
+        "event": "authorization_failure",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user_id": user_id,
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+        "failure_reason": failure_reason,
+        "error_type": type(error).__name__,
+        "error_message": str(error),
+        "connection_info": {
+            "client_host": websocket.client.host if websocket.client else "unknown",
+            "client_port": websocket.client.port if websocket.client else 0
+        }
+    }
+
+    # Log as warning for visibility
+    logger.warning(f"🔒 AUTHORIZATION FAILURE AUDIT: {audit_entry}")
+
+    # In production, this could also write to a dedicated audit database table
+    # or send to a SIEM system for security monitoring
+
+
+# ==============================================================================
+# MISSED NOTIFICATION PERSISTENCE - Database Helper Functions
+# ==============================================================================
+
+def store_missed_notification(user_id: str, message: Dict[str, Any]) -> Optional[str]:
+    """
+    Store a missed notification in the database for later replay.
+
+    Args:
+        user_id: User ID to store the notification for
+        message: The WebSocket message to store (as dict)
+
+    Returns:
+        Notification ID if stored successfully, None if error
+    """
+    try:
+        from fastmcp.task_management.infrastructure.database.database_config import get_session
+        from fastmcp.task_management.infrastructure.database.models import MissedNotification
+        import uuid
+
+        notification_id = str(uuid.uuid4())
+
+        with get_session() as session:
+            notification = MissedNotification(
+                id=notification_id,
+                user_id=user_id,
+                message=message,
+                created_at=datetime.now(timezone.utc),
+                delivered=False,
+                delivery_attempts=0
+            )
+            session.add(notification)
+            session.commit()
+
+            logger.info(f"💾 Stored missed notification {notification_id} for user {user_id}")
+            return notification_id
+
+    except Exception as e:
+        logger.error(f"❌ Failed to store missed notification for user {user_id}: {e}")
+        return None
+
+
+def fetch_missed_notifications(user_id: str, delivered: bool = False, limit: int = 100) -> List[Dict[str, Any]]:
+    """
+    Fetch missed notifications for a user from the database.
+
+    Args:
+        user_id: User ID to fetch notifications for
+        delivered: Whether to fetch delivered or undelivered notifications
+        limit: Maximum number of notifications to return
+
+    Returns:
+        List of notification dicts with id, message, created_at, etc.
+    """
+    try:
+        from fastmcp.task_management.infrastructure.database.database_config import get_session
+        from fastmcp.task_management.infrastructure.database.models import MissedNotification
+
+        with get_session() as session:
+            notifications = session.query(MissedNotification).filter(
+                MissedNotification.user_id == user_id,
+                MissedNotification.delivered == delivered
+            ).order_by(
+                MissedNotification.created_at.asc()
+            ).limit(limit).all()
+
+            result = []
+            for notif in notifications:
+                result.append({
+                    "id": notif.id,
+                    "message": notif.message,
+                    "created_at": notif.created_at,
+                    "delivery_attempts": notif.delivery_attempts
+                })
+
+            return result
+
+    except Exception as e:
+        logger.error(f"❌ Failed to fetch missed notifications for user {user_id}: {e}")
+        return []
+
+
+def mark_notification_delivered(notification_id: str) -> bool:
+    """
+    Mark a notification as successfully delivered.
+
+    Args:
+        notification_id: ID of the notification to mark as delivered
+
+    Returns:
+        True if marked successfully, False if error
+    """
+    try:
+        from fastmcp.task_management.infrastructure.database.database_config import get_session
+        from fastmcp.task_management.infrastructure.database.models import MissedNotification
+
+        with get_session() as session:
+            notification = session.query(MissedNotification).filter(
+                MissedNotification.id == notification_id
+            ).first()
+
+            if notification:
+                notification.delivered = True
+                notification.last_attempt_at = datetime.now(timezone.utc)
+                session.commit()
+                return True
+            else:
+                logger.warning(f"⚠️ Notification {notification_id} not found for marking delivered")
+                return False
+
+    except Exception as e:
+        logger.error(f"❌ Failed to mark notification {notification_id} as delivered: {e}")
+        return False
+
+
+def increment_delivery_attempts(notification_id: str) -> bool:
+    """
+    Increment the delivery attempt counter for a notification.
+
+    Args:
+        notification_id: ID of the notification to update
+
+    Returns:
+        True if updated successfully, False if error
+    """
+    try:
+        from fastmcp.task_management.infrastructure.database.database_config import get_session
+        from fastmcp.task_management.infrastructure.database.models import MissedNotification
+
+        with get_session() as session:
+            notification = session.query(MissedNotification).filter(
+                MissedNotification.id == notification_id
+            ).first()
+
+            if notification:
+                notification.delivery_attempts += 1
+                notification.last_attempt_at = datetime.now(timezone.utc)
+                session.commit()
+                return True
+            else:
+                logger.warning(f"⚠️ Notification {notification_id} not found for attempt increment")
+                return False
+
+    except Exception as e:
+        logger.error(f"❌ Failed to increment delivery attempts for {notification_id}: {e}")
+        return False
+
+
+def cleanup_expired_notifications(older_than_hours: int = 24) -> int:
+    """
+    Clean up expired missed notifications from the database.
+
+    Removes:
+    - Undelivered notifications older than specified hours
+    - Delivered notifications older than 7 days
+
+    Args:
+        older_than_hours: Remove undelivered notifications older than this many hours
+
+    Returns:
+        Number of notifications cleaned up
+    """
+    try:
+        from fastmcp.task_management.infrastructure.database.database_config import get_session
+        from fastmcp.task_management.infrastructure.database.models import MissedNotification
+
+        with get_session() as session:
+            # Calculate cutoff times
+            undelivered_cutoff = datetime.now(timezone.utc) - timedelta(hours=older_than_hours)
+            delivered_cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+
+            # Delete undelivered notifications older than cutoff
+            undelivered_deleted = session.query(MissedNotification).filter(
+                MissedNotification.delivered == False,
+                MissedNotification.created_at < undelivered_cutoff
+            ).delete()
+
+            # Delete delivered notifications older than 7 days
+            delivered_deleted = session.query(MissedNotification).filter(
+                MissedNotification.delivered == True,
+                MissedNotification.created_at < delivered_cutoff
+            ).delete()
+
+            session.commit()
+
+            total_deleted = undelivered_deleted + delivered_deleted
+            logger.info(f"🗑️ Cleaned up {total_deleted} expired notifications ({undelivered_deleted} undelivered, {delivered_deleted} delivered)")
+            return total_deleted
+
+    except Exception as e:
+        logger.error(f"❌ Failed to cleanup expired notifications: {e}")
+        return 0
 
 
 async def is_user_authorized_for_message(
@@ -379,12 +1021,45 @@ async def is_user_authorized_for_message(
         True if the user is authorized to receive the message, False otherwise
     """
     # Get user information for this connection
-    if websocket not in connection_users:
-        logger.warning(f"🚫 🎯 AUTH DEBUG: WebSocket connection has no associated user - denying access for {entity_type} {entity_id}")
-        logger.warning(f"🚫 🎯 AUTH DEBUG: Available connections: {len(connection_users)}")
+    if websocket not in connections:
+        logger.warning(
+            f"⚠️ AUTHORIZATION DENIED: NO_USER_CONTEXT - "
+            f"WebSocket connection has no associated user for {entity_type} {entity_id}"
+        )
+        logger.warning(f"📊 Available authenticated connections: {len(connections)}")
+
+        # Send error notification to frontend
+        try:
+            await websocket.send_json({
+                "id": f"auth-error-{random.randint(100000, 999999)}",
+                "version": "2.0",
+                "type": "error",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "sequence": random.randint(1000, 9999),
+                "payload": {
+                    "entity": "system",
+                    "action": "authorization_denied",
+                    "data": {
+                        "primary": {
+                            "code": "NO_USER_CONTEXT",
+                            "message": "WebSocket connection has no authenticated user",
+                            "entity_type": entity_type,
+                            "entity_id": entity_id,
+                            "reason": "Connection not properly authenticated"
+                        }
+                    }
+                },
+                "metadata": {
+                    "source": "system",
+                    "severity": "error"
+                }
+            })
+        except Exception as send_error:
+            logger.error(f"Failed to send NO_USER_CONTEXT error to client: {send_error}")
+
         return False
 
-    connection_user = connection_users[websocket]
+    connection_user = connections[websocket].user
     connection_user_id = connection_user.id
 
     logger.warning(f"🔍 🎯 AUTH DEBUG: Checking authorization for {entity_type} {entity_id}")
@@ -451,12 +1126,98 @@ async def is_user_authorized_for_message(
                     return True
 
     except Exception as e:
-        logger.error(f"Error checking user authorization: {e}")
-        # Fail closed - deny access on errors
-        return False
+        logger.error(f"⚠️ AUTHORIZATION ERROR: Database error during authorization check: {e}")
+
+        # Log for security audit trail
+        await log_authorization_failure(
+            websocket=websocket,
+            user_id=connection_user_id,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            error=e,
+            failure_reason="database_error"
+        )
+
+        # Send error notification to frontend
+        try:
+            await websocket.send_json({
+                "id": f"auth-error-{random.randint(100000, 999999)}",
+                "version": "2.0",
+                "type": "error",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "sequence": random.randint(1000, 9999),
+                "payload": {
+                    "entity": "system",
+                    "action": "authorization_error",
+                    "data": {
+                        "primary": {
+                            "code": "AUTH_DB_ERROR",
+                            "message": "Authorization check failed due to database issue",
+                            "entity_type": entity_type,
+                            "entity_id": entity_id,
+                            "retry_recommended": True,
+                            "error_type": "temporary"
+                        }
+                    }
+                },
+                "metadata": {
+                    "source": "system",
+                    "userId": connection_user_id,
+                    "severity": "warning"
+                }
+            })
+        except Exception as send_error:
+            logger.error(f"Failed to send auth error notification to client: {send_error}")
+
+        # Environment-based failure mode
+        environment = os.getenv("ENVIRONMENT", "production").lower()
+        if environment == "development":
+            logger.warning(f"⚠️ DEV MODE: Allowing message despite authorization error for user {connection_user_id}")
+            return True  # Fail open in development
+        else:
+            logger.error(f"🔒 PROD MODE: Denying message due to authorization error for user {connection_user_id}")
+            return False  # Fail closed in production
 
     # Default: deny access if no authorization rules match
-    logger.warning(f"🚫 🎯 AUTH DEBUG: User {connection_user_id} NOT authorized for {entity_type} {entity_id} - no authorization rules matched")
+    logger.warning(
+        f"⚠️ AUTHORIZATION DENIED: NO_RULE_MATCHED - "
+        f"User {connection_user_id} NOT authorized for {entity_type} {entity_id}"
+    )
+    logger.warning(
+        f"📋 Authorization attempt: triggering_user={triggering_user_id}, "
+        f"connection_user={connection_user_id}, entity={entity_type}:{entity_id}"
+    )
+
+    # Send error notification to frontend
+    try:
+        await websocket.send_json({
+            "id": f"auth-error-{random.randint(100000, 999999)}",
+            "version": "2.0",
+            "type": "error",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "sequence": random.randint(1000, 9999),
+            "payload": {
+                "entity": "system",
+                "action": "authorization_denied",
+                "data": {
+                    "primary": {
+                        "code": "NOT_AUTHORIZED",
+                        "message": f"You don't have access to this {entity_type}",
+                        "entity_type": entity_type,
+                        "entity_id": entity_id,
+                        "reason": "No authorization rules matched for this resource"
+                    }
+                }
+            },
+            "metadata": {
+                "source": "system",
+                "userId": connection_user_id,
+                "severity": "warning"
+            }
+        })
+    except Exception as send_error:
+        logger.error(f"Failed to send NOT_AUTHORIZED error to client: {send_error}")
+
     return False
 
 
@@ -558,9 +1319,36 @@ async def _check_resource_ownership(
                 return False
 
     except Exception as e:
-        logger.error(f"Error checking resource ownership for system message: {e}")
-        # Fail closed - deny access on errors
-        return False
+        logger.error(f"⚠️ AUTHORIZATION ERROR: Database error checking resource ownership: {e}")
+
+        # Log for security audit trail
+        audit_entry = {
+            "event": "resource_ownership_check_failure",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "user_id": connection_user_id,
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "failure_reason": "database_error",
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "context": "system_message_authorization"
+        }
+        logger.warning(f"🔒 RESOURCE OWNERSHIP CHECK FAILURE AUDIT: {audit_entry}")
+
+        # Environment-based failure mode
+        environment = os.getenv("ENVIRONMENT", "production").lower()
+        if environment == "development":
+            logger.warning(
+                f"⚠️ DEV MODE: Allowing system message despite ownership check error "
+                f"for user {connection_user_id}, {entity_type} {entity_id}"
+            )
+            return True  # Fail open in development
+        else:
+            logger.error(
+                f"🔒 PROD MODE: Denying system message due to ownership check error "
+                f"for user {connection_user_id}, {entity_type} {entity_id}"
+            )
+            return False  # Fail closed in production
 
 
 async def broadcast_data_change(
@@ -570,7 +1358,7 @@ async def broadcast_data_change(
     user_id: str,
     data: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None
-):
+) -> None:
     """
     Broadcast data change to all connected clients.
 
@@ -605,8 +1393,8 @@ async def broadcast_data_change(
         logger.warning(f"   User ID: {user_id}")
         logger.warning(f"   Data: {data}")
         logger.warning(f"   Metadata: {metadata}")
-        logger.warning(f"   Active Connections Count: {sum(len(ws_set) for ws_set in active_connections.values())}")
-        logger.warning(f"   Connection Client IDs: {list(active_connections.keys())}")
+        logger.warning(f"   Active Connections Count: {len(connections)}")
+        logger.warning(f"   Connection Client IDs: {[conn.client_id for conn in connections.values()]}")
 
     # Prepare the message in v2.0 format
     message = {
@@ -637,59 +1425,210 @@ async def broadcast_data_change(
         message["payload"]["data"]["cascade"] = metadata["cascade"]
         logger.info(f"✅ Moved cascade data to payload.data for frontend: {message['payload']['data']['cascade']}")
         # Remove from metadata to avoid duplication
-        metadata_copy = dict(metadata)
-        del metadata_copy["cascade"]
-        message["metadata"].update(metadata_copy)
+        del message["metadata"]["cascade"]
 
     # Send to authorized clients only - implement user-scoped authorization
     disconnected = []
     authorized_clients = 0
-    total_connections = sum(len(ws_set) for ws_set in active_connections.values())
-    logger.info(f"🔍 DELETE DEBUG: Filtering {total_connections} total WebSocket connections for authorization")
 
-    # Special detailed client logging for DELETE operations
-    if event_type.lower() in ['delete', 'deleted']:
-        logger.warning(f"🗑️ DELETE CLIENT AUTHORIZATION LOG:")
-        logger.warning(f"   Total connections: {total_connections}")
-        logger.warning(f"   Client details:")
-        for client_id, websocket_set in active_connections.items():
-            for websocket in websocket_set:
-                user_info = connection_users.get(websocket, 'Unknown User')
-                subscription_info = connection_subscriptions.get(websocket, {})
-                logger.warning(f"     Client {client_id}: User {getattr(user_info, 'id', 'Unknown')}, Scope: {subscription_info.get('scope', 'Unknown')}")
+    # Track broadcast duration with Prometheus metrics
+    with track_broadcast_duration(event_type, entity_type):
+        # Create snapshot of connections to prevent race conditions during iteration
+        async with _connections_lock:
+            connections_snapshot = list(connections.values())
+            total_connections = len(connections_snapshot)
 
-    for client_id, websocket_set in active_connections.items():
-        for websocket in websocket_set:
+        logger.info(f"🔍 DELETE DEBUG: Filtering {total_connections} total WebSocket connections for authorization")
+
+        # Special detailed client logging for DELETE operations
+        if event_type.lower() in ['delete', 'deleted']:
+            logger.warning(f"🗑️ DELETE CLIENT AUTHORIZATION LOG:")
+            logger.warning(f"   Total connections: {total_connections}")
+            logger.warning(f"   Client details:")
+            for connection in connections_snapshot:
+                logger.warning(f"     Client {connection.client_id}: User {connection.user.id}, Scope: {connection.subscription.get('scope', 'Unknown')}")
+    
+        for connection in connections_snapshot:
+            websocket = connection.websocket
+            client_id = connection.client_id
+            connection_user = connection.user
+    
             # Check if user is authorized to receive this message
             is_authorized = await is_user_authorized_for_message(websocket, entity_type, entity_id, user_id, metadata)
-
+    
             if is_authorized:
+                # Generate unique message ID for tracking
+                message_id = f"{message['id']}-{connection_user.id}"
+    
+                # Queue message before attempting send (optimistic queuing)
+                queued_msg = QueuedMessage(
+                    message_id=message_id,
+                    message=message.copy(),
+                    user_id=connection_user.id,
+                    timestamp=datetime.now(timezone.utc),
+                    retry_count=0
+                )
+                # Acquire lock to safely append to message queue
+                async with _message_queue_lock:
+                    user_message_queues[connection_user.id].append(queued_msg)
+    
                 try:
                     await websocket.send_json(message)
                     authorized_clients += 1
+    
+                    # SUCCESS: Remove from queue since delivered successfully
+                    # Acquire lock to safely modify message queue
+                    async with _message_queue_lock:
+                        user_message_queues[connection_user.id] = [
+                            msg for msg in user_message_queues[connection_user.id]
+                            if msg.message_id != message_id
+                        ]
+    
                     # Enhanced logging for DELETE operations
                     if event_type.lower() in ['delete', 'deleted']:
                         logger.warning(f"✅ DELETE SENT to authorized client {client_id}")
                     else:
                         logger.debug(f"Sent to authorized client {client_id}")
-                except Exception as e:
-                    logger.warning(f"❌ Failed to send to client {client_id}: {e}")
+                except WebSocketDisconnect:
+                    logger.info(f"Client {client_id} disconnected gracefully during send")
+                    disconnected.append(websocket)
+                    # No retry - client explicitly disconnected
+                except (ConnectionClosed, ConnectionClosedError):
+                    logger.warning(f"❌ Connection closed unexpectedly for client {client_id}")
+                    disconnected.append(websocket)
+                    # No retry - connection is dead
+                except (RuntimeError, Exception) as e:
+                    # WebSocket state errors or unexpected errors - queue for retry
+                    error_type = "WebSocket state error" if isinstance(e, RuntimeError) else "Unexpected error"
+                    logger.warning(f"❌ {error_type} sending to client {client_id}: {e}")
+                    if not isinstance(e, RuntimeError):
+                        logger.error(f"Full traceback:", exc_info=True)
+    
+                    # FAILED: Update queue entry with retry info (exponential backoff)
+                    # Acquire lock to safely modify message queue
+                    async with _message_queue_lock:
+                        for msg in user_message_queues[connection_user.id]:
+                            if msg.message_id == message_id:
+                                msg.retry_count += 1
+                                # Exponential backoff: 5s, 10s, 20s
+                                delay_seconds = RETRY_BASE_DELAY_SECONDS * (RETRY_BACKOFF_MULTIPLIER ** (msg.retry_count - 1))
+                                msg.next_retry_time = datetime.now(timezone.utc) + timedelta(seconds=delay_seconds)
+                                logger.info(f"📬 Queued message {message_id} for retry #{msg.retry_count} in {delay_seconds}s")
+                            break
+    
                     disconnected.append(websocket)
             else:
-                # Enhanced logging for DELETE operations
-                if event_type.lower() in ['delete', 'deleted']:
-                    logger.warning(f"🚫 DELETE SKIPPED unauthorized client {client_id} for {entity_type} {entity_id}")
+                # Authorization failed - log at WARNING level for visibility
+                # connection_user is already available from the loop
+                user_id_str = connection_user.id
+    
+                logger.warning(
+                    f"⚠️ NOTIFICATION BLOCKED: Unauthorized client {client_id} (user: {user_id_str}) "
+                    f"skipped for {entity_type} {entity_id} - {event_type} event"
+                )
+    
+                # Send authorization error to frontend
+                try:
+                    await websocket.send_json({
+                        "id": f"auth-blocked-{random.randint(100000, 999999)}",
+                        "version": "2.0",
+                        "type": "error",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "sequence": random.randint(1000, 9999),
+                        "payload": {
+                            "entity": "system",
+                            "action": "notification_blocked",
+                            "data": {
+                                "primary": {
+                                    "code": "NOT_AUTHORIZED",
+                                    "message": f"Notification blocked: You don't have access to this {entity_type}",
+                                    "entity_type": entity_type,
+                                    "entity_id": entity_id,
+                                    "event_type": event_type,
+                                    "reason": "Authorization check failed"
+                                }
+                            }
+                        },
+                        "metadata": {
+                            "source": "system",
+                            "userId": user_id_str,
+                            "severity": "info"
+                        }
+                    })
+                except Exception as e:
+                    logger.debug(f"Could not send authorization error to client {client_id}: {e}")
+    
+        # Store missed notifications for offline users
+        # Extract target users from metadata or use the event creator as fallback
+        target_user_ids = set()
+    
+        # Add the event creator as a target recipient
+        if user_id:
+            target_user_ids.add(user_id)
+    
+        # Add explicit recipients from metadata
+        if metadata:
+            # Check for user_ids list in metadata
+            if "user_ids" in metadata and isinstance(metadata["user_ids"], list):
+                target_user_ids.update(metadata["user_ids"])
+            # Check for single user_id in metadata
+            elif "user_id" in metadata:
+                target_user_ids.add(metadata["user_id"])
+            # Check for branch members (all users in a branch should get notifications)
+            elif "git_branch_id" in metadata or entity_type == "branch":
+                # For branch-level events, we'll rely on authorization during replay
+                # rather than trying to enumerate all branch members here
+                pass
+    
+        # Find currently connected user IDs
+        connected_user_ids = set(conn.user.id for conn in connections.values())
+    
+        # Store notifications for users who should receive it but aren't connected
+        offline_user_ids = target_user_ids - connected_user_ids
+    
+        if offline_user_ids:
+            for offline_user_id in offline_user_ids:
+                stored_id = store_missed_notification(offline_user_id, message)
+                if stored_id:
+                    logger.info(
+                        f"💾 Stored notification {stored_id[:8]} for offline user {offline_user_id[:8]} "
+                        f"({entity_type} {event_type})"
+                    )
                 else:
-                    logger.debug(f"Skipped unauthorized client {client_id} for {entity_type} {entity_id}")
+                    logger.warning(
+                        f"⚠️ Failed to store notification for offline user {offline_user_id[:8]} "
+                        f"({entity_type} {event_type})"
+                    )
+    
+        if event_type.lower() in ['delete', 'deleted']:
+            logger.warning(f"🗑️ DELETE BROADCAST SUMMARY: Message sent to {authorized_clients} authorized clients out of {total_connections} total connections")
+        else:
+            logger.info(f"Message broadcast to {authorized_clients} authorized clients out of {total_connections} total connections")
+    
+        # Clean up disconnected clients - single atomic deletion per connection
+        for websocket in disconnected:
+            connections.pop(websocket, None)
 
-    if event_type.lower() in ['delete', 'deleted']:
-        logger.warning(f"🗑️ DELETE BROADCAST SUMMARY: Message sent to {authorized_clients} authorized clients out of {total_connections} total connections")
-    else:
-        logger.info(f"Message broadcast to {authorized_clients} authorized clients out of {total_connections} total connections")
+# ============================================================================
+# PROMETHEUS METRICS ENDPOINT
+# ============================================================================
 
-    # Clean up disconnected clients
-    for websocket in disconnected:
-        for client_id, ws_set in active_connections.items():
-            ws_set.discard(websocket)
-        connection_subscriptions.pop(websocket, None)
-        connection_users.pop(websocket, None)  # Clean up user authentication data
+@router.get("/metrics")
+async def metrics() -> Response:
+    """
+    Prometheus metrics endpoint for WebSocket monitoring.
+    
+    Exposes metrics in Prometheus text format including:
+    - websocket_connections: Active WebSocket connections by status
+    - websocket_message_queue_size: Queued messages per user
+    - websocket_message_retries_total: Retry attempt counters
+    - websocket_message_delivery_seconds: Message delivery latency histogram
+    - websocket_broadcast_duration_seconds: Broadcast operation duration histogram
+    
+    Returns:
+        Response with metrics in Prometheus text format
+    """
+    return Response(
+        content=generate_latest(REGISTRY),
+        media_type=CONTENT_TYPE_LATEST
+    )
