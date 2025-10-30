@@ -165,7 +165,7 @@
         },
         {
           "hash": "69317648754b0fc1c994860f84454c8e",
-          "modified": "2025-10-29T10:48:14.389259",
+          "modified": "2025-10-29T13:13:07.428167",
           "name": "data-contracts.md",
           "path": "api-integration/data-contracts.md",
           "size": 17247
@@ -937,18 +937,25 @@
       "path": "development-guides/ui-patterns"
     },
     "issues": {
-      "count": 5,
+      "count": 6,
       "files": [
         {
+          "hash": "7c50b3103b0b949cd8f149fd87402b30",
+          "modified": "2025-10-30T20:28:37.670339",
+          "name": "git-branch-validation-bug.md",
+          "path": "issues/git-branch-validation-bug.md",
+          "size": 7991
+        },
+        {
           "hash": "577749312338cc2a69eca9075fa11336",
-          "modified": "2025-10-29T11:24:58.037541",
+          "modified": "2025-10-29T13:13:07.428167",
           "name": "user-id-filtering-investigation-2025-10-29.md",
           "path": "issues/user-id-filtering-investigation-2025-10-29.md",
           "size": 9833
         },
         {
           "hash": "1b8586ec5c9de445ebc49025e7c1ea7c",
-          "modified": "2025-10-29T11:39:51.590379",
+          "modified": "2025-10-29T13:13:07.428167",
           "name": "project-ownership-security-bug-2025-10-29.md",
           "path": "issues/project-ownership-security-bug-2025-10-29.md",
           "size": 11115
@@ -962,7 +969,7 @@
         },
         {
           "hash": "5773c3571f98d0b428ed6412f693384a",
-          "modified": "2025-10-29T11:31:22.579441",
+          "modified": "2025-10-29T13:13:07.428167",
           "name": "frontend-branch-mismatch-resolution.md",
           "path": "issues/frontend-branch-mismatch-resolution.md",
           "size": 6672
@@ -1005,7 +1012,7 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 15,
+      "count": 16,
       "files": [
         {
           "hash": "6a51e2d16df1b70df4fa859083bd87e1",
@@ -1041,6 +1048,13 @@
           "name": "production-deployment-guide.md",
           "path": "operations/production-deployment-guide.md",
           "size": 13610
+        },
+        {
+          "hash": "cec3edbb0933a0d2faa311b95bd6ace3",
+          "modified": "2025-10-30T21:26:00.962134",
+          "name": "websocket-metrics-guide.md",
+          "path": "operations/websocket-metrics-guide.md",
+          "size": 10397
         },
         {
           "hash": "a101e29dc7fc0d5c9217c0ba0e90c2c6",
@@ -1136,7 +1150,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 5,
+      "count": 8,
       "files": [
         {
           "hash": "92e5ced4af4d1fda095954c65ffec787",
@@ -1146,11 +1160,25 @@
           "size": 10457
         },
         {
+          "hash": "a1b87511950449f36b308c0fcd2a2040",
+          "modified": "2025-10-30T20:37:58.156902",
+          "name": "tdd-analysis-task-breakdown-2025-10-30.md",
+          "path": "reports-status/tdd-analysis-task-breakdown-2025-10-30.md",
+          "size": 9131
+        },
+        {
           "hash": "9aaf70c2a5546f1ba4224984eb827ace",
           "modified": "2025-10-28T10:54:36.728913",
           "name": "post-contract-alignment-comprehensive-analysis.md",
           "path": "reports-status/post-contract-alignment-comprehensive-analysis.md",
           "size": 21387
+        },
+        {
+          "hash": "4abc9617d93688727ba70344315c4b99",
+          "modified": "2025-10-30T20:23:11.947251",
+          "name": "websocket-reliability-code-review-2025-10-30.md",
+          "path": "reports-status/websocket-reliability-code-review-2025-10-30.md",
+          "size": 31950
         },
         {
           "hash": "2a61245ec9696bd2cdeeb5c488568a76",
@@ -1165,6 +1193,13 @@
           "name": "e2e-test-failure-analysis-2025-10-28.md",
           "path": "reports-status/e2e-test-failure-analysis-2025-10-28.md",
           "size": 9612
+        },
+        {
+          "hash": "ecd74a9828ecab0d7e4faf1e0f46eba4",
+          "modified": "2025-10-30T20:34:00.613871",
+          "name": "mcp-comprehensive-testing-report-2025-10-30.md",
+          "path": "reports-status/mcp-comprehensive-testing-report-2025-10-30.md",
+          "size": 11016
         },
         {
           "hash": "48556ccf55bd12d65c66a8c2ba485cfc",
@@ -1424,7 +1459,7 @@
         },
         {
           "hash": "c64fe77860d4e070ca7a0625e4857462",
-          "modified": "2025-10-29T10:49:41.782927",
+          "modified": "2025-10-29T13:13:07.428167",
           "name": "layer-to-layer-testing-implementation-plan.md",
           "path": "testing-qa/layer-to-layer-testing-implementation-plan.md",
           "size": 12030
@@ -1585,7 +1620,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-29T11:39:51.768083",
+  "generated_at": "2025-10-30T21:26:01.200197",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1780,6 +1815,7 @@
       "files": [
         "file-protection-bypass-via-bash-commands.md",
         "frontend-branch-mismatch-resolution.md",
+        "git-branch-validation-bug.md",
         "index.md",
         "project-ownership-security-bug-2025-10-29.md",
         "user-id-filtering-investigation-2025-10-29.md"
@@ -1808,7 +1844,8 @@
         "performance-tuning-guide.md",
         "postgresql-configuration-guide.md",
         "production-deployment-guide.md",
-        "python-3.14-installation-guide.md"
+        "python-3.14-installation-guide.md",
+        "websocket-metrics-guide.md"
       ]
     },
     "product-requirements": {
@@ -1820,10 +1857,13 @@
     "reports-status": {
       "files": [
         "e2e-test-failure-analysis-2025-10-28.md",
+        "mcp-comprehensive-testing-report-2025-10-30.md",
         "mcp-tool-response-analysis.md",
         "post-contract-alignment-comprehensive-analysis.md",
         "structural-fix-complete-report.md",
-        "test-fix-session-2025-10-24.md"
+        "tdd-analysis-task-breakdown-2025-10-30.md",
+        "test-fix-session-2025-10-24.md",
+        "websocket-reliability-code-review-2025-10-30.md"
       ]
     },
     "setup-guides": {
@@ -1889,5 +1929,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 206
+  "total_files": 211
 }
