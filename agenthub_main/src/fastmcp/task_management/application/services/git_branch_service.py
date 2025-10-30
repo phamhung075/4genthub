@@ -158,6 +158,15 @@ class GitBranchService:
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
 
+            # Fetch branch data BEFORE deletion for WebSocket notification
+            git_branch = await git_branch_repo.find_by_id(git_branch_id)
+            if not git_branch:
+                return {"success": False, "error": f"Git branch with ID {git_branch_id} not found", "error_code": "DELETE_FAILED"}
+
+            # Store branch data before deletion
+            branch_name = git_branch.name
+            branch_project_id = git_branch.project_id
+
             # delete_branch() handles all validation:
             # - Checks branch exists
             # - Verifies user owns project (not branch)
@@ -193,9 +202,9 @@ class GitBranchService:
                 await WebSocketNotificationService.broadcast_branch_event(
                     event_type="deleted",
                     branch_id=git_branch_id,
-                    project_id=project_id,
+                    project_id=branch_project_id,
                     user_id=self._user_id,
-                    branch_data={"name": git_branch.name if hasattr(git_branch, 'name') else "Unknown"}
+                    branch_data={"name": branch_name}
                 )
                 logger.info(f"Sent WebSocket notification for branch {git_branch_id} deletion")
             except Exception as ws_error:
