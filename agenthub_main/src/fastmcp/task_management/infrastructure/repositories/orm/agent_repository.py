@@ -220,6 +220,8 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
             "status": agent.status.value,
             "availability_score": 1.0 if agent.is_available() else 0.0,
             "last_active_at": datetime.now(timezone.utc) if agent.status == AgentStatus.AVAILABLE else None,
+            "created_at": agent.created_at,
+            "updated_at": agent.updated_at,
             "model_metadata": {
                 "specializations": agent.specializations,
                 "preferred_languages": agent.preferred_languages,
