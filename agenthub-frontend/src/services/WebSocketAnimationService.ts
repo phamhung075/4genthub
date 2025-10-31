@@ -72,6 +72,11 @@ class WebSocketAnimationService {
         logger.warn('🗑️ DELETE: Triggering branch animation');
       }
       this.triggerBranchAnimation(action, message);
+    } else if (entity === 'project') {
+      if (action?.toLowerCase().includes('delete')) {
+        logger.warn('🗑️ DELETE: Triggering project animation');
+      }
+      this.triggerProjectAnimation(action, message);
     } else {
       if (action?.toLowerCase().includes('delete')) {
         logger.warn('🗑️ DELETE: Entity not supported for animations:', entity);
@@ -277,6 +282,63 @@ class WebSocketAnimationService {
 
         logger.debug('🎬 WebSocketAnimationService: Branch animation request result (deferred):', {
           branchId,
+          animationType,
+          success
+        });
+      }, 150); // 150ms delay ensures DOM is ready
+    });
+  }
+
+  /**
+   * Trigger animations for project operations using centralized AnimationFactory
+   */
+  private triggerProjectAnimation(action: string, message: WSMessage) {
+    const { metadata } = message;
+    const projectTitle = metadata?.project_title || 'Project';
+
+    logger.debug('🎯 WebSocketAnimationService: Triggering project animation via AnimationFactory:', {
+      action,
+      projectTitle
+    });
+
+    // Extract project ID from message for targeted animations
+    const primary = message.payload?.data?.primary;
+    const primaryId = primary && !Array.isArray(primary) ? primary.id : undefined;
+    const directDataId = message.payload?.data?.id;
+    const metadataId = message.metadata?.entity_id;
+    const projectId = primaryId || directDataId || metadataId;
+
+    if (!projectId) {
+      logger.warn('❌ No project ID found - cannot trigger targeted animation');
+      return;
+    }
+
+    // Map WebSocket actions to animation types
+    let animationType: AnimationType | null = null;
+    switch (action) {
+      case 'created':
+        animationType = 'create';
+        break;
+      case 'updated':
+        animationType = 'update';
+        break;
+      case 'delete':
+      case 'deleted':
+        animationType = 'delete';
+        break;
+      default:
+        logger.debug('🎬 WebSocketAnimationService: Unknown project action:', action);
+        return;
+    }
+
+    // FIX: Defer animation until after DOM element exists
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        // Trigger animation via centralized factory
+        const success = animationFactory.animate(projectId, animationType!, 'websocket');
+
+        logger.debug('🎬 WebSocketAnimationService: Project animation request result (deferred):', {
+          projectId,
           animationType,
           success
         });
