@@ -407,7 +407,8 @@ class SubtaskApplicationFacade:
             status=subtask_data.get("status") if subtask_data else None,
             priority=subtask_data.get("priority") if subtask_data else None,
             assignees=subtask_data.get("assignees") if subtask_data else None,
-            progress_percentage=subtask_data.get("progress_percentage") if subtask_data else None
+            progress_percentage=subtask_data.get("progress_percentage") if subtask_data else None,
+            progress_notes=subtask_data.get("progress_notes") if subtask_data else None
         )
         response = update_subtask_use_case.execute(request)
         result = {

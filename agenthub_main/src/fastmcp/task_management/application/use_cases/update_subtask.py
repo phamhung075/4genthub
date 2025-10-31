@@ -56,7 +56,10 @@ class UpdateSubtaskUseCase:
             if request.progress_percentage is not None:
                 # Update subtask progress percentage using domain method
                 subtask.update_progress_percentage(request.progress_percentage)
-            
+            if request.progress_notes is not None:
+                # Append progress notes to history using domain method
+                subtask.append_progress(request.progress_notes)
+
             self._subtask_repository.save(subtask)
             # Standalone subtask response - include parent_task_id
             updated_subtask = subtask.to_dict(include_parent_id=True)

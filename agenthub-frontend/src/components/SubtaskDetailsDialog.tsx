@@ -11,6 +11,7 @@ import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { CopyableId } from "./ui/CopyableId";
 import { ParentTaskReference } from "./ui/ParentTaskReference";
+import { ProgressHistoryTimeline } from "./ProgressHistoryTimeline";
 
 interface SubtaskDetailsDialogProps {
   open: boolean;
@@ -303,13 +304,13 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                           <span className="text-sm font-medium">{fullSubtask.status === 'done' ? 100 : fullSubtask.progress_percentage}%</span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div 
+                          <div
                             className="h-2 rounded-full transition-all duration-300 relative overflow-hidden group"
                             style={{ width: `${fullSubtask.status === 'done' ? 100 : fullSubtask.progress_percentage}%` }}
                           >
                             {/* Background gradient - lighter blue for subtasks */}
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-blue-500" />
-                            <div 
+                            <div
                               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                               style={{
                                 backgroundSize: '200% 100%',
@@ -326,6 +327,17 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                         <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
                           {fullSubtask.progress_notes}
                         </p>
+                      </div>
+                    )}
+                    {fullSubtask.progress_history && (
+                      <div>
+                        <span className="text-sm font-medium block mb-2">Progress History:</span>
+                        <ProgressHistoryTimeline
+                          progressHistory={fullSubtask.progress_history}
+                          progressCount={fullSubtask.progress_count}
+                          variant="compact"
+                          className="mt-1"
+                        />
                       </div>
                     )}
                   </div>

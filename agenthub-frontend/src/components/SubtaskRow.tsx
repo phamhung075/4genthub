@@ -300,6 +300,12 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
                   <strong>Progress Notes:</strong> {fullSubtask.progress_notes}
                 </div>
               )}
+              {fullSubtask.progress_count && fullSubtask.progress_count > 0 && (
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  <strong>Progress Updates:</strong> {fullSubtask.progress_count} {fullSubtask.progress_count === 1 ? 'update' : 'updates'} recorded
+                  <span className="text-gray-500 ml-1">(view details for history)</span>
+                </div>
+              )}
             </div>
           </TableCell>
         </TableRow>

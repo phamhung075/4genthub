@@ -944,7 +944,7 @@
       "path": "development-guides/ui-patterns"
     },
     "issues": {
-      "count": 6,
+      "count": 8,
       "files": [
         {
           "hash": "7c50b3103b0b949cd8f149fd87402b30",
@@ -959,6 +959,13 @@
           "name": "user-id-filtering-investigation-2025-10-29.md",
           "path": "issues/user-id-filtering-investigation-2025-10-29.md",
           "size": 9833
+        },
+        {
+          "hash": "71a6eeb34199ff836f80f671e57c5ce0",
+          "modified": "2025-10-31T17:56:13.030246",
+          "name": "critical-data-persistence-failure-2025-10-31.md",
+          "path": "issues/critical-data-persistence-failure-2025-10-31.md",
+          "size": 15645
         },
         {
           "hash": "1b8586ec5c9de445ebc49025e7c1ea7c",
@@ -987,6 +994,13 @@
           "name": "file-protection-bypass-via-bash-commands.md",
           "path": "issues/file-protection-bypass-via-bash-commands.md",
           "size": 9161
+        },
+        {
+          "hash": "bd06c606d0ac4d3e0b8da28ba156a07f",
+          "modified": "2025-10-31T18:29:35.986501",
+          "name": "persistence-issue-resolution-2025-10-31.md",
+          "path": "issues/persistence-issue-resolution-2025-10-31.md",
+          "size": 11675
         }
       ],
       "path": "issues"
@@ -1343,7 +1357,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 28,
+      "count": 29,
       "files": [
         {
           "hash": "1191f0dddee0a1005a3e9c7d1cd50aa9",
@@ -1456,6 +1470,13 @@
           "name": "test-coverage-report-2025-10-24.md",
           "path": "testing-qa/test-coverage-report-2025-10-24.md",
           "size": 14454
+        },
+        {
+          "hash": "f3f2eee0d3e63d3f2eaf0dc1ea855800",
+          "modified": "2025-10-31T17:59:51.383253",
+          "name": "mcp-comprehensive-test-report-2025-10-31.md",
+          "path": "testing-qa/mcp-comprehensive-test-report-2025-10-31.md",
+          "size": 18969
         },
         {
           "hash": "420fbf7bdb81eb34ab5edf01cf7408e6",
@@ -1662,7 +1683,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-31T17:38:29.067732",
+  "generated_at": "2025-10-31T18:29:36.748581",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1856,10 +1877,12 @@
     ],
     "issues": {
       "files": [
+        "critical-data-persistence-failure-2025-10-31.md",
         "file-protection-bypass-via-bash-commands.md",
         "frontend-branch-mismatch-resolution.md",
         "git-branch-validation-bug.md",
         "index.md",
+        "persistence-issue-resolution-2025-10-31.md",
         "project-ownership-security-bug-2025-10-29.md",
         "user-id-filtering-investigation-2025-10-29.md"
       ]
@@ -1939,6 +1962,7 @@
         "label-integration-test-coverage.md",
         "layer-to-layer-contract-testing-guide.md",
         "layer-to-layer-testing-implementation-plan.md",
+        "mcp-comprehensive-test-report-2025-10-31.md",
         "mcp-tools-comprehensive-test-report-2025-10-31.md",
         "mcp-tools-comprehensive-test-results.md",
         "mcp-tools-test-report-2025-10-31-session-2.md",
@@ -1977,5 +2001,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 217
+  "total_files": 220
 }

@@ -205,6 +205,8 @@ class SubtaskCRUDHandler:
                 update_data["assignees"] = assignees
             if progress_percentage is not None:
                 update_data["progress_percentage"] = progress_percentage
+            if progress_notes is not None:
+                update_data["progress_notes"] = progress_notes
 
             result = facade.handle_manage_subtask(
                 action="update",

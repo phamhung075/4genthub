@@ -108,6 +108,8 @@ class SubtaskDTO(BaseModel):
     assignees: Optional[List[str]] = None
     assignees_count: int
     progress_percentage: Optional[int] = None
+    progress_history: Optional[Dict[str, Any]] = None  # Detailed progress tracking with timestamped entries
+    progress_count: Optional[int] = None  # Number of progress entries
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
     progress_notes: Optional[str] = None
