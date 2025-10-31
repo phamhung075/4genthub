@@ -52,15 +52,35 @@ function isValidISO8601(value: any): boolean {
 }
 
 /**
+ * Detect if response is in minimal/performance mode
+ */
+function isMinimalMode(data: any): boolean {
+  // Check if this is a minimal response (missing typically-required fields)
+  // Minimal mode responses omit project_id, subtasks, context_data, etc.
+  return !data.project_id && !data.subtasks && !data.context_data;
+}
+
+/**
  * Validate Task response structure
  */
 export function validateTask(data: any, endpoint: string): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
+  const minimal = isMinimalMode(data);
 
-  // Required UUID fields
-  const uuidFields = ['id', 'git_branch_id', 'project_id'];
-  uuidFields.forEach(field => {
+  // Log minimal mode detection for debugging
+  if (minimal && import.meta.env.DEV) {
+    logger.debug('🎯 [Response Validation] Minimal mode detected - relaxed validation applied', {
+      endpoint,
+      hasProjectId: !!data.project_id,
+      hasSubtasks: !!data.subtasks,
+      hasContextData: !!data.context_data
+    });
+  }
+
+  // Required UUID fields (always required)
+  const alwaysRequiredUUIDs = ['id', 'git_branch_id'];
+  alwaysRequiredUUIDs.forEach(field => {
     if (!data[field]) {
       errors.push({
         field,
@@ -78,6 +98,23 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
     }
   });
 
+  // Optional UUID fields in minimal mode
+  if (!minimal && !data.project_id) {
+    errors.push({
+      field: 'project_id',
+      expected: 'UUID string',
+      actual: String(data.project_id),
+      message: 'project_id is missing or null'
+    });
+  } else if (data.project_id && !isValidUUID(data.project_id)) {
+    errors.push({
+      field: 'project_id',
+      expected: 'Valid UUID',
+      actual: String(data.project_id),
+      message: 'project_id is not a valid UUID'
+    });
+  }
+
   // Required string field
   if (!data.title || typeof data.title !== 'string') {
     errors.push({
@@ -88,22 +125,22 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
     });
   }
 
-  // Assignees must be array
-  if (data.assignees === null || data.assignees === undefined) {
+  // Assignees validation (more lenient in minimal mode)
+  if (!minimal && (data.assignees === null || data.assignees === undefined)) {
     errors.push({
       field: 'assignees',
       expected: 'array',
       actual: String(data.assignees),
       message: 'assignees is null/undefined (should be empty array [])'
     });
-  } else if (!Array.isArray(data.assignees)) {
+  } else if (data.assignees !== undefined && data.assignees !== null && !Array.isArray(data.assignees)) {
     errors.push({
       field: 'assignees',
       expected: 'array',
       actual: typeof data.assignees,
       message: 'assignees is not an array'
     });
-  } else {
+  } else if (Array.isArray(data.assignees)) {
     // Check each assignee has @ prefix
     data.assignees.forEach((assignee: any, index: number) => {
       if (typeof assignee !== 'string') {
@@ -150,61 +187,57 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
     }
   }
 
-  // Subtasks array (should never be null)
-  if (data.subtasks === null) {
-    errors.push({
-      field: 'subtasks',
-      expected: 'array',
-      actual: 'null',
-      message: 'subtasks is null (should be empty array [])'
-    });
-  } else if (data.subtasks !== undefined && !Array.isArray(data.subtasks)) {
-    errors.push({
-      field: 'subtasks',
-      expected: 'array',
-      actual: typeof data.subtasks,
-      message: 'subtasks is not an array'
-    });
-  }
-
-  // Subtask count fields
-  if (typeof data.subtask_count === 'number' && Array.isArray(data.subtasks)) {
-    if (data.subtask_count !== data.subtasks.length) {
+  // Subtasks array validation (only validate if not in minimal mode)
+  if (!minimal) {
+    // Allow null or array - both mean "no subtasks" or "subtasks not loaded"
+    if (data.subtasks !== undefined && data.subtasks !== null && !Array.isArray(data.subtasks)) {
       errors.push({
-        field: 'subtask_count',
-        expected: String(data.subtasks.length),
-        actual: String(data.subtask_count),
-        message: `subtask_count (${data.subtask_count}) doesn't match subtasks.length (${data.subtasks.length})`
+        field: 'subtasks',
+        expected: 'array or null',
+        actual: typeof data.subtasks,
+        message: 'subtasks must be an array or null'
       });
     }
-  }
 
-  // Completed subtasks count
-  if (typeof data.completed_subtasks === 'number' && Array.isArray(data.subtasks)) {
-    const actualCompleted = data.subtasks.filter((s: any) => s.status === 'done' || s.status === 'completed').length;
-    if (data.completed_subtasks !== actualCompleted) {
+    // Subtask count fields (only validate if subtasks array is present)
+    if (typeof data.subtask_count === 'number' && Array.isArray(data.subtasks)) {
+      if (data.subtask_count !== data.subtasks.length) {
+        errors.push({
+          field: 'subtask_count',
+          expected: String(data.subtasks.length),
+          actual: String(data.subtask_count),
+          message: `subtask_count (${data.subtask_count}) doesn't match subtasks.length (${data.subtasks.length})`
+        });
+      }
+    }
+
+    // Completed subtasks count (only validate if subtasks array is present)
+    if (typeof data.completed_subtasks === 'number' && Array.isArray(data.subtasks)) {
+      const actualCompleted = data.subtasks.filter((s: any) => s.status === 'done' || s.status === 'completed').length;
+      if (data.completed_subtasks !== actualCompleted) {
+        errors.push({
+          field: 'completed_subtasks',
+          expected: String(actualCompleted),
+          actual: String(data.completed_subtasks),
+          message: `completed_subtasks (${data.completed_subtasks}) doesn't match actual completed count (${actualCompleted})`
+        });
+      }
+    }
+
+    // context_data validation (only in full mode)
+    if (data.context_data === null) {
+      warnings.push({
+        field: 'context_data',
+        message: 'context_data is null (expected empty object {})'
+      });
+    } else if (data.context_data !== undefined && typeof data.context_data !== 'object') {
       errors.push({
-        field: 'completed_subtasks',
-        expected: String(actualCompleted),
-        actual: String(data.completed_subtasks),
-        message: `completed_subtasks (${data.completed_subtasks}) doesn't match actual completed count (${actualCompleted})`
+        field: 'context_data',
+        expected: 'object',
+        actual: typeof data.context_data,
+        message: 'context_data is not an object'
       });
     }
-  }
-
-  // context_data should be object, not null
-  if (data.context_data === null) {
-    warnings.push({
-      field: 'context_data',
-      message: 'context_data is null (expected empty object {})'
-    });
-  } else if (data.context_data !== undefined && typeof data.context_data !== 'object') {
-    errors.push({
-      field: 'context_data',
-      expected: 'object',
-      actual: typeof data.context_data,
-      message: 'context_data is not an object'
-    });
   }
 
   // Progress percentage should be 0-100
@@ -363,33 +396,135 @@ export function validateProject(data: any, endpoint: string): ValidationResult {
 }
 
 /**
+ * Validate BranchSummary response structure
+ * Used for performance-optimized bulk summary endpoints
+ */
+export function validateBranchSummary(data: any, endpoint: string): ValidationResult {
+  const errors: ValidationError[] = [];
+  const warnings: ValidationWarning[] = [];
+
+  // Required UUID fields
+  if (!isValidUUID(data.id)) {
+    errors.push({
+      field: 'id',
+      expected: 'Valid UUID',
+      actual: String(data.id),
+      message: 'id is missing or not a valid UUID'
+    });
+  }
+
+  if (!isValidUUID(data.project_id)) {
+    errors.push({
+      field: 'project_id',
+      expected: 'Valid UUID',
+      actual: String(data.project_id),
+      message: 'project_id is missing or not a valid UUID'
+    });
+  }
+
+  // Required string field (name is always required in BranchSummary)
+  if (!data.name || typeof data.name !== 'string') {
+    errors.push({
+      field: 'name',
+      expected: 'string',
+      actual: typeof data.name,
+      message: 'name is missing or not a string'
+    });
+  }
+
+  // git_branch_name is OPTIONAL in BranchSummary (unlike GitBranch entity)
+  if (data.git_branch_name !== undefined && typeof data.git_branch_name !== 'string') {
+    warnings.push({
+      field: 'git_branch_name',
+      message: `git_branch_name should be string if present, got ${typeof data.git_branch_name}`
+    });
+  }
+
+  // Required task count field
+  if (typeof data.task_count !== 'number') {
+    errors.push({
+      field: 'task_count',
+      expected: 'number',
+      actual: typeof data.task_count,
+      message: 'task_count is missing or not a number'
+    });
+  }
+
+  // progress_percentage should be 0-100
+  if (typeof data.progress_percentage === 'number') {
+    if (data.progress_percentage < 0 || data.progress_percentage > 100) {
+      errors.push({
+        field: 'progress_percentage',
+        expected: '0-100',
+        actual: String(data.progress_percentage),
+        message: `progress_percentage (${data.progress_percentage}) is out of range`
+      });
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    timestamp: new Date().toISOString(),
+    endpoint
+  };
+}
+
+/**
  * Validate GitBranch response structure
  */
 export function validateGitBranch(data: any, endpoint: string): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
 
-  // Required UUID fields
-  const uuidFields = ['id', 'project_id'];
-  uuidFields.forEach(field => {
-    if (!isValidUUID(data[field])) {
+  // Check if this is a DELETE response (has 'deleted' field)
+  const isDeleteResponse = data.deleted === true;
+
+  if (isDeleteResponse) {
+    // DELETE responses only need to validate basic confirmation fields
+    if (!isValidUUID(data.id)) {
       errors.push({
-        field,
+        field: 'id',
         expected: 'Valid UUID',
-        actual: String(data[field]),
-        message: `${field} is missing or not a valid UUID`
+        actual: String(data.id),
+        message: 'id is missing or not a valid UUID'
       });
     }
-  });
 
-  // Required string field
-  if (!data.git_branch_name || typeof data.git_branch_name !== 'string') {
-    errors.push({
-      field: 'git_branch_name',
-      expected: 'string',
-      actual: typeof data.git_branch_name,
-      message: 'git_branch_name is missing or not a string'
+    // Validate success field exists
+    if (typeof data.success !== 'boolean') {
+      warnings.push({
+        field: 'success',
+        expected: 'boolean',
+        actual: typeof data.success,
+        message: 'success field should be a boolean'
+      });
+    }
+  } else {
+    // GET/POST responses need full entity validation
+    // Required UUID fields
+    const uuidFields = ['id', 'project_id'];
+    uuidFields.forEach(field => {
+      if (!isValidUUID(data[field])) {
+        errors.push({
+          field,
+          expected: 'Valid UUID',
+          actual: String(data[field]),
+          message: `${field} is missing or not a valid UUID`
+        });
+      }
     });
+
+    // Required string field
+    if (!data.git_branch_name || typeof data.git_branch_name !== 'string') {
+      errors.push({
+        field: 'git_branch_name',
+        expected: 'string',
+        actual: typeof data.git_branch_name,
+        message: 'git_branch_name is missing or not a string'
+      });
+    }
   }
 
   return {
@@ -436,7 +571,7 @@ export function logValidationResult(result: ValidationResult, data: any) {
  */
 export function validateResponse(
   data: any,
-  type: 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'unknown',
+  type: 'task' | 'subtask' | 'project' | 'branch' | 'branch_summary' | 'context' | 'unknown',
   endpoint: string
 ): ValidationResult {
   switch (type) {
@@ -448,6 +583,8 @@ export function validateResponse(
       return validateProject(data, endpoint);
     case 'branch':
       return validateGitBranch(data, endpoint);
+    case 'branch_summary':
+      return validateBranchSummary(data, endpoint);
     default:
       return {
         isValid: true,
@@ -462,7 +599,11 @@ export function validateResponse(
 /**
  * Detect response type from URL
  */
-export function detectResponseType(url: string): 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'unknown' {
+export function detectResponseType(url: string): 'task' | 'subtask' | 'project' | 'branch' | 'branch_summary' | 'context' | 'unknown' {
+  // CRITICAL: Check for bulk summaries BEFORE general branches check
+  // This prevents BranchSummary objects from being validated as GitBranch entities
+  if (url.includes('/branches/summaries/bulk')) return 'branch_summary';
+
   if (url.includes('/tasks/') || url.includes('/tasks?')) return 'task';
   if (url.includes('/subtasks/')) return 'subtask';
   if (url.includes('/projects/')) return 'project';
