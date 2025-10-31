@@ -67,6 +67,15 @@ export interface TaskSummary {
  *
  * @see {@link SubtaskSummary} matches backend SubtaskSummaryDTO
  */
+/**
+ * ProgressEntry - Individual progress entry with timestamp
+ */
+export interface ProgressEntry {
+  content: string;
+  timestamp: string;
+  progress_number: number;
+}
+
 export interface SubtaskSummary {
   id: string;
   title: string;
@@ -74,6 +83,8 @@ export interface SubtaskSummary {
   priority: string;
   assignees?: string[];
   progress_percentage?: number;
+  progress_history?: Record<string, ProgressEntry>;  // Detailed progress tracking
+  progress_count?: number;  // Number of progress entries
   created_at?: string;
   updated_at?: string;
 }

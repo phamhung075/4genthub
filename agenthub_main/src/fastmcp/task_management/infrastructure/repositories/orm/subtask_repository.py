@@ -905,6 +905,8 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             "priority": subtask.priority.value if subtask.priority else "medium",
             "assignees": assignees,
             "progress_percentage": getattr(subtask, 'progress_percentage', 0),  # Use actual progress_percentage
+            "progress_history": getattr(subtask, 'progress_history', {}),  # Detailed progress tracking
+            "progress_count": getattr(subtask, 'progress_count', 0),  # Number of progress entries
             "created_at": subtask.created_at,  # BaseTimestampRepository ensures this is set
             "updated_at": subtask.updated_at   # BaseTimestampRepository ensures this is set
         }
@@ -935,6 +937,8 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             priority=Priority.from_string(model.priority),
             assignees=assignees,
             progress_percentage=model.progress_percentage or 0,
+            progress_history=model.progress_history or {},  # Detailed progress tracking
+            progress_count=model.progress_count or 0,  # Number of progress entries
             created_at=model.created_at,
             updated_at=model.updated_at
         )

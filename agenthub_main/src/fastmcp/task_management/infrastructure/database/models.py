@@ -262,6 +262,8 @@ class Subtask(Base):
     assignees: Mapped[List[str]] = mapped_column(JSON, default=list)
     estimated_effort: Mapped[Optional[str]] = mapped_column(String)
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)
+    progress_history: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)  # Detailed progress tracking
+    progress_count: Mapped[int] = mapped_column(Integer, default=0)  # Number of progress entries
     progress_state: Mapped[ProgressState] = mapped_column(Enum(ProgressState), default=ProgressState.INITIAL, nullable=False)
     progress_notes: Mapped[str] = mapped_column(Text, default="")
     blockers: Mapped[str] = mapped_column(Text, default="")

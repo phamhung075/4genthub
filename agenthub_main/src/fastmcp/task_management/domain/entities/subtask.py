@@ -24,7 +24,9 @@ class Subtask(BaseTimestampEntity):
     priority: Optional[Priority] = None
     assignees: List[str] = field(default_factory=list)
     progress_percentage: int = 0  # Progress tracking (0-100)
-    
+    progress_history: Dict[str, Any] = field(default_factory=dict)  # Detailed progress tracking
+    progress_count: int = 0  # Number of progress entries
+
     # Domain events
     _events: List[Any] = field(default_factory=list, init=False)
     
@@ -243,11 +245,11 @@ class Subtask(BaseTimestampEntity):
         """Update subtask progress percentage"""
         if not isinstance(progress_percentage, int) or not (0 <= progress_percentage <= 100):
             raise ValueError(f"Progress percentage must be integer between 0-100, got: {progress_percentage}")
-        
+
         old_progress = self.progress_percentage
         self.progress_percentage = progress_percentage
         self.touch("progress_updated")
-        
+
         # Auto-update status based on progress percentage
         if progress_percentage == 0:
             self.status = TaskStatus.todo()
@@ -255,7 +257,7 @@ class Subtask(BaseTimestampEntity):
             self.status = TaskStatus.done()
         elif 1 <= progress_percentage <= 99:
             self.status = TaskStatus.in_progress()
-        
+
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=str(self.parent_task_id),
@@ -264,6 +266,41 @@ class Subtask(BaseTimestampEntity):
                     "old": f"{self.id}:{old_progress}",
                     "new": f"{self.id}:{progress_percentage}",
                     "updated_at": self.updated_at
+                }
+            }
+        ))
+
+    def append_progress(self, progress_content: str) -> None:
+        """Append new progress to subtask history with numbered headers"""
+        self.progress_count += 1
+        progress_header = f"=== Progress {self.progress_count} ==="
+
+        # Initialize progress_history if it doesn't exist
+        if not hasattr(self, 'progress_history') or self.progress_history is None:
+            self.progress_history = {}
+
+        # Update timestamp first
+        self.touch("progress_update")
+
+        # Store the progress entry
+        progress_entry = {
+            'content': f"{progress_header}\n{progress_content}",
+            'timestamp': self.updated_at.isoformat(),
+            'progress_number': self.progress_count
+        }
+
+        # Add to history using progress number as key
+        self.progress_history[f"progress_{self.progress_count}"] = progress_entry
+
+        # Raise domain event
+        self._events.append(TaskUpdated(
+            task_id=self.parent_task_id,
+            changes={
+                "subtask_progress_history": {
+                    "old_value": f"progress_added_{self.progress_count - 1}",
+                    "new_value": f"progress_added_{self.progress_count}",
+                    "subtask_id": str(self.id),
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
                 }
             }
         ))
@@ -458,6 +495,8 @@ class Subtask(BaseTimestampEntity):
             "priority": str(self.priority),
             "assignees": assignees_list,
             "progress_percentage": self.progress_percentage,  # Include progress percentage
+            "progress_history": self.progress_history,  # Include progress history
+            "progress_count": self.progress_count,  # Include progress count
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
