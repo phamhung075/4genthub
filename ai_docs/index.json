@@ -1343,7 +1343,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 26,
+      "count": 28,
       "files": [
         {
           "hash": "1191f0dddee0a1005a3e9c7d1cd50aa9",
@@ -1479,6 +1479,13 @@
           "size": 14125
         },
         {
+          "hash": "ae15b91b5bfea7239167005cfe9f802a",
+          "modified": "2025-10-31T17:38:28.224645",
+          "name": "bug-fix-verification-nested-context-managers-2025-10-31.md",
+          "path": "testing-qa/bug-fix-verification-nested-context-managers-2025-10-31.md",
+          "size": 17642
+        },
+        {
           "hash": "2569472524f4509ef52d9363e1a90722",
           "modified": "2025-10-28T14:42:15.450407",
           "name": "layer-to-layer-contract-testing-guide.md",
@@ -1526,6 +1533,13 @@
           "name": "coverage-improvement-strategic-plan-2025-10-25.md",
           "path": "testing-qa/coverage-improvement-strategic-plan-2025-10-25.md",
           "size": 13041
+        },
+        {
+          "hash": "58da3b9bfdeccde9144c317e0e7a0238",
+          "modified": "2025-10-31T15:37:36.305128",
+          "name": "mcp-tools-test-report-2025-10-31-session-2.md",
+          "path": "testing-qa/mcp-tools-test-report-2025-10-31-session-2.md",
+          "size": 16981
         }
       ],
       "path": "testing-qa"
@@ -1648,7 +1662,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-31T14:50:38.147004",
+  "generated_at": "2025-10-31T17:38:29.067732",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1916,6 +1930,7 @@
         "agenthub-mcp-tools-test-report-2025-10-22.md",
         "api-contract-test-final-report.md",
         "backend-frontend-type-comparison-matrix.md",
+        "bug-fix-verification-nested-context-managers-2025-10-31.md",
         "contract-test-gap-analysis-2025-10-28.md",
         "coverage-improvement-complete-package-2025-10-25.md",
         "coverage-improvement-plan-2025-10-25.md",
@@ -1926,6 +1941,7 @@
         "layer-to-layer-testing-implementation-plan.md",
         "mcp-tools-comprehensive-test-report-2025-10-31.md",
         "mcp-tools-comprehensive-test-results.md",
+        "mcp-tools-test-report-2025-10-31-session-2.md",
         "remaining-test-tasks-implementation-guide.md",
         "response-property-issues-investigation-report.md",
         "server-startup-test-implementation.md",
@@ -1961,5 +1977,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 215
+  "total_files": 217
 }

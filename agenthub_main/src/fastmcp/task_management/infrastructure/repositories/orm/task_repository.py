@@ -306,7 +306,7 @@ class ORMTaskRepository(
                    **kwargs) -> TaskEntity:
         """Create a new task"""
         try:
-            with self.transaction():
+            with self.transaction() as session:
                 # Generate task ID if not provided
                 task_id = kwargs.get('id')
                 if not task_id:
@@ -336,111 +336,107 @@ class ORMTaskRepository(
 
                 # Update branch counters after task creation
                 if self.git_branch_id:
-                    with self.get_db_session() as session:
-                        from ...database.models import ProjectGitBranch
-                        branch = session.query(ProjectGitBranch).filter(
-                            ProjectGitBranch.id == self.git_branch_id
-                        ).first()
+                    from ...database.models import ProjectGitBranch
+                    branch = session.query(ProjectGitBranch).filter(
+                        ProjectGitBranch.id == self.git_branch_id
+                    ).first()
 
-                        if branch:
-                            # Increment total task count
-                            branch.task_count = (branch.task_count or 0) + 1
+                    if branch:
+                        # Increment total task count
+                        branch.task_count = (branch.task_count or 0) + 1
 
-                            # Increment completed count if task starts as completed
-                            if task_data.get('status') == 'done':
-                                branch.completed_task_count = (branch.completed_task_count or 0) + 1
+                        # Increment completed count if task starts as completed
+                        if task_data.get('status') == 'done':
+                            branch.completed_task_count = (branch.completed_task_count or 0) + 1
 
-                            # Update timestamp with semantic reason
-                            branch.touch("branch_task_count_updated")
-                            session.commit()
-                            logger.info(f"Updated branch {self.git_branch_id} counters: task_count={branch.task_count}, completed_count={branch.completed_task_count}")
+                        # Update timestamp with semantic reason
+                        branch.touch("branch_task_count_updated")
+                        session.commit()
+                        logger.info(f"Updated branch {self.git_branch_id} counters: task_count={branch.task_count}, completed_count={branch.completed_task_count}")
 
                 # Add assignees with proper error handling
                 if assignee_ids:
-                    with self.get_db_session() as session:
-                        try:
-                            for assignee_id in assignee_ids:
-                                assignee = TaskAssignee(
-                                    id=str(uuid.uuid4()),  # Generate UUID for assignee record
-                                    task_id=task.id,
-                                    assignee_id=assignee_id,
-                                    role=kwargs.get('assignee_role', 'contributor'),
-                                    user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
-                                    assigned_at=datetime.now(timezone.utc)  # Set assignment timestamp
-                                )
-                                session.add(assignee)
-                            session.commit()
-                        except IntegrityError as ie:
-                            session.rollback()
-                            logger.error(f"Integrity error creating task assignees: {ie}")
-                            if "not null" in str(ie).lower():
-                                logger.error("Missing required field for task assignee (likely user_id)")
-                            elif "foreign key" in str(ie).lower():
-                                logger.error("Referenced task or user doesn't exist for assignee relationship")
-                            # Continue - assignees are optional
-                        except SQLAlchemyError as se:
-                            session.rollback()
-                            logger.error(f"Database error creating task assignees: {se}")
-                            # Continue - assignees are optional
-                        except Exception as e:
-                            session.rollback()
-                            logger.error(f"Failed to create task assignee relationships: {e}")
-                            # Continue - assignees are optional
+                    try:
+                        for assignee_id in assignee_ids:
+                            assignee = TaskAssignee(
+                                id=str(uuid.uuid4()),  # Generate UUID for assignee record
+                                task_id=task.id,
+                                assignee_id=assignee_id,
+                                role=kwargs.get('assignee_role', 'contributor'),
+                                user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
+                                assigned_at=datetime.now(timezone.utc)  # Set assignment timestamp
+                            )
+                            session.add(assignee)
+                        session.commit()
+                    except IntegrityError as ie:
+                        session.rollback()
+                        logger.error(f"Integrity error creating task assignees: {ie}")
+                        if "not null" in str(ie).lower():
+                            logger.error("Missing required field for task assignee (likely user_id)")
+                        elif "foreign key" in str(ie).lower():
+                            logger.error("Referenced task or user doesn't exist for assignee relationship")
+                        # Continue - assignees are optional
+                    except SQLAlchemyError as se:
+                        session.rollback()
+                        logger.error(f"Database error creating task assignees: {se}")
+                        # Continue - assignees are optional
+                    except Exception as e:
+                        session.rollback()
+                        logger.error(f"Failed to create task assignee relationships: {e}")
+                        # Continue - assignees are optional
                 
                 # Handle labels if provided with proper error handling
                 if label_names:
                     from ...database.models import Label
-                    with self.get_db_session() as session:
-                        try:
-                            for label_name in label_names:
-                                # Get or create label
-                                label = session.query(Label).filter(Label.name == label_name).first()
-                                if not label:
-                                    # Create new label with a unique ID
-                                    import uuid
-                                    label = Label(
-                                        id=str(uuid.uuid4()),
-                                        name=label_name,
-                                        color="#0066cc",
-                                        description="",
-                                        user_id=self.user_id,  # DDD: user_id required, no fallbacks
-                                        created_at=datetime.now(timezone.utc),
-                                        updated_at=datetime.now(timezone.utc)
-                                    )
-                                    session.add(label)
-                                    session.flush()  # Ensure label is saved before creating relationship
-                                
-                                # Create task-label relationship with user_id for data isolation
-                                task_label = TaskLabel(
-                                    task_id=task_id,
-                                    label_id=label.id,
-                                    user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
-                                    applied_at=datetime.now(timezone.utc)
+                    try:
+                        for label_name in label_names:
+                            # Get or create label
+                            label = session.query(Label).filter(Label.name == label_name).first()
+                            if not label:
+                                # Create new label with a unique ID
+                                import uuid
+                                label = Label(
+                                    id=str(uuid.uuid4()),
+                                    name=label_name,
+                                    color="#0066cc",
+                                    description="",
+                                    user_id=self.user_id,  # DDD: user_id required, no fallbacks
+                                    created_at=datetime.now(timezone.utc),
+                                    updated_at=datetime.now(timezone.utc)
                                 )
-                                session.add(task_label)
-                            session.commit()
-                        except IntegrityError as ie:
-                            session.rollback()
-                            logger.error(f"Integrity error creating task labels: {ie}")
-                            if "not null" in str(ie).lower():
-                                logger.error("Missing required field for task label (likely user_id)")
-                            elif "foreign key" in str(ie).lower():
-                                logger.error("Referenced task or label doesn't exist for label relationship")
-                            elif "duplicate key" in str(ie).lower():
-                                logger.error("Duplicate task-label relationship")
-                            # Continue - labels are optional
-                        except SQLAlchemyError as se:
-                            session.rollback()
-                            logger.error(f"Database error creating task labels: {se}")
-                            # Continue - labels are optional
-                        except Exception as e:
-                            session.rollback()
-                            logger.error(f"Failed to create task label relationships: {e}")
-                            # Continue - labels are optional
+                                session.add(label)
+                                session.flush()  # Ensure label is saved before creating relationship
+
+                            # Create task-label relationship with user_id for data isolation
+                            task_label = TaskLabel(
+                                task_id=task_id,
+                                label_id=label.id,
+                                user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
+                                applied_at=datetime.now(timezone.utc)
+                            )
+                            session.add(task_label)
+                        session.commit()
+                    except IntegrityError as ie:
+                        session.rollback()
+                        logger.error(f"Integrity error creating task labels: {ie}")
+                        if "not null" in str(ie).lower():
+                            logger.error("Missing required field for task label (likely user_id)")
+                        elif "foreign key" in str(ie).lower():
+                            logger.error("Referenced task or label doesn't exist for label relationship")
+                        elif "duplicate key" in str(ie).lower():
+                            logger.error("Duplicate task-label relationship")
+                        # Continue - labels are optional
+                    except SQLAlchemyError as se:
+                        session.rollback()
+                        logger.error(f"Database error creating task labels: {se}")
+                        # Continue - labels are optional
+                    except Exception as e:
+                        session.rollback()
+                        logger.error(f"Failed to create task label relationships: {e}")
+                        # Continue - labels are optional
                 
                 # Reload with relationships - use graceful loading
-                with self.get_db_session() as session:
-                    task = self._load_task_with_relationships(session, task.id)
+                task = self._load_task_with_relationships(session, task.id)
                 
                 # Invalidate cache after create
                 self.invalidate_cache_for_entity(
@@ -503,15 +499,14 @@ class ORMTaskRepository(
     def update_task(self, task_id: str, **updates) -> TaskEntity:
         """Update a task"""
         try:
-            with self.transaction():
+            with self.transaction() as session:
                 # Get the current task to check for status changes
-                with self.get_db_session() as session:
-                    current_task = session.query(Task).filter(Task.id == task_id).first()
-                    if not current_task:
-                        raise TaskNotFoundError(f"Task {task_id} not found")
+                current_task = session.query(Task).filter(Task.id == task_id).first()
+                if not current_task:
+                    raise TaskNotFoundError(f"Task {task_id} not found")
 
-                    old_status = current_task.status
-                    new_status = updates.get('status', old_status)
+                old_status = current_task.status
+                new_status = updates.get('status', old_status)
 
                 # Map overall_progress to progress_percentage if provided
                 if 'overall_progress' in updates:
@@ -527,100 +522,96 @@ class ORMTaskRepository(
 
                 # Update branch counters if status changed between done/not-done
                 if old_status != new_status and updated_task.git_branch_id:
-                    with self.get_db_session() as session:
-                        from ...database.models import ProjectGitBranch
-                        branch = session.query(ProjectGitBranch).filter(
-                            ProjectGitBranch.id == updated_task.git_branch_id
-                        ).first()
+                    from ...database.models import ProjectGitBranch
+                    branch = session.query(ProjectGitBranch).filter(
+                        ProjectGitBranch.id == updated_task.git_branch_id
+                    ).first()
 
-                        if branch:
-                            # Track completed count changes
-                            if old_status != 'done' and new_status == 'done':
-                                # Task became completed
-                                branch.completed_task_count = (branch.completed_task_count or 0) + 1
-                            elif old_status == 'done' and new_status != 'done':
-                                # Task became incomplete
-                                branch.completed_task_count = max(0, (branch.completed_task_count or 0) - 1)
+                    if branch:
+                        # Track completed count changes
+                        if old_status != 'done' and new_status == 'done':
+                            # Task became completed
+                            branch.completed_task_count = (branch.completed_task_count or 0) + 1
+                        elif old_status == 'done' and new_status != 'done':
+                            # Task became incomplete
+                            branch.completed_task_count = max(0, (branch.completed_task_count or 0) - 1)
 
-                            if old_status != new_status:
-                                # Update timestamp for any status change
-                                branch.touch("branch_task_status_updated")
-                                session.commit()
-                                logger.info(f"Updated branch {updated_task.git_branch_id} completed count: {branch.completed_task_count} (status: {old_status} -> {new_status})")
-                
+                        if old_status != new_status:
+                            # Update timestamp for any status change
+                            branch.touch("branch_task_status_updated")
+                            session.commit()
+                            logger.info(f"Updated branch {updated_task.git_branch_id} completed count: {branch.completed_task_count} (status: {old_status} -> {new_status})")
+
                 # Update assignees if provided
                 if 'assignee_ids' in updates:
-                    with self.get_db_session() as session:
-                        # Get existing assignee IDs for this task
-                        existing_assignees = session.query(TaskAssignee).filter(
-                            TaskAssignee.task_id == task_id
-                        ).all()
-                        existing_assignee_ids = {a.assignee_id for a in existing_assignees}
-                        new_assignee_ids = set(updates['assignee_ids'])
+                    # Get existing assignee IDs for this task
+                    existing_assignees = session.query(TaskAssignee).filter(
+                        TaskAssignee.task_id == task_id
+                    ).all()
+                    existing_assignee_ids = {a.assignee_id for a in existing_assignees}
+                    new_assignee_ids = set(updates['assignee_ids'])
 
-                        # Remove assignees that are no longer needed
-                        to_remove = existing_assignee_ids - new_assignee_ids
-                        if to_remove:
-                            session.query(TaskAssignee).filter(
-                                TaskAssignee.task_id == task_id,
-                                TaskAssignee.assignee_id.in_(to_remove)
-                            ).delete(synchronize_session=False)
+                    # Remove assignees that are no longer needed
+                    to_remove = existing_assignee_ids - new_assignee_ids
+                    if to_remove:
+                        session.query(TaskAssignee).filter(
+                            TaskAssignee.task_id == task_id,
+                            TaskAssignee.assignee_id.in_(to_remove)
+                        ).delete(synchronize_session=False)
 
-                        # Add only new assignees (idempotent - prevents duplicate inserts)
-                        to_add = new_assignee_ids - existing_assignee_ids
-                        for assignee_id in to_add:
-                            assignee = TaskAssignee(
-                                id=str(uuid.uuid4()),  # Generate UUID for assignee record
-                                task_id=task_id,
-                                assignee_id=assignee_id,
-                                role='contributor',
-                                user_id=self.user_id,
-                                assigned_at=datetime.now(timezone.utc)
-                            )
-                            session.add(assignee)
-                
+                    # Add only new assignees (idempotent - prevents duplicate inserts)
+                    to_add = new_assignee_ids - existing_assignee_ids
+                    for assignee_id in to_add:
+                        assignee = TaskAssignee(
+                            id=str(uuid.uuid4()),  # Generate UUID for assignee record
+                            task_id=task_id,
+                            assignee_id=assignee_id,
+                            role='contributor',
+                            user_id=self.user_id,
+                            assigned_at=datetime.now(timezone.utc)
+                        )
+                        session.add(assignee)
+
                 # Update labels if provided
                 if 'label_names' in updates or 'labels' in updates:
                     label_names = updates.get('label_names') or updates.get('labels', [])
                     from ...database.models import Label
-                    with self.get_db_session() as session:
-                        # Remove existing labels
-                        session.query(TaskLabel).filter(
-                            TaskLabel.task_id == task_id
-                        ).delete()
-                        
-                        # Add new labels
-                        for label_name in label_names:
-                            # Get or create label
-                            label = session.query(Label).filter(Label.name == label_name).first()
-                            if not label:
-                                # Create new label with a unique ID
-                                import uuid
-                                label = Label(
-                                    id=str(uuid.uuid4()),
-                                    name=label_name,
-                                    color="#0066cc",
-                                    description="",
-                                    user_id=self.user_id,
-                                    created_at=datetime.now(timezone.utc),
-                                    updated_at=datetime.now(timezone.utc)
-                                )
-                                session.add(label)
-                                session.flush()  # Ensure label is saved before creating relationship
-                            
-                            # Create task-label relationship with user_id for data isolation
-                            task_label = TaskLabel(
-                                task_id=task_id,
-                                label_id=label.id,
-                                user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
-                                applied_at=datetime.now(timezone.utc)
+                    # Remove existing labels
+                    session.query(TaskLabel).filter(
+                        TaskLabel.task_id == task_id
+                    ).delete()
+
+                    # Add new labels
+                    for label_name in label_names:
+                        # Get or create label
+                        label = session.query(Label).filter(Label.name == label_name).first()
+                        if not label:
+                            # Create new label with a unique ID
+                            import uuid
+                            label = Label(
+                                id=str(uuid.uuid4()),
+                                name=label_name,
+                                color="#0066cc",
+                                description="",
+                                user_id=self.user_id,
+                                created_at=datetime.now(timezone.utc),
+                                updated_at=datetime.now(timezone.utc)
                             )
-                            session.add(task_label)
-                
+                            session.add(label)
+                            session.flush()  # Ensure label is saved before creating relationship
+
+                        # Create task-label relationship with user_id for data isolation
+                        task_label = TaskLabel(
+                            task_id=task_id,
+                            label_id=label.id,
+                            user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
+                            applied_at=datetime.now(timezone.utc)
+                        )
+                        session.add(task_label)
+
                 # Reload with relationships - use graceful loading
-                with self.get_db_session() as session:
-                    task = self._load_task_with_relationships(session, task_id)
-                
+                task = self._load_task_with_relationships(session, task_id)
+
                 # Invalidate cache after update
                 self.invalidate_cache_for_entity(
                     entity_type="task",
@@ -636,7 +627,7 @@ class ORMTaskRepository(
                     self.invalidate_cache('search_tasks')
 
                 return self._model_to_entity(task)
-                
+
         except Exception as e:
             logger.error(f"Failed to update task {task_id}: {e}")
             raise TaskUpdateError(f"Failed to update task: {str(e)}")

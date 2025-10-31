@@ -435,33 +435,32 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
     async def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
         """Unassign an agent from a specific task tree within a project."""
         try:
-            with self.transaction():
-                with self.get_db_session() as session:
-                    # Find the git branch
-                    branch = session.query(ProjectGitBranch).filter(
-                        and_(
-                            ProjectGitBranch.id == git_branch_id,
-                            ProjectGitBranch.project_id == project_id,
-                            ProjectGitBranch.assigned_agent_id == agent_id
-                        )
-                    ).first()
-                    
-                    if not branch:
-                        raise ResourceNotFoundException(
-                            resource_type="Git Branch",
-                            resource_id=git_branch_id
-                        )
-                    
-                    # Unassign the agent
-                    branch.assigned_agent_id = None
-                    branch.touch("agent_unassigned")
-                    
-                    return {
-                        "success": True,
-                        "project_id": project_id,
-                        "git_branch_id": git_branch_id,
-                        "unassigned_agent_id": agent_id
-                    }
+            with self.transaction() as session:
+                # Find the git branch
+                branch = session.query(ProjectGitBranch).filter(
+                    and_(
+                        ProjectGitBranch.id == git_branch_id,
+                        ProjectGitBranch.project_id == project_id,
+                        ProjectGitBranch.assigned_agent_id == agent_id
+                    )
+                ).first()
+
+                if not branch:
+                    raise ResourceNotFoundException(
+                        resource_type="Git Branch",
+                        resource_id=git_branch_id
+                    )
+
+                # Unassign the agent
+                branch.assigned_agent_id = None
+                branch.touch("agent_unassigned")
+
+                return {
+                    "success": True,
+                    "project_id": project_id,
+                    "git_branch_id": git_branch_id,
+                    "unassigned_agent_id": agent_id
+                }
         except Exception as e:
             logger.error(f"Failed to unassign agent {agent_id} from tree {git_branch_id}: {e}")
             raise DatabaseException(
@@ -531,49 +530,48 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
     def update_project(self, project_id: str, **updates) -> ProjectEntity:
         """Update a project with ORM using proper DDD conversion pattern"""
         try:
-            with self.transaction():
+            with self.transaction() as session:
                 # Get the project entity first
-                with self.get_db_session() as session:
-                    project_model = session.query(Project).filter(
-                        Project.id == project_id
-                    ).first()
+                project_model = session.query(Project).filter(
+                    Project.id == project_id
+                ).first()
 
-                    if not project_model:
-                        raise ResourceNotFoundException(
-                            resource_type="Project",
-                            resource_id=project_id
-                        )
+                if not project_model:
+                    raise ResourceNotFoundException(
+                        resource_type="Project",
+                        resource_id=project_id
+                    )
 
-                    # If updating with a ProjectEntity, use conversion method
-                    if 'entity' in updates:
-                        project_entity = updates.pop('entity')
-                        # Convert entity to model dict using DDD pattern
-                        model_dict = self._entity_to_model_dict(project_entity)
+                # If updating with a ProjectEntity, use conversion method
+                if 'entity' in updates:
+                    project_entity = updates.pop('entity')
+                    # Convert entity to model dict using DDD pattern
+                    model_dict = self._entity_to_model_dict(project_entity)
 
-                        # Update model attributes from converted dict
-                        for key, value in model_dict.items():
-                            if key != 'model_metadata' and hasattr(project_model, key):
-                                setattr(project_model, key, value)
-
-                        # Store model_metadata in metadata field if exists
-                        if 'model_metadata' in model_dict and hasattr(project_model, 'metadata'):
-                            current_metadata = project_model.metadata or {}
-                            current_metadata.update(model_dict['model_metadata'])
-                            project_model.metadata = current_metadata
-
-                    # Apply any additional direct updates (legacy support)
-                    for key, value in updates.items():
-                        if hasattr(project_model, key):
+                    # Update model attributes from converted dict
+                    for key, value in model_dict.items():
+                        if key != 'model_metadata' and hasattr(project_model, key):
                             setattr(project_model, key, value)
 
-                    # Touch for timestamp update
-                    project_model.touch("project_updated")
+                    # Store model_metadata in metadata field if exists
+                    if 'model_metadata' in model_dict and hasattr(project_model, 'metadata'):
+                        current_metadata = project_model.metadata or {}
+                        current_metadata.update(model_dict['model_metadata'])
+                        project_model.metadata = current_metadata
 
-                    # Commit changes
-                    session.commit()
+                # Apply any additional direct updates (legacy support)
+                for key, value in updates.items():
+                    if hasattr(project_model, key):
+                        setattr(project_model, key, value)
 
-                    # Convert to entity for return
-                    updated_project = self._model_to_entity(project_model)
+                # Touch for timestamp update
+                project_model.touch("project_updated")
+
+                # Commit changes
+                session.commit()
+
+                # Convert to entity for return
+                updated_project = self._model_to_entity(project_model)
 
                 # Invalidate cache after update
                 self.invalidate_cache_for_entity(
