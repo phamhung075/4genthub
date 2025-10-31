@@ -183,6 +183,43 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
         ValidationStats.record(result);
       });
     }
+    // Handle bulk summaries response (Record of BranchSummary objects)
+    else if (responseType === 'branch_summary' && data.summaries && typeof data.summaries === 'object') {
+      // Extract individual BranchSummary objects from the summaries Record
+      const summariesArray = Object.values(data.summaries);
+      summariesArray.forEach((summary: any, index: number) => {
+        const result = validateResponse(summary, 'branch_summary', `${endpoint}[summaries.${index}]`);
+        logValidationResult(result, summary);
+        ValidationStats.record(result);
+      });
+    }
+    // Handle projects list response (array of Project objects)
+    else if (responseType === 'project' && data.projects && Array.isArray(data.projects)) {
+      // Extract individual Project objects from the projects array
+      data.projects.forEach((project: any, index: number) => {
+        const result = validateResponse(project, 'project', `${endpoint}[projects.${index}]`);
+        logValidationResult(result, project);
+        ValidationStats.record(result);
+      });
+    }
+    // Handle tasks list response (array of Task objects)
+    else if (responseType === 'task' && data.tasks && Array.isArray(data.tasks)) {
+      // Extract individual Task objects from the tasks array
+      data.tasks.forEach((task: any, index: number) => {
+        const result = validateResponse(task, 'task', `${endpoint}[tasks.${index}]`);
+        logValidationResult(result, task);
+        ValidationStats.record(result);
+      });
+    }
+    // Handle subtasks list response (array of Subtask objects)
+    else if (responseType === 'subtask' && data.subtasks && Array.isArray(data.subtasks)) {
+      // Extract individual Subtask objects from the subtasks array
+      data.subtasks.forEach((subtask: any, index: number) => {
+        const result = validateResponse(subtask, 'subtask', `${endpoint}[subtasks.${index}]`);
+        logValidationResult(result, subtask);
+        ValidationStats.record(result);
+      });
+    }
     // Handle wrapped responses (e.g., { data: {...}, success: true })
     else if (data && typeof data === 'object') {
       // Check if response has a data wrapper
