@@ -1,19 +1,15 @@
 import { Eye, Trash2 } from "lucide-react";
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { cn } from "../../../lib/utils";
 import { ShimmerBadge } from "../../ui/shimmer-badge";
 import { ShimmerButton } from "../../ui/shimmer-button";
-import { animationFactory, AnimationType } from "../../../services/AnimationFactory";
+import { useBranchAnimation } from "../../../hooks/useBranchAnimation";
 import type { BranchSummary } from "../../../types";
-import logger from "../../../utils/logger";
 
 interface BranchItemProps {
   branch: BranchSummary;
   projectId: string;
   selected: string | null;
-  isNew: boolean;
-  isFadingOut: boolean;
-  isDeleting: boolean;
   taskCount: number;
   isAnimatingCount: 'up' | 'down' | null;
   onSelect: (projectId: string, branchId: string) => void;
@@ -26,9 +22,6 @@ export const BranchItem: React.FC<BranchItemProps> = ({
   branch,
   projectId,
   selected,
-  isNew,
-  isFadingOut,
-  isDeleting,
   taskCount,
   isAnimatingCount,
   onSelect,
@@ -36,45 +29,28 @@ export const BranchItem: React.FC<BranchItemProps> = ({
   onDelete,
   project,
 }) => {
-  const elementRef = useRef<HTMLDivElement>(null);
-
-  // Register element with AnimationFactory on mount
-  useEffect(() => {
-    if (elementRef.current) {
-      animationFactory.registerElement(branch.id, elementRef.current, {
-        onAnimationStart: (type) => {
-          logger.debug(`Branch animation started: ${type}`, { branchId: branch.id, component: 'BranchItem' });
-        },
-        onAnimationEnd: (type) => {
-          logger.debug(`Branch animation complete: ${type}`, { branchId: branch.id, component: 'BranchItem' });
-        }
-      });
-
-      logger.debug('Registered branch element with AnimationFactory', { branchId: branch.id, component: 'BranchItem' });
-    }
-
-    return () => {
-      animationFactory.unregisterElement(branch.id);
-      logger.debug('Unregistered branch element from AnimationFactory', { branchId: branch.id, component: 'BranchItem' });
-    };
-  }, [branch.id]);
+  // Use animation hook for this branch
+  const {
+    isVisible,
+    animationClass,
+    desktopElementRef,
+  } = useBranchAnimation(branch, false);
 
   const isSelected = selected === `${projectId}:${branch.id}`;
+
+  // Don't render if marked as deleted
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <li key={branch.id}>
       <div
-        ref={elementRef}
+        ref={desktopElementRef}
         data-branch-id={branch.id}
         className={cn(
-          "group relative flex items-center gap-1 transition-all duration-300 ease-in-out",
-          // Fade-in animation for new branches
-          isNew && "opacity-0 -translate-x-2.5",
-          !isNew && "opacity-100 translate-x-0",
-          // Fade-out animation for deleting branches
-          isFadingOut && "opacity-0 -translate-x-2.5 pointer-events-none",
-          // Loading state for deletion process
-          isDeleting && !isFadingOut && "opacity-50 pointer-events-none"
+          "group relative flex items-center gap-1",
+          animationClass
         )}
       >
         <span className="text-muted-foreground">—</span>
@@ -121,14 +97,9 @@ export const BranchItem: React.FC<BranchItemProps> = ({
               variant="ghost"
               className="h-6 w-6"
               onClick={() => onDelete({ project, branch })}
-              disabled={isDeleting}
-              aria-label={isDeleting ? "Deleting Branch..." : "Delete Branch"}
+              aria-label="Delete Branch"
             >
-              {isDeleting ? (
-                <div className="animate-spin h-3 w-3 border-2 border-destructive border-t-transparent rounded-full" />
-              ) : (
-                <Trash2 className="w-3 h-3 text-destructive" />
-              )}
+              <Trash2 className="w-3 h-3 text-destructive" />
             </ShimmerButton>
           )}
         </div>

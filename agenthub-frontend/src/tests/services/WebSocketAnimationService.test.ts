@@ -360,6 +360,7 @@ describe('WebSocketAnimationService', () => {
     });
 
     it('should ignore messages for unsupported entities', () => {
+      // Use a truly unsupported entity type (projects are NOW supported!)
       const message: WSMessage = {
         id: 'msg-11',
         type: 'update',
@@ -367,10 +368,10 @@ describe('WebSocketAnimationService', () => {
         timestamp: new Date().toISOString(),
         priority: 'normal',
         payload: {
-          entity: 'project',
+          entity: 'unknown_entity',
           action: 'created',
           data: {
-            id: 'project-123'
+            id: 'unknown-123'
           }
         },
         metadata: {},

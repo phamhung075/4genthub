@@ -729,7 +729,7 @@
       "path": "core-architecture"
     },
     "development-guides": {
-      "count": 27,
+      "count": 28,
       "files": [
         {
           "hash": "743cdf33a47fa48cf4dc3322e9358663",
@@ -851,6 +851,13 @@
           "size": 9270
         },
         {
+          "hash": "7e533c733d2242a8d1ebe9da2999bad3",
+          "modified": "2025-10-31T11:02:06.730820",
+          "name": "3-phase-development-workflow.md",
+          "path": "development-guides/3-phase-development-workflow.md",
+          "size": 23323
+        },
+        {
           "hash": "e06d50e09d25c96b0240676b8ab6f36c",
           "modified": "2025-10-27T16:08:52.906245",
           "name": "test-organization-guide.md",
@@ -941,7 +948,7 @@
       "files": [
         {
           "hash": "7c50b3103b0b949cd8f149fd87402b30",
-          "modified": "2025-10-30T20:28:37.670339",
+          "modified": "2025-10-30T23:21:32.426609",
           "name": "git-branch-validation-bug.md",
           "path": "issues/git-branch-validation-bug.md",
           "size": 7991
@@ -1051,7 +1058,7 @@
         },
         {
           "hash": "cec3edbb0933a0d2faa311b95bd6ace3",
-          "modified": "2025-10-30T21:26:00.962134",
+          "modified": "2025-10-30T23:21:32.426609",
           "name": "websocket-metrics-guide.md",
           "path": "operations/websocket-metrics-guide.md",
           "size": 10397
@@ -1150,7 +1157,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 8,
+      "count": 9,
       "files": [
         {
           "hash": "92e5ced4af4d1fda095954c65ffec787",
@@ -1161,7 +1168,7 @@
         },
         {
           "hash": "a1b87511950449f36b308c0fcd2a2040",
-          "modified": "2025-10-30T20:37:58.156902",
+          "modified": "2025-10-30T23:21:32.426609",
           "name": "tdd-analysis-task-breakdown-2025-10-30.md",
           "path": "reports-status/tdd-analysis-task-breakdown-2025-10-30.md",
           "size": 9131
@@ -1175,7 +1182,7 @@
         },
         {
           "hash": "4abc9617d93688727ba70344315c4b99",
-          "modified": "2025-10-30T20:23:11.947251",
+          "modified": "2025-10-30T23:21:32.426609",
           "name": "websocket-reliability-code-review-2025-10-30.md",
           "path": "reports-status/websocket-reliability-code-review-2025-10-30.md",
           "size": 31950
@@ -1196,10 +1203,17 @@
         },
         {
           "hash": "ecd74a9828ecab0d7e4faf1e0f46eba4",
-          "modified": "2025-10-30T20:34:00.613871",
+          "modified": "2025-10-30T23:21:32.426609",
           "name": "mcp-comprehensive-testing-report-2025-10-30.md",
           "path": "reports-status/mcp-comprehensive-testing-report-2025-10-30.md",
           "size": 11016
+        },
+        {
+          "hash": "65ca839d33c0f16fa1fbe71dee11fad5",
+          "modified": "2025-10-31T09:24:43.948388",
+          "name": "websocket-animation-architecture-analysis.md",
+          "path": "reports-status/websocket-animation-architecture-analysis.md",
+          "size": 25105
         },
         {
           "hash": "48556ccf55bd12d65c66a8c2ba485cfc",
@@ -1329,7 +1343,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 24,
+      "count": 25,
       "files": [
         {
           "hash": "1191f0dddee0a1005a3e9c7d1cd50aa9",
@@ -1428,6 +1442,13 @@
           "name": "wave1-execution-plan.md",
           "path": "testing-qa/wave1-execution-plan.md",
           "size": 14565
+        },
+        {
+          "hash": "a7d50f8b5c720cf6358e268b6596a766",
+          "modified": "2025-10-31T10:54:25.969642",
+          "name": "mcp-tools-comprehensive-test-results.md",
+          "path": "testing-qa/mcp-tools-comprehensive-test-results.md",
+          "size": 17439
         },
         {
           "hash": "a071817db866ccda9621f80fce9a3b7f",
@@ -1620,7 +1641,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-30T21:26:01.200197",
+  "generated_at": "2025-10-31T11:02:08.540541",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1766,6 +1787,7 @@
     },
     "development-guides": {
       "files": [
+        "3-phase-development-workflow.md",
         "DDD-schema.md",
         "MCP-RESPONSE-FIX-MASTER-PLAN.md",
         "README.md",
@@ -1863,6 +1885,7 @@
         "structural-fix-complete-report.md",
         "tdd-analysis-task-breakdown-2025-10-30.md",
         "test-fix-session-2025-10-24.md",
+        "websocket-animation-architecture-analysis.md",
         "websocket-reliability-code-review-2025-10-30.md"
       ]
     },
@@ -1894,6 +1917,7 @@
         "label-integration-test-coverage.md",
         "layer-to-layer-contract-testing-guide.md",
         "layer-to-layer-testing-implementation-plan.md",
+        "mcp-tools-comprehensive-test-results.md",
         "remaining-test-tasks-implementation-guide.md",
         "response-property-issues-investigation-report.md",
         "server-startup-test-implementation.md",
@@ -1929,5 +1953,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 211
+  "total_files": 214
 }

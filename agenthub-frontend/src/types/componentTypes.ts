@@ -167,14 +167,12 @@ export interface ProjectListContentProps {
   taskCounts: Record<string, number>;
   openProjects: Record<string, boolean>;
   selected: string | null;
-  // Animation states
-  newBranches: Set<string>;
-  fadingOutBranches: Set<string>;
-  deletingBranches: Set<string>;
+  // Animation states (task count changes only)
+  // Note: Branch animations are now self-managed by useBranchAnimation hook
   animatingCounts: Map<string, 'up' | 'down'>;
   // Handlers
   onToggleProject: (projectId: string) => void;
-  onSelectBranch: (projectId: string, branchId: string) => void;
+  onSelectBranch?: (projectId: string, branchId: string) => void;
   onShowProjectDetails?: (project: Project) => void;
   onShowBranchDetails?: (project: Project, branch: any) => void;
   onCreateBranch: (project: Project) => void;

@@ -35,7 +35,6 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
   const {
     projects,
-    setProjects,
     branchSummaries,
     taskCounts,
     loading,
@@ -71,20 +70,13 @@ const ProjectList: React.FC<ProjectListProps> = ({
     setForm,
   } = dialogs;
 
-  // Custom hooks for animations
+  // Custom hooks for animations (task count changes only)
+  // Note: Branch animations are now self-managed by useBranchAnimation hook
   const animations = useProjectAnimations({
-    projects,
     taskCounts,
   });
 
-  const {
-    newBranches,
-    fadingOutBranches,
-    deletingBranches,
-    animatingCounts,
-    setDeletingBranches,
-    setFadingOutBranches,
-  } = animations;
+  const { animatingCounts } = animations;
 
   // Toggle project expand/collapse
   const toggleProject = (projectId: string) => {
@@ -152,39 +144,16 @@ const ProjectList: React.FC<ProjectListProps> = ({
   const handleDeleteBranchWrapper = async () => {
     if (!showDeleteBranch) return;
 
-    const branchId = showDeleteBranch.branch.id;
-
-    // Animation callbacks
-    const onFadeoutStart = () => {
-      setFadingOutBranches(prev => new Set(prev).add(branchId));
-    };
-
-    const onFadeoutComplete = () => {
-      setDeletingBranches(prev => new Set(prev).add(branchId));
-    };
-
     setSaving(true);
 
     try {
-      await handleDeleteBranch(showDeleteBranch, onFadeoutStart, onFadeoutComplete);
+      // Note: Branch animations are now self-managed by useBranchAnimation hook
+      // No need for animation callbacks - the hook handles fadeout/delete animations automatically
+      await handleDeleteBranch(showDeleteBranch);
       closeDialog('deleteBranch');
     } catch (e) {
       // Error already handled by hook
     } finally {
-      // Clean up loading states
-      setDeletingBranches(prev => {
-        const updated = new Set(prev);
-        updated.delete(branchId);
-        return updated;
-      });
-
-      // Clean up animation states
-      setFadingOutBranches(prev => {
-        const updated = new Set(prev);
-        updated.delete(branchId);
-        return updated;
-      });
-
       setSaving(false);
     }
   };
@@ -230,9 +199,6 @@ const ProjectList: React.FC<ProjectListProps> = ({
         taskCounts={taskCounts}
         openProjects={openProjects}
         selected={selected}
-        newBranches={newBranches}
-        fadingOutBranches={fadingOutBranches}
-        deletingBranches={deletingBranches}
         animatingCounts={animatingCounts}
         onToggleProject={toggleProject}
         onSelectBranch={onSelect}

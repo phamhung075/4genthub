@@ -184,7 +184,7 @@ export interface UseProjectDataReturn {
   handleUpdateProject: (project: Project, data: ProjectFormData) => Promise<void>;
   handleDeleteProject: (project: Project) => Promise<void>;
   handleCreateBranch: (project: Project, data: ProjectFormData) => Promise<void>;
-  handleDeleteBranch: (dialogState: { project: Project; branch: any }, onFadeoutStart: () => void, onFadeoutComplete: () => void) => Promise<void>;
+  handleDeleteBranch: (dialogState: { project: Project; branch: any }) => Promise<void>;
   handleRefresh: () => Promise<void>;
 }
 
@@ -192,23 +192,17 @@ export interface UseProjectDataReturn {
  * Options for useProjectAnimations hook
  */
 export interface UseProjectAnimationsOptions {
-  projects: Project[];
   taskCounts: Record<string, number>;
 }
 
 /**
  * Return type for useProjectAnimations hook
- * Manages animation states for project and branch interactions
+ * Manages task count change animations
+ *
+ * Note: Branch animations (create/delete/update) are now handled by useBranchAnimation hook
  */
 export interface UseProjectAnimationsReturn {
-  newBranches: Set<string>;
-  fadingOutBranches: Set<string>;
-  deletingBranches: Set<string>;
   animatingCounts: Map<string, 'up' | 'down'>;
-  previousTaskCounts: Record<string, number>;
-  isInitialLoad: boolean;
-  setDeletingBranches: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setFadingOutBranches: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 /**

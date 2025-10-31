@@ -320,22 +320,15 @@ export const useProjectData = ({
   };
 
   const handleDeleteBranch = async (
-    dialogState: { project: Project; branch: any },
-    onFadeoutStart: () => void,
-    onFadeoutComplete: () => void
+    dialogState: { project: Project; branch: any }
   ) => {
     const projectId = dialogState.project.id;
     const branchId = dialogState.branch.id;
     const branchName = dialogState.branch.git_branch_name || dialogState.branch.name;
 
-    // Start fade-out animation first
-    onFadeoutStart();
-
-    // Wait for fade-out animation to complete before proceeding
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    // Mark branch as being deleted (for loading state) - handled by parent
-    onFadeoutComplete();
+    // Note: Animations are now self-managed by useBranchAnimation hook
+    // No need for parent callbacks - the hook handles fadeout/delete animations automatically
+    // via branchDeletionTracker.ts
 
     // Store backup data for rollback
     const backupProjects = [...projects];
@@ -390,7 +383,7 @@ export const useProjectData = ({
           errorMsg,
           {
             label: 'Retry',
-            onClick: () => handleDeleteBranch(dialogState, onFadeoutStart, onFadeoutComplete)
+            onClick: () => handleDeleteBranch(dialogState)
           }
         );
         setError(errorMsg);
@@ -415,7 +408,7 @@ export const useProjectData = ({
         errorMessage,
         {
           label: 'Retry',
-          onClick: () => handleDeleteBranch(dialogState, onFadeoutStart, onFadeoutComplete)
+          onClick: () => handleDeleteBranch(dialogState)
         }
       );
       setError(errorMessage);
