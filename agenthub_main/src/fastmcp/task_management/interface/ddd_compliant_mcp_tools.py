@@ -24,8 +24,8 @@ if TYPE_CHECKING:
     pass
 
 
-# Infrastructure layer imports (proper DDD dependency direction)
-from ..application.use_cases.call_agent import CallAgentUseCase
+# Agent management imports (new implementation)
+from fastmcp.agent_management.interface.mcp_controllers import CallAgentMCPController
 
 # Infrastructure layer imports (proper DDD dependency direction)
 from ..infrastructure.configuration.tool_config import ToolConfig
@@ -39,9 +39,7 @@ from .mcp_controllers.agent_mcp_controller.agent_mcp_controller import (
 )
 
 # Claude agent controller removed
-from .mcp_controllers.call_agent_mcp_controller.call_agent_mcp_controller import (
-    CallAgentMCPController,
-)
+# CallAgentMCPController now imported from agent_management module (see line 28)
 from .mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller import (
     GitBranchMCPController,
 )
@@ -181,10 +179,9 @@ class DDDCompliantMCPTools:
         # Agent controller with facade service
         self._agent_controller = AgentMCPController(facade_service=self._facade_service)
 
-        # Initialize call agent use case and controller
-        cursor_agent_dir = self._path_resolver.get_cursor_agent_dir()
-        self._call_agent_use_case = CallAgentUseCase(cursor_agent_dir)
-        self._call_agent_controller = CallAgentMCPController(self._call_agent_use_case)
+        # Initialize new call agent controller (agent_management module)
+        # This uses the database-backed user agent instance system
+        self._call_agent_controller = CallAgentMCPController()
 
         # Claude agent controller removed
 

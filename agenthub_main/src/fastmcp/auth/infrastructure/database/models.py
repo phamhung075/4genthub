@@ -194,3 +194,46 @@ class UserSession(Base):
         Index('ix_user_sessions_refresh_token', 'refresh_token'),
         Index('ix_user_sessions_is_active', 'is_active'),
     )
+
+
+class UserTokenBalance(Base):
+    """Token balance tracking for user quotas and consumption"""
+    __tablename__ = "user_token_balances"
+
+    # Primary key
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    # Foreign key to user
+    user_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True
+    )
+
+    # Current balance
+    available_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    monthly_quota: Mapped[int] = mapped_column(Integer, default=10000, nullable=False)
+
+    # Reset tracking
+    last_reset_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    next_reset_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+    # Usage statistics
+    tokens_consumed_today: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    tokens_consumed_this_month: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_tokens_consumed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # Audit trail
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+    # Relationship to user (optional, for easier queries)
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id], lazy="select")
+
+    # Indexes for performance
+    __table_args__ = (
+        Index('ix_user_token_balances_user_id', 'user_id'),
+        CheckConstraint('available_tokens >= 0', name='check_available_tokens_non_negative'),
+        CheckConstraint('monthly_quota >= 0', name='check_monthly_quota_non_negative'),
+    )
