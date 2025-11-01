@@ -202,3 +202,242 @@ class AgentManagementFacade:
             List of all agent templates in the system
         """
         return self._template_repo.find_all()
+
+    def update_instance(
+        self,
+        user_id: UserId,
+        instance_id: str,
+        agent_name: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        tools: Optional[list[str]] = None,
+        capabilities: Optional[Dict[str, Any]] = None,
+        rules: Optional[list[str]] = None,
+        output_format: Optional[str] = None,
+        visibility: Optional[str] = None
+    ) -> UserAgentInstance:
+        """
+        Update a user agent instance.
+
+        This method allows users to update their agent instance configuration
+        and metadata. Only the instance owner can update their instances.
+
+        Args:
+            user_id: User identifier (must match instance owner)
+            instance_id: Instance identifier to update
+            agent_name: New custom name for instance (optional)
+            system_prompt: New system prompt (optional)
+            tools: New tools list (optional)
+            capabilities: New capabilities dict (optional)
+            rules: New rules list (optional)
+            output_format: New output format (optional)
+            visibility: New visibility ('private' or 'public', optional)
+
+        Returns:
+            Updated UserAgentInstance
+
+        Raises:
+            ValueError: If instance not found or user is not the owner
+        """
+        from ..value_objects.user_agent_instance_id import UserAgentInstanceId
+
+        logger.info(f"Updating instance {instance_id} for user {user_id.value}")
+
+        # Find instance
+        instance_uuid = UserAgentInstanceId.from_string(instance_id)
+        instance = self._instance_repo.find_by_id(instance_uuid)
+
+        if not instance:
+            raise ValueError(f"Instance not found: {instance_id}")
+
+        if instance.user_id != user_id:
+            raise ValueError(f"Instance {instance_id} does not belong to user {user_id.value}")
+
+        # Update agent name if provided
+        if agent_name is not None:
+            object.__setattr__(instance, 'agent_name', agent_name)
+
+        # Update configuration if any config fields provided
+        if any([system_prompt, tools, capabilities, rules, output_format]):
+            current_config = instance.configuration
+
+            # Create new configuration with updates
+            new_config_dict = {
+                "system_prompt": system_prompt if system_prompt is not None else current_config.system_prompt,
+                "tools": tuple(tools) if tools is not None else current_config.tools,
+                "capabilities": capabilities if capabilities is not None else current_config.capabilities,
+                "rules": tuple(rules) if rules is not None else current_config.rules,
+                "output_format": output_format if output_format is not None else current_config.output_format,
+            }
+
+            new_config = AgentConfiguration.from_dict(new_config_dict)
+            instance.customize_configuration(new_config, "Updated via REST API")
+
+        # Update visibility if provided
+        if visibility is not None:
+            if visibility not in ('private', 'public'):
+                raise ValueError(f"Invalid visibility: {visibility}. Must be 'private' or 'public'")
+            object.__setattr__(instance, 'visibility', visibility)
+
+        # Save updates
+        updated_instance = self._instance_repo.save(instance)
+        logger.info(f"Instance {instance_id} updated successfully")
+
+        return updated_instance
+
+    def delete_instance(
+        self,
+        user_id: UserId,
+        instance_id: str
+    ) -> bool:
+        """
+        Delete a user agent instance.
+
+        Only the instance owner can delete their instances.
+
+        Args:
+            user_id: User identifier (must match instance owner)
+            instance_id: Instance identifier to delete
+
+        Returns:
+            True if deleted successfully
+
+        Raises:
+            ValueError: If instance not found or user is not the owner
+        """
+        from ..value_objects.user_agent_instance_id import UserAgentInstanceId
+
+        logger.info(f"Deleting instance {instance_id} for user {user_id.value}")
+
+        # Find instance
+        instance_uuid = UserAgentInstanceId.from_string(instance_id)
+        instance = self._instance_repo.find_by_id(instance_uuid)
+
+        if not instance:
+            raise ValueError(f"Instance not found: {instance_id}")
+
+        if instance.user_id != user_id:
+            raise ValueError(f"Instance {instance_id} does not belong to user {user_id.value}")
+
+        # Delete instance
+        result = self._instance_repo.delete(instance_uuid)
+
+        if result:
+            logger.info(f"Instance {instance_id} deleted successfully")
+        else:
+            logger.warning(f"Failed to delete instance {instance_id}")
+
+        return result
+
+    def update_configuration(
+        self,
+        user_id: UserId,
+        agent_slug: str,
+        system_prompt: Optional[str] = None,
+        tools: Optional[list[str]] = None,
+        capabilities: Optional[Dict[str, Any]] = None,
+        rules: Optional[list[str]] = None,
+        output_format: Optional[str] = None
+    ) -> UserAgentInstance:
+        """
+        Update agent configuration for a user.
+
+        This is a convenience method that gets or creates an instance and
+        updates its configuration. Useful when you want to update by slug
+        rather than instance ID.
+
+        Args:
+            user_id: User identifier
+            agent_slug: Agent template slug
+            system_prompt: New system prompt (optional)
+            tools: New tools list (optional)
+            capabilities: New capabilities dict (optional)
+            rules: New rules list (optional)
+            output_format: New output format (optional)
+
+        Returns:
+            Updated UserAgentInstance
+
+        Raises:
+            ValueError: If template not found
+        """
+        logger.info(f"Updating configuration for agent {agent_slug}, user {user_id.value}")
+
+        # Get or create instance
+        instance = self.get_or_create_instance(user_id, agent_slug)
+
+        # Update configuration if any fields provided
+        if any([system_prompt, tools, capabilities, rules, output_format]):
+            current_config = instance.configuration
+
+            # Create new configuration with updates
+            new_config_dict = {
+                "system_prompt": system_prompt if system_prompt is not None else current_config.system_prompt,
+                "tools": tuple(tools) if tools is not None else current_config.tools,
+                "capabilities": capabilities if capabilities is not None else current_config.capabilities,
+                "rules": tuple(rules) if rules is not None else current_config.rules,
+                "output_format": output_format if output_format is not None else current_config.output_format,
+            }
+
+            new_config = AgentConfiguration.from_dict(new_config_dict)
+            instance.customize_configuration(new_config, "Updated configuration via REST API")
+
+            # Save updates
+            updated_instance = self._instance_repo.save(instance)
+            logger.info(f"Configuration updated for {agent_slug}")
+            return updated_instance
+
+        # No updates provided, return existing instance
+        return instance
+
+    def reset_configuration(
+        self,
+        user_id: UserId,
+        agent_slug: str
+    ) -> UserAgentInstance:
+        """
+        Reset agent configuration to default template.
+
+        This method resets a user's customized instance back to the
+        default template configuration.
+
+        Args:
+            user_id: User identifier
+            agent_slug: Agent template slug
+
+        Returns:
+            Reset UserAgentInstance with default configuration
+
+        Raises:
+            ValueError: If template or instance not found
+        """
+        logger.info(f"Resetting configuration for agent {agent_slug}, user {user_id.value}")
+
+        # Get template
+        template = self._template_repo.find_by_slug(agent_slug)
+        if not template:
+            raise ValueError(f"Agent template not found: {agent_slug}")
+
+        # Get existing instance
+        instance = self._instance_repo.find_by_user_and_template_slug(
+            user_id=user_id,
+            template_slug=agent_slug
+        )
+
+        if not instance:
+            raise ValueError(f"No instance found for user {user_id.value} and agent {agent_slug}")
+
+        # Reset to template configuration
+        template_config = template.default_configuration
+        instance.customize_configuration(
+            template_config,
+            "Reset to default template configuration"
+        )
+
+        # Mark as not customized
+        object.__setattr__(instance, 'is_customized', False)
+
+        # Save updates
+        reset_instance = self._instance_repo.save(instance)
+        logger.info(f"Configuration reset to default for {agent_slug}")
+
+        return reset_instance
