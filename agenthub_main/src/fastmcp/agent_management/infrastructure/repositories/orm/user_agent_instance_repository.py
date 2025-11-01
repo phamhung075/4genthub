@@ -171,6 +171,36 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             logger.error(f"Error finding user agent instance by user {user_id} and template {template_id}: {e}")
             return None
 
+    def exists_by_user_and_template(
+        self,
+        user_id: UserId,
+        template_id: AgentTemplateId
+    ) -> bool:
+        """
+        Check if an instance exists for user and template.
+
+        Args:
+            user_id: User identifier
+            template_id: Template identifier
+
+        Returns:
+            True if instance exists, False otherwise
+        """
+        try:
+            with self.get_db_session() as session:
+                exists = session.query(UserAgentInstanceORM).filter(
+                    and_(
+                        UserAgentInstanceORM.user_id == str(user_id),
+                        UserAgentInstanceORM.template_id == str(template_id)
+                    )
+                ).first() is not None
+
+                return exists
+
+        except Exception as e:
+            logger.error(f"Error checking if user agent instance exists for user {user_id} and template {template_id}: {e}")
+            return False
+
     def find_by_user(self, user_id: UserId) -> List[UserAgentInstance]:
         """
         Find all instances for a user
