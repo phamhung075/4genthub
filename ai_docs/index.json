@@ -541,7 +541,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 26,
+      "count": 30,
       "files": [
         {
           "hash": "dc24a1c59418320fc85e498f286228d4",
@@ -556,6 +556,13 @@
           "name": "claude-hooks-refactoring-architecture.md",
           "path": "core-architecture/claude-hooks-refactoring-architecture.md",
           "size": 18470
+        },
+        {
+          "hash": "a8189300d24860097ee93b50520b08d8",
+          "modified": "2025-11-01T11:48:37.299631",
+          "name": "Agent-Sharing-and-Import-System.md",
+          "path": "core-architecture/Agent-Sharing-and-Import-System.md",
+          "size": 39800
         },
         {
           "hash": "82f1cb835bab6c37ea12e7042e53bd2e",
@@ -621,6 +628,13 @@
           "size": 19045
         },
         {
+          "hash": "523ce5a651729929a49a67097cdac4f1",
+          "modified": "2025-11-01T11:45:58.116474",
+          "name": "User-Specific-Agent-System-Architecture.md",
+          "path": "core-architecture/User-Specific-Agent-System-Architecture.md",
+          "size": 51671
+        },
+        {
           "hash": "83e27d310ea4d30243f3749c7346bc92",
           "modified": "2025-10-27T16:08:52.902245",
           "name": "domain-events-catalog.md",
@@ -684,6 +698,13 @@
           "size": 34824
         },
         {
+          "hash": "22ee90d5232a042c82c55eb9b3da5ed3",
+          "modified": "2025-11-01T12:01:19.795222",
+          "name": "Simplified-Agent-System-MCP-and-REST-APIs.md",
+          "path": "core-architecture/Simplified-Agent-System-MCP-and-REST-APIs.md",
+          "size": 24312
+        },
+        {
           "hash": "625c2c6c27016d8e4277e8e4552c800f",
           "modified": "2025-10-27T16:08:52.902245",
           "name": "context-hierarchy-system.md",
@@ -724,6 +745,13 @@
           "name": "database-architecture.md",
           "path": "core-architecture/database-architecture.md",
           "size": 9231
+        },
+        {
+          "hash": "c9db64a19e7f0c4023244595aad1a410",
+          "modified": "2025-11-01T11:50:22.329845",
+          "name": "Clean-Migration-Strategy.md",
+          "path": "core-architecture/Clean-Migration-Strategy.md",
+          "size": 17573
         }
       ],
       "path": "core-architecture"
@@ -1107,7 +1135,7 @@
         },
         {
           "hash": "3203fb1b03eb849e472ac30021dbbafe",
-          "modified": "2025-11-01T08:38:58.987766",
+          "modified": "2025-11-01T11:19:59.665864",
           "name": "database-migration-guide.md",
           "path": "operations/database-migration-guide.md",
           "size": 10977
@@ -1690,7 +1718,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-01T08:38:59.407929",
+  "generated_at": "2025-11-01T14:53:31.654382",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1806,8 +1834,12 @@
     },
     "core-architecture": {
       "files": [
+        "Agent-Sharing-and-Import-System.md",
         "Architecture_Technique.md",
+        "Clean-Migration-Strategy.md",
         "README.md",
+        "Simplified-Agent-System-MCP-and-REST-APIs.md",
+        "User-Specific-Agent-System-Architecture.md",
         "agent-system-architecture.md",
         "architecture-thinking.md",
         "architecture.md",
@@ -2009,5 +2041,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 221
+  "total_files": 225
 }
