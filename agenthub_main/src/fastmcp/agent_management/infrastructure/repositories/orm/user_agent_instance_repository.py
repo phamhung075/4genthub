@@ -171,6 +171,54 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             logger.error(f"Error finding user agent instance by user {user_id} and template {template_id}: {e}")
             return None
 
+    def find_by_user_and_template_slug(
+        self,
+        user_id: UserId,
+        template_slug: str
+    ) -> Optional[UserAgentInstance]:
+        """
+        Find an instance by user ID and template slug.
+
+        This is a convenience method that combines template lookup by slug
+        with instance lookup by user and template ID.
+
+        Args:
+            user_id: User identifier
+            template_slug: Template slug (e.g., 'coding-agent')
+
+        Returns:
+            UserAgentInstance entity or None if not found
+        """
+        try:
+            with self.get_db_session() as session:
+                # Import here to avoid circular dependency
+                from ...database.models import AgentTemplateORM
+
+                # First find the template by slug
+                template = session.query(AgentTemplateORM).filter(
+                    AgentTemplateORM.slug == template_slug
+                ).first()
+
+                if not template:
+                    logger.debug(f"Template not found for slug: {template_slug}")
+                    return None
+
+                # Then find the instance by user and template ID
+                orm_instance = session.query(UserAgentInstanceORM).filter(
+                    and_(
+                        UserAgentInstanceORM.user_id == str(user_id),
+                        UserAgentInstanceORM.template_id == template.id
+                    )
+                ).first()
+
+                if orm_instance:
+                    return self._model_to_entity(orm_instance)
+                return None
+
+        except Exception as e:
+            logger.error(f"Error finding user agent instance by user {user_id} and template slug {template_slug}: {e}")
+            return None
+
     def exists_by_user_and_template(
         self,
         user_id: UserId,
@@ -335,12 +383,20 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             UserAgentInstance domain entity
         """
         try:
-            # Parse JSON fields
-            tools = json.loads(orm_instance.tools) if isinstance(orm_instance.tools, str) else orm_instance.tools
-            capabilities = json.loads(orm_instance.capabilities) if isinstance(orm_instance.capabilities, str) else orm_instance.capabilities
-            rules = json.loads(orm_instance.rules) if orm_instance.rules and isinstance(orm_instance.rules, str) else (orm_instance.rules if orm_instance.rules else None)
-            output_format = json.loads(orm_instance.output_format) if orm_instance.output_format and isinstance(orm_instance.output_format, str) else (orm_instance.output_format if orm_instance.output_format else None)
-            metadata = json.loads(orm_instance.metadata_json) if orm_instance.metadata_json and isinstance(orm_instance.metadata_json, str) else (orm_instance.metadata_json if orm_instance.metadata_json else None)
+            # Parse JSON fields - handle empty strings
+            def safe_json_parse(value, default=None):
+                """Safely parse JSON, handling empty strings and None"""
+                if not value or (isinstance(value, str) and value.strip() == ''):
+                    return default
+                if isinstance(value, str):
+                    return json.loads(value)
+                return value
+
+            tools = safe_json_parse(orm_instance.tools, [])
+            capabilities = safe_json_parse(orm_instance.capabilities, {})
+            rules = safe_json_parse(orm_instance.rules, None)
+            output_format = safe_json_parse(orm_instance.output_format, None)
+            metadata_json = safe_json_parse(orm_instance.metadata_json, {})
 
             # Create configuration value object
             configuration = AgentConfiguration(
@@ -349,7 +405,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                 capabilities=capabilities,
                 rules=rules,
                 output_format=output_format,
-                metadata=metadata
+                metadata=metadata_json
             )
 
             return UserAgentInstance(
@@ -358,13 +414,12 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                 template_id=AgentTemplateId(orm_instance.template_id),
                 agent_name=orm_instance.agent_name,
                 is_customized=orm_instance.is_customized,
-                customization_notes=orm_instance.customization_notes,
                 configuration=configuration,
                 visibility=orm_instance.visibility,
                 share_token=orm_instance.share_token,
-                share_created_at=orm_instance.share_created_at,
                 original_creator_id=UserId(orm_instance.original_creator_id) if orm_instance.original_creator_id else None,
-                imported_at=orm_instance.imported_at,
+                # Note: customization_notes, share_created_at, imported_at are ORM-only fields
+                # They are not part of the domain entity
                 created_at=orm_instance.created_at,
                 updated_at=orm_instance.updated_at
             )
@@ -382,13 +437,23 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
         Returns:
             Dictionary representation for ORM model
         """
+        # Extract customization_notes from metadata if present
+        customization_notes = None
+        if instance.metadata and 'last_customization' in instance.metadata:
+            customization_notes = instance.metadata['last_customization'].get('notes')
+
+        # Extract share_created_at and imported_at if present
+        # These are ORM-specific fields that may not be in the domain entity yet
+        share_created_at = getattr(instance, 'share_created_at', None)
+        imported_at = getattr(instance, 'imported_at', None)
+
         return {
             "id": str(instance.id),
             "user_id": str(instance.user_id),
             "template_id": str(instance.template_id),
             "agent_name": instance.agent_name,
             "is_customized": instance.is_customized,
-            "customization_notes": instance.customization_notes,
+            "customization_notes": customization_notes,
             "system_prompt": instance.configuration.system_prompt,
             "tools": json.dumps(instance.configuration.tools),
             "capabilities": json.dumps(instance.configuration.capabilities),
@@ -397,9 +462,9 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             "metadata_json": json.dumps(instance.configuration.metadata) if instance.configuration.metadata else None,
             "visibility": instance.visibility,
             "share_token": instance.share_token,
-            "share_created_at": instance.share_created_at,
+            "share_created_at": share_created_at,
             "original_creator_id": str(instance.original_creator_id) if instance.original_creator_id else None,
-            "imported_at": instance.imported_at,
+            "imported_at": imported_at,
             "created_at": instance.created_at,
             "updated_at": instance.updated_at
         }
