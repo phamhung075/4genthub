@@ -155,17 +155,17 @@ class AgentManagementFacade:
         if not template:
             raise ValueError(f"Agent template not found: {agent_slug}")
 
-        # Build response using instance's current configuration
-        config = instance.current_configuration
+        # Build response using instance's configuration
+        config = instance.configuration
 
         return {
-            "name": instance.custom_name or template.name,
+            "name": instance.agent_name or template.name,
             "slug": template.slug,
             "description": template.description,
             "system_prompt": config.system_prompt,
-            "tools": config.tools,
+            "tools": list(config.tools),  # Convert tuple to list for JSON serialization
             "capabilities": config.capabilities or {},
-            "rules": config.rules,
+            "rules": list(config.rules) if config.rules else [],  # Convert tuple to list
             "output_format": config.output_format,
             "category": template.category,
             "version": template.version,
@@ -175,8 +175,8 @@ class AgentManagementFacade:
             "metadata": {
                 **template.metadata,
                 "created_at": instance.created_at.isoformat(),
-                "last_used": instance.last_used.isoformat() if instance.last_used else None,
-                "customizations": instance.customizations
+                "last_used": instance.last_used_at.isoformat() if instance.last_used_at else None,
+                "customizations": instance.metadata.get("customizations", {})
             }
         }
 

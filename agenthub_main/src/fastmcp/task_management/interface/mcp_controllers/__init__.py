@@ -11,7 +11,7 @@ from .dependency_mcp_controller.dependency_mcp_controller import DependencyMCPCo
 from .unified_context_controller.unified_context_controller import UnifiedContextMCPController
 from .project_mcp_controller.project_mcp_controller import ProjectMCPController
 from .git_branch_mcp_controller.git_branch_mcp_controller import GitBranchMCPController
-from .call_agent_mcp_controller.call_agent_mcp_controller import CallAgentMCPController
+# CallAgentMCPController moved to fastmcp.agent_management.interface.mcp_controllers
 from .agent_mcp_controller import AgentMCPController, UnifiedAgentMCPController
 
 # Note: Internal subpackages (task_mcp_controller, auth_helper, etc.) are exposed
@@ -26,5 +26,4 @@ __all__ = [
     "GitBranchMCPController",
     "UnifiedAgentMCPController",
     "AgentMCPController",  # Backward compatibility alias
-    "CallAgentMCPController",
 ]
