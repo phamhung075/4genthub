@@ -50,7 +50,8 @@ class AgentManagementFacade:
         self._template_repo = template_repository or ORMAgentTemplateRepository()
         self._instance_repo = instance_repository or ORMUserAgentInstanceRepository()
         self._instantiation_service = instantiation_service or AgentInstantiationService(
-            template_repository=self._template_repo
+            template_repository=self._template_repo,
+            instance_repository=self._instance_repo
         )
 
     def get_or_create_instance(
@@ -78,28 +79,17 @@ class AgentManagementFacade:
         """
         logger.info(f"Getting or creating instance for user={user_id.value}, agent={agent_slug}")
 
-        # Check if user already has this agent instance
-        existing_instance = self._instance_repo.find_by_user_and_template_slug(
+        # Delegate to domain service - no logic duplication
+        instance = self._instantiation_service.get_or_create_instance(
             user_id=user_id,
             template_slug=agent_slug
         )
 
-        if existing_instance:
-            logger.info(f"Found existing instance: {existing_instance.id.value}")
-            return existing_instance
+        if not instance:
+            raise ValueError(f"Agent template not found: {agent_slug}")
 
-        # Create new instance using domain service
-        logger.info(f"Creating new instance for user={user_id.value}, agent={agent_slug}")
-        new_instance = self._instantiation_service.create_instance_from_template(
-            user_id=user_id,
-            template_slug=agent_slug
-        )
-
-        # Persist the new instance
-        self._instance_repo.save(new_instance)
-        logger.info(f"Instance created and saved: {new_instance.id.value}")
-
-        return new_instance
+        logger.info(f"Instance ready: {instance.id.value}")
+        return instance
 
     def get_agent_for_call(
         self,
