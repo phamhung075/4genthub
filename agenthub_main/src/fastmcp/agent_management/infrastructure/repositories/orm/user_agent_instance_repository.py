@@ -69,6 +69,8 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                     existing.visibility = model_dict["visibility"]
                     existing.share_token = model_dict.get("share_token")
                     existing.share_created_at = model_dict.get("share_created_at")
+                    existing.usage_count = model_dict.get("usage_count", 0)
+                    existing.last_used_at = model_dict.get("last_used_at")
                     existing.updated_at = datetime.now(timezone.utc)
 
                     logger.info(f"Updated user agent instance: {instance.agent_name} for user {instance.user_id}")
@@ -95,6 +97,8 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                         share_created_at=model_dict.get("share_created_at"),
                         original_creator_id=model_dict.get("original_creator_id"),
                         imported_at=model_dict.get("imported_at"),
+                        usage_count=model_dict.get("usage_count", 0),
+                        last_used_at=model_dict.get("last_used_at"),
                         created_at=model_dict["created_at"],
                         updated_at=model_dict["updated_at"]
                     )
@@ -408,6 +412,16 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                 metadata=metadata_json
             )
 
+            # Ensure last_used_at is timezone-aware (SQLite loses timezone info)
+            last_used_at = None
+            if hasattr(orm_instance, 'last_used_at') and orm_instance.last_used_at:
+                if orm_instance.last_used_at.tzinfo is None:
+                    # Assume UTC if no timezone info (SQLite behavior)
+                    from datetime import timezone as dt_timezone
+                    last_used_at = orm_instance.last_used_at.replace(tzinfo=dt_timezone.utc)
+                else:
+                    last_used_at = orm_instance.last_used_at
+
             return UserAgentInstance(
                 id=UserAgentInstanceId(orm_instance.id),
                 user_id=UserId(orm_instance.user_id),
@@ -418,6 +432,8 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                 visibility=orm_instance.visibility,
                 share_token=orm_instance.share_token,
                 original_creator_id=UserId(orm_instance.original_creator_id) if orm_instance.original_creator_id else None,
+                usage_count=orm_instance.usage_count if hasattr(orm_instance, 'usage_count') else 0,
+                last_used_at=last_used_at,
                 # Note: customization_notes, share_created_at, imported_at are ORM-only fields
                 # They are not part of the domain entity
                 created_at=orm_instance.created_at,
@@ -465,6 +481,8 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             "share_created_at": share_created_at,
             "original_creator_id": str(instance.original_creator_id) if instance.original_creator_id else None,
             "imported_at": imported_at,
+            "usage_count": instance.usage_count,
+            "last_used_at": instance.last_used_at,
             "created_at": instance.created_at,
             "updated_at": instance.updated_at
         }

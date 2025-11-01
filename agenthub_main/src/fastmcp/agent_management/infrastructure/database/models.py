@@ -8,7 +8,7 @@ This module defines the database schema for:
 
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import String, Text, Boolean, DateTime, Index, UniqueConstraint
+from sqlalchemy import String, Text, Boolean, DateTime, Integer, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from fastmcp.task_management.infrastructure.database.database_config import Base
@@ -274,6 +274,19 @@ class UserAgentInstanceORM(Base):
         DateTime(timezone=True),
         nullable=False,
         doc="Last update timestamp"
+    )
+
+    last_used_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        doc="Last time this agent instance was used"
+    )
+
+    usage_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        doc="Number of times this agent has been used"
     )
 
     # Constraints and indexes
