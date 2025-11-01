@@ -44,20 +44,25 @@ class DualModeConfig:
         else:
             # In stdio mode, find project root from current location
             current = Path.cwd()
-            
-            # Look for project indicators
-            project_indicators = [
+
+            # Priority 1: Check for .git directory (definitive project root indicator)
+            # This ensures consistency regardless of where the server starts
+            for path in [current] + list(current.parents):
+                if (path / ".git").exists():
+                    return path
+
+            # Priority 2: Fallback to other project indicators if .git not found
+            # (rare case for projects not using git)
+            fallback_indicators = [
                 "pyproject.toml",
-                ".git",
                 "src",
                 "agenthub_main"
             ]
-            
-            # Check current directory and parents
+
             for path in [current] + list(current.parents):
-                if any((path / indicator).exists() for indicator in project_indicators):
+                if any((path / indicator).exists() for indicator in fallback_indicators):
                     return path
-            
+
             # Fallback to current directory
             return current
     

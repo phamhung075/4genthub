@@ -313,9 +313,10 @@ def log_operation(operation: str):
 def init_logging():
     """Initialize logging with environment-based configuration."""
     log_level = os.environ.get("LOG_LEVEL", "INFO")
-    log_dir = os.environ.get("LOG_DIR", "logs")
+    # Don't provide default - let configure() use dual_mode_config.get_logs_directory()
+    log_dir = os.environ.get("LOG_DIR", None)
     enable_json = os.environ.get("LOG_FORMAT", "text").lower() == "json"
-    
+
     TaskManagementLogger.configure(
         log_level=log_level,
         log_dir=log_dir,

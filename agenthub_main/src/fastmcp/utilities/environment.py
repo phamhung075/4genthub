@@ -69,13 +69,20 @@ def get_log_directory(environment: Optional[EnvironmentType] = None) -> Path:
         return Path("/data/logs")
     else:
         # In local development, logs go to project's logs directory
-        # Find project root (look for key project files)
         current = Path.cwd()
-        project_indicators = ["pyproject.toml", "CLAUDE.md", "docker-system"]
 
-        # Search up the directory tree for project root
+        # Priority 1: Check for .git directory (definitive project root indicator)
+        # This ensures consistency regardless of where the server starts
         for parent in [current] + list(current.parents):
-            if any((parent / indicator).exists() for indicator in project_indicators):
+            if (parent / ".git").exists():
+                return parent / "logs"
+
+        # Priority 2: Fallback to other project indicators if .git not found
+        # (rare case for projects not using git)
+        fallback_indicators = ["pyproject.toml", "CLAUDE.md", "docker-system"]
+
+        for parent in [current] + list(current.parents):
+            if any((parent / indicator).exists() for indicator in fallback_indicators):
                 return parent / "logs"
 
         # Fallback to current directory logs folder
