@@ -125,7 +125,7 @@ def sample_agent_template(db_session):
         tools=json.dumps(list(configuration.tools)),  # Serialize to JSON
         capabilities=json.dumps(configuration.capabilities),  # Serialize to JSON
         rules=json.dumps(list(configuration.rules)) if configuration.rules else None,  # Serialize to JSON
-        output_format=configuration.output_format,
+        output_format=json.dumps(configuration.output_format) if configuration.output_format else None,  # Serialize to JSON
         metadata_json=json.dumps(configuration.metadata),  # Serialize to JSON
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc)
@@ -204,7 +204,7 @@ def sample_user_instance(db_session, sample_agent_template, sample_user_id):
         tools=json.dumps(list(custom_configuration.tools)),  # Serialize to JSON
         capabilities=json.dumps(custom_configuration.capabilities),  # Serialize to JSON
         rules=json.dumps(list(custom_configuration.rules)) if custom_configuration.rules else None,  # Serialize to JSON
-        output_format=custom_configuration.output_format,
+        output_format=json.dumps(custom_configuration.output_format) if custom_configuration.output_format else None,  # Serialize to JSON
         visibility="private",
         metadata_json=json.dumps({}),  # Serialize to JSON
         created_at=datetime.now(timezone.utc),
