@@ -962,7 +962,7 @@
         },
         {
           "hash": "71a6eeb34199ff836f80f671e57c5ce0",
-          "modified": "2025-10-31T17:56:13.030246",
+          "modified": "2025-10-31T21:02:50.601280",
           "name": "critical-data-persistence-failure-2025-10-31.md",
           "path": "issues/critical-data-persistence-failure-2025-10-31.md",
           "size": 15645
@@ -997,7 +997,7 @@
         },
         {
           "hash": "bd06c606d0ac4d3e0b8da28ba156a07f",
-          "modified": "2025-10-31T18:29:35.986501",
+          "modified": "2025-10-31T21:02:50.601280",
           "name": "persistence-issue-resolution-2025-10-31.md",
           "path": "issues/persistence-issue-resolution-2025-10-31.md",
           "size": 11675
@@ -1033,7 +1033,7 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 16,
+      "count": 17,
       "files": [
         {
           "hash": "6a51e2d16df1b70df4fa859083bd87e1",
@@ -1104,6 +1104,13 @@
           "name": "postgresql-configuration-guide.md",
           "path": "operations/postgresql-configuration-guide.md",
           "size": 2714
+        },
+        {
+          "hash": "3203fb1b03eb849e472ac30021dbbafe",
+          "modified": "2025-11-01T08:38:58.987766",
+          "name": "database-migration-guide.md",
+          "path": "operations/database-migration-guide.md",
+          "size": 10977
         },
         {
           "hash": "cf8c3af37bf26d7836d9698243efca6f",
@@ -1473,7 +1480,7 @@
         },
         {
           "hash": "f3f2eee0d3e63d3f2eaf0dc1ea855800",
-          "modified": "2025-10-31T17:59:51.383253",
+          "modified": "2025-10-31T21:02:50.601280",
           "name": "mcp-comprehensive-test-report-2025-10-31.md",
           "path": "testing-qa/mcp-comprehensive-test-report-2025-10-31.md",
           "size": 18969
@@ -1494,14 +1501,14 @@
         },
         {
           "hash": "ff271d03f745d1bfa871982b685e8ca1",
-          "modified": "2025-10-31T14:50:37.367364",
+          "modified": "2025-10-31T21:02:50.601280",
           "name": "mcp-tools-comprehensive-test-report-2025-10-31.md",
           "path": "testing-qa/mcp-tools-comprehensive-test-report-2025-10-31.md",
           "size": 14125
         },
         {
           "hash": "ae15b91b5bfea7239167005cfe9f802a",
-          "modified": "2025-10-31T17:38:28.224645",
+          "modified": "2025-10-31T21:02:50.601280",
           "name": "bug-fix-verification-nested-context-managers-2025-10-31.md",
           "path": "testing-qa/bug-fix-verification-nested-context-managers-2025-10-31.md",
           "size": 17642
@@ -1557,7 +1564,7 @@
         },
         {
           "hash": "58da3b9bfdeccde9144c317e0e7a0238",
-          "modified": "2025-10-31T15:37:36.305128",
+          "modified": "2025-10-31T21:02:50.601280",
           "name": "mcp-tools-test-report-2025-10-31-session-2.md",
           "path": "testing-qa/mcp-tools-test-report-2025-10-31-session-2.md",
           "size": 16981
@@ -1683,7 +1690,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-31T18:29:36.748581",
+  "generated_at": "2025-11-01T08:38:59.407929",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1899,6 +1906,7 @@
         "KEYCLOAK_POSTGRESQL_SETUP.md",
         "cloud-storage-solutions.md",
         "database-configuration-guide.md",
+        "database-migration-guide.md",
         "disaster-recovery-procedures.md",
         "docker-deployment-guide.md",
         "environment-setup.md",
@@ -2001,5 +2009,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 220
+  "total_files": 221
 }
