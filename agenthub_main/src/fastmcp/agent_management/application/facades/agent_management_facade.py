@@ -13,7 +13,9 @@ from datetime import datetime, timezone
 from ...domain.entities.agent_template import AgentTemplate
 from ...domain.entities.user_agent_instance import UserAgentInstance
 from ...domain.value_objects.user_id import UserId
+from ...domain.value_objects.agent_configuration import AgentConfiguration
 from ...domain.services.agent_instantiation_service import AgentInstantiationService
+from ...domain.services.agent_sharing_service import AgentSharingService
 from ...infrastructure.repositories import (
     ORMAgentTemplateRepository,
     ORMUserAgentInstanceRepository
@@ -37,7 +39,8 @@ class AgentManagementFacade:
         self,
         template_repository: Optional[ORMAgentTemplateRepository] = None,
         instance_repository: Optional[ORMUserAgentInstanceRepository] = None,
-        instantiation_service: Optional[AgentInstantiationService] = None
+        instantiation_service: Optional[AgentInstantiationService] = None,
+        sharing_service: Optional[AgentSharingService] = None
     ):
         """
         Initialize the facade with repositories and services.
@@ -46,12 +49,17 @@ class AgentManagementFacade:
             template_repository: Repository for agent templates
             instance_repository: Repository for user agent instances
             instantiation_service: Domain service for agent instantiation
+            sharing_service: Domain service for agent sharing
         """
         self._template_repo = template_repository or ORMAgentTemplateRepository()
         self._instance_repo = instance_repository or ORMUserAgentInstanceRepository()
         self._instantiation_service = instantiation_service or AgentInstantiationService(
             template_repository=self._template_repo,
             instance_repository=self._instance_repo
+        )
+        self._sharing_service = sharing_service or AgentSharingService(
+            instance_repository=self._instance_repo,
+            template_repository=self._template_repo
         )
 
     def get_or_create_instance(
@@ -193,6 +201,21 @@ class AgentManagementFacade:
             AgentTemplate if found, None otherwise
         """
         return self._template_repo.find_by_slug(agent_slug)
+
+    def get_template_by_id(self, template_id: str) -> Optional[AgentTemplate]:
+        """
+        Get agent template by ID.
+
+        Args:
+            template_id: Agent template ID (UUID string)
+
+        Returns:
+            AgentTemplate if found, None otherwise
+        """
+        from ...domain.value_objects.agent_template_id import AgentTemplateId
+
+        template_uuid = AgentTemplateId.from_string(template_id)
+        return self._template_repo.find_by_id(template_uuid)
 
     def list_available_templates(self) -> list[AgentTemplate]:
         """
@@ -441,3 +464,160 @@ class AgentManagementFacade:
         logger.info(f"Configuration reset to default for {agent_slug}")
 
         return reset_instance
+
+    def share_agent(
+        self,
+        user_id: UserId,
+        instance_id: str
+    ) -> Optional[str]:
+        """
+        Generate a share token and make an instance public.
+
+        This allows users to share their customized agent instances with others.
+        The generated token can be used by other users to import the agent.
+
+        Args:
+            user_id: User identifier (must be instance owner)
+            instance_id: Instance identifier to share
+
+        Returns:
+            The 64-character share token if successful, None otherwise
+
+        Raises:
+            ValueError: If instance not found or user is not the owner
+        """
+        from ...domain.value_objects.user_agent_instance_id import UserAgentInstanceId
+
+        logger.info(f"Sharing instance {instance_id} for user {user_id.value}")
+
+        instance_uuid = UserAgentInstanceId.from_string(instance_id)
+        share_token = self._sharing_service.generate_share_token(
+            instance_id=instance_uuid,
+            user_id=user_id
+        )
+
+        if not share_token:
+            raise ValueError(f"Failed to share instance {instance_id}. Instance not found or unauthorized.")
+
+        logger.info(f"Instance {instance_id} shared successfully with token")
+        return share_token
+
+    def unshare_agent(
+        self,
+        user_id: UserId,
+        instance_id: str
+    ) -> bool:
+        """
+        Revoke the share token and make an instance private.
+
+        Args:
+            user_id: User identifier (must be instance owner)
+            instance_id: Instance identifier to unshare
+
+        Returns:
+            True if successful
+
+        Raises:
+            ValueError: If instance not found or user is not the owner
+        """
+        from ...domain.value_objects.user_agent_instance_id import UserAgentInstanceId
+
+        logger.info(f"Unsharing instance {instance_id} for user {user_id.value}")
+
+        instance_uuid = UserAgentInstanceId.from_string(instance_id)
+        result = self._sharing_service.revoke_share_token(
+            instance_id=instance_uuid,
+            user_id=user_id
+        )
+
+        if not result:
+            raise ValueError(f"Failed to unshare instance {instance_id}. Instance not found or unauthorized.")
+
+        logger.info(f"Instance {instance_id} unshared successfully")
+        return result
+
+    def import_agent(
+        self,
+        share_token: str,
+        importer_user_id: UserId,
+        creator_email: Optional[str] = None
+    ) -> Optional[UserAgentInstance]:
+        """
+        Import a shared agent from another user.
+
+        Creates a copy of the shared agent instance for the importing user.
+        Handles name collisions automatically.
+
+        Args:
+            share_token: 64-character share token
+            importer_user_id: User importing the agent
+            creator_email: Email of the original creator (for attribution)
+
+        Returns:
+            The newly created instance if successful, None if token invalid
+
+        Raises:
+            ValueError: If share_token is invalid or user already has this template
+        """
+        logger.info(f"Importing agent for user {importer_user_id.value} with share token")
+
+        imported_instance = self._sharing_service.import_agent(
+            share_token=share_token,
+            importer_user_id=importer_user_id,
+            creator_email=creator_email
+        )
+
+        if not imported_instance:
+            raise ValueError(
+                f"Failed to import agent. Invalid token, instance not public, "
+                f"or user already has this template."
+            )
+
+        logger.info(
+            f"Agent imported successfully as instance {imported_instance.id.value} "
+            f"for user {importer_user_id.value}"
+        )
+        return imported_instance
+
+    def get_marketplace_agents(
+        self,
+        limit: int = 50,
+        offset: int = 0
+    ) -> list[UserAgentInstance]:
+        """
+        Get list of publicly shared agents for marketplace browsing.
+
+        Args:
+            limit: Maximum number of results (default 50)
+            offset: Offset for pagination (default 0)
+
+        Returns:
+            List of public agent instances
+        """
+        logger.info(f"Getting marketplace agents: limit={limit}, offset={offset}")
+        return self._sharing_service.get_public_instances(limit=limit, offset=offset)
+
+    def get_shared_agent_preview(
+        self,
+        share_token: str
+    ) -> Optional[UserAgentInstance]:
+        """
+        Preview a shared agent before importing.
+
+        Args:
+            share_token: The share token to preview
+
+        Returns:
+            The instance if found and public, None otherwise
+        """
+        logger.info(f"Previewing shared agent with token")
+
+        if not share_token or len(share_token) != 64:
+            raise ValueError("Invalid share token")
+
+        instance = self._instance_repo.find_by_share_token(share_token)
+
+        if not instance or not instance.is_public():
+            return None
+
+        return instance
