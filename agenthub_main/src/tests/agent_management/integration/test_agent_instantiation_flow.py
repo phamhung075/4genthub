@@ -205,7 +205,13 @@ class TestAgentInstantiationFlow:
         assert isinstance(db_instance.last_used_at, datetime)
 
         # Verify timestamp is recent (within last 5 seconds)
-        time_diff = datetime.now(timezone.utc) - db_instance.last_used_at
+        # Ensure both datetimes are timezone-aware for comparison
+        now_utc = datetime.now(timezone.utc)
+        last_used_utc = db_instance.last_used_at
+        if last_used_utc.tzinfo is None:
+            # If database returned timezone-naive datetime, assume UTC
+            last_used_utc = last_used_utc.replace(tzinfo=timezone.utc)
+        time_diff = now_utc - last_used_utc
         assert time_diff < timedelta(seconds=5)
 
     def test_get_agent_for_call_returns_correct_format_from_database(
