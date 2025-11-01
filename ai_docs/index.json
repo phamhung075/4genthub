@@ -380,6 +380,19 @@
       ],
       "path": "authentication"
     },
+    "claude-code": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "1de5ecb70420c68d652269b23dd3e6ec",
+          "modified": "2025-11-01T18:48:46.609486",
+          "name": "cclaude-cli-research.md",
+          "path": "claude-code/cclaude-cli-research.md",
+          "size": 10270
+        }
+      ],
+      "path": "claude-code"
+    },
     "context-system": {
       "count": 22,
       "files": [
@@ -1718,7 +1731,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-01T14:53:31.654382",
+  "generated_at": "2025-11-01T18:48:47.070776",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1804,6 +1817,11 @@
         "keycloak-service-account-setup.md",
         "keycloak-setup-guide.md",
         "token-flow.md"
+      ]
+    },
+    "claude-code": {
+      "files": [
+        "cclaude-cli-research.md"
       ]
     },
     "context-system": {
@@ -2040,6 +2058,6 @@
       ]
     }
   },
-  "total_directories": 26,
-  "total_files": 225
+  "total_directories": 27,
+  "total_files": 226
 }

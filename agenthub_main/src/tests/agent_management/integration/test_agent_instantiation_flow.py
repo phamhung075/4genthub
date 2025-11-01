@@ -55,7 +55,10 @@ class TestAgentInstantiationFlow:
         template_repo._session = db_session
         instance_repo._session = db_session
 
-        instantiation_service = AgentInstantiationService(template_repository=template_repo)
+        instantiation_service = AgentInstantiationService(
+            template_repository=template_repo,
+            instance_repository=instance_repo
+        )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
@@ -104,7 +107,10 @@ class TestAgentInstantiationFlow:
         template_repo._session = db_session
         instance_repo._session = db_session
 
-        instantiation_service = AgentInstantiationService(template_repository=template_repo)
+        instantiation_service = AgentInstantiationService(
+            template_repository=template_repo,
+            instance_repository=instance_repo
+        )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
@@ -166,7 +172,10 @@ class TestAgentInstantiationFlow:
         template_repo._session = db_session
         instance_repo._session = db_session
 
-        instantiation_service = AgentInstantiationService(template_repository=template_repo)
+        instantiation_service = AgentInstantiationService(
+            template_repository=template_repo,
+            instance_repository=instance_repo
+        )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
@@ -221,7 +230,10 @@ class TestAgentInstantiationFlow:
         template_repo._session = db_session
         instance_repo._session = db_session
 
-        instantiation_service = AgentInstantiationService(template_repository=template_repo)
+        instantiation_service = AgentInstantiationService(
+            template_repository=template_repo,
+            instance_repository=instance_repo
+        )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
@@ -279,7 +291,10 @@ class TestAgentInstantiationFlow:
         template_repo._session = db_session
         instance_repo._session = db_session
 
-        instantiation_service = AgentInstantiationService(template_repository=template_repo)
+        instantiation_service = AgentInstantiationService(
+            template_repository=template_repo,
+            instance_repository=instance_repo
+        )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
@@ -329,7 +344,10 @@ class TestAgentInstantiationFlow:
         template_repo._session = db_session
         instance_repo._session = db_session
 
-        instantiation_service = AgentInstantiationService(template_repository=template_repo)
+        instantiation_service = AgentInstantiationService(
+            template_repository=template_repo,
+            instance_repository=instance_repo
+        )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
@@ -367,7 +385,10 @@ class TestAgentInstantiationFlow:
         template_repo._session = db_session
         instance_repo._session = db_session
 
-        instantiation_service = AgentInstantiationService(template_repository=template_repo)
+        instantiation_service = AgentInstantiationService(
+            template_repository=template_repo,
+            instance_repository=instance_repo
+        )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
