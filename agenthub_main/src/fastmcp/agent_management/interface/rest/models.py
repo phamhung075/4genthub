@@ -154,6 +154,59 @@ class UpdateConfigurationRequest(BaseModel):
 
 
 # ============================================================================
+# Agent Sharing Models
+# ============================================================================
+
+class ShareAgentResponse(BaseModel):
+    """Response model for sharing an agent"""
+    success: bool = True
+    instance_id: str = Field(..., description="Instance UUID")
+    share_token: str = Field(..., description="64-character share token")
+    shareable_url: str = Field(..., description="URL for sharing")
+    visibility: str = Field(..., description="Visibility status ('public')")
+    message: Optional[str] = None
+
+
+class ImportAgentRequest(BaseModel):
+    """Request to import a shared agent"""
+    share_token: str = Field(..., description="64-character share token from shared agent")
+
+
+class MarketplaceAgentResponse(BaseModel):
+    """Response model for marketplace agent listing"""
+    instance_id: str = Field(..., description="Instance UUID")
+    agent_name: str = Field(..., description="Agent display name")
+    template_slug: str = Field(..., description="Template slug")
+    creator_display_name: str = Field(..., description="Creator attribution")
+    share_token: str = Field(..., description="Share token for importing")
+    customizations_summary: str = Field(..., description="Summary of customizations")
+    usage_count: int = Field(default=0, description="Usage statistics")
+    created_at: datetime = Field(..., description="Creation timestamp")
+
+
+class MarketplaceListResponse(BaseModel):
+    """Response model for marketplace agent list"""
+    success: bool = True
+    agents: List[MarketplaceAgentResponse] = Field(default_factory=list)
+    total: int = Field(..., description="Total number of agents")
+    page: int = Field(default=1, description="Current page number")
+    page_size: int = Field(default=50, description="Results per page")
+    message: Optional[str] = None
+
+
+class SharedAgentPreviewResponse(BaseModel):
+    """Response model for shared agent preview"""
+    success: bool = True
+    agent_name: str = Field(..., description="Agent display name")
+    template_slug: str = Field(..., description="Template slug")
+    creator_display_name: str = Field(..., description="Creator attribution")
+    configuration_preview: Dict[str, Any] = Field(..., description="Configuration details")
+    customizations_summary: str = Field(..., description="Summary of changes from template")
+    can_import: bool = Field(default=True, description="Whether user can import this agent")
+    message: Optional[str] = None
+
+
+# ============================================================================
 # Generic Response Models
 # ============================================================================
 

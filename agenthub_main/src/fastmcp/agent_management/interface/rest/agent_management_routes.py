@@ -30,6 +30,11 @@ from .models import (
     AgentConfigurationResponse,
     UpdateConfigurationRequest,
     SuccessResponse,
+    ShareAgentResponse,
+    ImportAgentRequest,
+    MarketplaceAgentResponse,
+    MarketplaceListResponse,
+    SharedAgentPreviewResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -703,4 +708,376 @@ async def reset_configuration(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to reset configuration: {str(e)}"
+        )
+
+
+# ============================================================================
+# Agent Sharing Endpoints (Phase 3.6-3.10)
+# ============================================================================
+
+@router.post("/instances/{instance_id}/share", response_model=ShareAgentResponse)
+async def share_agent(
+    instance_id: str,
+    current_user: User = Depends(get_current_user),
+    facade: AgentManagementFacade = Depends(get_facade)
+) -> ShareAgentResponse:
+    """
+    Share an agent instance publicly (Phase 3.6).
+
+    Generates a secure 64-character share token and makes the instance public.
+    Only the instance owner can share.
+
+    Args:
+        instance_id: UUID of the instance to share
+        current_user: Authenticated user (from JWT)
+        facade: AgentManagementFacade dependency
+
+    Returns:
+        ShareAgentResponse with share_token and shareable URL
+
+    Raises:
+        404: Instance not found or not owned by user
+        500: Server error during sharing
+    """
+    try:
+        user_id = UserId(current_user.id)
+        logger.info(f"User {current_user.email} sharing instance: {instance_id}")
+
+        # Call facade to share the agent (returns share_token string)
+        share_token = facade.share_agent(
+            user_id=user_id,
+            instance_id=instance_id
+        )
+
+        # Construct shareable URL
+        shareable_url = f"/api/v2/agent-management/marketplace/{share_token}"
+
+        return ShareAgentResponse(
+            instance_id=instance_id,
+            share_token=share_token,
+            shareable_url=shareable_url,
+            visibility="public",
+            message="Agent shared successfully"
+        )
+
+    except ValueError as e:
+        logger.error(f"Validation error sharing instance {instance_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sharing instance {instance_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to share agent: {str(e)}"
+        )
+
+
+@router.post("/instances/{instance_id}/unshare", response_model=SuccessResponse)
+async def unshare_agent(
+    instance_id: str,
+    current_user: User = Depends(get_current_user),
+    facade: AgentManagementFacade = Depends(get_facade)
+) -> SuccessResponse:
+    """
+    Revoke share token and make agent private (Phase 3.7).
+
+    Only the instance owner can unshare. Existing imports remain unaffected
+    as they are copies.
+
+    Args:
+        instance_id: UUID of the instance to unshare
+        current_user: Authenticated user (from JWT)
+        facade: AgentManagementFacade dependency
+
+    Returns:
+        SuccessResponse confirming unshare
+
+    Raises:
+        404: Instance not found or not owned by user
+        500: Server error during unsharing
+    """
+    try:
+        user_id = UserId(current_user.id)
+        logger.info(f"User {current_user.email} unsharing instance: {instance_id}")
+
+        # Call facade to unshare the agent (returns True on success)
+        facade.unshare_agent(
+            user_id=user_id,
+            instance_id=instance_id
+        )
+
+        return SuccessResponse(
+            message="Agent unshared successfully. It is now private."
+        )
+
+    except ValueError as e:
+        logger.error(f"Validation error unsharing instance {instance_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error unsharing instance {instance_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to unshare agent: {str(e)}"
+        )
+
+
+@router.post("/import", response_model=UserAgentInstanceResponse)
+async def import_agent(
+    request: ImportAgentRequest,
+    current_user: User = Depends(get_current_user),
+    facade: AgentManagementFacade = Depends(get_facade)
+) -> UserAgentInstanceResponse:
+    """
+    Import a shared agent from marketplace (Phase 3.8).
+
+    Creates a copy of the shared agent for the current user.
+    Handles name collisions by appending "- created by [creator_email]".
+    Records import in agent_import_history.
+
+    Args:
+        request: ImportAgentRequest with share_token
+        current_user: Authenticated user (from JWT)
+        facade: AgentManagementFacade dependency
+
+    Returns:
+        UserAgentInstanceResponse for the imported instance
+
+    Raises:
+        400: Invalid share token format
+        404: Share token not found or agent not public
+        409: User already has instance for this template
+        500: Server error during import
+    """
+    try:
+        user_id = UserId(current_user.id)
+        logger.info(f"User {current_user.email} importing agent with share token")
+
+        # Call facade to import the agent
+        imported_instance = facade.import_agent(
+            share_token=request.share_token,
+            importer_user_id=user_id,
+            creator_email=current_user.email
+        )
+
+        # Convert to response model
+        return UserAgentInstanceResponse(
+            id=str(imported_instance.id.value),
+            user_id=str(imported_instance.user_id.value),
+            template_id=str(imported_instance.template_id.value),
+            agent_name=imported_instance.agent_name,
+            is_customized=imported_instance.is_customized,
+            visibility=imported_instance.visibility,
+            usage_count=imported_instance.usage_count,
+            last_used_at=imported_instance.last_used_at,
+            created_at=imported_instance.created_at,
+            updated_at=imported_instance.updated_at,
+            system_prompt=imported_instance.configuration.system_prompt,
+            tools=list(imported_instance.configuration.tools),
+            capabilities=imported_instance.configuration.capabilities,
+            rules=list(imported_instance.configuration.rules) if imported_instance.configuration.rules else None,
+            output_format=imported_instance.configuration.output_format
+        )
+
+    except ValueError as e:
+        logger.error(f"Validation error importing agent: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error importing agent with token {request.share_token[:10]}...: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to import agent: {str(e)}"
+        )
+
+
+@router.get("/marketplace", response_model=MarketplaceListResponse)
+async def browse_marketplace(
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    sort: Optional[str] = "recent",
+    page: int = 1,
+    page_size: int = 50,
+    facade: AgentManagementFacade = Depends(get_facade)
+) -> MarketplaceListResponse:
+    """
+    Browse publicly shared agents in marketplace (Phase 3.9).
+
+    Lists all public agents with filtering and sorting options.
+    No authentication required - marketplace is public.
+
+    Args:
+        category: Filter by agent category (e.g., 'development')
+        search: Search in agent names
+        sort: Sort order ('popular', 'recent')
+        page: Page number (1-indexed)
+        page_size: Results per page (max 100)
+        facade: AgentManagementFacade dependency
+
+    Returns:
+        MarketplaceListResponse with list of agents
+
+    Raises:
+        400: Invalid pagination parameters
+        500: Server error during query
+    """
+    try:
+        logger.info("Browsing marketplace with filters")
+
+        # Validate pagination
+        if page < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Page number must be >= 1"
+            )
+        if page_size < 1 or page_size > 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Page size must be between 1 and 100"
+            )
+
+        # Calculate offset
+        offset = (page - 1) * page_size
+
+        # Get public instances from facade
+        instances = facade.get_marketplace_agents(limit=page_size, offset=offset)
+
+        # TODO: Implement filtering and sorting (category, search, sort)
+        # For now, return all instances as-is
+
+        # Get template information for each instance
+        agent_responses = []
+        for instance in instances:
+            template = facade.get_template_by_id(
+                str(instance.template_id.value) if hasattr(instance.template_id, 'value')
+                else str(instance.template_id)
+            )
+
+            # Build customizations summary
+            customizations = []
+            if instance.is_customized:
+                customizations.append("Custom configuration")
+
+            agent_responses.append(
+                MarketplaceAgentResponse(
+                    instance_id=str(instance.id.value),
+                    agent_name=instance.agent_name,
+                    template_slug=template.slug if template else "unknown",
+                    creator_display_name=instance.get_creator_display_name(),
+                    share_token=instance.share_token or "",
+                    customizations_summary=", ".join(customizations) if customizations else "Default template",
+                    usage_count=instance.usage_count,
+                    created_at=instance.created_at
+                )
+            )
+
+        return MarketplaceListResponse(
+            agents=agent_responses,
+            total=len(agent_responses),
+            page=page,
+            page_size=page_size,
+            message=f"Found {len(agent_responses)} public agents"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error browsing marketplace: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to browse marketplace: {str(e)}"
+        )
+
+
+@router.get("/marketplace/{share_token}", response_model=SharedAgentPreviewResponse)
+async def preview_shared_agent(
+    share_token: str,
+    facade: AgentManagementFacade = Depends(get_facade)
+) -> SharedAgentPreviewResponse:
+    """
+    Preview a shared agent before importing (Phase 3.10).
+
+    Public endpoint - no authentication required.
+    Shows read-only configuration preview and creator info.
+
+    Args:
+        share_token: 64-character share token
+        facade: AgentManagementFacade dependency
+
+    Returns:
+        SharedAgentPreviewResponse with agent details
+
+    Raises:
+        400: Invalid share token format
+        404: Share token not found or agent not public
+        500: Server error during preview
+    """
+    try:
+        logger.info(f"Previewing shared agent with token")
+
+        # Call facade to get preview
+        instance = facade.get_shared_agent_preview(share_token)
+
+        if not instance:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Shared agent not found or is no longer public"
+            )
+
+        # Get template information
+        template = facade.get_template_by_id(
+            str(instance.template_id.value) if hasattr(instance.template_id, 'value')
+            else str(instance.template_id)
+        )
+
+        # Build configuration preview
+        configuration_preview = {
+            "system_prompt": instance.configuration.system_prompt,
+            "tools": list(instance.configuration.tools),
+            "capabilities": instance.configuration.capabilities or {},
+            "rules": list(instance.configuration.rules) if instance.configuration.rules else [],
+            "output_format": instance.configuration.output_format
+        }
+
+        # Build customizations summary
+        customizations = []
+        if instance.is_customized:
+            customizations.append("Custom configuration")
+        customizations_summary = ", ".join(customizations) if customizations else "Default template configuration"
+
+        return SharedAgentPreviewResponse(
+            agent_name=instance.agent_name,
+            template_slug=template.slug if template else "unknown",
+            creator_display_name=instance.get_creator_display_name(),
+            configuration_preview=configuration_preview,
+            customizations_summary=customizations_summary,
+            can_import=True,
+            message="Agent preview loaded successfully"
+        )
+
+    except ValueError as e:
+        logger.error(f"Validation error previewing shared agent: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error previewing shared agent {share_token[:10]}...: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to preview shared agent: {str(e)}"
         )
