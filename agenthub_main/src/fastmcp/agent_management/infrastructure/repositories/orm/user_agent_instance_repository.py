@@ -59,6 +59,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                     # Update existing instance fields
                     existing.agent_name = model_dict["agent_name"]
                     existing.is_customized = model_dict["is_customized"]
+                    existing.is_enabled = model_dict.get("is_enabled", True)
                     existing.customization_notes = model_dict.get("customization_notes")
                     existing.system_prompt = model_dict["system_prompt"]
                     existing.tools = model_dict["tools"]
@@ -85,6 +86,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                         template_id=model_dict["template_id"],
                         agent_name=model_dict["agent_name"],
                         is_customized=model_dict["is_customized"],
+                        is_enabled=model_dict.get("is_enabled", True),
                         customization_notes=model_dict.get("customization_notes"),
                         system_prompt=model_dict["system_prompt"],
                         tools=model_dict["tools"],
@@ -275,6 +277,33 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             logger.error(f"Error finding user agent instances for user {user_id}: {e}")
             return []
 
+    def find_enabled_by_user(self, user_id: UserId) -> List[UserAgentInstance]:
+        """
+        Find all enabled instances for a user
+
+        Used when populating call_agent tool options - only shows enabled agents.
+
+        Args:
+            user_id: User identifier
+
+        Returns:
+            List of enabled UserAgentInstance entities (is_enabled=True)
+        """
+        try:
+            with self.get_db_session() as session:
+                orm_instances = session.query(UserAgentInstanceORM).filter(
+                    and_(
+                        UserAgentInstanceORM.user_id == str(user_id),
+                        UserAgentInstanceORM.is_enabled == True
+                    )
+                ).order_by(UserAgentInstanceORM.agent_name).all()
+
+                return [self._model_to_entity(instance) for instance in orm_instances]
+
+        except Exception as e:
+            logger.error(f"Error finding enabled user agent instances for user {user_id}: {e}")
+            return []
+
     def find_by_share_token(self, share_token: str) -> Optional[UserAgentInstance]:
         """
         Find an instance by its share token
@@ -299,21 +328,50 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             logger.error(f"Error finding user agent instance by share token: {e}")
             return None
 
-    def find_public_instances(self, limit: int = 50) -> List[UserAgentInstance]:
-        """
-        Find public instances (for browsing shared agents)
+    def find_public_instances(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        order_by: 'InstanceOrdering' = None
+    ) -> List[UserAgentInstance]:
+        """Find public instances (for browsing shared agents).
+
+        Following DDD: Domain defines WHAT ordering options exist,
+        infrastructure defines HOW to implement them in SQL.
 
         Args:
             limit: Maximum number of instances to return
+            offset: Offset for pagination
+            order_by: Domain-defined ordering preference
 
         Returns:
-            List of public UserAgentInstance entities
+            List of public UserAgentInstance entities ordered as specified
         """
+        from ....domain.enums.ordering import InstanceOrdering
+
+        # Default ordering if none specified
+        if order_by is None:
+            order_by = InstanceOrdering.CREATED_DESC
+
         try:
             with self.get_db_session() as session:
-                orm_instances = session.query(UserAgentInstanceORM).filter(
-                    UserAgentInstanceORM.visibility == 'public'
-                ).order_by(UserAgentInstanceORM.created_at.desc()).limit(limit).all()
+                query = session.query(UserAgentInstanceORM).filter(
+                    UserAgentInstanceORM.visibility == 'public',
+                    UserAgentInstanceORM.share_token.isnot(None)  # Defensive: ensure business invariant
+                )
+
+                # Infrastructure translates domain ordering to SQL
+                ordering_map = {
+                    InstanceOrdering.CREATED_DESC: UserAgentInstanceORM.created_at.desc(),
+                    InstanceOrdering.CREATED_ASC: UserAgentInstanceORM.created_at.asc(),
+                    InstanceOrdering.UPDATED_DESC: UserAgentInstanceORM.updated_at.desc(),
+                    InstanceOrdering.UPDATED_ASC: UserAgentInstanceORM.updated_at.asc(),
+                    InstanceOrdering.NAME_ASC: UserAgentInstanceORM.agent_name.asc(),
+                    InstanceOrdering.NAME_DESC: UserAgentInstanceORM.agent_name.desc(),
+                }
+
+                order_clause = ordering_map.get(order_by, UserAgentInstanceORM.created_at.desc())
+                orm_instances = query.order_by(order_clause).offset(offset).limit(limit).all()
 
                 return [self._model_to_entity(instance) for instance in orm_instances]
 
@@ -428,6 +486,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                 template_id=AgentTemplateId(orm_instance.template_id),
                 agent_name=orm_instance.agent_name,
                 is_customized=orm_instance.is_customized,
+                is_enabled=getattr(orm_instance, 'is_enabled', True),
                 configuration=configuration,
                 visibility=orm_instance.visibility,
                 share_token=orm_instance.share_token,
@@ -469,6 +528,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             "template_id": str(instance.template_id),
             "agent_name": instance.agent_name,
             "is_customized": instance.is_customized,
+            "is_enabled": getattr(instance, 'is_enabled', True),
             "customization_notes": customization_notes,
             "system_prompt": instance.configuration.system_prompt,
             "tools": json.dumps(instance.configuration.tools),

@@ -183,6 +183,14 @@ class UserAgentInstanceORM(Base):
         doc="Whether user has customized the configuration"
     )
 
+    # Agent selection/activation
+    is_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        doc="Whether this agent instance is enabled for use in call_agent tools"
+    )
+
     customization_notes: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,
@@ -301,6 +309,8 @@ class UserAgentInstanceORM(Base):
         Index("ix_user_agent_instances_user_visibility", "user_id", "visibility"),
         # Index for public instance queries
         Index("ix_user_agent_instances_visibility_created", "visibility", "created_at"),
+        # Index for enabled instance queries (call_agent filtering)
+        Index("ix_user_agent_instances_user_enabled", "user_id", "is_enabled"),
     )
 
 
