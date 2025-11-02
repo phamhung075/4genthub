@@ -314,7 +314,7 @@ class AgentSharingService:
 
         # Business validation: double-check all returned instances are shareable
         # (defensive programming - infrastructure should already filter, but we verify)
-        return [inst for inst in instances if inst.is_shared()]
+        return [inst for inst in instances if inst.is_public()]
 
     def _get_and_verify_ownership(
         self,
