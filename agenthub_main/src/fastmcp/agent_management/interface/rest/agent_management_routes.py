@@ -89,11 +89,11 @@ async def list_templates(
                 description=t.description,
                 category=t.category,
                 version=t.version,
-                system_prompt=t.configuration.system_prompt,
-                tools=list(t.configuration.tools),
-                capabilities=t.configuration.capabilities or {},
-                rules=list(t.configuration.rules) if t.configuration.rules else None,
-                output_format=t.configuration.output_format,
+                system_prompt=t.default_configuration.system_prompt,
+                tools=list(t.default_configuration.tools),
+                capabilities=t.default_configuration.capabilities or {},
+                rules=list(t.default_configuration.rules) if t.default_configuration.rules else None,
+                output_format=t.default_configuration.output_format,
                 metadata=t.metadata,
                 created_at=t.created_at
             )
@@ -144,11 +144,11 @@ async def get_template(
             description=template.description,
             category=template.category,
             version=template.version,
-            system_prompt=template.configuration.system_prompt,
-            tools=list(template.configuration.tools),
-            capabilities=template.configuration.capabilities or {},
-            rules=list(template.configuration.rules) if template.configuration.rules else None,
-            output_format=template.configuration.output_format,
+            system_prompt=template.default_configuration.system_prompt,
+            tools=list(template.default_configuration.tools),
+            capabilities=template.default_configuration.capabilities or {},
+            rules=list(template.default_configuration.rules) if template.default_configuration.rules else None,
+            output_format=template.default_configuration.output_format,
             metadata=template.metadata,
             created_at=template.created_at
         )
@@ -191,6 +191,7 @@ async def list_user_instances(
                 template_id=str(inst.template_id.value),
                 agent_name=inst.agent_name,
                 is_customized=inst.is_customized,
+                is_enabled=inst.is_enabled,
                 visibility=inst.visibility,
                 usage_count=inst.usage_count,
                 last_used_at=inst.last_used_at,
@@ -251,6 +252,7 @@ async def get_instance(
             template_id=str(instance.template_id.value),
             agent_name=instance.agent_name,
             is_customized=instance.is_customized,
+            is_enabled=instance.is_enabled,
             visibility=instance.visibility,
             usage_count=instance.usage_count,
             last_used_at=instance.last_used_at,
@@ -305,6 +307,7 @@ async def create_instance(
             template_id=str(instance.template_id.value),
             agent_name=instance.agent_name,
             is_customized=instance.is_customized,
+            is_enabled=instance.is_enabled,
             visibility=instance.visibility,
             usage_count=instance.usage_count,
             last_used_at=instance.last_used_at,
@@ -330,6 +333,67 @@ async def create_instance(
         )
 
 
+@router.post(
+    "/instances/bulk-create",
+    response_model=List[UserAgentInstanceResponse],
+    status_code=status.HTTP_201_CREATED,
+    summary="Bulk create agent instances",
+    description="Create instances for multiple templates in a single request. Only creates instances that don't already exist."
+)
+async def bulk_create_instances(
+    current_user: User = Depends(get_current_user),
+    facade: AgentManagementFacade = Depends(get_facade)
+):
+    """
+    Create instances for all available agent templates that the user doesn't already have.
+
+    This endpoint:
+    - Gets all available templates from the agent library
+    - Checks which templates the user already has instances for
+    - Creates instances only for missing templates
+    - Returns the newly created instances
+    """
+    try:
+        user_id = UserId(current_user.id)
+        logger.info(f"User {current_user.email} bulk creating all agent instances")
+
+        # Create instances for all templates (facade handles duplicate checking)
+        created_instances = facade.bulk_create_instances(user_id=user_id, template_slugs=None)
+
+        # Convert to response format
+        instance_responses = [
+            UserAgentInstanceResponse(
+                id=str(instance.id.value),
+                user_id=str(instance.user_id.value),
+                template_id=str(instance.template_id.value),
+                agent_name=instance.agent_name,
+                is_customized=instance.is_customized,
+                is_enabled=instance.is_enabled,
+                visibility=instance.visibility,
+                usage_count=instance.usage_count,
+                last_used_at=instance.last_used_at,
+                created_at=instance.created_at,
+                updated_at=instance.updated_at,
+                system_prompt=instance.configuration.system_prompt,
+                tools=list(instance.configuration.tools),
+                capabilities=instance.configuration.capabilities or {},
+                rules=list(instance.configuration.rules) if instance.configuration.rules else None,
+                output_format=instance.configuration.output_format
+            )
+            for instance in created_instances
+        ]
+
+        logger.info(f"Bulk created {len(instance_responses)} agent instances")
+        return instance_responses
+
+    except Exception as e:
+        logger.error(f"Error bulk creating instances: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to bulk create instances: {str(e)}"
+        )
+
+
 @router.put(
     "/instances/{instance_id}",
     response_model=UserAgentInstanceResponse,
@@ -352,6 +416,7 @@ async def update_instance(
             user_id=user_id,
             instance_id=instance_id,
             agent_name=request.agent_name,
+            is_enabled=request.is_enabled,
             system_prompt=request.system_prompt,
             tools=request.tools,
             capabilities=request.capabilities,
@@ -368,6 +433,7 @@ async def update_instance(
             template_id=updated_instance.template_id.value,
             agent_name=updated_instance.agent_name,
             is_customized=updated_instance.is_customized,
+            is_enabled=updated_instance.is_enabled,
             visibility=updated_instance.visibility,
             usage_count=updated_instance.usage_count,
             last_used_at=updated_instance.last_used_at,
@@ -875,6 +941,7 @@ async def import_agent(
             template_id=str(imported_instance.template_id.value),
             agent_name=imported_instance.agent_name,
             is_customized=imported_instance.is_customized,
+            is_enabled=imported_instance.is_enabled,
             visibility=imported_instance.visibility,
             usage_count=imported_instance.usage_count,
             last_used_at=imported_instance.last_used_at,
