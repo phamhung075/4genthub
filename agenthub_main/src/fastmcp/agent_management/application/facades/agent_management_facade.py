@@ -13,7 +13,9 @@ from datetime import datetime, timezone
 from ...domain.entities.agent_template import AgentTemplate
 from ...domain.entities.user_agent_instance import UserAgentInstance
 from ...domain.value_objects.user_id import UserId
+from ...domain.value_objects.user_agent_instance_id import UserAgentInstanceId
 from ...domain.value_objects.agent_configuration import AgentConfiguration
+from ...domain.enums.ordering import InstanceOrdering
 from ...domain.services.agent_instantiation_service import AgentInstantiationService
 from ...domain.services.agent_sharing_service import AgentSharingService
 from ...infrastructure.repositories import (
@@ -98,6 +100,68 @@ class AgentManagementFacade:
 
         logger.info(f"Instance ready: {instance.id.value}")
         return instance
+
+    def bulk_create_instances(
+        self,
+        user_id: UserId,
+        template_slugs: Optional[list[str]] = None
+    ) -> list[UserAgentInstance]:
+        """
+        Create instances for multiple templates in a single operation.
+        Only creates instances that don't already exist for the user.
+
+        Args:
+            user_id: User identifier
+            template_slugs: List of template slugs to create (if None, creates all available templates)
+
+        Returns:
+            List of UserAgentInstance objects (newly created only)
+        """
+        logger.info(f"Bulk creating instances for user={user_id.value}, templates={template_slugs or 'all'}")
+
+        # Get all available templates if no specific list provided
+        all_templates = self._template_repo.find_all()
+        if template_slugs is None:
+            template_slugs = [t.slug for t in all_templates]
+            logger.info(f"Creating instances for all {len(template_slugs)} available templates")
+
+        # Create a mapping of template_id -> slug for existing instances check
+        template_id_to_slug = {t.id.value: t.slug for t in all_templates}
+
+        # Get existing instances for user to avoid duplicates
+        existing_instances = self._instance_repo.find_by_user(user_id)
+        # Map template IDs to slugs for existing instances
+        existing_slugs = {
+            template_id_to_slug.get(inst.template_id.value)
+            for inst in existing_instances
+            if inst.template_id and inst.template_id.value in template_id_to_slug
+        }
+        logger.info(f"User already has {len(existing_slugs)} instances")
+
+        # Create instances for templates user doesn't have yet
+        created_instances = []
+        skipped_count = 0
+
+        for slug in template_slugs:
+            if slug in existing_slugs:
+                skipped_count += 1
+                logger.debug(f"Skipping {slug} - user already has instance")
+                continue
+
+            try:
+                instance = self._instantiation_service.get_or_create_instance(
+                    user_id=user_id,
+                    template_slug=slug
+                )
+                if instance:
+                    created_instances.append(instance)
+                    logger.info(f"Created instance for {slug}")
+            except Exception as e:
+                logger.warning(f"Failed to create instance for {slug}: {e}")
+                continue
+
+        logger.info(f"Bulk creation complete: {len(created_instances)} created, {skipped_count} skipped")
+        return created_instances
 
     def get_agent_for_call(
         self,
@@ -188,7 +252,7 @@ class AgentManagementFacade:
         Returns:
             List of user's agent instances
         """
-        return self._instance_repo.find_all_by_user(user_id)
+        return self._instance_repo.find_by_user(user_id)
 
     def get_template_by_slug(self, agent_slug: str) -> Optional[AgentTemplate]:
         """
@@ -231,6 +295,7 @@ class AgentManagementFacade:
         user_id: UserId,
         instance_id: str,
         agent_name: Optional[str] = None,
+        is_enabled: Optional[bool] = None,
         system_prompt: Optional[str] = None,
         tools: Optional[list[str]] = None,
         capabilities: Optional[Dict[str, Any]] = None,
@@ -248,6 +313,7 @@ class AgentManagementFacade:
             user_id: User identifier (must match instance owner)
             instance_id: Instance identifier to update
             agent_name: New custom name for instance (optional)
+            is_enabled: Whether agent is enabled for use in call_agent tools (optional)
             system_prompt: New system prompt (optional)
             tools: New tools list (optional)
             capabilities: New capabilities dict (optional)
@@ -261,7 +327,7 @@ class AgentManagementFacade:
         Raises:
             ValueError: If instance not found or user is not the owner
         """
-        from ..value_objects.user_agent_instance_id import UserAgentInstanceId
+        from ...domain.value_objects.user_agent_instance_id import UserAgentInstanceId
 
         logger.info(f"Updating instance {instance_id} for user {user_id.value}")
 
@@ -278,6 +344,10 @@ class AgentManagementFacade:
         # Update agent name if provided
         if agent_name is not None:
             object.__setattr__(instance, 'agent_name', agent_name)
+
+        # Update is_enabled if provided
+        if is_enabled is not None:
+            object.__setattr__(instance, 'is_enabled', is_enabled)
 
         # Update configuration if any config fields provided
         if any([system_prompt, tools, capabilities, rules, output_format]):
@@ -327,8 +397,6 @@ class AgentManagementFacade:
         Raises:
             ValueError: If instance not found or user is not the owner
         """
-        from ..value_objects.user_agent_instance_id import UserAgentInstanceId
-
         logger.info(f"Deleting instance {instance_id} for user {user_id.value}")
 
         # Find instance
@@ -582,20 +650,30 @@ class AgentManagementFacade:
     def get_marketplace_agents(
         self,
         limit: int = 50,
-        offset: int = 0
+        offset: int = 0,
+        order_by: 'InstanceOrdering' = None
     ) -> list[UserAgentInstance]:
-        """
-        Get list of publicly shared agents for marketplace browsing.
+        """Get list of publicly shared agents for marketplace browsing.
+
+        Application layer coordinates between presentation and domain layers.
 
         Args:
             limit: Maximum number of results (default 50)
             offset: Offset for pagination (default 0)
+            order_by: Optional ordering preference from presentation layer
 
         Returns:
-            List of public agent instances
+            List of public agent instances (validated and ordered by domain service)
         """
-        logger.info(f"Getting marketplace agents: limit={limit}, offset={offset}")
-        return self._sharing_service.get_public_instances(limit=limit, offset=offset)
+        logger.info(
+            f"Getting marketplace agents: limit={limit}, offset={offset}, "
+            f"order_by={order_by.value if order_by else 'default'}"
+        )
+        return self._sharing_service.get_public_instances(
+            limit=limit,
+            offset=offset,
+            order_by=order_by
+        )
 
     def get_shared_agent_preview(
         self,

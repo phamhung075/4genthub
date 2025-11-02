@@ -24,8 +24,8 @@ class AgentTemplateResponse(BaseModel):
     system_prompt: str = Field(..., description="Default system prompt")
     tools: List[str] = Field(default_factory=list, description="Available tools")
     capabilities: Dict[str, Any] = Field(default_factory=dict, description="Agent capabilities")
-    rules: Optional[List[str]] = Field(None, description="Agent rules")
-    output_format: Optional[str] = Field(None, description="Output format preference")
+    rules: Optional[Any] = Field(None, description="Agent rules (can be list of strings or list of rule objects)")
+    output_format: Optional[Any] = Field(None, description="Output format preference (can be string or format object)")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     created_at: datetime = Field(..., description="Creation timestamp")
 
@@ -60,6 +60,7 @@ class CreateInstanceRequest(BaseModel):
 class UpdateInstanceRequest(BaseModel):
     """Request to update agent instance"""
     agent_name: Optional[str] = Field(None, description="Updated name")
+    is_enabled: Optional[bool] = Field(None, description="Whether agent is enabled for use in call_agent tools")
     system_prompt: Optional[str] = Field(None, description="Updated system prompt")
     tools: Optional[List[str]] = Field(None, description="Updated tool list")
     capabilities: Optional[Dict[str, Any]] = Field(None, description="Updated capabilities")
@@ -75,6 +76,7 @@ class UserAgentInstanceResponse(BaseModel):
     template_id: str = Field(..., description="Source template UUID")
     agent_name: str = Field(..., description="Instance name")
     is_customized: bool = Field(..., description="Whether instance is customized")
+    is_enabled: bool = Field(default=True, description="Whether agent is enabled for use in call_agent tools")
     visibility: str = Field(..., description="'private' or 'public'")
     usage_count: int = Field(default=0, description="Number of times used")
     last_used_at: Optional[datetime] = Field(None, description="Last usage timestamp")
@@ -85,8 +87,8 @@ class UserAgentInstanceResponse(BaseModel):
     system_prompt: str = Field(..., description="Active system prompt")
     tools: List[str] = Field(default_factory=list, description="Active tools")
     capabilities: Dict[str, Any] = Field(default_factory=dict, description="Active capabilities")
-    rules: Optional[List[str]] = Field(None, description="Active rules")
-    output_format: Optional[str] = Field(None, description="Active output format")
+    rules: Optional[Any] = Field(None, description="Active rules (can be list of strings or list of rule objects)")
+    output_format: Optional[Any] = Field(None, description="Active output format (can be string or format object)")
 
     class Config:
         from_attributes = True
