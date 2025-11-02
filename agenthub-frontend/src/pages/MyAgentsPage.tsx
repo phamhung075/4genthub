@@ -8,7 +8,7 @@
  * @version 1.0.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -50,7 +50,7 @@ import logger from '../utils/logger';
  */
 export const MyAgentsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { instances, loading, error, loadInstances, deleteInstance, createInstance, bulkCreateInstances, toggleEnabled } = useUserAgentInstances();
+  const { instances, loading, error, loadInstances, deleteInstance, createInstance, bulkCreateInstances, toggleEnabled, updateInstance } = useUserAgentInstances();
   const { templates, loading: templatesLoading } = useAgentTemplates();
 
   // Local state
@@ -67,6 +67,63 @@ export const MyAgentsPage: React.FC = () => {
   const [instanceToDelete, setInstanceToDelete] = useState<UserAgentInstance | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [instanceToEdit, setInstanceToEdit] = useState<UserAgentInstance | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  // Edit form state (moved to top level to comply with React Rules of Hooks)
+  const [formData, setFormData] = useState({
+    agent_name: '',
+    system_prompt: '',
+    tools: [] as string[],
+    capabilities: '{}',
+    rules: [] as string[],
+    output_format: '',
+    visibility: 'private' as 'private' | 'public',
+    is_enabled: true,
+  });
+  const [newTool, setNewTool] = useState('');
+  const [newRule, setNewRule] = useState('');
+  const [capabilitiesError, setCapabilitiesError] = useState<string | null>(null);
+
+  // Update form data when instanceToEdit changes
+  useEffect(() => {
+    if (instanceToEdit) {
+      // Normalize tools and rules to always be string arrays (handle both string and object formats)
+      const normalizeToStringArray = (arr: any[]): string[] => {
+        if (!arr) return [];
+        return arr.map(item => {
+          if (typeof item === 'string') return item;
+          if (typeof item === 'object') return item?.name || item?.content || JSON.stringify(item);
+          return String(item);
+        });
+      };
+
+      // Normalize text fields if they're objects
+      const normalizeTextField = (value: any): string => {
+        if (!value) return '';
+        if (typeof value === 'string') return value;
+        if (typeof value === 'object') {
+          // Try to extract text content from object
+          return value.content || value.text || value.format || value.prompt || JSON.stringify(value, null, 2);
+        }
+        return String(value);
+      };
+
+      setFormData({
+        agent_name: typeof instanceToEdit.agent_name === 'string' ? instanceToEdit.agent_name : String(instanceToEdit.agent_name || ''),
+        system_prompt: normalizeTextField(instanceToEdit.system_prompt),
+        tools: normalizeToStringArray(instanceToEdit.tools || []),
+        capabilities: JSON.stringify(instanceToEdit.capabilities || {}, null, 2),
+        rules: normalizeToStringArray(instanceToEdit.rules || []),
+        output_format: normalizeTextField(instanceToEdit.output_format),
+        visibility: instanceToEdit.visibility,
+        is_enabled: instanceToEdit.is_enabled,
+      });
+      setCapabilitiesError(null);
+    }
+  }, [instanceToEdit]);
 
   // Filter instances
   const filteredInstances = useMemo(() => {
@@ -210,6 +267,124 @@ export const MyAgentsPage: React.FC = () => {
     } finally {
       setDeleting(false);
     }
+  };
+
+  // Handle edit click
+  const handleEditClick = (instance: UserAgentInstance) => {
+    setInstanceToEdit(instance);
+    setEditError(null);
+    setIsEditDialogOpen(true);
+  };
+
+  // Handle edit save
+  const handleEditSave = async (data: UpdateInstanceRequest) => {
+    if (!instanceToEdit) return;
+
+    setSaving(true);
+    setEditError(null);
+
+    try {
+      const updated = await updateInstance(instanceToEdit.id, data);
+
+      if (updated) {
+        setIsEditDialogOpen(false);
+        setInstanceToEdit(null);
+        setCreateSuccess(`Updated "${updated.agent_name}" successfully!`);
+        setTimeout(() => setCreateSuccess(null), 5000);
+        await loadInstances();
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error updating agent';
+      logger.error('Error updating agent:', err);
+      setEditError(errorMessage);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Edit form handlers (moved to top level to comply with React Rules of Hooks)
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'capabilities') {
+      setCapabilitiesError(null);
+    }
+  };
+
+  const handleAddTool = () => {
+    if (newTool.trim() && !formData.tools.includes(newTool.trim())) {
+      setFormData(prev => ({ ...prev, tools: [...prev.tools, newTool.trim()] }));
+      setNewTool('');
+    }
+  };
+
+  const handleRemoveTool = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      tools: prev.tools.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAddRule = () => {
+    if (newRule.trim()) {
+      setFormData(prev => ({ ...prev, rules: [...prev.rules, newRule.trim()] }));
+      setNewRule('');
+    }
+  };
+
+  const handleRemoveRule = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      rules: prev.rules.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleEditFormSave = () => {
+    // Validate capabilities JSON
+    let parsedCapabilities;
+    try {
+      parsedCapabilities = JSON.parse(formData.capabilities);
+    } catch (err) {
+      setCapabilitiesError('Invalid JSON format for capabilities');
+      return;
+    }
+
+    // Generate or use existing share_token when visibility is public
+    let shareToken: string | null = null;
+    if (formData.visibility === 'public') {
+      if (instanceToEdit?.share_token) {
+        // Use existing token if already exists
+        shareToken = instanceToEdit.share_token;
+      } else {
+        // Generate new 64-character random token
+        shareToken = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+      }
+    }
+
+    // Prepare update data
+    const updateData: UpdateInstanceRequest = {
+      agent_name: formData.agent_name,
+      system_prompt: formData.system_prompt,
+      tools: formData.tools,
+      capabilities: parsedCapabilities,
+      rules: formData.rules,
+      output_format: formData.output_format || null,
+      visibility: formData.visibility as 'private' | 'public',
+      is_enabled: formData.is_enabled,
+      share_token: shareToken,
+    };
+
+    handleEditSave(updateData);
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.agent_name.trim().length > 0 &&
+      formData.agent_name.length <= 100 &&
+      formData.system_prompt.trim().length >= 10 &&
+      formData.tools.length > 0
+    );
   };
 
   // Format date
@@ -378,6 +553,7 @@ export const MyAgentsPage: React.FC = () => {
                     key={instance.id}
                     instance={instance}
                     onViewDetails={handleViewDetails}
+                    onEdit={handleEditClick}
                     onDelete={handleDeleteClick}
                     onToggleEnabled={toggleEnabled}
                     formatDate={formatDate}
@@ -448,7 +624,7 @@ export const MyAgentsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Details Dialog */}
+      {/* Details Dialog - Enhanced Large View */}
       {selectedInstance && (() => {
         // Check if agent is callable in dialog
         const isCallableDialog = Boolean(
@@ -473,27 +649,28 @@ export const MyAgentsPage: React.FC = () => {
 
         return (
           <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-2xl">
+            <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+              <DialogHeader className="pb-6 border-b">
+                <DialogTitle className="text-3xl font-bold flex items-center gap-3">
+                  <Sparkles className="h-7 w-7 text-primary" />
                   {selectedInstance.agent_name}
                 </DialogTitle>
-                <DialogDescription>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <Badge variant="outline">
+                <DialogDescription className="mt-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Badge variant="outline" className="text-sm py-1 px-3">
                       {getVisibilityLabelDialog(selectedInstance.visibility)}
                     </Badge>
                     {selectedInstance.is_customized && (
-                      <Badge variant="secondary">Customized</Badge>
+                      <Badge variant="secondary" className="text-sm py-1 px-3">Customized</Badge>
                     )}
                     {isCallableDialog ? (
-                      <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                      <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-sm py-1 px-3">
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
                         Ready to Call
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-yellow-700 dark:text-yellow-400 border-yellow-500/40">
-                        <AlertCircle className="h-3 w-3 mr-1" />
+                      <Badge variant="outline" className="text-yellow-700 dark:text-yellow-400 border-yellow-500/40 text-sm py-1 px-3">
+                        <AlertCircle className="h-4 w-4 mr-1" />
                         Not Ready
                       </Badge>
                     )}
@@ -501,36 +678,51 @@ export const MyAgentsPage: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
 
-            <div className="space-y-6 py-4">
-              {/* Stats Cards */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="p-3 rounded-lg bg-muted text-center">
-                  <Activity className="h-5 w-5 text-primary mx-auto mb-1" />
-                  <p className="text-2xl font-bold">{selectedInstance.usage_count || 0}</p>
-                  <p className="text-xs text-muted-foreground">Uses</p>
+            <div className="space-y-8 py-6">
+              {/* Stats Cards - Larger and more prominent - Responsive */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 text-center">
+                  <Activity className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <p className="text-4xl font-bold text-primary">{selectedInstance.usage_count || 0}</p>
+                  <p className="text-sm text-muted-foreground mt-1">Total Uses</p>
                 </div>
-                <div className="p-3 rounded-lg bg-muted text-center">
-                  <Calendar className="h-5 w-5 text-primary mx-auto mb-1" />
-                  <p className="text-sm font-bold">{formatDate(selectedInstance.created_at)}</p>
-                  <p className="text-xs text-muted-foreground">Created</p>
+                <div className="p-6 rounded-lg bg-muted/50 border text-center">
+                  <Calendar className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <p className="text-lg font-bold">{formatDate(selectedInstance.created_at)}</p>
+                  <p className="text-sm text-muted-foreground mt-1">Created</p>
                 </div>
-                <div className="p-3 rounded-lg bg-muted text-center">
-                  <Calendar className="h-5 w-5 text-primary mx-auto mb-1" />
-                  <p className="text-sm font-bold">
+                <div className="p-6 rounded-lg bg-muted/50 border text-center">
+                  <Calendar className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <p className="text-lg font-bold">
                     {selectedInstance.last_used_at
                       ? formatDate(selectedInstance.last_used_at)
                       : 'Never'}
                   </p>
-                  <p className="text-xs text-muted-foreground">Last Used</p>
+                  <p className="text-sm text-muted-foreground mt-1">Last Used</p>
                 </div>
               </div>
 
-              {/* System Prompt */}
+              {/* System Prompt - Full width, larger font, no height limit */}
               {selectedInstance.system_prompt && (
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">System Prompt</h3>
-                  <div className="bg-muted p-4 rounded-lg max-h-60 overflow-y-auto">
-                    <pre className="text-xs whitespace-pre-wrap font-mono">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-xl flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      System Prompt
+                    </h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedInstance.system_prompt);
+                      }}
+                      className="gap-2"
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                  <div className="bg-muted/50 p-6 rounded-lg border">
+                    <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
                       {selectedInstance.system_prompt}
                     </pre>
                   </div>
@@ -539,29 +731,37 @@ export const MyAgentsPage: React.FC = () => {
 
               {/* Tools */}
               {selectedInstance.tools && selectedInstance.tools.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">
-                    Tools ({selectedInstance.tools.length})
+                <div className="space-y-3">
+                  <h3 className="font-bold text-xl flex items-center gap-2">
+                    Tools
+                    <Badge variant="secondary" className="ml-2">{selectedInstance.tools.length}</Badge>
                   </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedInstance.tools.map((tool, idx) => (
-                      <Badge key={idx} variant="secondary">{tool}</Badge>
-                    ))}
+                  <div className="bg-muted/30 p-4 rounded-lg border">
+                    <div className="flex flex-wrap gap-2">
+                      {selectedInstance.tools.map((tool, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-sm py-1 px-3">
+                          {tool}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Capabilities */}
               {selectedInstance.capabilities && Object.keys(selectedInstance.capabilities).length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">
-                    Capabilities ({Object.keys(selectedInstance.capabilities).length})
+                <div className="space-y-3">
+                  <h3 className="font-bold text-xl flex items-center gap-2">
+                    Capabilities
+                    <Badge variant="secondary" className="ml-2">
+                      {Object.keys(selectedInstance.capabilities).length}
+                    </Badge>
                   </h3>
-                  <div className="bg-muted p-4 rounded-lg space-y-2 max-h-60 overflow-y-auto">
+                  <div className="bg-muted/30 p-4 rounded-lg border space-y-3">
                     {Object.entries(selectedInstance.capabilities).map(([key, value]) => (
-                      <div key={key} className="flex gap-2 text-sm">
-                        <span className="font-semibold text-primary min-w-32">{key}:</span>
-                        <span className="text-muted-foreground">
+                      <div key={key} className="flex flex-col gap-1 text-sm border-b pb-2 last:border-b-0">
+                        <span className="font-semibold text-primary">{key}</span>
+                        <span className="text-muted-foreground pl-4">
                           {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
                         </span>
                       </div>
@@ -570,15 +770,20 @@ export const MyAgentsPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Rules */}
+              {/* Rules - Full width */}
               {selectedInstance.rules && Array.isArray(selectedInstance.rules) && selectedInstance.rules.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">Rules</h3>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-3">
+                  <h3 className="font-bold text-xl flex items-center gap-2">
+                    Rules
+                    <Badge variant="secondary" className="ml-2">{selectedInstance.rules.length}</Badge>
+                  </h3>
+                  <div className="bg-muted/30 p-4 rounded-lg border space-y-3">
                     {selectedInstance.rules.map((rule, idx) => (
-                      <div key={idx} className="flex gap-2 text-sm p-2 bg-muted rounded">
-                        <span className="text-primary font-semibold">{idx + 1}.</span>
-                        <span>{typeof rule === 'string' ? rule : JSON.stringify(rule)}</span>
+                      <div key={idx} className="flex gap-3 text-sm p-3 bg-background rounded border">
+                        <span className="text-primary font-bold text-base">{idx + 1}.</span>
+                        <span className="flex-1 leading-relaxed">
+                          {typeof rule === 'string' ? rule : JSON.stringify(rule)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -588,8 +793,8 @@ export const MyAgentsPage: React.FC = () => {
 
             <Separator />
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>
+            <DialogFooter className="pt-4">
+              <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)} className="px-8">
                 Close
               </Button>
             </DialogFooter>
@@ -714,6 +919,264 @@ export const MyAgentsPage: React.FC = () => {
                   <>
                     <Plus className="h-4 w-4" />
                     Create Instance
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Edit Agent Dialog */}
+      {instanceToEdit && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Edit Agent: {instanceToEdit.agent_name}</DialogTitle>
+              <DialogDescription>
+                Customize your agent's configuration, tools, and behavior.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              {/* Error Message */}
+              {editError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{editError}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Section 1: Basic Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Basic Information</h3>
+
+                {/* Agent Name */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Agent Name <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    value={formData.agent_name}
+                    onChange={(e) => handleInputChange('agent_name', e.target.value)}
+                    placeholder="Enter agent name"
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formData.agent_name.length}/100 characters
+                  </p>
+                </div>
+
+                {/* Visibility */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Visibility</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="private"
+                        checked={formData.visibility === 'private'}
+                        onChange={(e) => handleInputChange('visibility', e.target.value)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">Private</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="public"
+                        checked={formData.visibility === 'public'}
+                        onChange={(e) => handleInputChange('visibility', e.target.value)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">Public</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Is Enabled */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_enabled"
+                    checked={formData.is_enabled}
+                    onCheckedChange={(checked) => handleInputChange('is_enabled', checked)}
+                  />
+                  <label htmlFor="is_enabled" className="text-sm font-medium cursor-pointer">
+                    Agent Enabled
+                  </label>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 2: Configuration */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Configuration</h3>
+
+                {/* System Prompt */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    System Prompt <span className="text-destructive">*</span>
+                  </label>
+                  <textarea
+                    value={formData.system_prompt}
+                    onChange={(e) => handleInputChange('system_prompt', e.target.value)}
+                    placeholder="Enter system prompt (minimum 10 characters)"
+                    rows={10}
+                    className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background resize-y"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formData.system_prompt.length} characters (minimum 10 required)
+                  </p>
+                </div>
+
+                {/* Tools */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Tools <span className="text-destructive">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newTool}
+                      onChange={(e) => setNewTool(e.target.value)}
+                      placeholder="Add tool name"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddTool();
+                        }
+                      }}
+                    />
+                    <Button type="button" onClick={handleAddTool} size="sm">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.tools.map((tool, index) => {
+                      // Handle both string and object formats
+                      const toolName = typeof tool === 'string' ? tool : (tool as any)?.name || JSON.stringify(tool);
+                      return (
+                        <Badge key={index} variant="secondary" className="gap-1">
+                          {toolName}
+                          <button
+                            onClick={() => handleRemoveTool(index)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                  {formData.tools.length === 0 && (
+                    <p className="text-xs text-destructive">At least 1 tool is required</p>
+                  )}
+                </div>
+
+                {/* Capabilities */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Capabilities (JSON)</label>
+                  <textarea
+                    value={formData.capabilities}
+                    onChange={(e) => handleInputChange('capabilities', e.target.value)}
+                    placeholder='{"key": "value"}'
+                    rows={6}
+                    className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background font-mono resize-y"
+                  />
+                  {capabilitiesError && (
+                    <p className="text-xs text-destructive">{capabilitiesError}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Enter capabilities as valid JSON
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 3: Rules & Output */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Rules & Output</h3>
+
+                {/* Rules */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Rules</label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newRule}
+                      onChange={(e) => setNewRule(e.target.value)}
+                      placeholder="Add a rule"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddRule();
+                        }
+                      }}
+                    />
+                    <Button type="button" onClick={handleAddRule} size="sm">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
+                    {formData.rules.map((rule, index) => {
+                      // Handle both string and object formats
+                      const ruleText = typeof rule === 'string' ? rule : (rule as any)?.content || (rule as any)?.name || JSON.stringify(rule);
+                      return (
+                        <div key={index} className="flex gap-2 items-start p-2 bg-muted rounded">
+                          <span className="text-primary font-semibold text-sm">{index + 1}.</span>
+                          <span className="text-sm flex-1">{ruleText}</span>
+                          <button
+                            onClick={() => handleRemoveRule(index)}
+                            className="text-destructive hover:text-destructive/80"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Output Format */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Output Format</label>
+                  <textarea
+                    value={formData.output_format}
+                    onChange={(e) => handleInputChange('output_format', e.target.value)}
+                    placeholder="Enter output format specifications"
+                    rows={4}
+                    className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background resize-y"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                disabled={saving}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleEditFormSave}
+                disabled={!isFormValid() || saving}
+                className="gap-2"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    Save Changes
                   </>
                 )}
               </Button>
@@ -886,12 +1349,13 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onViewDetails, on
 interface AgentCardProps {
   instance: UserAgentInstance;
   onViewDetails: (instance: UserAgentInstance) => void;
+  onEdit: (instance: UserAgentInstance) => void;
   onDelete: (instance: UserAgentInstance) => void;
   onToggleEnabled: (instanceId: string, enabled: boolean) => Promise<boolean>;
   formatDate: (date: string) => string;
 }
 
-const AgentCard: React.FC<AgentCardProps> = ({ instance, onViewDetails, onDelete, onToggleEnabled, formatDate }) => {
+const AgentCard: React.FC<AgentCardProps> = ({ instance, onViewDetails, onEdit, onDelete, onToggleEnabled, formatDate }) => {
   const [isToggling, setIsToggling] = React.useState(false);
   const toolsCount = instance.tools ? instance.tools.length : 0;
   const capabilitiesCount = instance.capabilities ? Object.keys(instance.capabilities).length : 0;
@@ -1025,6 +1489,14 @@ const AgentCard: React.FC<AgentCardProps> = ({ instance, onViewDetails, onDelete
           >
             <Eye className="h-4 w-4" />
             View
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onEdit(instance)}
+            className="hover:text-primary hover:border-primary"
+          >
+            <Edit className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
