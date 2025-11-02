@@ -25,9 +25,16 @@ import {
   CheckCircle2,
   Eye,
   X,
+  Wrench,
+  Code,
+  FileText,
+  Copy,
+  Settings2,
+  ListChecks,
+  FileOutput,
 } from 'lucide-react';
 import { useAgentMarketplace, useAgentSharing } from '../hooks/useAgentManagement';
-import type { MarketplaceAgent, MarketplaceFilters } from '../types/agentTypes';
+import type { MarketplaceAgent, MarketplaceFilters, SharedAgentPreviewResponse } from '../types/agentTypes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -390,6 +397,42 @@ const AgentDetailDialog: React.FC<AgentDetailDialogProps> = ({
   onImport,
   importing,
 }) => {
+  const { previewAgent } = useAgentMarketplace();
+  const [preview, setPreview] = useState<SharedAgentPreviewResponse | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  // Load full preview when dialog opens
+  useEffect(() => {
+    const loadPreview = async () => {
+      if (!open || !agent) {
+        setPreview(null);
+        setPreviewError(null);
+        return;
+      }
+
+      setLoadingPreview(true);
+      setPreviewError(null);
+
+      try {
+        const data = await previewAgent(agent.share_token);
+        if (data) {
+          setPreview(data);
+        } else {
+          setPreviewError('Failed to load agent preview');
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error loading preview';
+        setPreviewError(errorMessage);
+        logger.error('Error loading agent preview:', err);
+      } finally {
+        setLoadingPreview(false);
+      }
+    };
+
+    loadPreview();
+  }, [open, agent, previewAgent]);
+
   if (!agent) return null;
 
   const formattedDate = new Date(agent.created_at).toLocaleDateString('en-US', {
@@ -402,89 +445,222 @@ const AgentDetailDialog: React.FC<AgentDetailDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+        {/* Enhanced Header - Matches My Agents */}
+        <DialogHeader className="pb-6 border-b">
+          <DialogTitle className="text-3xl font-bold flex items-center gap-3">
+            <Sparkles className="h-7 w-7 text-primary" />
             {agent.agent_name}
-            <Badge variant="secondary" className="capitalize">
+          </DialogTitle>
+          <DialogDescription className="flex flex-wrap items-center gap-2 text-base pt-2">
+            <Badge variant="secondary" className="capitalize text-sm">
               {category}
             </Badge>
-          </DialogTitle>
-          <DialogDescription className="flex items-center gap-2 text-base">
-            <User className="h-4 w-4" />
-            Created by {agent.creator_display_name} on {formattedDate}
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <User className="h-4 w-4" />
+              Created by {agent.creator_display_name}
+            </span>
+            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground">{formattedDate}</span>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Template Information */}
-          <div>
-            <h3 className="font-semibold text-lg mb-2">Template</h3>
-            <p className="text-sm text-muted-foreground">{agent.template_slug}</p>
+        {/* Loading State */}
+        {loadingPreview && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
+        )}
 
-          {/* Customizations Summary */}
-          <div>
-            <h3 className="font-semibold text-lg mb-2">Description</h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {agent.customizations_summary || 'No customization details provided'}
-            </p>
-          </div>
+        {/* Error State */}
+        {previewError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{previewError}</AlertDescription>
+          </Alert>
+        )}
 
-          {/* Statistics */}
-          <div>
-            <h3 className="font-semibold text-lg mb-2">Statistics</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Usage Count</p>
-                  <p className="text-2xl font-bold">{agent.usage_count}</p>
+        {/* Enhanced Content - Matches My Agents */}
+        {!loadingPreview && !previewError && preview && (
+          <div className="space-y-8 py-6">
+            {/* Stats Cards - 3-column grid with gradient backgrounds */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                  <h3 className="font-semibold text-lg">Usage Count</h3>
                 </div>
+                <p className="text-4xl font-bold text-primary">{agent.usage_count}</p>
               </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
-                <Clock className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Created</p>
-                  <p className="text-sm font-semibold">{formattedDate}</p>
+
+              <div className="p-6 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <Wrench className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <h3 className="font-semibold text-lg">Tools</h3>
+                </div>
+                <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                  {preview.configuration_preview.tools.length}
+                </p>
+              </div>
+
+              <div className="p-6 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <Code className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  <h3 className="font-semibold text-lg">Template</h3>
+                </div>
+                <p className="text-lg font-semibold text-purple-600 dark:text-purple-400 truncate">
+                  {agent.template_slug}
+                </p>
+              </div>
+            </div>
+
+            {/* Description */}
+            {agent.customizations_summary && (
+              <div className="space-y-3">
+                <h3 className="font-bold text-xl flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Description
+                </h3>
+                <p className="text-base text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {agent.customizations_summary}
+                </p>
+              </div>
+            )}
+
+            {/* System Prompt with Copy button */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-xl flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  System Prompt
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(preview.configuration_preview.system_prompt);
+                  }}
+                  className="gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy
+                </Button>
+              </div>
+              <div className="rounded-lg border bg-muted/50 p-6">
+                <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
+                  {preview.configuration_preview.system_prompt}
+                </pre>
+              </div>
+            </div>
+
+            {/* Tools - Full width with badges */}
+            <div className="space-y-3">
+              <h3 className="font-bold text-xl flex items-center gap-2">
+                <Wrench className="h-5 w-5 text-primary" />
+                Tools ({preview.configuration_preview.tools.length})
+              </h3>
+              <div className="rounded-lg border bg-muted/50 p-6">
+                <div className="flex flex-wrap gap-2">
+                  {preview.configuration_preview.tools.map((tool, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-sm px-3 py-1 font-mono">
+                      {tool}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
 
-          <Separator />
+            {/* Capabilities - Full width with key-value display */}
+            <div className="space-y-3">
+              <h3 className="font-bold text-xl flex items-center gap-2">
+                <Settings2 className="h-5 w-5 text-primary" />
+                Capabilities
+              </h3>
+              <div className="rounded-lg border bg-muted/50 p-6">
+                <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
+                  {JSON.stringify(preview.configuration_preview.capabilities, null, 2)}
+                </pre>
+              </div>
+            </div>
 
-          {/* Import Action */}
-          <div className="flex gap-3">
-            <Button
-              onClick={() => onImport(agent)}
-              disabled={importing}
-              className="flex-1 gap-2"
-              size="lg"
-            >
-              {importing ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Importing Agent...
-                </>
-              ) : (
-                <>
-                  <Download className="h-5 w-5" />
-                  Import This Agent
-                </>
-              )}
-            </Button>
-            <Button
-              onClick={() => onOpenChange(false)}
-              variant="outline"
-              size="lg"
-              className="gap-2"
-            >
-              <X className="h-5 w-5" />
-              Close
-            </Button>
+            {/* Rules - Full width with numbered list */}
+            {preview.configuration_preview.rules && preview.configuration_preview.rules.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="font-bold text-xl flex items-center gap-2">
+                  <ListChecks className="h-5 w-5 text-primary" />
+                  Rules ({preview.configuration_preview.rules.length})
+                </h3>
+                <div className="rounded-lg border bg-muted/50 p-6">
+                  <ol className="space-y-3 list-decimal list-inside">
+                    {preview.configuration_preview.rules.map((rule, idx) => (
+                      <li key={idx} className="text-base leading-relaxed">
+                        {rule}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            )}
+
+            {/* Output Format */}
+            {preview.configuration_preview.output_format && (
+              <div className="space-y-3">
+                <h3 className="font-bold text-xl flex items-center gap-2">
+                  <FileOutput className="h-5 w-5 text-primary" />
+                  Output Format
+                </h3>
+                <div className="rounded-lg border bg-muted/50 p-6">
+                  <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
+                    {preview.configuration_preview.output_format}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
+            {/* Import Action */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={() => onImport(agent)}
+                disabled={importing || !preview.can_import}
+                className="flex-1 gap-2"
+                size="lg"
+              >
+                {importing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Importing Agent...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-5 w-5" />
+                    Import This Agent
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => onOpenChange(false)}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                <X className="h-5 w-5" />
+                Close
+              </Button>
+            </div>
+
+            {/* Import Warning */}
+            {!preview.can_import && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {preview.message || 'This agent cannot be imported at this time.'}
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
