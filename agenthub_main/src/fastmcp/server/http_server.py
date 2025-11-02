@@ -456,9 +456,10 @@ def create_sse_app(
         from .routes.branch_routes import router as branch_router
         from .routes.agent_routes import router as agent_router
         from .routes.subtask_routes import router as subtask_router
+        from .routes.connection_routes import router as connection_router
         from ..agent_management.interface.rest import router as agent_management_router
         from fastapi import FastAPI
-        
+
         # Create a minimal FastAPI app for V2 routes
         v2_app = FastAPI()
         v2_app.include_router(project_router)
@@ -467,6 +468,7 @@ def create_sse_app(
         v2_app.include_router(branch_router)
         v2_app.include_router(agent_router)
         v2_app.include_router(subtask_router)
+        v2_app.include_router(connection_router)
         v2_app.include_router(agent_management_router)
         
         # Unified authentication routes removed - using Keycloak/Supabase directly
@@ -743,9 +745,10 @@ def create_streamable_http_app(
         from .routes.branch_routes import router as branch_router
         from .routes.agent_routes import router as agent_router
         from .routes.subtask_routes import router as subtask_router
+        from .routes.connection_routes import router as connection_router
         from ..agent_management.interface.rest import router as agent_management_router
         from fastapi import FastAPI
-        
+
         # Create a minimal FastAPI app for V2 routes
         v2_app = FastAPI()
         v2_app.include_router(project_router)
@@ -754,6 +757,7 @@ def create_streamable_http_app(
         v2_app.include_router(branch_router)
         v2_app.include_router(agent_router)
         v2_app.include_router(subtask_router)
+        v2_app.include_router(connection_router)
         v2_app.include_router(agent_management_router)
         
         # Token management routes are now handled by /api/v2/tokens router
