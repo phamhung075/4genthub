@@ -11,9 +11,9 @@ from typing import List
 
 class ProgressState(Enum):
     """Progress state enum for stepper visualization"""
-    INITIAL = "initial"
-    IN_PROGRESS = "in_progress"
-    COMPLETE = "complete"
+    INITIAL = "INITIAL"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETE = "COMPLETE"
 
     @classmethod
     def get_all_states(cls) -> List[str]:
@@ -23,7 +23,7 @@ class ProgressState(Enum):
     @classmethod
     def is_valid_state(cls, state_str: str) -> bool:
         """Check if a state string is valid"""
-        return state_str.lower() in cls.get_all_states()
+        return state_str.upper() in cls.get_all_states()
 
     @classmethod
     def from_progress_percentage(cls, percentage: int) -> "ProgressState":
