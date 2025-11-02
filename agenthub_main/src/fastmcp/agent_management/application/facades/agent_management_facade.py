@@ -7,6 +7,7 @@ high-level API for agent instantiation and retrieval.
 """
 
 import logging
+import uuid
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
@@ -22,6 +23,7 @@ from ...infrastructure.repositories import (
     ORMAgentTemplateRepository,
     ORMUserAgentInstanceRepository
 )
+from ...infrastructure.database.models import AgentImportHistoryORM
 
 logger = logging.getLogger(__name__)
 
@@ -629,6 +631,9 @@ class AgentManagementFacade:
         """
         logger.info(f"Importing agent for user {importer_user_id.value} with share token")
 
+        # Get source instance before import (for history recording)
+        source_instance = self._instance_repo.find_by_share_token(share_token)
+
         imported_instance = self._sharing_service.import_agent(
             share_token=share_token,
             importer_user_id=importer_user_id,
@@ -640,6 +645,28 @@ class AgentManagementFacade:
                 f"Failed to import agent. Invalid token, instance not public, "
                 f"or user already has this template."
             )
+
+        # Record import history
+        if source_instance:
+            try:
+                with self._instance_repo.get_db_session() as session:
+                    history_record = AgentImportHistoryORM(
+                        id=str(uuid.uuid4()),
+                        importer_user_id=str(importer_user_id.value),
+                        source_instance_id=str(source_instance.id.value),
+                        imported_instance_id=str(imported_instance.id.value),
+                        imported_at=datetime.now(timezone.utc),
+                        share_token=share_token
+                    )
+                    session.add(history_record)
+                    session.commit()
+                    logger.info(
+                        f"Recorded import history: {source_instance.id.value} → "
+                        f"{imported_instance.id.value} for user {importer_user_id.value}"
+                    )
+            except Exception as e:
+                # Don't fail the import if history recording fails
+                logger.warning(f"Failed to record import history: {e}")
 
         logger.info(
             f"Agent imported successfully as instance {imported_instance.id.value} "

@@ -314,5 +314,141 @@ class UserAgentInstanceORM(Base):
     )
 
 
+class AgentImportHistoryORM(Base):
+    """
+    ORM model for agent_import_history table.
+
+    Tracks when users import public agents from marketplace.
+    Records importer, source instance, and imported instance for analytics.
+
+    Table: agent_import_history
+    Primary Key: id (UUID)
+    Foreign Keys: importer_user_id (for cascade delete when user removed)
+    Indexes: importer_user_id, source_instance_id, imported_at for analytics queries
+    """
+
+    __tablename__ = "agent_import_history"
+
+    # Primary key
+    id: Mapped[str] = mapped_column(
+        UnifiedUUID,
+        primary_key=True,
+        doc="UUID identifier for the import record"
+    )
+
+    # User who imported the agent
+    importer_user_id: Mapped[str] = mapped_column(
+        UnifiedUUID,
+        nullable=False,
+        index=True,
+        doc="User who performed the import"
+    )
+
+    # Source agent instance (the shared agent being imported)
+    source_instance_id: Mapped[str] = mapped_column(
+        UnifiedUUID,
+        nullable=False,
+        index=True,
+        doc="Original agent instance that was shared"
+    )
+
+    # Imported agent instance (the copy created for importer)
+    imported_instance_id: Mapped[str] = mapped_column(
+        UnifiedUUID,
+        nullable=False,
+        doc="New agent instance created for the importer"
+    )
+
+    # Timestamp of import
+    imported_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+        doc="When the agent was imported"
+    )
+
+    # Share token used for import
+    share_token: Mapped[Optional[str]] = mapped_column(
+        String(64),
+        nullable=True,
+        doc="Share token that was used for the import"
+    )
+
+    # Constraints and indexes
+    __table_args__ = (
+        # Index for date-based analytics
+        Index("idx_import_history_date", "imported_at"),
+    )
+
+
+class UserAgentConfigurationMdORM(Base):
+    """
+    ORM model for user_agent_configurations_md table.
+
+    Stores markdown-formatted configuration documentation for agent instances.
+    Allows users to document their agent customizations in different categories.
+
+    Table: user_agent_configurations_md
+    Primary Key: id (UUID)
+    Unique Constraint: (instance_id, configuration_type) - one of each type per instance
+    Indexes: (instance_id, configuration_type) for quick lookups
+    """
+
+    __tablename__ = "user_agent_configurations_md"
+
+    # Primary key
+    id: Mapped[str] = mapped_column(
+        UnifiedUUID,
+        primary_key=True,
+        doc="UUID identifier for the configuration"
+    )
+
+    # Agent instance this configuration belongs to
+    instance_id: Mapped[str] = mapped_column(
+        UnifiedUUID,
+        nullable=False,
+        doc="Agent instance this configuration documents"
+    )
+
+    # Configuration type (e.g., 'usage', 'customization', 'examples')
+    configuration_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        doc="Type of configuration documentation"
+    )
+
+    # Markdown content
+    content_markdown: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        doc="Markdown-formatted documentation content"
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        doc="Creation timestamp"
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        doc="Last update timestamp"
+    )
+
+    # Constraints and indexes
+    __table_args__ = (
+        # UNIQUE constraint: one of each configuration type per instance
+        UniqueConstraint(
+            "instance_id",
+            "configuration_type",
+            name="user_agent_configurations_md_instance_type_key"
+        ),
+        # Composite index for lookups
+        Index("idx_configurations_md_instance", "instance_id", "configuration_type"),
+    )
+
+
 # Setup automatic timestamp management (global setup for all models)
 setup_timestamp_events()
