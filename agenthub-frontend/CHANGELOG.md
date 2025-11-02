@@ -3,6 +3,45 @@
 ## [Unreleased]
 
 ### Added
+- **✨ Edit Agent Dialog for Private Instance Customization** - 2025-11-02
+  - Users can now edit ALL 8 configuration fields for their private agent instances
+  - Comprehensive edit dialog with 3-section form layout for organized customization
+  - Added Edit button (pencil icon) to agent cards positioned between View and Delete buttons
+  - Real-time form validation ensures data integrity before saving
+  - Dynamic tool/rule management with add/remove buttons and badge display
+  - JSON editor for capabilities with syntax validation
+  - **Editable Fields (8 total)**:
+    1. Agent Name - Text input (1-100 chars, required)
+    2. System Prompt - Large textarea (min 10 chars, required)
+    3. Tools - Multi-select tag input with add/remove (min 1 tool required)
+    4. Capabilities - JSON editor with validation
+    5. Rules - Array input with add/remove buttons
+    6. Output Format - Textarea for specifications
+    7. Visibility - Radio buttons (Private/Public)
+    8. Is Enabled - Checkbox toggle
+  - Files modified:
+    - `src/pages/MyAgentsPage.tsx` (line 53): Added updateInstance to hook destructuring
+    - `src/pages/MyAgentsPage.tsx` (lines 70-73): Added edit dialog state management (isEditDialogOpen, instanceToEdit, saving, editError)
+    - `src/pages/MyAgentsPage.tsx` (lines 219-250): Added handleEditClick and handleEditSave functions with API integration
+    - `src/pages/MyAgentsPage.tsx` (line 418): Added onEdit prop to AgentCard component call
+    - `src/pages/MyAgentsPage.tsx` (lines 927, 933): Added onEdit to AgentCardProps interface and component signature
+    - `src/pages/MyAgentsPage.tsx` (lines 1068-1075): Added Edit button in AgentCard actions section
+    - `src/pages/MyAgentsPage.tsx` (lines 763-1097): Created comprehensive Edit Agent Dialog with form sections
+  - Impact:
+    - **Complete Customization** - Users can modify agent behavior, tools, and capabilities without recreating
+    - **Validation & Safety** - Form validation prevents invalid configurations (empty names, missing tools, invalid JSON)
+    - **User Experience** - Clear 3-section layout makes complex edits manageable
+    - **Success Feedback** - Toast notification and automatic list refresh on successful save
+    - **Error Handling** - Clear error messages for API failures or validation issues
+    - **Tool Management** - Visual badge display with one-click add/remove for tools
+    - **Rules Organization** - Numbered list with easy add/remove for agent rules
+    - **JSON Capabilities** - Flexible JSON editor for advanced capability configuration
+    - **Accessibility** - Proper labels, keyboard navigation, and screen reader support
+  - **Backend Integration**:
+    - Uses existing PUT `/api/v2/agent-management/instances/{instance_id}` endpoint
+    - UpdateInstanceRequest interface already supports all 8 fields
+    - useAgentManagement hook updateInstance function handles API calls
+    - Automatic instance list refresh after successful update
 - **✨ Smart Template Card Create Button** - 2025-11-02
   - Template cards now show "Create" button ONLY for templates user doesn't already have
   - Templates with existing instances display "Already Created" disabled button with checkmark
@@ -79,6 +118,58 @@
     - Users directed to My Agents page for all agent-related functionality
 
 ### Fixed
+- **🔧 Fixed Missing share_token for Public Visibility** - 2025-11-02
+  - **Error**: "UserAgentInstance with visibility='public' must have a share_token"
+  - **Root Cause**: Backend requires share_token field when visibility is 'public', but frontend wasn't sending it
+  - **Files modified**:
+    - `src/types/agentTypes.ts` (line 62): Added share_token field to UserAgentInstance interface
+    - `src/types/agentTypes.ts` (line 116): Added share_token field to UpdateInstanceRequest interface
+    - `src/pages/MyAgentsPage.tsx` (lines 351-363): Added share_token generation logic in handleEditFormSave
+  - **Implementation**:
+    - When visibility is 'public', reuses existing share_token if available
+    - Generates new secure 64-character random token if none exists
+    - Uses crypto.getRandomValues for cryptographically strong randomness
+    - Sets share_token to null for private visibility
+  - **Impact**:
+    - ✅ Users can now successfully change agent visibility to 'public'
+    - ✅ Share tokens automatically generated using secure crypto API
+    - ✅ Existing share tokens preserved when updating public agents
+    - ✅ Backend validation requirements satisfied
+- **🔧 CRITICAL: Fixed React Hooks Violation in Edit Agent Dialog** - 2025-11-02
+  - **Error**: "Rendered more hooks than during the previous render" causing application crash
+  - **Root Cause**: useState hooks were placed inside conditional IIFE `{instanceToEdit && (() => {...})}` at lines 766-778
+  - **Why Critical**: React hooks MUST be called at top level of component, not conditionally - violates Rules of Hooks
+  - **Files modified**:
+    - `src/pages/MyAgentsPage.tsx` (lines 11, 75-105): Added useEffect import, moved all form state hooks to top level
+    - `src/pages/MyAgentsPage.tsx` (lines 90-105): Added useEffect to initialize form data when instanceToEdit changes
+    - `src/pages/MyAgentsPage.tsx` (lines 284-352): Moved all form handler functions to top level (handleInputChange, handleAddTool, handleRemoveTool, handleAddRule, handleRemoveRule, handleEditFormSave, isFormValid)
+    - `src/pages/MyAgentsPage.tsx` (lines 866-1113): Replaced IIFE with clean conditional JSX rendering `{instanceToEdit && (<Dialog>...</Dialog>)}`
+  - **Impact**:
+    - ✅ Application no longer crashes when opening Edit Agent Dialog
+    - ✅ Hook order remains consistent across all renders
+    - ✅ Form state properly initialized from instanceToEdit via useEffect
+    - ✅ All handlers accessible at component scope
+    - ✅ Complies with React Rules of Hooks (hooks always called in same order)
+    - ✅ Clean separation: hooks/logic at top level, JSX conditionally rendered
+  - **Architecture Fix**: Moved from anti-pattern (hooks in IIFE) to best practice (hooks at top level, conditional rendering)
+  - **Technical Details**:
+    - Before: `{instanceToEdit && (() => { const [state] = useState(); return <Dialog/>; })()}`
+    - After: Hooks at top level → useEffect updates when instanceToEdit changes → Clean JSX: `{instanceToEdit && <Dialog/>}`
+- **🔧 Fixed Object Rendering Error in Edit Agent Dialog** - 2025-11-02
+  - **Error**: "Objects are not valid as a React child (found: object with keys {name, content})" and "[object Object]" displayed in text fields
+  - **Root Cause**: Backend was sending tools/rules/output_format/system_prompt as objects but frontend expected strings
+  - **Files modified**:
+    - `src/pages/MyAgentsPage.tsx` (lines 94-101): Added normalizeToStringArray helper to convert object arrays to string arrays
+    - `src/pages/MyAgentsPage.tsx` (lines 103-112): Added normalizeTextField helper to convert object text fields to strings
+    - `src/pages/MyAgentsPage.tsx` (lines 114-123): Applied normalization to all fields during form initialization
+    - `src/pages/MyAgentsPage.tsx` (lines 992-1006): Added type checking in tools rendering - handles both string and object formats
+    - `src/pages/MyAgentsPage.tsx` (lines 1058-1073): Added type checking in rules rendering - extracts content/name from objects
+  - **Impact**:
+    - ✅ All text fields (system_prompt, output_format) now display correctly even if backend sends objects
+    - ✅ Tools and rules arrays handle both string and object formats gracefully
+    - ✅ Normalizes data on load so formData always contains proper strings
+    - ✅ Tries multiple common object property names (content, text, format, prompt) before falling back to JSON.stringify
+    - ✅ Fixed "[object Object]" display issue in Output Format textarea
 - **🔧 Fixed Bulk Create Template Slug Mapping** - 2025-11-02
   - Fixed "'UserAgentInstance' object has no attribute 'template_slug'" error in bulk creation
   - Corrected duplicate detection logic to use template IDs instead of non-existent slug attribute
