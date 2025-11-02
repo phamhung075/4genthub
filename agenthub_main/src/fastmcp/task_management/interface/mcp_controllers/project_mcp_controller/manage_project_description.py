@@ -32,9 +32,7 @@ MANAGE_PROJECT_DESCRIPTION = """
 | rebalance_agents      | project_id          | force                   | Optimize agent assignments across task trees     |
 
 💡 USAGE GUIDELINES:
-• Provide all required identifiers for each action (see table above)
 • Use either project_id OR name for 'get' action (not both)
-• Optional parameters can be omitted unless overriding defaults
 • The 'force' parameter bypasses safety checks for maintenance operations
 • All operations return detailed success/error status with actionable messages
 • Business logic is delegated to the project application facade
@@ -42,29 +40,15 @@ MANAGE_PROJECT_DESCRIPTION = """
 🔍 AI DECISION TREES:
 
 PROJECT CREATION WORKFLOW:
-```
-IF new_feature_request:
-    1. List existing projects
-    2. Check for similar projects
-    IF no_similar_project:
-        Create new project
-        Initialize project context
-        Assign initial agents
-    ELSE:
-        Use existing project
-        Create new git branch
-```
+1. List existing projects
+2. Check for similar projects
+3. IF no_similar_project: Create new project → Initialize context → Assign agents
+4. ELSE: Use existing project → Create new git branch
 
 PROJECT HEALTH MONITORING:
-```
-IF starting_work_on_project:
-    Run project_health_check
-    IF health_issues_found:
-        Address issues before continuing
-        Run cleanup_obsolete if needed
-    ELSE:
-        Proceed with planned work
-```
+1. Run project_health_check
+2. IF health_issues_found: Address issues → Run cleanup_obsolete if needed
+3. ELSE: Proceed with planned work
 
 🛑 ERROR HANDLING:
 • Missing required parameters return specific field validation errors

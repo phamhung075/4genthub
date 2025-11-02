@@ -7,86 +7,48 @@ GLOBAL → PROJECT → BRANCH → TASK
 """
 
 MANAGE_UNIFIED_CONTEXT_DESCRIPTION = """
-🔗 UNIFIED CONTEXT MANAGEMENT SYSTEM - 4-Tier Context Operations with Hierarchical Inheritance
+🔗 UNIFIED CONTEXT MANAGEMENT - 4-Tier Hierarchical Operations
 
-⭐ WHAT IT DOES: Manages hierarchical contexts across 4 tiers (Global → Project → Branch → Task) with unified API, automatic inheritance, smart caching, and seamless data flow. Each user has their own global context instance for complete isolation.
+**Purpose**: Manage contexts across 4 tiers (Global → Project → Branch → Task) with unified API, auto-inheritance, smart caching, per-user isolation.
 
-📋 WHEN TO USE: Context operations, cross-session data persistence, hierarchical data management, agent coordination, and multi-tier information sharing.
+**Use For**: Context operations, cross-session persistence, hierarchical data, agent coordination, multi-tier sharing.
 
-🎯 CRITICAL FOR: Session continuity, hierarchical project organization, agent collaboration, cross-session knowledge retention, and distributed team coordination.
+**Hierarchy**: GLOBAL (per-user) → PROJECT → BRANCH → TASK (each inherits from parent)
 
-🏗️ HIERARCHY STRUCTURE:
+| Action | Required | Optional | Description |
+|--------|----------|----------|-------------|
+| create | action, level, context_id | data, user_id, project_id, git_branch_id | Create context at level |
+| get | action, level, context_id | include_inherited, user_id | Retrieve context with inheritance |
+| update | action, level, context_id | data, propagate_changes, user_id | Update with propagation |
+| delete | action, level, context_id | user_id | Remove context |
+| resolve | action, level, context_id | force_refresh, include_inherited, user_id | Resolve full inheritance chain |
+| delegate | action, level, context_id, delegate_to | delegate_data, delegation_reason, user_id | Move data between levels |
+| add_insight | action, level, context_id, content | category, importance, agent, user_id | Add categorized insight |
+| add_progress | action, level, context_id, content | agent, user_id | Add progress update |
+| list | action, level | filters, user_id | List contexts with filtering |
+
+**Level Values**: 'global' (user-scoped), 'project', 'branch', 'task'
+
+**context_id Mapping**: user_id (global), project_id (project), git_branch_id (branch), task_id (task)
+
+**Key Features**: Unified API | 4-tier inheritance | Auto-inheritance | Smart caching | Change propagation | Delegation queue | Backward compatible
+
+**Critical Parameters**:
+- force_refresh: Bypass cache, force fresh retrieval
+- include_inherited: Access full parent chain
+- propagate_changes: Cascade updates to children
+- data/filters: JSON string or dict (auto-parsed)
+
+**Usage Pattern**:
+```python
+manage_context(action="{action}", level="{global|project|branch|task}", context_id="{id}", data={...})
 ```
-GLOBAL (per-user) ↓ inherits to
-PROJECT          ↓ inherits to
-BRANCH           ↓ inherits to
-TASK
-```
 
-| Action | Required Parameters | Optional Parameters | Description |
-|--------|-------------------|-------------------|-------------|
-| create | action, level, context_id | data, user_id, project_id, git_branch_id | Create new context at specified level |
-| get | action, level, context_id | include_inherited, user_id | Retrieve specific context with optional inheritance |
-| update | action, level, context_id | data, propagate_changes, user_id | Update existing context with propagation |
-| delete | action, level, context_id | user_id | Remove context from specified level |
-| resolve | action, level, context_id | force_refresh, include_inherited, user_id | Resolve complete context with inheritance chain |
-| delegate | action, level, context_id, delegate_to | delegate_data, delegation_reason, user_id | Delegate context data to different level |
-| add_insight | action, level, context_id, content | category, importance, agent, user_id | Add categorized insight to context |
-| add_progress | action, level, context_id, content | agent, user_id | Add progress information to context |
-| list | action, level | filters, user_id | List contexts at specified level with filtering |
+**Example**: `manage_context(action="create", level="project", context_id="proj123", data={"key": "value"})`
 
-🎯 LEVEL PARAMETER:
-• 'global': User-scoped global context (each user has their own global context instance)
-• 'project': Project-specific context inheriting from global
-• 'branch': Git branch context inheriting from project and global  
-• 'task': Task-specific context inheriting from branch, project, and global
+**Backward Compatibility**: Legacy params auto-convert (task_id→context_id, data_*→data object, etc.)
 
-💡 USAGE GUIDELINES:
-• Always specify 'level' parameter to determine hierarchy tier
-• Use 'context_id' appropriate for the level (user_id for global, project_id for project, etc.)
-• Leverage 'include_inherited' to access complete inheritance chain
-• Use 'propagate_changes' to cascade updates down the hierarchy
-
-🔄 KEY FEATURES:
-• Unified API: Single interface for all context operations across hierarchy levels
-• Full Hierarchy Support: Complete 4-tier inheritance with user-scoped global contexts
-• Automatic Inheritance: Child contexts automatically access parent context data
-• Smart Caching: Intelligent caching with invalidation on updates for optimal performance
-• Change Propagation: Automatic cascading of updates through hierarchy levels
-• Delegation Queue: Queue-based delegation system for cross-level data movement
-• Backward Compatible: Full compatibility with legacy parameter formats
-
-📊 ADVANCED PARAMETERS:
-• force_refresh: Bypass cache and force fresh data retrieval
-• include_inherited: Access complete inheritance chain from parent levels
-• propagate_changes: Cascade updates down the hierarchy automatically
-• delegate_to: Target level for context delegation operations
-• delegate_data: Specific data to delegate to target level
-• filters: Filter criteria for list operations as JSON string (automatically parsed)
-• data: Context data as JSON string with nested structure support (automatically parsed)
-
-🚀 EXAMPLE USAGE:
-Dictionary format:
-  manage_context(action="create", level="project", context_id="proj123", data={"key": "value"})
-
-JSON string format:
-  manage_context(action="update", level="task", context_id="task456", data='{"progress": 75}')
-
-Legacy parameter format:
-  manage_context(action="get", task_id="task789", include_inherited="true")
-
-⚠️ BACKWARD COMPATIBILITY:
-• Legacy parameters are automatically converted:
-  - task_id → context_id (level inferred from parameter name)
-  - data_title, data_description → merged into data object
-  - project_context_id, branch_context_id → context_id with appropriate level
-• All legacy MCP tool parameters continue to work without changes
-
-🛡️ ERROR HANDLING:
-• Validates level and context_id compatibility before operations
-• Provides clear error messages for invalid parameter combinations
-• Gracefully handles missing contexts with auto-creation options
-• Returns detailed validation errors with suggested corrections
+**Error Handling**: Validates level/context_id compatibility | Clear error messages | Auto-creation options | Detailed validation errors
 """
 
 MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION = {
