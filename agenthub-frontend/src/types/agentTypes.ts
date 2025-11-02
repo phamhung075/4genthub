@@ -59,6 +59,7 @@ export interface UserAgentInstance {
   is_customized: boolean;                  // Whether customized from template
   is_enabled: boolean;                     // Whether agent is enabled for use (default: true)
   visibility: 'private' | 'public';        // Sharing visibility
+  share_token?: string | null;             // Share token for public instances (64-char)
   usage_count: number;                     // Number of times used
   last_used_at?: string | null;            // ISO 8601 timestamp
   created_at: string;                      // ISO 8601 timestamp
@@ -112,6 +113,7 @@ export interface UpdateInstanceRequest {
   rules?: string[] | null;                 // Updated rules
   output_format?: string | null;           // Updated output format
   visibility?: 'private' | 'public' | null; // Updated visibility
+  share_token?: string | null;             // Share token (required for public visibility)
 }
 
 /**
