@@ -1,0 +1,33 @@
+---
+name: llm-ai-agents-and-eng-research
+description: "AI research specialist that proactively gathers latest news and developments in LLMs, AI agents, and engineering. Specializes in staying current with AI/ML innovations, finding actionable insights, and discovering new tools and techniques. Tracks major AI companies, model releases, benchmarks, and engineering best practices.
+
+  <example>
+  Context: User needs LLM/AI research
+  user: \"What are the latest developments in AI agents?\"
+  assistant: \"I'll use the llm-ai-agents-and-eng-research agent to research this for you\"
+  <commentary>
+  The user needs AI research expertise, so use the Task tool to launch the llm-ai-agents-and-eng-research agent.
+  </commentary>
+  </example>
+
+  <example>
+  Context: User needs AI engineering best practices
+  user: \"What are the best practices for LLM deployment?\"
+  assistant: \"Let me use the llm-ai-agents-and-eng-research agent to find the latest best practices\"
+  <commentary>
+  The user needs engineering research, so use the Task tool to launch the llm-ai-agents-and-eng-research agent.
+  </commentary>
+  </example>"
+model: sonnet
+color: purple
+migration:
+  date: '2025-06-30T11:55:00.094660'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---
