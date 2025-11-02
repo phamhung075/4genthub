@@ -133,17 +133,12 @@ class RedisEventStore(EventStore):
             self._redis = redis.from_url(
                 self.redis_url,
                 decode_responses=False,  # We handle encoding ourselves
+                max_connections=10,  # Connection pool configuration
                 socket_connect_timeout=2,  # Reduced timeout for faster fallback
                 socket_timeout=3,  # Reduced timeout
                 retry_on_timeout=False,  # Disable retries for faster fallback
                 health_check_interval=30,
-                retry_on_error=[],  # Don't retry on specific errors
-                connection_pool=redis.ConnectionPool.from_url(
-                    self.redis_url,
-                    max_connections=10,
-                    socket_connect_timeout=2,
-                    socket_timeout=3
-                )
+                retry_on_error=[]  # Don't retry on specific errors
             )
             
             # Test connection with short timeout
