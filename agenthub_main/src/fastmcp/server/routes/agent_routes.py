@@ -315,41 +315,71 @@ async def call_agent(
 ):
     """
     Call an agent to get its information and capabilities.
-    
+
+    Uses the new user-agent-instance system with AgentManagementFacade.
+    Gets or creates a user-specific instance and returns full agent configuration.
+
     Args:
         request: Dict with 'agent_name' and optional 'params'
-    
-    Returns agent information from the agent-library.
+
+    Returns:
+        Agent configuration with system_prompt, tools, capabilities, rules
     """
     try:
         agent_name = request.get("agent_name")
         params = request.get("params", {})
-        
+
         if not agent_name:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="agent_name is required"
             )
-        
-        # Import the call_agent function directly
-        from ...task_management.application.use_cases.call_agent import call_agent as call_agent_func
-        
+
+        # Import the new agent management system
+        from ...agent_management.application.facades.agent_management_facade import AgentManagementFacade
+        from ...agent_management.infrastructure.repositories.orm.agent_template_repository import ORMAgentTemplateRepository
+        from ...agent_management.infrastructure.repositories.orm.user_agent_instance_repository import ORMUserAgentInstanceRepository
+        from ...agent_management.domain.value_objects.user_id import UserId
+
         # Log the access for audit
         logger.info(f"User {current_user.email} calling agent: {agent_name}")
-        
-        # Call the agent directly - it expects agent-library structure
-        result = call_agent_func(agent_name, format="json")
-        
-        logger.info(f"Agent call result: {result.get('success', False)}")
-        
-        # Add user context to result
-        if result.get("success"):
-            result["called_by"] = current_user.email
-        
-        return result
-        
+
+        # Initialize facade with database session
+        template_repo = ORMAgentTemplateRepository()
+        instance_repo = ORMUserAgentInstanceRepository()
+        template_repo._session = db
+        instance_repo._session = db
+
+        facade = AgentManagementFacade(
+            template_repository=template_repo,
+            instance_repository=instance_repo
+        )
+
+        # Get agent configuration using the new system
+        user_id_vo = UserId(current_user.id)
+        agent_config = facade.get_agent_for_call(
+            user_id=user_id_vo,
+            agent_slug=agent_name
+        )
+
+        logger.info(f"Agent {agent_name} loaded successfully for user {current_user.email}")
+
+        return {
+            "success": True,
+            "agent": agent_config,
+            "source": "agent-management-system",
+            "called_by": current_user.email
+        }
+
     except HTTPException:
         raise
+    except ValueError as e:
+        # Template not found or invalid agent name
+        logger.error(f"Agent not found: {agent_name}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Agent not found: {agent_name}"
+        )
     except Exception as e:
         logger.error(f"Error calling agent {agent_name}: {e}", exc_info=True)
         import traceback
