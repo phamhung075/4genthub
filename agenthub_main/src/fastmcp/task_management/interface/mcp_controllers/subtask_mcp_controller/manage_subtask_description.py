@@ -12,21 +12,15 @@ def get_subtask_description() -> str:
 
 
 MANAGE_SUBTASK_DESCRIPTION = """
-# 🔧 SUBTASK MANAGEMENT SYSTEM - Hierarchical Task Decomposition with Automatic Context Updates
+🔧 SUBTASK MANAGEMENT SYSTEM - Hierarchical Task Decomposition with Automatic Context Updates
 
-## ⭐ WHAT IT DOES:
-Manages subtasks within parent tasks for hierarchical task breakdown and granular progress tracking. All actions automatically update parent task context and progress.
+⭐ WHAT IT DOES: Manages subtasks within parent tasks for hierarchical task breakdown and granular progress tracking. All actions automatically update parent task context and progress.
 
-## 📋 WHEN TO USE:
-Breaking down complex tasks, detailed workflow management, and team coordination on multi-step processes.
+📋 WHEN TO USE: Breaking down complex tasks, detailed workflow management, and team coordination on multi-step processes.
 
-## 🎯 CRITICAL FOR:
-Task decomposition, progress tracking, hierarchical project organization, and maintaining parent-subtask synchronization.
+🎯 CRITICAL FOR: Task decomposition, progress tracking, hierarchical project organization, and maintaining parent-subtask synchronization.
 
-## 🚀 ENHANCED FEATURES:
-Integrated progress tracking, automatic parent context updates, blocker management, insight propagation, and intelligent workflow hints.
-
-### 🤖 AI USAGE GUIDELINES:
+🤖 AI USAGE GUIDELINES:
 • ALWAYS use subtasks when a task has multiple distinct steps or components
 • CREATE subtasks immediately after creating a parent task that requires multiple steps
 • UPDATE subtasks with progress_percentage AND progress_notes (both MANDATORY for tracking)
@@ -43,68 +37,47 @@ Integrated progress tracking, automatic parent context updates, blocker manageme
 | list     | task_id                    |                                    | List all subtasks with progress summary          |
 | complete | task_id, subtask_id, completion_summary, progress_notes | impact_on_parent, insights_found | Complete subtask with MANDATORY context update |
 
-### 📝 PRACTICAL EXAMPLES FOR AI:
-1. Breaking down a feature implementation:
-   - Parent task: "Implement user authentication" (assigned to: coding-agent, @security-auditor-agent)
-   - Subtasks: (auto-inherit both agents if not specified)
-     • "Create login UI" - inherits both agents
-     • "Add password validation" - inherits both agents  
-     • "Implement JWT tokens" - can override with: assignees: "@security-auditor-agent"
-     • "Add session management" - inherits both agents
+📝 USAGE PATTERN:
+**Decomposition**: Parent "Implement user authentication" (assigned: coding-agent, @security-auditor-agent)
+→ Subtasks auto-inherit both agents unless overridden: "Create login UI", "Add password validation", "Implement JWT tokens" (override: assignees="@security-auditor-agent"), "Add session management"
 
-2. Updating progress while working (progress_notes MANDATORY):
-   - action: "update", task_id: "parent-id", subtask_id: "sub-id", progress_percentage: 50, progress_notes: "Login UI complete, working on validation"
+**Progress Update**: action="update", task_id="parent-id", subtask_id="sub-id", progress_percentage=50, progress_notes="Login UI complete, working on validation"
 
-3. Completing with context (progress_notes MANDATORY):
-   - action: "complete", task_id: "parent-id", subtask_id: "sub-id", completion_summary: "JWT implementation complete with refresh token support", progress_notes: "Finalized token refresh mechanism and secure cookie storage", impact_on_parent: "Authentication backend 75% complete"
+**Completion**: action="complete", task_id="parent-id", subtask_id="sub-id", completion_summary="JWT implementation complete with refresh token support", progress_notes="Finalized token refresh mechanism and secure cookie storage", impact_on_parent="Authentication backend 75% complete"
 
-### 💡 ENHANCED PARAMETERS:
-• progress_notes: **MANDATORY for update/complete** - Brief description of work done that builds progress history (e.g., "Completed UI mockup, starting API integration")
-• completion_summary: **MANDATORY for complete action** - Detailed summary of what was accomplished (be specific!)
-• progress_percentage: 0-100 (automatically sets status: 0=todo, 1-99=in_progress, 100=done)
-• blockers: Any issues preventing progress (e.g., "Missing API documentation")
-• impact_on_parent: How completing this subtask affects the parent task
-• insights_found: Important discoveries (e.g., "Found existing utility function for validation")
+💡 KEY PARAMETERS:
+| Parameter | Requirement | Description |
+|-----------|------------|-------------|
+| progress_notes | **MANDATORY** (update/complete) | Brief work description, builds timestamped history |
+| completion_summary | **MANDATORY** (complete) | Detailed accomplishment summary (be specific!) |
+| progress_percentage | Optional | 0-100 (auto-maps: 0=todo, 1-99=in_progress, 100=done) |
+| blockers | Optional | Issues preventing progress |
+| impact_on_parent | Optional | How completion affects parent task |
+| insights_found | Optional | Important discoveries |
 
-### 🔄 AUTOMATIC FEATURES:
+🔄 AUTOMATIC FEATURES:
 • **Progress History Tracking**: Every update/complete with progress_notes builds timestamped history
-• **Agent Inheritance**: Subtasks automatically inherit parent task agents when none specified
+• **Agent Inheritance**: Subtasks auto-inherit parent task agents when none specified
 • Parent task progress recalculation on all modifications
-• Context updates with timestamps for all actions
 • Progress percentage mapping: 0% → todo, 1-99% → in_progress, 100% → done
 • Numbered progress entries: "=== Progress 1 ===", "=== Progress 2 ===", etc.
-• Progress counter: Automatic count of all progress updates (progress_count field)
 • Blocker escalation to parent task
 • Insight propagation from subtasks to parent
-• Progress summaries in list responses
 • Workflow hints tailored to current subtask state and action
-• Next action suggestions with examples
-• Rule reminders for current workflow phase
 
-### 📊 RESPONSE ENHANCEMENTS:
-• progress_history: Complete timestamped history of all progress updates (JSON object)
-• progress_count: Total number of progress entries recorded (integer)
+📊 RESPONSE ENHANCEMENTS:
+• progress_history: Complete timestamped history (JSON object)
+• progress_count: Total progress entries recorded (integer)
 • parent_progress: Updated parent task progress after actions
 • progress_summary: Detailed breakdown for list operations
 • hint: Helpful suggestions (e.g., "All subtasks complete! Parent task ready for completion.")
-• workflow_guidance: Intelligent hints, next actions, rules, and recommendations based on current state
+• workflow_guidance: Intelligent hints, next actions, rules, and recommendations
 
-### 💡 BEST PRACTICES FOR AI:
-• Create subtasks BEFORE starting work on a complex task
-• **ALWAYS provide progress_notes when updating or completing** - This builds the progress history!
-• Update progress_percentage regularly (every 25% increment is good)
-• Always provide completion_summary when completing subtasks
-• Use progress_notes to describe what you're doing at each update
-• Use insights_found to share important discoveries with future work
-• Check parent progress with 'list' action before completing parent task
-• Use blockers field to document any impediments
-• Review progress_history in responses to see complete work timeline
-
-### 🛑 ERROR HANDLING:
-• If required fields are missing, a clear error message is returned specifying which fields are needed
-• Unknown actions return an error listing valid actions
-• Internal errors are logged and returned with a generic error message
-• Context update failures don't block the main operation
+🛑 ERROR HANDLING:
+• Missing required fields → Clear error with field requirements
+• Unknown actions → Error listing valid actions
+• Internal errors → Logged and returned with generic message
+• Context update failures → Don't block main operation
 """
 
 MANAGE_SUBTASK_PARAMETERS_DESCRIPTION = {

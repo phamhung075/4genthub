@@ -44,128 +44,42 @@ MANAGE_TASK_DESCRIPTION = """
 | ai_analyze          | requirements                   | context                        | Analyze requirements without creating tasks      |
 | ai_suggest_agents   | requirements                   | available_agents               | Suggest optimal agents for requirements          |
 
-⚠️ PARAMETER VALIDATION PATTERN - TWO-STAGE VALIDATION:
+⚠️ PARAMETER VALIDATION - TWO-STAGE PATTERN:
+Only 'action' required in schema. Action-specific parameters validated in business logic. Provides flexibility, better errors, and MCP compatibility.
 
-📌 WHY ONLY 'action' IS REQUIRED IN JSON SCHEMA:
-The tool uses a two-stage validation pattern:
-1. **Schema Level**: Only 'action' is marked as required in JSON schema
-2. **Business Logic Level**: Based on the action value, specific parameters become required
+**Validation Flow**: Schema checks 'action' exists → Controller validates action-specific requirements → Returns specific error if parameters missing
 
-This design provides:
-- ✅ Flexibility: Different actions need different parameters
-- ✅ Better Error Messages: Context-specific validation errors
-- ✅ MCP Compatibility: Works better with single required parameter
-- ✅ User Experience: Clear feedback about what's missing for each action
+**Common Patterns**:
+- CRUD operations: Require task_id (update/get/delete/complete)
+- Creation: Requires git_branch_id, title, assignees (min 1 agent)
+- Search: Requires query
+- Dependencies: Require task_id + dependency_id
 
-📋 ACTUAL REQUIRED PARAMETERS BY ACTION (Validated in Business Logic):
-| Action | Required Parameters | Optional But Recommended | Notes |
-|--------|-------------------|--------------------------|-------|
-| create | action, git_branch_id, title, assignees | description, priority | MUST have at least 1 agent assigned |
-| update | action, task_id | any field to update | task_id identifies which task to update |
-| get | action, task_id | include_context | task_id identifies which task to retrieve |
-| delete | action, task_id | - | task_id identifies which task to delete |
-| complete | action, task_id | completion_summary, testing_notes | completion_summary highly recommended |
-| list | action | git_branch_id, status, priority | git_branch_id optional to filter by branch |
-| search | action, query | limit | query contains search terms |
-| next | action, git_branch_id | include_context | git_branch_id needed to find next task in branch |
-| add_dependency | action, task_id, dependency_id | - | establishes task order |
-| remove_dependency | action, task_id, dependency_id | - | removes task dependency |
+**Example Usage Pattern**:
+```
+action: "create", git_branch_id: "uuid", title: "Implement JWT auth",
+assignees: "coding-agent,@security-auditor-agent", priority: "high"
+```
 
-⚡ VALIDATION FLOW:
-1. MCP receives request → Checks if 'action' exists (schema validation)
-2. Controller receives request → Checks action-specific requirements (business validation)
-3. Returns specific error if required parameter is missing for that action
+🔄 DEPENDENCY MANAGEMENT:
+**Patterns**: Sequential (A→B→C) | Parallel (no deps) | Blocking (auto-status) | Cross-feature linking
+**Decision Rule**: Add dependency IF task requires another's output OR is part of sequence OR is testing/verification
 
-📝 PRACTICAL EXAMPLES FOR AI:
-1. Starting a new feature:
-   - action: "create", git_branch_id: "550e8400-e29b-41d4-a716-446655440001", title: "Implement user authentication", description: "Add JWT-based authentication with login, logout, and session management", assignees: "coding-agent,@security-auditor-agent", priority: "high", estimated_effort: "3 days"
+💡 KEY PARAMETERS:
+• **assignees**: REQUIRED for create - "@agent-name" format, comma-separated for multiple
+• **priority**: 'low'|'medium'|'high'|'urgent'|'critical' - affects 'next' ordering
+• **status**: 'todo'|'in_progress'|'blocked'|'review'|'testing'|'done'|'cancelled'
+• **dependencies**: Task IDs (string or comma-separated) that must complete first
+• **include_context**: Set true for vision insights and AI recommendations
 
-2. Getting recommended work:
-   - action: "next", git_branch_id: "550e8400-e29b-41d4-a716-446655440000", include_context: true
-   - This returns the most appropriate task based on priorities, dependencies, and project state
+🔄 VISION SYSTEM (Automatic):
+Task enrichment | Priority estimation | Workflow hints | Progress tracking | Blocker detection | Impact analysis | Team context updates
 
-3. Updating progress:
-   - action: "update", task_id: "550e8400-e29b-41d4-a716-446655440005", status: "in_progress", details: "Completed login UI, working on JWT integration"
-
-4. Completing with context:
-   - action: "complete", task_id: "550e8400-e29b-41d4-a716-446655440006", completion_summary: "Implemented full authentication flow with JWT tokens, refresh mechanism, and secure cookie storage", testing_notes: "Added unit tests for auth service, integration tests for login flow"
-
-5. Finding related tasks:
-   - action: "search", query: "authentication login", limit: 10
-
-6. Creating task with dependencies:
-   - action: "create", git_branch_id: "550e8400-e29b-41d4-a716-446655440002", title: "Add login tests", description: "Unit and integration tests for login", assignees: "@test-orchestrator-agent", dependencies: ["550e8400-e29b-41d4-a716-446655440003", "550e8400-e29b-41d4-a716-446655440004"]
-
-7. Managing dependencies:
-   - action: "add_dependency", task_id: "550e8400-e29b-41d4-a716-446655440007", dependency_id: "550e8400-e29b-41d4-a716-446655440008"
-   - action: "remove_dependency", task_id: "550e8400-e29b-41d4-a716-446655440007", dependency_id: "550e8400-e29b-41d4-a716-446655440009"
-
-🔄 DEPENDENCY WORKFLOW PATTERNS:
-• Sequential Tasks: Create tasks with dependencies to enforce completion order
-• Parallel Work: Tasks without dependencies can be worked on simultaneously
-• Blocking Dependencies: Task status automatically becomes 'blocked' if dependencies aren't complete
-• Dependency Chain: A → B → C ensures proper workflow sequence
-• Cross-Feature Dependencies: Link tasks across different features when needed
-
-🤖 AI DECISION RULES FOR DEPENDENCIES:
-IF task requires another task's output:
-    ADD as dependency
-ELIF task is independent:
-    NO dependencies needed
-ELIF task is part of sequence:
-    ADD previous step as dependency
-ELIF testing/verification task:
-    ADD implementation tasks as dependencies
-
-🔄 VISION SYSTEM FEATURES (Automatic):
-• Task enrichment with project context and best practices
-• Intelligent priority and effort estimation
-• Workflow hints and next action suggestions
-• Progress tracking with milestone detection
-• Blocker identification and resolution suggestions
-• Impact analysis on related tasks
-• Automatic context updates for team awareness
-
-💡 ENHANCED PARAMETERS:
-• title: Be specific and action-oriented (e.g., "Implement user login with email validation" not just "Login")
-• description: Include acceptance criteria and technical approach when known
-• priority: 'low', 'medium', 'high', 'urgent', 'critical' - affects task ordering in 'next' action
-• status: 'todo', 'in_progress', 'blocked', 'review', 'testing', 'done', 'cancelled'
-• estimated_effort: Use realistic estimates (e.g., "2 hours", "3 days", "1 week")
-• assignees: **REQUIRED for task creation** - Must have at least one agent. Use format: "@agent-name" (e.g., "coding-agent", "@test-orchestrator-agent"). Can be comma-separated for multiple agents: "coding-agent,debugger-agent"
-• labels: Can be a single string "frontend" or list ["frontend", "auth"] or comma-separated "frontend,auth,security"
-• dependencies: Task IDs that must be completed first (for create action) - can be list ["task-id-1", "task-id-2"], single string "task-id", or comma-separated "task-id-1,task-id-2"
-• completion_summary: Detailed summary of what was accomplished (for complete action)
-• testing_notes: Description of testing performed (for complete action)
-• include_context: Set to true to get vision insights and recommendations
-
-📊 RESPONSE ENHANCEMENTS:
-• vision_insights: AI-generated insights about the task
-• workflow_hints: Contextual guidance for next steps
-• related_tasks: Other tasks that might be affected
-• progress_indicators: Milestone tracking information
-• blocker_analysis: Identification of potential impediments
-• impact_assessment: How this task affects project goals
-
-💡 BEST PRACTICES FOR AI:
-• Create tasks BEFORE starting work to maintain project visibility
-• Use descriptive titles that clearly state the goal
-• Include technical details in description field
-• Update task status when starting work (todo → in_progress)
-• Use 'next' action when unsure what to work on
-• Complete tasks with detailed summaries for knowledge retention
-• Search before creating to avoid duplicates
-• Add dependencies for tasks that must be done in sequence
-• Use labels for better organization and filtering
-• Define dependencies upfront during task creation for better workflow planning
-• Review dependency chains before starting work to understand task order
-• Update dependent tasks when completing prerequisites
+💡 BEST PRACTICES:
+• Create tasks BEFORE work (visibility) | Use specific titles | Update status when starting | Complete with detailed summaries | Search before creating | Define dependencies upfront | Use labels for filtering
 
 🛑 ERROR HANDLING:
-• If required fields are missing, a clear error message is returned specifying which fields are needed
-• Unknown actions return an error listing valid actions
-• Internal errors are logged and returned with a generic error message
-• Vision system failures don't block core operations
+Missing required fields → specific error with field names | Unknown actions → valid action list | Internal errors → logged and generic message returned | Vision failures → don't block operations
 """
 
 # Parameter descriptions for the manage_task tool

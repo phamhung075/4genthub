@@ -7,18 +7,16 @@ following the established pattern of other tool descriptions in the system.
 
 # Main description for the manage_git_branch tool
 MANAGE_GIT_BRANCH_DESCRIPTION = """
-🌿 GIT BRANCH MANAGEMENT SYSTEM - Branch Operations and Task Tree Organization
+🌿 GIT BRANCH MANAGEMENT - Branch Operations and Task Tree Organization
 
-⭐ WHAT IT DOES: Manages git branches (task trees) with CRUD operations, agent assignments, and branch lifecycle management. Automatically enriches branches with workflow guidance, progress tracking, and intelligent context updates.
-📋 WHEN TO USE: Git branch operations, task tree management, and branch-specific workflows.
-🎯 CRITICAL FOR: Task organization, branch lifecycle, and hierarchical project structure.
+Manages git branches (task trees) with CRUD operations, agent assignments, and lifecycle management. Automatically enriches branches with workflow guidance, progress tracking, and intelligent context updates.
 
-🤖 AI USAGE GUIDELINES:
-• ALWAYS create a branch before creating tasks (tasks belong to branches)
-• USE 'list' action to discover existing branches before creating duplicates
-• ASSIGN agents to branches for specialized work (e.g., coding-agent for feature branches)
-• CHECK statistics to monitor branch progress and task completion
-• ARCHIVE completed branches to maintain a clean workspace
+**AI Usage Rules**:
+• Create branch BEFORE tasks (tasks belong to branches)
+• List existing branches before creating to avoid duplicates
+• Assign agents for specialized work (e.g., coding-agent for feature branches)
+• Check statistics to monitor progress
+• Archive completed branches
 
 | Action           | Required Parameters                | Optional Parameters                | Description                                      |
 |------------------|-----------------------------------|------------------------------------|--------------------------------------------------|
@@ -33,47 +31,15 @@ MANAGE_GIT_BRANCH_DESCRIPTION = """
 | archive          | project_id, git_branch_id          |                                    | Archive git branch (soft delete)                 |
 | restore          | project_id, git_branch_id          |                                    | Restore archived git branch                      |
 
-💡 PRACTICAL EXAMPLES FOR AI:
-1. Creating a feature branch:
-   - action: "create", project_id: "proj-uuid", git_branch_name: "feature/user-auth", git_branch_description: "Implement JWT authentication"
+**Example Pattern**: action="create", project_id="proj-uuid", git_branch_name="feature/user-auth", git_branch_description="Implement JWT"
+**Agent Assignment**: Use git_branch_name OR git_branch_id for identification
+**Statistics**: Returns total_tasks, completed_tasks, progress_percentage
 
-2. Assigning specialist agent:
-   - action: "assign_agent", project_id: "proj-uuid", git_branch_name: "feature/user-auth", agent_id: "security-auditor-agent"
-   - Note: Can use either git_branch_name OR git_branch_id for identification
+**Decision Trees**:
+Branch Creation: IF new_feature → IF similar_exists → use existing ELSE create + assign agent
+Agent Assignment: feature→coding-agent | security→security-auditor-agent | test→test-orchestrator-agent | ai_docs→documentation-agent
 
-3. Monitoring progress:
-   - action: "get_statistics", project_id: "proj-uuid", git_branch_id: "branch-uuid"
-   - Returns: total_tasks, completed_tasks, progress_percentage
-
-4. Listing active branches:
-   - action: "list", project_id: "proj-uuid"
-   - Use this before creating to avoid duplicates
-
-🔍 DECISION TREES:
-
-BRANCH CREATION DECISION:
-IF new_feature_requested:
-    IF similar_branch_exists:
-        USE existing branch
-    ELSE:
-        CREATE new branch with descriptive name
-        ASSIGN appropriate specialist agent
-
-AGENT ASSIGNMENT DECISION:
-IF branch_type == "feature":
-    ASSIGN coding-agent OR @ui_designer_agent
-ELIF branch_type == "security":
-    ASSIGN security-auditor-agent
-ELIF branch_type == "test":
-    ASSIGN test-orchestrator-agent
-ELIF branch_type == "ai_docs":
-    ASSIGN documentation-agent
-
-🛑 ERROR HANDLING:
-• Missing required parameters return clear error messages
-• Duplicate branch names are rejected with existing branch information
-• Invalid UUIDs and non-existent entities return specific error codes
-• Agent assignment conflicts are resolved with reassignment options
+**Error Handling**: Missing params/duplicate names/invalid UUIDs return clear error messages with existing entity info and resolution options
 """
 
 MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION = {

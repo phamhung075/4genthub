@@ -7,146 +7,63 @@ Agent invocation is handled separately by the call_agent tool.
 """
 
 UNIFIED_AGENT_DESCRIPTION = """
-🤖 AGENT MANAGEMENT SYSTEM - Registration and Assignment for 32 Specialized Agents
+🤖 AGENT MANAGEMENT SYSTEM - Agent Registration and Assignment (32 Specialized Agents)
 
-⭐ WHAT IT DOES: Manages agent registration, assignment, and lifecycle within projects. Coordinates 32 specialized agents covering development, testing, architecture, DevOps, documentation, and more.
-📋 WHEN TO USE: Agent registration, assignment, updates, and project agent management operations.
-🎯 CRITICAL FOR: Multi-agent orchestration, dynamic agent assignment, and project organization.
-📝 NOTE: For agent invocation/calling, use the separate 'call_agent' tool.
+⭐ WHAT IT DOES: Manages agent registration, assignment, and lifecycle within projects. Coordinates 32 specialized agents from development to deployment.
+📋 WHEN TO USE: Agent registration, assignment, updates, and project agent management.
+🎯 CRITICAL FOR: Multi-agent orchestration and dynamic agent assignment.
+📝 NOTE: For agent invocation, use separate 'call_agent' tool.
+
 🚀 AVAILABLE AGENTS (32 Total):
-  Development & Coding:
-    coding-agent - Implementation and feature development
-    debugger-agent - Bug fixing and troubleshooting
-    code-reviewer-agent - Code quality and review
-    prototyping-agent - Rapid prototyping and POCs
-    
-  Testing & QA:
-    test-orchestrator-agent - Comprehensive test management
-    uat-coordinator-agent - User acceptance testing
-    performance-load-tester-agent - Performance and load testing
-    
-  Architecture & Design:
-    system-architect-agent - System design and architecture
-    design-system-agent - Design system and UI patterns
-    @ui_designer_expert_shadcn_agent - Shadcn/UI components and frontend
-    core-concept-agent - Core concepts and fundamentals
-    
-  DevOps & Deployment:
-    devops-agent - CI/CD and infrastructure
-    @adaptive_deployment_strategist_agent - Deployment strategies
-    @swarm_scaler_agent - Distributed systems scaling
-    
-  Documentation & Specs:
-    documentation-agent - Technical documentation
-    @tech_spec_agent - Technical specifications
-    @prd_architect_agent - Product requirements documents
-    
-  Project & Planning:
-    project-initiator-agent - Project setup and kickoff
-    task-planning-agent - Task breakdown and planning
-    master-orchestrator-agent - Complex workflow orchestration
-    elicitation-agent - Requirements gathering
-    
-  Security & Compliance:
-    security-auditor-agent - Security audits and reviews
-    compliance-scope-agent - Regulatory compliance
-    ethical-review-agent - Ethical considerations
-    
-  Analytics & Optimization:
-    analytics-setup-agent - Analytics and tracking setup
-    efficiency-optimization-agent - Process optimization
-    health-monitor-agent - System health monitoring
-    
-  Marketing & Growth:
-    marketing-strategy-orchestrator-agent - Marketing strategy
-    @seo_sem_agent - SEO and SEM optimization
-    @growth_hacking_idea_agent - Growth strategies
-    @content_strategy_agent - Content planning
-    community-strategy-agent - Community building
-    branding-agent - Brand identity
-    
-  Research & Analysis:
-    deep-research-agent - In-depth research
-    @mcp_researcher_agent - MCP and tool research
-    root-cause-analysis-agent - Problem analysis
-    technology-advisor-agent - Technology recommendations
-    
-  AI & Machine Learning:
-    @brainjs_ml_agent - Machine learning with Brain.js
-    
-  Configuration & Integration:
-    @mcp_configuration_agent - MCP setup and configuration
-    
-  Creative & Ideation:
-    @idea_generation_agent - Creative idea generation
-    @idea_refinement_agent - Idea improvement
-    
-  Problem Resolution:
-    @remediation_agent - Issue remediation and fixes
 
-| Action      | Required Parameters                  | Optional Parameters                | Description                                      |
-|-------------|-------------------------------------|------------------------------------|--------------------------------------------------|
-| register    | project_id, name                    | agent_id (auto-generated if blank), call_agent | Register a new agent to a project                |
-| assign      | project_id, agent_id, git_branch_id  |                                    | Assign an agent to a task tree (branch)          |
-| get         | project_id, agent_id                |                                    | Retrieve agent details                           |
-| list        | project_id                          |                                    | List all agents in a project                     |
-| update      | project_id, agent_id                | name, call_agent                   | Update agent metadata                            |
-| unassign    | project_id, agent_id, git_branch_id  |                                   | Remove agent from a task tree (branch)           |
-| unregister  | project_id, agent_id                |                                    | Remove agent from a project                      |
-| rebalance   | project_id                          |                                    | Rebalance agent assignments in a project         |
+| Category | Agents | Purpose |
+|----------|--------|---------|
+| **Development** (4) | coding-agent, debugger-agent, code-reviewer-agent, prototyping-agent | Implementation, debugging, code review, POCs |
+| **Testing** (3) | test-orchestrator-agent, uat-coordinator-agent, performance-load-tester-agent | Test management, UAT, performance testing |
+| **Architecture** (4) | system-architect-agent, design-system-agent, @ui_designer_expert_shadcn_agent, core-concept-agent | System design, UI patterns, Shadcn/UI, fundamentals |
+| **DevOps** (3) | devops-agent, @adaptive_deployment_strategist_agent, @swarm_scaler_agent | CI/CD, deployment strategies, scaling |
+| **Documentation** (3) | documentation-agent, @tech_spec_agent, @prd_architect_agent | Technical docs, specifications, PRDs |
+| **Planning** (4) | project-initiator-agent, task-planning-agent, master-orchestrator-agent, elicitation-agent | Project setup, task breakdown, orchestration, requirements |
+| **Security** (3) | security-auditor-agent, compliance-scope-agent, ethical-review-agent | Security audits, compliance, ethics |
+| **Analytics** (3) | analytics-setup-agent, efficiency-optimization-agent, health-monitor-agent | Analytics setup, optimization, monitoring |
+| **Marketing** (6) | marketing-strategy-orchestrator-agent, @seo_sem_agent, @growth_hacking_idea_agent, @content_strategy_agent, community-strategy-agent, branding-agent | Marketing, SEO/SEM, growth, content, community, branding |
+| **Research** (4) | deep-research-agent, @mcp_researcher_agent, root-cause-analysis-agent, technology-advisor-agent | Research, MCP tools, problem analysis, tech recommendations |
+| **AI/ML** (1) | @brainjs_ml_agent | Machine learning with Brain.js |
+| **Config** (1) | @mcp_configuration_agent | MCP setup and configuration |
+| **Creative** (2) | @idea_generation_agent, @idea_refinement_agent | Idea generation, refinement |
+| **Resolution** (1) | @remediation_agent | Issue remediation |
+
+| Action | Required Parameters | Optional Parameters | Description |
+|--------|-------------------|-------------------|-------------|
+| register | project_id, name | agent_id, call_agent | Register agent to project |
+| assign | project_id, agent_id, git_branch_id | | Assign agent to branch |
+| get | project_id, agent_id | | Retrieve agent details |
+| list | project_id | | List all project agents |
+| update | project_id, agent_id | name, call_agent | Update agent metadata |
+| unassign | project_id, agent_id, git_branch_id | | Remove agent from branch |
+| unregister | project_id, agent_id | | Remove agent from project |
+| rebalance | project_id | | Rebalance assignments |
 
 💡 USAGE GUIDELINES:
-• Provide all required identifiers for each action (see table above).
-• Optional parameters can be omitted unless updating values.
-• The tool returns detailed error messages for missing or invalid parameters, unknown actions, and internal errors.
-• All business logic is delegated to the application layer (AgentApplicationFacade).
-• For invoking agents, use the separate 'call_agent' tool with agent names.
+• Provide required identifiers per action (see table)
+• Optional parameters: omit unless updating values
+• Returns detailed error messages for validation failures
+• Business logic delegated to AgentApplicationFacade
+• For agent invocation: use 'call_agent' tool separately
 
-🎯 USE CASES:
-• Register agents to projects for specialized task handling
-• Assign agents to specific git branches (task trees)
-• Manage agent lifecycle (update, unassign, unregister)
-• List all agents in a project
-• Rebalance agent assignments across projects
-
-📊 MANAGEMENT PATTERNS:
-1. Project Setup:
-   - Register required agents to project
-   - Assign agents to initial branches
-   - Configure agent metadata
-
-2. Team Expansion:
-   - Register additional specialized agents
-   - Assign to specific task areas
-   - Update agent configurations
-
-3. Project Cleanup:
-   - Unassign agents from completed branches
-   - Unregister unused agents
-   - Rebalance remaining assignments
+**Pattern**: {register → assign → work → unassign → unregister}
+**Example**: Register coding-agent → Assign to feature branch → Complete work → Unassign → Cleanup
 
 🛑 ERROR HANDLING:
-• If required fields are missing, a clear error message is returned specifying which fields are needed.
-• Unknown actions return an error listing valid actions.
-• Invalid agent names will result in an error with available agents list.
-• Internal errors are logged and returned with a generic error message.
-• Agent loading failures provide fallback to master-orchestrator-agent.
+• Missing required fields: Clear error with needed parameters
+• Unknown actions: Error listing valid actions
+• Invalid agent names: Error with available agents list
+• Internal errors: Logged and returned with generic message
 
-✅ VALIDATION CHECKPOINTS:
-• Check: Are all required parameters provided for the action?
-• Check: Is the agent name prefixed with @ (for call action)?
-• Check: Does the agent exist in available agents list (for call action)?
-• Check: Is the work type appropriate for the selected agent?
-• Pass: Operation executed successfully
-• Fail: Error with clear guidance and suggestions
-
-⚠️ IMPORTANT NOTES:
-• Agent names must include the @ prefix for call action
-• project_id is required for all management actions (register, assign, get, list, update, unassign, unregister, rebalance)
-• Switch to a role agent if no role is specified; otherwise, the default agent master-orchestrator-agent will be used
+⚠️ IMPORTANT:
+• project_id required for all management actions
+• Agent names use @ prefix (e.g., @ui_designer_expert_shadcn_agent)
 • Each agent has specialized knowledge and capabilities
-• Agents can collaborate as specified in their connectivity
-• Invalid agent names will result in an error with available agents list
 • Agents maintain context during task execution
 """
 
