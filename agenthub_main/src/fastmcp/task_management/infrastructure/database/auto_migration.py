@@ -24,6 +24,7 @@ class AutoMigration:
             AutoMigration._rename_subtasks_table()
             AutoMigration._add_progress_state_columns()
             AutoMigration._add_subtask_count_column()
+            AutoMigration._add_usage_tracking_columns()
 
             logger.info("✅ All database migrations completed successfully")
             return True
@@ -109,12 +110,12 @@ class AutoMigration:
                         # Update existing records to set proper progress_state based on status
                         session.execute(text(f"""
                             UPDATE {table_name}
-                            SET progress_state = CASE
+                            SET progress_state = (CASE
                                 WHEN status = 'done' THEN 'COMPLETE'
                                 WHEN status IN ('in_progress', 'active') THEN 'IN_PROGRESS'
                                 ELSE 'INITIAL'
-                            END
-                            WHERE progress_state = 'INITIAL' OR progress_state = 'initial'
+                            END)::progressstate
+                            WHERE progress_state = 'INITIAL'
                         """))
                         session.commit()
 
@@ -174,6 +175,74 @@ class AutoMigration:
                 raise
         except SQLAlchemyError as e:
             logger.error(f"Failed to add subtask_count column: {e}")
+            raise
+
+    @staticmethod
+    def _add_usage_tracking_columns():
+        """Add usage_count and last_used_at columns to user_agent_instances table."""
+        try:
+            with get_session() as session:
+                inspector = inspect(session.bind)
+
+                # Check if user_agent_instances table exists
+                if 'user_agent_instances' not in inspector.get_table_names():
+                    logger.info("Table user_agent_instances doesn't exist yet - will be created by ORM")
+                    return
+
+                # Check existing columns
+                columns = [col['name'] for col in inspector.get_columns('user_agent_instances')]
+
+                # Determine database type
+                dialect_name = session.bind.dialect.name
+
+                # Add usage_count column if missing
+                if 'usage_count' not in columns:
+                    logger.info("Adding usage_count column to user_agent_instances table...")
+
+                    if dialect_name == 'postgresql':
+                        session.execute(text(
+                            "ALTER TABLE user_agent_instances ADD COLUMN usage_count INTEGER DEFAULT 0 NOT NULL"
+                        ))
+                    else:
+                        session.execute(text(
+                            "ALTER TABLE user_agent_instances ADD COLUMN usage_count INTEGER DEFAULT 0 NOT NULL"
+                        ))
+
+                    session.commit()
+                    logger.info("✅ Added usage_count column to user_agent_instances table")
+                else:
+                    logger.info("✅ usage_count column already exists in user_agent_instances table")
+
+                # Refresh inspector after adding usage_count
+                inspector = inspect(session.bind)
+                columns = [col['name'] for col in inspector.get_columns('user_agent_instances')]
+
+                # Add last_used_at column if missing
+                if 'last_used_at' not in columns:
+                    logger.info("Adding last_used_at column to user_agent_instances table...")
+
+                    if dialect_name == 'postgresql':
+                        session.execute(text(
+                            "ALTER TABLE user_agent_instances ADD COLUMN last_used_at TIMESTAMP WITH TIME ZONE"
+                        ))
+                    else:
+                        session.execute(text(
+                            "ALTER TABLE user_agent_instances ADD COLUMN last_used_at DATETIME"
+                        ))
+
+                    session.commit()
+                    logger.info("✅ Added last_used_at column to user_agent_instances table")
+                else:
+                    logger.info("✅ last_used_at column already exists in user_agent_instances table")
+
+        except OperationalError as e:
+            if "duplicate column" in str(e).lower() or "already exists" in str(e).lower():
+                logger.info("Usage tracking columns already exist in user_agent_instances table")
+            else:
+                logger.error(f"Failed to add usage tracking columns: {e}")
+                raise
+        except SQLAlchemyError as e:
+            logger.error(f"Failed to add usage tracking columns: {e}")
             raise
 
 

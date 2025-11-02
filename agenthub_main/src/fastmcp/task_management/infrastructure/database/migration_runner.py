@@ -64,7 +64,7 @@ class AutoMigrationRunner:
                         CREATE TABLE {self.migrations_table} (
                             id SERIAL PRIMARY KEY,
                             migration_name VARCHAR(255) UNIQUE NOT NULL,
-                            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            applied_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                             success BOOLEAN DEFAULT TRUE,
                             error_message TEXT
                         )
@@ -115,7 +115,9 @@ class AutoMigrationRunner:
             ("branch_summaries_mv", self._create_branch_summaries_view),
             ("project_summaries_mv", self._create_project_summaries_view),
             ("websocket_indexes", self._create_websocket_indexes),
-            ("cascade_indexes", self._create_cascade_indexes)
+            ("cascade_indexes", self._create_cascade_indexes),
+            ("add_is_enabled_to_user_agent_instances", self._add_is_enabled_column),
+            ("add_usage_tracking_columns", self._add_usage_tracking_columns)
         ]
 
         for migration_name, migration_func in migrations:
@@ -462,6 +464,51 @@ class AutoMigrationRunner:
                 except Exception as e:
                     # Index might already exist with different name
                     logger.debug(f"Index creation skipped (may already exist): {e}")
+
+    async def _add_is_enabled_column(self):
+        """Add is_enabled column to user_agent_instances table"""
+        async with self.engine.begin() as conn:
+            # Add the column with default value of TRUE (all existing agents remain enabled)
+            await conn.execute(text("""
+                ALTER TABLE user_agent_instances
+                ADD COLUMN IF NOT EXISTS is_enabled BOOLEAN NOT NULL DEFAULT TRUE
+            """))
+
+            # Add index for efficient querying of enabled agents
+            await conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS ix_user_agent_instances_user_enabled
+                ON user_agent_instances(user_id, is_enabled)
+            """))
+
+            logger.info("✅ Added is_enabled column to user_agent_instances table with default TRUE")
+            logger.info("✅ Added index ix_user_agent_instances_user_enabled for efficient queries")
+
+    async def _add_usage_tracking_columns(self):
+        """Add usage_count and last_used_at columns to user_agent_instances table"""
+        async with self.engine.begin() as conn:
+            # Detect database type
+            is_postgres = await self._is_postgresql(conn)
+
+            # Add usage_count column
+            await conn.execute(text("""
+                ALTER TABLE user_agent_instances
+                ADD COLUMN IF NOT EXISTS usage_count INTEGER NOT NULL DEFAULT 0
+            """))
+
+            # Add last_used_at column with database-specific syntax
+            if is_postgres:
+                await conn.execute(text("""
+                    ALTER TABLE user_agent_instances
+                    ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMP WITH TIME ZONE
+                """))
+            else:
+                await conn.execute(text("""
+                    ALTER TABLE user_agent_instances
+                    ADD COLUMN IF NOT EXISTS last_used_at DATETIME
+                """))
+
+            logger.info("✅ Added usage_count column to user_agent_instances table with default 0")
+            logger.info("✅ Added last_used_at column to user_agent_instances table")
 
     async def _is_postgresql(self, conn) -> bool:
         """Check if we're using PostgreSQL"""

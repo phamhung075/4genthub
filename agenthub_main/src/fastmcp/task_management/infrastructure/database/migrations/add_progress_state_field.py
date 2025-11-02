@@ -89,7 +89,7 @@ class ProgressStateMigration:
 
                 # Add the column
                 connection.execute(text(
-                    "ALTER TABLE tasks ADD COLUMN progress_state VARCHAR(20) DEFAULT 'initial' NOT NULL"
+                    "ALTER TABLE tasks ADD COLUMN progress_state VARCHAR(20) DEFAULT 'INITIAL' NOT NULL"
                 ))
                 connection.commit()
                 logger.info("Added progress_state column to tasks table")
@@ -113,7 +113,7 @@ class ProgressStateMigration:
 
                 # Add the column
                 connection.execute(text(
-                    "ALTER TABLE subtasks ADD COLUMN progress_state VARCHAR(20) DEFAULT 'initial' NOT NULL"
+                    "ALTER TABLE subtasks ADD COLUMN progress_state VARCHAR(20) DEFAULT 'INITIAL' NOT NULL"
                 ))
                 connection.commit()
                 logger.info("Added progress_state column to subtasks table")
