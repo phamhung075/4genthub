@@ -849,7 +849,7 @@ export const branchApiV2 = {
 export const connectionApiV2 = {
   // Health check
   healthCheck: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/connections/health`, {
+    const response = await fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include',
@@ -973,6 +973,239 @@ export const agentApiV2 = {
         agent_name: normalizedName,
         params: params || {}
       }),
+    });
+    return handleResponse(response);
+  },
+};
+
+// ============================================
+// AGENT MANAGEMENT API (User-Specific Agent System)
+// ============================================
+
+export const agentManagementApiV2 = {
+  // List all agent templates from agent-library
+  listTemplates: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/templates`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get specific template by slug
+  getTemplate: async (slug: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/templates/${slug}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // List user's agent instances
+  listUserInstances: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get specific user agent instance
+  getUserInstance: async (instanceId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Create/customize agent instance from template
+  createInstance: async (data: {
+    template_slug: string;
+    agent_name?: string;
+    system_prompt?: string;
+    tools?: string[];
+    capabilities?: Record<string, any>;
+    rules?: string[];
+    output_format?: string;
+    visibility?: 'private' | 'public';
+  }) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  // Bulk create agent instances for all available templates
+  bulkCreateInstances: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/bulk-create`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Update agent instance
+  updateInstance: async (instanceId: string, data: {
+    agent_name?: string;
+    is_enabled?: boolean;
+    system_prompt?: string;
+    tools?: string[];
+    capabilities?: Record<string, any>;
+    rules?: string[];
+    output_format?: string;
+    visibility?: 'private' | 'public';
+  }) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  // Delete agent instance
+  deleteInstance: async (instanceId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get agent configuration (merged template + customizations)
+  getConfiguration: async (templateSlug: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/configuration/${templateSlug}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Update agent configuration
+  updateConfiguration: async (instanceId: string, data: {
+    system_prompt?: string;
+    tools?: string[];
+    capabilities?: Record<string, any>;
+    rules?: string[];
+    output_format?: string;
+  }) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}/configuration`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  // Share agent (make public and get share token)
+  shareAgent: async (instanceId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}/share`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Unshare agent (make private)
+  unshareAgent: async (instanceId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}/unshare`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Import shared agent by token
+  importAgent: async (shareToken: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/import`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ share_token: shareToken }),
+    });
+    return handleResponse(response);
+  },
+
+  // Browse marketplace (public shared agents)
+  browseMarketplace: async (filters?: {
+    category?: string;
+    search?: string;
+    sort?: 'recent' | 'popular';
+    page?: number;
+    page_size?: number;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.sort) params.append('sort', filters.sort);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.page_size) params.append('page_size', filters.page_size.toString());
+
+    const url = `${API_BASE_URL}/api/v2/agent-management/marketplace${params.toString() ? '?' + params.toString() : ''}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Preview shared agent before importing
+  previewSharedAgent: async (shareToken: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/marketplace/${shareToken}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get user usage statistics
+  getUserStats: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/analytics/user-stats`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get popular agents statistics
+  getPopularAgents: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/analytics/popular-agents`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },

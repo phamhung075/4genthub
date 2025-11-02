@@ -32,6 +32,11 @@ export * from './subtaskTypes';
 export * from './projectTypes';
 
 // ============================================
+// AGENT TYPES (User-Specific Agent System)
+// ============================================
+export * from './agentTypes';
+
+// ============================================
 // API SERVICE TYPES (Response wrappers)
 // ============================================
 export * from './serviceTypes';

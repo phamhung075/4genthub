@@ -29,6 +29,8 @@ import { Profile } from './pages/Profile';
 import RegistrationSuccess from './pages/RegistrationSuccess';
 import { TokenManagement } from './pages/TokenManagement';
 import { HelpSetup } from './pages/HelpSetup';
+import { MarketplacePage } from './pages/MarketplacePage';
+import { MyAgentsPage } from './pages/MyAgentsPage';
 // Use lazy loading for TaskList component for better performance
 import LazyTaskList from './components/LazyTaskList';
 //const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
@@ -281,6 +283,26 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/agents/marketplace"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MarketplacePage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agents/my-agents"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MyAgentsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
           {/*<Route
             path="/performance"
             element={
@@ -293,7 +315,7 @@ function App() {
               </ProtectedRoute>
             }
           />*/}
-          
+
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
