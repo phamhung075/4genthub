@@ -1,0 +1,555 @@
+/**
+ * Agent Templates Browser Page
+ *
+ * Browse and instantiate system agent templates from the agent-library.
+ * Displays 60+ templates with categories, descriptions, and capabilities.
+ *
+ * @module pages/TemplatesBrowser
+ * @version 1.0.0
+ */
+
+import React, { useState, useMemo } from 'react';
+import {
+  Search,
+  Filter,
+  Plus,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Wrench,
+  Box,
+  Code,
+  TestTube,
+  Shield,
+  Rocket,
+  BookOpen,
+  BarChart,
+  Megaphone,
+  Lightbulb,
+  Eye,
+  X,
+  Sparkles,
+} from 'lucide-react';
+import { useAgentTemplates, useUserAgentInstances } from '../hooks/useAgentManagement';
+import type { AgentTemplate } from '../types/agentTypes';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Separator } from '../components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../components/ui/dialog';
+import logger from '../utils/logger';
+
+/**
+ * Category icon mapping
+ */
+const categoryIcons: Record<string, React.ElementType> = {
+  coding: Code,
+  test: TestTube,
+  design: Sparkles,
+  planning: Lightbulb,
+  security: Shield,
+  operations: Wrench,
+  research: BookOpen,
+  marketing: Megaphone,
+  specialized: Box,
+  default: Rocket,
+};
+
+/**
+ * Agent Templates Browser Page Component
+ * Displays all system agent templates for instantiation
+ */
+export const TemplatesBrowser: React.FC = () => {
+  const { templates, loading, error, loadTemplates } = useAgentTemplates();
+  const { createInstance, loading: creating, error: createError } = useUserAgentInstances();
+
+  // Local state for filtering
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+
+  // Extract unique categories from templates
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    templates.forEach(template => {
+      cats.add(template.category);
+    });
+    return Array.from(cats).sort();
+  }, [templates]);
+
+  // Filter templates based on search and category
+  const filteredTemplates = useMemo(() => {
+    return templates.filter(template => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+          template.name.toLowerCase().includes(query) ||
+          template.slug.toLowerCase().includes(query) ||
+          template.description?.toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+      }
+
+      // Category filter
+      if (selectedCategory && template.category !== selectedCategory) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [templates, searchQuery, selectedCategory]);
+
+  // Handle template instantiation
+  const handleCreateInstance = async (template: AgentTemplate) => {
+    try {
+      setCreateSuccess(null);
+      const instance = await createInstance({
+        template_slug: template.slug,
+      });
+
+      if (instance) {
+        setCreateSuccess(`Created instance of "${template.name}" successfully!`);
+        logger.info(`Created instance of template: ${template.slug}`, { instanceId: instance.id });
+
+        // Clear success message after 5 seconds
+        setTimeout(() => setCreateSuccess(null), 5000);
+      }
+    } catch (err) {
+      logger.error('Error creating instance:', err);
+    }
+  };
+
+  return (
+    <div className="container mx-auto space-y-6 p-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight">Agent Templates</h1>
+        <p className="text-muted-foreground mt-2">
+          Browse and create instances from {templates.length} system agent templates
+        </p>
+      </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-4">
+            {/* Search Bar */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search templates..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Category Filter */}
+            {categories.length > 0 && (
+              <>
+                <Separator />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Button
+                    variant={selectedCategory === null ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedCategory(null)}
+                  >
+                    All Categories
+                  </Button>
+                  {categories.map(category => (
+                    <Button
+                      key={category}
+                      variant={selectedCategory === category ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedCategory(category)}
+                      className="capitalize"
+                    >
+                      {category}
+                    </Button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Success Message */}
+      {createSuccess && (
+        <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-600">{createSuccess}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Create Error */}
+      {createError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{createError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Load Error */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+          <Button onClick={loadTemplates} variant="outline" size="sm" className="mt-2">
+            Retry
+          </Button>
+        </Alert>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-6 w-3/4 rounded bg-muted" />
+                <div className="h-4 w-1/2 rounded bg-muted" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-4 w-full rounded bg-muted" />
+                  <div className="h-4 w-2/3 rounded bg-muted" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Templates Grid */}
+      {!loading && filteredTemplates.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredTemplates.map(template => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              onCreate={handleCreateInstance}
+              creating={creating}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && filteredTemplates.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Box className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-lg font-semibold mb-2">No templates found</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              {searchQuery || selectedCategory
+                ? 'Try adjusting your filters or search terms'
+                : 'No agent templates available'}
+            </p>
+            {(searchQuery || selectedCategory) && (
+              <Button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory(null);
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats Footer */}
+      {!loading && templates.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div>
+                Showing {filteredTemplates.length} of {templates.length} templates
+              </div>
+              <div className="flex items-center gap-4">
+                {categories.map(category => {
+                  const count = templates.filter(t => t.category === category).length;
+                  return (
+                    <div key={category} className="capitalize">
+                      {category}: {count}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Template Card Component
+ * Individual card for each agent template
+ */
+interface TemplateCardProps {
+  template: AgentTemplate;
+  onCreate: (template: AgentTemplate) => void;
+  creating: boolean;
+}
+
+const TemplateCard: React.FC<TemplateCardProps> = ({ template, onCreate, creating }) => {
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Get category icon
+  const IconComponent = categoryIcons[template.category] || categoryIcons.default;
+
+  // Parse capabilities count
+  const capabilitiesCount = template.capabilities
+    ? Object.keys(template.capabilities).length
+    : 0;
+
+  // Parse tools count
+  const toolsCount = template.tools ? template.tools.length : 0;
+
+  // Parse rules count
+  const rulesCount = template.rules && Array.isArray(template.rules) ? template.rules.length : 0;
+
+  return (
+    <Card className="group hover:shadow-lg transition-all hover:border-primary/50">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <IconComponent className="h-5 w-5 text-primary" />
+              {template.name}
+            </CardTitle>
+            <CardDescription className="mt-2">
+              <Badge variant="outline" className="capitalize">
+                {template.category}
+              </Badge>
+              {template.version && (
+                <Badge variant="secondary" className="ml-2">
+                  v{template.version}
+                </Badge>
+              )}
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Description */}
+        {template.description && (
+          <p className="text-sm text-muted-foreground line-clamp-3">{template.description}</p>
+        )}
+
+        <Separator />
+
+        {/* Template Info */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Wrench className="h-3 w-3" />
+            {toolsCount} {toolsCount === 1 ? 'tool' : 'tools'}
+          </div>
+          <div className="flex items-center gap-1">
+            <BarChart className="h-3 w-3" />
+            {capabilitiesCount} {capabilitiesCount === 1 ? 'capability' : 'capabilities'}
+          </div>
+        </div>
+
+        {/* Slug */}
+        <div className="text-xs text-muted-foreground">
+          <code className="bg-muted px-2 py-1 rounded">{template.slug}</code>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          {/* View Details Button - Simple version first */}
+          <Button
+            variant="outline"
+            className="flex-1 gap-2"
+            onClick={() => setDialogOpen(true)}
+          >
+            <Eye className="h-4 w-4" />
+            View Details
+          </Button>
+
+          {/* Dialog - Separate from button */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-2xl">
+                  <IconComponent className="h-6 w-6 text-primary" />
+                  {template.name}
+                </DialogTitle>
+                <DialogDescription>
+                  <Badge variant="outline" className="capitalize mr-2">
+                    {template.category}
+                  </Badge>
+                  <code className="text-xs bg-muted px-2 py-1 rounded">{template.slug}</code>
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 py-4">
+                {/* Description */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Description</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {template.description || 'No description provided'}
+                  </p>
+                </div>
+
+                {/* System Prompt */}
+                {template.system_prompt && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">System Prompt</h3>
+                    <div className="bg-muted p-4 rounded-lg max-h-60 overflow-y-auto">
+                      <pre className="text-xs whitespace-pre-wrap font-mono">
+                        {template.system_prompt}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
+                {/* Stats Cards */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Capabilities</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-3 rounded-lg bg-muted text-center">
+                      <Wrench className="h-5 w-5 text-primary mx-auto mb-1" />
+                      <p className="text-2xl font-bold">{toolsCount}</p>
+                      <p className="text-xs text-muted-foreground">Tools</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted text-center">
+                      <BarChart className="h-5 w-5 text-primary mx-auto mb-1" />
+                      <p className="text-2xl font-bold">{capabilitiesCount}</p>
+                      <p className="text-xs text-muted-foreground">Capabilities</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted text-center">
+                      <BookOpen className="h-5 w-5 text-primary mx-auto mb-1" />
+                      <p className="text-2xl font-bold">{rulesCount}</p>
+                      <p className="text-xs text-muted-foreground">Rules</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tools List */}
+                {template.tools && template.tools.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Tools ({template.tools.length})</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {template.tools.map((tool, idx) => (
+                        <Badge key={idx} variant="secondary">{tool}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Capabilities Details */}
+                {template.capabilities && Object.keys(template.capabilities).length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">
+                      Capabilities Details ({Object.keys(template.capabilities).length})
+                    </h3>
+                    <div className="bg-muted p-4 rounded-lg space-y-2 max-h-60 overflow-y-auto">
+                      {Object.entries(template.capabilities).map(([key, value]) => (
+                        <div key={key} className="flex gap-2 text-sm">
+                          <span className="font-semibold text-primary min-w-32">{key}:</span>
+                          <span className="text-muted-foreground">
+                            {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rules List */}
+                {template.rules && Array.isArray(template.rules) && template.rules.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Rules</h3>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {template.rules.map((rule, idx) => (
+                        <div key={idx} className="flex gap-2 text-sm p-2 bg-muted rounded">
+                          <span className="text-primary font-semibold">{idx + 1}.</span>
+                          <span>{typeof rule === 'string' ? rule : JSON.stringify(rule)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Dialog Actions */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      onCreate(template);
+                      setDialogOpen(false);
+                    }}
+                    disabled={creating}
+                    className="flex-1 gap-2"
+                    size="lg"
+                  >
+                    {creating ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-5 w-5" />
+                        Create Instance
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="gap-2"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    <X className="h-5 w-5" />
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Quick Create Button */}
+          <Button
+            onClick={() => onCreate(template)}
+            disabled={creating}
+            className="flex-1 gap-2"
+          >
+            {creating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" />
+                Create
+              </>
+            )}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default TemplatesBrowser;
