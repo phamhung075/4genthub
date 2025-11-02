@@ -25,6 +25,7 @@ class UserAgentInstance(BaseTimestampEntity):
     Business Rules:
         - UNIQUE(user_id, template_id): Each user can have only one instance per template
         - is_customized=True when configuration differs from template default
+        - is_enabled=True by default; controls visibility in call_agent tools
         - share_token is 64-char random string when visibility='public'
         - original_creator_id is set when instance is imported from another user
         - usage_count increments on each call_agent invocation
@@ -35,6 +36,7 @@ class UserAgentInstance(BaseTimestampEntity):
         template_id: ID of the template this instance is based on
         agent_name: Custom name for this instance (defaults to template name)
         is_customized: True if user has modified the configuration
+        is_enabled: True if agent is enabled for use in call_agent tools
         configuration: Agent configuration (can be customized)
         visibility: 'private' or 'public' (public allows sharing)
         share_token: Secure token for sharing (None if private)
@@ -55,6 +57,7 @@ class UserAgentInstance(BaseTimestampEntity):
     template_id: Optional[AgentTemplateId] = None
     agent_name: str = ""
     is_customized: bool = False
+    is_enabled: bool = True  # Default to enabled
     configuration: Optional[AgentConfiguration] = None
     visibility: str = "private"  # 'private' or 'public'
     share_token: Optional[str] = None
@@ -322,6 +325,7 @@ class UserAgentInstance(BaseTimestampEntity):
             template_id=template_id,
             agent_name=data.get('agent_name', ''),
             is_customized=data.get('is_customized', False),
+            is_enabled=data.get('is_enabled', True),
             configuration=configuration,
             visibility=data.get('visibility', 'private'),
             share_token=data.get('share_token'),
@@ -345,6 +349,7 @@ class UserAgentInstance(BaseTimestampEntity):
             "template_id": str(self.template_id) if self.template_id else None,
             "agent_name": self.agent_name,
             "is_customized": self.is_customized,
+            "is_enabled": self.is_enabled,
             "configuration": self.configuration.to_dict() if self.configuration else {},
             "visibility": self.visibility,
             "share_token": self.share_token,

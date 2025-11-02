@@ -59,7 +59,7 @@ class AgentInstantiationService:
         - Each user gets exactly one instance per template
         - New instances use template's default configuration
         - Instance name defaults to template name
-        - All instances start as private (not shared)
+        - All instances start with visibility='default' (from template, not customized)
 
         Args:
             user_id: The user requesting the agent
@@ -138,7 +138,7 @@ class AgentInstantiationService:
             agent_name=template.name,  # Default to template name
             is_customized=False,  # Not customized initially
             configuration=template.get_configuration_copy(),  # Copy default config
-            visibility='private',  # Private by default
+            visibility='private',  # Default to private for new instances
             share_token=None,  # No share token initially
             original_creator_id=None,  # Not imported
             usage_count=0,  # No usage yet

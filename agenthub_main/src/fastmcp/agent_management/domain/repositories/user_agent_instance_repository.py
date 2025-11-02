@@ -6,6 +6,7 @@ from ..entities.user_agent_instance import UserAgentInstance
 from ..value_objects.user_agent_instance_id import UserAgentInstanceId
 from ..value_objects.user_id import UserId
 from ..value_objects.agent_template_id import AgentTemplateId
+from ..enums.ordering import InstanceOrdering
 
 
 class UserAgentInstanceRepository(ABC):
@@ -71,6 +72,20 @@ class UserAgentInstanceRepository(ABC):
         pass
 
     @abstractmethod
+    def find_enabled_by_user(self, user_id: UserId) -> List[UserAgentInstance]:
+        """Find all enabled instances for a user.
+
+        Used when populating call_agent tool options - only shows enabled agents.
+
+        Args:
+            user_id: The user ID
+
+        Returns:
+            List of enabled instances owned by the user (is_enabled=True)
+        """
+        pass
+
+    @abstractmethod
     def find_by_share_token(self, share_token: str) -> Optional[UserAgentInstance]:
         """Find an instance by its share token.
 
@@ -83,15 +98,21 @@ class UserAgentInstanceRepository(ABC):
         pass
 
     @abstractmethod
-    def find_public_instances(self, limit: int = 50, offset: int = 0) -> List[UserAgentInstance]:
+    def find_public_instances(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        order_by: InstanceOrdering = InstanceOrdering.CREATED_DESC
+    ) -> List[UserAgentInstance]:
         """Find all publicly shared instances.
 
         Args:
             limit: Maximum number of results
             offset: Offset for pagination
+            order_by: Ordering preference (domain-defined business option)
 
         Returns:
-            List of public instances
+            List of public instances ordered as specified
         """
         pass
 

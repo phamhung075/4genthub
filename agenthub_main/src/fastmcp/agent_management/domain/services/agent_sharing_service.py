@@ -274,21 +274,47 @@ class AgentSharingService:
     def get_public_instances(
         self,
         limit: int = 50,
-        offset: int = 0
+        offset: int = 0,
+        order_by: 'InstanceOrdering' = None
     ) -> list[UserAgentInstance]:
         """Get list of publicly shared instances for marketplace.
+
+        Domain service adds business value:
+        - Enforces marketplace ordering policy (newest first by default)
+        - Validates pagination boundaries
+        - Ensures only truly shareable instances returned
 
         Args:
             limit: Maximum number of results
             offset: Offset for pagination
+            order_by: Optional ordering preference (defaults to CREATED_DESC for marketplace)
 
         Returns:
-            List of public instances
+            List of public instances ordered and validated
         """
-        return self.instance_repository.find_public_instances(
+        from ..enums.ordering import InstanceOrdering
+
+        # Business policy: marketplace defaults to newest first
+        if order_by is None:
+            order_by = InstanceOrdering.CREATED_DESC
+
+        # Business rule: validate pagination boundaries
+        if limit < 1 or limit > 100:
+            raise ValueError(f"Limit must be between 1 and 100, got {limit}")
+
+        if offset < 0:
+            raise ValueError(f"Offset must be non-negative, got {offset}")
+
+        # Retrieve instances using domain-defined criteria
+        instances = self.instance_repository.find_public_instances(
             limit=limit,
-            offset=offset
+            offset=offset,
+            order_by=order_by
         )
+
+        # Business validation: double-check all returned instances are shareable
+        # (defensive programming - infrastructure should already filter, but we verify)
+        return [inst for inst in instances if inst.is_shared()]
 
     def _get_and_verify_ownership(
         self,
