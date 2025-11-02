@@ -367,13 +367,28 @@ class AgentManagementFacade:
             new_config = AgentConfiguration.from_dict(new_config_dict)
             instance.customize_configuration(new_config, "Updated via REST API")
 
-        # Update visibility if provided
+        # Update visibility if provided - use sharing service for proper token handling
         if visibility is not None:
             if visibility not in ('private', 'public'):
                 raise ValueError(f"Invalid visibility: {visibility}. Must be 'private' or 'public'")
-            object.__setattr__(instance, 'visibility', visibility)
 
-        # Save updates
+            # Use sharing service to handle visibility changes with proper token management
+            if visibility == 'public' and not instance.share_token:
+                # Generate share token and set visibility to public atomically
+                share_token = self._sharing_service.generate_share_token(instance.id, user_id)
+                if not share_token:
+                    raise ValueError(f"Failed to generate share token for instance {instance_id}")
+                # Re-fetch instance with updated share_token
+                instance = self._instance_repo.find_by_id(instance_uuid)
+            elif visibility == 'private' and instance.share_token:
+                # Revoke share token and set visibility to private atomically
+                success = self._sharing_service.revoke_share_token(instance.id, user_id)
+                if not success:
+                    raise ValueError(f"Failed to revoke share token for instance {instance_id}")
+                # Re-fetch instance with revoked share_token
+                instance = self._instance_repo.find_by_id(instance_uuid)
+
+        # Save updates (if visibility wasn't changed, or after re-fetching from sharing service)
         updated_instance = self._instance_repo.save(instance)
         logger.info(f"Instance {instance_id} updated successfully")
 
