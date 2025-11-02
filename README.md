@@ -19,22 +19,26 @@ Dai Hung PHAM
 
 ## ✨ **What Makes agenthub Special?**
 
-🎭 **Human-First AI Orchestration** — Control 32 specialized AI agents through a beautiful web interface  
-🧠 **Intelligent Context Management** — 4-tier hierarchy ensures AI agents never lose context between sessions  
-🔗 **MCP Protocol Native** — Built on the Model Context Protocol for seamless AI integration  
-🎯 **Visual Task Management** — See your AI agents working in real-time through our React dashboard  
-🚀 **Multi-Agent Workflows** — Chain specialized agents for complex development workflows  
-🌐 **Web-First Experience** — Designed for humans who prefer web interfaces over command lines  
+🎭 **Human-First AI Orchestration** — Control 32 specialized AI agents through a beautiful web interface
+🧠 **Intelligent Context Management** — 4-tier hierarchy ensures AI agents never lose context between sessions
+🔗 **MCP Protocol Native** — Built on the Model Context Protocol for seamless AI integration
+🎯 **Visual Task Management** — See your AI agents working in real-time through our React dashboard
+🚀 **Multi-Agent Workflows** — Chain specialized agents for complex development workflows
+🌐 **Web-First Experience** — Designed for humans who prefer web interfaces over command lines
 🧹 **Optimized Agent Library** — Streamlined from 69 to 32 agents for better maintainability and clearer specialization
+🛍️ **Agent Marketplace** — Browse, customize, and share AI agents with your team and community
+🎨 **Personal Agent Instances** — Create customized versions of agents tailored to your workflow
 
 ## 🎯 **Perfect For Teams Who Want To...**
 
 - 🤝 **Collaborate with AI agents** like they're team members
-- 📊 **Visualize AI workflows** through an intuitive web dashboard  
+- 📊 **Visualize AI workflows** through an intuitive web dashboard
 - 🔄 **Maintain context** across multiple AI sessions and agents
 - 🎭 **Specialize AI agents** for different development roles
 - 🌟 **Scale development** without losing quality or oversight
 - 📈 **Track progress** of both human and AI contributions
+- 🛍️ **Share and discover** customized AI agents through the marketplace
+- 🎨 **Customize agent behavior** to match their team's unique workflow
 
 ---
 
@@ -49,10 +53,13 @@ Dai Hung PHAM
 http://localhost:3800
 ```
 - 🎯 **Real-time agent activity**
-- 📊 **Visual task management** 
+- 📊 **Visual task management**
 - 🔄 **Context flow visualization**
 - 👥 **Multi-agent coordination**
 - 📈 **Progress tracking**
+- 🛍️ **Agent marketplace** — Browse & import community agents
+- 🎨 **My Agents** — Manage personal agent instances
+- 📚 **Agent templates** — 60+ pre-configured agents
 
 </td>
 <td width="50%">
@@ -73,11 +80,14 @@ http://localhost:8000
 
 ### 🎬 **Experience Highlights**
 
-🎭 **Agent Theater** — Watch AI agents collaborate on your tasks in real-time  
-📊 **Smart Dashboards** — Beautiful visualizations of project progress and agent activity  
-🧠 **Context Streams** — See how context flows between agents and sessions  
-🎯 **One-Click Orchestration** — Deploy complex multi-agent workflows with simple clicks  
+🎭 **Agent Theater** — Watch AI agents collaborate on your tasks in real-time
+📊 **Smart Dashboards** — Beautiful visualizations of project progress and agent activity
+🧠 **Context Streams** — See how context flows between agents and sessions
+🎯 **One-Click Orchestration** — Deploy complex multi-agent workflows with simple clicks
 ⚡ **Instant Feedback** — Real-time updates as agents complete tasks and make decisions
+🛍️ **Community Marketplace** — Discover, share, and import customized agents from your team
+🎨 **Personal Workspaces** — Create and manage your own agent instances with custom configurations
+✨ **Smart Templates** — Browse 60+ ready-to-use agent templates across all specializations
 
 ---
 
@@ -121,13 +131,14 @@ graph TD
 - 🔗 **MCP Server**: FastMCP-based server with streamable HTTP transport and RESTful APIs
 - 🎯 **Task Management**: Comprehensive DDD-compliant lifecycle management with visual tracking
 - 🤖 **Agent Orchestration**: Multi-agent coordination with intelligent role-based switching
+- 🛍️ **Agent Management**: Complete agent lifecycle — browse templates, create instances, customize, share via marketplace
 - 📋 **Project Management**: Hierarchical organization with automatic context inheritance
 - 🌐 **Web Dashboard**: React-based interface optimized for human-AI collaboration
 - 🐳 **Docker Infrastructure**: Multi-mode containerized deployment with one-click setup
 
 ## 🤖 **Agent Gallery - Meet Your Optimized AI Team**
 
-> **✨ Recently optimized from 69 to 32 agents** for better maintainability and clearer specialization. [View cleanup analysis →](ai_docs/architecture-design/agent-library-cleanup-recommendations.md)
+> **✨ Recently optimized from 69 to 32 agents** for better maintainability and clearer specialization. All 32 agent templates load successfully with the new agent management system, enabling instant agent instance creation and customization.
 
 <table>
 <tr>
@@ -201,6 +212,9 @@ graph TD
 - **Role Specialization** — Each agent excels in their specific domain
 - **Collaborative Workflows** — Agents work together seamlessly on complex tasks
 - **Dynamic Assignment** — System automatically selects the best agent for each task
+- **Personal Instances** — Create customized versions of any agent with your preferred settings
+- **Community Sharing** — Share your customized agents with team via marketplace
+- **Instant Access** — One-click bulk creation of all 32 agent instances
 
 ---
 
@@ -286,8 +300,8 @@ Optional: Python 3.8+, Node.js 18+, WSL2 (Windows)
 Transform any AI tool into a collaborative agent with our MCP protocol:
 
 ```python
-# 🎭 1. Orchestrate agents through MCP
-agent = mcp__agenthub_http__call_agent(name_agent="@task_planning_agent")
+# 🎭 1. Load agent configuration from your personal instance
+agent = mcp__agenthub_http__call_agent(name_agent="coding-agent")
 
 # 📋 2. Create collaborative workspace  
 project = mcp__agenthub_http__manage_project(
@@ -437,10 +451,13 @@ Human: Validate solution
 </td>
 <td width="33%">
 
-#### 🤖 **Agent Orchestration** 
+#### 🤖 **Agent Orchestration**
 - Dynamic agent role switching
 - Multi-agent collaboration
 - Agent registration & management
+- Personal agent instances
+- Agent marketplace with sharing
+- Bulk agent creation
 - Workflow coordination
 - Context sharing between agents
 
@@ -606,12 +623,14 @@ Our release process follows industry best practices:
 <td width="50%">
 
 #### 🚀 **With agenthub**
-- One platform, 60+ specialized agents
+- One platform, 32 optimized + 60+ customizable agents
 - Persistent context across all sessions
-- Agents remember your preferences  
+- Agents remember your preferences
 - Visual dashboard shows everything
 - Track AI work like team members
 - Collaborative AI workflows
+- Personal agent instances with custom configs
+- Community marketplace for sharing agents
 
 </td>
 </tr>
@@ -621,10 +640,12 @@ Our release process follows industry best practices:
 
 > **"What if working with AI felt as natural as working with your best teammate?"**
 
-✅ **Context that Never Dies** — Agents remember everything, forever  
-✅ **Visual AI Collaboration** — See your AI team working in real-time  
-✅ **Specialized AI Experts** — 60+ agents, each mastering their craft  
-✅ **Human-First Design** — Built for people who love web interfaces  
+✅ **Context that Never Dies** — Agents remember everything, forever
+✅ **Visual AI Collaboration** — See your AI team working in real-time
+✅ **Specialized AI Experts** — 32 core agents + 60+ customizable instances, each mastering their craft
+✅ **Human-First Design** — Built for people who love web interfaces
+✅ **Personal Agent Workspaces** — Create, customize, and manage your own agent instances
+✅ **Community Marketplace** — Share and discover agents customized by your team
 ✅ **Enterprise Ready** — Scales from solo dev to global teams
 
 ---
