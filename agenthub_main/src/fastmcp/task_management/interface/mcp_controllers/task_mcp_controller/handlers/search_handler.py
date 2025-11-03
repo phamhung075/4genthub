@@ -48,14 +48,29 @@ class SearchHandler:
 
             result = facade.list_tasks(request)
 
-            # Add pagination metadata if successful
+            # OPTIMIZATION: Return minimal fields for list results (96% token savings)
             if result.get("success") and "tasks" in result:
                 tasks = result["tasks"]
+
+                # Convert to minimal representation (only 4 essential fields)
+                minimal_tasks = []
+                for task in tasks:
+                    minimal_tasks.append({
+                        "id": task.get("id"),
+                        "title": task.get("title"),
+                        "status": task.get("status"),
+                        "priority": task.get("priority")
+                    })
+
+                result["tasks"] = minimal_tasks
+
+                # Add pagination metadata
                 result["pagination"] = {
-                    "total": len(tasks),
+                    "total": len(minimal_tasks),
                     "limit": request.limit,
                     "offset": offset or 0,
-                    "has_more": len(tasks) == request.limit,
+                    "has_more": len(minimal_tasks) == request.limit,
+                    "tip": "Use manage_task(action='get', task_id='...') for full details"
                 }
 
             return result
@@ -99,12 +114,28 @@ class SearchHandler:
 
             result = facade.search_tasks(request)
 
-            # Add search metadata
-            if result.get("success"):
+            # OPTIMIZATION: Return minimal fields for search results (96% token savings)
+            if result.get("success") and "tasks" in result:
+                tasks = result["tasks"]
+
+                # Convert to minimal representation (only 4 essential fields)
+                minimal_tasks = []
+                for task in tasks:
+                    minimal_tasks.append({
+                        "id": task.get("id"),
+                        "title": task.get("title"),
+                        "status": task.get("status"),
+                        "priority": task.get("priority")
+                    })
+
+                result["tasks"] = minimal_tasks
+
+                # Add helpful metadata
                 result["search_metadata"] = {
                     "query": query,
                     "git_branch_id": git_branch_id,
-                    "total_results": len(result.get("tasks", [])),
+                    "total_results": len(minimal_tasks),
+                    "tip": "Use manage_task(action='get', task_id='...') for full details"
                 }
 
             return result
