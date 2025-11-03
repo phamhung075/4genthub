@@ -60,57 +60,57 @@ class UnifiedContextMCPController:
 
         @mcp.tool(description=get_manage_unified_context_description())
         def manage_context(
-            action: Annotated[str, Field(description=params["action"]["description"])],
+            action: Annotated[str, Field(description="[OPTIONAL] " + params["action"]["description"])],
             level: Annotated[
-                str, Field(description=params["level"]["description"])
+                str, Field(description="[REQUIRED for all actions except 'list'] " + params["level"]["description"])
             ] = None,
             context_id: Annotated[
-                str, Field(description=params["context_id"]["description"])
+                str, Field(description="[REQUIRED for all actions except 'list'] " + params["context_id"]["description"])
             ] = None,
             data: Annotated[
-                str, Field(description=params["data"]["description"])
+                str, Field(description="[OPTIONAL] " + params["data"]["description"])
             ] = None,
             user_id: Annotated[
-                str, Field(description=params["user_id"]["description"])
+                str, Field(description="[OPTIONAL] " + params["user_id"]["description"])
             ] = None,
             project_id: Annotated[
-                str, Field(description=params["project_id"]["description"])
+                str, Field(description="[OPTIONAL] " + params["project_id"]["description"])
             ] = None,
             git_branch_id: Annotated[
-                str, Field(description=params["git_branch_id"]["description"])
+                str, Field(description="[OPTIONAL] " + params["git_branch_id"]["description"])
             ] = None,
             force_refresh: Annotated[
-                str, Field(description=params["force_refresh"]["description"])
+                str, Field(description="[OPTIONAL] " + params["force_refresh"]["description"])
             ] = None,
             include_inherited: Annotated[
-                str, Field(description=params["include_inherited"]["description"])
+                str, Field(description="[OPTIONAL] " + params["include_inherited"]["description"])
             ] = None,
             propagate_changes: Annotated[
-                str, Field(description=params["propagate_changes"]["description"])
+                str, Field(description="[OPTIONAL] " + params["propagate_changes"]["description"])
             ] = None,
             delegate_to: Annotated[
-                str, Field(description=params["delegate_to"]["description"])
+                str, Field(description="[REQUIRED for 'delegate' action] " + params["delegate_to"]["description"])
             ] = None,
             delegate_data: Annotated[
-                str, Field(description=params["delegate_data"]["description"])
+                str, Field(description="[OPTIONAL] " + params["delegate_data"]["description"])
             ] = None,
             delegation_reason: Annotated[
-                str, Field(description=params["delegation_reason"]["description"])
+                str, Field(description="[OPTIONAL] " + params["delegation_reason"]["description"])
             ] = None,
             content: Annotated[
-                str, Field(description=params["content"]["description"])
+                str, Field(description="[REQUIRED for 'add_insight' and 'add_progress' actions] " + params["content"]["description"])
             ] = None,
             category: Annotated[
-                str, Field(description=params["category"]["description"])
+                str, Field(description="[OPTIONAL] " + params["category"]["description"])
             ] = None,
             importance: Annotated[
-                str, Field(description=params["importance"]["description"])
+                str, Field(description="[OPTIONAL] " + params["importance"]["description"])
             ] = None,
             agent: Annotated[
-                str, Field(description=params["agent"]["description"])
+                str, Field(description="[OPTIONAL] " + params["agent"]["description"])
             ] = None,
             filters: Annotated[
-                str, Field(description=params["filters"]["description"])
+                str, Field(description="[OPTIONAL] " + params["filters"]["description"])
             ] = None,
         ) -> dict[str, Any]:
             """Main unified context management function with two-stage validation pattern:

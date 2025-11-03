@@ -158,66 +158,66 @@ class SubtaskMCPController(ContextPropagationMixin):
 
         @mcp.tool(description=get_manage_subtask_description())
         def manage_subtask(
-            action: Annotated[str, Field(description=params["action"]["description"])],
+            action: Annotated[str, Field(description="[OPTIONAL] " + params["action"]["description"])],
             task_id: Annotated[
-                str, Field(description=params["task_id"]["description"])
+                str, Field(description="[REQUIRED for 'create', 'update', 'delete', 'get', 'list', 'complete' actions] " + params["task_id"]["description"])
             ] = None,
             subtask_id: Annotated[
-                str, Field(description=params["subtask_id"]["description"])
+                str, Field(description="[REQUIRED for 'update', 'delete', 'get', 'complete' actions] " + params["subtask_id"]["description"])
             ] = None,
             title: Annotated[
-                str, Field(description=params["title"]["description"])
+                str, Field(description="[REQUIRED for 'create' action] " + params["title"]["description"])
             ] = None,
             description: Annotated[
-                str, Field(description=params["description"]["description"])
+                str, Field(description="[OPTIONAL] " + params["description"]["description"])
             ] = None,
             status: Annotated[
-                str, Field(description=params["status"]["description"])
+                str, Field(description="[OPTIONAL] " + params["status"]["description"])
             ] = None,
             priority: Annotated[
-                str, Field(description=params["priority"]["description"])
+                str, Field(description="[OPTIONAL] " + params["priority"]["description"])
             ] = None,
             assignees: Annotated[
-                str, Field(description=params["assignees"]["description"])
+                str, Field(description="[OPTIONAL] " + params["assignees"]["description"])
             ] = None,
             progress_percentage: Annotated[
-                int, Field(description=params["progress_percentage"]["description"])
+                int, Field(description="[OPTIONAL] " + params["progress_percentage"]["description"])
             ] = None,
             progress_notes: Annotated[
-                str, Field(description=params["progress_notes"]["description"])
+                str, Field(description="[REQUIRED for 'update' and 'complete' actions] " + params["progress_notes"]["description"])
             ] = None,
             completion_summary: Annotated[
-                str, Field(description=params["completion_summary"]["description"])
+                str, Field(description="[REQUIRED for 'complete' action] " + params["completion_summary"]["description"])
             ] = None,
             testing_notes: Annotated[
-                str, Field(description=params["testing_notes"]["description"])
+                str, Field(description="[OPTIONAL] " + params["testing_notes"]["description"])
             ] = None,
             insights_found: Annotated[
-                str, Field(description=params["insights_found"]["description"])
+                str, Field(description="[OPTIONAL] " + params["insights_found"]["description"])
             ] = None,
             challenges_overcome: Annotated[
-                str, Field(description=params["challenges_overcome"]["description"])
+                str, Field(description="[OPTIONAL] " + params["challenges_overcome"]["description"])
             ] = None,
             skills_learned: Annotated[
-                str, Field(description=params["skills_learned"]["description"])
+                str, Field(description="[OPTIONAL] " + params["skills_learned"]["description"])
             ] = None,
             next_recommendations: Annotated[
-                str, Field(description=params["next_recommendations"]["description"])
+                str, Field(description="[OPTIONAL] " + params["next_recommendations"]["description"])
             ] = None,
             deliverables: Annotated[
-                str, Field(description=params["deliverables"]["description"])
+                str, Field(description="[OPTIONAL] " + params["deliverables"]["description"])
             ] = None,
             completion_quality: Annotated[
-                str, Field(description=params["completion_quality"]["description"])
+                str, Field(description="[OPTIONAL] " + params["completion_quality"]["description"])
             ] = None,
             impact_on_parent: Annotated[
-                str, Field(description=params["impact_on_parent"]["description"])
+                str, Field(description="[OPTIONAL] " + params["impact_on_parent"]["description"])
             ] = None,
             blockers: Annotated[
-                str, Field(description=params["blockers"]["description"])
+                str, Field(description="[OPTIONAL] " + params["blockers"]["description"])
             ] = None,
             user_id: Annotated[
-                str, Field(description=params["user_id"]["description"])
+                str, Field(description="[OPTIONAL] " + params["user_id"]["description"])
             ] = None,
         ) -> dict[str, Any]:
             """Main subtask management function with two-stage validation pattern:

@@ -60,11 +60,11 @@ PROJECT HEALTH MONITORING:
 
 MANAGE_PROJECT_PARAMETERS_DESCRIPTION = {
     "action": "Project management action to perform. Valid values: create, get, list, update, delete, project_health_check, cleanup_obsolete, validate_integrity, rebalance_agents",
-    "project_id": "[OPTIONAL] Project identifier (UUID). Required for most actions except create/list",
-    "name": "[OPTIONAL] Project name. Required for create, can be used instead of project_id for get action",
-    "description": "[OPTIONAL] Project description. Optional for create/update operations",
-    "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
-    "force": "[OPTIONAL] Force parameter to bypass safety checks for maintenance and delete operations",
+    "project_id": "Project identifier (UUID). Required for most actions except create/list",
+    "name": "Project name. Required for create, can be used instead of project_id for get action",
+    "description": "Project description. Optional for create/update operations",
+    "user_id": "User identifier for authentication and audit trails",
+    "force": "Force parameter to bypass safety checks for maintenance and delete operations",
 }
 
 MANAGE_PROJECT_PARAMS = {

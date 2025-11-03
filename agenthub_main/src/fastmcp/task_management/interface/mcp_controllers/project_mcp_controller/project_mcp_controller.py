@@ -140,21 +140,21 @@ class ProjectMCPController(ContextPropagationMixin):
 
         @mcp.tool(description=get_manage_project_description())
         async def manage_project(
-            action: Annotated[str, Field(description=params["action"]["description"])],
+            action: Annotated[str, Field(description="[OPTIONAL] " + params["action"]["description"])],
             project_id: Annotated[
-                str, Field(description=params["project_id"]["description"])
+                str, Field(description="[REQUIRED for most actions except 'create' and 'list'] " + params["project_id"]["description"])
             ] = None,
             name: Annotated[
-                str, Field(description=params["name"]["description"])
+                str, Field(description="[REQUIRED for 'create' action] " + params["name"]["description"])
             ] = None,
             description: Annotated[
-                str, Field(description=params["description"]["description"])
+                str, Field(description="[OPTIONAL] " + params["description"]["description"])
             ] = None,
             force: Annotated[
-                str, Field(description=params["force"]["description"])
+                str, Field(description="[OPTIONAL] " + params["force"]["description"])
             ] = None,
             user_id: Annotated[
-                str, Field(description=params["user_id"]["description"])
+                str, Field(description="[OPTIONAL] " + params["user_id"]["description"])
             ] = None,
         ) -> dict[str, Any]:
             """Main project management function with two-stage validation pattern:

@@ -75,11 +75,11 @@ ERROR HANDLING:
 MANAGE_AGENT_PARAMETERS_DESCRIPTION = {
     "action": "Agent management action to perform. Valid values: register, assign, get, list, update, unassign, unregister, rebalance",
     "project_id": "[REQUIRED] Project identifier for agent management. No default value - must be provided",
-    "agent_id": "[OPTIONAL] Agent identifier. Required for most actions except register/list/rebalance",
-    "name": "[OPTIONAL] Agent name. Required for register, optional for update",
-    "call_agent": "[OPTIONAL] Call agent string or configuration. Optional, for register/update actions",
-    "git_branch_id": "[OPTIONAL] Task tree identifier. Required for assign/unassign actions",
-    "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
+    "agent_id": "Agent identifier. Required for most actions except register/list/rebalance",
+    "name": "Agent name. Required for register, optional for update",
+    "call_agent": "Call agent string or configuration. Optional, for register/update actions",
+    "git_branch_id": "Task tree identifier. Required for assign/unassign actions",
+    "user_id": "User identifier for authentication and audit trails",
 }
 
 MANAGE_AGENT_PARAMS = {

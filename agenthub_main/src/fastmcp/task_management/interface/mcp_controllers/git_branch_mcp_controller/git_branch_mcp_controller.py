@@ -114,24 +114,24 @@ class GitBranchMCPController(ContextPropagationMixin):
 
         @mcp.tool(description=get_manage_git_branch_description())
         def manage_git_branch(
-            action: Annotated[str, Field(description=params["action"]["description"])],
+            action: Annotated[str, Field(description="[OPTIONAL] " + params["action"]["description"])],
             project_id: Annotated[
-                str, Field(description=params["project_id"]["description"])
+                str, Field(description="[REQUIRED for all actions] " + params["project_id"]["description"])
             ] = None,
             git_branch_id: Annotated[
-                str, Field(description=params["git_branch_id"]["description"])
+                str, Field(description="[REQUIRED for most actions except 'create' and 'list'] " + params["git_branch_id"]["description"])
             ] = None,
             git_branch_name: Annotated[
-                str, Field(description=params["git_branch_name"]["description"])
+                str, Field(description="[REQUIRED for 'create' action] " + params["git_branch_name"]["description"])
             ] = None,
             git_branch_description: Annotated[
-                str, Field(description=params["git_branch_description"]["description"])
+                str, Field(description="[OPTIONAL] " + params["git_branch_description"]["description"])
             ] = None,
             agent_id: Annotated[
-                str, Field(description=params["agent_id"]["description"])
+                str, Field(description="[REQUIRED for 'assign_agent' and 'unassign_agent' actions] " + params["agent_id"]["description"])
             ] = None,
             user_id: Annotated[
-                str, Field(description=params["user_id"]["description"])
+                str, Field(description="[OPTIONAL] " + params["user_id"]["description"])
             ] = None,
         ) -> dict[str, Any]:
             """Main git branch management function with two-stage validation pattern:

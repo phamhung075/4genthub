@@ -44,12 +44,12 @@ Agent Assignment: feature→coding-agent | security→security-auditor-agent | t
 
 MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION = {
     "action": "Git branch management action to perform. Valid values: create, get, list, update, delete, assign_agent, unassign_agent, get_statistics, archive, restore",
-    "project_id": "[OPTIONAL] Project identifier for the git branch operation",
-    "git_branch_id": "[OPTIONAL] Git branch identifier (UUID). Required for most actions except create/list",
-    "git_branch_name": "[OPTIONAL] Git branch name. Required for create, optional for update. Can be used instead of git_branch_id for agent assignment",
-    "git_branch_description": "[OPTIONAL] Description of the git branch. Optional for create/update operations",
-    "agent_id": "[OPTIONAL] Agent identifier for assignment operations. Required for assign_agent/unassign_agent actions",
-    "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
+    "project_id": "Project identifier for the git branch operation",
+    "git_branch_id": "Git branch identifier (UUID). Required for most actions except create/list",
+    "git_branch_name": "Git branch name. Required for create, optional for update. Can be used instead of git_branch_id for agent assignment",
+    "git_branch_description": "Description of the git branch. Optional for create/update operations",
+    "agent_id": "Agent identifier for assignment operations. Required for assign_agent/unassign_agent actions",
+    "user_id": "User identifier for authentication and audit trails",
 }
 
 MANAGE_GIT_BRANCH_PARAMS = {
