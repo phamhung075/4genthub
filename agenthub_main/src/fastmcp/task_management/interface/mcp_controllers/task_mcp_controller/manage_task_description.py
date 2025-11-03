@@ -12,74 +12,41 @@ TOOL_DESCRIPTION = (
 )
 
 MANAGE_TASK_DESCRIPTION = """
-📋 TASK MANAGEMENT SYSTEM - Complete task lifecycle operations with Vision System Integration
+TASK MANAGEMENT - Complete lifecycle: CRUD | search | dependencies | workflow | vision insights | progress tracking
 
-⭐ WHAT IT DOES: Handles all task operations including CRUD, search, dependencies, and workflow management. Automatically enriches tasks with vision insights, progress tracking, and intelligent context updates.
-📋 WHEN TO USE: For any task-related operation from creation to completion, including search and dependency management.
-🎯 CRITICAL FOR: Project organization, workflow management, team collaboration, and maintaining development context.
+USE FOR: Task operations creation→completion | AI recommendations | Project organization | Team collaboration
 
-🤖 AI USAGE GUIDELINES:
-• ALWAYS create a task before starting any significant work (more than a single file edit)
-• USE 'next' action to get AI-recommended tasks based on project state
-• UPDATE tasks regularly with progress (status changes, completion percentage)
-• COMPLETE tasks with detailed summaries to maintain project context
-• SEARCH for existing tasks before creating duplicates
-• CREATE subtasks using manage_subtask for complex tasks requiring multiple steps
+AI RULES: Create before work (>1 file edit) | Use 'next' for recommendations | Update progress regularly | Complete with summaries | Search before creating | Use manage_subtask for complex work
 
-| Action              | Required Parameters                | Optional Parameters                | Description                                      |
-|---------------------|-----------------------------------|------------------------------------|--------------------------------------------------|
-| create              | git_branch_id, title, assignees  | description, status, priority, details, estimated_effort, labels, due_date, dependencies | Create new task (MUST have at least 1 agent)    |
-| update              | task_id                           | title, description, status, priority, details, estimated_effort, assignees, labels, due_date, context_id | Update existing task           |
-| get                 | task_id                           | include_context                    | Retrieve task details                            |
-| delete              | task_id                           |                                    | Remove task                                      |
-| complete            | task_id                           | completion_summary, testing_notes  | Mark task as completed with context              |
-| list                | (none)                            | status, priority, assignees, labels, limit, git_branch_id | List tasks with filtering         |
-| search              | query                             | limit, git_branch_id               | Full-text search                                 |
-| next                | git_branch_id                     | include_context                    | Get next recommended task                        |
-| add_dependency      | task_id, dependency_id         |                                | Add dependency to task                           |
-| remove_dependency   | task_id, dependency_id         |                                | Remove dependency from task                      |
-| ai_plan             | requirements, title, git_branch_id | description, context, auto_create_tasks | Create AI-generated task plan from requirements |
-| ai_create           | title, git_branch_id           | enable_ai_breakdown, enable_smart_assignment, ai_requirements | Create AI-enhanced task with smart features     |
-| ai_enhance          | task_id                        | analyze_complexity, suggest_optimizations, identify_risks | Enhance existing task with AI insights          |
-| ai_analyze          | requirements                   | context                        | Analyze requirements without creating tasks      |
-| ai_suggest_agents   | requirements                   | available_agents               | Suggest optimal agents for requirements          |
+| Action              | Required                          | Optional                           | Description                        |
+|---------------------|-----------------------------------|------------------------------------|------------------------------------|
+| create              | git_branch_id, title, assignees   | description, status, priority, details, estimated_effort, labels, due_date, dependencies | Create task (min 1 agent)         |
+| update              | task_id                           | title, description, status, priority, details, estimated_effort, assignees, labels, due_date, context_id | Update task                        |
+| get                 | task_id                           | include_context                    | Retrieve task                      |
+| delete              | task_id                           |                                    | Remove task                        |
+| complete            | task_id                           | completion_summary, testing_notes  | Complete task                      |
+| list                | (none)                            | status, priority, assignees, labels, limit, git_branch_id | List with filters                  |
+| search              | query                             | limit, git_branch_id               | Full-text search                   |
+| next                | git_branch_id                     | include_context                    | Get recommended task               |
+| add_dependency      | task_id, dependency_id            |                                    | Add dependency                     |
+| remove_dependency   | task_id, dependency_id            |                                    | Remove dependency                  |
+| ai_plan             | requirements, title, git_branch_id| description, context, auto_create_tasks | AI task plan                       |
+| ai_create           | title, git_branch_id              | enable_ai_breakdown, enable_smart_assignment, ai_requirements | AI-enhanced task                   |
+| ai_enhance          | task_id                           | analyze_complexity, suggest_optimizations, identify_risks | AI insights                        |
+| ai_analyze          | requirements                      | context                            | Analyze requirements               |
+| ai_suggest_agents   | requirements                      | available_agents                   | Suggest agents                     |
 
-⚠️ PARAMETER VALIDATION - TWO-STAGE PATTERN:
-Only 'action' required in schema. Action-specific parameters validated in business logic. Provides flexibility, better errors, and MCP compatibility.
+VALIDATION: Two-stage (schema: 'action' only → business logic: action-specific) | CRUD needs task_id | Create needs git_branch_id+title+assignees (min 1) | Search needs query | Dependencies need task_id+dependency_id
 
-**Validation Flow**: Schema checks 'action' exists → Controller validates action-specific requirements → Returns specific error if parameters missing
+KEY PARAMS: assignees (@agent-name, comma-separated, REQUIRED for create) | priority (low|medium|high|urgent|critical, affects 'next') | status (todo|in_progress|blocked|review|testing|done|cancelled) | dependencies (task IDs, comma-separated) | include_context (true for vision)
 
-**Common Patterns**:
-- CRUD operations: Require task_id (update/get/delete/complete)
-- Creation: Requires git_branch_id, title, assignees (min 1 agent)
-- Search: Requires query
-- Dependencies: Require task_id + dependency_id
+VISION (Auto): Task enrichment | Priority estimation | Workflow hints | Progress tracking | Blocker detection | Impact analysis | Context updates
 
-**Example Usage Pattern**:
-```
-action: "create", git_branch_id: "uuid", title: "Implement JWT auth",
-assignees: "coding-agent,@security-auditor-agent", priority: "high"
-```
+BEST PRACTICES: Create before work | Specific titles | Update status | Detailed summaries | Search first | Define deps upfront | Use labels
 
-🔄 DEPENDENCY MANAGEMENT:
-**Patterns**: Sequential (A→B→C) | Parallel (no deps) | Blocking (auto-status) | Cross-feature linking
-**Decision Rule**: Add dependency IF task requires another's output OR is part of sequence OR is testing/verification
+DEPENDENCIES: Sequential (A→B→C) | Parallel | Blocking | Cross-feature | Add IF task needs output OR sequence part
 
-💡 KEY PARAMETERS:
-• **assignees**: REQUIRED for create - "@agent-name" format, comma-separated for multiple
-• **priority**: 'low'|'medium'|'high'|'urgent'|'critical' - affects 'next' ordering
-• **status**: 'todo'|'in_progress'|'blocked'|'review'|'testing'|'done'|'cancelled'
-• **dependencies**: Task IDs (string or comma-separated) that must complete first
-• **include_context**: Set true for vision insights and AI recommendations
-
-🔄 VISION SYSTEM (Automatic):
-Task enrichment | Priority estimation | Workflow hints | Progress tracking | Blocker detection | Impact analysis | Team context updates
-
-💡 BEST PRACTICES:
-• Create tasks BEFORE work (visibility) | Use specific titles | Update status when starting | Complete with detailed summaries | Search before creating | Define dependencies upfront | Use labels for filtering
-
-🛑 ERROR HANDLING:
-Missing required fields → specific error with field names | Unknown actions → valid action list | Internal errors → logged and generic message returned | Vision failures → don't block operations
+ERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic | Vision→don't block
 """
 
 # Parameter descriptions for the manage_task tool

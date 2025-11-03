@@ -6,70 +6,15 @@ Separated from the controller logic for better maintainability and organization.
 """
 
 MANAGE_AGENT_DESCRIPTION = """
-AGENT MANAGEMENT SYSTEM - Agent Registration and Assignment (33 Specialized Agents)
+AGENT MANAGEMENT - Registration & assignment: 33 specialized agents (coding, testing, architecture, DevOps, security, ML, etc.)
 
-WHAT IT DOES: Manages agent registration, assignment, and lifecycle within projects. Coordinates 33 specialized agents from the agent-library including coding, debugging, testing, architecture, DevOps, documentation, security, ML, and orchestration agents.
-WHEN TO USE: Agent registration, assignment, updates, and project agent management.
-CRITICAL FOR: Multi-agent orchestration and dynamic agent assignment.
+ACTIONS: register | assign | get | list | update | unassign | unregister | rebalance
 
-AVAILABLE AGENTS (33 Specialized Agents):
+KEY PARAMS: project_id (REQUIRED for all) | name (REQUIRED for register) | agent_id (REQUIRED for most except register/list/rebalance) | git_branch_id (REQUIRED for assign/unassign)
 
-| Category | Agent | Purpose |
-|----------|-------|---------|
-| **Development & Coding (4)** | coding-agent | Implementation and feature development |
-| | debugger-agent | Bug fixing and troubleshooting |
-| | code-reviewer-agent | Code quality and review |
-| | prototyping-agent | Rapid prototyping and POCs |
-| **Testing & QA (3)** | test-orchestrator-agent | Comprehensive test management |
-| | uat-coordinator-agent | User acceptance testing |
-| | performance-load-tester-agent | Performance and load testing |
-| **Architecture & Design (4)** | system-architect-agent | System design and architecture |
-| | design-system-agent | Design system and UI patterns |
-| | shadcn-ui-expert-agent | UI/UX design and frontend development |
-| | core-concept-agent | Core concepts and fundamentals |
-| **DevOps & Infrastructure (1)** | devops-agent | CI/CD and infrastructure |
-| **Documentation (1)** | documentation-agent | Technical documentation |
-| **Project & Planning (4)** | project-initiator-agent | Project setup and kickoff |
-| | task-planning-agent | Task breakdown and planning |
-| | master-orchestrator-agent | Complex workflow orchestration |
-| | elicitation-agent | Requirements gathering |
-| **Security & Compliance (3)** | security-auditor-agent | Security audits and reviews |
-| | compliance-scope-agent | Regulatory compliance |
-| | ethical-review-agent | Ethical considerations |
-| **Analytics & Optimization (3)** | analytics-setup-agent | Analytics and tracking setup |
-| | efficiency-optimization-agent | Process optimization |
-| | health-monitor-agent | System health monitoring |
-| **Marketing & Branding (3)** | marketing-strategy-orchestrator-agent | Marketing strategy |
-| | community-strategy-agent | Community building |
-| | branding-agent | Brand identity |
-| **Research & Analysis (4)** | deep-research-agent | In-depth research |
-| | llm-ai-agents-research | AI/ML research and innovations |
-| | root-cause-analysis-agent | Problem analysis |
-| | technology-advisor-agent | Technology recommendations |
-| **AI & Machine Learning (1)** | ml-specialist-agent | Machine learning implementation |
-| **Creative & Ideation (1)** | creative-ideation-agent | Creative idea generation |
+REGISTRATION: agent_id auto-generated if not provided
 
-| Action | Required Parameters | Optional Parameters | Description |
-|--------|-------------------|-------------------|-------------|
-| register | project_id, name | agent_id (auto-generated if blank), call_agent | Register a new agent to a project |
-| assign | project_id, agent_id, git_branch_id | | Assign an agent to a task tree (branch) |
-| get | project_id, agent_id | | Retrieve agent details |
-| list | project_id | | List all agents in a project |
-| update | project_id, agent_id | name, call_agent | Update agent metadata |
-| unassign | project_id, agent_id, git_branch_id | | Remove agent from a task tree (branch) |
-| unregister | project_id, agent_id | | Remove agent from a project |
-| rebalance | project_id | | Rebalance agent assignments in a project |
-
-USAGE GUIDELINES:
-• Provide all required identifiers for each action (see table)
-• Optional parameters can be omitted unless updating values
-• Returns detailed error messages for missing/invalid parameters, unknown actions, and internal errors
-• All business logic delegated to AgentApplicationFacade
-
-ERROR HANDLING:
-• Missing required fields: Clear error specifying needed fields
-• Unknown actions: Error listing valid actions
-• Internal errors: Logged and returned with generic error message
+ERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic
 """
 
 MANAGE_AGENT_PARAMETERS_DESCRIPTION = {

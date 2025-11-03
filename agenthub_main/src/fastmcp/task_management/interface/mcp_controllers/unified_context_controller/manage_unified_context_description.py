@@ -7,48 +7,17 @@ GLOBAL → PROJECT → BRANCH → TASK
 """
 
 MANAGE_UNIFIED_CONTEXT_DESCRIPTION = """
-🔗 UNIFIED CONTEXT MANAGEMENT - 4-Tier Hierarchical Operations
+CONTEXT MANAGEMENT - 4-tier hierarchy (Global→Project→Branch→Task): CRUD | inheritance | caching | delegation | insights
 
-**Purpose**: Manage contexts across 4 tiers (Global → Project → Branch → Task) with unified API, auto-inheritance, smart caching, per-user isolation.
+ACTIONS: create | get | update | delete | resolve (full chain) | delegate (move between levels) | add_insight | add_progress | list
 
-**Use For**: Context operations, cross-session persistence, hierarchical data, agent coordination, multi-tier sharing.
+LEVELS: global (user-scoped) | project | branch | task | Each inherits from parent
 
-**Hierarchy**: GLOBAL (per-user) → PROJECT → BRANCH → TASK (each inherits from parent)
+KEY PARAMS: level (tier) | context_id (ID for level) | force_refresh (bypass cache) | include_inherited (full chain) | propagate_changes (cascade) | delegate_to ('delegate' action) | content ('add_insight'/'add_progress' actions)
 
-| Action | Required | Optional | Description |
-|--------|----------|----------|-------------|
-| create | action, level, context_id | data, user_id, project_id, git_branch_id | Create context at level |
-| get | action, level, context_id | include_inherited, user_id | Retrieve context with inheritance |
-| update | action, level, context_id | data, propagate_changes, user_id | Update with propagation |
-| delete | action, level, context_id | user_id | Remove context |
-| resolve | action, level, context_id | force_refresh, include_inherited, user_id | Resolve full inheritance chain |
-| delegate | action, level, context_id, delegate_to | delegate_data, delegation_reason, user_id | Move data between levels |
-| add_insight | action, level, context_id, content | category, importance, agent, user_id | Add categorized insight |
-| add_progress | action, level, context_id, content | agent, user_id | Add progress update |
-| list | action, level | filters, user_id | List contexts with filtering |
+FEATURES: Unified API | Auto-inheritance | Smart caching | Change propagation | Delegation queue | Backward compatible
 
-**Level Values**: 'global' (user-scoped), 'project', 'branch', 'task'
-
-**context_id Mapping**: user_id (global), project_id (project), git_branch_id (branch), task_id (task)
-
-**Key Features**: Unified API | 4-tier inheritance | Auto-inheritance | Smart caching | Change propagation | Delegation queue | Backward compatible
-
-**Critical Parameters**:
-- force_refresh: Bypass cache, force fresh retrieval
-- include_inherited: Access full parent chain
-- propagate_changes: Cascade updates to children
-- data/filters: JSON string or dict (auto-parsed)
-
-**Usage Pattern**:
-```python
-manage_context(action="{action}", level="{global|project|branch|task}", context_id="{id}", data={...})
-```
-
-**Example**: `manage_context(action="create", level="project", context_id="proj123", data={"key": "value"})`
-
-**Backward Compatibility**: Legacy params auto-convert (task_id→context_id, data_*→data object, etc.)
-
-**Error Handling**: Validates level/context_id compatibility | Clear error messages | Auto-creation options | Detailed validation errors
+ERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic
 """
 
 MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION = {
