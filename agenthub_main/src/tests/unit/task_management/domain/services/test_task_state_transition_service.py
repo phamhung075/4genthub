@@ -270,9 +270,11 @@ class TestTaskStateTransitionService:
         
         # Act
         allowed = self.service.get_allowed_transitions(done_task)
-        
+
         # Assert
-        assert len(allowed) == 0  # Done tasks have no allowed transitions
+        assert len(allowed) == 1  # Done tasks can transition to in_progress for rework
+        assert "in_progress" in allowed
+        assert allowed["in_progress"]["allowed"] is True
 
     def test_suggest_next_status_logical_progression(self):
         """Test suggestion of next logical status"""
@@ -703,9 +705,9 @@ class TestTaskStateTransitionServiceIntegration:
         """Test comprehensive state machine rule enforcement"""
         # Test all invalid state transitions are properly blocked
         invalid_transition_sets = [
-            # From done - should block all transitions
-            ("done", ["todo", "in_progress", "review", "testing", "blocked", "cancelled"]),
-            # From cancelled - should block all transitions  
+            # From done - should block all transitions except in_progress (rework allowed)
+            ("done", ["todo", "review", "testing", "blocked", "cancelled"]),
+            # From cancelled - should block all transitions
             ("cancelled", ["todo", "in_progress", "review", "testing", "blocked", "done"]),
             # Logical violations
             ("todo", ["review", "testing"]),  # Can't skip ahead

@@ -273,12 +273,14 @@ class TestTaskStatusTransitions:
         assert testing_status.can_transition_to("archived") is False
     
     def test_done_transitions(self):
-        """Test that DONE status has no valid transitions."""
+        """Test that DONE status can transition to IN_PROGRESS for rework."""
         done_status = TaskStatus.done()
-        
-        # No valid transitions from done
+
+        # Valid transition: done -> in_progress (rework allowed)
+        assert done_status.can_transition_to("in_progress") is True
+
+        # Invalid transitions from done
         assert done_status.can_transition_to("todo") is False
-        assert done_status.can_transition_to("in_progress") is False
         assert done_status.can_transition_to("blocked") is False
         assert done_status.can_transition_to("review") is False
         assert done_status.can_transition_to("testing") is False

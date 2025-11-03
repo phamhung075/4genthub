@@ -1,6 +1,51 @@
 {
   "absolute_docs": {
-    "obsolete_docs": [],
+    "obsolete_docs": [
+      {
+        "moved_date": "2025-10-28T10:54:36.728913",
+        "path": "_obsolete_docs/reports-status/structural-fix-complete-report.md"
+      },
+      {
+        "moved_date": "2025-10-30T23:21:32.426609",
+        "path": "_obsolete_docs/reports-status/tdd-analysis-task-breakdown-2025-10-30.md"
+      },
+      {
+        "moved_date": "2025-10-28T10:54:36.728913",
+        "path": "_obsolete_docs/reports-status/post-contract-alignment-comprehensive-analysis.md"
+      },
+      {
+        "moved_date": "2025-10-30T23:21:32.426609",
+        "path": "_obsolete_docs/reports-status/websocket-reliability-code-review-2025-10-30.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.910246",
+        "path": "_obsolete_docs/reports-status/test-fix-session-2025-10-24.md"
+      },
+      {
+        "moved_date": "2025-10-28T19:35:49.401897",
+        "path": "_obsolete_docs/reports-status/e2e-test-failure-analysis-2025-10-28.md"
+      },
+      {
+        "moved_date": "2025-10-30T23:21:32.426609",
+        "path": "_obsolete_docs/reports-status/mcp-comprehensive-testing-report-2025-10-30.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.910246",
+        "path": "_obsolete_docs/reports-status/mcp-tool-response-analysis.md"
+      },
+      {
+        "moved_date": "2025-10-27T21:30:37.638424",
+        "path": "_obsolete_docs/testing-qa/api-contract-test-final-report.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.910246",
+        "path": "_obsolete_docs/testing-qa/test-coverage-report-2025-10-24.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.910246",
+        "path": "_obsolete_docs/testing-qa/agenthub-mcp-tools-test-report-2025-10-22.md"
+      }
+    ],
     "tracked_files": {
       "scripts/docker-menu.sh": {
         "doc_path": "_absolute_docs/scripts/docker-menu.sh.md",
@@ -22,6 +67,95 @@
         }
       ],
       "path": "_absolute_docs/scripts"
+    },
+    "_obsolete_docs/reports-status": {
+      "count": 8,
+      "files": [
+        {
+          "hash": "92e5ced4af4d1fda095954c65ffec787",
+          "modified": "2025-10-28T10:54:36.728913",
+          "name": "structural-fix-complete-report.md",
+          "path": "_obsolete_docs/reports-status/structural-fix-complete-report.md",
+          "size": 10457
+        },
+        {
+          "hash": "a1b87511950449f36b308c0fcd2a2040",
+          "modified": "2025-10-30T23:21:32.426609",
+          "name": "tdd-analysis-task-breakdown-2025-10-30.md",
+          "path": "_obsolete_docs/reports-status/tdd-analysis-task-breakdown-2025-10-30.md",
+          "size": 9131
+        },
+        {
+          "hash": "9aaf70c2a5546f1ba4224984eb827ace",
+          "modified": "2025-10-28T10:54:36.728913",
+          "name": "post-contract-alignment-comprehensive-analysis.md",
+          "path": "_obsolete_docs/reports-status/post-contract-alignment-comprehensive-analysis.md",
+          "size": 21387
+        },
+        {
+          "hash": "4abc9617d93688727ba70344315c4b99",
+          "modified": "2025-10-30T23:21:32.426609",
+          "name": "websocket-reliability-code-review-2025-10-30.md",
+          "path": "_obsolete_docs/reports-status/websocket-reliability-code-review-2025-10-30.md",
+          "size": 31950
+        },
+        {
+          "hash": "2a61245ec9696bd2cdeeb5c488568a76",
+          "modified": "2025-10-27T16:08:52.910246",
+          "name": "test-fix-session-2025-10-24.md",
+          "path": "_obsolete_docs/reports-status/test-fix-session-2025-10-24.md",
+          "size": 4039
+        },
+        {
+          "hash": "49821bbbe42bec64eeb31ac54589a518",
+          "modified": "2025-10-28T19:35:49.401897",
+          "name": "e2e-test-failure-analysis-2025-10-28.md",
+          "path": "_obsolete_docs/reports-status/e2e-test-failure-analysis-2025-10-28.md",
+          "size": 9612
+        },
+        {
+          "hash": "ecd74a9828ecab0d7e4faf1e0f46eba4",
+          "modified": "2025-10-30T23:21:32.426609",
+          "name": "mcp-comprehensive-testing-report-2025-10-30.md",
+          "path": "_obsolete_docs/reports-status/mcp-comprehensive-testing-report-2025-10-30.md",
+          "size": 11016
+        },
+        {
+          "hash": "48556ccf55bd12d65c66a8c2ba485cfc",
+          "modified": "2025-10-27T16:08:52.910246",
+          "name": "mcp-tool-response-analysis.md",
+          "path": "_obsolete_docs/reports-status/mcp-tool-response-analysis.md",
+          "size": 18214
+        }
+      ],
+      "path": "_obsolete_docs/reports-status"
+    },
+    "_obsolete_docs/testing-qa": {
+      "count": 3,
+      "files": [
+        {
+          "hash": "6a2639a9cbfd26dd1404f2334dd910fe",
+          "modified": "2025-10-27T21:30:37.638424",
+          "name": "api-contract-test-final-report.md",
+          "path": "_obsolete_docs/testing-qa/api-contract-test-final-report.md",
+          "size": 14963
+        },
+        {
+          "hash": "a071817db866ccda9621f80fce9a3b7f",
+          "modified": "2025-10-27T16:08:52.910246",
+          "name": "test-coverage-report-2025-10-24.md",
+          "path": "_obsolete_docs/testing-qa/test-coverage-report-2025-10-24.md",
+          "size": 14454
+        },
+        {
+          "hash": "47ac0db31bc17e94f91538884870681f",
+          "modified": "2025-10-27T16:08:52.910246",
+          "name": "agenthub-mcp-tools-test-report-2025-10-22.md",
+          "path": "_obsolete_docs/testing-qa/agenthub-mcp-tools-test-report-2025-10-22.md",
+          "size": 12620
+        }
+      ],
+      "path": "_obsolete_docs/testing-qa"
     },
     "_workplace/workers": {
       "count": 1,
@@ -381,8 +515,50 @@
       "path": "authentication"
     },
     "claude-code": {
-      "count": 1,
+      "count": 7,
       "files": [
+        {
+          "hash": "96b91902d34189edf7d0d37be17916bc",
+          "modified": "2025-11-03T12:34:00.501769",
+          "name": "claude-md-optimization-results.md",
+          "path": "claude-code/claude-md-optimization-results.md",
+          "size": 5441
+        },
+        {
+          "hash": "a1660bcfab81098fb2b4acd0b5ca868b",
+          "modified": "2025-11-03T11:22:30.103476",
+          "name": "token-optimization-comparison.md",
+          "path": "claude-code/token-optimization-comparison.md",
+          "size": 15352
+        },
+        {
+          "hash": "c8c4596e36a946fdded861ceef49bfd8",
+          "modified": "2025-11-03T11:25:59.641310",
+          "name": "phase2-hook-optimization-strategy.md",
+          "path": "claude-code/phase2-hook-optimization-strategy.md",
+          "size": 13978
+        },
+        {
+          "hash": "cfa88c9522d2d50f83478d32d63df340",
+          "modified": "2025-11-03T11:20:45.347819",
+          "name": "CLAUDE-optimized-demo.md",
+          "path": "claude-code/CLAUDE-optimized-demo.md",
+          "size": 16289
+        },
+        {
+          "hash": "cadd790c428e4a4b9a898405c99a83d7",
+          "modified": "2025-11-03T12:06:03.737774",
+          "name": "phase3-hook-migration-complete.md",
+          "path": "claude-code/phase3-hook-migration-complete.md",
+          "size": 9477
+        },
+        {
+          "hash": "15728cedb32c5fbee41227a585614396",
+          "modified": "2025-11-03T11:23:44.047191",
+          "name": "CLAUDE-stable-version-backup.md",
+          "path": "claude-code/CLAUDE-stable-version-backup.md",
+          "size": 38828
+        },
         {
           "hash": "1de5ecb70420c68d652269b23dd3e6ec",
           "modified": "2025-11-01T18:48:46.609486",
@@ -554,7 +730,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 30,
+      "count": 34,
       "files": [
         {
           "hash": "dc24a1c59418320fc85e498f286228d4",
@@ -571,11 +747,11 @@
           "size": 18470
         },
         {
-          "hash": "a8189300d24860097ee93b50520b08d8",
-          "modified": "2025-11-01T11:48:37.299631",
+          "hash": "bf071d91a3eb0c9a3a2d5f41d1132d14",
+          "modified": "2025-11-03T13:13:19.976962",
           "name": "Agent-Sharing-and-Import-System.md",
           "path": "core-architecture/Agent-Sharing-and-Import-System.md",
-          "size": 39800
+          "size": 14492
         },
         {
           "hash": "82f1cb835bab6c37ea12e7042e53bd2e",
@@ -604,6 +780,13 @@
           "name": "repository-pagination-migration-guide.md",
           "path": "core-architecture/repository-pagination-migration-guide.md",
           "size": 13079
+        },
+        {
+          "hash": "8344effe1753a8786c8a2ea4f98070ec",
+          "modified": "2025-11-03T12:59:28.559525",
+          "name": "agent-system-architecture-optimization-results.md",
+          "path": "core-architecture/agent-system-architecture-optimization-results.md",
+          "size": 11244
         },
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
@@ -641,11 +824,11 @@
           "size": 19045
         },
         {
-          "hash": "523ce5a651729929a49a67097cdac4f1",
-          "modified": "2025-11-01T11:45:58.116474",
+          "hash": "24a09f4ee180ddab59a7faed2cd63253",
+          "modified": "2025-11-03T13:04:53.047715",
           "name": "User-Specific-Agent-System-Architecture.md",
           "path": "core-architecture/User-Specific-Agent-System-Architecture.md",
-          "size": 51671
+          "size": 21788
         },
         {
           "hash": "83e27d310ea4d30243f3749c7346bc92",
@@ -669,6 +852,20 @@
           "size": 4364
         },
         {
+          "hash": "3779c50bbb803a22d8c56e85415f1448",
+          "modified": "2025-11-03T13:42:58.838974",
+          "name": "mcp-injection-architecture-optimization-results.md",
+          "path": "core-architecture/mcp-injection-architecture-optimization-results.md",
+          "size": 27743
+        },
+        {
+          "hash": "0c80c95070a53917c97ccdca524651fd",
+          "modified": "2025-11-03T13:15:23.835859",
+          "name": "Agent-Sharing-and-Import-System-optimization-results.md",
+          "path": "core-architecture/Agent-Sharing-and-Import-System-optimization-results.md",
+          "size": 19222
+        },
+        {
           "hash": "0e9db02a476abe42edf8d6b11b4b1b6c",
           "modified": "2025-10-27T16:08:52.902245",
           "name": "architecture.md",
@@ -690,18 +887,25 @@
           "size": 18954
         },
         {
-          "hash": "e57dfab4afd5f3c7bbab68b9a09682df",
-          "modified": "2025-10-27T16:08:52.902245",
+          "hash": "35d76caf1cefc7d9ebb220ec30a9c11f",
+          "modified": "2025-11-03T12:57:32.363092",
           "name": "agent-system-architecture.md",
           "path": "core-architecture/agent-system-architecture.md",
-          "size": 58877
+          "size": 23478
         },
         {
-          "hash": "28e09c0b0d11ef3cf07372a214b9fede",
-          "modified": "2025-10-27T16:08:52.906245",
+          "hash": "f182bc04e45bc117ad1669ce65b7ca4e",
+          "modified": "2025-11-03T13:07:09.272039",
+          "name": "User-Specific-Agent-System-Architecture-optimization-results.md",
+          "path": "core-architecture/User-Specific-Agent-System-Architecture-optimization-results.md",
+          "size": 20585
+        },
+        {
+          "hash": "70d35ad8231057082ed4a80c982f7be6",
+          "modified": "2025-11-03T13:40:12.918085",
           "name": "mcp-injection-architecture.md",
           "path": "core-architecture/mcp-injection-architecture.md",
-          "size": 43410
+          "size": 22723
         },
         {
           "hash": "9e7dacddaf71fdced6e9c098b94a7003",
@@ -1219,76 +1423,20 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 9,
+      "count": 1,
       "files": [
-        {
-          "hash": "92e5ced4af4d1fda095954c65ffec787",
-          "modified": "2025-10-28T10:54:36.728913",
-          "name": "structural-fix-complete-report.md",
-          "path": "reports-status/structural-fix-complete-report.md",
-          "size": 10457
-        },
-        {
-          "hash": "a1b87511950449f36b308c0fcd2a2040",
-          "modified": "2025-10-30T23:21:32.426609",
-          "name": "tdd-analysis-task-breakdown-2025-10-30.md",
-          "path": "reports-status/tdd-analysis-task-breakdown-2025-10-30.md",
-          "size": 9131
-        },
-        {
-          "hash": "9aaf70c2a5546f1ba4224984eb827ace",
-          "modified": "2025-10-28T10:54:36.728913",
-          "name": "post-contract-alignment-comprehensive-analysis.md",
-          "path": "reports-status/post-contract-alignment-comprehensive-analysis.md",
-          "size": 21387
-        },
-        {
-          "hash": "4abc9617d93688727ba70344315c4b99",
-          "modified": "2025-10-30T23:21:32.426609",
-          "name": "websocket-reliability-code-review-2025-10-30.md",
-          "path": "reports-status/websocket-reliability-code-review-2025-10-30.md",
-          "size": 31950
-        },
-        {
-          "hash": "2a61245ec9696bd2cdeeb5c488568a76",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "test-fix-session-2025-10-24.md",
-          "path": "reports-status/test-fix-session-2025-10-24.md",
-          "size": 4039
-        },
-        {
-          "hash": "49821bbbe42bec64eeb31ac54589a518",
-          "modified": "2025-10-28T19:35:49.401897",
-          "name": "e2e-test-failure-analysis-2025-10-28.md",
-          "path": "reports-status/e2e-test-failure-analysis-2025-10-28.md",
-          "size": 9612
-        },
-        {
-          "hash": "ecd74a9828ecab0d7e4faf1e0f46eba4",
-          "modified": "2025-10-30T23:21:32.426609",
-          "name": "mcp-comprehensive-testing-report-2025-10-30.md",
-          "path": "reports-status/mcp-comprehensive-testing-report-2025-10-30.md",
-          "size": 11016
-        },
         {
           "hash": "65ca839d33c0f16fa1fbe71dee11fad5",
           "modified": "2025-10-31T14:40:19.196414",
           "name": "websocket-animation-architecture-analysis.md",
           "path": "reports-status/websocket-animation-architecture-analysis.md",
           "size": 25105
-        },
-        {
-          "hash": "48556ccf55bd12d65c66a8c2ba485cfc",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "mcp-tool-response-analysis.md",
-          "path": "reports-status/mcp-tool-response-analysis.md",
-          "size": 18214
         }
       ],
       "path": "reports-status"
     },
     "root": {
-      "count": 9,
+      "count": 13,
       "files": [
         {
           "hash": "42b2d04f206c4fa810f4410070d043d3",
@@ -1305,6 +1453,20 @@
           "size": 9456
         },
         {
+          "hash": "8fcf1affe0e9d50ed5dee1071aca4fed",
+          "modified": "2025-11-03T14:58:15.106066",
+          "name": "cleanup-analysis-minimal-serializer-implementation-2025-11-03.md",
+          "path": "cleanup-analysis-minimal-serializer-implementation-2025-11-03.md",
+          "size": 11892
+        },
+        {
+          "hash": "f7c67c8a91e95397791f7b7a87ce1be9",
+          "modified": "2025-11-03T12:42:22.419693",
+          "name": "cleanup-analysis-2025-11-03.md",
+          "path": "cleanup-analysis-2025-11-03.md",
+          "size": 6972
+        },
+        {
           "hash": "2f1ea8f81370322905c6a2abe2eb9313",
           "modified": "2025-10-27T16:08:52.914246",
           "name": "uv-single-file-scripts.md",
@@ -1317,6 +1479,20 @@
           "name": "codex_tools_list.md",
           "path": "codex_tools_list.md",
           "size": 12726
+        },
+        {
+          "hash": "63afde81c80a9d62c11deb6bb0ea72ab",
+          "modified": "2025-11-03T15:00:35.396387",
+          "name": "token-optimization-complete-summary-2025-11-03.md",
+          "path": "token-optimization-complete-summary-2025-11-03.md",
+          "size": 22953
+        },
+        {
+          "hash": "2d46f3b915e2575a56b0d06685ecea6e",
+          "modified": "2025-11-03T14:49:10.478051",
+          "name": "cleanup-analysis-hint-enrichment-services-2025-11-03.md",
+          "path": "cleanup-analysis-hint-enrichment-services-2025-11-03.md",
+          "size": 6181
         },
         {
           "hash": "ea2e21e685fd8d59ae148b4a182cb9f4",
@@ -1405,7 +1581,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 29,
+      "count": 26,
       "files": [
         {
           "hash": "1191f0dddee0a1005a3e9c7d1cd50aa9",
@@ -1464,13 +1640,6 @@
           "size": 21279
         },
         {
-          "hash": "6a2639a9cbfd26dd1404f2334dd910fe",
-          "modified": "2025-10-27T21:30:37.638424",
-          "name": "api-contract-test-final-report.md",
-          "path": "testing-qa/api-contract-test-final-report.md",
-          "size": 14963
-        },
-        {
           "hash": "62d60b7073e3e4911d75fda513fe2814",
           "modified": "2025-10-27T16:08:52.910246",
           "name": "wave1-coverage-audit-2025-10-26.md",
@@ -1511,13 +1680,6 @@
           "name": "mcp-tools-comprehensive-test-results.md",
           "path": "testing-qa/mcp-tools-comprehensive-test-results.md",
           "size": 17439
-        },
-        {
-          "hash": "a071817db866ccda9621f80fce9a3b7f",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "test-coverage-report-2025-10-24.md",
-          "path": "testing-qa/test-coverage-report-2025-10-24.md",
-          "size": 14454
         },
         {
           "hash": "f3f2eee0d3e63d3f2eaf0dc1ea855800",
@@ -1574,13 +1736,6 @@
           "name": "test-pollution-fix-2025-10-24.md",
           "path": "testing-qa/test-pollution-fix-2025-10-24.md",
           "size": 5608
-        },
-        {
-          "hash": "47ac0db31bc17e94f91538884870681f",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "agenthub-mcp-tools-test-report-2025-10-22.md",
-          "path": "testing-qa/agenthub-mcp-tools-test-report-2025-10-22.md",
-          "size": 12620
         },
         {
           "hash": "4f2df87b2459ab15c010258ea5e9c79d",
@@ -1731,12 +1886,33 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-02T15:55:16.744208",
+  "generated_at": "2025-11-03T15:00:36.457519",
   "structure": {
     "_absolute_docs": {
       "scripts": {
         "files": [
           "docker-menu.sh.md"
+        ]
+      }
+    },
+    "_obsolete_docs": {
+      "reports-status": {
+        "files": [
+          "e2e-test-failure-analysis-2025-10-28.md",
+          "mcp-comprehensive-testing-report-2025-10-30.md",
+          "mcp-tool-response-analysis.md",
+          "post-contract-alignment-comprehensive-analysis.md",
+          "structural-fix-complete-report.md",
+          "tdd-analysis-task-breakdown-2025-10-30.md",
+          "test-fix-session-2025-10-24.md",
+          "websocket-reliability-code-review-2025-10-30.md"
+        ]
+      },
+      "testing-qa": {
+        "files": [
+          "agenthub-mcp-tools-test-report-2025-10-22.md",
+          "api-contract-test-final-report.md",
+          "test-coverage-report-2025-10-24.md"
         ]
       }
     },
@@ -1821,7 +1997,13 @@
     },
     "claude-code": {
       "files": [
-        "cclaude-cli-research.md"
+        "CLAUDE-optimized-demo.md",
+        "CLAUDE-stable-version-backup.md",
+        "cclaude-cli-research.md",
+        "claude-md-optimization-results.md",
+        "phase2-hook-optimization-strategy.md",
+        "phase3-hook-migration-complete.md",
+        "token-optimization-comparison.md"
       ]
     },
     "context-system": {
@@ -1852,12 +2034,15 @@
     },
     "core-architecture": {
       "files": [
+        "Agent-Sharing-and-Import-System-optimization-results.md",
         "Agent-Sharing-and-Import-System.md",
         "Architecture_Technique.md",
         "Clean-Migration-Strategy.md",
         "README.md",
         "Simplified-Agent-System-MCP-and-REST-APIs.md",
+        "User-Specific-Agent-System-Architecture-optimization-results.md",
         "User-Specific-Agent-System-Architecture.md",
+        "agent-system-architecture-optimization-results.md",
         "agent-system-architecture.md",
         "architecture-thinking.md",
         "architecture.md",
@@ -1872,6 +2057,7 @@
         "domain-events-catalog.md",
         "implementation-methodology-pattern.md",
         "index.md",
+        "mcp-injection-architecture-optimization-results.md",
         "mcp-injection-architecture.md",
         "phase2-domain-verification-2025-10-26.md",
         "prompt-analyze.md",
@@ -1927,8 +2113,12 @@
       "anthropic_output_styles.md",
       "anthropic_quick_start.md",
       "cc_hooks_docs.md",
+      "cleanup-analysis-2025-11-03.md",
+      "cleanup-analysis-hint-enrichment-services-2025-11-03.md",
+      "cleanup-analysis-minimal-serializer-implementation-2025-11-03.md",
       "codex_tools_list.md",
       "openai_quick_start.md",
+      "token-optimization-complete-summary-2025-11-03.md",
       "user_prompt_submit_hook.md",
       "uv-single-file-scripts.md"
     ],
@@ -1980,15 +2170,7 @@
     },
     "reports-status": {
       "files": [
-        "e2e-test-failure-analysis-2025-10-28.md",
-        "mcp-comprehensive-testing-report-2025-10-30.md",
-        "mcp-tool-response-analysis.md",
-        "post-contract-alignment-comprehensive-analysis.md",
-        "structural-fix-complete-report.md",
-        "tdd-analysis-task-breakdown-2025-10-30.md",
-        "test-fix-session-2025-10-24.md",
-        "websocket-animation-architecture-analysis.md",
-        "websocket-reliability-code-review-2025-10-30.md"
+        "websocket-animation-architecture-analysis.md"
       ]
     },
     "setup-guides": {
@@ -2008,8 +2190,6 @@
         ]
       },
       "files": [
-        "agenthub-mcp-tools-test-report-2025-10-22.md",
-        "api-contract-test-final-report.md",
         "backend-frontend-type-comparison-matrix.md",
         "bug-fix-verification-nested-context-managers-2025-10-31.md",
         "contract-test-gap-analysis-2025-10-28.md",
@@ -2029,7 +2209,6 @@
         "server-startup-test-implementation.md",
         "strategic-test-plan-2025-10-24.md",
         "test-coverage-analysis-2025-10-27.md",
-        "test-coverage-report-2025-10-24.md",
         "test-flow-issues-2025-10-22.md",
         "test-pollution-fix-2025-10-24.md",
         "wave1-coverage-audit-2025-10-26.md",
@@ -2058,6 +2237,6 @@
       ]
     }
   },
-  "total_directories": 27,
-  "total_files": 226
+  "total_directories": 30,
+  "total_files": 240
 }

@@ -263,9 +263,9 @@ class TestSubtaskStatusManagement:
             status=TaskStatus.done()  # Start from DONE status (final state)
         )
 
-        # Invalid transition: done -> in_progress (DONE is final state)
-        with pytest.raises(ValueError, match="Cannot transition from"):
-            subtask.update_status(TaskStatus.in_progress())
+        # Valid transition: done -> in_progress (rework allowed)
+        subtask.update_status(TaskStatus.in_progress())
+        assert subtask.status == TaskStatus.in_progress()
     
     def test_complete_subtask(self):
         """Test completing a subtask."""
