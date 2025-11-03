@@ -23,6 +23,7 @@ from ...domain.interfaces.repository_factory import ITaskRepositoryFactory
 from ...infrastructure.repositories.task_repository_factory import TaskRepositoryFactory
 from ...infrastructure.repositories.subtask_repository_factory import SubtaskRepositoryFactory
 from ..services.websocket_notification_service import WebSocketNotificationService
+from ..services.minimal_response_serializer import MinimalResponseSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -415,7 +416,7 @@ class SubtaskApplicationFacade:
             "success": True,
             "action": "update",
             "message": f"Subtask {actual_subtask_id} updated",
-            "subtask": response.to_dict()
+            "subtask": MinimalResponseSerializer.serialize_subtask_minimal(response, "update")
         }
 
         # Broadcast subtask update event via WebSocket
@@ -424,8 +425,8 @@ class SubtaskApplicationFacade:
             context = self._derive_context_from_task(task_id)
             user_id = context.get("user_id", "system")
 
-            # Convert subtask response to dict for broadcasting
-            subtask_dict = response.to_dict()
+            # Convert subtask response to dict for broadcasting (minimal serialization)
+            subtask_dict = MinimalResponseSerializer.serialize_subtask_minimal(response, "update")
 
             WebSocketNotificationService.sync_broadcast_subtask_event(
                 event_type="updated",

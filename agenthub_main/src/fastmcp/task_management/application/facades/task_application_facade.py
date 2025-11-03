@@ -14,6 +14,7 @@ from ..factories.context_response_factory import ContextResponseFactory
 
 from ..services.task_application_service import TaskApplicationService
 from ..services.websocket_notification_service import WebSocketNotificationService
+from ..services.minimal_response_serializer import MinimalResponseSerializer
 
 from ..use_cases.create_task import CreateTaskUseCase
 from ..use_cases.update_task import UpdateTaskUseCase
@@ -482,18 +483,18 @@ class TaskApplicationFacade:
 
                     if updated_task_response is not None:
                         # Context was successfully created and task response includes context data
-                        # Convert updated task response to dict properly
+                        # Convert updated task response to dict with minimal serialization (token optimized)
                         if hasattr(updated_task_response, 'to_dict'):
-                            task_payload = updated_task_response.to_dict()
+                            task_payload = MinimalResponseSerializer.serialize_task_minimal(updated_task_response, "create")
                         else:
-                            task_payload = updated_task_response.task.to_dict()
+                            task_payload = MinimalResponseSerializer.serialize_task_minimal(updated_task_response.task, "create")
                         # Apply unified context format
                         task_payload = ContextResponseFactory.apply_to_task_response(task_payload)
                     else:
                         # Context creation failed - but don't rollback, just log warning
                         logger.warning("Context creation failed for task %s, but task was created successfully", task_response.task.id)
-                        # Return task without context data
-                        task_payload = task_response.task.to_dict()
+                        # Return task without context data (minimal serialization)
+                        task_payload = MinimalResponseSerializer.serialize_task_minimal(task_response.task, "create")
                         warning_msg = "Task created without context synchronization"
 
                 except Exception as e:
@@ -501,8 +502,8 @@ class TaskApplicationFacade:
                     # Don't rollback - task creation should succeed even without context
                     logger.warning("Continuing with task creation despite context sync failure")
 
-                    # Return task without context data
-                    task_payload = task_response.task.to_dict()
+                    # Return task without context data (minimal serialization)
+                    task_payload = MinimalResponseSerializer.serialize_task_minimal(task_response.task, "create")
                     warning_msg = f"Task created without context: {str(e)}"
 
                 # Broadcast task creation event ONLY if this was a new creation (not a duplicate)
@@ -560,9 +561,9 @@ class TaskApplicationFacade:
 
             # Check if task was actually updated with meaningful changes
             was_actually_updated = self._check_for_meaningful_update(current_task, task_response.task if task_response and task_response.success else None, request)
-            
+
             if task_response and task_response.success:
-                task_dict = task_response.task.to_dict()
+                task_dict = MinimalResponseSerializer.serialize_task_minimal(task_response.task, "update")
 
                 # Broadcast task update event ONLY if this was a meaningful update (not a duplicate)
                 if was_actually_updated:
@@ -1476,7 +1477,7 @@ class TaskApplicationFacade:
             return {
                 "success": True,
                 "message": message,
-                "task": task.to_dict()
+                "task": MinimalResponseSerializer.serialize_task_minimal(task, "update")
             }
         except (TaskNotFoundError, ValueError) as e:
             return {"success": False, "error": str(e)}
@@ -1517,7 +1518,7 @@ class TaskApplicationFacade:
             return {
                 "success": True,
                 "message": message,
-                "task": task.to_dict()
+                "task": MinimalResponseSerializer.serialize_task_minimal(task, "update")
             }
         except (TaskNotFoundError, ValueError) as e:
             return {"success": False, "error": str(e)}
