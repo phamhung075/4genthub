@@ -1,91 +1,42 @@
 # MCP Context Injection System Architecture
 
-**Document Version**: 3.0
-**Last Updated**: 2025-10-16
-**Status**: Production Ready
-**Python Version**: 3.14.0+
-**Architecture**: DDD Phase 8 Complete
+**Version**: 3.0 | **Updated**: 2025-10-16 | **Status**: Production Ready | **Python**: 3.14.0+ | **Architecture**: DDD Phase 8 Complete
 
 ## Executive Summary
 
-The MCP Context Injection System is a sophisticated architecture that automatically injects relevant project context, task information, and workflow guidance into Claude AI's operations. This system breaks the circular dependency on AI memory by proactively providing context at critical execution points, achieving 40% improvement in task completion rates while maintaining sub-500ms performance.
+MCP Context Injection System automatically injects relevant project context, task information, and workflow guidance into Claude AI at critical execution points. Breaks circular dependency on AI memory through proactive HTTP-based context delivery, achieving 42% improvement in task completion rates with sub-500ms performance.
 
-### Key Capabilities
-
-1. **Auto-Injection on Session Start**: Automatically loads pending tasks and project context
-2. **Real-Time Context Updates**: Continuous context synchronization during operations
-3. **HTTP-Based Communication**: Secure REST API integration with MCP server
-4. **Performance Optimized**: Sub-500ms response time with intelligent caching
-5. **Task Dependency Integration**: Automatic dependency resolution and workflow guidance
-
-### Implementation Confidence: 98%
+| Capability | Description |
+|------------|-------------|
+| **Auto-Injection on Session Start** | Automatically loads pending tasks and project context |
+| **Real-Time Context Updates** | Continuous synchronization during operations |
+| **HTTP Communication** | Secure REST API integration with MCP server (Port 8000) |
+| **Performance** | Sub-500ms response time with intelligent caching |
+| **Task Dependencies** | Automatic dependency resolution and workflow guidance |
+| **Implementation Confidence** | 98% |
 
 ---
 
-## 1. System Architecture Overview
+## 1. System Architecture
 
-### 1.1 High-Level Architecture
+### 1.1 Architecture Layers
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         CLAUDE AI INTERFACE                         │
-│                    (.claude/hooks/ Integration)                     │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │
-┌────────────────────────────┴────────────────────────────────────────┐
-│                   CONTEXT INJECTION LAYER                           │
-├─────────────────────┬─────────────────────┬─────────────────────────┤
-│  Session Hook       │   Pre-Tool Hook     │   Post-Tool Hook        │
-│  Initializer        │   Context Injector  │   Context Updater       │
-│  (session_start.py) │  (pre_tool_use.py)  │  (post_tool_use.py)     │
-└─────────────────────┴─────────────────────┴─────────────────────────┘
-                             │
-┌────────────────────────────┴────────────────────────────────────────┐
-│                   HTTP COMMUNICATION LAYER                          │
-├─────────────────────┬─────────────────────┬─────────────────────────┤
-│  MCP HTTP Client    │  JWT Authentication │  Cache Manager          │
-│  (mcp_client.py)    │  (hook_auth.py)     │  (cache_manager.py)     │
-└─────────────────────┴─────────────────────┴─────────────────────────┘
-                             │
-                    HTTP/REST (Port 8000)
-                             │
-┌────────────────────────────┴────────────────────────────────────────┐
-│                      MCP HTTP SERVER                                │
-│                    (FastAPI + Keycloak)                             │
-├─────────────────────┬─────────────────────┬─────────────────────────┤
-│  Task Management    │  Context System     │  Agent Management       │
-│  (Application Layer)│  (4-Tier Hierarchy) │  (Permission System)    │
-└─────────────────────┴─────────────────────┴─────────────────────────┘
-```
+| Layer | Components | Location | Purpose |
+|-------|------------|----------|---------|
+| **CLAUDE AI INTERFACE** | .claude/hooks/ Integration | Hook filesystem | Entry point for Claude Code |
+| **CONTEXT INJECTION LAYER** | Session Hook (.claude/hooks/session_start.py:105-150) \| Pre-Tool Hook (.claude/hooks/pre_tool_use.py:180-250) \| Post-Tool Hook (.claude/hooks/post_tool_use.py:95-140) | Hook scripts | Initial context, real-time injection, context updates |
+| **HTTP COMMUNICATION LAYER** | MCP HTTP Client (utils/mcp_client.py:1-200) \| JWT Auth (auth/hook_auth.py:1-85) \| Cache Manager (utils/cache_manager.py:45-180) | Hook utilities | Connection pooling, authentication, caching |
+| **MCP HTTP SERVER** | Task Management (Application Layer) \| Context System (4-Tier Hierarchy) \| Agent Management (Permission System) | FastAPI + Keycloak (Port 8000) | Backend services and data |
+
+**Flow**: Claude Hook (Local Python) → HTTP POST (Bearer Token + JSON payload) → MCP HTTP Server (FastAPI:8000) → Return Context Data (JSON) → Inject into Claude Context
 
 ### 1.2 Core Components
 
-#### Session Start Hook (`session_start.py`)
-- **Location**: `.claude/hooks/session_start.py:105-150`
-- **Function**: Initial context injection on session startup
-- **Features**:
-  - Loads master orchestrator agent instructions
-  - Queries MCP for pending tasks
-  - Displays visual task dashboard
-  - Injects project context
-
-#### Pre-Tool Hook (`pre_tool_use.py`)
-- **Location**: `.claude/hooks/pre_tool_use.py:180-250`
-- **Function**: Real-time context injection before tool execution
-- **Features**:
-  - Context relevance detection
-  - Async context queries
-  - Performance monitoring
-  - Error handling with fallbacks
-
-#### Post-Tool Hook (`post_tool_use.py`)
-- **Location**: `.claude/hooks/post_tool_use.py:95-140`
-- **Function**: Context updates after tool execution
-- **Features**:
-  - MCP context updates
-  - Cache invalidation
-  - Change tracking
-  - Documentation sync
+| Component | Location | Function | Features |
+|-----------|----------|----------|----------|
+| **Session Start Hook** | session_start.py:105-150 | Initial context injection on startup | Load master orchestrator \| Query pending tasks \| Display task dashboard \| Inject project context |
+| **Pre-Tool Hook** | pre_tool_use.py:180-250 | Real-time injection before tool execution | Context relevance detection \| Async queries \| Performance monitoring \| Error fallbacks |
+| **Post-Tool Hook** | post_tool_use.py:95-140 | Context updates after tool execution | MCP context updates \| Cache invalidation \| Change tracking \| Documentation sync |
 
 ---
 
@@ -95,99 +46,27 @@ The MCP Context Injection System is a sophisticated architecture that automatica
 
 **Implementation**: `agenthub_main/src/fastmcp/auth/hook_auth.py:1-85`
 
-```python
-# Hook authentication configuration
-HOOK_JWT_SECRET = "agenthub-hook-secret-2025"
-HOOK_JWT_ALGORITHM = "HS256"
-TOKEN_EXPIRY = 3600  # 1 hour
+| Component | Value | Purpose |
+|-----------|-------|---------|
+| **HOOK_JWT_SECRET** | "agenthub-hook-secret-2025" | Token signing secret |
+| **HOOK_JWT_ALGORITHM** | "HS256" | Token algorithm |
+| **TOKEN_EXPIRY** | 3600 seconds (1 hour) | Token lifetime |
+| **Token Cache File** | `~/.claude/.mcp_token_cache` | Persistent token storage |
 
-class HookTokenManager:
-    """Manages JWT tokens for hook-to-MCP communication."""
-
-    def __init__(self):
-        self.token_cache_file = Path.home() / ".claude" / ".mcp_token_cache"
-        self.token = None
-        self.token_expiry = None
-
-    def get_valid_token(self) -> Optional[str]:
-        """Get valid JWT token, refreshing if needed."""
-        # Check cache first
-        if self.token and self.token_expiry and datetime.now() < self.token_expiry:
-            return self.token
-
-        # Load from cache file
-        if self.token_cache_file.exists():
-            cached = self._load_cached_token()
-            if cached and self._is_valid(cached):
-                return cached["token"]
-
-        # Request new token
-        return self._request_new_token()
-```
+**HookTokenManager**: Manages JWT tokens for hook-to-MCP communication | `get_valid_token()` checks cache (memory + file) → Returns cached if valid → Requests new token if expired
 
 ### 2.2 HTTP Client Architecture
 
 **Implementation**: `.claude/hooks/utils/mcp_client.py:1-200`
 
-```python
-class OptimizedMCPClient:
-    """HTTP client with connection pooling and retry logic."""
+**OptimizedMCPClient Features**:
+- Connection pooling (10 connections, 10 max size)
+- Retry logic (3 total retries, 0.3s backoff factor)
+- Rate limiting (100 requests per 60s window)
+- Timeout configuration (3s connect, 10s read)
+- Auto token refresh on 401 errors
 
-    def __init__(self):
-        self.base_url = os.getenv("MCP_SERVER_URL", "http://localhost:8000")
-        self.session = requests.Session()
-
-        # Connection pooling
-        adapter = HTTPAdapter(
-            pool_connections=10,
-            pool_maxsize=10,
-            max_retries=Retry(total=3, backoff_factor=0.3)
-        )
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
-
-        # Rate limiting
-        self.rate_limiter = RateLimiter(max_requests=100, time_window=60)
-
-    def query_tasks(self, status: str = "todo", limit: int = 5) -> List[Dict]:
-        """Query MCP for tasks via HTTP."""
-        token = self.token_manager.get_valid_token()
-
-        response = self.session.post(
-            f"{self.base_url}/mcp/manage_task",
-            json={"action": "list", "status": status, "limit": limit},
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=(3, 10)  # connect, read timeouts
-        )
-
-        if response.status_code == 401:
-            # Token expired - refresh and retry
-            self.token_manager.refresh_token()
-            return self.query_tasks(status, limit)
-
-        return response.json().get("data", {}).get("tasks", [])
-```
-
-### 2.3 Communication Flow
-
-```
-Claude Hook                          MCP HTTP Server
-(Local Python)                       (FastAPI:8000)
-     │                                      │
-     │ 1. Get JWT Token                    │
-     ├────────────────────────────────────>│
-     │                                      │
-     │ 2. Query Context (HTTP POST)        │
-     ├────────────────────────────────────>│
-     │    Headers: Bearer Token            │
-     │    Body: {action, params}           │
-     │                                      │
-     │ 3. Return Context Data (JSON)       │
-     │<────────────────────────────────────┤
-     │                                      │
-     │ 4. Inject into Claude Context       │
-     └────> Claude receives context        │
-```
+**query_tasks() Pattern**: Get valid token → POST to /mcp/manage_task → Auto-refresh token on 401 → Return JSON data
 
 ---
 
@@ -199,78 +78,24 @@ Claude Hook                          MCP HTTP Server
 
 **Implementation**: `.claude/hooks/session_start.py:105-180`
 
-```python
-def load_development_context(source):
-    """Enhanced context loading with auto-injection."""
-    context_parts = []
-
-    # CRITICAL: Master orchestrator loading (required first)
-    context_parts.append(
-        "🚀 INITIALIZATION REQUIRED: Call mcp__agenthub_http__call_agent('master-orchestrator-agent')"
-    )
-
-    # AUTO-INJECT: Query pending tasks via HTTP
-    try:
-        mcp_client = OptimizedMCPClient()
-        if mcp_client.authenticate():
-            pending_tasks = mcp_client.query_tasks(status="todo", limit=5)
-
-            if pending_tasks:
-                context_parts.append(
-                    f"⚠️ AUTO-INJECTION: {len(pending_tasks)} PENDING TASKS"
-                )
-                context_parts.append(
-                    create_visual_task_dashboard(pending_tasks)
-                )
-
-                # Add next recommended task
-                next_task = mcp_client.query_next_task()
-                if next_task:
-                    context_parts.append(
-                        create_next_action_guidance(next_task)
-                    )
-    except Exception as e:
-        logger.warning(f"Auto-injection failed: {e}")
-        # Continue without injection - graceful degradation
-
-    return "\n".join(context_parts)
-```
+**load_development_context() Flow**:
+1. Display initialization requirement: "Call mcp__agenthub_http__call_agent('master-orchestrator-agent')"
+2. Authenticate to MCP server via HTTP
+3. Query pending tasks (status="todo", limit=5)
+4. Create visual task dashboard (see 3.2)
+5. Query next recommended task
+6. Create next action guidance
+7. Graceful degradation on error (continue without injection)
 
 ### 3.2 Visual Task Dashboard
 
 **Implementation**: `.claude/hooks/utils/visual_builder.py:1-120`
 
-```python
-def create_visual_task_dashboard(tasks: List[Dict]) -> str:
-    """Create visual dashboard for injected tasks."""
-
-    dashboard = [
-        "╔═══════════════════════════════════════════════════════╗",
-        "║          🎯 PENDING TASKS DASHBOARD                  ║",
-        "╠═══════════════════════════════════════════════════════╣"
-    ]
-
-    for task in tasks[:5]:  # Limit to 5 tasks
-        priority_icon = {
-            "critical": "🔴",
-            "urgent": "🟠",
-            "high": "🟡",
-            "medium": "🔵",
-            "low": "⚪"
-        }.get(task["priority"], "⚪")
-
-        dashboard.append(
-            f"║ {priority_icon} {task['title'][:45]:<45} ║"
-        )
-
-    dashboard.extend([
-        "╠═══════════════════════════════════════════════════════╣",
-        f"║ Total: {len(tasks)} tasks | Use manage_task to view  ║",
-        "╚═══════════════════════════════════════════════════════╝"
-    ])
-
-    return "\n".join(dashboard)
-```
+**create_visual_task_dashboard() Pattern**:
+- Priority icons: 🔴 critical | 🟠 urgent | 🟡 high | 🔵 medium | ⚪ low
+- Displays top 5 pending tasks with truncated titles (45 chars)
+- Shows total task count and usage guidance
+- Formatted with box-drawing characters for clarity
 
 ### 3.3 Token Economy Optimization
 
@@ -278,41 +103,10 @@ def create_visual_task_dashboard(tasks: List[Dict]) -> str:
 
 **Strategy**: Keep injection payloads under 100 tokens to preserve Claude's working memory
 
-```python
-class TokenBudgetManager:
-    """Manages token usage for context injection."""
-
-    MAX_INJECTION_TOKENS = 100  # Budget limit per injection
-
-    def optimize_payload(self, raw_context: dict) -> str:
-        """Optimize context for minimal token usage."""
-
-        # Priority-based content selection
-        critical = self.extract_critical_items(raw_context)
-        important = self.extract_important_items(raw_context)
-
-        # Compressed representation
-        compressed = {
-            "critical": critical[:3],  # Top 3 critical items
-            "summary": self.create_summary(important),  # Summarize rest
-            "visual": self.create_progress_bar(raw_context)  # Visual indicator
-        }
-
-        # Enforce token limit
-        return self.truncate_to_budget(compressed)
-
-    def create_progress_bar(self, context: dict) -> str:
-        """Create compact visual progress indicator."""
-        total = context.get("total_tasks", 0)
-        complete = context.get("completed_tasks", 0)
-
-        if total > 0:
-            progress = int((complete / total) * 10)
-            bar = "█" * progress + "░" * (10 - progress)
-            return f"[{bar}] {complete}/{total}"
-
-        return "[No active project]"
-```
+**TokenBudgetManager**:
+- MAX_INJECTION_TOKENS = 100 (budget limit per injection)
+- optimize_payload(): Extract critical items (top 3) → Summarize important items → Create visual progress bar → Truncate to budget
+- create_progress_bar(): Visual indicator `[████████░░] 8/10` showing completion progress
 
 ---
 
@@ -322,187 +116,42 @@ class TokenBudgetManager:
 
 **Implementation**: `.claude/hooks/pre_tool_use.py:180-280`
 
-**Purpose**: Detect when tool calls require context injection and provide it before execution
+**ContextInjector** - Real-time context injection manager with 500ms performance threshold
 
-```python
-class ContextInjector:
-    """Real-time context injection manager."""
+**Context Triggers by Tool**:
+| Tool | Actions Requiring Context |
+|------|--------------------------|
+| mcp__agenthub_http__manage_task | get, update, complete, next |
+| mcp__agenthub_http__manage_subtask | create, update, complete |
+| mcp__agenthub_http__manage_context | get, resolve |
+| mcp__agenthub_http__call_agent | Always relevant (true) |
 
-    def __init__(self):
-        self.mcp_client = OptimizedMCPClient()
-        self.cache = SessionContextCache()
-        self.performance_threshold_ms = 500
-
-    def detect_context_relevant_tools(self, tool_name: str, tool_input: dict) -> bool:
-        """Detect if tool requires context injection."""
-
-        context_triggers = {
-            # Task management operations
-            'mcp__agenthub_http__manage_task': ['get', 'update', 'complete', 'next'],
-            'mcp__agenthub_http__manage_subtask': ['create', 'update', 'complete'],
-
-            # Context operations
-            'mcp__agenthub_http__manage_context': ['get', 'resolve'],
-
-            # Agent operations
-            'mcp__agenthub_http__call_agent': True,  # Always relevant
-        }
-
-        if tool_name not in context_triggers:
-            return False
-
-        # Check if specific action requires context
-        trigger_actions = context_triggers[tool_name]
-        if isinstance(trigger_actions, bool):
-            return trigger_actions
-
-        action = tool_input.get("action")
-        return action in trigger_actions
-
-    async def inject_context(self, tool_name: str, tool_input: dict) -> Optional[str]:
-        """Inject relevant context before tool execution."""
-        start_time = time.time()
-
-        try:
-            # Check cache first (< 50ms)
-            cache_key = self.build_cache_key(tool_name, tool_input)
-            cached = self.cache.get(cache_key)
-
-            if cached and self.is_cache_fresh(cached):
-                logger.debug(f"Cache hit for {tool_name}")
-                return self.format_context(cached)
-
-            # Query MCP server (< 400ms)
-            context_data = await self.query_mcp_context(tool_name, tool_input)
-
-            # Cache results (< 50ms)
-            self.cache.set(cache_key, context_data, ttl=900)  # 15 minutes
-
-            return self.format_context(context_data)
-
-        finally:
-            execution_ms = (time.time() - start_time) * 1000
-            if execution_ms > self.performance_threshold_ms:
-                logger.warning(
-                    f"Context injection took {execution_ms}ms "
-                    f"(exceeds {self.performance_threshold_ms}ms threshold)"
-                )
-```
+**inject_context() Flow**: Check cache (<50ms) → If fresh, return cached → Query MCP server (<400ms) → Cache results (15 min TTL) → Format and return → Log warning if >500ms
 
 ### 4.2 Context Query Service
 
 **Implementation**: `.claude/hooks/utils/context_query.py:1-150`
 
-```python
-class ContextQueryService:
-    """Service for querying MCP context via HTTP."""
+**query_mcp_context() Logic**: Build context request based on tool/input → Batch multiple requests for efficiency → Execute single or batch query
 
-    async def query_mcp_context(self, tool_name: str, tool_input: dict) -> dict:
-        """Query MCP for relevant context."""
-
-        # Determine what context is needed based on tool
-        context_request = self.build_context_request(tool_name, tool_input)
-
-        # Batch requests for efficiency
-        if len(context_request) > 1:
-            return await self.batch_query_context(context_request)
-
-        # Single request
-        return await self.single_query_context(context_request[0])
-
-    def build_context_request(self, tool_name: str, tool_input: dict) -> List[Dict]:
-        """Build context request based on tool and input."""
-
-        requests = []
-
-        if tool_name == "mcp__agenthub_http__manage_task":
-            action = tool_input.get("action")
-
-            if action in ["create", "update"]:
-                # Need project context and recent tasks
-                requests.extend([
-                    {"type": "project_context", "project_id": tool_input.get("project_id")},
-                    {"type": "recent_tasks", "limit": 3},
-                    {"type": "git_status"}
-                ])
-
-            elif action == "next":
-                # Need branch context and dependencies
-                requests.extend([
-                    {"type": "branch_context", "branch_id": tool_input.get("git_branch_id")},
-                    {"type": "task_dependencies"}
-                ])
-
-        elif tool_name == "mcp__agenthub_http__call_agent":
-            # Need agent capabilities and current context
-            requests.extend([
-                {"type": "agent_info", "agent_name": tool_input.get("name_agent")},
-                {"type": "session_context"}
-            ])
-
-        return requests
-```
+**Context Request Patterns**:
+| Tool Action | Context Needed |
+|------------|----------------|
+| manage_task: create/update | project_context, recent_tasks (limit 3), git_status |
+| manage_task: next | branch_context, task_dependencies |
+| call_agent: any | agent_info, session_context |
 
 ### 4.3 Cache Management
 
 **Implementation**: `.claude/hooks/utils/cache_manager.py:45-180`
 
-**Strategy**: LRU cache with TTL and intelligent invalidation
+**SessionContextCache** - LRU cache with TTL (100 entry max)
 
-```python
-class SessionContextCache:
-    """Session-scoped context cache with TTL."""
+**TTL Configuration by Type**:
+- pending_tasks: 900s (15 min) | next_task: 900s | project_context: 3600s (1 hr)
+- git_status: 300s (5 min) | file_metadata: 1800s (30 min) | documentation: 7200s (2 hr)
 
-    def __init__(self):
-        self.cache = {}
-        self.ttl_map = {}
-        self.max_size = 100
-
-        # Cache TTL configuration
-        self.ttl_config = {
-            'pending_tasks': 900,      # 15 minutes
-            'next_task': 900,          # 15 minutes
-            'project_context': 3600,   # 1 hour
-            'git_status': 300,         # 5 minutes
-            'file_metadata': 1800,     # 30 minutes
-            'documentation': 7200      # 2 hours
-        }
-
-    def get(self, cache_key: str) -> Optional[dict]:
-        """Get cached data if fresh."""
-        if cache_key not in self.cache:
-            return None
-
-        # Check TTL
-        if not self.is_fresh(cache_key):
-            del self.cache[cache_key]
-            del self.ttl_map[cache_key]
-            return None
-
-        # Update LRU
-        self._update_lru(cache_key)
-        return self.cache[cache_key]
-
-    def set(self, cache_key: str, data: dict, ttl: int = 900):
-        """Store data in cache with TTL."""
-        # Evict if cache is full
-        if len(self.cache) >= self.max_size:
-            self._evict_lru()
-
-        self.cache[cache_key] = data
-        self.ttl_map[cache_key] = time.time() + ttl
-
-    def invalidate_pattern(self, pattern: str):
-        """Invalidate cache entries matching pattern."""
-        keys_to_delete = [
-            key for key in self.cache.keys()
-            if re.match(pattern, key)
-        ]
-
-        for key in keys_to_delete:
-            del self.cache[key]
-            del self.ttl_map[key]
-```
+**Operations**: get() checks TTL + updates LRU | set() evicts LRU when full | invalidate_pattern() removes matching regex entries
 
 ---
 
@@ -512,89 +161,29 @@ class SessionContextCache:
 
 **Implementation**: `.claude/hooks/post_tool_use.py:95-180`
 
-```python
-class ContextUpdater:
-    """Manages context updates after tool execution."""
+**ContextUpdater** - Manages context updates after tool execution
 
-    def __init__(self):
-        self.mcp_client = OptimizedMCPClient()
-        self.cache = SessionContextCache()
+**Operation Classification**:
+| Tool | Action | Update Type |
+|------|--------|-------------|
+| manage_task | create | task_created |
+| manage_task | update | task_updated |
+| manage_task | complete | task_completed |
+| Write/Edit | any | file_modified |
+| manage_context | any | context_changed |
 
-    async def update_context(self, tool_name: str, tool_input: dict, tool_output: dict):
-        """Update MCP context based on tool execution results."""
-
-        # Classify operation type
-        operation_type = self.classify_operation(tool_name, tool_input, tool_output)
-
-        # Handle specific update types
-        update_handlers = {
-            'task_created': self.handle_task_creation,
-            'task_updated': self.handle_task_update,
-            'task_completed': self.handle_task_completion,
-            'file_modified': self.handle_file_modification,
-            'context_changed': self.handle_context_change
-        }
-
-        if operation_type in update_handlers:
-            await update_handlers[operation_type](tool_input, tool_output)
-
-            # Invalidate related cache entries
-            self.invalidate_related_cache(operation_type, tool_input)
-
-    def classify_operation(self, tool_name: str, tool_input: dict, tool_output: dict) -> str:
-        """Classify what type of update is needed."""
-
-        if tool_name == "mcp__agenthub_http__manage_task":
-            action = tool_input.get("action")
-
-            if action == "create":
-                return "task_created"
-            elif action in ["update", "complete"]:
-                return "task_updated" if action == "update" else "task_completed"
-
-        elif tool_name in ["Write", "Edit"]:
-            return "file_modified"
-
-        elif tool_name == "mcp__agenthub_http__manage_context":
-            return "context_changed"
-
-        return "unknown"
-```
+**update_context() Flow**: Classify operation → Call handler (task_creation/update/completion/file_modification/context_change) → Invalidate related cache
 
 ### 5.2 Cache Invalidation Strategy
 
-```python
-def invalidate_related_cache(self, operation_type: str, tool_input: dict):
-    """Invalidate cache entries related to the operation."""
-
-    invalidation_patterns = {
-        'task_created': [
-            r'pending_tasks:.*',
-            r'next_task:.*',
-            r'project_context:.*'
-        ],
-        'task_updated': [
-            r'pending_tasks:.*',
-            r'task:' + tool_input.get('task_id', '.*')
-        ],
-        'task_completed': [
-            r'pending_tasks:.*',
-            r'next_task:.*',
-            r'task:' + tool_input.get('task_id', '.*')
-        ],
-        'file_modified': [
-            r'file_metadata:.*',
-            r'documentation:.*'
-        ],
-        'context_changed': [
-            r'.*_context:.*'  # Invalidate all context caches
-        ]
-    }
-
-    patterns = invalidation_patterns.get(operation_type, [])
-    for pattern in patterns:
-        self.cache.invalidate_pattern(pattern)
-```
+**Invalidation Patterns by Operation**:
+| Operation | Invalidated Cache Keys (Regex) |
+|-----------|-------------------------------|
+| task_created | pending_tasks:.* \| next_task:.* \| project_context:.* |
+| task_updated | pending_tasks:.* \| task:{task_id} |
+| task_completed | pending_tasks:.* \| next_task:.* \| task:{task_id} |
+| file_modified | file_metadata:.* \| documentation:.* |
+| context_changed | .*_context:.* (all context caches) |
 
 ---
 
@@ -604,118 +193,27 @@ def invalidate_related_cache(self, operation_type: str, tool_input: dict):
 
 **Source**: Original `mcp-injection-task-dependencies.md`
 
-The auto-injection system integrates with task dependencies to provide proper workflow guidance:
+Auto-injection system integrates with task dependencies for proper workflow guidance.
 
-```mermaid
-graph TD
-    %% Phase Dependencies
-    P1[Phase 1: Foundation]
-    P1_1[HTTP Client]
-    P1_2[Auth Setup]
-    P1_3[Session Hook]
+**Phase Dependencies & Critical Path**:
 
-    P2[Phase 2: Real-Time]
-    P3[Phase 3: Intelligence]
-    P4[Phase 4: Optimization]
+| Phase | Dependencies | Tasks | Timeline |
+|-------|-------------|-------|----------|
+| **Phase 1: Foundation** | None (start) | HTTP Client \| Auth Setup \| Session Hook | Week 1 (Day 1-2 parallel, Day 3-5 sequential) |
+| **Phase 2: Real-Time** | Phase 1 complete | Real-Time Injection \| Integration Tests | Week 2 (sequential) |
+| **Phase 3: Intelligence** | Phase 2 complete | Intelligence Layer \| E2E tests (parallel) | Week 3 (mixed) |
+| **Phase 4: Optimization** | Phases 2 & 3 complete | Optimization \| Test validation \| Staging deployment | Week 4 (finalization) |
 
-    %% Critical Path
-    P1 --> P1_1
-    P1 --> P1_2
-    P1_1 --> P1_3
-    P1_2 --> P1_3
-    P1_3 --> P2
-    P2 --> P3
-    P2 --> P4
-    P3 --> P4
-```
+**Critical Path**: P1 (HTTP + Auth) → P1 (Session Hook) → P2 (Real-Time) → P3 (Intelligence) + P2 (Early optimization) → P4 (Complete optimization + validation)
 
 ### 6.2 Dependency-Aware Injection
 
 **Implementation**: `.claude/hooks/utils/dependency_resolver.py:1-120`
 
-```python
-class DependencyAwareInjector:
-    """Injects context aware of task dependencies."""
-
-    def __init__(self):
-        self.mcp_client = OptimizedMCPClient()
-
-    async def inject_with_dependencies(self, task_id: str) -> dict:
-        """Inject task context including dependency information."""
-
-        # Get task details
-        task = await self.mcp_client.get_task(task_id)
-
-        # Get dependency graph
-        dependencies = await self.get_dependency_graph(task_id)
-
-        # Build context with dependency awareness
-        context = {
-            "task": task,
-            "can_start": self.can_task_start(dependencies),
-            "blocking_tasks": self.get_blocking_tasks(dependencies),
-            "dependent_tasks": self.get_dependent_tasks(dependencies),
-            "workflow_hint": self.generate_workflow_hint(task, dependencies)
-        }
-
-        return context
-
-    def can_task_start(self, dependencies: List[Dict]) -> bool:
-        """Check if all dependencies are completed."""
-        blocked_deps = [
-            dep for dep in dependencies
-            if dep["status"] not in ["done", "completed"]
-        ]
-        return len(blocked_deps) == 0
-
-    def generate_workflow_hint(self, task: Dict, dependencies: List[Dict]) -> str:
-        """Generate helpful workflow guidance."""
-
-        if not self.can_task_start(dependencies):
-            blocking = self.get_blocking_tasks(dependencies)
-            return (
-                f"⚠️ Task blocked by {len(blocking)} dependencies. "
-                f"Complete: {', '.join([t['title'] for t in blocking[:3]])}"
-            )
-
-        dependent = self.get_dependent_tasks(dependencies)
-        if dependent:
-            return (
-                f"✅ Ready to start. "
-                f"{len(dependent)} tasks depend on this completion."
-            )
-
-        return "✅ Ready to start. No blocking dependencies."
-```
-
-### 6.3 Critical Path Analysis
-
-**Task Execution Order**:
-
-```yaml
-Week 1 (Critical Path):
-  Day 1-2 (Parallel):
-    - HTTP Client Implementation
-    - Keycloak Auth Setup
-    - Test Framework Setup
-
-  Day 3-5 (Sequential):
-    - Session Hook Enhancement (depends on HTTP + Auth)
-    - Unit Tests for Phase 1
-
-Week 2 (Sequential):
-  - Real-Time Injection (depends on Phase 1)
-  - Integration Tests (parallel with implementation)
-
-Week 3 (Mixed):
-  Primary: Intelligence Layer (depends on Phase 2)
-  Parallel: Early optimization work + E2E tests
-
-Week 4 (Finalization):
-  - Complete optimization (depends on Phases 2 & 3)
-  - Full test suite validation
-  - Staging deployment
-```
+**DependencyAwareInjector**:
+- inject_with_dependencies(): Get task → Get dependency graph → Build context with can_start/blocking_tasks/dependent_tasks/workflow_hint
+- can_task_start(): Returns true if all dependencies are "done" or "completed"
+- generate_workflow_hint(): If blocked → "⚠️ Task blocked by N dependencies. Complete: [titles]" | If ready with dependents → "✅ Ready to start. N tasks depend on this" | If ready no dependents → "✅ Ready to start. No blocking dependencies"
 
 ---
 
@@ -733,93 +231,27 @@ Week 4 (Finalization):
 
 ### 7.2 Caching Strategy
 
-**Multi-Level Cache Architecture**:
+**MultiLevelCache** - Three-tier cache for optimal performance:
 
-```python
-class MultiLevelCache:
-    """Three-tier cache for optimal performance."""
-
-    def __init__(self):
-        self.l1_cache = {}          # In-memory (fastest)
-        self.l2_cache = RedisCache() # Redis (fast, shared)
-        self.l3_cache = SQLiteCache() # Persistent (slower)
-
-    async def get(self, cache_key: str) -> Optional[dict]:
-        """Get from multi-level cache."""
-
-        # L1 Cache (fastest - in-memory)
-        if cache_key in self.l1_cache:
-            return self.l1_cache[cache_key]
-
-        # L2 Cache (fast - Redis)
-        l2_result = await self.l2_cache.get(cache_key)
-        if l2_result:
-            self.l1_cache[cache_key] = l2_result
-            return l2_result
-
-        # L3 Cache (persistent - SQLite)
-        l3_result = await self.l3_cache.get(cache_key)
-        if l3_result:
-            await self.l2_cache.set(cache_key, l3_result, ttl=300)
-            self.l1_cache[cache_key] = l3_result
-            return l3_result
-
-        return None
-```
+| Tier | Technology | Speed | Fallback Logic |
+|------|-----------|-------|----------------|
+| **L1 Cache** | In-memory (dict) | Fastest | Check L1 → If hit, return |
+| **L2 Cache** | Redis (shared) | Fast | Check L2 → If hit, populate L1 + return |
+| **L3 Cache** | SQLite (persistent) | Slower | Check L3 → If hit, populate L2 + L1 + return |
 
 ### 7.3 Circuit Breaker Pattern
 
 **Implementation**: `.claude/hooks/utils/circuit_breaker.py:1-95`
 
-```python
-class CircuitBreaker:
-    """Circuit breaker for MCP server failures."""
+**CircuitBreaker** - Protection for MCP server failures:
 
-    def __init__(self):
-        self.failure_threshold = 5
-        self.recovery_timeout = 30
-        self.success_threshold = 3
+| State | Condition | Behavior |
+|-------|-----------|----------|
+| **CLOSED** | Normal operation | Execute requests normally |
+| **OPEN** | failure_count ≥ 5 | Reject all requests (fast-fail) |
+| **HALF_OPEN** | After 30s recovery timeout | Try limited requests to test recovery |
 
-        self.failure_count = 0
-        self.success_count = 0
-        self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
-        self.opened_at = None
-
-    async def call(self, func, *args, **kwargs):
-        """Execute function with circuit breaker protection."""
-
-        if self.state == "OPEN":
-            if time.time() - self.opened_at > self.recovery_timeout:
-                self.state = "HALF_OPEN"
-                self.success_count = 0
-            else:
-                raise CircuitBreakerOpenError("Circuit breaker is OPEN")
-
-        try:
-            result = await func(*args, **kwargs)
-            self.on_success()
-            return result
-        except Exception as e:
-            self.on_failure()
-            raise
-
-    def on_success(self):
-        """Handle successful call."""
-        self.failure_count = 0
-
-        if self.state == "HALF_OPEN":
-            self.success_count += 1
-            if self.success_count >= self.success_threshold:
-                self.state = "CLOSED"
-
-    def on_failure(self):
-        """Handle failed call."""
-        self.failure_count += 1
-
-        if self.failure_count >= self.failure_threshold:
-            self.state = "OPEN"
-            self.opened_at = time.time()
-```
+**State Transitions**: on_failure() → failure_count++ → If ≥5 open circuit | on_success() → failure_count=0 → If HALF_OPEN and success_count ≥3 close circuit
 
 ---
 
@@ -829,112 +261,52 @@ class CircuitBreaker:
 
 **File**: `.env` in project root
 
-```bash
-# MCP Server Configuration
-MCP_SERVER_URL=http://localhost:8000
-MCP_REQUEST_TIMEOUT=10
-
-# Hook JWT Authentication
-HOOK_JWT_SECRET=agenthub-hook-secret-2025
-HOOK_JWT_ALGORITHM=HS256
-
-# Keycloak Configuration (for service account)
-KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=agenthub
-KEYCLOAK_CLIENT_ID=claude-hooks
-KEYCLOAK_CLIENT_SECRET=<secret>
-
-# Performance Settings
-CONTEXT_INJECTION_THRESHOLD_MS=500
-CONTEXT_CACHE_TTL_SECONDS=900
-
-# Connection Settings
-HTTP_POOL_CONNECTIONS=10
-HTTP_POOL_MAXSIZE=10
-HTTP_MAX_RETRIES=3
-RATE_LIMIT_REQUESTS_PER_MINUTE=100
-
-# Fallback Settings
-FALLBACK_CACHE_TTL=3600
-FALLBACK_STRATEGY=cache_then_skip
-```
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| MCP_SERVER_URL | http://localhost:8000 | MCP server endpoint |
+| MCP_REQUEST_TIMEOUT | 10 | Request timeout (seconds) |
+| HOOK_JWT_SECRET | agenthub-hook-secret-2025 | JWT signing secret |
+| HOOK_JWT_ALGORITHM | HS256 | JWT algorithm |
+| KEYCLOAK_URL | http://localhost:8080 | Keycloak server |
+| KEYCLOAK_REALM | agenthub | Keycloak realm |
+| KEYCLOAK_CLIENT_ID | claude-hooks | Service account client |
+| CONTEXT_INJECTION_THRESHOLD_MS | 500 | Performance threshold |
+| CONTEXT_CACHE_TTL_SECONDS | 900 | Default cache TTL (15 min) |
+| HTTP_POOL_CONNECTIONS | 10 | Connection pool size |
+| HTTP_MAX_RETRIES | 3 | Max retry attempts |
+| RATE_LIMIT_REQUESTS_PER_MINUTE | 100 | Rate limit threshold |
+| FALLBACK_STRATEGY | cache_then_skip | Fallback behavior |
 
 ### 8.2 Installation Steps
 
-**Phase 1: Foundation Setup**
-
-```bash
-# 1. Install dependencies (Python 3.14.0+)
-cd agenthub_main
-pip install -r requirements.txt
-
-# 2. Configure environment variables
-cp .env.example .env
-# Edit .env with your settings
-
-# 3. Set up Keycloak service account
-# (Follow Keycloak admin console setup - see Section 8.3)
-
-# 4. Test authentication
-python scripts/test_hook_auth.py
-```
-
-**Phase 2: Hook Enhancement**
-
-```bash
-# 1. Update hooks with MCP client integration
-# Files to modify:
-#   .claude/hooks/session_start.py
-#   .claude/hooks/pre_tool_use.py
-#   .claude/hooks/post_tool_use.py
-
-# 2. Add utility modules
-#   .claude/hooks/utils/mcp_client.py
-#   .claude/hooks/utils/context_injector.py
-#   .claude/hooks/utils/cache_manager.py
-
-# 3. Test hook integration
-python -m pytest .claude/hooks/tests/
-```
+| Phase | Steps | Files/Commands |
+|-------|-------|----------------|
+| **Phase 1: Foundation Setup** | 1. Install dependencies (Python 3.14.0+): `cd agenthub_main && pip install -r requirements.txt`<br>2. Configure environment: `cp .env.example .env` + edit settings<br>3. Set up Keycloak service account (see 8.3)<br>4. Test authentication: `python scripts/test_hook_auth.py` | requirements.txt, .env |
+| **Phase 2: Hook Enhancement** | 1. Update hooks with MCP client integration (.claude/hooks/session_start.py, pre_tool_use.py, post_tool_use.py)<br>2. Add utility modules (utils/mcp_client.py, context_injector.py, cache_manager.py)<br>3. Test hook integration: `python -m pytest .claude/hooks/tests/` | Hook files + utilities |
 
 ### 8.3 Keycloak Service Account Setup
 
-**Steps**:
+**Configuration Steps**:
 
-1. Navigate to Keycloak Admin Console
-2. Go to: Clients → Create Client
-3. Configure:
-   - Client ID: `claude-hooks`
-   - Client Protocol: `openid-connect`
-   - Access Type: `confidential`
-   - Service Accounts Enabled: `ON`
-4. Go to: Credentials tab → Copy Secret
-5. Go to: Service Account Roles → Add roles:
-   - `mcp-user` (realm role)
-   - `task-viewer` (client role)
-   - `context-reader` (client role)
+| Step | Action | Settings |
+|------|--------|----------|
+| 1 | Navigate to Keycloak Admin Console | - |
+| 2 | Create Client | Clients → Create Client |
+| 3 | Configure Client | Client ID: `claude-hooks` \| Protocol: `openid-connect` \| Access Type: `confidential` \| Service Accounts Enabled: `ON` |
+| 4 | Copy Secret | Credentials tab → Copy Secret |
+| 5 | Assign Roles | Service Account Roles → Add: `mcp-user` (realm role), `task-viewer` (client role), `context-reader` (client role) |
 
 ### 8.4 Testing Strategy
 
 **Test Suite**: `agenthub_main/src/tests/test_context_injection_system.py:1-350`
 
-```bash
-# 1. Create test data
-python agenthub_main/src/tests/create_test_data.py
-
-# 2. Run unit tests
-pytest agenthub_main/src/tests/test_context_injection.py -v
-
-# 3. Run integration tests
-HOOK_JWT_SECRET="agenthub-hook-secret-2025" \
-pytest agenthub_main/src/tests/test_context_injection_system.py -v
-
-# 4. Run performance tests
-pytest agenthub_main/src/tests/test_context_injection_performance.py -v
-
-# 5. Validate end-to-end flow
-python scripts/test_full_injection_flow.py
-```
+| Test Type | Command | Purpose |
+|-----------|---------|---------|
+| Create test data | `python agenthub_main/src/tests/create_test_data.py` | Generate test scenarios |
+| Unit tests | `pytest agenthub_main/src/tests/test_context_injection.py -v` | Test individual components |
+| Integration tests | `HOOK_JWT_SECRET="agenthub-hook-secret-2025" pytest agenthub_main/src/tests/test_context_injection_system.py -v` | Test system integration |
+| Performance tests | `pytest agenthub_main/src/tests/test_context_injection_performance.py -v` | Validate performance metrics |
+| E2E validation | `python scripts/test_full_injection_flow.py` | End-to-end flow validation |
 
 ---
 
@@ -942,63 +314,22 @@ python scripts/test_full_injection_flow.py
 
 ### 9.1 Fallback Strategies
 
-**Priority Order**:
+**Priority Order** (ResilientMCPClient):
 
-1. **Primary**: Query MCP server via HTTP
-2. **Fallback 1**: Use cached data (if < 1 hour old)
-3. **Fallback 2**: Use minimal context from local state
-4. **Fallback 3**: Skip injection gracefully, continue without context
-
-**Implementation**: `.claude/hooks/utils/resilient_client.py:1-85`
-
-```python
-class ResilientMCPClient:
-    """HTTP client with fallback strategies."""
-
-    def query_with_fallback(self) -> Optional[List[Dict]]:
-        """Query MCP with multiple fallback strategies."""
-
-        # Strategy 1: Try primary MCP server
-        try:
-            return self._query_mcp_server()
-        except (requests.ConnectionError, requests.Timeout) as e:
-            logger.warning(f"MCP server unavailable: {e}")
-
-        # Strategy 2: Use cached data if recent
-        cached_data = self._get_cached_fallback()
-        if cached_data and self._is_cache_valid(cached_data):
-            logger.info("Using cached fallback data")
-            return cached_data.get("tasks", [])
-
-        # Strategy 3: Return minimal context
-        logger.warning("All strategies failed, using minimal context")
-        return self._get_minimal_context()
-
-    def _is_cache_valid(self, cache_data: dict) -> bool:
-        """Check if cached data is recent enough (< 1 hour)."""
-        cache_time = cache_data.get("timestamp", 0)
-        return (time.time() - cache_time) < 3600
-```
+| Priority | Strategy | Condition | Action |
+|----------|----------|-----------|--------|
+| **Primary** | Query MCP server via HTTP | Normal operation | Standard HTTP request |
+| **Fallback 1** | Use cached data | Server unavailable | Return cached if < 1 hour old |
+| **Fallback 2** | Use minimal context from local state | Cache invalid/missing | Return basic local context |
+| **Fallback 3** | Skip injection gracefully | All strategies fail | Continue without context (graceful degradation) |
 
 ### 9.2 Error Recovery
 
 **Automatic Retry with Exponential Backoff**:
-
-```python
-async def retry_with_backoff(func, max_retries=3, base_delay=1):
-    """Retry function with exponential backoff."""
-
-    for attempt in range(max_retries):
-        try:
-            return await func()
-        except Exception as e:
-            if attempt == max_retries - 1:
-                raise
-
-            delay = base_delay * (2 ** attempt)
-            logger.warning(f"Attempt {attempt + 1} failed, retrying in {delay}s")
-            await asyncio.sleep(delay)
-```
+- Max retries: 3
+- Base delay: 1 second
+- Delay formula: base_delay × (2 ^ attempt)
+- Pattern: Try → Fail → Wait 1s → Try → Fail → Wait 2s → Try → Fail → Wait 4s → Raise exception
 
 ---
 
@@ -1006,70 +337,24 @@ async def retry_with_backoff(func, max_retries=3, base_delay=1):
 
 ### 10.1 Performance Metrics
 
-**Metrics Collection**: `.claude/hooks/utils/metrics.py:1-120`
+**Implementation**: `.claude/hooks/utils/metrics.py:1-120`
 
-```python
-class InjectionMetrics:
-    """Collects and reports injection performance metrics."""
+**InjectionMetrics Collected**:
+- total_injections | successful_injections | failed_injections
+- cache_hits | cache_misses
+- average_latency_ms (running average)
 
-    def __init__(self):
-        self.metrics = {
-            "total_injections": 0,
-            "successful_injections": 0,
-            "failed_injections": 0,
-            "cache_hits": 0,
-            "cache_misses": 0,
-            "average_latency_ms": 0
-        }
-
-    def record_injection(self, success: bool, latency_ms: float, cache_hit: bool):
-        """Record injection event."""
-        self.metrics["total_injections"] += 1
-
-        if success:
-            self.metrics["successful_injections"] += 1
-        else:
-            self.metrics["failed_injections"] += 1
-
-        if cache_hit:
-            self.metrics["cache_hits"] += 1
-        else:
-            self.metrics["cache_misses"] += 1
-
-        # Update running average
-        total = self.metrics["total_injections"]
-        current_avg = self.metrics["average_latency_ms"]
-        self.metrics["average_latency_ms"] = (
-            (current_avg * (total - 1) + latency_ms) / total
-        )
-
-    def get_success_rate(self) -> float:
-        """Calculate success rate percentage."""
-        total = self.metrics["total_injections"]
-        if total == 0:
-            return 0.0
-        return (self.metrics["successful_injections"] / total) * 100
-
-    def get_cache_hit_rate(self) -> float:
-        """Calculate cache hit rate percentage."""
-        total = self.metrics["cache_hits"] + self.metrics["cache_misses"]
-        if total == 0:
-            return 0.0
-        return (self.metrics["cache_hits"] / total) * 100
-```
+**Calculated Metrics**:
+- Success rate % = (successful / total) × 100
+- Cache hit rate % = (cache_hits / (cache_hits + cache_misses)) × 100
 
 ### 10.2 Logging Strategy
 
-**Log Files**:
-- Context injection: `logs/context_injection.log`
-- Errors: `logs/context_injection_errors.log`
-- Performance: `logs/context_performance.log`
-
-**Log Levels**:
-- `DEBUG`: Detailed execution flow
-- `INFO`: Successful operations
-- `WARNING`: Fallback usage, performance degradation
-- `ERROR`: Failed operations with context
+| Log File | Content | Level Guidelines |
+|----------|---------|------------------|
+| logs/context_injection.log | Successful operations | DEBUG: Detailed execution flow \| INFO: Successful operations |
+| logs/context_injection_errors.log | Failed operations with context | WARNING: Fallback usage, performance degradation \| ERROR: Failed operations |
+| logs/context_performance.log | Performance metrics | INFO: Latency measurements, cache stats |
 
 ---
 
@@ -1077,51 +362,18 @@ class InjectionMetrics:
 
 ### 11.1 Data Protection
 
-**Sensitive Data Filtering**:
-
-```python
-def sanitize_context_data(context: dict) -> dict:
-    """Remove sensitive data from context before injection."""
-
-    sensitive_fields = [
-        "password", "secret", "token", "api_key",
-        "private_key", "credentials"
-    ]
-
-    sanitized = {}
-    for key, value in context.items():
-        # Skip sensitive fields
-        if any(sensitive in key.lower() for sensitive in sensitive_fields):
-            continue
-
-        # Recursively sanitize nested dicts
-        if isinstance(value, dict):
-            sanitized[key] = sanitize_context_data(value)
-        else:
-            sanitized[key] = value
-
-    return sanitized
-```
+**Sensitive Data Filtering** (sanitize_context_data()):
+- Blocked fields: password, secret, token, api_key, private_key, credentials
+- Pattern matching: Case-insensitive substring check in field names
+- Recursive sanitization: Nested dicts processed recursively
+- Behavior: Skip sensitive fields, include all others
 
 ### 11.2 Access Control
 
-**Permission Validation**:
-
-```python
-async def validate_context_access(user_id: str, context_type: str) -> bool:
-    """Validate user has permission to access context."""
-
-    # Query MCP for user permissions
-    permissions = await mcp_client.get_user_permissions(user_id)
-
-    required_permission = {
-        "task": "task:read",
-        "project": "project:read",
-        "context": "context:read"
-    }.get(context_type)
-
-    return required_permission in permissions
-```
+**Permission Validation** (validate_context_access()):
+- Query MCP for user permissions
+- Required permissions by context type: task → "task:read" | project → "project:read" | context → "context:read"
+- Returns: bool (true if user has required permission)
 
 ---
 
@@ -1129,31 +381,17 @@ async def validate_context_access(user_id: str, context_type: str) -> bool:
 
 ### 12.1 Reference to CLAUDE.md
 
-**IMPORTANT**: The MCP injection system integrates with Dynamic Tool Enforcement v2.0 documented in:
-
-- **File**: `CLAUDE.md` (project root)
-- **Section**: "🔒 DYNAMIC TOOL ENFORCEMENT v2.0 - CRITICAL SECURITY UPDATE"
-- **Lines**: Approximately 300-450
+**IMPORTANT**: The MCP injection system integrates with Dynamic Tool Enforcement v2.0 documented in `CLAUDE.md` (project root, Section "🔒 DYNAMIC TOOL ENFORCEMENT v2.0 - CRITICAL SECURITY UPDATE", Lines ~300-450).
 
 **Key Integration Points**:
-
-1. **Agent Loading**: `call_agent` returns dynamic tool permissions
-2. **Tool Restrictions**: Only tools in agent's `tools` array are available
+1. **Agent Loading**: call_agent returns dynamic tool permissions
+2. **Tool Restrictions**: Only tools in agent's tools array are available
 3. **Injection Context**: Includes current agent's tool permissions
 4. **Error Prevention**: System blocks unauthorized tool usage
 
-**What MCP Injection Provides**:
+**What MCP Injection Provides**: Current agent role + capabilities | Tool permission list from agent definition | Workflow hints based on available tools | Delegation guidance when tools are restricted
 
-- Current agent role and capabilities
-- Tool permission list from agent definition
-- Workflow hints based on available tools
-- Delegation guidance when tools are restricted
-
-**See CLAUDE.md for**:
-- Complete tool enforcement rules
-- Agent-specific tool lists
-- Dynamic blocking examples
-- Security enforcement details
+**See CLAUDE.md for**: Complete tool enforcement rules | Agent-specific tool lists | Dynamic blocking examples | Security enforcement details
 
 ---
 
@@ -1161,40 +399,24 @@ async def validate_context_access(user_id: str, context_type: str) -> bool:
 
 ### 13.1 Core Architecture Documents
 
-- **Timestamp Management**: `unified-timestamp-architecture.md` - Database timestamp handling
+- **Timestamp Management**: unified-timestamp-architecture.md - Database timestamp handling
 - **Agent System**: Future consolidation - Agent orchestration patterns
-- **Database Architecture**: `database-architecture.md` - Database design with Python 3.14.0
-- **System Overview**: `system-architecture-overview.md` - Complete system architecture
+- **Database Architecture**: database-architecture.md - Database design with Python 3.14.0
+- **System Overview**: system-architecture-overview.md - Complete system architecture
 
 ### 13.2 Implementation Files
 
-**Hook System**:
-- `.claude/hooks/session_start.py:105-180` - Session initialization
-- `.claude/hooks/pre_tool_use.py:180-280` - Real-time injection
-- `.claude/hooks/post_tool_use.py:95-180` - Context updates
+**Hook System**: session_start.py:105-180 | pre_tool_use.py:180-280 | post_tool_use.py:95-180
 
-**Utilities**:
-- `.claude/hooks/utils/mcp_client.py:1-200` - HTTP client
-- `.claude/hooks/utils/context_injector.py:1-250` - Injection logic
-- `.claude/hooks/utils/cache_manager.py:45-180` - Cache management
-- `.claude/hooks/utils/token_optimizer.py:1-85` - Token economy
+**Utilities**: mcp_client.py:1-200 (HTTP client) | context_injector.py:1-250 (Injection logic) | cache_manager.py:45-180 (Cache management) | token_optimizer.py:1-85 (Token economy)
 
-**Backend**:
-- `agenthub_main/src/fastmcp/auth/hook_auth.py:1-85` - JWT authentication
-- `agenthub_main/src/fastmcp/task_management/` - Task management (DDD Phase 8)
-- `agenthub_main/src/fastmcp/context_system/` - Context management (4-tier hierarchy)
+**Backend**: hook_auth.py:1-85 (JWT authentication) | task_management/ (DDD Phase 8) | context_system/ (4-tier hierarchy)
 
 ### 13.3 Testing & Validation
 
-**Test Suites**:
-- `agenthub_main/src/tests/test_context_injection.py` - Unit tests
-- `agenthub_main/src/tests/test_context_injection_system.py` - Integration tests
-- `agenthub_main/src/tests/test_context_injection_performance.py` - Performance tests
+**Test Suites**: test_context_injection.py (unit) | test_context_injection_system.py (integration) | test_context_injection_performance.py (performance)
 
-**Scripts**:
-- `scripts/test_hook_auth.py` - Authentication validation
-- `scripts/test_full_injection_flow.py` - End-to-end testing
-- `agenthub_main/src/tests/create_test_data.py` - Test data generation
+**Scripts**: test_hook_auth.py (authentication validation) | test_full_injection_flow.py (E2E testing) | create_test_data.py (test data generation)
 
 ---
 
@@ -1212,23 +434,11 @@ async def validate_context_access(user_id: str, context_type: str) -> bool:
 
 ### 14.2 Validation Results
 
-**Completion Rate Validation**:
-```python
-# Baseline (before auto-injection): ~60% task completion
-# Current (with auto-injection): ~85% task completion
-# Improvement: +42% (exceeds target of +40%)
-```
+**Completion Rate**: Baseline (before auto-injection) ~60% → Current (with auto-injection) ~85% → Improvement +42% (exceeds +40% target)
 
-**Performance Validation**:
-- P50 latency: 250ms
-- P95 latency: 450ms
-- P99 latency: 680ms
-- Target: < 500ms average ✅ Met
+**Performance Latency**: P50: 250ms | P95: 450ms | P99: 680ms | Target: <500ms avg ✅ Met
 
-**Reliability Validation**:
-- 30-day uptime: 99.8%
-- Error recovery rate: 98.5%
-- Fallback success rate: 95%
+**Reliability**: 30-day uptime 99.8% | Error recovery rate 98.5% | Fallback success rate 95%
 
 ---
 
@@ -1236,28 +446,16 @@ async def validate_context_access(user_id: str, context_type: str) -> bool:
 
 ### 15.1 Phase 3 Opportunities
 
-**Machine Learning Integration**:
-- Context relevance prediction
-- Optimal injection timing prediction
-- Task priority learning from user behavior
-- Smart cache preloading based on patterns
+**Machine Learning Integration**: Context relevance prediction | Optimal injection timing prediction | Task priority learning from user behavior | Smart cache preloading based on patterns
 
-**Advanced Caching**:
-- Distributed Redis cache for multi-instance support
-- Predictive cache warming
-- Context streaming for large payloads
-- GraphQL for selective field queries
+**Advanced Caching**: Distributed Redis cache for multi-instance support | Predictive cache warming | Context streaming for large payloads | GraphQL for selective field queries
 
-**Enhanced Visualization**:
-- Interactive ASCII dashboards
-- Real-time progress indicators
-- Workflow dependency visualization
-- Performance analytics dashboard
+**Enhanced Visualization**: Interactive ASCII dashboards | Real-time progress indicators | Workflow dependency visualization | Performance analytics dashboard
 
 ### 15.2 Optimization Targets
 
-- Further reduce latency to < 200ms (P95)
-- Increase cache hit rate to > 90%
+- Further reduce latency to <200ms (P95)
+- Increase cache hit rate to >90%
 - Implement context compression (30% size reduction)
 - Add WebSocket support for real-time updates
 - Enhance ML-based context prediction
@@ -1266,7 +464,7 @@ async def validate_context_access(user_id: str, context_type: str) -> bool:
 
 ## 16. Conclusion
 
-The MCP Context Injection System represents a breakthrough in AI-assisted development workflows. By automatically providing Claude AI with relevant context at critical execution points, we've achieved:
+MCP Context Injection System represents a breakthrough in AI-assisted development workflows. By automatically providing Claude AI with relevant context at critical execution points, we've achieved:
 
 ✅ **42% improvement in task completion rates** (exceeds 40% target)
 ✅ **99.2% successful context injection** (exceeds 99% target)
@@ -1284,25 +482,22 @@ The MCP Context Injection System represents a breakthrough in AI-assisted develo
 
 ### Architecture Strengths
 
-- **HTTP-Based**: Secure REST API with JWT authentication
-- **DDD Phase 8**: Clean architecture with proper separation of concerns
-- **Python 3.14.0+**: Modern Python with latest language features
-- **Multi-Tier Cache**: Optimized performance with intelligent invalidation
-- **Graceful Degradation**: Multiple fallback strategies for resilience
+**HTTP-Based**: Secure REST API with JWT authentication
+**DDD Phase 8**: Clean architecture with proper separation of concerns
+**Python 3.14.0+**: Modern Python with latest language features
+**Multi-Tier Cache**: Optimized performance with intelligent invalidation
+**Graceful Degradation**: Multiple fallback strategies for resilience
 
 ### Path Forward
 
-The foundation is complete and validated. Future enhancements will focus on:
+Foundation complete and validated. Future enhancements will focus on:
 - Machine learning-based context prediction
-- Advanced caching strategies
-- Enhanced visualization systems
-- Performance optimization to < 200ms
+- Advanced caching strategies (distributed Redis, predictive warming)
+- Enhanced visualization systems (interactive dashboards)
+- Performance optimization to <200ms (P95 latency)
 
 **The cognitive prosthesis is operational. The path to 95% project completion rates is clear.**
 
 ---
 
-**Document Status**: Production Ready
-**Last Validated**: 2025-10-16
-**Next Review**: 2025-11-16
-**Confidence**: 98%
+**Document Status**: Production Ready | **Last Validated**: 2025-10-16 | **Next Review**: 2025-11-16 | **Confidence**: 98%
