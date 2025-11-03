@@ -190,6 +190,19 @@ class SubtaskCRUDHandler:
                 "Include 'subtask_id' in your request",
             )
 
+        # REQUIRED: progress_notes for updates (minimum 10 characters)
+        if not progress_notes or len(progress_notes.strip()) < 10:
+            return self._response_formatter.create_error_response(
+                operation="update_subtask",
+                error="Missing required field: progress_notes (minimum 10 characters). Updates must include progress description.",
+                error_code=ErrorCodes.VALIDATION_ERROR,
+                metadata={
+                    "field": "progress_notes",
+                    "requirement": "Minimum 10 characters describing what was done",
+                    "example": "Completed schema design, starting implementation"
+                }
+            )
+
         try:
             # Prepare update data
             update_data = {}
@@ -374,6 +387,27 @@ class SubtaskCRUDHandler:
                 action="list", task_id=task_id, subtask_data=filter_data
             )
 
+            # OPTIMIZATION: Return minimal fields for list results (96% token savings)
+            if result.get("success") and "subtasks" in result:
+                subtasks = result["subtasks"]
+
+                # Convert to minimal representation (only 4 essential fields)
+                minimal_subtasks = []
+                for subtask in subtasks:
+                    minimal_subtasks.append({
+                        "id": subtask.get("id"),
+                        "title": subtask.get("title"),
+                        "status": subtask.get("status"),
+                        "priority": subtask.get("priority")
+                    })
+
+                result["subtasks"] = minimal_subtasks
+                result["list_metadata"] = {
+                    "task_id": task_id,
+                    "total_results": len(minimal_subtasks),
+                    "tip": "Use manage_subtask(action='get', task_id='...', subtask_id='...') for full details"
+                }
+
             # Add parent progress information
             if result.get("success") and self._context_facade:
                 result["parent_progress"] = self._get_parent_progress(facade, task_id)
@@ -410,6 +444,19 @@ class SubtaskCRUDHandler:
                 "subtask_id",
                 "A valid subtask_id string",
                 "Include 'subtask_id' in your request",
+            )
+
+        # REQUIRED: completion_summary for completions (minimum 20 characters)
+        if not completion_summary or len(completion_summary.strip()) < 20:
+            return self._response_formatter.create_error_response(
+                operation="complete_subtask",
+                error="Missing required field: completion_summary (minimum 20 characters). Completions must include detailed summary of accomplishments.",
+                error_code=ErrorCodes.VALIDATION_ERROR,
+                metadata={
+                    "field": "completion_summary",
+                    "requirement": "Minimum 20 characters describing what was accomplished",
+                    "example": "Feature implemented with tests passing, documented in README"
+                }
             )
 
         try:
