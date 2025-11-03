@@ -197,6 +197,19 @@ class CRUDHandler:
                 hint="Include 'task_id' in your request body",
             )
 
+        # REQUIRED: details (progress_notes) for updates (minimum 10 characters)
+        if not details or len(details.strip()) < 10:
+            return self._response_formatter.create_error_response(
+                operation="update_task",
+                error="Missing required field: details (progress_notes). Updates must include progress description (minimum 10 characters).",
+                error_code=ErrorCodes.VALIDATION_ERROR,
+                metadata={
+                    "field": "details",
+                    "requirement": "Minimum 10 characters describing what was done",
+                    "example": "Completed JWT implementation, starting refresh token logic"
+                }
+            )
+
         # Create update request with provided fields
         request_data = {"task_id": task_id}  # task_id is required for UpdateTaskRequest
 
@@ -356,6 +369,19 @@ class CRUDHandler:
                 field="task_id",
                 expected="A valid task_id string",
                 hint="Include 'task_id' in your request",
+            )
+
+        # REQUIRED: completion_summary for completions (minimum 20 characters)
+        if not completion_summary or len(completion_summary.strip()) < 20:
+            return self._response_formatter.create_error_response(
+                operation="complete_task",
+                error="Missing required field: completion_summary (minimum 20 characters). Completions must include detailed summary of accomplishments.",
+                error_code=ErrorCodes.VALIDATION_ERROR,
+                metadata={
+                    "field": "completion_summary",
+                    "requirement": "Minimum 20 characters describing what was accomplished",
+                    "example": "Implemented JWT authentication with refresh tokens, added 2FA support, all tests passing"
+                }
             )
 
         # Extract user_id from facade's repository if available
