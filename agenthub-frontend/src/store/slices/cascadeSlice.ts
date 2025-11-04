@@ -142,13 +142,5 @@ export const {
 
 export default cascadeSlice.reducer;
 
-// Selectors
-export const selectCascadeState = (state: { cascade: CascadeState }) => state.cascade;
-export const selectBranches = (state: { cascade: CascadeState }) => state.cascade.branches;
-export const selectTasks = (state: { cascade: CascadeState }) => state.cascade.tasks;
-export const selectProjects = (state: { cascade: CascadeState }) => state.cascade.projects;
-export const selectSubtasks = (state: { cascade: CascadeState }) => state.cascade.subtasks;
-export const selectContexts = (state: { cascade: CascadeState }) => state.cascade.contexts;
-export const selectBranchById = (state: { cascade: CascadeState }, id: string) => state.cascade.branches[id];
-export const selectTaskById = (state: { cascade: CascadeState }, id: string) => state.cascade.tasks[id];
-export const selectProjectById = (state: { cascade: CascadeState }, id: string) => state.cascade.projects[id];
+// Note: Selectors removed - cascade data is write-only (stored but never read by UI)
+// If you need to access cascade data in the future, add selectors here

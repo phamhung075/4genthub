@@ -14,7 +14,6 @@ export const store = configureStore({
         ignoredActions: [
           'websocket/messageReceived',
           'websocket/error',
-          'cascade/updateFromWebSocket',
         ],
         // Ignore these field paths in all actions
         ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],
