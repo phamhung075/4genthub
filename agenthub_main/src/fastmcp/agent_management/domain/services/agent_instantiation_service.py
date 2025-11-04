@@ -6,7 +6,6 @@ from typing import Optional
 from ..entities.user_agent_instance import UserAgentInstance
 from ..entities.agent_template import AgentTemplate
 from ..value_objects.user_id import UserId
-from ..value_objects.agent_template_id import AgentTemplateId
 from ..value_objects.user_agent_instance_id import UserAgentInstanceId
 from ..repositories.agent_template_repository import AgentTemplateRepository
 from ..repositories.user_agent_instance_repository import UserAgentInstanceRepository

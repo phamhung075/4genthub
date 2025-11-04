@@ -6,13 +6,12 @@ for complete authentication workflows including registration, password reset, an
 email verification.
 """
 
-import os
 import logging
 from typing import Optional, Dict, Any
 from datetime import datetime
 from dataclasses import dataclass
 
-from .supabase_auth import SupabaseAuthService, SupabaseAuthResult
+from .supabase_auth import SupabaseAuthService
 from .email_service import SMTPEmailService, EmailResult, get_email_service
 from .repositories.email_token_repository import (
     EmailTokenRepository, 
