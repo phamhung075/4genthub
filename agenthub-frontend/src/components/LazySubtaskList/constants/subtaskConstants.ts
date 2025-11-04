@@ -1,34 +1,6 @@
 // LazySubtaskList constants
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import type { BadgeVariant } from "../../../types/subtaskTypes";
-
-/**
- * Status color mapping for badges
- * Maps subtask status to UI badge variant
- */
-export const STATUS_COLOR_MAP: Record<string, BadgeVariant> = {
-  done: "default",
-  in_progress: "secondary",
-  review: "secondary",
-  testing: "secondary",
-  todo: "outline",
-  blocked: "destructive",
-  cancelled: "destructive",
-  archived: "outline"
-} as const;
-
-/**
- * Priority color mapping for badges
- * Maps subtask priority to UI badge variant
- */
-export const PRIORITY_COLOR_MAP: Record<string, BadgeVariant> = {
-  low: "outline",
-  medium: "secondary",
-  high: "default",
-  urgent: "destructive"
-} as const;
-
 /**
  * Animation configuration
  */

@@ -23,13 +23,6 @@ export function subtaskToSummary(subtask: Subtask): SubtaskSummary {
 }
 
 /**
- * Convert multiple Subtasks to SubtaskSummaries
- */
-export function subtasksToSummaries(subtasks: Subtask[]): SubtaskSummary[] {
-  return subtasks.map(subtaskToSummary);
-}
-
-/**
  * Check if a subtask ID has a valid UUID format
  * Prevents unnecessary API calls for invalid IDs
  */
@@ -210,17 +203,6 @@ function hasSubtaskChanged(oldSubtask: SubtaskSummary, newSubtask: SubtaskSummar
     oldSubtask.assignees_count !== newSubtask.assignees_count ||
     JSON.stringify(oldSubtask.assignees) !== JSON.stringify(newSubtask.assignees)
   );
-}
-
-/**
- * Generate navigation URL for subtask dialog
- */
-export function generateSubtaskDialogUrl(
-  projectId: string,
-  taskTreeId: string,
-  subtaskId: string
-): string {
-  return `/dashboard/project/${projectId}/branch/${taskTreeId}/subtask/${subtaskId}`;
 }
 
 /**
