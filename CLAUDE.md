@@ -381,7 +381,7 @@ echo "$result" | jq '.completion_summary'
 
 ## 📝 TOKEN OPTIMIZATION TECHNIQUES
 
-**Purpose**: Apply when writing docs, changelogs, MCP tasks
+**Purpose**: Apply when writing docs, changelogs, MCP tasks, subtasks, description, progress
 **Principle**: Quality Priority #1, Token Economy Priority #2
 
 ### 15 Techniques
