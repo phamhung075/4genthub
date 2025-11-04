@@ -17,6 +17,23 @@ import logger from '../utils/logger';
 import { tokenService } from '../services/tokenService';
 import { API_BASE_URL } from '../config/environment';
 
+interface UsageStats {
+  task_create?: number;
+  task_update?: number;
+  task_delete?: number;
+  subtask_create?: number;
+  subtask_update?: number;
+  subtask_delete?: number;
+  project_create?: number;
+  project_update?: number;
+  branch_create?: number;
+  branch_update?: number;
+  agent_call?: number;
+  context_create?: number;
+  context_update?: number;
+  [key: string]: number | undefined;
+}
+
 interface APIToken {
   id: string;
   name: string;
@@ -27,6 +44,7 @@ interface APIToken {
   last_used_at?: string;
   usage_count: number;
   rate_limit?: number;
+  usage_stats?: UsageStats;
   is_active: boolean;
 }
 
@@ -187,7 +205,11 @@ export function TokenManagement() {
   
   // Delete dialog state - using token ID as key for multiple dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<{[key: string]: boolean}>({});
-  
+
+  // Details dialog state
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState<{[key: string]: boolean}>({});
+  const [selectedToken, setSelectedToken] = useState<APIToken | null>(null);
+
   // Copy state for buttons
   const [copiedButton, setCopiedButton] = useState<string | null>(null);
 
@@ -230,6 +252,10 @@ export function TokenManagement() {
     }
     if (selectedScopes.length === 0) {
       setError('At least one scope must be selected');
+      return;
+    }
+    if (rateLimit > 1000) {
+      setError('Rate limit must be 1000 or less requests/hour');
       return;
     }
 
@@ -301,6 +327,16 @@ export function TokenManagement() {
 
   const closeDeleteDialog = (tokenId: string) => {
     setDeleteDialogOpen(prev => ({ ...prev, [tokenId]: false }));
+  };
+
+  const openDetailsDialog = (token: APIToken) => {
+    setSelectedToken(token);
+    setDetailsDialogOpen(prev => ({ ...prev, [token.id]: true }));
+  };
+
+  const closeDetailsDialog = (tokenId: string) => {
+    setDetailsDialogOpen(prev => ({ ...prev, [tokenId]: false }));
+    setSelectedToken(null);
   };
 
   return (
@@ -510,10 +546,10 @@ export function TokenManagement() {
                       value={rateLimit}
                       onChange={(e) => setRateLimit(parseInt(e.target.value) || 1000)}
                       min="1"
-                      max="10000"
+                      max="1000"
                       className="bg-background/50"
                     />
-                    <p className="text-xs text-muted-foreground">Maximum requests per hour</p>
+                    <p className="text-xs text-muted-foreground">Maximum requests per hour (1000 max)</p>
                   </div>
                 </div>
 
@@ -664,18 +700,54 @@ export function TokenManagement() {
                         <div className="grid grid-cols-2 gap-4 text-center">
                           <div className="bg-background/50 rounded-lg p-3">
                             <p className="text-2xl font-bold text-primary">{token.usage_count}</p>
-                            <p className="text-xs text-muted-foreground">Requests</p>
+                            <p className="text-xs text-muted-foreground">Total Requests</p>
                           </div>
                           {token.rate_limit && (
                             <div className="bg-background/50 rounded-lg p-3">
                               <p className="text-2xl font-bold text-secondary">{token.rate_limit}</p>
-                              <p className="text-xs text-muted-foreground">Per Hour</p>
+                              <p className="text-xs text-muted-foreground">Rate Limit/Hr</p>
                             </div>
                           )}
                         </div>
+
+                        {/* Detailed Usage Breakdown */}
+                        {token.usage_stats && Object.keys(token.usage_stats).length > 0 && (
+                          <>
+                            <Separator />
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-semibold text-muted-foreground uppercase">Operation Breakdown</h4>
+                              <div className="space-y-1 max-h-32 overflow-y-auto">
+                                {Object.entries(token.usage_stats)
+                                  .filter(([_, count]) => count && count > 0)
+                                  .sort((a, b) => (b[1] || 0) - (a[1] || 0))
+                                  .map(([operation, count]) => {
+                                    const operationLabel = operation
+                                      .split('_')
+                                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                      .join(' ');
+                                    return (
+                                      <div key={operation} className="flex justify-between items-center text-xs">
+                                        <span className="text-muted-foreground truncate">{operationLabel}</span>
+                                        <Badge variant="outline" className="ml-2 text-xs">{count}</Badge>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          </>
+                        )}
                         
-                        {/* Revoke Button */}
-                        <div className="pt-4">
+                        {/* Action Buttons */}
+                        <div className="pt-4 space-y-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => openDetailsDialog(token)}
+                          >
+                            <Settings className="h-4 w-4 mr-2" />
+                            View Details
+                          </Button>
                           <Button
                             variant="destructive"
                             size="sm"
@@ -906,6 +978,179 @@ export function TokenManagement() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Token Details Dialog */}
+        {selectedToken && (
+          <Dialog
+            open={detailsDialogOpen[selectedToken.id] || false}
+            onOpenChange={(open) => !open && closeDetailsDialog(selectedToken.id)}
+          >
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center space-x-2">
+                  <Key className="h-5 w-5 text-primary" />
+                  <span>Token Details: {selectedToken.name}</span>
+                </DialogTitle>
+                <DialogDescription>
+                  Comprehensive usage statistics and token information
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                {/* Token Status */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Status & Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Status</p>
+                        <Badge
+                          variant={selectedToken.is_active && new Date(selectedToken.expires_at) > new Date() ? "default" : "secondary"}
+                          className={`${
+                            selectedToken.is_active && new Date(selectedToken.expires_at) > new Date()
+                              ? "bg-green-500 hover:bg-green-600 text-white"
+                              : "bg-gray-500 text-white"
+                          }`}
+                        >
+                          {new Date(selectedToken.expires_at) < new Date() ? 'Expired' : selectedToken.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Rate Limit</p>
+                        <p className="text-sm font-medium">{selectedToken.rate_limit || 1000} requests/hour</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Created</p>
+                        <p className="text-sm font-medium">{format(new Date(selectedToken.created_at), 'MMM d, yyyy h:mm a')}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Expires</p>
+                        <p className="text-sm font-medium">{format(new Date(selectedToken.expires_at), 'MMM d, yyyy h:mm a')}</p>
+                      </div>
+                      {selectedToken.last_used_at && (
+                        <div className="col-span-2">
+                          <p className="text-xs text-muted-foreground">Last Used</p>
+                          <p className="text-sm font-medium">{format(new Date(selectedToken.last_used_at), 'MMM d, yyyy h:mm a')}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Usage Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Usage Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-primary/10 rounded-lg p-4">
+                        <p className="text-3xl font-bold text-primary">{selectedToken.usage_count}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Total Requests</p>
+                      </div>
+                      <div className="bg-secondary/10 rounded-lg p-4">
+                        <p className="text-3xl font-bold text-secondary">
+                          {selectedToken.usage_stats ? Object.keys(selectedToken.usage_stats).length : 0}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Operation Types</p>
+                      </div>
+                      <div className="bg-green-500/10 rounded-lg p-4">
+                        <p className="text-3xl font-bold text-green-600">
+                          {selectedToken.usage_stats && Object.keys(selectedToken.usage_stats).length > 0
+                            ? Math.max(...Object.values(selectedToken.usage_stats).filter((v): v is number => v !== undefined))
+                            : 0}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Most Used</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Detailed Operation Breakdown */}
+                {selectedToken.usage_stats && Object.keys(selectedToken.usage_stats).length > 0 ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center justify-between">
+                        <span>Operation Breakdown</span>
+                        <Badge variant="outline">{Object.keys(selectedToken.usage_stats).length} operations</Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {Object.entries(selectedToken.usage_stats)
+                          .filter(([_, count]) => count && count > 0)
+                          .sort((a, b) => (b[1] || 0) - (a[1] || 0))
+                          .map(([operation, count]) => {
+                            const operationLabel = operation
+                              .split('_')
+                              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                              .join(' ');
+                            const percentage = selectedToken.usage_count > 0
+                              ? ((count || 0) / selectedToken.usage_count * 100).toFixed(1)
+                              : 0;
+
+                            return (
+                              <div key={operation} className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium">{operationLabel}</span>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-xs text-muted-foreground">{percentage}%</span>
+                                    <Badge variant="secondary">{count}</Badge>
+                                  </div>
+                                </div>
+                                <div className="w-full bg-secondary/20 rounded-full h-2">
+                                  <div
+                                    className="bg-primary h-2 rounded-full transition-all"
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-8 text-center">
+                      <Zap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-sm text-muted-foreground">
+                        No operation data yet. Start using this token to see detailed usage statistics.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Scopes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      <span>Permissions (Scopes)</span>
+                      <Badge variant="outline">{selectedToken.scopes.length} scopes</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedToken.scopes.map((scope) => (
+                        <Badge key={scope} variant="secondary" className="text-xs">
+                          {scope}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => closeDetailsDialog(selectedToken.id)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </AppLayout>
   );
