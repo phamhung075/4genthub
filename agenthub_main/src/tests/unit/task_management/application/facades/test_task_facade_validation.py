@@ -18,6 +18,9 @@ Test Coverage:
 4. Null/None git_branch_id (should fail)
 5. Empty string git_branch_id (should fail)
 6. Integration: Validation prevents auto-creation bypass
+7. Error message quality verification
+8. Authentication error handling (added 2025-11-04)
+9. Exception type reporting in errors (added 2025-11-04)
 
 Related Documentation:
 - Bug report: ai_docs/issues/git-branch-validation-bug.md
@@ -324,6 +327,86 @@ class TestGitBranchIdValidation(unittest.TestCase):
                     # Should provide actionable guidance
                     has_guidance = any(word in error_msg.lower() for word in ['create', 'list', 'manage_git_branch'])
                     self.assertTrue(has_guidance, "Error should provide guidance on how to fix the issue")
+
+        asyncio.run(run_test())
+
+    def test_authentication_error_handling(self):
+        """Test 8: Verify authentication errors are caught and re-raised with helpful context"""
+
+        async def run_test():
+            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
+                UserAuthenticationRequiredError
+            )
+
+            # Mock repositories
+            mock_task_repo = AsyncMock()
+            mock_branch_repo = AsyncMock()
+            # Simulate authentication error
+            mock_branch_repo.find_by_id = AsyncMock(
+                side_effect=UserAuthenticationRequiredError("User authentication is required")
+            )
+
+            with patch('fastmcp.task_management.application.services.project_management_service.ProjectManagementService') as MockPMS:
+                mock_pms = MockPMS.return_value
+                mock_pms.get_git_branch_by_id = Mock(
+                    side_effect=UserAuthenticationRequiredError("User authentication is required")
+                )
+
+                # Create facade with correct constructor signature
+                facade = TaskApplicationFacade(
+                    task_repository=mock_task_repo,
+                    git_branch_repository=mock_branch_repo
+                )
+
+                try:
+                    await facade._derive_context_from_git_branch_id(self.valid_branch_id)
+                    self.fail("Should have raised ValueError")
+                except ValueError as e:
+                    error_msg = str(e)
+
+                    # Verify error message contains authentication context
+                    self.assertIn("Cannot validate git_branch_id", error_msg)
+                    self.assertIn(self.valid_branch_id, error_msg)
+                    self.assertIn("authentication", error_msg.lower())
+                    self.assertIn("user_id", error_msg.lower())
+
+        asyncio.run(run_test())
+
+    def test_exception_type_in_error_message(self):
+        """Test 9: Verify unexpected exceptions include exception type for debugging"""
+
+        async def run_test():
+            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+
+            # Mock repositories
+            mock_task_repo = AsyncMock()
+            mock_branch_repo = AsyncMock()
+            # Simulate unexpected exception (e.g., DatabaseError)
+            custom_exception = RuntimeError("Database connection timeout")
+            mock_branch_repo.find_by_id = AsyncMock(side_effect=custom_exception)
+
+            with patch('fastmcp.task_management.application.services.project_management_service.ProjectManagementService') as MockPMS:
+                mock_pms = MockPMS.return_value
+                mock_pms.get_git_branch_by_id = Mock(side_effect=custom_exception)
+
+                # Create facade with correct constructor signature
+                facade = TaskApplicationFacade(
+                    task_repository=mock_task_repo,
+                    git_branch_repository=mock_branch_repo
+                )
+
+                try:
+                    await facade._derive_context_from_git_branch_id(self.valid_branch_id)
+                    self.fail("Should have raised ValueError")
+                except ValueError as e:
+                    error_msg = str(e)
+
+                    # Verify error message contains exception type
+                    self.assertIn("Unexpected error", error_msg)
+                    self.assertIn("RuntimeError", error_msg, "Error should include exception type")
+                    self.assertIn("Database connection timeout", error_msg)
+                    self.assertIn(self.valid_branch_id, error_msg)
 
         asyncio.run(run_test())
 

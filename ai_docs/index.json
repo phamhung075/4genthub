@@ -1325,8 +1325,15 @@
       "path": "operations"
     },
     "reports-status": {
-      "count": 1,
+      "count": 2,
       "files": [
+        {
+          "hash": "91a79474ab06f08ecdd3d644ba419b26",
+          "modified": "2025-11-04T14:30:01.580001",
+          "name": "dead-code-analysis-2025-11-04.md",
+          "path": "reports-status/dead-code-analysis-2025-11-04.md",
+          "size": 9123
+        },
         {
           "hash": "65ca839d33c0f16fa1fbe71dee11fad5",
           "modified": "2025-10-31T14:40:19.196414",
@@ -1788,7 +1795,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-04T11:27:51.753437",
+  "generated_at": "2025-11-04T14:30:02.266880",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -2054,6 +2061,7 @@
     },
     "reports-status": {
       "files": [
+        "dead-code-analysis-2025-11-04.md",
         "websocket-animation-architecture-analysis.md"
       ]
     },
@@ -2122,5 +2130,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 235
+  "total_files": 236
 }
