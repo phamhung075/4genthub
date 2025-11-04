@@ -40,16 +40,14 @@ export type {
   UseSubtaskDialogsReturn
 } from "../../types/subtaskTypes";
 
-// Utility exports
+// Utility exports (commonly used helpers)
 export {
   subtaskToSummary,
-  subtasksToSummaries,
   isValidSubtaskId,
   filterSubtasks,
   calculateProgressSummary,
   sortSubtasks,
   detectSubtaskChanges,
-  generateSubtaskDialogUrl,
   generateBranchUrl,
   debounce,
   logSubtaskError,
@@ -58,8 +56,6 @@ export {
 
 // Constants exports
 export {
-  STATUS_COLOR_MAP,
-  PRIORITY_COLOR_MAP,
   ANIMATION_CONFIG,
   LOADING_CONFIG,
   DIALOG_CONFIG
