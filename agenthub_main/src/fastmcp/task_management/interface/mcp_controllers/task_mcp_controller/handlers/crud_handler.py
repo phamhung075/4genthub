@@ -197,15 +197,18 @@ class CRUDHandler:
                 hint="Include 'task_id' in your request body",
             )
 
-        # REQUIRED: details (progress_notes) for updates (minimum 10 characters)
-        if not details or len(details.strip()) < 10:
+        # CONDITIONAL: details (progress_notes) required only for status or progress changes
+        # Administrative updates (assignees, labels, priority, etc.) don't require progress notes
+        requires_progress_notes = status is not None or progress_percentage is not None
+
+        if requires_progress_notes and (not details or len(details.strip()) < 10):
             return self._response_formatter.create_error_response(
                 operation="update_task",
-                error="Missing required field: details (progress_notes). Updates must include progress description (minimum 10 characters).",
+                error="Missing required field: details (progress_notes). Status and progress updates must include progress description (minimum 10 characters).",
                 error_code=ErrorCodes.VALIDATION_ERROR,
                 metadata={
                     "field": "details",
-                    "requirement": "Minimum 10 characters describing what was done",
+                    "requirement": "Minimum 10 characters describing what was done (required when updating status or progress_percentage)",
                     "example": "Completed JWT implementation, starting refresh token logic"
                 }
             )

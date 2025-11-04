@@ -18,6 +18,7 @@ from ....application.facades.git_branch_application_facade import (
     GitBranchApplicationFacade,
 )
 from ....application.services.facade_service import FacadeService
+from ....infrastructure.configuration.tool_config import ToolConfig
 from ...utils.response_formatter import (
     ErrorCodes,
     StandardResponseFormatter,
@@ -87,8 +88,11 @@ class GitBranchMCPController(ContextPropagationMixin):
     maintaining the same interface while improving maintainability and separation of concerns.
     """
 
-    def __init__(self, facade_service: FacadeService | None = None):
+    def __init__(self, facade_service: FacadeService | None = None, config: ToolConfig | None = None):
         """Initialize the modular git branch MCP controller."""
+
+        # Store configuration
+        self._config = config or ToolConfig()
 
         # Store facade factory
         self._facade_service = facade_service or FacadeService.get_instance()
@@ -101,10 +105,13 @@ class GitBranchMCPController(ContextPropagationMixin):
             response_formatter=self._response_formatter
         )
 
-        # Initialize workflow guidance
-        self._workflow_guidance = GitBranchWorkflowFactory.create()
-
-        logger.info("GitBranchMCPController initialized with modular architecture")
+        # Initialize workflow guidance only if enabled
+        if self._config.is_workflow_guidance_enabled():
+            self._workflow_guidance = GitBranchWorkflowFactory.create()
+            logger.info("GitBranchMCPController initialized with workflow guidance enabled")
+        else:
+            self._workflow_guidance = None
+            logger.info("GitBranchMCPController initialized with workflow guidance disabled (token optimization)")
 
     def register_tools(self, mcp: "FastMCP"):
         """Register MCP tools with the server."""
@@ -215,6 +222,10 @@ class GitBranchMCPController(ContextPropagationMixin):
         self, response: dict[str, Any], action: str, project_id: str
     ) -> dict[str, Any]:
         """Enhance response with workflow guidance using the workflow guidance system."""
+
+        # Early return if workflow guidance is disabled (token optimization)
+        if not self._config.is_workflow_guidance_enabled():
+            return response
 
         try:
             if self._workflow_guidance:

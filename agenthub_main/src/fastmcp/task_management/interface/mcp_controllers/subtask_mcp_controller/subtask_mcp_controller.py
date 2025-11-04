@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 # Import modular components
 from ....application.facades.subtask_application_facade import SubtaskApplicationFacade
 from ....application.services.facade_service import FacadeService
+from ....infrastructure.configuration.tool_config import ToolConfig
 from ...utils.parameter_validation_fix import coerce_parameter_types
 from ...utils.response_formatter import (
     ErrorCodes,
@@ -95,12 +96,20 @@ class SubtaskMCPController(ContextPropagationMixin):
         task_facade=None,
         context_facade=None,
         task_repository_factory=None,
+        config: ToolConfig | None = None,
     ):
         """Initialize the modular subtask MCP controller.
 
         Args:
             facade_service_or_factory: Either a FacadeService (new interface) or SubtaskFacadeFactory (legacy interface)
+            task_facade: Task facade for parent updates
+            context_facade: Context facade for context updates
+            task_repository_factory: Repository factory
+            config: Tool configuration for workflow guidance control
         """
+
+        # Store configuration
+        self._config = config or ToolConfig()
 
         # Handle both FacadeService and legacy factory interfaces for backward compatibility
         if hasattr(facade_service_or_factory, "create_subtask_facade"):
@@ -127,12 +136,13 @@ class SubtaskMCPController(ContextPropagationMixin):
             task_facade=task_facade,
         )
 
-        # Initialize workflow guidance
-        self._workflow_guidance = SubtaskWorkflowFactory.create()
-
-        logger.info(
-            "SubtaskMCPController initialized with modular architecture and progress tracking"
-        )
+        # Initialize workflow guidance only if enabled
+        if self._config.is_workflow_guidance_enabled():
+            self._workflow_guidance = SubtaskWorkflowFactory.create()
+            logger.info("SubtaskMCPController initialized with workflow guidance enabled")
+        else:
+            self._workflow_guidance = None
+            logger.info("SubtaskMCPController initialized with workflow guidance disabled (token optimization)")
 
     def _run_async(self, coro):
         """Run coroutine in async context with proper event loop management."""
@@ -379,6 +389,10 @@ class SubtaskMCPController(ContextPropagationMixin):
         self, response: dict[str, Any], action: str, task_id: str
     ) -> dict[str, Any]:
         """Enhance response with workflow guidance using the workflow guidance system."""
+
+        # Early return if workflow guidance is disabled (token optimization)
+        if not self._config.is_workflow_guidance_enabled():
+            return response
 
         try:
             if self._workflow_guidance:

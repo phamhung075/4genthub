@@ -23,6 +23,7 @@ from .....auth.domain.permissions import (
 from ....application.facades.task_application_facade import TaskApplicationFacade
 from ....application.factories.task_facade_factory import TaskFacadeFactory
 from ....application.services.facade_service import FacadeService
+from ....infrastructure.configuration.tool_config import ToolConfig
 
 # Services are created by factories with their required dependencies
 from ....application.services.parameter_enforcement_service import (
@@ -34,9 +35,6 @@ from ....application.services.parameter_transformation_service import (
 )
 from ....application.services.progressive_enforcement_service import (
     ProgressiveEnforcementService,
-)
-from ....application.services.response_enrichment_service import (
-    ResponseEnrichmentService,
 )
 from ....application.services.task_authorization_service import (
     TaskAuthorizationService,
@@ -131,13 +129,18 @@ class TaskMCPController(ContextPropagationMixin):
         self,
         facade_service_or_factory: FacadeService | TaskFacadeFactory | None = None,
         workflow_hint_enhancer: WorkflowHintEnhancer | None = None,
+        config: ToolConfig | None = None,
     ):
         """Initialize the modular task MCP controller.
 
         Args:
             facade_service_or_factory: Either a FacadeService (new interface) or TaskFacadeFactory (legacy interface)
             workflow_hint_enhancer: Optional workflow hint enhancer
+            config: Tool configuration for workflow guidance control
         """
+
+        # Store configuration
+        self._config = config or ToolConfig()
 
         # Handle both FacadeService and TaskFacadeFactory interfaces for backward compatibility
         if isinstance(facade_service_or_factory, TaskFacadeFactory):
@@ -171,9 +174,14 @@ class TaskMCPController(ContextPropagationMixin):
             response_formatter=self._response_formatter
         )
 
-        # Initialize workflow components
-        workflow_factory = TaskWorkflowFactory()
-        self._workflow_guidance = workflow_factory.create()
+        # Initialize workflow components only if enabled
+        if self._config.is_workflow_guidance_enabled():
+            workflow_factory = TaskWorkflowFactory()
+            self._workflow_guidance = workflow_factory.create()
+            logger.info("TaskMCPController initialized with workflow guidance enabled")
+        else:
+            self._workflow_guidance = None
+            logger.info("TaskMCPController initialized with workflow guidance disabled (token optimization)")
 
         # Note: Orchestrator services are created by factories as needed
         # They require repositories and other dependencies that are not available here
@@ -186,9 +194,6 @@ class TaskMCPController(ContextPropagationMixin):
             enforcement_service=self._enforcement_service,
             default_level=EnforcementLevel.WARNING,
         )
-
-        # Initialize response enrichment service
-        self._response_enrichment = ResponseEnrichmentService()
 
         # Initialize authorization service
         self._authorization_service = TaskAuthorizationService(

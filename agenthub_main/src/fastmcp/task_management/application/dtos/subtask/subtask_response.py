@@ -11,17 +11,22 @@ class SubtaskResponse:
     agent_inheritance_applied: bool = field(default=False)
     inherited_assignees: List[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert response to dictionary"""
+    def to_dict(self, include_parent_id: bool = False) -> Dict[str, Any]:
+        """Convert response to dictionary
+
+        Args:
+            include_parent_id: Optional flag for API compatibility with Subtask.to_dict().
+                             Not used in SubtaskResponse as task_id is already included in the structure.
+        """
         result = {
             "task_id": self.task_id,
             "subtask": self.subtask,
             "progress": self.progress
         }
-        
+
         # Include inheritance information if applied
         if self.agent_inheritance_applied:
             result["agent_inheritance_applied"] = self.agent_inheritance_applied
             result["inherited_assignees"] = self.inherited_assignees
-        
+
         return result 

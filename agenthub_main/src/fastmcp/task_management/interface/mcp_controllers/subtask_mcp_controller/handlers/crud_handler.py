@@ -460,16 +460,23 @@ class SubtaskCRUDHandler:
             )
 
         try:
-            # Complete the subtask
+            # Delegate to facade's complete handler which broadcasts "completed" event
             completion_data = {
-                "status": "done",
-                "progress_percentage": 100,  # Automatically set progress to 100% when completed
-                "completion_notes": completion_notes,
-                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "subtask_id": subtask_id,
+                "completion_summary": completion_summary,
+                "testing_notes": kwargs.get("testing_notes"),
+                "insights_found": kwargs.get("insights_found"),
+                "challenges_overcome": kwargs.get("challenges_overcome"),
+                "skills_learned": kwargs.get("skills_learned"),
+                "next_recommendations": kwargs.get("next_recommendations"),
+                "deliverables": kwargs.get("deliverables"),
+                "completion_quality": kwargs.get("completion_quality"),
+                "impact_on_parent": kwargs.get("impact_on_parent"),
             }
 
+            # Call facade's complete action which will broadcast "completed" event with enriched metadata
             result = facade.handle_manage_subtask(
-                action="update",
+                action="complete",
                 task_id=task_id,
                 subtask_id=subtask_id,
                 subtask_data=completion_data,

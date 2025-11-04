@@ -1424,6 +1424,11 @@ class Task(BaseTimestampEntity):
             "progress_percentage": self.overall_progress  # FIXED: Use overall_progress (entity field) instead of non-existent progress_percentage
         }
 
+        # CRITICAL FIX: Include completion fields for WebSocket metadata enrichment
+        # These fields are populated when complete_task() is called
+        result["completion_summary"] = getattr(self, '_completion_summary', None) or ""
+        result["testing_notes"] = getattr(self, '_testing_notes', None) or ""
+
         # Include progress timeline if exists
         if self.progress_timeline:
             result["progress_timeline"] = self.progress_timeline.to_dict()

@@ -26,6 +26,7 @@ from ....domain.constants import validate_user_id
 from ....domain.exceptions.authentication_exceptions import (
     UserAuthenticationRequiredError,
 )
+from ....infrastructure.configuration.tool_config import ToolConfig
 from ...utils.response_formatter import StandardResponseFormatter
 from ..workflow_guidance.agent.agent_workflow_factory import AgentWorkflowFactory
 
@@ -70,24 +71,29 @@ class AgentMCPController:
     - Workflow guidance system integration
     """
 
-    def __init__(self, facade_service: FacadeService | None = None):
+    def __init__(self, facade_service: FacadeService | None = None, config: ToolConfig | None = None):
         """
         Initialize controller with facade service and modular components.
 
         Args:
             facade_service: Service for obtaining application facades (optional)
+            config: Tool configuration for workflow guidance control (optional)
         """
+        self._config = config or ToolConfig()
         self._facade_service = facade_service or FacadeService.get_instance()
-        self._workflow_guidance = AgentWorkflowFactory.create()
+
+        # Initialize workflow guidance only if enabled
+        if self._config.is_workflow_guidance_enabled():
+            self._workflow_guidance = AgentWorkflowFactory.create()
+            logger.info("AgentMCPController initialized with workflow guidance enabled")
+        else:
+            self._workflow_guidance = None
+            logger.info("AgentMCPController initialized with workflow guidance disabled (token optimization)")
 
         # Initialize modular components
         self._response_formatter = StandardResponseFormatter()
         self._operation_factory = AgentOperationFactory(self._response_formatter)
         self._response_factory = AgentResponseFactory(self._response_formatter)
-
-        logger.info(
-            "AgentMCPController initialized with modular architecture (factory pattern and workflow guidance)"
-        )
 
     def register_tools(self, mcp: "FastMCP"):
         """Register agent management MCP tools with the FastMCP server"""
@@ -377,6 +383,10 @@ class AgentMCPController:
         Returns:
             Enhanced response with workflow guidance
         """
+        # Early return if workflow guidance is disabled (token optimization)
+        if not self._config.is_workflow_guidance_enabled():
+            return response
+
         if response.get("success", False):
             # Build context for workflow guidance
             guidance_context = {}

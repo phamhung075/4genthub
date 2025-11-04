@@ -137,7 +137,8 @@ class ProgressHandler:
             progress["recommendations"] = self._generate_progress_recommendations(
                 progress, subtasks
             )
-            progress["visual_indicators"] = self._generate_visual_indicators(progress)
+            # OPTIMIZATION: Removed visual_indicators to reduce token overhead
+            # Frontend can compute progress bars/emojis from progress_percentage
 
             return progress
 
@@ -234,45 +235,9 @@ class ProgressHandler:
 
         return recommendations
 
-    def _generate_visual_indicators(self, progress: dict[str, Any]) -> dict[str, Any]:
-        """Generate visual indicators for progress display."""
-
-        percentage = progress.get("progress_percentage", 0)
-        status = progress.get("progress_status", "pending")
-
-        # Progress bar visualization
-        if percentage == 0:
-            progress_bar = "⬜⬜⬜⬜⬜"
-            color = "gray"
-        elif percentage <= 20:
-            progress_bar = "🟩⬜⬜⬜⬜"
-            color = "red"
-        elif percentage <= 40:
-            progress_bar = "🟩🟩⬜⬜⬜"
-            color = "orange"
-        elif percentage <= 60:
-            progress_bar = "🟩🟩🟩⬜⬜"
-            color = "yellow"
-        elif percentage <= 80:
-            progress_bar = "🟩🟩🟩🟩⬜"
-            color = "lightgreen"
-        else:
-            progress_bar = "🟩🟩🟩🟩🟩"
-            color = "green"
-
-        # Status indicators
-        status_indicators = {
-            "completed": {"emoji": "✅", "color": "green"},
-            "in_progress": {"emoji": "🔄", "color": "blue"},
-            "blocked": {"emoji": "🚫", "color": "red"},
-            "pending": {"emoji": "⏳", "color": "gray"},
-        }
-
-        status_info = status_indicators.get(status, status_indicators["pending"])
-
-        return {
-            "progress_bar": progress_bar,
-            "progress_color": color,
-            "status_color": status_info["color"],
-            "percentage_text": f"{percentage}%",
-        }
+    # DEPRECATED: Removed to reduce token overhead (~40-60 tokens per response)
+    # Frontend should compute visual indicators client-side:
+    #
+    # Progress bar: Math.floor(percentage / 20) filled blocks (🟩/⬜)
+    # Status emoji: {"completed": "✅", "in_progress": "🔄", "blocked": "🚫", "pending": "⏳"}
+    # Color mapping: percentage or status-based client-side computation

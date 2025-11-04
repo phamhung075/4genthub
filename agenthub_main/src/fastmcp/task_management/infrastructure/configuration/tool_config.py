@@ -33,7 +33,8 @@ class ToolConfig:
         config = {
             "enabled_tools": enabled_tools,
             "debug_mode": self._get_bool_env("TOOL_DEBUG_MODE", False),
-            "tool_logging": self._get_bool_env("TOOL_LOGGING", False)
+            "tool_logging": self._get_bool_env("TOOL_LOGGING", False),
+            "enable_workflow_guidance": self._get_bool_env("ENABLE_WORKFLOW_GUIDANCE", False)
         }
 
         # Legacy support: Check for MCP_TOOL_CONFIG JSON file (with warning)
@@ -85,3 +86,7 @@ class ToolConfig:
     def get_enabled_tools(self) -> Dict[str, bool]:
         """Get all enabled tools configuration"""
         return self.config.get("enabled_tools", {})
+
+    def is_workflow_guidance_enabled(self) -> bool:
+        """Check if workflow guidance should be included in responses"""
+        return self.config.get("enable_workflow_guidance", False)

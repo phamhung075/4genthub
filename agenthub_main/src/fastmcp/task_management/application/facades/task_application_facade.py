@@ -1019,8 +1019,26 @@ class TaskApplicationFacade:
             # Broadcast task completion event ONLY if this was a new completion (not an update to already completed task)
             if response.get("success") and not response.get("was_already_completed", False):
                 try:
-                    # Get task data to extract git_branch_id and project_id for proper filtering
-                    task_data = response.get("task")
+                    # CRITICAL FIX: complete_task use case doesn't return task data, so we need to fetch it
+                    # This ensures WebSocket metadata enrichment has access to completion_summary, testing_notes, etc.
+                    logger.info(f"Fetching full task data for completion broadcast of task {task_id}")
+
+                    try:
+                        # Fetch the completed task directly from repository
+                        completed_task = self._task_repository.get_task(task_id)
+
+                        if completed_task:
+                            # CLEAN CODE: to_dict() now includes completion_summary and testing_notes automatically
+                            task_data = completed_task.to_dict()
+
+                            logger.info(f"✅ Fetched task data with completion_summary: {task_data.get('completion_summary', '')[:80]}...")
+                        else:
+                            logger.warning(f"Could not fetch task from repository for completion broadcast")
+                            task_data = {"task_id": task_id, "status": response.get("status", "done")}
+                    except Exception as fetch_error:
+                        logger.warning(f"Error fetching task data for broadcast: {fetch_error}")
+                        task_data = {"task_id": task_id, "status": response.get("status", "done")}
+
                     git_branch_id = task_data.get("git_branch_id") if task_data else None
 
                     # Derive project_id from git_branch_id if possible
