@@ -3,6 +3,8 @@ Database model for API tokens.
 """
 
 from sqlalchemy import Column, String, Boolean, Integer, DateTime, ARRAY
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import declarative_base
 from datetime import datetime, timezone
 
@@ -36,7 +38,11 @@ class ApiToken(Base):
     # Usage tracking
     usage_count = Column(Integer, default=0, nullable=False)
     rate_limit = Column(Integer, default=1000, nullable=False)
-    
+
+    # Detailed usage statistics (operation-level tracking)
+    # Stores counts like: {"task_create": 10, "task_update": 5, "subtask_create": 3, "agent_call": 20}
+    usage_stats = Column(JSON, nullable=False, default=dict)
+
     # Status
     is_active = Column(Boolean, default=True, nullable=False)
     
@@ -51,12 +57,13 @@ class ApiToken(Base):
             "last_used_at": self.last_used_at.isoformat() if self.last_used_at else None,
             "usage_count": self.usage_count,
             "rate_limit": self.rate_limit,
+            "usage_stats": self.usage_stats or {},
             "is_active": self.is_active,
             "user_id": self.user_id
         }
-        
+
         # Only include the actual token when generating (not on list/get)
         if include_token and token_value:
             result["token"] = token_value
-            
+
         return result
