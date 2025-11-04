@@ -676,13 +676,65 @@ class TestTaskDomainEvents:
     def test_event_ordering(self):
         """Test that events maintain order."""
         task = Task(title="Test", description="Test")
-        
+
         task.update_title("Title 1")
         task.update_title("Title 2")
         task.update_title("Title 3")
-        
+
         events = task.get_events()
         # TaskUpdated now uses changes dict
         assert events[0].changes["title"]["new_value"] == "Title 1"
         assert events[1].changes["title"]["new_value"] == "Title 2"
         assert events[2].changes["title"]["new_value"] == "Title 3"
+
+
+class TestTaskCompletionSerialization:
+    """Test that to_dict() includes completion fields for WebSocket broadcasting."""
+
+    def test_to_dict_includes_completion_summary_after_completion(self):
+        """Test that to_dict() includes completion_summary field after task completion."""
+        task = Task(
+            title="Test Task",
+            description="Test completion serialization",
+            context_id="context-123"
+        )
+
+        # Complete the task with a summary
+        completion_text = "Task completed successfully with all tests passing"
+        task.complete_task(completion_summary=completion_text)
+
+        # Convert to dict
+        task_dict = task.to_dict()
+
+        # Verify completion_summary is present
+        assert "completion_summary" in task_dict, "to_dict() must include completion_summary"
+        assert task_dict["completion_summary"] == completion_text
+        assert task_dict["status"] == "done"
+
+    def test_to_dict_includes_empty_completion_summary_for_incomplete_tasks(self):
+        """Test that to_dict() includes empty completion_summary for incomplete tasks."""
+        task = Task(
+            title="Test Task",
+            description="Test incomplete task serialization"
+        )
+
+        # Don't complete the task
+        task_dict = task.to_dict()
+
+        # Verify completion_summary is present but empty
+        assert "completion_summary" in task_dict, "to_dict() must include completion_summary field"
+        assert task_dict["completion_summary"] == ""
+
+    def test_to_dict_includes_testing_notes_field(self):
+        """Test that to_dict() includes testing_notes field (may be empty)."""
+        task = Task(
+            title="Test Task",
+            description="Test testing_notes serialization"
+        )
+
+        task_dict = task.to_dict()
+
+        # Verify testing_notes field is present (testing_notes are stored in context, not entity)
+        assert "testing_notes" in task_dict, "to_dict() must include testing_notes field"
+        # For Task entity, testing_notes should be empty (stored in context layer)
+        assert task_dict["testing_notes"] == ""
