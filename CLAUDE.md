@@ -249,13 +249,16 @@ manage_task(action="complete", task_id=task_id,
 
 ```bash
 # cclaude (Asynchronous) - Fire and forget
-cclaude <agent-name> <description or task_id>
+cclaude <agent-name> <description or task_id> [--custom "instructions"]
 cclaude coding-agent "Fix auth in src/auth/login.js:45-52"
 cclaude coding-agent "task_id: 381291d6-fa7f-4e60-80c5-0d1b86664722"
 cclaude coding-agent "subtask_id: xyz-456, task_id: abc-123"
+cclaude coding-agent "task_id: abc-123" --custom "Use strict types and add tests"
 
 # cclaude-wait (Synchronous) - Opens terminal + WAITS + RETURNS JSON
+cclaude-wait <agent-name> <task_id or subtask_id> [--custom "6) instruction 7) instruction"]
 result=$(cclaude-wait coding-agent "task_id: abc-123")
+result=$(cclaude-wait coding-agent "task_id: abc-123" --custom "6) Use TypeScript strict 7) Add JSDoc")
 echo "$result" | jq '.completion_summary'
 
 # cclaude-wait-parallel (Parallel + Synchronous) - Multiple subtasks with WebSocket monitoring
