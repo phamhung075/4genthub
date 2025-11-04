@@ -754,6 +754,194 @@ async def realtime_updates(websocket: WebSocket) -> None:
             logger.warning(f"🔌 CLEANUP: Unauthenticated connection terminated. Remaining: {remaining_connections}")
 
 
+@router.websocket("/task-polling")
+async def task_polling(websocket: WebSocket) -> None:
+    """
+    WebSocket endpoint for task/subtask completion polling.
+
+    Used by cclaude-wait and other tools to monitor specific task progress
+    and receive completion data when tasks reach 'done' status.
+
+    Authentication: JWT token required in query params (?token=<jwt>)
+
+    Protocol:
+      1. Client connects with valid JWT token
+      2. Server authenticates and accepts connection
+      3. Client sends subscription: {"type": "subscribe", "scope": "task|subtask", "entity_id": "uuid"}
+      4. Server acknowledges subscription
+      5. Server sends completion event when entity reaches 'done' status
+      6. Connection can be kept alive for heartbeats or closed after delivery
+
+    Example completion message format:
+    {
+        "version": "2.0",
+        "type": "update",
+        "payload": {
+            "entity": "task",
+            "action": "completed",
+            "data": {"primary": {...task_data...}}
+        },
+        "metadata": {
+            "status": "done",
+            "entity_id": "task_uuid",
+            "task_title": "...",
+            "completion_summary": "...",
+            "progress_percentage": 100,
+            ...
+        }
+    }
+    """
+    authenticated_user = None
+    subscription = {}
+    client_id = None
+
+    # Log connection attempt
+    client_ip = websocket.client.host if websocket.client else "unknown"
+    logger.info(f"🔗 TASK POLLING: Connection attempt from {client_ip}")
+
+    try:
+        # Get token from query params BEFORE accepting connection
+        token = websocket.query_params.get("token")
+
+        if not token:
+            logger.warning(f"🚫 TASK POLLING: Connection rejected - no token provided from {client_ip}")
+            await websocket.close(code=4001, reason="Authentication required: missing token")
+            return
+
+        # Validate JWT token BEFORE accepting connection (reuse existing validation)
+        authenticated_user = await validate_websocket_token(token)
+
+        if not authenticated_user:
+            logger.warning(f"🚫 TASK POLLING: Connection rejected - invalid token from {client_ip}")
+            await websocket.close(code=4001, reason="Authentication required: invalid token")
+            return
+
+        logger.info(f"✅ TASK POLLING: JWT token valid for user: {authenticated_user.id} ({authenticated_user.email})")
+
+        # Accept connection after successful authentication
+        await websocket.accept()
+        logger.info(f"🎉 TASK POLLING: Connection accepted for user: {authenticated_user.id}")
+
+        # Generate unique client ID
+        connection_id = random.randint(100000, 999999)
+        client_id = f"polling_{authenticated_user.id}_{connection_id}"
+
+        # Wait for subscription message from client
+        try:
+            data = await asyncio.wait_for(websocket.receive_json(), timeout=10)
+        except asyncio.TimeoutError:
+            logger.warning(f"⏰ TASK POLLING: Timeout waiting for subscription from {client_id}")
+            await websocket.close(code=4000, reason="Timeout: expected subscribe message within 10s")
+            return
+
+        # Validate subscription message
+        if data.get("type") != "subscribe":
+            logger.warning(f"🚫 TASK POLLING: Invalid message type from {client_id}: {data.get('type')}")
+            await websocket.close(code=4000, reason="Expected subscribe message")
+            return
+
+        # Extract subscription details
+        scope = data.get("scope")  # "task" or "subtask"
+        entity_id = data.get("entity_id")
+
+        if not entity_id:
+            logger.warning(f"🚫 TASK POLLING: Missing entity_id from {client_id}")
+            await websocket.close(code=4000, reason="Missing entity_id in subscription")
+            return
+
+        if scope not in ["task", "subtask"]:
+            logger.warning(f"🚫 TASK POLLING: Invalid scope from {client_id}: {scope}")
+            await websocket.close(code=4000, reason="Invalid scope: must be 'task' or 'subtask'")
+            return
+
+        # Store subscription details
+        subscription = {
+            "scope": scope,
+            "entity_id": entity_id,
+            "user_id": authenticated_user.id
+        }
+
+        logger.info(f"📡 TASK POLLING: Subscribed to {scope} {entity_id} for user {authenticated_user.id}")
+
+        # Store connection in global connections dict for broadcast_data_change to find
+        current_time = datetime.now(timezone.utc)
+        connection = WebSocketConnection(
+            websocket=websocket,
+            user=authenticated_user,
+            client_id=client_id,
+            subscription=subscription,
+            connected_at=current_time,
+            last_activity=current_time
+        )
+
+        # Add to connections dict (thread-safe)
+        async with _connections_lock:
+            connections[websocket] = connection
+
+        logger.info(f"✅ TASK POLLING: Connection registered for {scope} {entity_id}")
+
+        # Send acknowledgment to client
+        await websocket.send_json({
+            "type": "subscribed",
+            "scope": scope,
+            "entity_id": entity_id,
+            "client_id": client_id,
+            "user_id": authenticated_user.id
+        })
+
+        # Keep connection alive - wait for completion event or disconnect
+        # The broadcast_data_change function will send completion events when tasks complete
+        while True:
+            try:
+                # Wait for messages with timeout
+                message = await asyncio.wait_for(
+                    websocket.receive_json(),
+                    timeout=3600  # 1 hour timeout
+                )
+
+                # Handle heartbeat pings
+                if message.get("type") in ["ping", "heartbeat"]:
+                    await websocket.send_json({
+                        "type": "pong",
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    })
+                    connection.update_activity()
+                    logger.debug(f"💓 TASK POLLING: Heartbeat from {client_id}")
+
+            except asyncio.TimeoutError:
+                logger.info(f"⏰ TASK POLLING: Timeout for {client_id} - closing connection")
+                break
+            except WebSocketDisconnect:
+                logger.info(f"🔌 TASK POLLING: Client {client_id} disconnected")
+                break
+            except json.JSONDecodeError:
+                logger.warning(f"⚠️ TASK POLLING: Invalid JSON from {client_id}")
+                await websocket.send_json({
+                    "type": "error",
+                    "message": "Invalid JSON format"
+                })
+            except Exception as e:
+                logger.error(f"❌ TASK POLLING: Error processing message from {client_id}: {e}")
+                break
+
+    except Exception as e:
+        logger.error(f"❌ TASK POLLING: Unexpected error for {client_id}: {e}", exc_info=True)
+
+    finally:
+        # Cleanup connection
+        async with _connections_lock:
+            if websocket in connections:
+                del connections[websocket]
+                remaining = len(connections)
+                logger.info(f"🧹 TASK POLLING: Cleaned up {client_id}. Remaining connections: {remaining}")
+
+        # Update metrics
+        if connections:
+            authenticated_count = sum(1 for conn in connections.values() if conn.user.id)
+            unauthenticated_count = len(connections) - authenticated_count
+            update_connection_count(len(connections), authenticated_count, unauthenticated_count)
+
+
 async def log_authorization_failure(
     websocket: WebSocket,
     user_id: str,
@@ -1419,6 +1607,19 @@ async def broadcast_data_change(
             **(metadata or {})
         }
     }
+
+    # DEBUG: Log metadata structure for completion events
+    if event_type == "completed" and entity_type == "subtask":
+        logger.info(f"🔍 DEBUG WEBSOCKET: Subtask completion message being sent")
+        logger.info(f"🔍 DEBUG WEBSOCKET: metadata keys = {list(metadata.keys()) if metadata else 'None'}")
+        logger.info(f"🔍 DEBUG WEBSOCKET: message['metadata'] keys = {list(message['metadata'].keys())}")
+        if metadata and 'progress_history' in metadata:
+            logger.info(f"🔍 DEBUG WEBSOCKET: metadata['progress_history'] length = {len(metadata['progress_history'])}")
+            logger.info(f"🔍 DEBUG WEBSOCKET: metadata['progress_history'] type = {type(metadata['progress_history'])}")
+        if 'progress_history' in message['metadata']:
+            logger.info(f"🔍 DEBUG WEBSOCKET: message['metadata']['progress_history'] length = {len(message['metadata']['progress_history'])}")
+        else:
+            logger.warning(f"⚠️ DEBUG WEBSOCKET: progress_history NOT IN message['metadata']!")
 
     # Move cascade data from metadata to payload.data for frontend compatibility
     if metadata and "cascade" in metadata:

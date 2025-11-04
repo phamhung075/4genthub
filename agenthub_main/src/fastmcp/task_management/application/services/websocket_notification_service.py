@@ -667,6 +667,38 @@ class WebSocketNotificationService:
         metadata["parent_branch_id"] = task_context["parent_branch_id"]
         metadata["parent_branch_title"] = task_context["parent_branch_title"]
 
+        # COMPLETION EVENT: Add completion details to metadata for cclaude-wait polling
+        if event_type == "completed" and task_data:
+            logger.info(f"📋 Adding completion details to metadata for task {task_id}")
+
+            # DEBUG LOGGING: Log raw task_data BEFORE enrichment
+            logger.info(f"🔍 DEBUG: Raw task_data keys: {list(task_data.keys())}")
+            logger.info(f"🔍 DEBUG: task_data['status'] = {task_data.get('status')}")
+            logger.info(f"🔍 DEBUG: task_data['completion_summary'] = {task_data.get('completion_summary')}")
+            logger.info(f"🔍 DEBUG: task_data['testing_notes'] = {task_data.get('testing_notes')}")
+            logger.info(f"🔍 DEBUG: task_data['progress_percentage'] = {task_data.get('progress_percentage')}")
+            logger.info(f"🔍 DEBUG: task_data['title'] = {task_data.get('title')}")
+
+            # Add completion-specific fields that poll_mcp_websocket.py expects
+            metadata["status"] = task_data.get("status", "done")
+            metadata["title"] = task_data.get("title", metadata["task_title"])
+            metadata["completion_summary"] = task_data.get("completion_summary", "")
+            metadata["testing_notes"] = task_data.get("testing_notes", "")
+            metadata["progress_percentage"] = task_data.get("progress_percentage", 100)
+            metadata["progress_history"] = task_data.get("progress_history", {})
+            metadata["progress_count"] = task_data.get("progress_count", 0)
+            metadata["assignees"] = task_data.get("assignees", [])
+            metadata["description"] = task_data.get("description", "")
+            metadata["insights_found"] = task_data.get("insights_found", [])
+            metadata["blockers"] = task_data.get("blockers", [])
+
+            # DEBUG LOGGING: Log enriched metadata AFTER enrichment
+            logger.info(f"🔍 DEBUG: Enriched metadata['status'] = {metadata.get('status')}")
+            logger.info(f"🔍 DEBUG: Enriched metadata['completion_summary'] = {metadata.get('completion_summary')}")
+            logger.info(f"🔍 DEBUG: Enriched metadata['testing_notes'] = {metadata.get('testing_notes')}")
+            logger.info(f"🔍 DEBUG: Enriched metadata['progress_percentage'] = {metadata.get('progress_percentage')}")
+            logger.info(f"✅ Enriched completion metadata with {len(metadata)} fields for task {task_id}")
+
         # CRITICAL FIX: Add branch cascade data for task events to trigger frontend animations
         if event_type in ["created", "deleted"] and git_branch_id:
             logger.info(f"🎯 Adding branch cascade data for task {event_type} event")
@@ -920,6 +952,40 @@ class WebSocketNotificationService:
             "subtask_title": subtask_context["subtask_title"],
             "parent_task_title": subtask_context["parent_task_title"]
         }
+
+        # COMPLETION EVENT: Add completion details to metadata for cclaude-wait polling (matching task pattern)
+        if event_type == "completed" and subtask_data:
+            logger.info(f"📋 Adding completion details to subtask metadata for {subtask_id}")
+
+            # DEBUG: Log raw subtask_data BEFORE extraction
+            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: subtask_data keys = {list(subtask_data.keys())}")
+            progress_history_raw = subtask_data.get("progress_history", {})
+            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: Raw progress_history type = {type(progress_history_raw)}")
+            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: Raw progress_history length = {len(progress_history_raw) if progress_history_raw else 0}")
+            if progress_history_raw:
+                logger.info(f"🔍 DEBUG PROGRESS_HISTORY: Raw progress_history keys = {list(progress_history_raw.keys())[:5]}")  # First 5 keys
+                logger.info(f"🔍 DEBUG PROGRESS_HISTORY: First entry = {list(progress_history_raw.values())[0] if progress_history_raw else 'N/A'}")
+
+            # Add completion-specific fields that poll_mcp_websocket.py expects
+            metadata["status"] = subtask_data.get("status", "done")
+            metadata["title"] = subtask_data.get("title", metadata["subtask_title"])
+            metadata["completion_summary"] = subtask_data.get("completion_summary", "")
+            metadata["testing_notes"] = subtask_data.get("testing_notes", "")
+            metadata["progress_percentage"] = subtask_data.get("progress_percentage", 100)
+            metadata["progress_history"] = progress_history_raw
+            metadata["progress_count"] = subtask_data.get("progress_count", 0)
+            metadata["assignees"] = subtask_data.get("assignees", [])
+            metadata["description"] = subtask_data.get("description", "")
+            metadata["insights_found"] = subtask_data.get("insights_found", [])
+            metadata["blockers"] = subtask_data.get("blockers", [])
+            metadata["is_subtask"] = True  # Flag to distinguish from task completions
+
+            # DEBUG: Verify metadata AFTER assignment
+            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: metadata['progress_history'] type = {type(metadata['progress_history'])}")
+            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: metadata['progress_history'] length = {len(metadata['progress_history']) if metadata['progress_history'] else 0}")
+            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: metadata['progress_count'] = {metadata['progress_count']}")
+
+            logger.info(f"✅ Enriched subtask completion metadata with {len(metadata)} fields for subtask {subtask_id}")
 
         # Try direct WebSocket broadcast first (same process)
         try:

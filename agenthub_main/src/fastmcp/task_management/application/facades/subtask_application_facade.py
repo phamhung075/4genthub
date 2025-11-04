@@ -24,6 +24,8 @@ from ...infrastructure.repositories.task_repository_factory import TaskRepositor
 from ...infrastructure.repositories.subtask_repository_factory import SubtaskRepositoryFactory
 from ..services.websocket_notification_service import WebSocketNotificationService
 from ..services.minimal_response_serializer import MinimalResponseSerializer
+from ...infrastructure.database.models import Subtask as SubtaskModel
+from ...infrastructure.database.database_config import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -213,6 +215,7 @@ class SubtaskApplicationFacade:
         task_id: str,
         subtask_data: Dict[str, Any] | None = None,
         subtask_id: str | None = None,  # Add subtask_id as separate parameter
+        suppress_broadcast: bool = False,  # Option A fix: suppress "updated" during completion
         # Legacy compatibility parameters (will be ignored following clean relationship chain)
         project_id: str | None = None,
         git_branch_name: str | None = None,
@@ -260,7 +263,7 @@ class SubtaskApplicationFacade:
         if action == "create":
             return self._handle_create_subtask(task_id, subtask_data, task_repository, subtask_repository)
         elif action == "update":
-            return self._handle_update_subtask(task_id, subtask_data, task_repository, subtask_repository, subtask_id)
+            return self._handle_update_subtask(task_id, subtask_data, task_repository, subtask_repository, subtask_id, suppress_broadcast)
         elif action == "delete":
             return self._handle_delete_subtask(task_id, subtask_data, task_repository, subtask_repository, subtask_id)
         elif action == "list":
@@ -390,8 +393,12 @@ class SubtaskApplicationFacade:
 
         return result
     
-    def _handle_update_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> Dict[str, Any]:
-        """Handle subtask update"""
+    def _handle_update_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None, suppress_broadcast: bool = False) -> Dict[str, Any]:
+        """Handle subtask update
+
+        Args:
+            suppress_broadcast: If True, skip WebSocket broadcast (used during completion to prevent duplicate events)
+        """
         # Use subtask_id parameter if provided, otherwise extract from subtask_data (backward compatibility)
         actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
         if not actual_subtask_id:
@@ -416,27 +423,30 @@ class SubtaskApplicationFacade:
             "success": True,
             "action": "update",
             "message": f"Subtask {actual_subtask_id} updated",
-            "subtask": MinimalResponseSerializer.serialize_subtask_minimal(response, "update")
+            "subtask": MinimalResponseSerializer.serialize_subtask_minimal(response.subtask, "update")
         }
 
-        # Broadcast subtask update event via WebSocket
-        try:
-            # Get user_id from context derivation
-            context = self._derive_context_from_task(task_id)
-            user_id = context.get("user_id", "system")
+        # Broadcast subtask update event via WebSocket (unless suppressed during completion)
+        if not suppress_broadcast:
+            try:
+                # Get user_id from context derivation
+                context = self._derive_context_from_task(task_id)
+                user_id = context.get("user_id", "system")
 
-            # Convert subtask response to dict for broadcasting (minimal serialization)
-            subtask_dict = MinimalResponseSerializer.serialize_subtask_minimal(response, "update")
+                # Convert subtask response to dict for broadcasting (minimal serialization)
+                subtask_dict = MinimalResponseSerializer.serialize_subtask_minimal(response.subtask, "update")
 
-            WebSocketNotificationService.sync_broadcast_subtask_event(
-                event_type="updated",
-                subtask_id=actual_subtask_id,
-                task_id=task_id,
-                user_id=user_id,
-                subtask_data=subtask_dict
-            )
-        except Exception as e:
-            logger.warning(f"Failed to broadcast subtask update: {e}")
+                WebSocketNotificationService.sync_broadcast_subtask_event(
+                    event_type="updated",
+                    subtask_id=actual_subtask_id,
+                    task_id=task_id,
+                    user_id=user_id,
+                    subtask_data=subtask_dict
+                )
+            except Exception as e:
+                logger.warning(f"Failed to broadcast subtask update: {e}")
+        else:
+            logger.info(f"🔇 Suppressed 'updated' broadcast for subtask {actual_subtask_id} (part of completion flow)")
 
         # 🔄 SYNC: Update parent task's subtask counts in context_data
         try:
@@ -593,6 +603,7 @@ class SubtaskApplicationFacade:
         completion_summary = subtask_data.get('completion_summary') if subtask_data else None
         insights_found = subtask_data.get('insights_found') if subtask_data else None
         testing_notes = subtask_data.get('testing_notes') if subtask_data else None
+        impact_on_parent = subtask_data.get('impact_on_parent') if subtask_data else None
 
         # Create use case with context-specific repositories
         complete_subtask_use_case = self._complete_subtask_use_case or CompleteSubtaskUseCase(task_repository, subtask_repository)
@@ -605,6 +616,30 @@ class SubtaskApplicationFacade:
             insights_found=insights_found,
             testing_notes=testing_notes
         )
+
+        # 🔄 SYNC: Update parent task's subtask counts in context_data after completion
+        # DO THIS BEFORE broadcasting to ensure all DB operations complete first
+        try:
+            from ..services.task_context_sync_service import TaskContextSyncService
+            import asyncio
+
+            sync_service = TaskContextSyncService(task_repository)
+            try:
+                # Check if we're already in an event loop
+                loop = asyncio.get_running_loop()
+                # We're in an async context - schedule as background task
+                asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+            except RuntimeError:
+                # No event loop running - safe to use asyncio.run()
+                try:
+                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask completion")
+                except Exception as inner_error:
+                    logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
+        except Exception as sync_error:
+            logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
+
         response = {
             "success": result["success"],
             "action": "complete",
@@ -614,21 +649,83 @@ class SubtaskApplicationFacade:
         }
 
         # Broadcast subtask completion event via WebSocket (only if successful)
+        # CRITICAL: This must fire LAST, after all DB operations, to ensure cclaude-wait receives it
         if result["success"]:
+            logger.info(f"🎯 COMPLETION_BROADCAST: Starting completion broadcast for subtask {actual_subtask_id}")
             try:
                 # Get user_id from context derivation
                 context = self._derive_context_from_task(task_id)
                 user_id = context.get("user_id", "system")
+                logger.info(f"🎯 COMPLETION_BROADCAST: Got user_id={user_id}")
 
+                # Fetch complete subtask data for rich broadcast (matching task completion pattern)
+                # CRITICAL FIX: Query ORM model directly to get persistence fields like progress_history
+                try:
+                    # Get domain entity for basic fields
+                    subtask = subtask_repository.find_by_id(actual_subtask_id)
+
+                    # Query ORM model directly for persistence fields that don't exist on domain entity
+                    with get_session() as session:
+                        orm_subtask = session.query(SubtaskModel).filter(
+                            SubtaskModel.id == actual_subtask_id
+                        ).first()
+
+                        if orm_subtask:
+                            logger.info(f"🎯 COMPLETION_BROADCAST: ORM model fetched, progress_history has {len(orm_subtask.progress_history)} entries")
+                            enriched_subtask_data = {
+                                "id": actual_subtask_id,
+                                "status": "done",
+                                "title": subtask.title,
+                                "description": subtask.description,
+                                "completion_summary": completion_summary or orm_subtask.completion_summary or "",
+                                "testing_notes": testing_notes or "",
+                                "progress_percentage": 100,
+                                "assignees": subtask.assignees,
+                                "insights_found": insights_found or orm_subtask.insights_found or [],
+                                "blockers": orm_subtask.blockers or [],
+                                "progress_history": orm_subtask.progress_history or {},
+                                "progress_count": len(orm_subtask.progress_history) if orm_subtask.progress_history else 0,
+                                "impact_on_parent": impact_on_parent or orm_subtask.impact_on_parent or "",
+                            }
+                            logger.info(f"🎯 COMPLETION_BROADCAST: Enriched data prepared with {len(enriched_subtask_data)} fields, progress_history keys: {list(enriched_subtask_data['progress_history'].keys())}")
+                        else:
+                            logger.warning(f"🚨 COMPLETION_BROADCAST: ORM model not found for {actual_subtask_id}, using domain entity only")
+                            enriched_subtask_data = {
+                                "id": actual_subtask_id,
+                                "status": "done",
+                                "title": subtask.title,
+                                "description": subtask.description,
+                                "completion_summary": completion_summary or "",
+                                "testing_notes": testing_notes or "",
+                                "progress_percentage": 100,
+                                "assignees": subtask.assignees,
+                                "insights_found": insights_found or [],
+                                "blockers": [],
+                                "progress_history": {},
+                                "progress_count": 0,
+                                "impact_on_parent": impact_on_parent or "",
+                            }
+                except Exception as fetch_error:
+                    logger.warning(f"Could not fetch full subtask data, using minimal: {fetch_error}")
+                    enriched_subtask_data = {
+                        "id": actual_subtask_id,
+                        "status": "done",
+                        "completion_summary": completion_summary or "",
+                        "testing_notes": testing_notes or "",
+                        "progress_percentage": 100,
+                    }
+
+                logger.info(f"🎯 COMPLETION_BROADCAST: About to call WebSocketNotificationService with event_type='completed'")
                 WebSocketNotificationService.sync_broadcast_subtask_event(
                     event_type="completed",
                     subtask_id=actual_subtask_id,
                     task_id=task_id,
                     user_id=user_id,
-                    subtask_data={"id": actual_subtask_id, "completed": True}
+                    subtask_data=enriched_subtask_data
                 )
+                logger.info(f"🎯 COMPLETION_BROADCAST: Successfully called WebSocketNotificationService.sync_broadcast_subtask_event with event_type='completed'")
             except Exception as e:
-                logger.warning(f"Failed to broadcast subtask completion: {e}")
+                logger.error(f"🚨 COMPLETION_BROADCAST FAILED: {e}", exc_info=True)
 
             # 🔄 SYNC: Update parent task's subtask counts in context_data after completion
             try:
