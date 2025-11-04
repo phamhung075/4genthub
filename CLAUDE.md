@@ -235,29 +235,33 @@ manage_task(action="complete", task_id=task_id,
 
 ### Delegation Models
 
-| Feature | cclaude (async) | cclaude-wait (sync) | Agent Switching |
-|---|---|---|---|
-| Visibility | ✅ Separate terminal | ✅ Separate terminal | ❌ Same session |
-| Results | ❌ No | ✅ JSON | ✅ Yes |
-| Execution | ✅ Non-blocking | ❌ Blocks | ✅ Sequential |
-| Parallel | ✅ Yes | ❌ No | ❌ No |
-| Token cost | ~20k per agent | ~20k per agent | ~1200 total |
-| Best for | Parallel + visibility | Sequential + results | Efficiency |
+| Feature | cclaude (async) | cclaude-wait (sync) | cclaude-wait-parallel | Agent Switching |
+|---|---|---|---|---|
+| Visibility | ✅ Separate terminal | ✅ Separate terminal | ✅ Separate terminals | ❌ Same session |
+| Results | ❌ No | ✅ JSON (single) | ✅ JSON (aggregated) | ✅ Yes |
+| Execution | ✅ Non-blocking | ❌ Blocks | ❌ Blocks until all done | ✅ Sequential |
+| Parallel | ✅ Yes (fire-forget) | ❌ No | ✅ Yes (wait all) | ❌ No |
+| WebSocket | ❌ No | ✅ Live monitoring | ✅ Multi-subtask monitoring | ❌ No |
+| Token cost | ~20k per agent | ~20k per agent | ~20k per agent | ~1200 total |
+| Best for | Fire-and-forget | Single task + results | Multiple tasks + results | Efficiency |
 
 ### Syntax
 
 ```bash
-# Parent tasks
+# cclaude (Asynchronous) - Fire and forget
 cclaude <agent-name> <description or task_id>
 cclaude coding-agent "Fix auth in src/auth/login.js:45-52"
 cclaude coding-agent "task_id: 381291d6-fa7f-4e60-80c5-0d1b86664722"
-
-# Subtasks
 cclaude coding-agent "subtask_id: xyz-456, task_id: abc-123"
 
 # cclaude-wait (Synchronous) - Opens terminal + WAITS + RETURNS JSON
 result=$(cclaude-wait coding-agent "task_id: abc-123")
 echo "$result" | jq '.completion_summary'
+
+# cclaude-wait-parallel (Parallel + Synchronous) - Multiple subtasks with WebSocket monitoring
+cclaude-wait-parallel <agent-name> <task_id> <subtask_id1> <subtask_id2> [<subtask_id3> ...]
+result=$(cclaude-wait-parallel documentation-agent "cd482b1b-..." "40a7581e-..." "f2148066-...")
+echo "$result" | jq '.subtasks[0].completion_data.completion_summary'
 ```
 
 ### When to Use
@@ -265,7 +269,8 @@ echo "$result" | jq '.completion_summary'
 | Model | Use When |
 |-------|----------|
 | **cclaude (async)** | Parallel execution \| Fire-and-forget \| Don't need results \| Terminal freedom |
-| **cclaude-wait (sync)** | Visibility + Results \| Sequential workflow \| Parse results \| Result-dependent logic |
+| **cclaude-wait (sync)** | Single task \| Visibility + Results \| Sequential workflow \| Parse results \| Result-dependent logic |
+| **cclaude-wait-parallel** | Multiple subtasks \| Parallel + Wait all \| Aggregated results \| WebSocket monitoring \| Real-time progress |
 | **Agent Switching** | Token efficiency (70% savings) \| Sequential only \| Simple workflows \| Production automation |
 
 ---
@@ -276,8 +281,9 @@ echo "$result" | jq '.completion_summary'
 
 | Model | Cost | Best For |
 |---|---|---|
-| cclaude (async) | ~20k, non-blocking | Parallel + visibility |
-| cclaude-wait (sync) | ~20k, blocking | Sequential + visibility + results |
+| cclaude (async) | ~20k, non-blocking | Parallel + visibility (fire-forget) |
+| cclaude-wait (sync) | ~20k, blocking | Single task + visibility + results |
+| cclaude-wait-parallel | ~20k, blocking | Multiple subtasks + parallel + all results |
 | Agent Switching | ~1200 total | Sequential + efficiency |
 
 **Always**: Create MCP tasks FIRST
@@ -285,8 +291,9 @@ echo "$result" | jq '.completion_summary'
 ### 2. Token Economy
 
 - Agent Switching: ~1200 tokens (70% savings)
-- cclaude (async): ~20k (enables parallel)
-- cclaude-wait (sync): ~20k (returns results)
+- cclaude (async): ~20k (enables parallel, no results)
+- cclaude-wait (sync): ~20k (single task, returns results)
+- cclaude-wait-parallel: ~20k (multiple subtasks, aggregated results)
 
 ### 3. Role Separation
 
@@ -442,6 +449,7 @@ and follow best practices. Start by looking at auth module then...
 |-------|----------|
 | **cclaude (async)** | Create MCP → Delegate `cclaude agent "task_id: XXX"` → Monitor → Non-blocking → Parallel |
 | **cclaude-wait (sync)** | Create MCP → Delegate `cclaude-wait agent "task_id: XXX"` → Monitor → Blocking → Returns JSON |
+| **cclaude-wait-parallel** | Create MCP → Create subtasks → Delegate `cclaude-wait-parallel agent task_id sub1 sub2` → WebSocket monitoring → Blocking → Returns aggregated JSON |
 | **Agent Switching** | call_agent("master-orchestrator") → Switch call_agent("agent") → Check tools → MCP → Progress → Sequential |
 
-**Remember**: Three models | cclaude = parallel | cclaude-wait = sequential+results | Agent switching = efficient | Manager = human | Work system = MCP | Smart choice each situation
+**Remember**: Four models | cclaude = parallel (fire-forget) | cclaude-wait = single+results | cclaude-wait-parallel = multiple+results | Agent switching = efficient | Manager = human | Work system = MCP | Smart choice each situation
