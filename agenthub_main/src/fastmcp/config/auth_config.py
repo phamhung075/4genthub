@@ -6,7 +6,6 @@ All operations require proper user authentication - no fallbacks allowed.
 
 import os
 import logging
-from typing import Optional
 from ..task_management.domain.exceptions.authentication_exceptions import (
     UserAuthenticationRequiredError
 )
