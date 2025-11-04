@@ -46,6 +46,7 @@ class APIToken(Base):
     last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     usage_count: Mapped[int] = mapped_column(Integer, default=0)
     rate_limit: Mapped[int] = mapped_column(Integer, default=1000)  # Requests per hour
+    usage_stats: Mapped[Dict[str, int]] = mapped_column(JSON, default=dict)  # Operation-level usage tracking
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     token_metadata: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)  # Additional metadata
 
