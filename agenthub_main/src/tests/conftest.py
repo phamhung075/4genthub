@@ -1771,26 +1771,6 @@ def module_test_db():
 from tests.utils.test_cleanup_factory import TestCleanupFactory
 
 
-# Example 1: Simple environment cleanup (can replace manual cleanup logic)
-@pytest.fixture
-def cleanup_env_vars_example():
-    """Example: Clean environment variable cleanup using factory"""
-    with TestCleanupFactory.environment_cleanup(['DATABASE_TYPE', 'DATABASE_URL']):
-        yield
-
-
-# Example 2: Combined cleanup for integration tests
-@pytest.fixture
-def cleanup_integration_test_example():
-    """Example: Combined cleanup for tests that pollute multiple areas"""
-    with TestCleanupFactory.combined_cleanup(
-        env_vars=['DATABASE_TYPE', 'DATABASE_URL', 'DATABASE_PATH'],
-        cleanup_database=True,
-        cleanup_db_config=True
-    ):
-        yield
-
-
 # Example 3: Temporary environment variables (inline usage)
 # Use this pattern directly in tests:
 # def test_something():
