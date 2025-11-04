@@ -9,8 +9,7 @@ import logging
 import json
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
+from sqlalchemy import and_, func
 
 from ....domain.entities.user_agent_instance import UserAgentInstance
 from ....domain.value_objects.user_agent_instance_id import UserAgentInstanceId

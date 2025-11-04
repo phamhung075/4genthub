@@ -5,7 +5,6 @@ import secrets
 from typing import Optional
 
 from ..entities.user_agent_instance import UserAgentInstance
-from ..entities.agent_template import AgentTemplate
 from ..value_objects.user_agent_instance_id import UserAgentInstanceId
 from ..value_objects.user_id import UserId
 from ..repositories.user_agent_instance_repository import UserAgentInstanceRepository

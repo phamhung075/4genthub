@@ -6,7 +6,7 @@ Request and response models for user-specific agent system endpoints.
 
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field, UUID4
+from pydantic import BaseModel, Field
 
 
 # ============================================================================

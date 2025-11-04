@@ -19,7 +19,6 @@ from pathlib import Path
 import secrets
 import hashlib
 from datetime import datetime, timedelta, timezone
-import asyncio
 import ssl
 from dotenv import load_dotenv
 
