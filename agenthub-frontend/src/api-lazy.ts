@@ -20,47 +20,6 @@ export type { BranchSummary } from './types/api.types';
 import type { TaskSummariesResponse } from './types/serviceTypes';
 
 // --- Task Lazy Loading ---
-export const getTaskSummaries = async (params?: {
-  page?: number;
-  limit?: number;
-  git_branch_id?: string;
-}): Promise<TaskSummariesResponse> => {
-  // Use the optimized /api/tasks/summaries endpoint with denormalized subtask_count
-  const token = Cookies.get('access_token');
-  if (!token) {
-    return { tasks: [], total: 0, page: 1, limit: 50, has_more: false };
-  }
-
-  const response = await fetch(`${API_BASE_URL}/api/tasks/summaries`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      git_branch_id: params?.git_branch_id,
-      page: params?.page || 1,
-      limit: params?.limit || 50
-    }),
-    credentials: 'include'
-  });
-
-  if (!response.ok) {
-    logger.error(`Failed to fetch task summaries: ${response.status}`);
-    return { tasks: [], total: 0, page: 1, limit: 50, has_more: false };
-  }
-
-  const data = await response.json();
-
-  return {
-    tasks: data.tasks || [],
-    total: data.total || 0,
-    page: data.page || 1,
-    limit: data.limit || 50,
-    has_more: data.has_more || false
-  };
-};
-
 export const getFullTask = async (task_id: string): Promise<any> => {
   const response = await taskApiV2.getTask(task_id);
   return (response as any).task || response;
@@ -181,25 +140,4 @@ export const getBranchSummaries = async (project_id: string): Promise<{
 };
 
 // --- Project Lazy Loading ---
-export const getProjectSummaries = async (params?: {
-  page?: number;
-  limit?: number;
-}): Promise<any> => {
-  const response = await projectApiV2.getProjects();
-  const projects = (response as any).projects || [];
-  
-  return {
-    projects: projects.map((p: Project) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      branch_count: p.branches?.length || 0,
-      created_at: p.created_at,
-      updated_at: p.updated_at
-    })),
-    total: projects.length,
-    page: params?.page || 1,
-    limit: params?.limit || 50,
-    has_more: false
-  };
-};
+// Note: getProjectSummaries removed - use projectApiV2.getProjects() directly
