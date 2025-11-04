@@ -31,6 +31,11 @@ from ...domain.repositories.task_repository import TaskRepository
 from ...domain.repositories.subtask_repository import SubtaskRepository
 from ...domain.repositories.git_branch_repository import GitBranchRepository
 from ...domain.exceptions import TaskNotFoundError, AutoRuleGenerationError
+from ...domain.exceptions.authentication_exceptions import (
+    UserAuthenticationRequiredError,
+    InvalidUserIdError,
+    AuthenticationError
+)
 
 from ...domain.value_objects.task_id import TaskId
 from ..services.unified_context_service import UnifiedContextService
@@ -161,17 +166,27 @@ class TaskApplicationFacade:
 
             # Git branch not found - raise validation error
             raise ValueError(
-                f"git_branch_id '{git_branch_id}' not found. "
-                f"Please create the branch first using manage_git_branch(action='create') "
-                f"or use an existing branch ID from manage_git_branch(action='list')."
+                f"Git branch does not exist: git_branch_id '{git_branch_id}' was not found in the system.\n"
+                f"Solution: Use manage_git_branch(action='list') to see all available branches and their IDs, "
+                f"then use the correct git_branch_id. Alternatively, create a new branch using "
+                f"manage_git_branch(action='create', git_branch_name='your-branch-name', project_id='your-project-id')."
             )
         except ValueError:
             # Re-raise ValueError (our validation error)
             raise
-        except Exception as e:
-            # Wrap other exceptions in ValueError for consistency
+        except (UserAuthenticationRequiredError, InvalidUserIdError, AuthenticationError) as auth_error:
+            # Authentication errors - provide clear message about missing user context
             raise ValueError(
-                f"Failed to validate git_branch_id '{git_branch_id}': {str(e)}"
+                f"Cannot validate git_branch_id '{git_branch_id}': {str(auth_error)}\n"
+                f"This operation requires user authentication context. "
+                f"Ensure user_id is provided when calling task management operations."
+            ) from auth_error
+        except Exception as e:
+            # Other unexpected exceptions - include exception type for debugging
+            exception_type = type(e).__name__
+            raise ValueError(
+                f"Unexpected error while validating git_branch_id '{git_branch_id}': "
+                f"{exception_type}: {str(e)}"
             ) from e
 
     def _ensure_branch_context_exists(
