@@ -259,8 +259,21 @@ result=$(cclaude-wait coding-agent "task_id: abc-123")
 echo "$result" | jq '.completion_summary'
 
 # cclaude-wait-parallel (Parallel + Synchronous) - Multiple subtasks with WebSocket monitoring
-cclaude-wait-parallel <agent-name> <task_id> <subtask_id1> <subtask_id2> [<subtask_id3> ...]
-result=$(cclaude-wait-parallel documentation-agent "cd482b1b-..." "40a7581e-..." "f2148066-...")
+# Basic usage (same agent):
+cclaude-wait-parallel <task_id> <agent> <subtask1> <agent> <subtask2>
+
+# Multi-agent usage (different agents per subtask):
+cclaude-wait-parallel <task_id> <agent1> <subtask1> <agent2> <subtask2>
+
+# With custom instructions per agent:
+cclaude-wait-parallel <task_id> \
+    <agent1> <subtask1> --custom "6) Custom instruction 7) Another instruction" \
+    <agent2> <subtask2> --custom "6) Different instruction"
+
+# Example:
+result=$(cclaude-wait-parallel "cd482b1b-..." \
+    coding-agent "40a7581e-..." --custom "6) Use TypeScript strict mode" \
+    test-orchestrator-agent "f2148066-..." --custom "6) Run pytest with coverage")
 echo "$result" | jq '.subtasks[0].completion_data.completion_summary'
 ```
 
