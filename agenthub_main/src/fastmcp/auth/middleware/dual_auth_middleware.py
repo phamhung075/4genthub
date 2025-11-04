@@ -575,11 +575,35 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
             payload = jwt_service.verify_token(token, expected_type="api_token")
             if payload:
                 user_id = payload.get('user_id') or payload.get('sub')
+                token_id = payload.get('token_id') or payload.get('jti')
+
+                # Track token usage (increment usage_count) - run in background
+                if token_id:
+                    # Run tracking in background task to not block authentication
+                    async def track_usage():
+                        try:
+                            from fastmcp.task_management.infrastructure.database import SessionLocal
+                            from fastmcp.task_management.infrastructure.repositories.token_repository import TokenRepository
+
+                            db = SessionLocal()
+                            try:
+                                repository = TokenRepository(db)
+                                # Increment usage_count without operation-specific tracking
+                                await repository.update_token_usage(token_id, operation=None)
+                                logger.info(f"✅ Tracked token usage for token_id: {token_id}")
+                            finally:
+                                db.close()
+                        except Exception as track_error:
+                            logger.error(f"❌ Failed to track token usage: {track_error}", exc_info=True)
+
+                    # Schedule tracking to run in background
+                    asyncio.create_task(track_usage())
+
                 return {
                     'user_id': user_id,
                     'auth_method': 'api_token',
                     'jwt_secret_used': 'JWT_SECRET_KEY',
-                    'token_id': payload.get('token_id') or payload.get('jti'),
+                    'token_id': token_id,
                     'scopes': payload.get('scopes', []),
                     'type': 'api_token',
                     'email': payload.get('email'),

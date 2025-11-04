@@ -21,6 +21,7 @@ _current_user_email: ContextVar[Optional[str]] = ContextVar('current_user_email'
 _current_auth_method: ContextVar[Optional[str]] = ContextVar('current_auth_method', default=None)
 _current_auth_info: ContextVar[Optional[Dict[str, Any]]] = ContextVar('current_auth_info', default=None)
 _request_authenticated: ContextVar[bool] = ContextVar('request_authenticated', default=False)
+_current_token_id: ContextVar[Optional[str]] = ContextVar('current_token_id', default=None)
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
@@ -115,7 +116,12 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
                         email = auth_info.get('email')
                         if email:
                             _current_user_email.set(email)
-                        
+
+                        # Extract token_id for usage tracking
+                        token_id = auth_info.get('token_id')
+                        if token_id:
+                            _current_token_id.set(token_id)
+
                         auth_method = auth_info.get('auth_method', auth_type)
                         _current_auth_method.set(auth_method)
                         _current_auth_info.set(auth_info)
@@ -139,6 +145,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             _current_auth_method.set(None)
             _current_auth_info.set(None)
             _request_authenticated.set(False)
+            _current_token_id.set(None)
             logger.debug("🧹 REQUEST_CONTEXT: Authentication context cleared")
         except Exception as e:
             logger.error(f"❌ REQUEST_CONTEXT: Error clearing auth context: {e}")
@@ -212,7 +219,7 @@ def get_current_auth_info() -> Optional[Dict[str, Any]]:
 def is_request_authenticated() -> bool:
     """
     Check if the current request is authenticated.
-    
+
     Returns:
         True if request is authenticated, False otherwise
     """
@@ -223,6 +230,22 @@ def is_request_authenticated() -> bool:
     except Exception as e:
         logger.error(f"❌ CONTEXT_ACCESS: Error checking authentication status: {e}")
         return False
+
+
+def get_current_token_id() -> Optional[str]:
+    """
+    Get the current API token ID from context variables.
+
+    Returns:
+        Token ID if authenticated with API token, None otherwise
+    """
+    try:
+        token_id = _current_token_id.get()
+        logger.debug(f"🔍 CONTEXT_ACCESS: get_current_token_id() returning: {token_id}")
+        return token_id
+    except Exception as e:
+        logger.error(f"❌ CONTEXT_ACCESS: Error getting current token ID: {e}")
+        return None
 
 
 def get_authentication_context() -> Dict[str, Any]:

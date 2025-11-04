@@ -263,13 +263,14 @@ class TokenRepository(ITokenRepository):
             self.session.rollback()
             return False
     
-    async def update_token_usage(self, token_id: str) -> bool:
+    async def update_token_usage(self, token_id: str, operation: Optional[str] = None) -> bool:
         """
-        Update token usage statistics (last used, usage count).
-        
+        Update token usage statistics (last used, usage count, and operation-specific tracking).
+
         Args:
             token_id: Token identifier
-            
+            operation: Optional operation type (e.g., 'task_create', 'subtask_update', 'agent_call')
+
         Returns:
             True if successful, False otherwise
         """
@@ -278,21 +279,31 @@ class TokenRepository(ITokenRepository):
             token = self.session.query(APIToken).filter(
                 APIToken.id == token_id
             ).first()
-            
+
             if not token:
                 # Fallback to ApiToken model
                 token = self.session.query(ApiToken).filter(
                     ApiToken.id == token_id
                 ).first()
-            
+
             if not token:
                 return False
-            
+
             token.last_used_at = datetime.now(timezone.utc)
             token.usage_count = (token.usage_count or 0) + 1
+
+            # Track operation-specific usage
+            if operation:
+                usage_stats = token.usage_stats or {}
+                usage_stats[operation] = usage_stats.get(operation, 0) + 1
+                token.usage_stats = usage_stats
+                # Mark as modified for SQLAlchemy to detect JSON changes
+                from sqlalchemy.orm.attributes import flag_modified
+                flag_modified(token, "usage_stats")
+
             self.session.commit()
             return True
-            
+
         except Exception as e:
             logger.error(f"Error updating token usage: {e}")
             self.session.rollback()
