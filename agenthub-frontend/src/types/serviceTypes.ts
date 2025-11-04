@@ -142,6 +142,26 @@ export interface GenerateTokenRequest {
 }
 
 /**
+ * Detailed usage statistics per operation type
+ */
+export interface UsageStats {
+  task_create?: number;
+  task_update?: number;
+  task_delete?: number;
+  subtask_create?: number;
+  subtask_update?: number;
+  subtask_delete?: number;
+  project_create?: number;
+  project_update?: number;
+  branch_create?: number;
+  branch_update?: number;
+  agent_call?: number;
+  context_create?: number;
+  context_update?: number;
+  [key: string]: number | undefined; // Allow other operation types
+}
+
+/**
  * API token response structure
  */
 export interface TokenResponse {
@@ -154,6 +174,7 @@ export interface TokenResponse {
   last_used_at?: string;
   usage_count: number;
   rate_limit?: number;
+  usage_stats?: UsageStats;
   is_active: boolean;
 }
 
