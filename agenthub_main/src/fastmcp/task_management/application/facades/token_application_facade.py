@@ -177,10 +177,18 @@ class TokenApplicationFacade:
     ) -> Dict[str, Any]:
         """
         Create an API token with database persistence.
-        
+
         Uses repository pattern for database operations.
         """
         try:
+            # Validate rate limit (must be 1000 or less)
+            effective_rate_limit = rate_limit if rate_limit is not None else 1000
+            if effective_rate_limit > 1000:
+                return {
+                    "success": False,
+                    "error": "Rate limit must be 1000 or less requests per hour"
+                }
+
             repository = self._get_repository(session)
             
             # Generate unique token ID
@@ -208,7 +216,7 @@ class TokenApplicationFacade:
                 "token_hash": token_hash,
                 "scopes": scopes,
                 "expires_at": expires_at,
-                "rate_limit": rate_limit or 1000,
+                "rate_limit": effective_rate_limit,
                 "token_metadata": metadata or {}
             }
             
