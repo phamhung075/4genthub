@@ -4,6 +4,7 @@ CRUD Handler for Subtask MCP Controller
 Handles Create, Read, Update, Delete operations for subtasks with automatic progress tracking.
 """
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Any
@@ -31,6 +32,39 @@ class SubtaskCRUDHandler:
         self._response_formatter = response_formatter
         self._context_facade = context_facade
         self._task_facade = task_facade
+
+    async def _track_token_operation(self, operation: str) -> None:
+        """
+        Track token usage for a specific operation in background.
+
+        Args:
+            operation: Operation name (e.g., 'subtask_create', 'subtask_update')
+        """
+        try:
+            # Get token_id from request context
+            from fastmcp.auth.middleware.request_context_middleware import get_current_token_id
+            token_id = get_current_token_id()
+
+            if not token_id:
+                logger.debug(f"No token_id found for operation tracking: {operation}")
+                return
+
+            # Get database session
+            from .....infrastructure.database.database_config import get_db_config
+            db_config = get_db_config()
+            session = db_config.get_session()
+
+            try:
+                # Track the operation
+                from .....infrastructure.repositories.token_repository import TokenRepository
+                repository = TokenRepository(session)
+                await repository.update_token_usage(token_id, operation=operation)
+                logger.info(f"✅ Tracked operation: {operation} for token: {token_id}")
+            finally:
+                session.close()
+
+        except Exception as e:
+            logger.warning(f"Failed to track token operation {operation}: {e}", exc_info=True)
 
     def create_subtask(
         self,
@@ -152,6 +186,10 @@ class SubtaskCRUDHandler:
                         "Subtask created successfully but parent context update failed"
                     )
 
+            # Track successful subtask creation (run in background)
+            if result.get('success', False):
+                asyncio.create_task(self._track_token_operation('subtask_create'))
+
             return result
 
         except Exception as e:
@@ -253,6 +291,10 @@ class SubtaskCRUDHandler:
                     result["context_updated"] = False
                     result["context_update_error"] = str(e)
 
+            # Track successful subtask update (run in background)
+            if result.get('success', False):
+                asyncio.create_task(self._track_token_operation('subtask_update'))
+
             return result
 
         except Exception as e:
@@ -312,6 +354,10 @@ class SubtaskCRUDHandler:
                     logger.error(f"Failed to update parent context: {e}")
                     result["context_updated"] = False
                     result["context_update_error"] = str(e)
+
+            # Track successful subtask deletion (run in background)
+            if result.get('success', False):
+                asyncio.create_task(self._track_token_operation('subtask_delete'))
 
             return result
 
@@ -504,6 +550,10 @@ class SubtaskCRUDHandler:
                     logger.error(f"Failed to update parent context: {e}")
                     result["context_updated"] = False
                     result["context_update_error"] = str(e)
+
+            # Track successful subtask completion (run in background)
+            if result.get('success', False):
+                asyncio.create_task(self._track_token_operation('subtask_complete'))
 
             return result
 

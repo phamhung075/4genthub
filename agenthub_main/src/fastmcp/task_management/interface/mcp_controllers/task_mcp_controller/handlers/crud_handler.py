@@ -5,6 +5,7 @@ Handles Create, Read, Update, Delete operations for tasks.
 """
 
 import logging
+import asyncio
 from typing import Any
 
 from .....application.dtos.task.create_task_request import CreateTaskRequest
@@ -20,6 +21,39 @@ class CRUDHandler:
 
     def __init__(self, response_formatter: StandardResponseFormatter):
         self._response_formatter = response_formatter
+
+    async def _track_token_operation(self, operation: str) -> None:
+        """
+        Track token usage for a specific operation in background.
+
+        Args:
+            operation: Operation name (e.g., 'task_create', 'task_update')
+        """
+        try:
+            # Get token_id from request context
+            from fastmcp.auth.middleware.request_context_middleware import get_current_token_id
+            token_id = get_current_token_id()
+
+            if not token_id:
+                logger.debug(f"No token_id found for operation tracking: {operation}")
+                return
+
+            # Get database session
+            from .....infrastructure.database.database_config import get_db_config
+            db_config = get_db_config()
+            session = db_config.get_session()
+
+            try:
+                # Track the operation
+                from .....infrastructure.repositories.token_repository import TokenRepository
+                repository = TokenRepository(session)
+                await repository.update_token_usage(token_id, operation=operation)
+                logger.info(f"✅ Tracked operation: {operation} for token: {token_id}")
+            finally:
+                session.close()
+
+        except Exception as e:
+            logger.warning(f"Failed to track token operation {operation}: {e}", exc_info=True)
 
     def create_task(
         self,
@@ -166,6 +200,10 @@ class CRUDHandler:
                 error_code=ErrorCodes.INTERNAL_ERROR,
             )
 
+        # Track successful task creation (run in background)
+        if result.get('success', False):
+            asyncio.create_task(self._track_token_operation('task_create'))
+
         return result
 
     def update_task(
@@ -256,7 +294,14 @@ class CRUDHandler:
                 f"Failed to create UpdateTaskRequest: {e}, request_data={request_data}"
             )
             raise
-        return facade.update_task(request)
+
+        result = facade.update_task(request)
+
+        # Track successful task update (run in background)
+        if isinstance(result, dict) and result.get('success', False):
+            asyncio.create_task(self._track_token_operation('task_update'))
+
+        return result
 
     def get_task(
         self, facade: TaskApplicationFacade, task_id: str, include_context: bool = True
@@ -356,7 +401,13 @@ class CRUDHandler:
 
         # Use the provided authenticated user_id instead of extracting from repository
         # This ensures WebSocket messages are sent with the correct user_id for authorization
-        return facade.delete_task(task_id, user_id)
+        result = facade.delete_task(task_id, user_id)
+
+        # Track successful task deletion (run in background)
+        if isinstance(result, dict) and result.get('success', False):
+            asyncio.create_task(self._track_token_operation('task_delete'))
+
+        return result
 
     def complete_task(
         self,
@@ -396,7 +447,13 @@ class CRUDHandler:
 
         # Use the facade's complete_task method directly
         # This properly handles both transitioning to done and updating already-done tasks
-        return facade.complete_task(task_id, completion_summary, testing_notes, user_id)
+        result = facade.complete_task(task_id, completion_summary, testing_notes, user_id)
+
+        # Track successful task completion (run in background)
+        if isinstance(result, dict) and result.get('success', False):
+            asyncio.create_task(self._track_token_operation('task_complete'))
+
+        return result
 
     def _create_standardized_error(
         self, operation: str, field: str, expected: str, hint: str
