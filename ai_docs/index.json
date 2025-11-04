@@ -847,8 +847,15 @@
       "path": "core-architecture"
     },
     "development-guides": {
-      "count": 32,
+      "count": 35,
       "files": [
+        {
+          "hash": "097c88613174fafff24ef9fdc940e443",
+          "modified": "2025-11-04T11:26:07.550647",
+          "name": "parallel-execution-architecture.md",
+          "path": "development-guides/parallel-execution-architecture.md",
+          "size": 17642
+        },
         {
           "hash": "743cdf33a47fa48cf4dc3322e9358663",
           "modified": "2025-10-27T16:08:52.906245",
@@ -1018,6 +1025,13 @@
           "size": 6248
         },
         {
+          "hash": "f91b2458c62646d50e1539058d035054",
+          "modified": "2025-11-04T11:27:50.912787",
+          "name": "delegation-models-quickref.md",
+          "path": "development-guides/delegation-models-quickref.md",
+          "size": 14078
+        },
+        {
           "hash": "e431b36b4af74b93c5efaa3c623e4da7",
           "modified": "2025-10-27T16:08:52.906245",
           "name": "hmr-debugging-guide.md",
@@ -1065,6 +1079,13 @@
           "name": "DDD-schema.md",
           "path": "development-guides/DDD-schema.md",
           "size": 20628
+        },
+        {
+          "hash": "3ddfd53b5ab3deba4ee484beac35c217",
+          "modified": "2025-11-04T11:24:41.915460",
+          "name": "cclaude-wait-parallel-guide.md",
+          "path": "development-guides/cclaude-wait-parallel-guide.md",
+          "size": 11787
         },
         {
           "hash": "831a13a39e5c59e9f1a3c2397aef3e19",
@@ -1767,7 +1788,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-03T18:06:15.985524",
+  "generated_at": "2025-11-04T11:27:51.753437",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1941,7 +1962,9 @@
         "REPOSITORY_ARCHITECTURE_FINAL.md",
         "REPOSITORY_SWITCHING_GUIDE.md",
         "avoiding-mro-conflicts.md",
+        "cclaude-wait-parallel-guide.md",
         "claude-code-integration.md",
+        "delegation-models-quickref.md",
         "docker-system-guide.md",
         "domain-driven-design.md",
         "domain-events-usage-guide.md",
@@ -1957,6 +1980,7 @@
         "mcp-response-correction-phases.md",
         "mcp-response-redundancy-analysis.md",
         "mcp-task-creation-guide.md",
+        "parallel-execution-architecture.md",
         "phase-1-implementation-guide.md",
         "phase-2-implementation-guide.md",
         "phase-3-4-implementation-guide.md",
@@ -2098,5 +2122,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 232
+  "total_files": 235
 }
