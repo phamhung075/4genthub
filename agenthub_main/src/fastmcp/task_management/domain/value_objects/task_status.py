@@ -107,7 +107,7 @@ class TaskStatus:
         - BLOCKED → IN_PROGRESS, CANCELLED
         - REVIEW → IN_PROGRESS, TESTING, DONE, CANCELLED
         - TESTING → IN_PROGRESS, REVIEW, DONE, CANCELLED
-        - DONE → (no transitions - final state)
+        - DONE → IN_PROGRESS (can reopen for rework)
         - CANCELLED → TODO (can reopen)
         - ARCHIVED → (no transitions - final state)
         
@@ -120,11 +120,11 @@ class TaskStatus:
             TaskStatusEnum.BLOCKED.value: {TaskStatusEnum.IN_PROGRESS.value, TaskStatusEnum.CANCELLED.value},
             TaskStatusEnum.REVIEW.value: {TaskStatusEnum.IN_PROGRESS.value, TaskStatusEnum.TESTING.value, TaskStatusEnum.DONE.value, TaskStatusEnum.CANCELLED.value},
             TaskStatusEnum.TESTING.value: {TaskStatusEnum.IN_PROGRESS.value, TaskStatusEnum.REVIEW.value, TaskStatusEnum.DONE.value, TaskStatusEnum.CANCELLED.value},
-            TaskStatusEnum.DONE.value: set(),  # No transitions from completed
+            TaskStatusEnum.DONE.value: {TaskStatusEnum.IN_PROGRESS.value},  # Can reopen completed tasks for rework
             TaskStatusEnum.CANCELLED.value: {TaskStatusEnum.TODO.value},  # Can reopen cancelled tasks
             TaskStatusEnum.ARCHIVED.value: set()  # No transitions from archived
         }
-        
+
         return new_status in transitions.get(self.value, set())
     
     def get_valid_transitions(self) -> Set[str]:
@@ -140,11 +140,11 @@ class TaskStatus:
             TaskStatusEnum.BLOCKED.value: {TaskStatusEnum.IN_PROGRESS.value, TaskStatusEnum.CANCELLED.value},
             TaskStatusEnum.REVIEW.value: {TaskStatusEnum.IN_PROGRESS.value, TaskStatusEnum.TESTING.value, TaskStatusEnum.DONE.value, TaskStatusEnum.CANCELLED.value},
             TaskStatusEnum.TESTING.value: {TaskStatusEnum.IN_PROGRESS.value, TaskStatusEnum.REVIEW.value, TaskStatusEnum.DONE.value, TaskStatusEnum.CANCELLED.value},
-            TaskStatusEnum.DONE.value: set(),
+            TaskStatusEnum.DONE.value: {TaskStatusEnum.IN_PROGRESS.value},  # Can reopen completed tasks for rework
             TaskStatusEnum.CANCELLED.value: {TaskStatusEnum.TODO.value},
             TaskStatusEnum.ARCHIVED.value: set()
         }
-        
+
         return transitions.get(self.value, set())
     
     def get_transition_error_message(self, target_status: str) -> str:

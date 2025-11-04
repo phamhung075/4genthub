@@ -93,14 +93,10 @@ class WorkflowHandler:
             if workflow_guidance:
                 response["workflow_guidance"] = workflow_guidance
 
-            # Add visual indicators
-            response["visual_indicators"] = self._generate_visual_indicators(task_data)
-
-            # Add context availability status
-            task_id = task_data.get("id")
-            if task_id:
-                context_status = self._check_context_availability(task_id)
-                response["context_status"] = context_status
+            # OPTIMIZATION: Removed visual_indicators and context_status
+            # Frontend can compute these from task data:
+            # - visual_indicators: Map status/priority to emojis client-side
+            # - context_status: Check task.context_id !== null
 
             return response
 
@@ -172,68 +168,16 @@ class WorkflowHandler:
 
         return next_actions
 
-    def _generate_visual_indicators(self, task_data: dict[str, Any]) -> dict[str, Any]:
-        """Generate visual indicators for the task."""
-        status = task_data.get("status", "pending")
-        priority = task_data.get("priority", "medium")
-
-        # Status indicators
-        status_colors = {
-            "pending": "🟡",
-            "in_progress": "🔵",
-            "completed": "🟢",
-            "blocked": "🔴",
-            "cancelled": "⚫",
-        }
-
-        # Priority indicators
-        priority_indicators = {
-            "critical": "🚨",
-            "high": "⚡",
-            "medium": "📋",
-            "low": "📝",
-        }
-
-        return {
-            "status_indicator": status_colors.get(status.lower(), "⚪"),
-            "priority_indicator": priority_indicators.get(priority.lower(), "📋"),
-            "completion_percentage": self._calculate_completion_percentage(task_data),
-        }
-
-    def _calculate_completion_percentage(self, task_data: dict[str, Any]) -> int:
-        """Calculate rough completion percentage based on task data."""
-        status = task_data.get("status", "pending").lower()
-
-        # Simple status-based percentage
-        if status == "completed":
-            return 100
-        elif status == "in_progress":
-            return 50  # Could be enhanced with more detailed tracking
-        elif status == "blocked":
-            return 25
-        else:  # pending, cancelled
-            return 0
-
-    def _check_context_availability(self, task_id: str) -> dict[str, Any]:
-        """Check if context is available for the task."""
-        if not self._context_facade_factory:
-            return {"available": False, "reason": "Context system not available"}
-
-        try:
-            context_facade = self._context_facade_factory.create()
-            context_result = context_facade.get_context(
-                level="task", context_id=task_id
-            )
-
-            if context_result.get("success") and context_result.get("context"):
-                return {
-                    "available": True,
-                    "context_id": task_id,
-                    "last_updated": context_result.get("context", {}).get("updated_at"),
-                }
-            else:
-                return {"available": False, "reason": "No context found for task"}
-
-        except Exception as e:
-            logger.error(f"Error checking context availability: {str(e)}")
-            return {"available": False, "reason": f"Error checking context: {str(e)}"}
+    # DEPRECATED: Removed to reduce token overhead in responses
+    # Frontend should compute visual indicators client-side:
+    #
+    # STATUS_EMOJI_MAP = {
+    #     "pending": "🟡", "in_progress": "🔵", "completed": "🟢",
+    #     "blocked": "🔴", "cancelled": "⚫"
+    # }
+    #
+    # PRIORITY_EMOJI_MAP = {
+    #     "critical": "🚨", "high": "⚡", "medium": "📋", "low": "📝"
+    # }
+    #
+    # Context availability: Check task.context_id !== null instead

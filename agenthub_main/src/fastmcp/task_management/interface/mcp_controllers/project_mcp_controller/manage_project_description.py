@@ -36,7 +36,7 @@ MANAGE_PROJECT_PARAMS = {
         },
         # Project identification parameters
         "project_id": {
-            "type": "string",
+            "type": "UUID",
             "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["project_id"],
         },
         "name": {

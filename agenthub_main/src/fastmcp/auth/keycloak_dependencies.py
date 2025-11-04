@@ -201,11 +201,13 @@ def validate_local_token(token: str) -> User:
     
     try:
         # Decode the local JWT token with clock skew tolerance
+        # Skip audience validation for local tokens - they work across different audiences
         payload = jwt.decode(
             token,
             jwt_secret,
             algorithms=[JWT_ALGORITHM],
-            leeway=30  # Allow 30 seconds of clock skew
+            leeway=30,  # Allow 30 seconds of clock skew
+            options={"verify_aud": False}  # Don't validate audience for local tokens
         )
         
         # Extract user information

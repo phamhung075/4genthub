@@ -119,9 +119,11 @@ class DDDCompliantMCPTools:
         # Initialize facade service for all facades
         self._facade_service = FacadeService.get_instance()
 
-        # Initialize controllers with facade service
+        # Initialize controllers with facade service and config
         self._task_controller = TaskMCPController(
-            facade_service_or_factory=self._facade_service, workflow_hint_enhancer=None
+            facade_service_or_factory=self._facade_service,
+            workflow_hint_enhancer=None,
+            config=self._config
         )
 
         self._subtask_controller = SubtaskMCPController(
@@ -129,6 +131,7 @@ class DDDCompliantMCPTools:
             task_facade=None,  # Will be set if Vision System is enabled
             context_facade=None,  # Will be set if Vision System is enabled
             task_repository_factory=self._task_repository_factory,
+            config=self._config
         )
 
         # Auto-create global context on system startup with a system user ID
@@ -167,17 +170,21 @@ class DDDCompliantMCPTools:
                 )
             self._context_controller = None
 
-        # Initialize controllers with facade service
+        # Initialize controllers with facade service and config
         self._project_controller = ProjectMCPController(
             facade_service=self._facade_service
         )
 
         self._git_branch_controller = GitBranchMCPController(
-            facade_service=self._facade_service
+            facade_service=self._facade_service,
+            config=self._config
         )
 
-        # Agent controller with facade service
-        self._agent_controller = AgentMCPController(facade_service=self._facade_service)
+        # Agent controller with facade service and config
+        self._agent_controller = AgentMCPController(
+            facade_service=self._facade_service,
+            config=self._config
+        )
 
         # Initialize new call agent controller (agent_management module)
         # This uses the database-backed user agent instance system
