@@ -6,6 +6,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+
+**Phase 2 Dead Code Cleanup - 568 Lines Removed** (2025-11-04)
+- **Priority 1** (~300 lines): Removed example test files, unused Keycloak integration, dead API functions
+  - Deleted `example_backend_test.py`, `example_hooks_test.py` (27KB)
+  - Removed PostgreSQL and server mock fixtures (unused test infrastructure)
+  - Deleted `keycloakAuth.ts` service and environment variables
+  - Removed 7 frontend API functions never called in codebase
+- **Priority 2** (~230 lines): Removed test fixtures and config presets
+  - Cleaned up 3 PostgreSQL test fixtures and 5 server mock fixtures (160 lines)
+  - Removed logger configuration presets and legacy exports (70 lines)
+- **Priority 3** (38 lines net): Fixed type colocation and duplicate definitions
+  - Fixed bug: Removed duplicate `UseTaskDataOptions`/`UseTaskDataReturn` in `useTaskData.ts`
+  - Colocated 5 single-use component props to their components (SelectProps, SidebarProps, DialogProps, EnhancedButtonProps, TextareaProps)
+  - Reduced `componentTypes.ts` by ~15%, improved type discoverability
+- **Impact**: Cleaner codebase, enforced single-source-of-truth, zero breaking changes
+- **Commits**: `1d34f9a5`, `4a50019c`, `00e1ead2`
+
 ### Added
 
 **Phase 2 MCP Response Optimizations - 96% Token Savings** (2025-11-03)
