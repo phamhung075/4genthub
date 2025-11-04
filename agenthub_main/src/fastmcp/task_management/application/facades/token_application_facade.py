@@ -278,6 +278,7 @@ class TokenApplicationFacade:
                     "last_used_at": token.last_used_at.isoformat() if token.last_used_at else None,
                     "usage_count": token.usage_count,
                     "rate_limit": token.rate_limit,
+                    "usage_stats": token.usage_stats or {},
                     "is_active": token.is_active
                 }
                 for token in tokens
@@ -322,7 +323,7 @@ class TokenApplicationFacade:
             
             return {
                 "success": True,
-                "token": {
+                "token_data": {
                     "id": token.id,
                     "name": token.name,
                     "scopes": token.scopes,
@@ -331,6 +332,7 @@ class TokenApplicationFacade:
                     "last_used_at": token.last_used_at.isoformat() if token.last_used_at else None,
                     "usage_count": token.usage_count,
                     "rate_limit": token.rate_limit,
+                    "usage_stats": token.usage_stats or {},
                     "is_active": token.is_active,
                     "metadata": token.token_metadata if hasattr(token, 'token_metadata') else {}
                 }
