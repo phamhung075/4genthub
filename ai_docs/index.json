@@ -1325,8 +1325,15 @@
       "path": "operations"
     },
     "reports-status": {
-      "count": 2,
+      "count": 3,
       "files": [
+        {
+          "hash": "aa027c11aa121f1eb680f40d38d2da7a",
+          "modified": "2025-11-04T14:54:09.582110",
+          "name": "deep-dead-code-analysis-typescript-2025-11-04.md",
+          "path": "reports-status/deep-dead-code-analysis-typescript-2025-11-04.md",
+          "size": 12375
+        },
         {
           "hash": "91a79474ab06f08ecdd3d644ba419b26",
           "modified": "2025-11-04T14:30:01.580001",
@@ -1795,7 +1802,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-04T14:30:02.266880",
+  "generated_at": "2025-11-04T14:54:10.448875",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -2062,6 +2069,7 @@
     "reports-status": {
       "files": [
         "dead-code-analysis-2025-11-04.md",
+        "deep-dead-code-analysis-typescript-2025-11-04.md",
         "websocket-animation-architecture-analysis.md"
       ]
     },
@@ -2130,5 +2138,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 236
+  "total_files": 237
 }
