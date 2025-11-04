@@ -98,7 +98,7 @@
       "path": "api-behavior"
     },
     "api-integration": {
-      "count": 13,
+      "count": 14,
       "files": [
         {
           "hash": "677ae44155bbd2b3ca5ab9b6e533aa76",
@@ -106,6 +106,13 @@
           "name": "mcp-client-configuration-guide.md",
           "path": "api-integration/mcp-client-configuration-guide.md",
           "size": 17081
+        },
+        {
+          "hash": "d2e2f257f310e96f3651a359b63f7c1c",
+          "modified": "2025-11-04T18:19:54.908765",
+          "name": "token-usage-tracking-guide.md",
+          "path": "api-integration/token-usage-tracking-guide.md",
+          "size": 7762
         },
         {
           "hash": "de6b25e0fa060df49f91bc23527bfa63",
@@ -1325,7 +1332,7 @@
       "path": "operations"
     },
     "reports-status": {
-      "count": 3,
+      "count": 4,
       "files": [
         {
           "hash": "aa027c11aa121f1eb680f40d38d2da7a",
@@ -1333,6 +1340,13 @@
           "name": "deep-dead-code-analysis-typescript-2025-11-04.md",
           "path": "reports-status/deep-dead-code-analysis-typescript-2025-11-04.md",
           "size": 12375
+        },
+        {
+          "hash": "24ba155f5186186c8874aa61a6860936",
+          "modified": "2025-11-04T18:14:14.973251",
+          "name": "dead-code-analysis-phase2-2025-11-04.md",
+          "path": "reports-status/dead-code-analysis-phase2-2025-11-04.md",
+          "size": 25340
         },
         {
           "hash": "91a79474ab06f08ecdd3d644ba419b26",
@@ -1802,7 +1816,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-04T14:54:10.448875",
+  "generated_at": "2025-11-04T18:19:55.335560",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1862,7 +1876,8 @@
         "mcp-client-configuration-guide.md",
         "mcp-client-troubleshooting.md",
         "mcp-client-usage-examples.md",
-        "mcp-http-client-architecture.md"
+        "mcp-http-client-architecture.md",
+        "token-usage-tracking-guide.md"
       ]
     },
     "architecture-design": {
@@ -2069,6 +2084,7 @@
     "reports-status": {
       "files": [
         "dead-code-analysis-2025-11-04.md",
+        "dead-code-analysis-phase2-2025-11-04.md",
         "deep-dead-code-analysis-typescript-2025-11-04.md",
         "websocket-animation-architecture-analysis.md"
       ]
@@ -2138,5 +2154,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 237
+  "total_files": 239
 }

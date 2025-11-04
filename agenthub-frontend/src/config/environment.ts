@@ -58,11 +58,6 @@ export const DEBUG_MODE = getEnvVar('VITE_DEBUG', 'false') === 'true';
 // Application Configuration
 export const APP_NAME = getEnvVar('VITE_APP_NAME', 'agenthub');
 
-// Keycloak Configuration
-export const KEYCLOAK_URL = getEnvVar('VITE_KEYCLOAK_URL', '');
-export const KEYCLOAK_REALM = getEnvVar('VITE_KEYCLOAK_REALM', '');
-export const KEYCLOAK_CLIENT_ID = getEnvVar('VITE_KEYCLOAK_CLIENT_ID', '');
-
 // WebSocket Configuration
 // Auto-derive WebSocket URL from API URL in development if not explicitly configured
 const getDefaultWebSocketUrl = (): string => {

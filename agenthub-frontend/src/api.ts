@@ -218,11 +218,6 @@ export const deleteProject = async (project_id: string): Promise<DeleteResponse>
 };
 
 // --- Branch Operations ---
-export const listBranches = async (project_id: string): Promise<Branch[]> => {
-    const response = await branchApiV2.getBranches(project_id) as BranchesResponse;
-    return response.branches || [];
-};
-
 // Get bulk summaries using the new optimized endpoint
 export const createBranch = async (project_id: string, branch: Partial<Branch>): Promise<Branch> => {
     const response = await branchApiV2.createBranch(project_id, {
@@ -446,42 +441,8 @@ export const callAgent = async (agent_name: string, params?: any): Promise<any> 
     }
 };
 
-// --- Rule Operations (Placeholder) ---
-export const listRules = async (): Promise<Rule[]> => {
-    logger.warn('Rule operations not yet implemented in V2 API');
-    return [];
-};
-
-export const createRule = async (_rule: Partial<Rule>): Promise<Rule> => {
-    logger.warn('Rule operations not yet implemented in V2 API');
-    throw new Error('Rule operations not available');
-};
-
-export const updateRule = async (_rule_id: string, _updates: Partial<Rule>): Promise<Rule> => {
-    logger.warn('Rule operations not yet implemented in V2 API');
-    throw new Error('Rule operations not available');
-};
-
-export const deleteRule = async (_rule_id: string): Promise<void> => {
-    logger.warn('Rule operations not yet implemented in V2 API');
-    throw new Error('Rule operations not available');
-};
-
-export const validateRule = async (_rule: Partial<Rule>): Promise<any> => {
-    logger.warn('Rule operations not yet implemented in V2 API');
-    return { valid: false, errors: ['Rule operations not available'] };
-};
-
 // --- Connection Operations ---
-export const checkHealth = async (): Promise<boolean> => {
-    try {
-        const response = await connectionApiV2.healthCheck() as HealthResponse;
-        return response.status === 'healthy';
-    } catch (error) {
-        logger.error('Health check failed:', error);
-        return false;
-    }
-};
+// (Health check handled via connectionApiV2 directly in components)
 
 // Export utility functions and bulk API functions
 export { getCurrentUserId, isAuthenticated };
