@@ -96,72 +96,6 @@ export const getLoggerConfig = (): LoggerConfig => {
 };
 
 /**
- * Environment-specific configurations for reference/testing
- * These are now just presets - actual config comes from environment variables
- */
-export const environmentPresets = {
-  development: {
-    VITE_LOG_ENABLED: 'true',
-    VITE_LOG_LEVEL: 'debug',
-    VITE_LOG_SHOW_TIMESTAMP: 'true',
-    VITE_LOG_SHOW_LEVEL: 'true',
-    VITE_LOG_SHOW_FILE_PATH: 'true',
-    VITE_LOG_COLORIZE: 'true',
-    VITE_LOG_TO_CONSOLE: 'true',
-    VITE_LOG_TO_LOCALSTORAGE: 'true',
-    VITE_LOG_TO_REMOTE: 'false',
-    VITE_LOG_MAX_STORAGE_SIZE: '5242880',
-    VITE_LOG_BATCH_SIZE: '10',
-    VITE_LOG_BATCH_INTERVAL: '5000'
-  },
-
-  staging: {
-    VITE_LOG_ENABLED: 'true',
-    VITE_LOG_LEVEL: 'info',
-    VITE_LOG_SHOW_TIMESTAMP: 'true',
-    VITE_LOG_SHOW_LEVEL: 'true',
-    VITE_LOG_SHOW_FILE_PATH: 'false',
-    VITE_LOG_COLORIZE: 'false',
-    VITE_LOG_TO_CONSOLE: 'true',
-    VITE_LOG_TO_LOCALSTORAGE: 'true',
-    VITE_LOG_TO_REMOTE: 'true',
-    VITE_LOG_MAX_STORAGE_SIZE: '5242880',
-    VITE_LOG_BATCH_SIZE: '10',
-    VITE_LOG_BATCH_INTERVAL: '5000'
-  },
-
-  production: {
-    VITE_LOG_ENABLED: 'true',
-    VITE_LOG_LEVEL: 'warn',
-    VITE_LOG_SHOW_TIMESTAMP: 'true',
-    VITE_LOG_SHOW_LEVEL: 'true',
-    VITE_LOG_SHOW_FILE_PATH: 'false',
-    VITE_LOG_COLORIZE: 'false',
-    VITE_LOG_TO_CONSOLE: 'false',
-    VITE_LOG_TO_LOCALSTORAGE: 'false',
-    VITE_LOG_TO_REMOTE: 'true',
-    VITE_LOG_MAX_STORAGE_SIZE: '2097152', // 2MB for production
-    VITE_LOG_BATCH_SIZE: '20',
-    VITE_LOG_BATCH_INTERVAL: '10000'
-  },
-
-  test: {
-    VITE_LOG_ENABLED: 'false',
-    VITE_LOG_LEVEL: 'error',
-    VITE_LOG_SHOW_TIMESTAMP: 'false',
-    VITE_LOG_SHOW_LEVEL: 'true',
-    VITE_LOG_SHOW_FILE_PATH: 'false',
-    VITE_LOG_COLORIZE: 'false',
-    VITE_LOG_TO_CONSOLE: 'true',
-    VITE_LOG_TO_LOCALSTORAGE: 'false',
-    VITE_LOG_TO_REMOTE: 'false',
-    VITE_LOG_MAX_STORAGE_SIZE: '1048576', // 1MB for tests
-    VITE_LOG_BATCH_SIZE: '5',
-    VITE_LOG_BATCH_INTERVAL: '1000'
-  }
-};
-
-/**
  * Debug helper: Log current configuration to console
  * Useful for debugging environment variable issues
  */
@@ -198,10 +132,3 @@ export const debugLoggerConfig = (): void => {
   });
   console.groupEnd();
 };
-
-// Legacy exports for backward compatibility
-export const baseConfig = loggerConfig;
-export const developmentConfig = loggerConfig;
-export const stagingConfig = loggerConfig;
-export const productionConfig = loggerConfig;
-export const testConfig = loggerConfig;
