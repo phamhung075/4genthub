@@ -1,51 +1,6 @@
 {
   "absolute_docs": {
-    "obsolete_docs": [
-      {
-        "moved_date": "2025-10-28T10:54:36.728913",
-        "path": "_obsolete_docs/reports-status/structural-fix-complete-report.md"
-      },
-      {
-        "moved_date": "2025-10-30T23:21:32.426609",
-        "path": "_obsolete_docs/reports-status/tdd-analysis-task-breakdown-2025-10-30.md"
-      },
-      {
-        "moved_date": "2025-10-28T10:54:36.728913",
-        "path": "_obsolete_docs/reports-status/post-contract-alignment-comprehensive-analysis.md"
-      },
-      {
-        "moved_date": "2025-10-30T23:21:32.426609",
-        "path": "_obsolete_docs/reports-status/websocket-reliability-code-review-2025-10-30.md"
-      },
-      {
-        "moved_date": "2025-10-27T16:08:52.910246",
-        "path": "_obsolete_docs/reports-status/test-fix-session-2025-10-24.md"
-      },
-      {
-        "moved_date": "2025-10-28T19:35:49.401897",
-        "path": "_obsolete_docs/reports-status/e2e-test-failure-analysis-2025-10-28.md"
-      },
-      {
-        "moved_date": "2025-10-30T23:21:32.426609",
-        "path": "_obsolete_docs/reports-status/mcp-comprehensive-testing-report-2025-10-30.md"
-      },
-      {
-        "moved_date": "2025-10-27T16:08:52.910246",
-        "path": "_obsolete_docs/reports-status/mcp-tool-response-analysis.md"
-      },
-      {
-        "moved_date": "2025-10-27T21:30:37.638424",
-        "path": "_obsolete_docs/testing-qa/api-contract-test-final-report.md"
-      },
-      {
-        "moved_date": "2025-10-27T16:08:52.910246",
-        "path": "_obsolete_docs/testing-qa/test-coverage-report-2025-10-24.md"
-      },
-      {
-        "moved_date": "2025-10-27T16:08:52.910246",
-        "path": "_obsolete_docs/testing-qa/agenthub-mcp-tools-test-report-2025-10-22.md"
-      }
-    ],
+    "obsolete_docs": [],
     "tracked_files": {
       "scripts/docker-menu.sh": {
         "doc_path": "_absolute_docs/scripts/docker-menu.sh.md",
@@ -67,95 +22,6 @@
         }
       ],
       "path": "_absolute_docs/scripts"
-    },
-    "_obsolete_docs/reports-status": {
-      "count": 8,
-      "files": [
-        {
-          "hash": "92e5ced4af4d1fda095954c65ffec787",
-          "modified": "2025-10-28T10:54:36.728913",
-          "name": "structural-fix-complete-report.md",
-          "path": "_obsolete_docs/reports-status/structural-fix-complete-report.md",
-          "size": 10457
-        },
-        {
-          "hash": "a1b87511950449f36b308c0fcd2a2040",
-          "modified": "2025-10-30T23:21:32.426609",
-          "name": "tdd-analysis-task-breakdown-2025-10-30.md",
-          "path": "_obsolete_docs/reports-status/tdd-analysis-task-breakdown-2025-10-30.md",
-          "size": 9131
-        },
-        {
-          "hash": "9aaf70c2a5546f1ba4224984eb827ace",
-          "modified": "2025-10-28T10:54:36.728913",
-          "name": "post-contract-alignment-comprehensive-analysis.md",
-          "path": "_obsolete_docs/reports-status/post-contract-alignment-comprehensive-analysis.md",
-          "size": 21387
-        },
-        {
-          "hash": "4abc9617d93688727ba70344315c4b99",
-          "modified": "2025-10-30T23:21:32.426609",
-          "name": "websocket-reliability-code-review-2025-10-30.md",
-          "path": "_obsolete_docs/reports-status/websocket-reliability-code-review-2025-10-30.md",
-          "size": 31950
-        },
-        {
-          "hash": "2a61245ec9696bd2cdeeb5c488568a76",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "test-fix-session-2025-10-24.md",
-          "path": "_obsolete_docs/reports-status/test-fix-session-2025-10-24.md",
-          "size": 4039
-        },
-        {
-          "hash": "49821bbbe42bec64eeb31ac54589a518",
-          "modified": "2025-10-28T19:35:49.401897",
-          "name": "e2e-test-failure-analysis-2025-10-28.md",
-          "path": "_obsolete_docs/reports-status/e2e-test-failure-analysis-2025-10-28.md",
-          "size": 9612
-        },
-        {
-          "hash": "ecd74a9828ecab0d7e4faf1e0f46eba4",
-          "modified": "2025-10-30T23:21:32.426609",
-          "name": "mcp-comprehensive-testing-report-2025-10-30.md",
-          "path": "_obsolete_docs/reports-status/mcp-comprehensive-testing-report-2025-10-30.md",
-          "size": 11016
-        },
-        {
-          "hash": "48556ccf55bd12d65c66a8c2ba485cfc",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "mcp-tool-response-analysis.md",
-          "path": "_obsolete_docs/reports-status/mcp-tool-response-analysis.md",
-          "size": 18214
-        }
-      ],
-      "path": "_obsolete_docs/reports-status"
-    },
-    "_obsolete_docs/testing-qa": {
-      "count": 3,
-      "files": [
-        {
-          "hash": "6a2639a9cbfd26dd1404f2334dd910fe",
-          "modified": "2025-10-27T21:30:37.638424",
-          "name": "api-contract-test-final-report.md",
-          "path": "_obsolete_docs/testing-qa/api-contract-test-final-report.md",
-          "size": 14963
-        },
-        {
-          "hash": "a071817db866ccda9621f80fce9a3b7f",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "test-coverage-report-2025-10-24.md",
-          "path": "_obsolete_docs/testing-qa/test-coverage-report-2025-10-24.md",
-          "size": 14454
-        },
-        {
-          "hash": "47ac0db31bc17e94f91538884870681f",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "agenthub-mcp-tools-test-report-2025-10-22.md",
-          "path": "_obsolete_docs/testing-qa/agenthub-mcp-tools-test-report-2025-10-22.md",
-          "size": 12620
-        }
-      ],
-      "path": "_obsolete_docs/testing-qa"
     },
     "_workplace/workers": {
       "count": 1,
@@ -515,7 +381,7 @@
       "path": "authentication"
     },
     "claude-code": {
-      "count": 7,
+      "count": 8,
       "files": [
         {
           "hash": "96b91902d34189edf7d0d37be17916bc",
@@ -551,6 +417,13 @@
           "name": "phase3-hook-migration-complete.md",
           "path": "claude-code/phase3-hook-migration-complete.md",
           "size": 9477
+        },
+        {
+          "hash": "0b0ad6b69ffcee0cf4d6da70fa5b19dc",
+          "modified": "2025-11-03T15:20:24.219527",
+          "name": "phase3-development-guides-optimization-results.md",
+          "path": "claude-code/phase3-development-guides-optimization-results.md",
+          "size": 16374
         },
         {
           "hash": "15728cedb32c5fbee41227a585614396",
@@ -974,7 +847,7 @@
       "path": "core-architecture"
     },
     "development-guides": {
-      "count": 28,
+      "count": 32,
       "files": [
         {
           "hash": "743cdf33a47fa48cf4dc3322e9358663",
@@ -1003,6 +876,13 @@
           "name": "frontend-ux-enhancements.md",
           "path": "development-guides/frontend-ux-enhancements.md",
           "size": 7919
+        },
+        {
+          "hash": "13e7cb80ab34246846347af43d66c379",
+          "modified": "2025-11-03T17:48:00.873996",
+          "name": "phase2-validation-and-search-optimization.md",
+          "path": "development-guides/phase2-validation-and-search-optimization.md",
+          "size": 12085
         },
         {
           "hash": "156a10e107b14da2efe9b04ebb78fa6b",
@@ -1061,6 +941,13 @@
           "size": 14201
         },
         {
+          "hash": "9fdea339234ee7e5303ba3ed138ab648",
+          "modified": "2025-11-03T15:28:54.546652",
+          "name": "mcp-response-redundancy-analysis.md",
+          "path": "development-guides/mcp-response-redundancy-analysis.md",
+          "size": 11376
+        },
+        {
           "hash": "828a791755adfb6f5d7b74a9c25f2b73",
           "modified": "2025-10-27T16:08:52.906245",
           "name": "index.md",
@@ -1080,6 +967,13 @@
           "name": "mcp-task-creation-guide.md",
           "path": "development-guides/mcp-task-creation-guide.md",
           "size": 17996
+        },
+        {
+          "hash": "a6c61b10b3b62a1d820d9961ffb895e9",
+          "modified": "2025-11-03T18:06:15.000399",
+          "name": "phase2-implementation-results.md",
+          "path": "development-guides/phase2-implementation-results.md",
+          "size": 9277
         },
         {
           "hash": "5c4a0dfd84e9efd82568039f814964f3",
@@ -1131,11 +1025,18 @@
           "size": 6107
         },
         {
-          "hash": "e784e58bdbbac361893b4c9b357ec219",
-          "modified": "2025-10-27T16:08:52.906245",
+          "hash": "f1ee999181c5c2ad72f7ef68b44e90b7",
+          "modified": "2025-11-03T16:53:39.036202",
+          "name": "workflow-guidance-token-optimization.md",
+          "path": "development-guides/workflow-guidance-token-optimization.md",
+          "size": 9550
+        },
+        {
+          "hash": "7ffab05c14fc13dedd43e9e30bfd9434",
+          "modified": "2025-11-03T15:15:08.670084",
           "name": "mcp-response-correction-phases.md",
           "path": "development-guides/mcp-response-correction-phases.md",
-          "size": 101374
+          "size": 31522
         },
         {
           "hash": "c10d33a877c510979f71600d6796b4f1",
@@ -1159,11 +1060,11 @@
           "size": 13832
         },
         {
-          "hash": "c65dcef80fa903596c3d8dd06b37508c",
-          "modified": "2025-10-27T16:08:52.906245",
+          "hash": "b3da745f3cfa8fe1509e71f11fb1e95b",
+          "modified": "2025-11-03T15:18:37.703671",
           "name": "DDD-schema.md",
           "path": "development-guides/DDD-schema.md",
-          "size": 47069
+          "size": 20628
         },
         {
           "hash": "831a13a39e5c59e9f1a3c2397aef3e19",
@@ -1401,26 +1302,6 @@
         }
       ],
       "path": "operations"
-    },
-    "product-requirements": {
-      "count": 2,
-      "files": [
-        {
-          "hash": "df495c23d4fa2d33057b3bcb334a83b9",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "PRD.md",
-          "path": "product-requirements/PRD.md",
-          "size": 17607
-        },
-        {
-          "hash": "84f5e2457b14460c7aa5b4ec58b0a845",
-          "modified": "2025-10-27T16:08:52.910246",
-          "name": "README.md",
-          "path": "product-requirements/README.md",
-          "size": 1992
-        }
-      ],
-      "path": "product-requirements"
     },
     "reports-status": {
       "count": 1,
@@ -1886,7 +1767,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-03T15:00:36.457519",
+  "generated_at": "2025-11-03T18:06:15.985524",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1895,27 +1776,7 @@
         ]
       }
     },
-    "_obsolete_docs": {
-      "reports-status": {
-        "files": [
-          "e2e-test-failure-analysis-2025-10-28.md",
-          "mcp-comprehensive-testing-report-2025-10-30.md",
-          "mcp-tool-response-analysis.md",
-          "post-contract-alignment-comprehensive-analysis.md",
-          "structural-fix-complete-report.md",
-          "tdd-analysis-task-breakdown-2025-10-30.md",
-          "test-fix-session-2025-10-24.md",
-          "websocket-reliability-code-review-2025-10-30.md"
-        ]
-      },
-      "testing-qa": {
-        "files": [
-          "agenthub-mcp-tools-test-report-2025-10-22.md",
-          "api-contract-test-final-report.md",
-          "test-coverage-report-2025-10-24.md"
-        ]
-      }
-    },
+    "_obsolete_docs": {},
     "_workplace": {
       "workers": {
         "files": [
@@ -2002,6 +1863,7 @@
         "cclaude-cli-research.md",
         "claude-md-optimization-results.md",
         "phase2-hook-optimization-strategy.md",
+        "phase3-development-guides-optimization-results.md",
         "phase3-hook-migration-complete.md",
         "token-optimization-comparison.md"
       ]
@@ -2093,13 +1955,17 @@
         "logger-environment-variables.md",
         "mcp-integration-guide.md",
         "mcp-response-correction-phases.md",
+        "mcp-response-redundancy-analysis.md",
         "mcp-task-creation-guide.md",
         "phase-1-implementation-guide.md",
         "phase-2-implementation-guide.md",
         "phase-3-4-implementation-guide.md",
+        "phase2-implementation-results.md",
+        "phase2-validation-and-search-optimization.md",
         "test-organization-guide.md",
         "test_creation_guide.md",
-        "token-management-analysis.md"
+        "token-management-analysis.md",
+        "workflow-guidance-token-optimization.md"
       ],
       "ui-patterns": {
         "files": [
@@ -2160,12 +2026,6 @@
         "production-deployment-guide.md",
         "python-3.14-installation-guide.md",
         "websocket-metrics-guide.md"
-      ]
-    },
-    "product-requirements": {
-      "files": [
-        "PRD.md",
-        "README.md"
       ]
     },
     "reports-status": {
@@ -2237,6 +2097,6 @@
       ]
     }
   },
-  "total_directories": 30,
-  "total_files": 240
+  "total_directories": 27,
+  "total_files": 232
 }

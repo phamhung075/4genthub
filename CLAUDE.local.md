@@ -337,3 +337,7 @@ echo "R" | ./docker-system/docker-menu.sh
 - **Vision System**: Refer to CLAUDE.md for workflow guidance and progress tracking details
 - **Agent Library**: 32 specialized agents documented in CLAUDE.md
 - **Troubleshooter**: Use Task tool to launch Claude Code troubleshooter agent when needed
+---
+##  Key Learning:
+When modifying Python backend code, always restart the backend process to load changes.
+Python caches imported modules in memory, so file edits alone aren't sufficient—the process must be killed and restarted to pick up new code.
