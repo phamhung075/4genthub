@@ -102,7 +102,8 @@ class GitBranchNameValidator:
             raise ValidationException("Branch name cannot exceed 100 characters")
 
         # Git branch name rules (simplified version of git's rules)
-        forbidden_chars = [' ', '~', '^', ':', '\\', '*', '?', '[', '.', '@{']
+        # Note: '.' is allowed in branch names (e.g., '1.0.0-release'), but has specific rules checked separately
+        forbidden_chars = [' ', '~', '^', ':', '\\', '*', '?', '[', '@{']
         for char in forbidden_chars:
             if char in name:
                 if char == ' ':

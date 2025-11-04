@@ -66,7 +66,6 @@ class TestGitBranchNameValidator:
             ("name*asterisk", "*"),
             ("name?question", "?"),
             ("name[bracket", "["),
-            ("name.dot", "."),
             ("name@{brace", "@{"),
         ]
 
@@ -84,12 +83,12 @@ class TestGitBranchNameValidator:
         # Test slash and hyphen which are checked for start position
         with pytest.raises(ValidationException, match="cannot start with"):
             await validator.validate_name_format("/branch")
-        
+
         with pytest.raises(ValidationException, match="cannot start with"):
             await validator.validate_name_format("-branch")
-        
-        # Dot is handled by forbidden chars, not start position
-        with pytest.raises(ValidationException, match="cannot contain the character"):
+
+        # Dot at start is also checked
+        with pytest.raises(ValidationException, match="cannot start with"):
             await validator.validate_name_format(".branch")
 
     @pytest.mark.asyncio
@@ -98,16 +97,15 @@ class TestGitBranchNameValidator:
         # Test slash which is checked for end position
         with pytest.raises(ValidationException, match="cannot end with"):
             await validator.validate_name_format("branch/")
-        
-        # Dot is handled by forbidden chars, not end position
-        with pytest.raises(ValidationException, match="cannot contain the character"):
+
+        # Dot at end is also checked
+        with pytest.raises(ValidationException, match="cannot end with"):
             await validator.validate_name_format("branch.")
 
     @pytest.mark.asyncio
     async def test_validate_name_format_consecutive_dots(self, validator):
         """Test that names with consecutive dots are rejected"""
-        # Note: Since '.' is in forbidden chars, this will be caught before consecutive dots check
-        with pytest.raises(ValidationException, match="cannot contain the character"):
+        with pytest.raises(ValidationException, match="cannot contain consecutive dots"):
             await validator.validate_name_format("branch..name")
 
     @pytest.mark.asyncio
@@ -150,12 +148,17 @@ class TestGitBranchNameValidator:
             "develop",
             "feature/user-auth",
             "hotfix-123",
-            "release_v1_0_0",  # Changed dots to underscores
+            "release_v1_0_0",
             "bug_fix_456",
             "FEATURE-789",
             "feature/add-login-functionality",
             "a",  # minimum length
             "a" * 100,  # maximum length
+            # Valid period usage
+            "1.0.0-release",
+            "v2.5.3-hotfix",
+            "feature.branch.name",
+            "0.0.6-agents-base",
         ]
 
         for name in valid_names:
@@ -246,12 +249,13 @@ class TestGitBranchNameValidator:
     async def test_validate_branch_name_valid(self, validator, mock_git_branch_repository):
         """Test comprehensive validation for valid branch names"""
         mock_git_branch_repository.find_all_by_project.return_value = []
-        
+
         valid_names = [
             "main",
             "feature/user-authentication",
             "hotfix-critical-bug",
-            "release/v2_0_0",  # Changed dots to underscores
+            "release/v2.0.0",  # Periods now allowed
+            "0.0.6-agents-base",  # Version-style names
         ]
 
         for name in valid_names:
