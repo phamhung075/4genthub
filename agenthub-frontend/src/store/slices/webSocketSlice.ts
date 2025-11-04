@@ -108,12 +108,7 @@ export const {
 
 export default webSocketSlice.reducer;
 
-// Selectors
-export const selectWebSocketState = (state: { websocket: WebSocketState }) => state.websocket;
+// Selectors (used by UI components)
 export const selectIsConnected = (state: { websocket: WebSocketState }) => state.websocket.isConnected;
 export const selectIsReconnecting = (state: { websocket: WebSocketState }) => state.websocket.isReconnecting;
 export const selectWebSocketError = (state: { websocket: WebSocketState }) => state.websocket.error;
-export const selectLastMessage = (state: { websocket: WebSocketState }) => state.websocket.lastMessage;
-export const selectMessageQueue = (state: { websocket: WebSocketState }) => state.websocket.messageQueue;
-export const selectReconnectAttempts = (state: { websocket: WebSocketState }) => state.websocket.reconnectAttempts;
-export const selectLastHeartbeat = (state: { websocket: WebSocketState }) => state.websocket.lastHeartbeat;

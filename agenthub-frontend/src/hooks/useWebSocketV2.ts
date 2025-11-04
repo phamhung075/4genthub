@@ -12,7 +12,6 @@ import {
   selectIsReconnecting,
   selectWebSocketError,
 } from '../store/slices/webSocketSlice';
-import { updateFromWebSocket } from '../store/slices/cascadeSlice';
 import { webSocketAnimationService } from '../services/WebSocketAnimationService';
 import { initializeWebSocketIntegration } from '../services/changePoolService';
 import { notificationService } from '../services/notificationService';
@@ -128,10 +127,7 @@ export function useWebSocket(userId: string, token: string) {
       // Dispatch message to Redux store
       dispatch(messageReceived(message));
 
-      // Process cascade data if present
-      if (message.payload.data.cascade) {
-        dispatch(updateFromWebSocket(message.payload.data.cascade));
-      }
+      // Note: Cascade data integration removed - was write-only (stored but never read)
     });
 
     // Handle user actions (immediate feedback)
