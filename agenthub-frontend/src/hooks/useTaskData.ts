@@ -4,32 +4,7 @@ import { listTasks } from '../api';
 import { getFullTask } from '../api-lazy';
 import logger from '../utils/logger';
 import { TaskSummary } from '../types/taskTypes';
-
-interface UseTaskDataOptions {
-  taskTreeId: string;
-  onTasksChanged?: () => void;
-}
-
-interface UseTaskDataReturn {
-  // State
-  taskSummaries: TaskSummary[];
-  fullTasks: Map<string, Task>;
-  totalTasks: number;
-  loading: boolean;
-  error: string | null;
-  loadingTasks: Set<string>;
-
-  // Actions
-  loadTaskSummaries: (page?: number) => Promise<void>;
-  loadFullTask: (taskId: string) => Promise<Task | null>;
-  updateTaskFromData: (taskData: Task) => void;
-  addNewTask: (taskData: Task) => void;
-  removeTask: (taskId: string) => void;
-  setTotalTasks: React.Dispatch<React.SetStateAction<number>>;
-
-  // Utilities
-  convertToTaskSummary: (task: any) => TaskSummary;
-}
+import type { UseTaskDataOptions, UseTaskDataReturn } from '../types/hookTypes';
 
 export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions): UseTaskDataReturn {
   // Reset state when taskTreeId changes

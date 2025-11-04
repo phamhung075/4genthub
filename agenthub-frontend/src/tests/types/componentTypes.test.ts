@@ -4,13 +4,8 @@ import type {
   SearchResult,
   AuthContextType,
   InputProps,
-  DialogProps,
   BadgeProps,
   ButtonProps,
-  TextareaProps,
-  SelectProps,
-  SidebarProps,
-  EnhancedButtonProps,
   ToastType,
   Toast,
   ProgressState,
@@ -20,6 +15,11 @@ import type {
   ProjectFormData,
   ProjectDialogsProps,
 } from '../../types/componentTypes';
+import type { DialogProps } from '../../components/ui/dialog';
+import type { TextareaProps } from '../../components/ui/textarea';
+import type { SelectProps } from '../../components/ui/select-simple';
+import type { SidebarProps } from '../../components/ui/sidebar';
+import type { EnhancedButtonProps } from '../../components/ui/EnhancedButton';
 import type { Task, Subtask, Project } from '../../api';
 import type { BranchSummary } from '../../types/api.types';
 import type { User, AuthTokens, SignupResult } from '../../types/authTypes';
