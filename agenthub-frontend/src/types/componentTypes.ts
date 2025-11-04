@@ -62,15 +62,6 @@ export interface AuthContextType {
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 /**
- * Dialog component props extending React HTML div attributes
- */
-export interface DialogProps extends React.HTMLAttributes<HTMLDivElement> {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  children: React.ReactNode;
-}
-
-/**
  * Badge component props
  * Supports multiple visual variants for different contexts
  */
@@ -85,31 +76,6 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
   size?: "default" | "sm" | "lg" | "icon";
-}
-
-/**
- * Textarea component props extending React HTML textarea attributes
- */
-export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
-
-/**
- * Select component props extending React HTML select attributes
- */
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {}
-
-/**
- * Sidebar component props extending React HTML div attributes
- */
-export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-/**
- * Enhanced Button component props with animation support
- * Extends ButtonProps with additional animation options
- */
-export interface EnhancedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
-  size?: "default" | "sm" | "lg" | "icon";
-  animation?: "none" | "shimmer" | "glow" | "sweep" | "pulse" | "gradient" | "aurora" | "dual-rotating" | "dual-rotating-glow";
 }
 
 /**
