@@ -42,7 +42,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 **CLI Tools**
 - `cclaude` (async) - delegate tasks to separate terminal sessions, non-blocking, enables parallel execution
 - `cclaude-wait` (sync) - delegate with blocking + JSON results, sequential workflows
+- `cclaude-wait-parallel` (NEW) - parallel subtask delegation with live progress, replicates Task tool capabilities
 - Both support task_id and subtask_id delegation patterns
+
+**Parallel Execution System - cclaude-wait-parallel** (2025-11-04)
+- **Purpose**: Replicates Task tool's parallel execution with live progress visibility
+- **Architecture**: WebSocket multiplexer pattern with single connection monitoring multiple subtasks
+- **Components**:
+  - `.claude/bin/cclaude-wait-parallel` - Bash wrapper that launches multiple cclaude sessions in parallel
+  - `.claude/bin/poll_mcp_websocket_parallel.py` - WebSocket multiplexer with live progress table
+- **Features**:
+  - ✅ True parallel execution (all cclaude sessions start simultaneously)
+  - ✅ Live progress visibility (real-time updates in orchestrator session)
+  - ✅ Aggregated progress display (single rich table showing all subtasks)
+  - ✅ Blocking wait (orchestrator waits until all complete)
+  - ✅ Structured JSON results (complete data for all subtasks)
+- **Usage**: `cclaude-wait-parallel <agent> <task_id> <sub1> <sub2> <sub3> [...]`
+- **Performance**: 67% time savings vs sequential (3 subtasks @ 60s each: 180s → 60s)
+- **Solution to**: Claude Code's sequential Bash execution limitation
+- **User Request**: "how build in claude Task tool it working perfect? i want make my cclaude wait work like that"
+- **Documentation**:
+  - `ai_docs/development-guides/cclaude-wait-parallel-guide.md` - Complete usage guide
+  - `ai_docs/development-guides/parallel-execution-architecture.md` - Architecture deep-dive
 
 **Agent Skills - changelog-updater** (2025-11-03)
 - SKILL.md (244 lines): YAML frontmatter, allowed-tools (Read, Edit, Grep), format requirements, instructions, examples
