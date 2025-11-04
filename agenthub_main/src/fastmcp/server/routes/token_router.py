@@ -47,6 +47,7 @@ class TokenResponse(BaseModel):
     last_used_at: Optional[datetime] = None
     usage_count: Optional[int] = 0
     rate_limit: Optional[int] = None
+    usage_stats: Optional[Dict[str, int]] = {}  # Operation-level usage tracking
     is_active: bool = True
     token: Optional[str] = None  # Only included during creation
     metadata: Optional[Dict[str, Any]] = {}
