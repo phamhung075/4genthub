@@ -3,11 +3,9 @@
 
 import logging
 import psycopg2
-from psycopg2 import sql
 import os
 from typing import Optional
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 

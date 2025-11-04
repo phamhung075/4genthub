@@ -9,8 +9,8 @@ import asyncio
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 import httpx
-from jose import jwt, JWTError
-from datetime import datetime, timedelta
+from jose import jwt
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
