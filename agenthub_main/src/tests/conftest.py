@@ -1597,72 +1597,6 @@ def clean_import_state(request):
 
 
 # =============================================
-# POSTGRESQL TEST DATABASE FIXTURES
-# =============================================
-
-@pytest.fixture(scope="function")
-def postgresql_test_db():
-    """
-    Function-scoped fixture for PostgreSQL testing.
-    
-    This fixture respects the user requirement for separate PostgreSQL
-    test database and handles URL parsing issues with special characters.
-    """
-    # Import here to avoid circular dependencies
-    try:
-        from fastmcp.task_management.infrastructure.database.test_database_config import (
-            get_test_database_config,
-            install_missing_dependencies
-        )
-        
-        # Install missing dependencies
-        install_missing_dependencies()
-        
-        # Configure PostgreSQL test environment
-        test_config = get_test_database_config()
-        
-        yield test_config
-        
-        # Restore environment
-        test_config.restore_environment()
-        
-    except ImportError as e:
-        pytest.skip(f"PostgreSQL test configuration not available: {e}")
-    except Exception as e:
-        pytest.fail(f"PostgreSQL test setup failed: {e}")
-
-
-@pytest.fixture(scope="session")
-def postgresql_session_db():
-    """
-    Session-scoped fixture for PostgreSQL integration tests.
-    Creates database once per test session for read-only tests.
-    """
-    try:
-        from fastmcp.task_management.infrastructure.database.test_database_config import (
-            get_test_database_config,
-            install_missing_dependencies
-        )
-        
-        # Install missing dependencies
-        install_missing_dependencies()
-        
-        # Configure PostgreSQL test environment
-        test_config = get_test_database_config()
-        
-        print(f"\n🚀 Creating PostgreSQL test database session")
-        
-        yield test_config
-        
-        print(f"\n🧹 Cleaning up PostgreSQL test database session")
-        test_config.restore_environment()
-        
-    except ImportError as e:
-        pytest.skip(f"PostgreSQL test configuration not available: {e}")
-    except Exception as e:
-        pytest.fail(f"PostgreSQL session test setup failed: {e}")
-
-
 # =============================================
 # SESSION-SCOPED DATABASE FIXTURES FOR SPEED
 # =============================================
@@ -1718,47 +1652,6 @@ def shared_test_db():
         os.environ["MCP_DB_PATH"] = old_db_path
     elif "MCP_DB_PATH" in os.environ:
         del os.environ["MCP_DB_PATH"]
-
-
-@pytest.fixture(scope="module")
-def module_test_db():
-    """
-    Module-scoped fixture for integration tests within a module.
-    Creates database once per test module.
-    """
-    from fastmcp.task_management.infrastructure.database.database_initializer import reset_initialization_cache
-    from fastmcp.task_management.infrastructure.database.database_source_manager import DatabaseSourceManager
-    
-    # Clear caches
-    reset_initialization_cache()
-    DatabaseSourceManager.clear_instance()
-    
-    # Create a module-scoped test database
-    module_db_path = Path(__file__).parent.parent / "database" / "data" / f"agenthub_module_test_{os.getpid()}.db"
-    
-    # Remove if exists
-    if module_db_path.exists():
-        try:
-            module_db_path.unlink()
-        except OSError:
-            pass
-    
-    os.environ["MCP_DB_PATH"] = str(module_db_path)
-    print(f"\n📦 Creating module test database: {module_db_path}")
-
-    # Initialize database with basic data
-    from fastmcp.task_management.infrastructure.database.database_initializer import initialize_database
-    initialize_database(None)
-    _initialize_test_database_with_basic_data()
-    
-    yield module_db_path
-    
-    # Cleanup
-    if module_db_path.exists():
-        try:
-            module_db_path.unlink()
-        except OSError:
-            pass
 
 
 # =============================================

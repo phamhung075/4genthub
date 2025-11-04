@@ -60,35 +60,6 @@ def mock_settings():
 
 
 @pytest.fixture
-def mock_tool_manager():
-    """Mock ToolManager"""
-    manager = AsyncMock(spec=ToolManager)
-    manager.get_tools = AsyncMock(return_value={})
-    manager.add_tool = Mock()
-    return manager
-
-
-@pytest.fixture
-def mock_resource_manager():
-    """Mock ResourceManager"""
-    manager = AsyncMock(spec=ResourceManager)
-    manager.get_resources = AsyncMock(return_value={})
-    manager.get_resource_templates = AsyncMock(return_value={})
-    manager.add_resource = Mock()
-    manager.add_template = Mock()
-    return manager
-
-
-@pytest.fixture
-def mock_prompt_manager():
-    """Mock PromptManager"""
-    manager = AsyncMock(spec=PromptManager)
-    manager.get_prompts = AsyncMock(return_value={})
-    manager.add_prompt = Mock()
-    return manager
-
-
-@pytest.fixture
 def mock_mcp_server():
     """Mock MCP Server"""
     server = Mock(spec=MCPServer)
@@ -102,27 +73,6 @@ def mock_mcp_server():
     server.read_resource = Mock(return_value=lambda x: x)
     server.get_prompt = Mock(return_value=lambda x: x)
     return server
-
-
-@pytest.fixture
-def mock_auth_provider():
-    """Mock OAuth provider"""
-    provider = Mock(spec=OAuthProvider)
-    provider.client_id = "test_client"
-    return provider
-
-
-@pytest.fixture
-def basic_server():
-    """Create a basic FastMCP server instance for testing"""
-    with patch('fastmcp.server.server.MCPServer') as mock_server_cls:
-        mock_server_instance = Mock()
-        mock_server_instance.name = "TestServer"
-        mock_server_instance.instructions = None
-        mock_server_cls.return_value = mock_server_instance
-
-        server = FastMCP(name="TestServer")
-        return server
 
 
 # ============================================================================
