@@ -4,19 +4,20 @@
 
 import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { taskDeletionTracker } from "../../services/taskDeletionTracker";
 import { useSuccessToast, useErrorToast } from "../ui/toast";
 import logger from "../../utils/logger";
 
+// React Query hooks
+import { useQueryClient } from '@tanstack/react-query';
+import { useSubtasks, useSubtaskMutations } from "../../hooks/useSubtasks";
+import { useWebSocket } from "../../hooks/useWebSocketV2";
+import { useRealtimeSync } from "../../hooks/useRealtimeSync";
+import { useAuth } from "../../contexts/AuthContext";
+
 // Import custom hooks (business logic)
-import { useSubtaskData } from "./hooks/useSubtaskData";
 import { useSubtaskFilters } from "./hooks/useSubtaskFilters";
-import { useSubtaskWebSocket } from "./hooks/useSubtaskWebSocket";
 import { useSubtaskExpansion } from "./hooks/useSubtaskExpansion";
 import { useSubtaskDialogs } from "./hooks/useSubtaskDialogs";
-
-// Import API functions
-import { deleteSubtask } from "../../api";
 
 // Import UI components (presentation)
 import { SubtaskListHeader } from "./components/SubtaskListHeader";
@@ -74,55 +75,50 @@ export function LazySubtaskListRefactored({
     subtaskId = undefined;
   }
 
-  // Data management hook
-  const {
-    subtaskSummaries,
-    fullSubtasks,
-    loading,
-    error,
-    loadingSubtasks,
-    hasLoaded,
-    subscriptionEnabled,
-    loadSubtaskSummaries,
-    loadSubtaskById,
-    handleSubtaskCreated,
-    refreshData
-  } = useSubtaskData(parentTaskId);
+  // Auth and WebSocket
+  const { user, tokens } = useAuth();
+  const webSocketClient = useWebSocket(user?.id || '', tokens?.access_token || '');
+  useRealtimeSync(webSocketClient.client, true);
+
+  // React Query hooks
+  const { data: subtasks = [], isLoading: loading, error, refetch: loadSubtaskSummaries } = useSubtasks(parentTaskId);
+  const subtaskMutations = useSubtaskMutations();
+  const queryClient = useQueryClient();
+
+  // Track full subtask loads
+  const [loadedSubtaskIds, setLoadedSubtaskIds] = React.useState<Set<string>>(new Set());
+  const fullSubtasksMap = useRef<Map<string, any>>(new Map());
+
+  // Load full subtask on demand
+  const loadSubtaskById = useCallback(async (subtaskId: string): Promise<any | null> => {
+    if (fullSubtasksMap.current.has(subtaskId)) {
+      return fullSubtasksMap.current.get(subtaskId);
+    }
+
+    try {
+      // Subtasks are already loaded with full data from useSubtasks
+      const subtask = subtasks.find(s => s.id === subtaskId);
+      if (subtask) {
+        fullSubtasksMap.current.set(subtaskId, subtask);
+        setLoadedSubtaskIds(prev => new Set([...prev, subtaskId]));
+      }
+      return subtask || null;
+    } catch (e) {
+      logger.error('Error loading subtask', { subtaskId, error: e });
+      return null;
+    }
+  }, [subtasks]);
 
   // Filtering and sorting hook
-  const { filteredSubtasks } = useSubtaskFilters(subtaskSummaries);
+  const { filteredSubtasks } = useSubtaskFilters(subtasks);
 
   // 🔴 DEBUG: Track subtask data
   logger.debug('🔍 [LazySubtaskList] Subtask data state', {
-    subtaskSummariesCount: subtaskSummaries.length,
+    subtasksCount: subtasks.length,
     filteredSubtasksCount: filteredSubtasks.length,
-    subtaskIds: subtaskSummaries.map(s => s.id),
-    subtaskTitles: subtaskSummaries.map(s => s.title)
+    subtaskIds: subtasks.map(s => s.id),
+    subtaskTitles: subtasks.map(s => s.title)
   });
-
-  // Handle subtask deletion with animation
-  const handleSubtaskDeleted = useCallback((subtaskId: string) => {
-    logger.debug('🗑️ [LazySubtaskList] Subtask deleted, marking for animation', { subtaskId }, 'LazySubtaskListRefactored.tsx');
-
-    // Mark for deletion so SubtaskRow can detect and animate
-    taskDeletionTracker.markForDeletion(subtaskId);
-
-    // Remove after animation completes (800ms)
-    setTimeout(() => {
-      logger.debug('🗑️ [LazySubtaskList] Removing subtask after animation', { subtaskId }, 'LazySubtaskListRefactored.tsx');
-      refreshData();
-      taskDeletionTracker.clearDeletion(subtaskId);
-    }, 800);
-  }, [refreshData]);
-
-  // Real-time updates hook
-  const { isConnected } = useSubtaskWebSocket(
-    parentTaskId,
-    subscriptionEnabled,
-    refreshData,
-    handleSubtaskDeleted,
-    handleSubtaskCreated  // Pass the optimistic update handler
-  );
 
   // Animation and expansion state hook
   const {
@@ -157,11 +153,6 @@ export function LazySubtaskListRefactored({
   // Track the last processed subtaskId to prevent reopening loops
   const lastProcessedSubtaskIdRef = useRef<string | undefined>(undefined);
 
-  // Load data on mount
-  useEffect(() => {
-    loadSubtaskSummaries();
-  }, [loadSubtaskSummaries]);
-
   // Auto-open subtask dialog from URL
   useEffect(() => {
     const autoOpenSubtask = async () => {
@@ -176,7 +167,7 @@ export function LazySubtaskListRefactored({
 
         if (subtaskId && !detailsDialog.open) {
           // Check if subtask is already loaded
-          let subtask = fullSubtasks.get(subtaskId);
+          let subtask = fullSubtasksMap.current.get(subtaskId);
 
           // If not loaded, fetch it
           if (!subtask && loadSubtaskById) {
@@ -195,7 +186,7 @@ export function LazySubtaskListRefactored({
     };
 
     autoOpenSubtask();
-  }, [subtaskId, detailsDialog.open, fullSubtasks, loadSubtaskById, openDetailsDialog, closeAllDialogs]);
+  }, [subtaskId, detailsDialog.open, loadSubtaskById, openDetailsDialog, closeAllDialogs, isClosingRef]);
 
   // Calculate progress summary
   const progressSummary = useMemo(() => {
@@ -205,7 +196,7 @@ export function LazySubtaskListRefactored({
 
   // Handle subtask actions
   const handleSubtaskAction = (action: 'details' | 'edit' | 'complete', subtaskId: string) => {
-    const subtask = fullSubtasks.get(subtaskId);
+    const subtask = fullSubtasksMap.current.get(subtaskId) || subtasks.find(s => s.id === subtaskId);
 
     switch (action) {
       case 'details':
@@ -220,15 +211,14 @@ export function LazySubtaskListRefactored({
     }
   };
 
-  // Handle delete subtask
+  // Handle delete subtask with React Query mutation
   const handleDeleteSubtask = async (subtaskId: string) => {
     try {
       logger.debug('[DEBUG] Delete subtask:', subtaskId);
 
-      // Call API to delete subtask from backend
-      await deleteSubtask(subtaskId);
+      await subtaskMutations.deleteSubtaskAsync(subtaskId);
 
-      logger.debug('[DEBUG] Subtask deleted successfully from backend:', subtaskId);
+      logger.debug('[DEBUG] Subtask deleted successfully:', subtaskId);
 
       // Close the delete dialog immediately
       closeAllDialogs();
@@ -236,17 +226,12 @@ export function LazySubtaskListRefactored({
       // Show success notification
       showSuccessToast('Subtask deleted successfully', 'The subtask has been removed from the list');
 
-      // Trigger animation and UI update
-      handleSubtaskDeleted(subtaskId);
-
     } catch (error) {
       logger.error('Error deleting subtask:', error);
       // Close dialog even on error
       closeAllDialogs();
       // Show error notification
       showErrorToast('Failed to delete subtask', error instanceof Error ? error.message : 'An unknown error occurred');
-      // Refresh to sync with server state
-      refreshData();
     }
   };
 
@@ -256,17 +241,43 @@ export function LazySubtaskListRefactored({
     logger.debug('Complete subtask:', subtask);
   };
 
+  // Handle subtask created (optimistic update handled by mutation hook)
+  const handleSubtaskCreated = useCallback(() => {
+    logger.debug('[LazySubtaskList] Subtask created via dialog');
+    loadSubtaskSummaries();
+  }, [loadSubtaskSummaries]);
+
+  // Build fullSubtasks map from loaded subtasks
+  const fullSubtasks = useMemo(() => {
+    const map = new Map();
+    subtasks.forEach(subtask => {
+      map.set(subtask.id, subtask);
+    });
+    loadedSubtaskIds.forEach(subtaskId => {
+      const fullSubtask = fullSubtasksMap.current.get(subtaskId);
+      if (fullSubtask) {
+        map.set(subtaskId, fullSubtask);
+      }
+    });
+    return map;
+  }, [subtasks, loadedSubtaskIds]);
+
+  // Track loading state for individual subtasks
+  const loadingSubtasks = useMemo(() => {
+    return new Set<string>();
+  }, []);
+
   // Error state
   if (error) {
     return (
       <div className="p-4 text-center text-sm text-red-500">
-        Error loading subtasks: {error}
+        Error loading subtasks: {error.message || 'Unknown error'}
       </div>
     );
   }
 
   // Loading state (only during initial load)
-  if (loading && !hasLoaded && filteredSubtasks.length === 0) {
+  if (loading && filteredSubtasks.length === 0) {
     return (
       <div className="p-4 text-center text-sm text-muted-foreground">
         Loading subtasks...
@@ -365,5 +376,3 @@ export function LazySubtaskListRefactored({
     </div>
   );
 }
-
-export default LazySubtaskListRefactored;

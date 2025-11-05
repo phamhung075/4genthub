@@ -3,7 +3,8 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Plus, FileText } from "lucide-react";
-import { createSubtask, Subtask } from "../api";
+import { Subtask } from "../api";
+import { useSubtaskMutations } from "../hooks/useSubtasks";
 
 interface SubtaskCreateDialogProps {
   open: boolean;
@@ -22,50 +23,45 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
 }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // Use React Query mutation hook
+  const { createSubtask, isCreating, createError } = useSubtaskMutations();
 
   // Reset form when dialog opens/closes
   React.useEffect(() => {
     if (open) {
       setTitle("");
       setDescription("");
-      setError(null);
     }
   }, [open]);
 
   const handleCreate = async () => {
     if (!title.trim()) {
-      setError("Title is required");
       return;
     }
 
-    setCreating(true);
-    setError(null);
-
     try {
-      const result = await createSubtask(parentTaskId, {
-        title: title.trim(),
-        description: description.trim() || undefined,
+      const result = await createSubtask({
+        taskId: parentTaskId,
+        subtask: {
+          title: title.trim(),
+          description: description.trim() || undefined,
+        }
       });
 
       if (result) {
         onCreated(result);
         onClose();
-      } else {
-        setError("Failed to create subtask");
       }
     } catch (e: any) {
-      setError(e.message || "Failed to create subtask");
-    } finally {
-      setCreating(false);
+      // Error is already handled by the mutation hook
+      console.error('Failed to create subtask:', e);
     }
   };
 
   const handleCancel = () => {
     setTitle("");
     setDescription("");
-    setError(null);
     onClose();
   };
 
@@ -93,7 +89,7 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
               placeholder="Enter subtask title..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              disabled={creating}
+              disabled={isCreating}
               autoFocus
               className="w-full"
             />
@@ -112,7 +108,7 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
               placeholder="Describe the subtask in detail..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              disabled={creating}
+              disabled={isCreating}
               rows={3}
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -138,23 +134,23 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
           </div>
 
           {/* Error Display */}
-          {error && (
+          {createError && (
             <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-3 py-2 rounded-md text-sm">
-              {error}
+              {createError.message || 'Failed to create subtask'}
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel} disabled={creating}>
+          <Button variant="outline" onClick={handleCancel} disabled={isCreating}>
             Cancel
           </Button>
           <Button
             variant="default"
             onClick={handleCreate}
-            disabled={creating || !title.trim()}
+            disabled={isCreating || !title.trim()}
           >
-            {creating ? (
+            {isCreating ? (
               <>
                 <Plus className="w-4 h-4 animate-spin mr-2" />
                 Creating...

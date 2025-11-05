@@ -1,6 +1,3 @@
-export { useProjectData } from './useProjectData';
-export type { UseProjectDataOptions, UseProjectDataReturn } from './useProjectData';
-
 export { useProjectDialogs } from './useProjectDialogs';
 export type {
   UseProjectDialogsReturn,

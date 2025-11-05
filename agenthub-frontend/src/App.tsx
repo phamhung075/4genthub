@@ -1,5 +1,5 @@
 import { Folder, Menu, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useParams, useNavigate } from 'react-router-dom';
 import { Project } from './api';
 import './App.css';
@@ -7,36 +7,48 @@ import './styles/animations.css';
 import './styles/task-animations.css';
 import './styles/subtask-animations.css';
 import './styles/branch-animations.css';
-import { AppLayout } from './components/AppLayout';
-import { AuthWrapper, EmailVerification, LoginForm, ProtectedRoute, SignupForm } from './components/auth';
-import BranchDetailsDialog from './components/BranchDetailsDialog';
-import GlobalContextDialog from './components/GlobalContextDialog';
 import { Header } from './components/Header';
-import ProjectDetailsDialog from './components/ProjectDetailsDialog';
-import ProjectList from './components/ProjectList';
 import { ShimmerButton } from './components/ui/shimmer-button';
 import { ToastProvider } from './components/ui/toast';
-import { WebSocketToastBridge } from './components/WebSocketToastBridge';
-import { WebSocketStatusBadge } from './components/WebSocketStatusBadge';
 import { ThemeProvider } from './contexts/ThemeContext';
-// Import Redux Provider and store
-import { Provider as ReduxProvider } from 'react-redux';
-import { store } from './store';
 // WebSocket is now handled in AuthContext, no need to import here
 import { useAuth } from './contexts/AuthContext';
-// Removed toastEventBus and useToast imports - test code removed
-import { Profile } from './pages/Profile';
-import RegistrationSuccess from './pages/RegistrationSuccess';
-import { TokenManagement } from './pages/TokenManagement';
-import { HelpSetup } from './pages/HelpSetup';
-import { MarketplacePage } from './pages/MarketplacePage';
-import { MyAgentsPage } from './pages/MyAgentsPage';
-// Use lazy loading for TaskList component for better performance
-import LazyTaskList from './components/LazyTaskList';
-//const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
 
 // Import WebSocket test utility for debugging
 import './utils/testWebSocket';
+
+// Lazy load heavy components for better code splitting
+const AppLayout = lazy(() => import('./components/AppLayout').then(m => ({ default: m.AppLayout })));
+const AuthWrapper = lazy(() => import('./components/auth').then(m => ({ default: m.AuthWrapper })));
+const EmailVerification = lazy(() => import('./components/auth').then(m => ({ default: m.EmailVerification })));
+const LoginForm = lazy(() => import('./components/auth').then(m => ({ default: m.LoginForm })));
+const ProtectedRoute = lazy(() => import('./components/auth').then(m => ({ default: m.ProtectedRoute })));
+const SignupForm = lazy(() => import('./components/auth').then(m => ({ default: m.SignupForm })));
+const BranchDetailsDialog = lazy(() => import('./components/BranchDetailsDialog'));
+const GlobalContextDialog = lazy(() => import('./components/GlobalContextDialog'));
+const ProjectDetailsDialog = lazy(() => import('./components/ProjectDetailsDialog'));
+const ProjectList = lazy(() => import('./components/ProjectList'));
+const WebSocketToastBridge = lazy(() => import('./components/WebSocketToastBridge').then(m => ({ default: m.WebSocketToastBridge })));
+const WebSocketStatusBadge = lazy(() => import('./components/WebSocketStatusBadge').then(m => ({ default: m.WebSocketStatusBadge })));
+const LazyTaskList = lazy(() => import('./components/LazyTaskList'));
+
+// Lazy load page components
+const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
+const RegistrationSuccess = lazy(() => import('./pages/RegistrationSuccess'));
+const TokenManagement = lazy(() => import('./pages/TokenManagement').then(m => ({ default: m.TokenManagement })));
+const HelpSetup = lazy(() => import('./pages/HelpSetup').then(m => ({ default: m.HelpSetup })));
+const MarketplacePage = lazy(() => import('./pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
+const MyAgentsPage = lazy(() => import('./pages/MyAgentsPage').then(m => ({ default: m.MyAgentsPage })));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-screen bg-gradient-to-br from-base via-base-secondary to-base-tertiary">
+    <div className="text-center">
+      <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-base-primary">Loading...</p>
+    </div>
+  </div>
+);
 
 
 function Dashboard() {
@@ -196,111 +208,153 @@ function ConditionalWebSocketBadge() {
   // Only show badge when user is authenticated
   if (!isAuthenticated) return null;
 
-  return <WebSocketStatusBadge />;
+  return (
+    <Suspense fallback={null}>
+      <WebSocketStatusBadge />
+    </Suspense>
+  );
 }
 
 function App() {
   return (
-    <ReduxProvider store={store}>
-      <ThemeProvider>
-        <ToastProvider>
-          <WebSocketToastBridge />
-          <AuthWrapper>
-            <ConditionalWebSocketBadge />
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<LoginForm />} />
-          <Route path="/signup" element={<SignupForm />} />
-          <Route path="/registration-success" element={<RegistrationSuccess />} />
-          <Route path="/auth/verify" element={<EmailVerification />} />
+    <ThemeProvider>
+      <ToastProvider>
+          <Suspense fallback={null}>
+            <WebSocketToastBridge />
+          </Suspense>
+          <Suspense fallback={<LoadingFallback />}>
+            <AuthWrapper>
+              <ConditionalWebSocketBadge />
+              <Routes>
+          {/* Public routes with Suspense */}
+          <Route path="/login" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <LoginForm />
+            </Suspense>
+          } />
+          <Route path="/signup" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <SignupForm />
+            </Suspense>
+          } />
+          <Route path="/registration-success" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <RegistrationSuccess />
+            </Suspense>
+          } />
+          <Route path="/auth/verify" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <EmailVerification />
+            </Suspense>
+          } />
           
-          {/* Protected routes */}
+          {/* Protected routes with Suspense */}
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           <Route
             path="/dashboard/project/:projectId"
             element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           <Route
             path="/dashboard/project/:projectId/branch/:branchId"
             element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           <Route
             path="/dashboard/project/:projectId/branch/:branchId/task/:taskId"
             element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           <Route
             path="/dashboard/project/:projectId/branch/:branchId/subtask/:subtaskId"
             element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           <Route
             path="/profile"
             element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Profile />
-                </AppLayout>
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Profile />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           <Route
             path="/tokens"
             element={
-              <ProtectedRoute>
-                <TokenManagement />
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <TokenManagement />
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           <Route
             path="/help"
             element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <HelpSetup />
-                </AppLayout>
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <HelpSetup />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           <Route
             path="/agents/marketplace"
             element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <MarketplacePage />
-                </AppLayout>
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <MarketplacePage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           <Route
             path="/agents/my-agents"
             element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <MyAgentsPage />
-                </AppLayout>
-              </ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <MyAgentsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
             }
           />
           {/*<Route
@@ -321,11 +375,11 @@ function App() {
 
           {/* Catch-all route for unmatched paths */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-        </AuthWrapper>
+              </Routes>
+            </AuthWrapper>
+          </Suspense>
       </ToastProvider>
     </ThemeProvider>
-    </ReduxProvider>
   );
 }
 

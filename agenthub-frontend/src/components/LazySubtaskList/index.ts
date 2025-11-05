@@ -2,8 +2,8 @@
 // Refactored modular structure following SOLID principles
 
 // Main component export
-export { default } from "./LazySubtaskListRefactored";
 export { LazySubtaskListRefactored } from "./LazySubtaskListRefactored";
+export { LazySubtaskListRefactored as default } from "./LazySubtaskListRefactored";
 
 // Hook exports (for testing and reuse)
 export { useSubtaskData } from "./hooks/useSubtaskData";

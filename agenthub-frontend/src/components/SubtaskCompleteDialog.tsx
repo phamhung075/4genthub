@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Check, FileText } from "lucide-react";
-import { completeSubtask } from "../api";
+import { useSubtaskMutations } from "../hooks/useSubtasks";
 
 interface SubtaskCompleteDialogProps {
   open: boolean;
@@ -24,8 +24,9 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
   const [completionSummary, setCompletionSummary] = useState("");
   const [impactOnParent, setImpactOnParent] = useState("");
   const [challengesOvercome, setChallengesOvercome] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // Use React Query mutation hook
+  const { completeSubtask, isCompleting, completeError } = useSubtaskMutations();
 
   // Reset form when subtask changes
   React.useEffect(() => {
@@ -33,43 +34,36 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
       setCompletionSummary("");
       setImpactOnParent("");
       setChallengesOvercome("");
-      setError(null);
     }
   }, [subtask]);
 
   const handleComplete = async () => {
     if (!subtask || !completionSummary.trim()) {
-      setError("Completion summary is required");
       return;
     }
 
-    setSaving(true);
-    setError(null);
-
     try {
-      // Parse challenges overcome into array if provided
-      const challenges = challengesOvercome.trim()
-        ? challengesOvercome.split('\n').filter(c => c.trim())
-        : undefined;
+      // Build completion notes string
+      let notes = completionSummary;
+      if (impactOnParent) {
+        notes += `\n\nImpact on Parent: ${impactOnParent}`;
+      }
+      if (challengesOvercome.trim()) {
+        notes += `\n\nChallenges Overcome:\n${challengesOvercome}`;
+      }
 
-      const result = await completeSubtask(
-        parentTaskId,
-        subtask.id,
-        completionSummary,
-        impactOnParent || undefined,
-        challenges
-      );
-      
+      const result = await completeSubtask({
+        subtaskId: subtask.id,
+        completion_notes: notes
+      });
+
       if (result) {
         onComplete(result);
         onClose();
-      } else {
-        setError("Failed to complete subtask");
       }
     } catch (e: any) {
-      setError(e.message || "Failed to complete subtask");
-    } finally {
-      setSaving(false);
+      // Error is already handled by the mutation hook
+      console.error('Failed to complete subtask:', e);
     }
   };
 
@@ -77,7 +71,6 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
     setCompletionSummary("");
     setImpactOnParent("");
     setChallengesOvercome("");
-    setError(null);
     onClose();
   };
 
@@ -109,7 +102,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
               placeholder="Describe what was accomplished in detail..."
               value={completionSummary}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCompletionSummary(e.target.value)}
-              disabled={saving}
+              disabled={isCompleting}
               rows={3}
               autoFocus
             />
@@ -128,7 +121,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
               placeholder="How does completing this subtask affect the parent task?"
               value={impactOnParent}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setImpactOnParent(e.target.value)}
-              disabled={saving}
+              disabled={isCompleting}
               rows={2}
             />
           </div>
@@ -143,7 +136,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
               placeholder="List any challenges faced and overcome (one per line)..."
               value={challengesOvercome}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setChallengesOvercome(e.target.value)}
-              disabled={saving}
+              disabled={isCompleting}
               rows={2}
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -163,23 +156,23 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
           </div>
 
           {/* Error Display */}
-          {error && (
+          {completeError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-sm">
-              {error}
+              {completeError.message || 'Failed to complete subtask'}
             </div>
           )}
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel} disabled={saving}>
+          <Button variant="outline" onClick={handleCancel} disabled={isCompleting}>
             Cancel
           </Button>
-          <Button 
-            variant="default" 
-            onClick={handleComplete} 
-            disabled={saving || !completionSummary.trim()}
+          <Button
+            variant="default"
+            onClick={handleComplete}
+            disabled={isCompleting || !completionSummary.trim()}
           >
-            {saving ? (
+            {isCompleting ? (
               <>
                 <Check className="w-4 h-4 animate-spin mr-2" />
                 Completing...

@@ -1396,38 +1396,36 @@ const AgentCard: React.FC<AgentCardProps> = ({ instance, onViewDetails, onEdit, 
             <CardTitle className="text-lg flex items-center gap-2">
               {instance.agent_name}
             </CardTitle>
-            <CardDescription className="mt-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="text-xs">
-                  {getVisibilityLabel(instance.visibility)}
+            <div className="flex items-center gap-2 flex-wrap mt-2">
+              <Badge variant="outline" className="text-xs">
+                {getVisibilityLabel(instance.visibility)}
+              </Badge>
+              {instance.is_customized && (
+                <Badge variant="secondary" className="text-xs">
+                  Customized
                 </Badge>
-                {instance.is_customized && (
-                  <Badge variant="secondary" className="text-xs">
-                    Customized
-                  </Badge>
-                )}
-                {isCallable ? (
-                  <Badge className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Ready to Call
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-xs text-yellow-700 dark:text-yellow-400 border-yellow-500/40">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Not Ready
-                  </Badge>
-                )}
-                {instance.is_enabled ? (
-                  <Badge className="text-xs bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
-                    ✓ Enabled
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400">
-                    Disabled
-                  </Badge>
-                )}
-              </div>
-            </CardDescription>
+              )}
+              {isCallable ? (
+                <Badge className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Ready to Call
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs text-yellow-700 dark:text-yellow-400 border-yellow-500/40">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Not Ready
+                </Badge>
+              )}
+              {instance.is_enabled ? (
+                <Badge className="text-xs bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+                  ✓ Enabled
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400">
+                  Disabled
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>

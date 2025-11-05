@@ -23,9 +23,9 @@ export const ParentTaskReference: React.FC<ParentTaskReferenceProps> = ({
   showId = false,
   className = ''
 }) => {
-  const { parentTaskInfo, loading, error } = useParentTaskInfo(parentTaskId);
+  const { parentTaskInfo, isLoading, error } = useParentTaskInfo(parentTaskId);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className={`inline-flex items-center gap-1 text-xs text-gray-500 ${className}`}>
         <Link className="w-3 h-3" />
