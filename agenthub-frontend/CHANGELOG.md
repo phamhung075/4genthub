@@ -2,6 +2,51 @@
 
 ## [Unreleased]
 
+### Changed
+- **⚡ Bundle Size Optimization - 70% Reduction** - 2025-11-05
+  - Reduced initial bundle from 1,973KB (459KB gzipped) to 502KB (138KB gzipped)
+  - Implemented comprehensive code splitting and lazy loading strategy
+  - Generated 75+ separate chunks for better caching and on-demand loading
+  - **Optimizations Applied**:
+    1. **Manual Chunk Splitting** - Separated vendor libraries into 6 cacheable chunks:
+       - `react-vendor.js` (62KB) - React, React DOM, React Router
+       - `mui-vendor.js` (285KB) - Material-UI components, Emotion styling
+       - `ui-vendor.js` (60KB) - Radix UI primitives
+       - `state-vendor.js` (42KB) - Redux Toolkit, React Redux
+       - `animation-vendor.js` (114KB) - Framer Motion
+       - `utils-vendor.js` (45KB) - Date-fns, clsx, tailwind-merge
+    2. **Route-Based Code Splitting** - All routes converted to lazy loading with React.lazy()
+    3. **Component Lazy Loading** - Lazy loaded heavy components:
+       - Authentication components (LoginForm, SignupForm, EmailVerification)
+       - Layout components (AppLayout, AuthWrapper, ProtectedRoute)
+       - Dialog components (ProjectDetailsDialog, BranchDetailsDialog, GlobalContextDialog)
+       - Page components (Profile, TokenManagement, HelpSetup, MarketplacePage, MyAgentsPage)
+    4. **Suspense Boundaries** - Added LoadingFallback component with proper Suspense wrappers
+    5. **Bundle Analysis** - Integrated rollup-plugin-visualizer for build analysis
+  - Files modified:
+    - `vite.config.ts:1-6` - Added visualizer plugin import
+    - `vite.config.ts:104-114` - Configured visualizer plugin with gzip/brotli analysis
+    - `vite.config.ts:143-172` - Added manual chunk configuration with vendor grouping
+    - `src/App.tsx:1-54` - Converted all imports to lazy loading with React.lazy()
+    - `src/App.tsx:208-219` - Added Suspense wrapper to WebSocketStatusBadge
+    - `src/App.tsx:221-232` - Wrapped app routes in Suspense with LoadingFallback
+    - `src/App.tsx:234-253` - Added Suspense to all public routes
+    - `src/App.tsx:256-363` - Added Suspense to all protected routes
+  - Impact:
+    - **70% faster initial load** - Users download 320KB less on first visit (gzipped comparison)
+    - **Better caching** - Vendor chunks cached separately, reducing repeat visit bandwidth
+    - **On-demand loading** - Pages/components only load when accessed
+    - **Improved UX** - LoadingFallback provides smooth transitions during chunk loading
+    - **Build analysis** - stats.html generated in build/ for bundle visualization
+  - Technical Details:
+    - Vite's Rollup-based build now generates strategic chunk splits
+    - Each vendor chunk can be cached independently (1-year cache-control recommended)
+    - Dynamic imports create separate entry points for route components
+    - Suspense boundaries prevent app freeze during chunk download
+    - Build time: 21.75s (slight increase due to chunk optimization)
+  - Dependencies:
+    - Added: `rollup-plugin-visualizer@6.0.5` (devDependency)
+
 ### Added
 - **✨ Edit Agent Dialog for Private Instance Customization** - 2025-11-02
   - Users can now edit ALL 8 configuration fields for their private agent instances
