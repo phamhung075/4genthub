@@ -538,3 +538,10 @@ marketing-solution/*
 # Local Claude Code settings and configs (auto-generated)
 .claude/hooks/config/__claude_hook__allowed_root_files
 .claude/hooks/config/__claude_hook__valid_test_paths
+# Development scripts (generated for debugging/analysis)
+scripts/analyze-*.sh
+scripts/analyze_*.py
+scripts/analyze_*.js
+scripts/benchmark-*.ts
+scripts/diagnose_*.py
+scripts/find-*.sh
