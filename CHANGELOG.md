@@ -6,6 +6,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+**Test Infrastructure - AnimationFactory Mocking (79% Error Reduction)** (2025-11-05)
+- **Problem**: 68% of test suite failing due to missing/incomplete service mocks
+  - Runtime error: `TypeError: animationFactory.animate is not a function`
+  - Affected 68+ test files with animation-dependent components
+- **Solution**: Created comprehensive service mocking infrastructure
+  - Added `__mocks__` directory with `AnimationFactory.ts`, `taskDeletionTracker.ts`, `branchDeletionTracker.ts`
+  - Updated `setupTests.ts` to globally enable service mocking via `vi.mock()`
+  - Fixed `BranchItem.test.tsx` incomplete mock (added missing `animate()` method)
+- **Impact**:
+  - Uncaught exceptions: 19 → 4 (79% reduction)
+  - Eliminated animation-related runtime errors across test suite
+  - Created reusable mock infrastructure for future test development
+- **Remaining Work**: 68/89 test files still failing (assertion mismatches, outdated expectations)
+- **Documentation**: `ai_docs/testing-qa/frontend-qa-status-2025-11-05.md`
+- **Commit**: `816c417e`
+
 ### Changed
 
 **Phase 2 Dead Code Cleanup - 568 Lines Removed** (2025-11-04)
