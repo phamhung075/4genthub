@@ -1,14 +1,15 @@
 /**
- * Agent Management Custom Hooks
+ * Agent Management Custom Hooks (React Query version)
  *
  * Provides React hooks for interacting with the User-Specific Agent System.
- * These hooks follow the project's custom hooks pattern (NOT React Query).
+ * Uses React Query for automatic caching, mutations, and optimistic updates.
  *
  * @module hooks/useAgentManagement
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { agentManagementApiV2 } from '../services/apiV2';
 import logger from '../utils/logger';
 import type {
@@ -41,57 +42,34 @@ interface UseAgentTemplatesReturn {
  * Templates are read-only system-wide templates that users can instantiate
  */
 export function useAgentTemplates(): UseAgentTemplatesReturn {
-  const [templates, setTemplates] = useState<AgentTemplate[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const isLoadingRef = useRef(false);
-
-  const loadTemplates = useCallback(async () => {
-    if (isLoadingRef.current) return;
-
-    isLoadingRef.current = true;
-    setLoading(true);
-    setError(null);
-
-    try {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['agentTemplates'],
+    queryFn: async () => {
       const response: any = await agentManagementApiV2.listTemplates();
-
       if (response.success && response.templates) {
-        setTemplates(response.templates);
         logger.info(`Loaded ${response.templates.length} agent templates`);
-      } else {
-        throw new Error(response.message || 'Failed to load templates');
+        return response.templates;
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error loading templates';
-      logger.error('Error loading agent templates:', err);
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-      isLoadingRef.current = false;
-    }
-  }, []);
+      throw new Error(response.message || 'Failed to load templates');
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes - templates rarely change
+  });
 
   const getTemplateBySlug = useCallback((slug: string) => {
-    return templates.find(t => t.slug === slug);
-  }, [templates]);
-
-  // Auto-load templates on mount
-  useEffect(() => {
-    loadTemplates();
-  }, [loadTemplates]);
+    return data?.find((t: AgentTemplate) => t.slug === slug);
+  }, [data]);
 
   return {
-    templates,
-    loading,
-    error,
-    loadTemplates,
+    templates: data ?? [],
+    loading: isLoading,
+    error: error?.message ?? null,
+    loadTemplates: refetch,
     getTemplateBySlug,
   };
 }
 
 // ============================================================================
-// useUserAgentInstances - Manage user's agent instances
+// useUserAgentInstances - Manage user's agent instances (React Query + Mutations)
 // ============================================================================
 
 interface UseUserAgentInstancesReturn {
@@ -108,49 +86,67 @@ interface UseUserAgentInstancesReturn {
 }
 
 /**
- * Hook for managing user's agent instances
- * Handles CRUD operations for customized agent instances
+ * Hook for managing user's agent instances with React Query mutations
+ * Handles CRUD operations with automatic cache updates
  */
 export function useUserAgentInstances(): UseUserAgentInstancesReturn {
-  const [instances, setInstances] = useState<UserAgentInstance[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const isLoadingRef = useRef(false);
+  const queryClient = useQueryClient();
 
-  const loadInstances = useCallback(async () => {
-    if (isLoadingRef.current) return;
-
-    isLoadingRef.current = true;
-    setLoading(true);
-    setError(null);
-
-    try {
+  // Query for listing instances
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['userAgentInstances'],
+    queryFn: async () => {
       const response: any = await agentManagementApiV2.listUserInstances();
-
       if (response.success && response.instances) {
-        setInstances(response.instances);
         logger.info(`Loaded ${response.instances.length} agent instances`);
-      } else {
-        throw new Error(response.message || 'Failed to load instances');
+        return response.instances;
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error loading instances';
-      logger.error('Error loading agent instances:', err);
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-      isLoadingRef.current = false;
-    }
-  }, []);
+      throw new Error(response.message || 'Failed to load instances');
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 
+  // Mutation for creating instance
+  const createMutation = useMutation({
+    mutationFn: (data: CreateInstanceRequest) => agentManagementApiV2.createInstance(data),
+    onSuccess: (newInstance) => {
+      queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
+        [...old, newInstance]
+      );
+      logger.info(`Created instance: ${newInstance.agent_name}`);
+    },
+  });
+
+  // Mutation for updating instance
+  const updateMutation = useMutation({
+    mutationFn: ({ instanceId, data }: { instanceId: string; data: UpdateInstanceRequest }) =>
+      agentManagementApiV2.updateInstance(instanceId, data),
+    onSuccess: (updatedInstance, { instanceId }) => {
+      queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
+        old.map(inst => inst.id === instanceId ? updatedInstance : inst)
+      );
+      logger.info(`Updated instance: ${instanceId}`);
+    },
+  });
+
+  // Mutation for deleting instance
+  const deleteMutation = useMutation({
+    mutationFn: (instanceId: string) => agentManagementApiV2.deleteInstance(instanceId),
+    onSuccess: (response, instanceId) => {
+      queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
+        old.filter(inst => inst.id !== instanceId)
+      );
+      logger.info(`Deleted instance: ${instanceId}`);
+    },
+  });
+
+  // Helper functions
   const getInstance = useCallback(async (instanceId: string): Promise<UserAgentInstance | null> => {
     try {
       const response: any = await agentManagementApiV2.getUserInstance(instanceId);
-
       if (response.success && response.instance) {
         return response.instance;
       }
-
       throw new Error(response.message || 'Failed to get instance');
     } catch (err) {
       logger.error(`Error getting instance ${instanceId}:`, err);
@@ -158,162 +154,42 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
     }
   }, []);
 
-  const createInstance = useCallback(async (data: CreateInstanceRequest): Promise<UserAgentInstance | null> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response: any = await agentManagementApiV2.createInstance(data);
-
-      // Backend returns the instance directly (not wrapped in {success, instance})
-      if (response && response.id) {
-        // Add to local state
-        setInstances(prev => [...prev, response]);
-        logger.info(`Created instance: ${response.agent_name}`);
-        return response;
-      }
-
-      throw new Error('Failed to create instance - invalid response');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error creating instance';
-      logger.error('Error creating instance:', err);
-      setError(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const bulkCreateInstances = useCallback(async (): Promise<UserAgentInstance[]> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response: any = await agentManagementApiV2.bulkCreateInstances();
-
-      // Backend returns array of instances directly
-      if (Array.isArray(response)) {
-        // Add all new instances to local state
-        setInstances(prev => [...prev, ...response]);
-        logger.info(`Bulk created ${response.length} instances`);
-        return response;
-      }
-
-      throw new Error('Failed to bulk create instances - invalid response');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error bulk creating instances';
-      logger.error('Error bulk creating instances:', err);
-      setError(errorMessage);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const updateInstance = useCallback(async (
-    instanceId: string,
-    data: UpdateInstanceRequest
-  ): Promise<UserAgentInstance | null> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response: any = await agentManagementApiV2.updateInstance(instanceId, data);
-
-      if (response.success && response.instance) {
-        // Update in local state
-        setInstances(prev => prev.map(inst =>
-          inst.id === instanceId ? response.instance : inst
-        ));
-        logger.info(`Updated instance: ${instanceId}`);
-        return response.instance;
-      }
-
-      throw new Error(response.message || 'Failed to update instance');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error updating instance';
-      logger.error('Error updating instance:', err);
-      setError(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const deleteInstance = useCallback(async (instanceId: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response: any = await agentManagementApiV2.deleteInstance(instanceId);
-
-      if (response.success) {
-        // Remove from local state
-        setInstances(prev => prev.filter(inst => inst.id !== instanceId));
-        logger.info(`Deleted instance: ${instanceId}`);
-        return true;
-      }
-
-      throw new Error(response.message || 'Failed to delete instance');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error deleting instance';
-      logger.error('Error deleting instance:', err);
-      setError(errorMessage);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const refreshInstance = useCallback(async (instanceId: string) => {
     const instance = await getInstance(instanceId);
     if (instance) {
-      setInstances(prev => prev.map(inst =>
-        inst.id === instanceId ? instance : inst
-      ));
+      queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
+        old.map(inst => inst.id === instanceId ? instance : inst)
+      );
     }
-  }, [getInstance]);
+  }, [getInstance, queryClient]);
 
   const toggleEnabled = useCallback(async (instanceId: string, enabled: boolean): Promise<boolean> => {
     try {
-      const response: any = await agentManagementApiV2.updateInstance(instanceId, {
-        is_enabled: enabled,
-      });
-
-      // Backend returns the instance directly (not wrapped in {success, instance})
-      if (response && response.id) {
-        // Update in local state
-        setInstances(prev => prev.map(inst =>
-          inst.id === instanceId ? response : inst
-        ));
-        logger.info(`${enabled ? 'Enabled' : 'Disabled'} agent: ${instanceId}`);
-        return true;
-      }
-
-      throw new Error('Failed to toggle enabled status - invalid response');
+      const result = await updateMutation.mutateAsync({ instanceId, data: { is_enabled: enabled } });
+      logger.info(`${enabled ? 'Enabled' : 'Disabled'} agent: ${instanceId}`);
+      return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error toggling enabled status';
       logger.error('Error toggling enabled status:', err);
-      setError(errorMessage);
       return false;
     }
-  }, []);
-
-  // Auto-load instances on mount
-  useEffect(() => {
-    loadInstances();
-  }, [loadInstances]);
+  }, [updateMutation]);
 
   return {
-    instances,
-    loading,
-    error,
-    loadInstances,
+    instances: data ?? [],
+    loading: isLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    error: error?.message ?? null,
+    loadInstances: refetch,
     getInstance,
-    createInstance,
-    bulkCreateInstances,
-    updateInstance,
-    deleteInstance,
+    createInstance: (data) => createMutation.mutateAsync(data),
+    updateInstance: (instanceId, data) => updateMutation.mutateAsync({ instanceId, data }),
+    deleteInstance: async (instanceId) => {
+      try {
+        await deleteMutation.mutateAsync(instanceId);
+        return true;
+      } catch {
+        return false;
+      }
+    },
     refreshInstance,
     toggleEnabled,
   };
