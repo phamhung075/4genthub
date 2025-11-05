@@ -6,7 +6,60 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+
+**Agent Import - Public Shared Reference Model** (2025-11-05)
+- **Feature**: Imported agents maintain public visibility and are independently shareable
+  - Imported agents stay `public` with their own unique share token
+  - Each import generates new 64-char secure share token (prevents DB constraint violation)
+  - Only original creator can edit; importers have read-only access
+  - Importers can share their imported agent (creates viral sharing network)
+  - New API fields: `is_imported`, `original_creator_id`, `is_read_only`
+- **Implementation**:
+  - Generate unique share token on import using `secrets.token_urlsafe(48)[:64]`
+  - Set `visibility='public'` and link to original via metadata
+  - Added metadata: `is_imported: True`, `source_instance_id`, `source_share_token`
+  - Read-only validation in update route (HTTP 403 for non-owners)
+  - Updated UserAgentInstanceResponse model with sharing metadata
+- **Impact**:
+  - **Viral Sharing**: Importers can share their copy, creating network effect
+  - **Clear Ownership**: UI shows read-only indicators for imported agents
+  - **Read-Only Protection**: Non-owners cannot modify agent configuration
+  - **Marketplace Visibility**: All imported agents appear in marketplace
+- **Files**:
+  - `agenthub_main/src/fastmcp/agent_management/domain/services/agent_sharing_service.py:188-215`
+  - `agenthub_main/src/fastmcp/agent_management/interface/rest/agent_management_routes.py:424-436`
+  - `agenthub_main/src/fastmcp/agent_management/interface/rest/models.py:86-89`
+- **Testing**: Imported agents stay public with unique token, editing by non-owner returns 403 Forbidden
+
 ### Fixed
+
+**Agent Update - Read-Only Validation** (2025-11-05)
+- **Problem**: Private agents couldn't be edited due to `'AgentManagementFacade' object has no attribute 'get_user_instance'` error
+- **Root Cause**: Read-only validation in route used non-existent facade method
+- **Solution**: Moved read-only validation from route to facade's `update_instance` method
+  - Checks `original_creator_id` before allowing updates
+  - Returns proper HTTP 403 Forbidden for read-only violations
+  - Private agents (non-imported) can now be edited normally
+- **Files**:
+  - `agenthub_main/src/fastmcp/agent_management/application/facades/agent_management_facade.py:346-353`
+  - `agenthub_main/src/fastmcp/agent_management/interface/rest/agent_management_routes.py:430, 469-474`
+
+**Agent Import - Non-UUID User ID Support** (2025-11-05)
+- **Problem**: Marketplace agent import failing with "Invalid UserId format: 'dev-user-001'" error
+  - Development JWT tokens contain non-UUID user IDs
+  - UserId value object requires strict UUID format validation
+  - Frontend error: `Error importing agent: Error: Failed to import agent` at `useAgentManagement.ts:403`
+- **Solution**: Added graceful handling of non-UUID user IDs in import route
+  - Try creating UserId normally (for production UUID user IDs)
+  - On ValueError, convert non-UUID ID to deterministic UUID v5
+  - Uses null namespace UUID for consistent conversion
+- **Impact**:
+  - Agent imports now work in both development and production
+  - Backward compatible - existing UUID user IDs unaffected
+  - Eliminates development environment import errors
+- **File**: `agenthub_main/src/fastmcp/agent_management/interface/rest/agent_management_routes.py:927-937`
+- **Testing**: Verified with development user ID 'dev-user-001' successfully converts to UUID
 
 **Test Infrastructure - AnimationFactory Mocking (79% Error Reduction)** (2025-11-05)
 - **Problem**: 68% of test suite failing due to missing/incomplete service mocks
