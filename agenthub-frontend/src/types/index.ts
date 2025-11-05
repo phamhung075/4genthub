@@ -45,7 +45,6 @@ export * from './serviceTypes';
 // COMPONENT TYPES (Props, state interfaces)
 // ============================================
 export * from './componentTypes';
-export * from './storeTypes';
 
 // ============================================
 // UTILITY TYPES
