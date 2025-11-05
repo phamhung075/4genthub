@@ -9,6 +9,7 @@
 
 import { afterEach, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
+import { resetWebSocketStore } from './tests/zustand-utils';
 import { cleanup } from '@testing-library/react';
 
 // Enable auto-mocking for animation services
@@ -19,6 +20,7 @@ vi.mock('./services/branchDeletionTracker');
 // Cleanup after each test
 afterEach(() => {
   cleanup();
+  resetWebSocketStore(); // Reset Zustand store to prevent state pollution
 });
 
 // Mock window.matchMedia
