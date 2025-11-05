@@ -1,7 +1,12 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from './../test-utils';
 import { vi, describe, it, beforeEach, expect } from 'vitest';
 import '@testing-library/jest-dom';
+import {
+  createBranchSummariesMock,
+  createEntityChangesMock,
+  createToastMocks,
+} from '../test-mocks';
 import ProjectList from '../../components/ProjectList';
 import * as api from '../../api';
 import * as apiLazy from '../../api-lazy';
@@ -10,35 +15,57 @@ import * as apiLazy from '../../api-lazy';
 vi.mock('../../api');
 vi.mock('../../api-lazy');
 
-// Mock dialog components
+// Mock WebSocket services to prevent real connections
+vi.mock('../../services/WebSocketClient', () => ({
+  default: class MockWebSocketClient {
+    connect() { return Promise.resolve(); }
+    disconnect() {}
+    send() {}
+    on() {}
+    off() {}
+  }
+}));
+
+vi.mock('../../services/WebSocketNotificationService', () => ({
+  default: {
+    initialize: vi.fn(),
+    cleanup: vi.fn(),
+  }
+}));
+
+// Mock custom hooks with our test utilities
+vi.mock('../../hooks/useBranchSummaries', () => ({
+  useBranchSummaries: createBranchSummariesMock(),
+}));
+
+vi.mock('../../hooks/useChangeSubscription', () => ({
+  useEntityChanges: createEntityChangesMock(),
+}));
+
+// Mock toast hooks
+const toastMocks = createToastMocks();
+vi.mock('../../components/ui/toast', () => ({
+  useErrorToast: () => toastMocks.error,
+  useSuccessToast: () => toastMocks.success,
+}));
+
+// Mock dialog components with simple inline mocks
 vi.mock('../../components/BranchDetailsDialog', () => ({
   __esModule: true,
-  default: ({ open, onOpenChange, project, branch }: any) => open ? (
-    <div data-testid="branch-details-dialog">
-      <div>Branch Details: {branch?.name}</div>
-      <button onClick={() => onOpenChange(false)}>Close</button>
-    </div>
-  ) : null
+  default: ({ open, children, ...props }: any) =>
+    open ? <div data-testid="branch-details-dialog" {...props}>{children}</div> : null,
 }));
 
 vi.mock('../../components/ProjectDetailsDialog', () => ({
   __esModule: true,
-  default: ({ open, onOpenChange, project }: any) => open ? (
-    <div data-testid="project-details-dialog">
-      <div>Project Details: {project?.name}</div>
-      <button onClick={() => onOpenChange(false)}>Close</button>
-    </div>
-  ) : null
+  default: ({ open, children, ...props }: any) =>
+    open ? <div data-testid="project-details-dialog" {...props}>{children}</div> : null,
 }));
 
 vi.mock('../../components/GlobalContextDialog', () => ({
   __esModule: true,
-  default: ({ open, onOpenChange }: any) => open ? (
-    <div data-testid="global-context-dialog">
-      <div>Global Context</div>
-      <button onClick={() => onOpenChange(false)}>Close</button>
-    </div>
-  ) : null
+  default: ({ open, children, ...props }: any) =>
+    open ? <div data-testid="global-context-dialog" {...props}>{children}</div> : null,
 }));
 
 describe('ProjectList', () => {
@@ -796,9 +823,9 @@ describe('ProjectList', () => {
     it('should open project details dialog', async () => {
       const mockOnShowProjectDetails = vi.fn();
       render(
-        <ProjectList 
-          onSelect={mockOnSelect} 
-          refreshKey={refreshKey} 
+        <ProjectList
+          onSelect={mockOnSelect}
+          refreshKey={refreshKey}
           onShowProjectDetails={mockOnShowProjectDetails}
         />
       );
@@ -844,9 +871,9 @@ describe('ProjectList', () => {
     it('should open global context dialog', async () => {
       const mockOnShowGlobalContext = vi.fn();
       render(
-        <ProjectList 
-          onSelect={mockOnSelect} 
-          refreshKey={refreshKey} 
+        <ProjectList
+          onSelect={mockOnSelect}
+          refreshKey={refreshKey}
           onShowGlobalContext={mockOnShowGlobalContext}
         />
       );

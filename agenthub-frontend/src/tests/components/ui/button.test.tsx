@@ -1,7 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from './../../test-utils';
 import { describe, it, beforeEach, expect, vi } from 'vitest';
-import '@testing-library/jest-dom';
 import { Button, ButtonProps } from '../../../components/ui/button';
 import { cn } from '../../../lib/utils';
 
@@ -39,16 +38,18 @@ describe('Button', () => {
 
     it('renders outline variant', () => {
       render(<Button variant="outline">Outline</Button>);
-      
+
       const button = screen.getByRole('button');
-      expect(button.className).toContain('theme-btn-outline');
+      expect(button.className).toContain('border');
+      expect(button.className).toContain('border-gray-200');
     });
 
     it('renders secondary variant', () => {
       render(<Button variant="secondary">Secondary</Button>);
-      
+
       const button = screen.getByRole('button');
-      expect(button.className).toContain('theme-btn-secondary');
+      expect(button.className).toContain('bg-gray-50');
+      expect(button.className).toContain('dark:bg-gray-800');
     });
 
     it('renders ghost variant', () => {

@@ -3,11 +3,11 @@ import { lightTheme, darkTheme, getTheme } from '../../theme/muiTheme';
 import { themeConfig } from '../../theme/themeConfig';
 
 // Mock dependencies
-jest.mock('@mui/material/styles', () => ({
-  createTheme: jest.fn((options) => ({ ...options, isTheme: true })),
+vi.mock('@mui/material/styles', () => ({
+  createTheme: vi.fn((options) => ({ ...options, isTheme: true })),
 }));
 
-jest.mock('../../theme/themeConfig', () => ({
+vi.mock('../../theme/themeConfig', () => ({
   themeConfig: {
     light: {
       primary: '#1976d2',
@@ -94,10 +94,10 @@ jest.mock('../../theme/themeConfig', () => ({
 }));
 
 describe('muiTheme', () => {
-  const mockCreateTheme = createTheme as jest.MockedFunction<typeof createTheme>;
+  const mockCreateTheme = createTheme as anyedFunction<typeof createTheme>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('lightTheme', () => {

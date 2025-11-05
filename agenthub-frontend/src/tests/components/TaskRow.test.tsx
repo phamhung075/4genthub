@@ -4,8 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { render, screen, waitFor } from './../test-utils';
 import { BrowserRouter } from 'react-router-dom';
 import TaskRow from '../../components/TaskRow';
 import animationFactory from '../../services/AnimationFactory';

@@ -1,7 +1,6 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from './../test-utils';
 import { vi } from 'vitest';
-import '@testing-library/jest-dom';
 import { MuiThemeWrapper } from '../../contexts/MuiThemeProvider';
 import { useTheme } from '../../hooks/useTheme';
 import { getTheme } from '../../theme/muiTheme';

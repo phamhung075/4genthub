@@ -2,8 +2,8 @@ import * as hooks from '../../hooks/index';
 import { useTheme } from '../../hooks/useTheme';
 
 // Mock the useTheme hook
-jest.mock('../../hooks/useTheme', () => ({
-  useTheme: jest.fn(),
+vi.mock('../../hooks/useTheme', () => ({
+  useTheme: vi.fn(),
 }));
 
 describe('hooks/index', () => {

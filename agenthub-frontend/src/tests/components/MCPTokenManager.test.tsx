@@ -1,8 +1,7 @@
 // MCPTokenManager Component Tests
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from './../test-utils';
 import { vi } from 'vitest';
-import '@testing-library/jest-dom';
 import MCPTokenManager from '../../components/MCPTokenManager';
 import { mcpTokenService } from '../../services/mcpTokenService';
 

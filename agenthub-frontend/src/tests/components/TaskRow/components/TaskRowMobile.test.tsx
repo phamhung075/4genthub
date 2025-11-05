@@ -3,13 +3,13 @@
  * Tests mobile-specific task row rendering and interactions
  */
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from './../../../test-utils';
 import { TaskRowMobile } from '../../../../components/TaskRow/components/TaskRowMobile';
 import { Task } from '../../../../types/taskTypes';
 import { MemoryRouter } from 'react-router-dom';
 
 // Mock the status emoji util
-jest.mock('../../../../utils/statusEmojis', () => ({
+vi.mock('../../../../utils/statusEmojis', () => ({
   getStatusEmoji: (status: string) => {
     const emojis: Record<string, string> = {
       'todo': '📋',
@@ -45,8 +45,8 @@ describe('TaskRowMobile', () => {
     task: mockTask,
     projectId: 'proj-123',
     branchId: 'branch-456',
-    onDelete: jest.fn(),
-    onUpdate: jest.fn()
+    onDelete: vi.fn(),
+    onUpdate: vi.fn()
   };
 
   const renderComponent = (props = {}) => {
@@ -58,7 +58,7 @@ describe('TaskRowMobile', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Mobile Layout', () => {

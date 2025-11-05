@@ -1,5 +1,4 @@
-import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor, act } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, act } from './../test-utils';
 import React from 'react';
 import { vi } from 'vitest';
 import * as api from '../../api';
@@ -40,9 +39,9 @@ vi.mock('../../hooks/useTaskWebSocket', () => ({
     mockOnTaskUpdate = config.onTaskUpdate;
     return {
       isConnected: true,
-      isConnecting: false,
+      isReconnecting: false,
       error: null,
-      reconnectAttempts: 0
+      handleTaskChanges: vi.fn()
     };
   })
 }));

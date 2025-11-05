@@ -6,7 +6,7 @@ import { ThemeContext } from '../../contexts/ThemeContext';
 describe('useTheme', () => {
   it('throws error when used outside ThemeProvider', () => {
     // Suppress console.error for this test
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     const { result } = renderHook(() => useTheme());
     
@@ -20,8 +20,8 @@ describe('useTheme', () => {
   it('returns theme context value when used within ThemeProvider', () => {
     const mockContextValue = {
       theme: 'light' as const,
-      toggleTheme: jest.fn(),
-      setTheme: jest.fn(),
+      toggleTheme: vi.fn(),
+      setTheme: vi.fn(),
     };
 
     const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -41,8 +41,8 @@ describe('useTheme', () => {
   it('returns dark theme context value', () => {
     const mockContextValue = {
       theme: 'dark' as const,
-      toggleTheme: jest.fn(),
-      setTheme: jest.fn(),
+      toggleTheme: vi.fn(),
+      setTheme: vi.fn(),
     };
 
     const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -58,10 +58,10 @@ describe('useTheme', () => {
 
   it('updates when context value changes', () => {
     let theme: 'light' | 'dark' = 'light';
-    const toggleTheme = jest.fn(() => {
+    const toggleTheme = vi.fn(() => {
       theme = theme === 'light' ? 'dark' : 'light';
     });
-    const setTheme = jest.fn((newTheme: 'light' | 'dark') => {
+    const setTheme = vi.fn((newTheme: 'light' | 'dark') => {
       theme = newTheme;
     });
 
@@ -108,8 +108,8 @@ describe('useTheme', () => {
   it('maintains referential equality of functions', () => {
     const mockContextValue = {
       theme: 'light' as const,
-      toggleTheme: jest.fn(),
-      setTheme: jest.fn(),
+      toggleTheme: vi.fn(),
+      setTheme: vi.fn(),
     };
 
     const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -130,8 +130,8 @@ describe('useTheme', () => {
   });
 
   it('allows calling context functions', () => {
-    const mockToggleTheme = jest.fn();
-    const mockSetTheme = jest.fn();
+    const mockToggleTheme = vi.fn();
+    const mockSetTheme = vi.fn();
 
     const mockContextValue = {
       theme: 'light' as const,
@@ -160,8 +160,8 @@ describe('useTheme', () => {
   it('works with multiple hooks in the same provider', () => {
     const mockContextValue = {
       theme: 'light' as const,
-      toggleTheme: jest.fn(),
-      setTheme: jest.fn(),
+      toggleTheme: vi.fn(),
+      setTheme: vi.fn(),
     };
 
     const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (

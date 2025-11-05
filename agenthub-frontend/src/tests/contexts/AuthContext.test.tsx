@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, act, waitFor } from './../test-utils';
 import { AuthProvider, AuthContext } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/environment';
 import { useContext } from 'react';
@@ -7,16 +7,16 @@ import Cookies from 'js-cookie';
 import * as jwtDecode from 'jwt-decode';
 
 // Mock dependencies
-jest.mock('js-cookie');
-jest.mock('jwt-decode');
-jest.mock('../../hooks/useWebSocketV2');
+vi.mock('js-cookie');
+vi.mock('jwt-decode');
+vi.mock('../../hooks/useWebSocketV2');
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock useWebSocket hook
-const mockDisconnect = jest.fn();
-const mockUseWebSocket = jest.fn(() => ({
+const mockDisconnect = vi.fn();
+const mockUseWebSocket = vi.fn(() => ({
   isConnected: false,
   disconnect: mockDisconnect
 }));
@@ -26,13 +26,13 @@ const mockUseWebSocket = jest.fn(() => ({
   MODE: 'test'
 };
 
-jest.mock('../../config/environment', () => ({
+vi.mock('../../config/environment', () => ({
   API_BASE_URL: 'http://test-api.com'
 }));
 
 // Import useWebSocket mock after mocking
 import { useWebSocket } from '../../hooks/useWebSocketV2';
-(useWebSocket as jest.Mock).mockImplementation(mockUseWebSocket);
+(useWebSocket as any).mockImplementation(mockUseWebSocket);
 
 describe('AuthContext', () => {
   const mockUser = {
@@ -77,19 +77,19 @@ describe('AuthContext', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockDisconnect.mockClear();
     mockUseWebSocket.mockClear();
-    (Cookies.get as jest.Mock).mockReset();
-    (Cookies.set as jest.Mock).mockReset();
-    (Cookies.remove as jest.Mock).mockReset();
-    (jwtDecode.jwtDecode as jest.Mock).mockReset();
-    (global.fetch as jest.Mock).mockReset();
+    (Cookies.get as any).mockReset();
+    (Cookies.set as any).mockReset();
+    (Cookies.remove as any).mockReset();
+    (jwtDecode.jwtDecode as any).mockReset();
+    (global.fetch as any).mockReset();
   });
 
   describe('Initial State', () => {
     it('should initialize with loading state', () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
+      (Cookies.get as any).mockReturnValue(null);
       
       render(
         <AuthProvider>
@@ -102,13 +102,13 @@ describe('AuthContext', () => {
     });
 
     it('should restore user from existing valid tokens', async () => {
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       render(
         <AuthProvider>
@@ -129,16 +129,16 @@ describe('AuthContext', () => {
         exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
       };
 
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValueOnce(expiredToken);
+      (jwtDecode.jwtDecode as any).mockReturnValueOnce(expiredToken);
 
       // Mock successful token refresh
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           access_token: 'new-access-token',
@@ -147,7 +147,7 @@ describe('AuthContext', () => {
       });
 
       // Return valid token after refresh
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValueOnce(mockDecodedToken);
+      (jwtDecode.jwtDecode as any).mockReturnValueOnce(mockDecodedToken);
 
       render(
         <AuthProvider>
@@ -174,10 +174,10 @@ describe('AuthContext', () => {
 
   describe('Login', () => {
     it('should login successfully', async () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (Cookies.get as any).mockReturnValue(null);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -230,9 +230,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle login failure', async () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
+      (Cookies.get as any).mockReturnValue(null);
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({
@@ -254,9 +254,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle email verification required error', async () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
+      (Cookies.get as any).mockReturnValue(null);
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 403,
         json: async () => ({
@@ -278,9 +278,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle email verification response', async () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
+      (Cookies.get as any).mockReturnValue(null);
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -304,9 +304,9 @@ describe('AuthContext', () => {
 
   describe('Signup', () => {
     it('should signup and require email verification', async () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
+      (Cookies.get as any).mockReturnValue(null);
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -351,10 +351,10 @@ describe('AuthContext', () => {
     });
 
     it('should signup and auto-login when no verification required', async () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (Cookies.get as any).mockReturnValue(null);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -380,9 +380,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle signup failure', async () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
+      (Cookies.get as any).mockReturnValue(null);
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 400,
         json: async () => ({
@@ -406,13 +406,13 @@ describe('AuthContext', () => {
 
   describe('Logout', () => {
     it('should clear user and tokens on logout', async () => {
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -442,13 +442,13 @@ describe('AuthContext', () => {
         disconnect: mockDisconnect
       });
       
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -481,14 +481,14 @@ describe('AuthContext', () => {
     });
 
     it('should refresh token successfully', async () => {
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           access_token: 'new-access-token',
@@ -531,13 +531,13 @@ describe('AuthContext', () => {
     });
 
     it('should logout on refresh failure', async () => {
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -549,7 +549,7 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
       });
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({
@@ -579,12 +579,12 @@ describe('AuthContext', () => {
         disconnect: mockDisconnect
       });
       
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ detail: 'Invalid refresh token' })
@@ -613,15 +613,15 @@ describe('AuthContext', () => {
         exp: Math.floor(Date.now() / 1000) + 120 // Expires in 2 minutes
       };
 
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(nearExpiryToken);
+      (jwtDecode.jwtDecode as any).mockReturnValue(nearExpiryToken);
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           access_token: 'refreshed-access-token',
@@ -651,8 +651,8 @@ describe('AuthContext', () => {
 
   describe('setTokens', () => {
     it('should set tokens and decode user', async () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (Cookies.get as any).mockReturnValue(null);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -694,8 +694,8 @@ describe('AuthContext', () => {
       // Mock production environment
       (import.meta as any).env.MODE = 'production';
       
-      (Cookies.get as jest.Mock).mockReturnValue(null);
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (Cookies.get as any).mockReturnValue(null);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
         <AuthProvider>
@@ -724,17 +724,17 @@ describe('AuthContext', () => {
 
   describe('Token Decoding', () => {
     it('should handle malformed tokens', async () => {
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'access_token') return 'malformed-token';
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (jwtDecode.jwtDecode as jest.Mock).mockImplementation(() => {
+      (jwtDecode.jwtDecode as any).mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(
         <AuthProvider>
@@ -758,10 +758,10 @@ describe('AuthContext', () => {
         username: undefined
       };
 
-      (Cookies.get as jest.Mock).mockReturnValue(null);
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(tokenWithoutUsername);
+      (Cookies.get as any).mockReturnValue(null);
+      (jwtDecode.jwtDecode as any).mockReturnValue(tokenWithoutUsername);
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -795,10 +795,10 @@ describe('AuthContext', () => {
         roles: undefined
       };
 
-      (Cookies.get as jest.Mock).mockReturnValue(null);
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(tokenWithoutRoles);
+      (Cookies.get as any).mockReturnValue(null);
+      (jwtDecode.jwtDecode as any).mockReturnValue(tokenWithoutRoles);
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -829,13 +829,13 @@ describe('AuthContext', () => {
 
   describe('Event Listeners', () => {
     it('should handle logout event from API layer', async () => {
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { container } = render(
         <AuthProvider>
@@ -862,7 +862,7 @@ describe('AuthContext', () => {
 
   describe('Context Access', () => {
     it('should throw error when AuthContext is used without provider', () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
 
       expect(() => {
         render(<TestComponent />);
@@ -874,10 +874,10 @@ describe('AuthContext', () => {
 
   describe('Error Handling', () => {
     it('should console error on login failure', async () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
       
-      (Cookies.get as jest.Mock).mockReturnValue(null);
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (Cookies.get as any).mockReturnValue(null);
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       const { getByText } = render(
         <AuthProvider>
@@ -897,10 +897,10 @@ describe('AuthContext', () => {
     });
 
     it('should console error on signup failure', async () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
       
-      (Cookies.get as jest.Mock).mockReturnValue(null);
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (Cookies.get as any).mockReturnValue(null);
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       const { getByText } = render(
         <AuthProvider>
@@ -920,14 +920,14 @@ describe('AuthContext', () => {
     });
 
     it('should console error on token refresh failure', async () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
       
-      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+      (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
       
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       const { getByText } = render(
         <AuthProvider>

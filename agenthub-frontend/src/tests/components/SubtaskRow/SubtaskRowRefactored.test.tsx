@@ -3,13 +3,13 @@
  * Tests the refactored subtask row display with simplified subtask count handling
  */
 
-import { render, screen } from '@testing-library/react';
+import { render, screen } from './../../test-utils';
 import { SubtaskRowRefactored } from '../../../components/SubtaskRow/SubtaskRowRefactored';
 import { Subtask } from '../../../types/taskTypes';
 import { MemoryRouter } from 'react-router-dom';
 
 // Mock the status emoji util
-jest.mock('../../../utils/statusEmojis', () => ({
+vi.mock('../../../utils/statusEmojis', () => ({
   getStatusEmoji: (status: string) => {
     const emojis: Record<string, string> = {
       'todo': '📋',
@@ -40,7 +40,7 @@ describe('SubtaskRowRefactored', () => {
     projectId: 'proj-123',
     branchId: 'branch-456',
     taskId: 'task-789',
-    onUpdate: jest.fn()
+    onUpdate: vi.fn()
   };
 
   const renderComponent = (props = {}) => {
@@ -52,7 +52,7 @@ describe('SubtaskRowRefactored', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Basic Rendering', () => {

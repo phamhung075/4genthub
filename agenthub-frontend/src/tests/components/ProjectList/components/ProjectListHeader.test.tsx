@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from './../../../test-utils';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ProjectListHeader } from '../../../../components/ProjectList/components/ProjectListHeader';
 import type { ProjectListHeaderProps } from '../../../../types/componentTypes';

@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { render, screen } from './../../test-utils';
 import {
   Table,
   TableHeader,
@@ -13,15 +12,15 @@ import {
 import { cn } from '../../../lib/utils';
 
 // Mock the cn utility
-jest.mock('../../../lib/utils', () => ({
-  cn: jest.fn((...args: any[]) => args.filter(Boolean).join(' ')),
+vi.mock('../../../lib/utils', () => ({
+  cn: vi.fn((...args: any[]) => args.filter(Boolean).join(' ')),
 }));
 
 describe('Table components', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Ensure the mock is working
-    (cn as jest.Mock).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
+    (cn as any).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
   });
 
   describe('Table', () => {

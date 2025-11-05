@@ -1,31 +1,30 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import { TaskContextDialog } from "../../components/TaskContextDialog";
 import { Task } from "../../api";
 import { getTaskContext, updateTaskContext, getBranchContext, getProjectContext, getGlobalContext } from "../../api";
 import { useEntityChanges } from "../../hooks/useChangeSubscription";
 
 // Mock the API functions
-jest.mock("../../api", () => ({
-  getTaskContext: jest.fn(),
-  updateTaskContext: jest.fn(),
-  getBranchContext: jest.fn(),
-  getProjectContext: jest.fn(),
-  getGlobalContext: jest.fn()
+vi.mock("../../api", () => ({
+  getTaskContext: vi.fn(),
+  updateTaskContext: vi.fn(),
+  getBranchContext: vi.fn(),
+  getProjectContext: vi.fn(),
+  getGlobalContext: vi.fn()
 }));
 
 // Mock the WebSocket hook
-jest.mock("../../hooks/useChangeSubscription", () => ({
-  useEntityChanges: jest.fn()
+vi.mock("../../hooks/useChangeSubscription", () => ({
+  useEntityChanges: vi.fn()
 }));
 
 // Mock the logger
-jest.mock("../../utils/logger", () => ({
+vi.mock("../../utils/logger", () => ({
   default: {
-    debug: jest.fn(),
-    info: jest.fn(),
-    error: jest.fn()
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn()
   }
 }));
 
@@ -48,8 +47,8 @@ describe("TaskContextDialog", () => {
     subtasks: []
   };
 
-  const mockOnClose = jest.fn();
-  const mockOnOpenChange = jest.fn();
+  const mockOnClose = vi.fn();
+  const mockOnOpenChange = vi.fn();
 
   const defaultProps = {
     open: true,
@@ -61,14 +60,14 @@ describe("TaskContextDialog", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Setup default mock implementations
-    (getTaskContext as jest.Mock).mockResolvedValue(null);
-    (getBranchContext as jest.Mock).mockResolvedValue(null);
-    (getProjectContext as jest.Mock).mockResolvedValue(null);
-    (getGlobalContext as jest.Mock).mockResolvedValue(null);
-    (updateTaskContext as jest.Mock).mockResolvedValue({});
-    (useEntityChanges as jest.Mock).mockImplementation(() => {});
+    (getTaskContext as any).mockResolvedValue(null);
+    (getBranchContext as any).mockResolvedValue(null);
+    (getProjectContext as any).mockResolvedValue(null);
+    (getGlobalContext as any).mockResolvedValue(null);
+    (updateTaskContext as any).mockResolvedValue({});
+    (useEntityChanges as any).mockImplementation(() => {});
   });
 
   describe("Basic Rendering", () => {
@@ -177,7 +176,7 @@ describe("TaskContextDialog", () => {
         }
       };
       
-      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      (getTaskContext as any).mockResolvedValue(mockContext);
       
       render(<TaskContextDialog {...defaultProps} />);
       
@@ -197,7 +196,7 @@ describe("TaskContextDialog", () => {
     });
 
     it("handles API errors gracefully", async () => {
-      (getTaskContext as jest.Mock).mockRejectedValue(new Error("API Error"));
+      (getTaskContext as any).mockRejectedValue(new Error("API Error"));
       
       render(<TaskContextDialog {...defaultProps} />);
       
@@ -222,7 +221,7 @@ describe("TaskContextDialog", () => {
         }
       };
       
-      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      (getTaskContext as any).mockResolvedValue(mockContext);
       
       render(<TaskContextDialog {...defaultProps} />);
       
@@ -251,8 +250,8 @@ describe("TaskContextDialog", () => {
         }
       };
       
-      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
-      (updateTaskContext as jest.Mock).mockResolvedValue({});
+      (getTaskContext as any).mockResolvedValue(mockContext);
+      (updateTaskContext as any).mockResolvedValue({});
       
       render(<TaskContextDialog {...defaultProps} />);
       
@@ -279,7 +278,7 @@ describe("TaskContextDialog", () => {
         data: { task_info: { title: "Original" } }
       };
       
-      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      (getTaskContext as any).mockResolvedValue(mockContext);
       
       render(<TaskContextDialog {...defaultProps} />);
       
@@ -313,7 +312,7 @@ describe("TaskContextDialog", () => {
         }
       };
       
-      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      (getTaskContext as any).mockResolvedValue(mockContext);
       
       render(<TaskContextDialog {...defaultProps} />);
       
@@ -355,9 +354,9 @@ describe("TaskContextDialog", () => {
       const mockProjectContext = { data: { project_setting: "value" } };
       const mockGlobalContext = { data: { global_setting: "value" } };
       
-      (getBranchContext as jest.Mock).mockResolvedValue(mockBranchContext);
-      (getProjectContext as jest.Mock).mockResolvedValue(mockProjectContext);
-      (getGlobalContext as jest.Mock).mockResolvedValue(mockGlobalContext);
+      (getBranchContext as any).mockResolvedValue(mockBranchContext);
+      (getProjectContext as any).mockResolvedValue(mockProjectContext);
+      (getGlobalContext as any).mockResolvedValue(mockGlobalContext);
       
       render(<TaskContextDialog {...defaultProps} />);
       
@@ -409,7 +408,7 @@ describe("TaskContextDialog", () => {
         data: { task_info: { title: "Initial" } }
       };
       
-      (getTaskContext as jest.Mock)
+      (getTaskContext as any)
         .mockResolvedValueOnce(mockContext)
         .mockResolvedValueOnce({
           data: { 
@@ -419,7 +418,7 @@ describe("TaskContextDialog", () => {
         });
       
       let websocketHandler: ((notification: any) => void) | null = null;
-      (useEntityChanges as jest.Mock).mockImplementation((_, __, handler) => {
+      (useEntityChanges as any).mockImplementation((_, __, handler) => {
         websocketHandler = handler;
       });
       
@@ -447,7 +446,7 @@ describe("TaskContextDialog", () => {
 
     it("ignores WebSocket updates for different tasks", async () => {
       let websocketHandler: ((notification: any) => void) | null = null;
-      (useEntityChanges as jest.Mock).mockImplementation((_, __, handler) => {
+      (useEntityChanges as any).mockImplementation((_, __, handler) => {
         websocketHandler = handler;
       });
       
@@ -479,12 +478,12 @@ describe("TaskContextDialog", () => {
         data: { task_info: { title: "Test" } }
       };
       
-      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      (getTaskContext as any).mockResolvedValue(mockContext);
       
       // Mock clipboard API
       Object.assign(navigator, {
         clipboard: {
-          writeText: jest.fn().mockResolvedValue(undefined)
+          writeText: vi.fn().mockResolvedValue(undefined)
         }
       });
       
@@ -511,7 +510,7 @@ describe("TaskContextDialog", () => {
         data: { task_info: { title: "Test" } }
       };
       
-      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      (getTaskContext as any).mockResolvedValue(mockContext);
       
       render(<TaskContextDialog {...defaultProps} />);
       
@@ -557,7 +556,7 @@ describe("TaskContextDialog", () => {
         data: { task_info: { title: "Test" } }
       };
       
-      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      (getTaskContext as any).mockResolvedValue(mockContext);
       
       render(<TaskContextDialog {...defaultProps} />);
       

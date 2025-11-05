@@ -1,26 +1,25 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { render, screen, fireEvent, waitFor } from './../../test-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
 import { cn } from '../../../lib/utils';
 
 // Mock the cn utility
-jest.mock('../../../lib/utils', () => ({
-  cn: jest.fn((...args: any[]) => args.filter(Boolean).join(' ')),
+vi.mock('../../../lib/utils', () => ({
+  cn: vi.fn((...args: any[]) => args.filter(Boolean).join(' ')),
 }));
 
 describe('Dialog components', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Ensure the mock is working
-    (cn as jest.Mock).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
+    (cn as any).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
     // Reset body overflow style
     document.body.style.overflow = 'unset';
   });
 
   describe('Dialog', () => {
     it('renders when open is true', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       render(
         <Dialog open={true} onOpenChange={onOpenChange}>
           <div>Dialog content</div>
@@ -31,7 +30,7 @@ describe('Dialog components', () => {
     });
 
     it('does not render when open is false', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       render(
         <Dialog open={false} onOpenChange={onOpenChange}>
           <div>Dialog content</div>
@@ -42,7 +41,7 @@ describe('Dialog components', () => {
     });
 
     it('calls onOpenChange when clicking overlay', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       render(
         <Dialog open={true} onOpenChange={onOpenChange}>
           <div>Dialog content</div>
@@ -56,7 +55,7 @@ describe('Dialog components', () => {
     });
 
     it('closes dialog when Escape key is pressed', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       render(
         <Dialog open={true} onOpenChange={onOpenChange}>
           <div>Dialog content</div>
@@ -69,7 +68,7 @@ describe('Dialog components', () => {
     });
 
     it('does not add keydown listener when closed', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       render(
         <Dialog open={false} onOpenChange={onOpenChange}>
           <div>Dialog content</div>
@@ -82,7 +81,7 @@ describe('Dialog components', () => {
     });
 
     it('sets body overflow to hidden when open', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       render(
         <Dialog open={true} onOpenChange={onOpenChange}>
           <div>Dialog content</div>
@@ -93,7 +92,7 @@ describe('Dialog components', () => {
     });
 
     it('resets body overflow when closed', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       const { rerender } = render(
         <Dialog open={true} onOpenChange={onOpenChange}>
           <div>Dialog content</div>
@@ -112,7 +111,7 @@ describe('Dialog components', () => {
     });
 
     it('cleans up body overflow on unmount', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       const { unmount } = render(
         <Dialog open={true} onOpenChange={onOpenChange}>
           <div>Dialog content</div>
@@ -127,7 +126,7 @@ describe('Dialog components', () => {
     });
 
     it('renders with correct overlay structure', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       render(
         <Dialog open={true} onOpenChange={onOpenChange}>
           <div data-testid="content">Dialog content</div>
@@ -184,7 +183,7 @@ describe('Dialog components', () => {
     });
 
     it('stops click propagation', () => {
-      const parentClick = jest.fn();
+      const parentClick = vi.fn();
       render(
         <div onClick={parentClick}>
           <DialogContent>
@@ -306,7 +305,7 @@ describe('Dialog components', () => {
 
   describe('Integration', () => {
     it('renders complete dialog structure', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       render(
         <Dialog open={true} onOpenChange={onOpenChange}>
           <DialogContent>
@@ -329,7 +328,7 @@ describe('Dialog components', () => {
     });
 
     it('does not close when clicking dialog content', () => {
-      const onOpenChange = jest.fn();
+      const onOpenChange = vi.fn();
       render(
         <Dialog open={true} onOpenChange={onOpenChange}>
           <DialogContent>

@@ -1,7 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from './../test-utils';
 import { vi } from 'vitest';
-import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
 import { TaskSearch } from '../../components/TaskSearch';
 import * as api from '../../api';

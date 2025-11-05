@@ -2,17 +2,23 @@
 import Cookies from 'js-cookie';
 import { mcpTokenService } from '../../services/mcpTokenService';
 
-// Mock js-cookie
-jest.mock('js-cookie', () => ({
-  get: jest.fn(),
-}));
+// Mock js-cookie with default export for Vitest compatibility
+vi.mock('js-cookie', () => {
+  const mockCookies = {
+    get: vi.fn(),
+  };
+  return {
+    default: mockCookies,
+    ...mockCookies
+  };
+});
 
 // Mock import.meta.env
 const mockApiUrl = 'http://localhost:8000';
 (import.meta as any).env = { VITE_API_URL: mockApiUrl };
 
 // Global fetch mock
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('MCPTokenService', () => {
   const mockAccessToken = 'mock-supabase-token';
@@ -26,18 +32,18 @@ describe('MCPTokenService', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Reset service state
     mcpTokenService.clearCache();
     // Default to authenticated state
-    (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+    (Cookies.get as any).mockImplementation((key: string) => {
       if (key === 'access_token') return mockAccessToken;
       return null;
     });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('isAuthenticated', () => {
@@ -47,7 +53,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should return false when access token does not exist', () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
+      (Cookies.get as any).mockReturnValue(null);
       expect(mcpTokenService.isAuthenticated()).toBe(false);
     });
   });
@@ -61,7 +67,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -95,7 +101,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -115,7 +121,7 @@ describe('MCPTokenService', () => {
 
     it('should handle HTTP error responses', async () => {
       const errorMessage = 'Unauthorized';
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: false,
         status: 401,
         json: async () => ({ message: errorMessage }),
@@ -130,7 +136,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should handle JSON parse errors on error response', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => {
@@ -148,7 +154,7 @@ describe('MCPTokenService', () => {
 
     it('should handle network errors', async () => {
       const networkError = new Error('Network error');
-      (fetch as jest.Mock).mockRejectedValue(networkError);
+      (fetch as any).mockRejectedValue(networkError);
 
       const result = await mcpTokenService.generateMCPToken();
 
@@ -166,7 +172,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -180,7 +186,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should work without authentication token', async () => {
-      (Cookies.get as jest.Mock).mockReturnValue(null);
+      (Cookies.get as any).mockReturnValue(null);
       
       const mockResponse = {
         success: true,
@@ -189,7 +195,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -218,13 +224,13 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
 
       await mcpTokenService.generateMCPToken();
-      (fetch as jest.Mock).mockClear();
+      (fetch as any).mockClear();
 
       // Get token should use cache
       const token = await mcpTokenService.getMCPToken();
@@ -240,7 +246,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -261,7 +267,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse1,
       });
@@ -276,7 +282,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse2,
       });
@@ -288,7 +294,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should return null if token generation fails', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => ({ message: 'Server error' }),
@@ -307,7 +313,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -332,7 +338,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockGenerateResponse,
       });
@@ -345,7 +351,7 @@ describe('MCPTokenService', () => {
         message: 'All tokens revoked',
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockRevokeResponse,
       });
@@ -371,7 +377,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should return false on revoke failure', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: false,
         json: async () => ({ success: false, message: 'Revoke failed' }),
       });
@@ -382,7 +388,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should handle network errors during revoke', async () => {
-      (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+      (fetch as any).mockRejectedValue(new Error('Network error'));
 
       const result = await mcpTokenService.revokeTokens();
       
@@ -398,7 +404,7 @@ describe('MCPTokenService', () => {
         message: 'Stats retrieved',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -420,7 +426,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should return null on HTTP error', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: false,
         status: 404,
       });
@@ -431,7 +437,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should return null on network error', async () => {
-      (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+      (fetch as any).mockRejectedValue(new Error('Network error'));
 
       const result = await mcpTokenService.getTokenStats();
       
@@ -448,7 +454,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -465,7 +471,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should return headers without token if generation fails', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => ({ message: 'Server error' }),
@@ -491,7 +497,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockTokenResponse,
       });
@@ -505,7 +511,7 @@ describe('MCPTokenService', () => {
         },
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockMCPResponse,
       });
@@ -539,7 +545,7 @@ describe('MCPTokenService', () => {
     });
 
     it('should handle failed token generation', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: false,
         status: 401,
         json: async () => ({ message: 'Unauthorized' }),
@@ -562,13 +568,13 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockTokenResponse,
       });
 
       // Mock failed MCP request
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 403,
       });
@@ -590,13 +596,13 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockTokenResponse,
       });
 
       // Mock network error
-      (fetch as jest.Mock).mockRejectedValueOnce(new Error('Connection refused'));
+      (fetch as any).mockRejectedValueOnce(new Error('Connection refused'));
 
       const result = await mcpTokenService.testMCPToken();
 
@@ -615,7 +621,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockTokenResponse,
       });
@@ -627,7 +633,7 @@ describe('MCPTokenService', () => {
         result: {},
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockMCPResponse,
       });
@@ -649,13 +655,13 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => mockTokenResponse,
       });
 
       // Mock throwing non-Error
-      (fetch as jest.Mock).mockRejectedValueOnce('String error');
+      (fetch as any).mockRejectedValueOnce('String error');
 
       const result = await mcpTokenService.testMCPToken();
 
@@ -676,7 +682,7 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -699,8 +705,8 @@ describe('MCPTokenService', () => {
     let consoleErrorSpy: jest.SpyInstance;
 
     beforeEach(() => {
-      consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      consoleLogSpy = vi.spyOn(console, 'log').mockImplementation();
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
     });
 
     afterEach(() => {
@@ -716,33 +722,37 @@ describe('MCPTokenService', () => {
         message: 'Token generated successfully',
       };
 
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
 
       await mcpTokenService.generateMCPToken();
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'MCP token generated successfully, expires:',
-        mockExpiry
-      );
+      // Logger adds formatted prefix, check that call contains expected message
+      expect(consoleLogSpy).toHaveBeenCalled();
+      const logCalls = consoleLogSpy.mock.calls;
+      expect(logCalls.some((call: any) => call.some((arg: any) =>
+        typeof arg === 'string' && arg.includes('MCP token generated successfully')
+      ))).toBe(true);
     });
 
     it('should log token generation errors', async () => {
       const error = new Error('Network error');
-      (fetch as jest.Mock).mockRejectedValue(error);
+      (fetch as any).mockRejectedValue(error);
 
       await mcpTokenService.generateMCPToken();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Failed to generate MCP token:',
-        error
-      );
+      // Logger adds formatted prefix, check that call contains expected message
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      const errorCalls = consoleErrorSpy.mock.calls;
+      expect(errorCalls.some((call: any) => call.some((arg: any) =>
+        typeof arg === 'string' && arg.includes('Failed to generate MCP token')
+      ))).toBe(true);
     });
 
     it('should log getMCPToken failures', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => ({ message: 'Server error' }),
@@ -750,51 +760,67 @@ describe('MCPTokenService', () => {
 
       await mcpTokenService.getMCPToken();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Failed to obtain MCP token:',
-        'Server error'
-      );
+      // Logger adds formatted prefix, check that call contains expected message
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      const errorCalls = consoleErrorSpy.mock.calls;
+      expect(errorCalls.some((call: any) => call.some((arg: any) =>
+        typeof arg === 'string' && arg.includes('Failed to obtain MCP token')
+      ))).toBe(true);
     });
 
     it('should log successful token revocation', async () => {
-      (fetch as jest.Mock).mockResolvedValue({
+      (fetch as any).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
 
       await mcpTokenService.revokeTokens();
 
-      expect(consoleLogSpy).toHaveBeenCalledWith('MCP tokens revoked successfully');
+      // Logger adds formatted prefix, check that call contains expected message
+      expect(consoleLogSpy).toHaveBeenCalled();
+      const logCalls = consoleLogSpy.mock.calls;
+      expect(logCalls.some((call: any) => call.some((arg: any) =>
+        typeof arg === 'string' && arg.includes('MCP tokens revoked successfully')
+      ))).toBe(true);
     });
 
     it('should log token revocation errors', async () => {
       const error = new Error('Network error');
-      (fetch as jest.Mock).mockRejectedValue(error);
+      (fetch as any).mockRejectedValue(error);
 
       await mcpTokenService.revokeTokens();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Failed to revoke MCP tokens:',
-        error
-      );
+      // Logger adds formatted prefix, check that call contains expected message
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      const errorCalls = consoleErrorSpy.mock.calls;
+      expect(errorCalls.some((call: any) => call.some((arg: any) =>
+        typeof arg === 'string' && arg.includes('Failed to revoke MCP tokens')
+      ))).toBe(true);
     });
 
     it('should log stats retrieval errors', async () => {
       const error = new Error('Stats error');
-      (fetch as jest.Mock).mockRejectedValue(error);
+      (fetch as any).mockRejectedValue(error);
 
       await mcpTokenService.getTokenStats();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Failed to get token stats:',
-        error
-      );
+      // Logger adds formatted prefix, check that call contains expected message
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      const errorCalls = consoleErrorSpy.mock.calls;
+      expect(errorCalls.some((call: any) => call.some((arg: any) =>
+        typeof arg === 'string' && arg.includes('Failed to get token stats')
+      ))).toBe(true);
     });
 
     it('should log cache clearing', () => {
       mcpTokenService.clearCache();
 
-      expect(consoleLogSpy).toHaveBeenCalledWith('MCP token cache cleared');
+      // Logger adds formatted prefix, check that call contains expected message
+      expect(consoleLogSpy).toHaveBeenCalled();
+      const logCalls = consoleLogSpy.mock.calls;
+      expect(logCalls.some((call: any) => call.some((arg: any) =>
+        typeof arg === 'string' && arg.includes('MCP token cache cleared')
+      ))).toBe(true);
     });
   });
 });

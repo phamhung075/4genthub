@@ -132,11 +132,11 @@ describe('themeConfig', () => {
   });
 
   describe('applyThemeToRoot', () => {
-    let mockSetProperty: jest.Mock;
+    let mockSetProperty: any;
     let originalDocumentElement: HTMLElement;
 
     beforeEach(() => {
-      mockSetProperty = jest.fn();
+      mockSetProperty = vi.fn();
       originalDocumentElement = document.documentElement;
       
       // Mock document.documentElement.style.setProperty
