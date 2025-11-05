@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useAppSelector } from '../store/hooks';
-import { selectIsConnected, selectIsReconnecting, selectWebSocketError } from '../store/slices/webSocketSlice';
+import { useIsConnected, useIsReconnecting, useWebSocketError } from '../store/websocket';
 import { Wifi, WifiOff, RefreshCw, AlertCircle } from 'lucide-react';
 
 export function WebSocketStatus() {
-  const isConnected = useAppSelector(selectIsConnected);
-  const isReconnecting = useAppSelector(selectIsReconnecting);
-  const error = useAppSelector(selectWebSocketError);
+  const isConnected = useIsConnected();
+  const isReconnecting = useIsReconnecting();
+  const error = useWebSocketError();
   const [showDetails, setShowDetails] = useState(false);
 
   // Auto-show details on error

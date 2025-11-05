@@ -1,14 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { createTask, updateTask, deleteTask, getAvailableAgents, listAgents } from "../../api";
+import { getAvailableAgents, listAgents } from "../../api";
 import { useAuth } from "../../contexts/AuthContext";
-import { useErrorToast } from "../ui/toast";
+import { useErrorToast, useSuccessToast } from "../ui/toast";
 import logger from "../../utils/logger";
-import { taskDeletionTracker } from "../../services/taskDeletionTracker";
 
-// Hooks
-import { useTaskData } from "../../hooks/useTaskData";
-import { useTaskWebSocket } from "../../hooks/useTaskWebSocket";
+// React Query hooks
+import { useQueryClient } from '@tanstack/react-query';
+import { useTasks, useTaskMutations } from "../../hooks/useTasks";
+import { useWebSocket } from "../../hooks/useWebSocketV2";
+import { useRealtimeSync } from "../../hooks/useRealtimeSync";
+
+// Component hooks
 import { useDialogManager } from "./hooks/useDialogManager";
 
 // Components
@@ -23,147 +26,52 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   const navigate = useNavigate();
   const { user, tokens } = useAuth();
   const showError = useErrorToast();
+  const showSuccess = useSuccessToast();
 
   // State for mobile responsiveness
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Task data management
-  const {
-    taskSummaries,
-    fullTasks,
-    totalTasks,
-    loading,
-    loadingTasks,
-    loadTaskSummaries,
-    loadFullTask,
-    updateTaskFromData,
-    addNewTask,
-    removeTask,
-    setTotalTasks
-  } = useTaskData({ taskTreeId, onTasksChanged });
+  // React Query data hooks
+  const { data: tasks = [], isLoading: loading, refetch: loadTaskSummaries } = useTasks(taskTreeId);
+  const taskMutations = useTaskMutations();
+  const queryClient = useQueryClient();
 
-  // Track WebSocket-deleted tasks to prevent duplicate delete attempts
-  const wsDeletedTasksRef = useRef<Set<string>>(new Set());
+  // WebSocket integration with real-time sync
+  const webSocketClient = useWebSocket(user?.id || '', tokens?.access_token || '');
+  const { isConnected } = webSocketClient;
+  useRealtimeSync(webSocketClient.client, true);
 
-  // WebSocket update handler
-  const updateTaskFromWebSocket = useCallback((notification: any) => {
-    logger.debug('🎯 [LazyTaskList] WebSocket notification received', {
-      entityId: notification?.entityId,
-      eventType: notification?.eventType,
-      hasData: !!notification?.data,
-      data: notification?.data,
-      metadata: notification?.metadata,
-      taskTreeId,
-      timestamp: new Date().toISOString()
-    }, 'LazyTaskListRefactored.tsx');
+  // Track full task loads
+  const [loadedTaskIds, setLoadedTaskIds] = useState<Set<string>>(new Set());
+  const fullTasksMap = useRef<Map<string, any>>(new Map());
 
-    const { entityId, eventType, data, metadata } = notification;
-
-    // Branch filtering is already handled by changePoolService and useTaskWebSocket
-    // No need for additional filtering here - it was causing task updates to be rejected
-
-    if (eventType === 'api_fallback_needed') {
-      logger.warn('🔄 [LazyTaskList] API fallback needed, reloading task summaries', {}, 'LazyTaskListRefactored.tsx');
-      loadTaskSummaries(1);
-      return true;
+  // Load full task on demand
+  const loadFullTask = useCallback(async (taskId: string): Promise<any | null> => {
+    if (fullTasksMap.current.has(taskId)) {
+      return fullTasksMap.current.get(taskId);
     }
 
-    // FIX: Add stricter validation - check for required task fields, not just truthiness
-    if (eventType === 'created' && data && data.id && data.title) {
-      logger.warn('✅ [LazyTaskList] Creating new task from WebSocket - COMPLETE DATA', {
-        taskId: data.id,
-        title: data.title,
-        hasAllFields: !!(data.id && data.title && data.status),
-        willCallAddNewTask: true
-      }, 'LazyTaskListRefactored.tsx');
-      addNewTask(data);
-      return true;
-    } else if (eventType === 'created' && !data) {
-      logger.warn('⚠️ [LazyTaskList] CREATE event received but data is COMPLETELY MISSING!', {
-        entityId,
-        metadata,
-        willReloadTasks: true
-      }, 'LazyTaskListRefactored.tsx');
-      // Fallback: reload all tasks
-      logger.warn('🔄 [LazyTaskList] Falling back to full task list reload - NO DATA', {}, 'LazyTaskListRefactored.tsx');
-      loadTaskSummaries(1);
-      return true;
-    } else if (eventType === 'created' && data && (!data.id || !data.title)) {
-      // NEW: Handle case where data exists but is incomplete (empty object {})
-      logger.warn('⚠️ [LazyTaskList] CREATE event has INCOMPLETE task data (missing id or title)', {
-        entityId,
-        hasData: !!data,
-        hasId: !!data.id,
-        hasTitle: !!data.title,
-        dataKeys: Object.keys(data),
-        metadata,
-        willReloadTasks: true
-      }, 'LazyTaskListRefactored.tsx');
-      // Fallback: reload all tasks
-      logger.warn('🔄 [LazyTaskList] Falling back to full task list reload - INCOMPLETE DATA', {}, 'LazyTaskListRefactored.tsx');
-      loadTaskSummaries(1);
-      return true;
-    } else if (eventType === 'updated' && data && data.id) {
-      logger.debug('✅ [LazyTaskList] Updating task from WebSocket', {
-        component: 'LazyTaskList',
-        taskId: data.id,
-        title: data.title
-      }, 'LazyTaskListRefactored.tsx');
-      updateTaskFromData(data);
-      return true;
-    } else if (eventType === 'completed' && data && data.id) {
-      // Completed is semantically an update (task status changed to done)
-      logger.debug('✅ [LazyTaskList] Task completed from WebSocket', {
-        component: 'LazyTaskList',
-        taskId: data.id,
-        title: data.title,
-        status: data.status
-      }, 'LazyTaskListRefactored.tsx');
-      updateTaskFromData(data);
-      return true;
-    } else if (eventType === 'deleted') {
-      logger.debug('✅ [LazyTaskList] Deleting task from WebSocket', {
-        component: 'LazyTaskList',
-        entityId
-      }, 'LazyTaskListRefactored.tsx');
+    // Use queryClient.fetchQuery to load the full task
+    try {
+      const fullTask = await queryClient.fetchQuery({
+        queryKey: ['task', taskId, true],
+        queryFn: async () => {
+          const { getTask } = await import('../../api');
+          return await getTask(taskId, { includeContext: true });
+        },
+        staleTime: 5 * 60 * 1000
+      });
 
-      // Track this deletion to prevent duplicate attempts in API callback
-      wsDeletedTasksRef.current.add(entityId);
-
-      // Mark for deletion so TaskRow can detect and animate
-      taskDeletionTracker.markForDeletion(entityId);
-
-      // Remove from state after animation completes (800ms animation + 200ms buffer)
-      setTimeout(() => {
-        logger.debug('🗑️ [LazyTaskList] Removing task after animation', { entityId }, 'LazyTaskListRefactored.tsx');
-
-        // BUGFIX: Only remove if task still exists in state (hasn't been removed by API callback)
-        // This prevents double-decrement of totalTasks count
-        if (taskSummaries.some(t => t.id === entityId)) {
-          removeTask(entityId);
-        } else {
-          logger.debug('⚠️ [LazyTaskList] Task already removed by API, skipping WebSocket removal', { entityId }, 'LazyTaskListRefactored.tsx');
-        }
-
-        wsDeletedTasksRef.current.delete(entityId);
-        taskDeletionTracker.clearDeletion(entityId);
-      }, 1000);
-
-      return true;
+      if (fullTask) {
+        fullTasksMap.current.set(taskId, fullTask);
+        setLoadedTaskIds(prev => new Set([...prev, taskId]));
+      }
+      return fullTask;
+    } catch (e) {
+      logger.error('Error loading full task', { taskId, error: e });
+      return null;
     }
-
-    logger.warn('⚠️ [LazyTaskList] Unhandled notification:', { eventType, hasData: !!data });
-    return false;
-  }, [taskTreeId, addNewTask, updateTaskFromData, removeTask, loadTaskSummaries, taskSummaries]);
-
-  // WebSocket integration
-  const { isConnected, branchTaskTotal } = useTaskWebSocket({
-    userId: user?.id || '',
-    token: tokens?.access_token || '',
-    taskTreeId,
-    projectId,
-    onTaskUpdate: updateTaskFromWebSocket
-  });
+  }, [queryClient]);
 
   // UI state
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
@@ -246,7 +154,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     }
   }, [expandedTasks, loadFullTask]);
 
-  // Task CRUD handlers
+  // Task CRUD handlers using React Query mutations
   const handleCreateTask = useCallback(async (taskData: any) => {
     if (!taskTreeId) {
       showError('Cannot create task: No branch selected.');
@@ -254,12 +162,13 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     }
     setSaving(true);
     try {
-      const newTask = await createTask({
+      await taskMutations.createTaskAsync({
         ...taskData,
         git_branch_id: taskTreeId,
         assignees: taskData.assignees || []
       });
-      // WebSocket will handle the update via addNewTask, no need for manual refresh
+
+      showSuccess('Task created successfully');
       closeDialog();
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
@@ -267,13 +176,17 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     } finally {
       setSaving(false);
     }
-  }, [closeDialog, onTasksChanged, taskTreeId, showError, setSaving]);
+  }, [closeDialog, onTasksChanged, taskTreeId, showError, showSuccess, setSaving, taskMutations]);
 
   const handleUpdateTask = useCallback(async (taskId: string, updates: any) => {
     setSaving(true);
     try {
-      const updatedTask = await updateTask(taskId, updates);
-      // WebSocket will handle the update via updateTaskFromData, no need for manual refresh
+      await taskMutations.updateTaskAsync({
+        taskId,
+        updates
+      });
+
+      showSuccess('Task updated successfully');
       closeDialog();
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
@@ -281,59 +194,65 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     } finally {
       setSaving(false);
     }
-  }, [closeDialog, onTasksChanged, showError, setSaving]);
+  }, [closeDialog, onTasksChanged, showError, showSuccess, setSaving, taskMutations]);
 
   const handleDeleteTask = useCallback(async (taskId: string) => {
     closeDialog();
     try {
-      await deleteTask(taskId);
+      await taskMutations.deleteTaskAsync(taskId);
 
-      // Only update UI if WebSocket hasn't already handled it
-      // This prevents duplicate delete attempts and 404 errors
-      if (!wsDeletedTasksRef.current.has(taskId)) {
-        removeTask(taskId);
-      }
-
+      showSuccess('Task deleted successfully');
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
-      // Only show error if WebSocket didn't already delete it
-      // WebSocket deletion means the task was successfully removed
-      if (!wsDeletedTasksRef.current.has(taskId)) {
-        showError(`Failed to delete task: ${error.message || 'Unknown error'}`);
-      }
+      showError(`Failed to delete task: ${error.message || 'Unknown error'}`);
     }
-  }, [closeDialog, onTasksChanged, showError, removeTask]);
+  }, [closeDialog, onTasksChanged, showError, showSuccess, taskMutations]);
 
   // Effects
-  // Load initial tasks when taskTreeId changes
-  useEffect(() => {
-    if (taskTreeId) {
-      loadTaskSummaries(1);
-    }
-  }, [taskTreeId, loadTaskSummaries]);
-
-  useEffect(() => {
-    if (typeof branchTaskTotal === "number" && !Number.isNaN(branchTaskTotal) && branchTaskTotal > 0) {
-      setTotalTasks(prevTotal => prevTotal !== branchTaskTotal ? branchTaskTotal : prevTotal);
-    }
-  }, [branchTaskTotal, setTotalTasks]);
-
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Display tasks - DON'T filter out deleting tasks (let animation play first)
+  // Display tasks with pagination
   const displayTasks = useMemo(() => {
-    if (!taskSummaries || !Array.isArray(taskSummaries)) {
+    if (!tasks || !Array.isArray(tasks)) {
       return [];
     }
 
-    // Keep all tasks including those being deleted
-    // The delete animation will play, then the task will be removed after timeout
-    return taskSummaries.slice(0, TASKS_PER_PAGE);
-  }, [taskSummaries, totalTasks]); // Include totalTasks to force re-computation when new tasks are added
+    // Convert full tasks to summaries for display
+    return tasks.slice(0, TASKS_PER_PAGE).map(task => ({
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      priority: task.priority,
+      subtask_count: task.subtask_count ?? 0,
+      assignees_count: task.assignees?.length ?? 0,
+      assignees: task.assignees || [],
+      has_dependencies: task.dependencies?.length > 0 || task.dependency_summary?.total_dependencies > 0,
+      dependency_count: task.dependencies?.length ?? task.dependency_summary?.total_dependencies ?? 0,
+      has_context: Boolean(task.context_id || task.context_data),
+      created_at: task.created_at
+    }));
+  }, [tasks]);
+
+  // Build fullTasks map from loaded tasks
+  const fullTasks = useMemo(() => {
+    const map = new Map();
+    loadedTaskIds.forEach(taskId => {
+      const fullTask = fullTasksMap.current.get(taskId);
+      if (fullTask) {
+        map.set(taskId, fullTask);
+      }
+    });
+    return map;
+  }, [loadedTaskIds]);
+
+  // Track loading state for individual tasks
+  const loadingTasks = useMemo(() => {
+    return new Set<string>();
+  }, []);
 
   return (
     <>
@@ -345,10 +264,10 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       />
 
       <TaskListHeader
-        totalTasks={totalTasks}
+        totalTasks={tasks.length}
         isConnected={isConnected}
         loading={loading}
-        onRefresh={() => loadTaskSummaries(1)}
+        onRefresh={() => loadTaskSummaries()}
         onCreateNew={() => openDialog('create')}
       />
 
@@ -371,7 +290,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       <DialogSection
         activeDialog={activeDialog}
         fullTasks={fullTasks}
-        taskSummaries={taskSummaries}
+        taskSummaries={displayTasks}
         agents={agents}
         availableAgents={availableAgents}
         saving={saving}

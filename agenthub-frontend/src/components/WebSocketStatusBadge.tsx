@@ -5,12 +5,11 @@
  * Automatically hides when connected.
  */
 
-import { useAppSelector } from '../store/hooks';
-import { selectIsConnected, selectIsReconnecting } from '../store/slices/webSocketSlice';
+import { useIsConnected, useIsReconnecting } from '../store/websocket';
 
 export function WebSocketStatusBadge() {
-  const isConnected = useAppSelector(selectIsConnected);
-  const isReconnecting = useAppSelector(selectIsReconnecting);
+  const isConnected = useIsConnected();
+  const isReconnecting = useIsReconnecting();
 
   // Only show when reconnecting or disconnected (not on initial connect)
   if (isConnected && !isReconnecting) {

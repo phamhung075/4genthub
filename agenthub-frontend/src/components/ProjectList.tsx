@@ -1,54 +1,31 @@
-import Cookies from "js-cookie";
-import { ChevronDown, ChevronRight, Eye, Folder, GitBranchPlus, Globe, Pencil, Plus, Trash2 } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
-import { createBranch, createProject, deleteBranch, deleteProject, listProjects, Project, updateProject } from "../api";
-import { BranchSummary } from "../types/api.types";
+import React, { useEffect, useState } from "react";
+import { ProjectListProps } from "../types";
+import { ProjectDialogs, ProjectListContent, ProjectListHeader } from "./ProjectList/components";
+import { useProjectAnimations, useProjectDialogs } from "./ProjectList/hooks";
+import { useAuth } from "../contexts/AuthContext";
+import { useProjects, useProjectMutations } from "../hooks/useProjects";
 import { useBranchSummaries } from "../hooks/useBranchSummaries";
-import { cn } from "../lib/utils";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Input } from "./ui/input";
-import { RefreshButton } from "./ui/refresh-button";
-import { ShimmerBadge } from "./ui/shimmer-badge";
-import { ShimmerButton } from "./ui/shimmer-button";
-import { useErrorToast, useSuccessToast } from "./ui/toast";
-import { useEntityChanges } from "../hooks/useChangeSubscription";
-import { useAppSelector } from "../store/hooks";
+import { useBranchMutations } from "../hooks/useBranches";
+import { useWebSocket } from "../hooks/useWebSocketV2";
+import { useRealtimeSync } from "../hooks/useRealtimeSync";
+import { BranchSummary, Project } from "../types";
 import logger from "../utils/logger";
+import { useErrorToast, useSuccessToast } from "./ui/toast";
 
-interface ProjectListProps {
-  onSelect?: (projectId: string, branchId: string) => void;
-  selectedProjectId?: string; // Currently selected project ID from URL
-  selectedBranchId?: string; // Currently selected branch ID from URL
-  onShowGlobalContext?: () => void; // Handler for showing global context
-  onShowProjectDetails?: (project: Project) => void; // Handler for showing project details
-  onShowBranchDetails?: (project: Project, branch: any) => void; // Handler for showing branch details
-}
-
-const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, selectedBranchId, onShowGlobalContext, onShowProjectDetails, onShowBranchDetails }) => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const ProjectList: React.FC<ProjectListProps> = ({
+  onSelect,
+  selectedProjectId,
+  selectedBranchId,
+  onShowGlobalContext,
+  onShowProjectDetails,
+  onShowBranchDetails
+}) => {
   // Derive selection from URL params instead of local state
   const selected = selectedProjectId && selectedBranchId ? `${selectedProjectId}:${selectedBranchId}` : null;
 
-  // Use the new bulk API hook for optimized branch summaries
-  const {
-    summaries: allBranchSummaries,
-    projects: projectSummaries,
-    loading: loadingBulkSummaries,
-    error: bulkSummariesError,
-    refresh: refreshBulkSummaries
-  } = useBranchSummaries();
-
-  // State declarations - moved openProjects before useEffect that uses it
-  const [showCreate, setShowCreate] = useState(false);
-  const [showEdit, setShowEdit] = useState<Project | null>(null);
-  const [showDelete, setShowDelete] = useState<Project | null>(null);
-  const [showDeleteBranch, setShowDeleteBranch] = useState<{ project: Project; branch: any } | null>(null);
-  const [showCreateBranch, setShowCreateBranch] = useState<Project | null>(null);
-  const [form, setForm] = useState<{ name: string; description: string }>({ name: "", description: "" });
-  const [saving, setSaving] = useState(false);
+  // State for open/closed projects
   const [openProjects, setOpenProjects] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState<string | null>(null);
 
   // Auto-expand project when it's selected from URL
   useEffect(() => {
@@ -56,6 +33,31 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
       setOpenProjects(prev => ({ ...prev, [selectedProjectId]: true }));
     }
   }, [selectedProjectId, openProjects]);
+
+  // Auth and WebSocket
+  const { user, tokens } = useAuth();
+  const webSocketClient = useWebSocket(user?.id || '', tokens?.access_token || '');
+  const { isConnected } = webSocketClient;
+
+  // React Query hooks for data
+  const { data: projects = [], isLoading: loadingProjects, refetch: refetchProjects } = useProjects();
+  const {
+    summaries: allBranchSummaries,
+    loading: loadingBulkSummaries,
+    error: bulkSummariesError,
+    refresh: refreshBulkSummaries
+  } = useBranchSummaries();
+
+  // Real-time WebSocket sync (replaces cascade Redux)
+  useRealtimeSync(webSocketClient.client, true);
+
+  // Mutation hooks
+  const projectMutations = useProjectMutations();
+  const branchMutations = useBranchMutations();
+
+  // Toast notifications
+  const showSuccessToast = useSuccessToast();
+  const showErrorToast = useErrorToast();
 
   // Convert bulk summaries to project-keyed format for compatibility with existing UI
   const branchSummaries = React.useMemo(() => {
@@ -80,202 +82,75 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
     return result;
   }, [allBranchSummaries]);
 
-  // Get real-time branch updates from WebSocket cascade store
-  const cascadeBranches = useAppSelector(state => state.cascade?.branches || {});
-
-  // Extract task counts from bulk summaries and merge with WebSocket updates
+  // Extract task counts from bulk summaries (no more Redux cascade needed!)
   const taskCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
 
-    // Start with initial data from API
     allBranchSummaries.forEach(branch => {
       // Use standardized task_count property from backend
       counts[branch.id] = branch.task_count || 0;
     });
 
-    // Override with real-time WebSocket updates if available
-    Object.entries(cascadeBranches).forEach(([branchId, branchData]: [string, any]) => {
-      if (branchData?.task_count !== undefined) {
-        counts[branchId] = branchData.task_count;
-      }
-    });
-
     return counts;
-  }, [allBranchSummaries, cascadeBranches]);
+  }, [allBranchSummaries]);
 
-  const [deletingBranches, setDeletingBranches] = useState<Set<string>>(new Set());
-  const [previousTaskCounts, setPreviousTaskCounts] = useState<Record<string, number>>({});
-  const [animatingCounts, setAnimatingCounts] = useState<Map<string, 'up' | 'down'>>(new Map());
-
-  // Animation states for branch creation and deletion
-  const [newBranches, setNewBranches] = useState<Set<string>>(new Set());
-  const [fadingOutBranches, setFadingOutBranches] = useState<Set<string>>(new Set());
-  const [previousBranchIds, setPreviousBranchIds] = useState<Set<string>>(new Set());
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
-  // Toast notifications
-  const showSuccessToast = useSuccessToast();
-  const showErrorToast = useErrorToast();
-
-  const toggleProject = (projectId: string) => {
-    const isOpening = !openProjects[projectId];
-    // Simply toggle - branches are already preloaded
-    setOpenProjects(prev => ({ ...prev, [projectId]: isOpening }));
-  };
-
-
-
-  const fetchProjects = useCallback(async () => {
-    setLoading(true);
-    try {
-      const projectsData = await listProjects();
-      logger.debug('✅ Fetched projects data:', projectsData);
-      setProjects(projectsData);
-
-      logger.info('🚀 Using optimized bulk API for branch summaries - no individual project calls needed');
-
-    } catch (e: any) {
-      setError(e.message);
-      logger.error('❌ Failed to fetch projects:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const refreshBranchSummaries = useCallback(async () => {
-    // Use the bulk API hook's refresh function instead of manual refresh
-    console.log('🚀 REFRESH DEBUG: refreshBranchSummaries called - this will update counts');
-    logger.info('🔄 Refreshing branch summaries using optimized bulk API');
-    await refreshBulkSummaries();
-    console.log('🚀 REFRESH DEBUG: refreshBulkSummaries completed');
-  }, [refreshBulkSummaries]);
-
-  // Initial load only - real-time updates handled by useEntityChanges hook
-  useEffect(() => {
-    logger.debug('ProjectList initial load');
-    fetchProjects();
-    refreshBranchSummaries();
-  }, [fetchProjects, refreshBranchSummaries]);
-
-  // Create stable refresh callback for change pool
-  const handleDataChange = useCallback(() => {
-    console.log('🚀 CHANGE DEBUG: handleDataChange called - WebSocket event detected');
-    logger.debug('📡 ProjectList: Data change detected, refreshing...');
-    // Refresh when entity events occur using bulk API
-    fetchProjects();
-    refreshBranchSummaries();
-    console.log('🚀 CHANGE DEBUG: handleDataChange completed refresh calls');
-  }, [fetchProjects, refreshBranchSummaries]);
-
-  // Unified refresh function for UI buttons
-  const handleRefresh = useCallback(async () => {
+  // Unified refresh function
+  const handleRefresh = React.useCallback(async () => {
     logger.debug('🔄 Manual refresh triggered');
     await Promise.all([
-      fetchProjects(),
-      refreshBranchSummaries()
+      refetchProjects(),
+      refreshBulkSummaries()
     ]);
-  }, [fetchProjects, refreshBranchSummaries]);
+  }, [refetchProjects, refreshBulkSummaries]);
 
+  // Custom hooks for dialog management
+  const dialogs = useProjectDialogs();
 
-  // Subscribe to centralized change pool for real-time updates
-  useEntityChanges('ProjectList', ['task', 'project', 'branch'], handleDataChange);
+  const {
+    showCreate,
+    showEdit,
+    showDelete,
+    showCreateBranch,
+    showDeleteBranch,
+    form,
+    saving,
+    setSaving,
+    openCreateDialog,
+    openEditDialog,
+    openDeleteDialog,
+    openCreateBranchDialog,
+    openDeleteBranchDialog,
+    closeDialog,
+    setForm,
+  } = dialogs;
 
-  // Detect task count changes and trigger animations
-  useEffect(() => {
-    const changedBranches = new Map<string, 'up' | 'down'>();
+  // Custom hooks for animations (task count changes only)
+  const animations = useProjectAnimations({
+    taskCounts,
+  });
 
-    Object.entries(taskCounts).forEach(([branchId, count]) => {
-      const previousCount = previousTaskCounts[branchId];
-      if (previousCount !== undefined && previousCount !== count) {
-        const direction = count > previousCount ? 'up' : 'down';
-        changedBranches.set(branchId, direction);
-        console.log('🎯 COUNT ANIMATION: Count changed for branch', branchId, 'from', previousCount, 'to', count, 'direction:', direction);
-      }
-    });
+  const { animatingCounts } = animations;
 
-    if (changedBranches.size > 0) {
-      // Add branches to animating map with direction
-      setAnimatingCounts(prev => new Map([...prev, ...changedBranches]));
+  // Toggle project expand/collapse
+  const toggleProject = (projectId: string) => {
+    setOpenProjects(prev => ({ ...prev, [projectId]: !prev[projectId] }));
+  };
 
-      // Remove from animating set after animation completes
-      setTimeout(() => {
-        setAnimatingCounts(prev => {
-          const newMap = new Map(prev);
-          changedBranches.forEach((_, id) => newMap.delete(id));
-          return newMap;
-        });
-      }, 600); // Animation duration
-    }
-
-    // Update previous counts
-    setPreviousTaskCounts(taskCounts);
-  }, [taskCounts]);
-
-  // Detect new branches and trigger fade-in animations
-  useEffect(() => {
-    if (isInitialLoad) {
-      // Don't animate on initial load, just track current branches
-      const currentBranchIds = new Set<string>();
-      projects.forEach(project => {
-        if (project.git_branchs) {
-          Object.keys(project.git_branchs as Record<string, any>).forEach(branchId => {
-            currentBranchIds.add(branchId);
-          });
-        }
-      });
-      setPreviousBranchIds(currentBranchIds);
-      setIsInitialLoad(false);
-      return;
-    }
-
-    // Get current branch IDs
-    const currentBranchIds = new Set<string>();
-    projects.forEach(project => {
-      if (project.git_branchs) {
-        Object.keys(project.git_branchs as Record<string, any>).forEach(branchId => {
-          currentBranchIds.add(branchId);
-        });
-      }
-    });
-
-    // Find newly added branches (not in previous set)
-    const newlyAddedBranches = Array.from(currentBranchIds).filter(id => !previousBranchIds.has(id));
-
-    if (newlyAddedBranches.length > 0) {
-      logger.debug('Detected new branches for animation:', newlyAddedBranches);
-
-      // Add to newBranches for animation
-      setNewBranches(prev => {
-        const updated = new Set(prev);
-        newlyAddedBranches.forEach(id => updated.add(id));
-        return updated;
-      });
-
-      // Remove from newBranches after animation completes
-      setTimeout(() => {
-        setNewBranches(prev => {
-          const updated = new Set(prev);
-          newlyAddedBranches.forEach(id => updated.delete(id));
-          return updated;
-        });
-      }, 300); // Match animation duration
-    }
-
-    // Update previous branch IDs for next comparison
-    setPreviousBranchIds(currentBranchIds);
-  }, [projects, isInitialLoad]); // Remove previousBranchIds from dependencies
-
-  const handleCreate = async () => {
+  // CRUD operation wrappers with dialog state management
+  const handleCreateProjectWrapper = async () => {
     setSaving(true);
     try {
-      await createProject({ name: form.name, description: form.description });
+      await projectMutations.createProjectAsync({
+        name: form.name,
+        description: form.description
+      });
+
       showSuccessToast(
         'Project created successfully',
         `Project "${form.name}" has been created.`
       );
-      setShowCreate(false);
-      setForm({ name: "", description: "" });
-      fetchProjects();
+
+      closeDialog('create');
     } catch (e: any) {
       showErrorToast('Failed to create project', e.message);
       setError(e.message);
@@ -284,48 +159,24 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
     }
   };
 
-  const handleCreateBranch = async () => {
-    if (!showCreateBranch) return;
-    setSaving(true);
-    try {
-      await createBranch(showCreateBranch.id, {
-        git_branch_name: form.name,
-        description: form.description
-      });
-
-      showSuccessToast(
-        'Branch created successfully',
-        `Branch "${form.name}" has been created in project "${showCreateBranch.name}".`
-      );
-      setShowCreateBranch(null);
-      setForm({ name: "", description: "" });
-
-      // Fetch projects first, then trigger animation
-      await fetchProjects();
-
-      // Note: The animation will be triggered by the useEffect that detects new branches
-      logger.debug('Branch created, animation will be triggered by branch detection logic');
-
-    } catch (e: any) {
-      showErrorToast('Failed to create branch', e.message);
-      setError(e.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleEdit = async () => {
+  const handleEditProjectWrapper = async () => {
     if (!showEdit) return;
     setSaving(true);
     try {
-      await updateProject(showEdit.id, { name: form.name, description: form.description });
+      await projectMutations.updateProjectAsync({
+        projectId: showEdit.id,
+        updates: {
+          name: form.name,
+          description: form.description
+        }
+      });
+
       showSuccessToast(
         'Project updated successfully',
         `Project has been renamed to "${form.name}".`
       );
-      setShowEdit(null);
-      setForm({ name: "", description: "" });
-      fetchProjects();
+
+      closeDialog('edit');
     } catch (e: any) {
       showErrorToast('Failed to update project', e.message);
       setError(e.message);
@@ -334,646 +185,163 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteProjectWrapper = async () => {
     if (!showDelete) return;
+    const projectName = showDelete.name;
+
     setSaving(true);
     setError(null);
-    
-    const projectToDelete = showDelete;
-    const projectName = projectToDelete.name;
-    const projectId = projectToDelete.id;
-    
-    // Store previous state for rollback
-    const previousProjects = projects;
-    
-    // Optimistic update - immediately remove project from UI
-    setProjects(prevProjects => prevProjects.filter(p => p.id !== projectId));
-    
+
     // Close dialog immediately for better UX
-    setShowDelete(null);
-    
+    closeDialog('delete');
+
     try {
-      const result = await deleteProject(projectId);
-      if (result.success) {
-        showSuccessToast(
-          'Project deleted successfully',
-          `Project "${projectName}" has been removed.`
-        );
-        // Don't refresh - optimistic update already handled it
-      } else {
-        // Restore the project on failure
-        setProjects(previousProjects);
-        // Show the specific validation error from backend
-        const errorMsg = result.error || result.message || "Failed to delete project";
-        // Make error message more user-friendly
-        const userFriendlyMsg = errorMsg
-          .replace(/\(\d+ branches:/, '(branches:')  // Remove branch count from parentheses
-          .replace(/Delete other branches first.*/, 'Please delete all branches except "main" first.')
-          .replace(/Delete all tasks first.*/, 'Please delete all tasks from the main branch first.');
-        showErrorToast('Cannot Delete Project', userFriendlyMsg);
-        setError(userFriendlyMsg);
-      }
+      await projectMutations.deleteProjectAsync(showDelete.id);
+      // Success toast will be shown by mutation hook
     } catch (e: any) {
-      // Restore the project on error
-      setProjects(previousProjects);
-      // Handle the case where the API call fails
-      logger.error('Delete project error:', e);
-      const errorMessage = e.message || "Failed to delete project";
-      showErrorToast('Network error', errorMessage);
-      setError(errorMessage);
+      // Make error message more user-friendly
+      const errorMsg = e.message || "Failed to delete project";
+      const userFriendlyMsg = errorMsg
+        .replace(/\(\d+ branches:/, '(branches:')
+        .replace(/Delete other branches first.*/, 'Please delete all branches except "main" first.')
+        .replace(/Delete all tasks first.*/, 'Please delete all tasks from the main branch first.');
+
+      showErrorToast('Cannot Delete Project', userFriendlyMsg);
+      setError(userFriendlyMsg);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteBranch = async () => {
+  const handleCreateBranchWrapper = async () => {
+    if (!showCreateBranch) return;
+    setSaving(true);
+    try {
+      await branchMutations.createBranchAsync({
+        projectId: showCreateBranch.id,
+        branch: {
+          git_branch_name: form.name,
+          description: form.description
+        }
+      });
+
+      showSuccessToast(
+        'Branch created successfully',
+        `Branch "${form.name}" has been created in project "${showCreateBranch.name}".`
+      );
+
+      closeDialog('createBranch');
+    } catch (e: any) {
+      showErrorToast('Failed to create branch', e.message);
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteBranchWrapper = async () => {
     if (!showDeleteBranch) return;
 
-    const projectId = showDeleteBranch.project.id;
-    const branchId = showDeleteBranch.branch.id;
-    const branchName = showDeleteBranch.branch.git_branch_name || showDeleteBranch.branch.name;
-
-    // Start fade-out animation first
-    setFadingOutBranches(prev => new Set(prev).add(branchId));
     setSaving(true);
 
-    // Wait for fade-out animation to complete before proceeding
-    setTimeout(async () => {
-      // Mark branch as being deleted (for loading state)
-      setDeletingBranches(prev => new Set(prev).add(branchId));
-
-      // Store backup data for rollback
-      const backupProjects = [...projects];
-    
-    // Optimistically remove the branch from UI
     try {
-      // Remove from projects state
-      setProjects(prev => prev.map(project => {
-        if (project.id === projectId && project.git_branchs) {
-          const updatedBranches = { ...project.git_branchs };
-          delete updatedBranches[branchId];
-          return { ...project, git_branchs: updatedBranches };
-        }
-        return project;
-      }));
-      
-      // Note: Branch summaries and task counts are managed by the useBranchSummaries hook
-      // and will be refreshed automatically after successful deletion
-      
-      logger.debug('Optimistically removed branch from UI, attempting deletion:', branchId);
-      
-      // Attempt actual deletion
-      const result = await deleteBranch(branchId);
-      logger.debug('Delete result:', result);
-      
-      if (result.success) {
-        // Success! WebSocket notification will show toast and update UI
-        // No need for duplicate notification here
-        setShowDeleteBranch(null);
+      await branchMutations.deleteBranchAsync(showDeleteBranch.branch.id);
 
-        // UI will be updated by WebSocket event handler
-        logger.debug('Branch deletion successful - WebSocket notification will update UI');
-      } else {
-        // Backend deletion failed - rollback UI changes
-        logger.error('Backend deletion failed, rolling back:', result);
-        setProjects(backupProjects);
-        // Refresh branch summaries to restore UI state
-        refreshBranchSummaries();
-        
-        const errorMsg = result.error || result.message || "Failed to delete branch";
-        showErrorToast(
-          'Failed to delete branch',
-          errorMsg,
-          {
-            label: 'Retry',
-            onClick: () => handleDeleteBranch()
-          }
-        );
-        setError(errorMsg);
-      }
+      closeDialog('deleteBranch');
+      // Success - mutation hook handles cache updates via optimistic updates
     } catch (e: any) {
-      // Network/API error - rollback UI changes
-      logger.error('Delete branch error, rolling back:', e);
-      setProjects(backupProjects);
-      // Refresh branch summaries to restore UI state
-      refreshBranchSummaries();
-      
       const errorMessage = e.message || "Failed to delete branch";
       showErrorToast(
-        'Network error',
+        'Failed to delete branch',
         errorMessage,
         {
           label: 'Retry',
-          onClick: () => handleDeleteBranch()
+          onClick: () => handleDeleteBranchWrapper()
         }
       );
       setError(errorMessage);
     } finally {
-      // Clean up loading states
-      setDeletingBranches(prev => {
-        const updated = new Set(prev);
-        updated.delete(branchId);
-        return updated;
-      });
-
-      // Clean up animation states
-      setFadingOutBranches(prev => {
-        const updated = new Set(prev);
-        updated.delete(branchId);
-        return updated;
-      });
-
       setSaving(false);
     }
-    }, 300); // Animation duration
   };
 
-  if ((loading && projects.length === 0) || loadingBulkSummaries) return (
-    <div className="flex items-center gap-2 text-xs text-muted-foreground px-2 py-1">
-      <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
-      {loading ? 'Loading projects...' : 'Loading branch summaries...'}
-    </div>
-  );
-  if (error || bulkSummariesError) return (
-    <div className="text-xs text-destructive px-2 py-1">
-      Error: {error || bulkSummariesError}
-    </div>
-  );
+  // Form change handler
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'name' | 'description') => {
+    setForm(prev => ({ ...prev, [field]: e.target.value }));
+  };
 
+  // Combine loading states
+  const loading = loadingProjects || loadingBulkSummaries;
+
+  // Loading and error states
+  if (loading && projects.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-muted-foreground px-2 py-1">
+        <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
+        Loading projects...
+      </div>
+    );
+  }
+
+  if (error || bulkSummariesError) {
+    return (
+      <div className="text-xs text-destructive px-2 py-1">
+        Error: {error || bulkSummariesError}
+      </div>
+    );
+  }
+
+  // Main render
   return (
     <div className="flex flex-col gap-2 overflow-visible">
-      {/* CSS for count change animation */}
-      <style>{`
-        @keyframes countPulse {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-          }
-          25% {
-            transform: scale(1.2);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
-          }
-          50% {
-            transform: scale(1.1);
-            box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
-          }
-        }
+      <ProjectListHeader
+        loading={loading}
+        loadingBulkSummaries={loadingBulkSummaries}
+        isConnected={isConnected}
+        onRefresh={handleRefresh}
+        onShowGlobalContext={onShowGlobalContext}
+        onCreateProject={openCreateDialog}
+      />
 
-        .count-pulse {
-          animation: countPulse 0.6s ease-in-out;
-        }
+      <ProjectListContent
+        projects={projects}
+        branchSummaries={branchSummaries}
+        taskCounts={taskCounts}
+        openProjects={openProjects}
+        selected={selected}
+        animatingCounts={animatingCounts}
+        onToggleProject={toggleProject}
+        onSelectBranch={onSelect}
+        onShowProjectDetails={onShowProjectDetails}
+        onShowBranchDetails={onShowBranchDetails}
+        onCreateBranch={openCreateBranchDialog}
+        onEditProject={openEditDialog}
+        onDeleteProject={openDeleteDialog}
+        onDeleteBranch={openDeleteBranchDialog}
+      />
 
-        .count-change-up {
-          animation: countPulse 0.6s ease-in-out;
-          background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
-        }
-
-        .count-change-down {
-          animation: countPulse 0.6s ease-in-out;
-          background: linear-gradient(135deg, #ef4444 0%, #f87171 100%) !important;
-        }
-      `}</style>
-      {/* Mobile-optimized header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-2">
-        {/* Title section */}
-        <div className="flex items-center justify-between sm:justify-start">
-          <span className="font-bold text-base sm:text-lg">Projects</span>
-          {/* Refresh button on mobile - next to title */}
-          <RefreshButton
-            onClick={handleRefresh}
-            loading={loading || loadingBulkSummaries}
-            className="sm:hidden"
-            size="icon"
-            title="Refresh projects and branch summaries"
-          />
-        </div>
-        
-        {/* Action buttons - responsive layout */}
-        <div className="flex gap-2 justify-end sm:w-auto">
-          {/* Hidden refresh on desktop (shown in different position) */}
-          <RefreshButton
-            onClick={handleRefresh}
-            loading={loading || loadingBulkSummaries}
-            className="hidden sm:flex lg:hidden"
-            size="icon"
-            title="Refresh projects and branch summaries"
-          />
-          <RefreshButton
-            onClick={handleRefresh}
-            loading={loading || loadingBulkSummaries}
-            className="hidden lg:flex"
-            size="sm"
-            title="Refresh projects and branch summaries"
-          />
-
-
-          {/* Global context button */}
-          <ShimmerButton 
-            size="sm" 
-            variant="outline" 
-            onClick={() => onShowGlobalContext && onShowGlobalContext()}
-            aria-label="View/Edit Global Context"
-            title="View and Edit Global Context"
-            className="flex-1 sm:flex-initial min-w-0"
-          >
-            <Globe className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Global</span>
-          </ShimmerButton>
-          
-          {/* New project button */}
-          <ShimmerButton 
-            size="sm" 
-            variant="default" 
-            onClick={() => { setShowCreate(true); setForm({ name: "", description: "" }); }}
-            className="flex-1 sm:flex-initial min-w-0"
-            title="Create New Project"
-          >
-            <Plus className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">New Project</span>
-          </ShimmerButton>
-        </div>
-      </div>
-      {projects.length === 0 ? (
-        <div className="text-xs text-muted-foreground">No projects found.</div>
-      ) : (
-        <ul className="flex flex-col gap-1">
-          {projects.map((project) => (
-            <li key={project.id}>
-              <div
-                className="group relative flex items-center justify-between p-2 rounded-md hover:bg-background-hover transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2 flex-1" onClick={() => toggleProject(project.id)}>
-                  {openProjects[project.id] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                  <Folder className="w-4 h-4" />
-                  <span className="font-semibold text-sm truncate text-left" title={project.name}>{project.name}</span>
-                  <div className="flex gap-1 ml-2">
-                    {project.git_branchs && Object.keys(project.git_branchs as Record<string, any>).length > 0 && (
-                      <ShimmerBadge variant={openProjects[project.id] ? "secondary" : "outline"} className="text-xs">
-                        {Object.keys(project.git_branchs as Record<string, any>).length} {Object.keys(project.git_branchs as Record<string, any>).length === 1 ? 'branch' : 'branches'}
-                      </ShimmerBadge>
-                    )}
-                    {(() => {
-                      const branches = project.git_branchs as Record<string, any>;
-                      const totalTasks = branches ?
-                        Object.values(branches).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) : 0;
-                      return totalTasks > 0 ? (
-                        <ShimmerBadge variant="default" className="text-xs">
-                          {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
-                        </ShimmerBadge>
-                      ) : null;
-                    })()}
-                  </div>
-                </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                  <ShimmerButton 
-                    size="icon" 
-                    variant="ghost" 
-                    className="h-7 w-7" 
-                    aria-label="View Project Details" 
-                    title="View Project Details"
-                    onClick={() => onShowProjectDetails && onShowProjectDetails(project)}
-                  >
-                    <Eye className="w-3 h-3" />
-                  </ShimmerButton>
-                  <ShimmerButton size="icon" variant="ghost" className="h-7 w-7" aria-label="Create Branch" onClick={() => { setShowCreateBranch(project); setForm({ name: "", description: "" }); }}>
-                    <GitBranchPlus className="w-3 h-3" />
-                  </ShimmerButton>
-                  <ShimmerButton size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit" onClick={() => { setShowEdit(project); setForm({ name: project.name, description: project.description || "" }); }}>
-                    <Pencil className="w-3 h-3" />
-                  </ShimmerButton>
-                  <ShimmerButton size="icon" variant="ghost" className="h-7 w-7" aria-label="Delete" onClick={() => setShowDelete(project)}>
-                    <Trash2 className="w-3 h-3 text-destructive" />
-                  </ShimmerButton>
-                </div>
-              </div>
-              <ul className="flex flex-col gap-1 ml-8 mt-1" style={{ display: openProjects[project.id] ? 'flex' : 'none' }}>
-                  {branchSummaries[project.id] ? (
-                    // Use optimized branch summaries if available
-                    branchSummaries[project.id].map((branch) => (
-                      <li key={branch.id}>
-                        <div className={cn(
-                          "group relative flex items-center gap-1 transition-all duration-300 ease-in-out",
-                          // Fade-in animation for new branches
-                          newBranches.has(branch.id) && "opacity-0 -translate-x-2.5",
-                          !newBranches.has(branch.id) && "opacity-100 translate-x-0",
-                          // Fade-out animation for deleting branches
-                          fadingOutBranches.has(branch.id) && "opacity-0 -translate-x-2.5 pointer-events-none",
-                          // Loading state for deletion process
-                          deletingBranches.has(branch.id) && !fadingOutBranches.has(branch.id) && "opacity-50 pointer-events-none"
-                        )}>
-                          <span className="text-muted-foreground">—</span>
-                          <ShimmerButton
-                            size="sm"
-                            variant={selected === `${project.id}:${branch.id}` ? "default" : "ghost"}
-                            className={cn(
-                              "flex-1 justify-start text-xs text-left",
-                              selected === `${project.id}:${branch.id}` && "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700"
-                            )}
-                            onClick={() => {
-                              onSelect && onSelect(project.id, branch.id);
-                            }}
-                          >
-                            <span className="truncate text-left flex-1">{branch.git_branch_name || branch.name}</span>
-                            <div className="flex items-center gap-1">
-                              <ShimmerBadge variant="secondary" className="text-xs">
-                                {taskCounts[branch.id] ?? 0}
-                              </ShimmerBadge>
-                              {branch.has_urgent_tasks && (
-                                <ShimmerBadge variant="destructive" className="text-xs">!</ShimmerBadge>
-                              )}
-                              {branch.is_completed && (
-                                <ShimmerBadge variant="secondary" className="text-xs text-green-600">✓</ShimmerBadge>
-                              )}
-                            </div>
-                          </ShimmerButton>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                            <ShimmerButton 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6"
-                              onClick={() => onShowBranchDetails && onShowBranchDetails(project, branch)}
-                              aria-label="View Branch Details"
-                              title="View Branch Details"
-                            >
-                              <Eye className="w-3 h-3" />
-                            </ShimmerButton>
-                            {(branch.git_branch_name || branch.name) !== 'main' && (
-                              <ShimmerButton 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-6 w-6"
-                                onClick={() => setShowDeleteBranch({ project, branch })}
-                                disabled={deletingBranches.has(branch.id)}
-                                aria-label={deletingBranches.has(branch.id) ? "Deleting Branch..." : "Delete Branch"}
-                              >
-                                {deletingBranches.has(branch.id) ? (
-                                  <div className="animate-spin h-3 w-3 border-2 border-destructive border-t-transparent rounded-full" />
-                                ) : (
-                                  <Trash2 className="w-3 h-3 text-destructive" />
-                                )}
-                              </ShimmerButton>
-                            )}
-                          </div>
-                        </div>
-                      </li>
-                    ))
-                  ) : project.git_branchs ? (
-                    // Fallback to original branch data if optimized not loaded
-                    Object.values(project.git_branchs as Record<string, any>).map((tree: any) => (
-                      <li key={tree.id}>
-                        <div className={cn(
-                          "group relative flex items-center gap-1 transition-all duration-300 ease-in-out",
-                          // Fade-in animation for new branches
-                          newBranches.has(tree.id) && "opacity-0 -translate-x-2.5",
-                          !newBranches.has(tree.id) && "opacity-100 translate-x-0",
-                          // Fade-out animation for deleting branches
-                          fadingOutBranches.has(tree.id) && "opacity-0 -translate-x-2.5 pointer-events-none",
-                          // Loading state for deletion process
-                          deletingBranches.has(tree.id) && !fadingOutBranches.has(tree.id) && "opacity-50 pointer-events-none"
-                        )}>
-                          <span className="text-muted-foreground">—</span>
-                          <ShimmerButton
-                            size="sm"
-                            variant={selected === `${project.id}:${tree.id}` ? "secondary" : "ghost"}
-                            className="flex-1 justify-start text-xs text-left"
-                            onClick={() => {
-                              onSelect && onSelect(project.id, tree.id);
-                            }}
-                          >
-                            <span className="truncate text-left flex-1">{tree.git_branch_name || tree.name}</span>
-                            <ShimmerBadge
-                              variant="secondary"
-                              className={cn(
-                                "text-xs ml-2",
-                                animatingCounts.get(tree.id) === 'up' && "count-change-up",
-                                animatingCounts.get(tree.id) === 'down' && "count-change-down",
-                                animatingCounts.has(tree.id) && "count-pulse"
-                              )}
-                            >
-                              {tree.task_count !== undefined ? tree.task_count : (taskCounts[tree.id as string] ?? 0)}
-                            </ShimmerBadge>
-                          </ShimmerButton>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                            <ShimmerButton 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6"
-                              onClick={() => onShowBranchDetails && onShowBranchDetails(project, tree)}
-                              aria-label="View Branch Details"
-                              title="View Branch Details"
-                            >
-                              <Eye className="w-3 h-3" />
-                            </ShimmerButton>
-                            {(tree.git_branch_name || tree.name) !== 'main' && (
-                              <ShimmerButton 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-6 w-6"
-                                onClick={() => setShowDeleteBranch({ project, branch: tree })}
-                                disabled={deletingBranches.has(tree.id)}
-                                aria-label={deletingBranches.has(tree.id) ? "Deleting Branch..." : "Delete Branch"}
-                              >
-                                {deletingBranches.has(tree.id) ? (
-                                  <div className="animate-spin h-3 w-3 border-2 border-destructive border-t-transparent rounded-full" />
-                                ) : (
-                                  <Trash2 className="w-3 h-3 text-destructive" />
-                                )}
-                              </ShimmerButton>
-                            )}
-                          </div>
-                        </div>
-                      </li>
-                    ))
-                  ) : null}
-                </ul>
-            </li>
-          ))}
-        </ul>
-      )}
-      {/* Dialogs */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">New Project</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
-            <Input
-              placeholder="Project name"
-              value={form.name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, name: e.target.value }))}
-              autoFocus
-              className="h-8 text-sm"
-            />
-            <Input
-              placeholder="Description (optional)"
-              value={form.description}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, description: e.target.value }))}
-              className="h-8 text-sm"
-            />
-          </div>
-          <DialogFooter className="mt-3">
-            <ShimmerButton variant="secondary" onClick={() => setShowCreate(false)} size="sm">Cancel</ShimmerButton>
-            <ShimmerButton variant="default" onClick={handleCreate} disabled={!form.name.trim()} size="sm">
-              Create
-            </ShimmerButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!showCreateBranch} onOpenChange={(v) => !v && setShowCreateBranch(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">New Branch in {showCreateBranch?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
-            <Input
-              placeholder="Branch name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              autoFocus
-              disabled={saving}
-              className="h-8 text-sm"
-            />
-            <Input
-              placeholder="Description (optional)"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              disabled={saving}
-              className="h-8 text-sm"
-            />
-          </div>
-          <DialogFooter className="mt-3">
-            <ShimmerButton variant="secondary" onClick={() => setShowCreateBranch(null)} disabled={saving} size="sm">Cancel</ShimmerButton>
-            <ShimmerButton onClick={handleCreateBranch} disabled={saving || !form.name.trim()} size="sm">
-              {saving ? "Creating..." : "Create"}
-            </ShimmerButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!showEdit} onOpenChange={(v: boolean) => { if (!v) setShowEdit(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">Edit Project</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
-            <Input
-              placeholder="Project name"
-              value={form.name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, name: e.target.value }))}
-              autoFocus
-              className="h-8 text-sm"
-            />
-            <Input
-              placeholder="Description (optional)"
-              value={form.description}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, description: e.target.value }))}
-              className="h-8 text-sm"
-            />
-          </div>
-          <DialogFooter className="mt-3">
-            <ShimmerButton variant="secondary" onClick={() => setShowEdit(null)} size="sm">Cancel</ShimmerButton>
-            <ShimmerButton variant="default" onClick={handleEdit} disabled={!form.name.trim()} size="sm">
-              Save
-            </ShimmerButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!showDelete} onOpenChange={(v: boolean) => { if (!v) setShowDelete(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">Delete Project</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <p className="text-sm">Are you sure you want to delete the project <strong>{showDelete?.name}</strong>?</p>
-            {showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1 && (
-              <p className="text-sm text-amber-600 dark:text-amber-400">
-                ⚠️ This project has {Object.keys(showDelete.git_branchs as Record<string, any>).length} branches. You must delete all branches except "main" before deleting the project.
-              </p>
-            )}
-            {showDelete && showDelete.git_branchs && (() => {
-              const branches = showDelete.git_branchs as Record<string, any>;
-              const totalTasks = Object.values(branches).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0);
-              return totalTasks > 0 ? (
-                <p className="text-sm text-amber-600 dark:text-amber-400">
-                  ⚠️ This project contains {totalTasks} task{totalTasks === 1 ? '' : 's'}. All tasks must be deleted first.
-                </p>
-              ) : null;
-            })()}
-            <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
-          </div>
-          <DialogFooter className="mt-3">
-            <ShimmerButton variant="secondary" onClick={() => setShowDelete(null)} size="sm">Cancel</ShimmerButton>
-            <ShimmerButton 
-              variant={
-                (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
-                  ? "secondary" 
-                  : "destructive"
-              }
-              onClick={handleDelete} 
-              size="sm" 
-              disabled={
-                saving || 
-                (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
-              }
-              title={
-                (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) 
-                  ? "Delete all branches except 'main' first" 
-                  : (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) > 0)
-                    ? "Delete all tasks first"
-                    : undefined
-              }
-              className={
-                (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
-                  ? "opacity-50 cursor-not-allowed" 
-                  : ""
-              }
-            >
-              {saving ? "Deleting..." : "Delete Project"}
-            </ShimmerButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Branch Dialog */}
-      <Dialog open={!!showDeleteBranch} onOpenChange={(v: boolean) => { if (!v) setShowDeleteBranch(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">Delete Branch</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <p className="text-sm">Are you sure you want to delete the branch <strong>{showDeleteBranch?.branch.git_branch_name || showDeleteBranch?.branch.name}</strong> from project <strong>{showDeleteBranch?.project.name}</strong>?</p>
-            {showDeleteBranch && (showDeleteBranch.branch.task_count || 0) > 0 && (
-              <p className="text-sm text-destructive">
-                Warning: This branch contains {showDeleteBranch.branch.task_count || 0} task(s) that will also be deleted.
-              </p>
-            )}
-            <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
-          </div>
-          <DialogFooter className="mt-3">
-            <ShimmerButton variant="secondary" onClick={() => setShowDeleteBranch(null)} size="sm" disabled={saving}>
-              Cancel
-            </ShimmerButton>
-            <ShimmerButton 
-              variant="destructive" 
-              onClick={handleDeleteBranch} 
-              size="sm"
-              disabled={saving}
-            >
-              {saving ? "Deleting..." : "Delete Branch"}
-            </ShimmerButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-
-
+      <ProjectDialogs
+        showCreate={showCreate}
+        showEdit={showEdit}
+        showDelete={showDelete}
+        showCreateBranch={showCreateBranch}
+        showDeleteBranch={showDeleteBranch}
+        form={form}
+        saving={saving}
+        onCloseCreate={() => closeDialog('create')}
+        onCloseEdit={() => closeDialog('edit')}
+        onCloseDelete={() => closeDialog('delete')}
+        onCloseCreateBranch={() => closeDialog('createBranch')}
+        onCloseDeleteBranch={() => closeDialog('deleteBranch')}
+        onFormChange={handleFormChange}
+        onCreateProject={handleCreateProjectWrapper}
+        onEditProject={handleEditProjectWrapper}
+        onDeleteProject={handleDeleteProjectWrapper}
+        onCreateBranch={handleCreateBranchWrapper}
+        onDeleteBranch={handleDeleteBranchWrapper}
+      />
     </div>
   );
 };
 
-export default ProjectList; 
+export default ProjectList;

@@ -1,17 +1,11 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { WebSocketClient, WSMessage } from '../services/WebSocketClient';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
-  connected,
-  disconnected,
-  reconnecting,
-  reconnectFailed,
-  error,
-  messageReceived,
-  selectIsConnected,
-  selectIsReconnecting,
-  selectWebSocketError,
-} from '../store/slices/webSocketSlice';
+  useIsConnected,
+  useIsReconnecting,
+  useWebSocketError,
+  getWebSocketState,
+} from '../store/websocket';
 import { webSocketAnimationService } from '../services/WebSocketAnimationService';
 import { initializeWebSocketIntegration } from '../services/changePoolService';
 import { notificationService } from '../services/notificationService';
@@ -34,14 +28,13 @@ let globalIntegrationsInitialized = false;
  * Implements singleton pattern to prevent multiple connections
  */
 export function useWebSocket(userId: string, token: string) {
-  const dispatch = useAppDispatch();
   const clientRef = useRef<WebSocketClient | null>(null);
   const prevCredentialsRef = useRef<{userId: string, token: string} | null>(null);
 
-  // Get WebSocket state from Redux store
-  const isConnected = useAppSelector(selectIsConnected);
-  const isReconnecting = useAppSelector(selectIsReconnecting);
-  const wsError = useAppSelector(selectWebSocketError);
+  // Get WebSocket state from Zustand store
+  const isConnected = useIsConnected();
+  const isReconnecting = useIsReconnecting();
+  const wsError = useWebSocketError();
 
   useEffect(() => {
     // Check if this is a credential CHANGE (logout/expiry) vs mount cycle
@@ -124,8 +117,8 @@ export function useWebSocket(userId: string, token: string) {
         WSValidationStats.record(validationResult);
       }
 
-      // Dispatch message to Redux store
-      dispatch(messageReceived(message));
+      // Add message to Zustand store
+      getWebSocketState().addMessage(message);
 
       // Note: Cascade data integration removed - was write-only (stored but never read)
     });
@@ -145,36 +138,33 @@ export function useWebSocket(userId: string, token: string) {
     // Handle connection events
     client.on('connected', () => {
       logger.info('[WebSocket] ✅ Connected');
-      dispatch(connected({}));
+      getWebSocketState().setConnected();
     });
 
     client.on('disconnected', () => {
       logger.warn('[WebSocket] ❌ Disconnected');
-      dispatch(disconnected());
+      getWebSocketState().setDisconnected();
     });
 
     // Handle reconnecting event with attempt details
     client.on('reconnecting', (details: {attempt: number, maxAttempts: number, delay: number}) => {
       logger.info(`[WebSocket] 🔄 Reconnecting (${details.attempt}/${details.maxAttempts})`);
-      dispatch(reconnecting({
-        attempt: details.attempt,
-        maxAttempts: details.maxAttempts
-      }));
+      getWebSocketState().setReconnecting(details.attempt);
     });
 
     client.on('error', (errorEvent: Event) => {
       logger.error('[WebSocket] ❌ Error:', errorEvent);
-      dispatch(error('WebSocket connection error'));
+      getWebSocketState().setError('WebSocket connection error');
     });
 
     client.on('reconnectFailed', () => {
       logger.error('[WebSocket] ❌ Reconnect failed');
-      dispatch(reconnectFailed());
+      getWebSocketState().setReconnectFailed();
     });
 
     client.on('authenticationFailed', (reason: string) => {
       logger.error('[WebSocket] ❌ Auth failed:', reason);
-      dispatch(error(`WebSocket authentication failed: ${reason}`));
+      getWebSocketState().setError(`WebSocket authentication failed: ${reason}`);
     });
 
     // Initialize services only once per global client
@@ -197,7 +187,7 @@ export function useWebSocket(userId: string, token: string) {
       clientRef.current = null;
       logger.debug('[useWebSocket] Component cleanup executed', undefined, 'useWebSocketV2.ts');
     };
-  }, [userId, token, dispatch]);
+  }, [userId, token]);
 
   /**
    * Send message to WebSocket server
@@ -234,6 +224,7 @@ export function useWebSocket(userId: string, token: string) {
   }, []);
 
   return {
+    client: clientRef.current,
     isConnected,
     isReconnecting,
     error: wsError ? new Error(wsError) : null,

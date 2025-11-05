@@ -101,13 +101,15 @@ export function validateWebSocketMessage(message: WSMessage): WSValidationResult
     }
   }
 
+  // Check root-level timestamp (per Protocol v2.0 spec)
+  if (!message.timestamp) {
+    warnings.push('message.timestamp is missing');
+  }
+
   // Check metadata
   if (!message.metadata) {
     warnings.push('message.metadata is missing');
   } else {
-    if (!message.metadata.timestamp) {
-      warnings.push('message.metadata.timestamp is missing');
-    }
     if (!message.metadata.source) {
       warnings.push('message.metadata.source is missing');
     }

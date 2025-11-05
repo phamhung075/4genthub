@@ -1,7 +1,7 @@
 // Custom hook to manage parent task information for subtask displays
 
-import { useState, useEffect, useCallback } from 'react';
-import { getTask, Task } from '../api';
+import { useQuery } from '@tanstack/react-query';
+import { getTask } from '../api';
 import logger from '../utils/logger';
 
 interface ParentTaskInfo {
@@ -13,99 +13,71 @@ interface ParentTaskInfo {
 
 interface UseParentTaskInfoReturn {
   parentTaskInfo: ParentTaskInfo | null;
-  loading: boolean;
+  isLoading: boolean;
   error: string | null;
   refetch: () => void;
 }
 
-// Cache for parent task info to avoid repeated API calls
-const parentTaskCache = new Map<string, ParentTaskInfo>();
-
 /**
- * Custom hook to fetch and cache parent task information
+ * Custom hook to fetch and cache parent task information using React Query
  * @param parentTaskId The ID of the parent task
  * @returns Parent task information, loading state, error state, and refetch function
  */
 export const useParentTaskInfo = (parentTaskId: string): UseParentTaskInfoReturn => {
-  const [parentTaskInfo, setParentTaskInfo] = useState<ParentTaskInfo | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchParentTaskInfo = useCallback(async () => {
-    if (!parentTaskId) {
-      return;
-    }
-
-    // Check cache first
-    const cached = parentTaskCache.get(parentTaskId);
-    if (cached) {
-      setParentTaskInfo(cached);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      logger.debug('[useParentTaskInfo] Fetching parent task info for:', parentTaskId);
-      const response = await getTask(parentTaskId);
-
-      // Handle both response.task and direct task response formats
-      const taskData = response?.task || response;
-
-      if (taskData && taskData.id) {
-        const info: ParentTaskInfo = {
-          id: taskData.id,
-          title: taskData.title || 'Untitled Task',
-          status: taskData.status,
-          priority: taskData.priority
-        };
-
-        // Cache the result
-        parentTaskCache.set(parentTaskId, info);
-        setParentTaskInfo(info);
-
-        logger.debug('[useParentTaskInfo] Successfully fetched parent task info:', info);
-      } else {
-        throw new Error('Invalid task data received');
-      }
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to fetch parent task information';
-      logger.error('[useParentTaskInfo] Error fetching parent task:', err);
-      setError(errorMessage);
-
-      // Create a fallback info object
-      const fallbackInfo: ParentTaskInfo = {
-        id: parentTaskId,
-        title: 'Unknown Task'
-      };
-      setParentTaskInfo(fallbackInfo);
-    } finally {
-      setLoading(false);
-    }
-  }, [parentTaskId]);
-
-  const refetch = useCallback(() => {
-    // Clear cache for this task and refetch
-    parentTaskCache.delete(parentTaskId);
-    fetchParentTaskInfo();
-  }, [parentTaskId, fetchParentTaskInfo]);
-
-  useEffect(() => {
-    fetchParentTaskInfo();
-  }, [fetchParentTaskInfo]);
-
-  return {
-    parentTaskInfo,
-    loading,
+  const {
+    data: parentTaskInfo,
+    isLoading,
     error,
     refetch
-  };
-};
+  } = useQuery({
+    queryKey: ['parentTask', parentTaskId],
+    queryFn: async () => {
+      if (!parentTaskId) {
+        return null;
+      }
 
-/**
- * Clear the parent task cache (useful for testing or when task info changes)
- */
-export const clearParentTaskCache = () => {
-  parentTaskCache.clear();
+      logger.debug('[useParentTaskInfo] Fetching parent task info for:', parentTaskId);
+
+      try {
+        const response = await getTask(parentTaskId);
+
+        // Handle both response.task and direct task response formats
+        const taskData = response?.task || response;
+
+        if (taskData && taskData.id) {
+          const info: ParentTaskInfo = {
+            id: taskData.id,
+            title: taskData.title || 'Untitled Task',
+            status: taskData.status,
+            priority: taskData.priority
+          };
+
+          logger.debug('[useParentTaskInfo] Successfully fetched parent task info:', info);
+          return info;
+        }
+
+        throw new Error('Invalid task data received');
+      } catch (err: any) {
+        logger.error('[useParentTaskInfo] Error fetching parent task:', err);
+
+        // Return fallback info on error
+        return {
+          id: parentTaskId,
+          title: 'Unknown Task'
+        };
+      }
+    },
+    enabled: !!parentTaskId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    retry: 2,
+    refetchOnWindowFocus: false
+  });
+
+  return {
+    parentTaskInfo: parentTaskInfo || null,
+    isLoading,
+    error: error ? (error as Error).message : null,
+    refetch: () => { refetch(); }
+  };
 };

@@ -218,6 +218,16 @@ export const deleteProject = async (project_id: string): Promise<DeleteResponse>
 };
 
 // --- Branch Operations ---
+export const listBranches = async (project_id: string): Promise<Branch[]> => {
+    try {
+        const response = await branchApiV2.getBranches(project_id) as BranchesResponse;
+        return response.branches || [];
+    } catch (error) {
+        logger.error('listBranches: Error fetching branches:', error);
+        throw error;
+    }
+};
+
 // Get bulk summaries using the new optimized endpoint
 export const createBranch = async (project_id: string, branch: Partial<Branch>): Promise<Branch> => {
     const response = await branchApiV2.createBranch(project_id, {

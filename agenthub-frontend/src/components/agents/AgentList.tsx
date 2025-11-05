@@ -46,7 +46,7 @@ export const AgentList: React.FC<AgentListProps> = ({
   onShareAgent,
   onCreateNew,
 }) => {
-  const { instances, loading, error, loadInstances } = useUserAgentInstances();
+  const { instances, isLoading, error, loadInstances } = useUserAgentInstances();
 
   // Local state for filtering and search
   const [searchQuery, setSearchQuery] = useState('');
@@ -176,7 +176,7 @@ export const AgentList: React.FC<AgentListProps> = ({
       </div>
 
       {/* Loading State */}
-      {loading && (
+      {isLoading && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map(i => (
             <Card key={i} className="animate-pulse">
@@ -196,7 +196,7 @@ export const AgentList: React.FC<AgentListProps> = ({
       )}
 
       {/* Agent Cards Grid */}
-      {!loading && filteredInstances.length > 0 && (
+      {!isLoading && filteredInstances.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredInstances.map(instance => (
             <AgentCard
@@ -211,7 +211,7 @@ export const AgentList: React.FC<AgentListProps> = ({
       )}
 
       {/* Empty State */}
-      {!loading && filteredInstances.length === 0 && (
+      {!isLoading && filteredInstances.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <User className="h-12 w-12 text-muted-foreground mb-4" />

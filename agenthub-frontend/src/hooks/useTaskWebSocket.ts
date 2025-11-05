@@ -1,8 +1,6 @@
-import { useCallback, useRef, useEffect, useMemo } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useTaskWebSocket as useTaskWebSocketV2 } from './useWebSocketV2';
 import { useEntityChanges } from './useChangeSubscription';
-import { useAppSelector } from '../store/hooks';
-import { TaskSummary } from '../types/taskTypes';
 import logger from '../utils/logger';
 
 interface UseTaskWebSocketOptions {
@@ -17,7 +15,6 @@ interface UseTaskWebSocketReturn {
   isConnected: boolean;
   isReconnecting: boolean;
   error: Error | null;
-  branchTaskTotal: number | undefined;
   handleTaskChanges: (notification?: any) => Promise<void>;
 }
 
@@ -32,33 +29,9 @@ export function useTaskWebSocket({
   // Initialize WebSocket for real-time task updates
   const { isConnected, isReconnecting, error } = useTaskWebSocketV2(userId, token);
 
-  // Real-time branch summary from WebSocket cascade store
-  const branchSummary = useAppSelector(state => state.cascade?.branches?.[taskTreeId]);
-
   // Debounce timer ref for batching rapid changes
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isLoadingRef = useRef(false);
-
-  // Derive branch-reported totals from WebSocket cascade payload
-  const branchTaskTotal = useMemo(() => {
-    if (!branchSummary) return undefined;
-
-    const counts = branchSummary.task_counts;
-    if (counts && typeof counts.total === "number") {
-      return counts.total;
-    }
-
-    // Use standardized task_count property
-    const candidateTotals = [branchSummary.task_count];
-
-    for (const value of candidateTotals) {
-      if (typeof value === "number") {
-        return value;
-      }
-    }
-
-    return undefined;
-  }, [branchSummary]);
 
   // Optimized task change handler with WebSocket-first strategy and debouncing
   const handleTaskChanges = useCallback(async (notification?: any) => {
@@ -169,7 +142,6 @@ export function useTaskWebSocket({
     isConnected,
     isReconnecting,
     error,
-    branchTaskTotal,
     handleTaskChanges,
   };
 }

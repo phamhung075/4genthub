@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Check, FileText } from "lucide-react";
-import { completeTask, Task } from "../api";
+import { Task } from "../api";
+import { useTaskMutations } from "../hooks/useTasks";
 
 interface TaskCompleteDialogProps {
   open: boolean;
@@ -21,47 +22,43 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
 }) => {
   const [completionSummary, setCompletionSummary] = useState("");
   const [testingNotes, setTestingNotes] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // Use React Query mutation hook
+  const { completeTask, isCompleting, completeError } = useTaskMutations();
 
   // Reset form when task changes
   React.useEffect(() => {
     if (task) {
       setCompletionSummary("");
       setTestingNotes("");
-      setError(null);
     }
   }, [task]);
 
   const handleComplete = async () => {
     if (!task || !completionSummary.trim()) {
-      setError("Completion summary is required");
       return;
     }
 
-    setSaving(true);
-    setError(null);
-
     try {
-      const result = await completeTask(task.id, completionSummary, testingNotes || undefined);
-      
+      const result = await completeTask({
+        taskId: task.id,
+        completion_summary: completionSummary,
+        testing_notes: testingNotes || undefined
+      });
+
       if (result) {
         onComplete(result);
         onClose();
-      } else {
-        setError("Failed to complete task");
       }
     } catch (e: any) {
-      setError(e.message || "Failed to complete task");
-    } finally {
-      setSaving(false);
+      // Error is already handled by the mutation hook
+      console.error('Failed to complete task:', e);
     }
   };
 
   const handleCancel = () => {
     setCompletionSummary("");
     setTestingNotes("");
-    setError(null);
     onClose();
   };
 
@@ -73,7 +70,7 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Complete Task</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           {/* Task Information */}
           <div className="bg-gray-50 p-3 rounded">
@@ -93,7 +90,7 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
               placeholder="Describe what was accomplished in detail..."
               value={completionSummary}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCompletionSummary(e.target.value)}
-              disabled={saving}
+              disabled={isCompleting}
               rows={4}
               autoFocus
             />
@@ -112,7 +109,7 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
               placeholder="Describe any testing performed..."
               value={testingNotes}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTestingNotes(e.target.value)}
-              disabled={saving}
+              disabled={isCompleting}
               rows={3}
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -132,23 +129,23 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
           </div>
 
           {/* Error Display */}
-          {error && (
+          {completeError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-sm">
-              {error}
+              {completeError.message || 'Failed to complete task'}
             </div>
           )}
         </div>
-        
+
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel} disabled={saving}>
+          <Button variant="outline" onClick={handleCancel} disabled={isCompleting}>
             Cancel
           </Button>
-          <Button 
-            variant="default" 
-            onClick={handleComplete} 
-            disabled={saving || !completionSummary.trim()}
+          <Button
+            variant="default"
+            onClick={handleComplete}
+            disabled={isCompleting || !completionSummary.trim()}
           >
-            {saving ? (
+            {isCompleting ? (
               <>
                 <Check className="w-4 h-4 animate-spin mr-2" />
                 Completing...

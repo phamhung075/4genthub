@@ -3,6 +3,9 @@ import { config } from '../config/environment';
 import type { WebSocketConfig, WSMessage } from '../types/websocketTypes';
 import logger from '../utils/logger';
 
+// Re-export WSMessage for consumers
+export type { WSMessage };
+
 /**
  * WebSocket Client v2.0 - Clean Implementation
  * Features:

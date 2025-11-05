@@ -240,15 +240,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 size="icon"
                 className="h-8 w-8"
                 onClick={(e) => {
-                  console.log('[TaskRow] 🖱️ MOBILE expand button clicked:', {
-                    taskId: summary.id,
-                    taskTitle: summary.title,
-                    currentIsExpanded: isExpanded,
-                    timestamp: new Date().toISOString()
-                  });
                   e.stopPropagation();
                   onToggleExpansion();
-                  console.log('[TaskRow] 🔄 MOBILE onToggleExpansion called');
                 }}
                 disabled={isLoading}
               >
@@ -318,19 +311,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </div>
 
           {/* Expanded Content - Only render LazySubtaskList if task has subtasks */}
-          {(() => {
-            const shouldRenderSubtasks = isExpanded && fullTask && subtaskCount > 0;
-            console.log('[TaskRow] 🔍 MOBILE Subtask render decision:', {
-              taskId: summary.id,
-              taskTitle: summary.title,
-              isExpanded,
-              hasFullTask: !!fullTask,
-              subtaskCount,
-              shouldRenderSubtasks,
-              timestamp: new Date().toISOString()
-            });
-            return shouldRenderSubtasks;
-          })() && (
+          {isExpanded && fullTask && subtaskCount > 0 && (
             <div className="border-t border-surface-border dark:border-gray-700">
               <div className="border-blue-400 dark:border-blue-600">
                 <LazySubtaskList
@@ -511,19 +492,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
         </TableRow>
 
         {/* Only render LazySubtaskList if task has subtasks */}
-        {(() => {
-          const shouldRenderSubtasks = isExpanded && fullTask && subtaskCount > 0;
-          console.log('[TaskRow] 🔍 DESKTOP Subtask render decision:', {
-            taskId: summary.id,
-            taskTitle: summary.title,
-            isExpanded,
-            hasFullTask: !!fullTask,
-            subtaskCount,
-            shouldRenderSubtasks,
-            timestamp: new Date().toISOString()
-          });
-          return shouldRenderSubtasks;
-        })() && (
+        {isExpanded && fullTask && subtaskCount > 0 && (
           <TableRow className="theme-context-section">
             <TableCell colSpan={7} className="p-0">
               <div className="border-blue-400 dark:border-blue-600 ml-8">

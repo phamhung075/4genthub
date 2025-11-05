@@ -74,7 +74,7 @@ export function useAgentTemplates(): UseAgentTemplatesReturn {
 
 interface UseUserAgentInstancesReturn {
   instances: UserAgentInstance[];
-  loading: boolean;
+  isLoading: boolean;
   error: string | null;
   loadInstances: () => Promise<void>;
   getInstance: (instanceId: string) => Promise<UserAgentInstance | null>;
@@ -176,7 +176,7 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
 
   return {
     instances: data ?? [],
-    loading: isLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    isLoading: isLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
     error: error?.message ?? null,
     loadInstances: refetch,
     getInstance,

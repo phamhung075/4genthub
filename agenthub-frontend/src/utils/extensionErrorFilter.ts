@@ -80,7 +80,7 @@ export function handlePotentialExtensionError(
       {
         error: typeof error === 'string' ? error : error.message,
         source: error instanceof Error ? error.stack :
-               'message' in error ? error.filename : 'unknown',
+               (typeof error === 'object' && error !== null && 'filename' in error) ? error.filename : 'unknown',
         type: 'extension_error',
         filtered: true
       }
