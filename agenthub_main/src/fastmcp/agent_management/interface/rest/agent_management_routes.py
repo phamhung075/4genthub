@@ -197,6 +197,12 @@ async def list_user_instances(
                 last_used_at=inst.last_used_at,
                 created_at=inst.created_at,
                 updated_at=inst.updated_at,
+                is_imported=inst.original_creator_id is not None,
+                original_creator_id=str(inst.original_creator_id.value) if inst.original_creator_id else None,
+                is_read_only=(
+                    inst.original_creator_id is not None and
+                    str(inst.original_creator_id.value) != str(user_id.value)
+                ),
                 system_prompt=inst.configuration.system_prompt,
                 tools=list(inst.configuration.tools),
                 capabilities=inst.configuration.capabilities or {},
@@ -408,10 +414,20 @@ async def update_instance(
 ):
     """Update agent instance configuration."""
     try:
-        user_id = UserId(current_user.id)
+        # Handle both UUID and non-UUID user IDs (for development)
+        try:
+            user_id = UserId(current_user.id)
+        except ValueError as e:
+            # Convert non-UUID ID to deterministic UUID v5
+            import uuid
+            namespace_uuid = uuid.UUID('00000000-0000-0000-0000-000000000000')
+            user_uuid = str(uuid.uuid5(namespace_uuid, current_user.id))
+            user_id = UserId(user_uuid)
+            logger.info(f"Converted non-UUID user ID '{current_user.id}' to UUID: {user_uuid}")
+
         logger.info(f"User {current_user.email} updating instance: {instance_id}")
 
-        # Update instance using facade
+        # Update instance using facade (facade will check read-only permissions)
         updated_instance = facade.update_instance(
             user_id=user_id,
             instance_id=instance_id,
@@ -426,7 +442,6 @@ async def update_instance(
         )
 
         # Build response
-        template = facade.get_template_by_slug(updated_instance.template_id.value)
         return UserAgentInstanceResponse(
             id=updated_instance.id.value,
             user_id=updated_instance.user_id.value,
@@ -447,10 +462,20 @@ async def update_instance(
         )
 
     except ValueError as e:
-        logger.error(f"Validation error updating instance {instance_id}: {e}")
+        error_msg = str(e)
+        logger.error(f"Validation error updating instance {instance_id}: {error_msg}")
+
+        # Check if this is a read-only violation (imported agent)
+        if "Cannot edit imported agent" in error_msg or "original creator" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=error_msg
+            )
+
+        # Other validation errors are 400 Bad Request
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail=error_msg
         )
     except HTTPException:
         raise
@@ -924,7 +949,18 @@ async def import_agent(
         500: Server error during import
     """
     try:
-        user_id = UserId(current_user.id)
+        # Handle both UUID and non-UUID user IDs (for development)
+        try:
+            user_id = UserId(current_user.id)
+        except ValueError as e:
+            # If user ID is not a valid UUID (e.g., 'dev-user-001' in development),
+            # create a deterministic UUID from it using UUID v5 (name-based)
+            import uuid
+            namespace_uuid = uuid.UUID('00000000-0000-0000-0000-000000000000')
+            user_uuid = str(uuid.uuid5(namespace_uuid, current_user.id))
+            user_id = UserId(user_uuid)
+            logger.info(f"Converted non-UUID user ID '{current_user.id}' to UUID: {user_uuid}")
+
         logger.info(f"User {current_user.email} importing agent with share token")
 
         # Call facade to import the agent
@@ -935,6 +971,12 @@ async def import_agent(
         )
 
         # Convert to response model
+        # Imported agents are read-only for the importer
+        is_read_only = (
+            imported_instance.original_creator_id is not None and
+            str(imported_instance.original_creator_id.value) != str(user_id.value)
+        )
+
         return UserAgentInstanceResponse(
             id=str(imported_instance.id.value),
             user_id=str(imported_instance.user_id.value),
@@ -947,6 +989,9 @@ async def import_agent(
             last_used_at=imported_instance.last_used_at,
             created_at=imported_instance.created_at,
             updated_at=imported_instance.updated_at,
+            is_imported=True,  # This is an imported agent
+            original_creator_id=str(imported_instance.original_creator_id.value) if imported_instance.original_creator_id else None,
+            is_read_only=is_read_only,  # Read-only for non-owners
             system_prompt=imported_instance.configuration.system_prompt,
             tools=list(imported_instance.configuration.tools),
             capabilities=imported_instance.configuration.capabilities,

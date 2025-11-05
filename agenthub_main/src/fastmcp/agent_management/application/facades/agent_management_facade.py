@@ -197,9 +197,10 @@ class AgentManagementFacade:
                 "category": str,
                 "version": str,
                 "is_customized": bool,
+                "is_orphaned": bool,  # True if imported and original creator deleted their agent
                 "instance_id": str,
                 "template_id": str,
-                "metadata": Dict[str, Any]
+                "metadata": Dict[str, Any]  # includes "orphaned_warning" if applicable
             }
 
         Raises:
@@ -222,6 +223,9 @@ class AgentManagementFacade:
         # Build response using instance's configuration
         config = instance.configuration
 
+        # Check if this is an orphaned import (original creator deleted their agent)
+        is_orphaned = self._instance_repo.is_orphaned(instance.id)
+
         return {
             "name": instance.agent_name or template.name,
             "slug": template.slug,
@@ -234,13 +238,15 @@ class AgentManagementFacade:
             "category": template.category,
             "version": template.version,
             "is_customized": instance.is_customized,
+            "is_orphaned": is_orphaned,  # Flag for imported agents where original was deleted
             "instance_id": instance.id.value,
             "template_id": template.id.value,
             "metadata": {
                 **template.metadata,
                 "created_at": instance.created_at.isoformat(),
                 "last_used": instance.last_used_at.isoformat() if instance.last_used_at else None,
-                "customizations": instance.metadata.get("customizations", {})
+                "customizations": instance.metadata.get("customizations", {}),
+                "orphaned_warning": "Agent not supported by owner anymore, you are in last version" if is_orphaned else None
             }
         }
 
@@ -342,6 +348,15 @@ class AgentManagementFacade:
 
         if instance.user_id != user_id:
             raise ValueError(f"Instance {instance_id} does not belong to user {user_id.value}")
+
+        # Check if this is an imported agent (read-only for non-owners)
+        if instance.original_creator_id:
+            # This is an imported agent - only original creator can edit
+            if instance.original_creator_id != user_id:
+                raise ValueError(
+                    f"Cannot edit imported agent. Only the original creator "
+                    f"(user {instance.original_creator_id.value}) can update this agent."
+                )
 
         # Update agent name if provided
         if agent_name is not None:
@@ -662,26 +677,23 @@ class AgentManagementFacade:
             )
 
         # Record import history
+        # Note: importer_user_id references Keycloak user (no FK constraint)
         if source_instance:
-            try:
-                with self._instance_repo.get_db_session() as session:
-                    history_record = AgentImportHistoryORM(
-                        id=str(uuid.uuid4()),
-                        importer_user_id=str(importer_user_id.value),
-                        source_instance_id=str(source_instance.id.value),
-                        imported_instance_id=str(imported_instance.id.value),
-                        imported_at=datetime.now(timezone.utc),
-                        share_token=share_token
-                    )
-                    session.add(history_record)
-                    session.commit()
-                    logger.info(
-                        f"Recorded import history: {source_instance.id.value} → "
-                        f"{imported_instance.id.value} for user {importer_user_id.value}"
-                    )
-            except Exception as e:
-                # Don't fail the import if history recording fails
-                logger.warning(f"Failed to record import history: {e}")
+            with self._instance_repo.get_db_session() as session:
+                history_record = AgentImportHistoryORM(
+                    id=str(uuid.uuid4()),
+                    importer_user_id=str(importer_user_id.value),
+                    source_instance_id=str(source_instance.id.value),
+                    imported_instance_id=str(imported_instance.id.value),
+                    imported_at=datetime.now(timezone.utc),
+                    share_token=share_token
+                )
+                session.add(history_record)
+                session.commit()
+                logger.info(
+                    f"Recorded import history: {source_instance.id.value} → "
+                    f"{imported_instance.id.value} for user {importer_user_id.value}"
+                )
 
         logger.info(
             f"Agent imported successfully as instance {imported_instance.id.value} "
