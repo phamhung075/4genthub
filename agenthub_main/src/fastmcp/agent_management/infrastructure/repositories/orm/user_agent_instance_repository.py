@@ -9,7 +9,7 @@ import logging
 import json
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from sqlalchemy import and_, func
+from sqlalchemy import and_, or_, func
 
 from ....domain.entities.user_agent_instance import UserAgentInstance
 from ....domain.value_objects.user_agent_instance_id import UserAgentInstanceId
@@ -338,6 +338,11 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
         Following DDD: Domain defines WHAT ordering options exist,
         infrastructure defines HOW to implement them in SQL.
 
+        Business Rule: Exclude orphaned imports (imports where original creator deleted their agent).
+        Only show:
+        1. Original agents (original_creator_id IS NULL)
+        2. Imported agents where original still exists
+
         Args:
             limit: Maximum number of instances to return
             offset: Offset for pagination
@@ -347,6 +352,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             List of public UserAgentInstance entities ordered as specified
         """
         from ....domain.enums.ordering import InstanceOrdering
+        from sqlalchemy import exists, select
 
         # Default ordering if none specified
         if order_by is None:
@@ -354,9 +360,30 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
 
         try:
             with self.get_db_session() as session:
+                # Base filter: public and has share token
                 query = session.query(UserAgentInstanceORM).filter(
                     UserAgentInstanceORM.visibility == 'public',
                     UserAgentInstanceORM.share_token.isnot(None)  # Defensive: ensure business invariant
+                )
+
+                # Business rule: Exclude orphaned imports
+                # Show only: original agents OR imported agents where original still exists
+                # Need to alias the table for the subquery to avoid ambiguity
+                from sqlalchemy.orm import aliased
+                OriginalInstance = aliased(UserAgentInstanceORM)
+
+                query = query.filter(
+                    or_(
+                        # Original agents (not imported)
+                        UserAgentInstanceORM.original_creator_id.is_(None),
+                        # Imported agents where original creator still has an instance
+                        # Check if there exists any instance owned by the original_creator_id
+                        exists(
+                            select(1).select_from(OriginalInstance).where(
+                                OriginalInstance.user_id == UserAgentInstanceORM.original_creator_id
+                            )
+                        )
+                    )
                 )
 
                 # Infrastructure translates domain ordering to SQL
@@ -377,6 +404,46 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
         except Exception as e:
             logger.error(f"Error finding public user agent instances: {e}")
             return []
+
+    def is_orphaned(self, instance_id: UserAgentInstanceId) -> bool:
+        """Check if an instance is orphaned (imported but original creator deleted their agent).
+
+        An instance is considered orphaned if:
+        1. It has an original_creator_id (it's an imported copy)
+        2. The original creator's instance no longer exists (was deleted)
+
+        Args:
+            instance_id: Instance identifier to check
+
+        Returns:
+            True if orphaned, False otherwise (including original agents and active imports)
+        """
+        try:
+            with self.get_db_session() as session:
+                instance = session.query(UserAgentInstanceORM).filter(
+                    UserAgentInstanceORM.id == str(instance_id)
+                ).first()
+
+                if not instance:
+                    logger.debug(f"Instance not found: {instance_id}")
+                    return False
+
+                # Not imported (original agent) - not orphaned
+                if not instance.original_creator_id:
+                    return False
+
+                # Check if original creator (user) still has any instance
+                # original_creator_id is a USER ID, not an instance ID
+                original_exists = session.query(UserAgentInstanceORM).filter(
+                    UserAgentInstanceORM.user_id == instance.original_creator_id
+                ).first() is not None
+
+                # Orphaned if original creator no longer has any instance
+                return not original_exists
+
+        except Exception as e:
+            logger.error(f"Error checking if instance {instance_id} is orphaned: {e}")
+            return False
 
     def count_by_agent_name_for_user(self, user_id: UserId, agent_name: str) -> int:
         """

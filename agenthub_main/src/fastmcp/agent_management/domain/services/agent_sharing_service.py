@@ -185,7 +185,13 @@ class AgentSharingService:
             creator_email=creator_email
         )
 
-        # Create new instance (copy) for the importer
+        # Generate new unique share token for imported instance
+        # This allows imported agents to stay public and be independently shareable
+        import secrets
+        new_share_token = secrets.token_urlsafe(48)[:64]
+
+        # Create new instance (public reference) for the importer
+        # Imported agents stay public with their own share token
         imported_instance = UserAgentInstance(
             id=UserAgentInstanceId.generate_new(),
             user_id=importer_user_id,
@@ -193,15 +199,18 @@ class AgentSharingService:
             agent_name=final_agent_name,
             is_customized=source_instance.is_customized,
             configuration=source_instance.configuration,  # Copy configuration
-            visibility='private',  # Start as private
-            share_token=None,  # No share token initially
+            visibility='public',  # Public with own share token
+            share_token=new_share_token,  # New unique share token
             original_creator_id=source_instance.user_id,  # Track original creator
             usage_count=0,  # Reset usage
             last_used_at=None,  # Reset usage timestamp
             metadata={
                 'imported_from': str(source_instance.id),
                 'imported_via_token': share_token,
-                'original_agent_name': source_instance.agent_name
+                'original_agent_name': source_instance.agent_name,
+                'is_imported': True,  # Flag as imported (read-only for non-owner)
+                'source_instance_id': str(source_instance.id),  # Link to original
+                'source_share_token': share_token  # Track original share token
             }
         )
 

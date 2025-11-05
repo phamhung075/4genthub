@@ -83,6 +83,11 @@ class UserAgentInstanceResponse(BaseModel):
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
 
+    # Import/sharing metadata
+    is_imported: bool = Field(default=False, description="Whether this is an imported agent (read-only for non-owners)")
+    original_creator_id: Optional[str] = Field(None, description="Original creator's user ID (if imported)")
+    is_read_only: bool = Field(default=False, description="Whether current user can edit this agent")
+
     # Configuration details
     system_prompt: str = Field(..., description="Active system prompt")
     tools: List[str] = Field(default_factory=list, description="Active tools")
