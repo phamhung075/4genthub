@@ -1,7 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act } from './../test-utils';
 import { vi } from 'vitest';
-import '@testing-library/jest-dom';
 import LazyTaskList from '../../components/LazyTaskList';
 import { changePoolService, ChangeNotification } from '../../services/changePoolService';
 import * as api from '../../api';
@@ -17,10 +16,12 @@ vi.mock('../../api', () => ({
 }));
 
 // Mock WebSocket
-vi.mock('../../hooks/useWebSocketV2', () => ({
+vi.mock('../../hooks/useTaskWebSocket', () => ({
   useTaskWebSocket: vi.fn(() => ({
     isConnected: true,
-    connectionStatus: 'connected'
+    isReconnecting: false,
+    error: null,
+    handleTaskChanges: vi.fn()
   }))
 }));
 
@@ -30,11 +31,6 @@ vi.mock('../../contexts/AuthContext', () => ({
     user: { id: 'e2e-user' },
     tokens: { access_token: 'e2e-token' }
   }))
-}));
-
-// Mock Redux
-vi.mock('../../store/hooks', () => ({
-  useAppSelector: vi.fn(() => null)
 }));
 
 // Mock toast
@@ -416,11 +412,13 @@ describe('End-to-End Real-time Updates', () => {
       (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue(initialTasks);
 
       // Mock WebSocket disconnection/reconnection
-      const mockUseTaskWebSocket = vi.mocked(require('../../hooks/useWebSocketV2').useTaskWebSocket);
+      const { useTaskWebSocket: mockUseTaskWebSocket } = await import('../../hooks/useTaskWebSocket');
 
-      mockUseTaskWebSocket.mockReturnValue({
+      vi.mocked(mockUseTaskWebSocket).mockReturnValue({
         isConnected: false,
-        connectionStatus: 'disconnected'
+        isReconnecting: false,
+        error: null,
+        handleTaskChanges: vi.fn()
       });
 
       const { rerender } = render(
@@ -436,9 +434,11 @@ describe('End-to-End Real-time Updates', () => {
       });
 
       // Simulate reconnection
-      mockUseTaskWebSocket.mockReturnValue({
+      vi.mocked(mockUseTaskWebSocket).mockReturnValue({
         isConnected: true,
-        connectionStatus: 'connected'
+        isReconnecting: false,
+        error: null,
+        handleTaskChanges: vi.fn()
       });
 
       rerender(

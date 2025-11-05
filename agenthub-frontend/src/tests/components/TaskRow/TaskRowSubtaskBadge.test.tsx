@@ -23,7 +23,7 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from './../../test-utils';
 import { vi } from 'vitest';
 import { TaskRowDesktop } from '../../../components/TaskRow/components/TaskRowDesktop';
 import { TaskSummary } from '../../../types/taskTypes';

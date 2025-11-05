@@ -1,7 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from './../test-utils';
 import { vi } from 'vitest';
-import '@testing-library/jest-dom';
 import { TokenManagement } from '../../pages/TokenManagement';
 import { tokenService } from '../../services/tokenService';
 import { format } from 'date-fns';

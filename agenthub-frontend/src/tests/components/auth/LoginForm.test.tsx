@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { render, screen, fireEvent, waitFor } from './../../test-utils';
 import { BrowserRouter } from 'react-router-dom';
 import { LoginForm } from '../../../components/auth/LoginForm';
 import { useAuth } from '../../../hooks/useAuth';
@@ -8,15 +7,15 @@ import { useNavigate } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 
 // Mock dependencies
-jest.mock('../../../hooks/useAuth');
-jest.mock('react-router-dom', () => ({
+vi.mock('../../../hooks/useAuth');
+vi.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   BrowserRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useNavigate: jest.fn(),
+  useNavigate: vi.fn(),
   Link: ({ children, to, ...props }: any) => <a href={to} {...props}>{children}</a>,
 }));
 
-jest.mock('../../../components/ThemeToggle', () => ({
+vi.mock('../../../components/ThemeToggle', () => ({
   ThemeToggle: () => <div data-testid="theme-toggle">Theme Toggle</div>,
 }));
 
@@ -29,14 +28,14 @@ const renderLoginForm = () => {
 };
 
 describe('LoginForm', () => {
-  const mockLogin = jest.fn();
-  const mockNavigate = jest.fn();
+  const mockLogin = vi.fn();
+  const mockNavigate = vi.fn();
   const user = userEvent.setup();
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useAuth as jest.Mock).mockReturnValue({ login: mockLogin });
-    (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
+    vi.clearAllMocks();
+    (useAuth as any).mockReturnValue({ login: mockLogin });
+    (useNavigate as any).mockReturnValue(mockNavigate);
   });
 
   it('renders login form with all elements', () => {

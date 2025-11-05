@@ -1,33 +1,33 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from './../../test-utils';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
 import { EmailVerification } from '../../../components/auth/EmailVerification';
 import { useAuth } from '../../../hooks/useAuth';
 
 // Mock dependencies
-jest.mock('react-router-dom', () => ({
+vi.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
-  useNavigate: jest.fn(),
+  useNavigate: vi.fn(),
 }));
 
-jest.mock('../../../hooks/useAuth', () => ({
-  useAuth: jest.fn(),
+vi.mock('../../../hooks/useAuth', () => ({
+  useAuth: vi.fn(),
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('EmailVerification', () => {
-  const mockNavigate = jest.fn();
-  const mockSetTokens = jest.fn();
+  const mockNavigate = vi.fn();
+  const mockSetTokens = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
-    (useAuth as jest.Mock).mockReturnValue({ setTokens: mockSetTokens });
+    vi.clearAllMocks();
+    (useNavigate as any).mockReturnValue(mockNavigate);
+    (useAuth as any).mockReturnValue({ setTokens: mockSetTokens });
     
     // Reset fetch mock
-    (global.fetch as jest.Mock).mockReset();
+    (global.fetch as any).mockReset();
     
     // Clear window.location.hash
     window.location.hash = '';
@@ -183,7 +183,7 @@ describe('EmailVerification', () => {
     });
 
     it('successfully resends verification email', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -228,7 +228,7 @@ describe('EmailVerification', () => {
     });
 
     it('handles resend verification API error', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         json: async () => ({ detail: 'Email not found' }),
       });
@@ -249,7 +249,7 @@ describe('EmailVerification', () => {
     });
 
     it('handles resend verification network error', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       renderComponent();
 
@@ -271,7 +271,7 @@ describe('EmailVerification', () => {
       const originalViteApiUrl = (import.meta as any).env.VITE_API_URL;
       (import.meta as any).env = { VITE_API_URL: 'https://api.example.com' };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
       });

@@ -1,7 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act } from './../test-utils';
 import { vi } from 'vitest';
-import '@testing-library/jest-dom';
 import LazyTaskList from '../../components/LazyTaskList';
 import * as api from '../../api';
 import { ChangeNotification } from '../../services/changePoolService';
@@ -11,18 +10,13 @@ import { useEntityChanges } from '../../hooks/useChangeSubscription';
 vi.mock('../../api');
 
 // Mock the WebSocket hooks
-vi.mock('../../hooks/useWebSocketV2', () => ({
+vi.mock('../../hooks/useTaskWebSocket', () => ({
   useTaskWebSocket: vi.fn(() => ({
     isConnected: true,
-    connectionStatus: 'connected',
-    lastMessage: null,
-    reconnectAttempts: 0
+    isReconnecting: false,
+    error: null,
+    handleTaskChanges: vi.fn()
   }))
-}));
-
-// Mock Redux hooks
-vi.mock('../../store/hooks', () => ({
-  useAppSelector: vi.fn(() => null)
 }));
 
 // Mock Auth context

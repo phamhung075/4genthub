@@ -1,10 +1,10 @@
 import React from 'react';
-import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from './../../test-utils';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import ProjectList from '../../../components/ProjectList/ProjectList';
 import { ProjectListProps } from '../../../types';
 import { AuthContext } from '../../../contexts/AuthContext';
-import * as projectDataHook from '../../../components/ProjectList/hooks/useProjectData';
+import * as projectsHook from '../../../hooks/useProjects';
 import * as projectDialogsHook from '../../../components/ProjectList/hooks/useProjectDialogs';
 import * as projectAnimationsHook from '../../../components/ProjectList/hooks/useProjectAnimations';
 

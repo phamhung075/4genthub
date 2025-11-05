@@ -1,18 +1,17 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { render, screen } from './../../test-utils';
 import { AuthWrapper } from '../../../components/auth/AuthWrapper';
 import { AuthProvider } from '../../../contexts/AuthContext';
 import { MuiThemeWrapper } from '../../../contexts/MuiThemeProvider';
 
 // Mock the context providers
-jest.mock('../../../contexts/AuthContext', () => ({
+vi.mock('../../../contexts/AuthContext', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="auth-provider">{children}</div>
   ),
 }));
 
-jest.mock('../../../contexts/MuiThemeProvider', () => ({
+vi.mock('../../../contexts/MuiThemeProvider', () => ({
   MuiThemeWrapper: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="mui-theme-wrapper">{children}</div>
   ),
@@ -20,7 +19,7 @@ jest.mock('../../../contexts/MuiThemeProvider', () => ({
 
 describe('AuthWrapper', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders children correctly', () => {

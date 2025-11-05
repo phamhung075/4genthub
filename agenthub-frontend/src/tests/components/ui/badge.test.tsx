@@ -1,9 +1,9 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from './../../test-utils';
 import { Badge, BadgeProps } from '../../../components/ui/badge';
 
 // Mock the utils module
-jest.mock('../../../lib/utils', () => ({
+vi.mock('../../../lib/utils', () => ({
   cn: (...classes: any[]) => classes.filter(Boolean).join(' ')
 }));
 
@@ -140,8 +140,8 @@ describe('Badge', () => {
     });
 
     it('forwards event handlers', () => {
-      const handleClick = jest.fn();
-      const handleMouseEnter = jest.fn();
+      const handleClick = vi.fn();
+      const handleMouseEnter = vi.fn();
       
       renderBadge({ 
         onClick: handleClick,

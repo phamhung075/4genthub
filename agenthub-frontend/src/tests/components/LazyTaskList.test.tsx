@@ -1,7 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from './../test-utils';
 import { vi } from 'vitest';
-import '@testing-library/jest-dom';
 import LazyTaskList from '../../components/LazyTaskList';
 import * as api from '../../api';
 import { changePoolService } from '../../services/changePoolService';
@@ -32,23 +31,18 @@ vi.mock('../../services/AnimationFactory', () => ({
 }));
 
 // Mock WebSocket hooks
-vi.mock('../../hooks/useWebSocketV2', () => ({
+vi.mock('../../hooks/useTaskWebSocket', () => ({
   useTaskWebSocket: vi.fn(() => ({
     isConnected: true,
-    connectionStatus: 'connected',
-    lastMessage: null,
-    reconnectAttempts: 0
+    isReconnecting: false,
+    error: null,
+    handleTaskChanges: vi.fn()
   }))
 }));
 
 // Mock useEntityChanges hook
 vi.mock('../../hooks/useChangeSubscription', () => ({
   useEntityChanges: vi.fn()
-}));
-
-// Mock Redux hooks
-vi.mock('../../store/hooks', () => ({
-  useAppSelector: vi.fn(() => null)
 }));
 
 // Mock Auth context
@@ -1202,14 +1196,14 @@ describe('LazyTaskList', () => {
 
   describe('WebSocket Real-time Updates', () => {
     it('should handle WebSocket connection status changes', async () => {
-      const mockUseTaskWebSocket = vi.mocked(require('../../hooks/useWebSocketV2').useTaskWebSocket);
+      const { useTaskWebSocket: mockUseTaskWebSocket } = await import('../../hooks/useTaskWebSocket');
 
       // Start disconnected
-      mockUseTaskWebSocket.mockReturnValue({
+      vi.mocked(mockUseTaskWebSocket).mockReturnValue({
         isConnected: false,
-        connectionStatus: 'disconnected',
-        lastMessage: null,
-        reconnectAttempts: 3
+        isReconnecting: true,
+        error: null,
+        handleTaskChanges: vi.fn()
       });
 
       const { rerender } = render(
@@ -1224,11 +1218,11 @@ describe('LazyTaskList', () => {
       expect(screen.getByText('Offline')).toBeInTheDocument();
 
       // Simulate connection
-      mockUseTaskWebSocket.mockReturnValue({
+      vi.mocked(mockUseTaskWebSocket).mockReturnValue({
         isConnected: true,
-        connectionStatus: 'connected',
-        lastMessage: null,
-        reconnectAttempts: 0
+        isReconnecting: false,
+        error: null,
+        handleTaskChanges: vi.fn()
       });
 
       rerender(

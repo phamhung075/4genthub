@@ -1,24 +1,24 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from './../../test-utils';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
 import { SignupForm } from '../../../components/auth/SignupForm';
 import { useAuth } from '../../../hooks/useAuth';
 
 // Mock dependencies
-jest.mock('react-router-dom', () => ({
+vi.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   BrowserRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useNavigate: jest.fn(),
+  useNavigate: vi.fn(),
   Link: ({ to, children }: any) => <a href={to}>{children}</a>,
 }));
 
-jest.mock('../../../hooks/useAuth', () => ({
-  useAuth: jest.fn(),
+vi.mock('../../../hooks/useAuth', () => ({
+  useAuth: vi.fn(),
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock import.meta.env
 const mockEnv = {
@@ -36,15 +36,15 @@ Object.defineProperty(global, 'import', {
 });
 
 describe('SignupForm', () => {
-  const mockNavigate = jest.fn();
-  const mockSignup = jest.fn();
+  const mockNavigate = vi.fn();
+  const mockSignup = vi.fn();
   let user: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
-    (useAuth as jest.Mock).mockReturnValue({ signup: mockSignup });
-    (global.fetch as jest.Mock).mockReset();
+    vi.clearAllMocks();
+    (useNavigate as any).mockReturnValue(mockNavigate);
+    (useAuth as any).mockReturnValue({ signup: mockSignup });
+    (global.fetch as any).mockReset();
     user = userEvent.setup();
   });
 
@@ -397,7 +397,7 @@ describe('SignupForm', () => {
         message: 'Please verify your email'
       });
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true })
       });
@@ -435,7 +435,7 @@ describe('SignupForm', () => {
     it('handles resend verification error', async () => {
       mockSignup.mockRejectedValueOnce(new Error('User already registered'));
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         json: async () => ({ detail: 'Invalid email' })
       });
@@ -463,7 +463,7 @@ describe('SignupForm', () => {
     it('handles resend verification network error', async () => {
       mockSignup.mockRejectedValueOnce(new Error('User already registered'));
 
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       renderComponent();
 
@@ -526,7 +526,7 @@ describe('SignupForm', () => {
       mockEnv.VITE_API_URL = 'https://api.example.com';
 
       mockSignup.mockRejectedValueOnce(new Error('User already registered'));
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true })
       });

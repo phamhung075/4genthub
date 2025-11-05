@@ -1,21 +1,20 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAuthenticatedFetch, authenticatedFetch } from '../../hooks/useAuthenticatedFetch';
 import { useAuth } from '../../hooks/useAuth';
-import { jest } from '@jest/globals';
 import Cookies from 'js-cookie';
 
 // Mock the auth hook
-jest.mock('../../hooks/useAuth');
+vi.mock('../../hooks/useAuth');
 
 // Mock js-cookie
-jest.mock('js-cookie');
+vi.mock('js-cookie');
 
-const mockUseAuth = jest.mocked(useAuth);
-const mockCookies = jest.mocked(Cookies);
+const mockUseAuth = vi.mocked(useAuth);
+const mockCookies = vi.mocked(Cookies);
 
 // Mock global fetch
-global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
-const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+global.fetch = vi.fn() as anyedFunction<typeof fetch>;
+const mockFetch = global.fetch as anyedFunction<typeof fetch>;
 
 describe('useAuthenticatedFetch', () => {
   const mockTokens = {
@@ -24,11 +23,11 @@ describe('useAuthenticatedFetch', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseAuth.mockReturnValue({
       tokens: mockTokens,
-      refreshToken: jest.fn(),
-      logout: jest.fn(),
+      refreshToken: vi.fn(),
+      logout: vi.fn(),
     });
     mockCookies.get.mockReturnValue('test-access-token');
   });
@@ -100,8 +99,8 @@ describe('useAuthenticatedFetch', () => {
   it('makes request without auth header when tokens are not available', async () => {
     mockUseAuth.mockReturnValue({
       tokens: null,
-      refreshToken: jest.fn(),
-      logout: jest.fn(),
+      refreshToken: vi.fn(),
+      logout: vi.fn(),
     });
 
     const mockResponse = {
@@ -125,7 +124,7 @@ describe('useAuthenticatedFetch', () => {
   it('handles non-JSON responses', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: jest.fn().mockRejectedValue(new Error('Invalid JSON')),
+      json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
       text: async () => 'Plain text response',
     } as unknown as Response);
 
@@ -189,12 +188,12 @@ describe('useAuthenticatedFetch', () => {
   });
 
   it('handles 401 responses by refreshing token and retrying', async () => {
-    const refreshToken = jest.fn().mockResolvedValue(undefined);
+    const refreshToken = vi.fn().mockResolvedValue(undefined);
     
     mockUseAuth.mockReturnValue({
       tokens: mockTokens,
       refreshToken,
-      logout: jest.fn(),
+      logout: vi.fn(),
     });
 
     const mockSuccessResponse = {
@@ -272,8 +271,8 @@ describe('useAuthenticatedFetch', () => {
   });
 
   it('handles refresh token failure by logging out', async () => {
-    const refreshToken = jest.fn().mockRejectedValue(new Error('Refresh failed'));
-    const logout = jest.fn();
+    const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
+    const logout = vi.fn();
     
     mockUseAuth.mockReturnValue({
       tokens: mockTokens,
@@ -301,7 +300,7 @@ describe('useAuthenticatedFetch', () => {
 
 describe('authenticatedFetch (standalone)', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('adds authorization header when token is available in cookies', async () => {

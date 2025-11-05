@@ -1,19 +1,18 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { render, screen, fireEvent } from './../../../test-utils';
 import { ProjectListContent } from '../../../../components/ProjectList/components/ProjectListContent';
 import { Project } from '../../../../api';
 import type { BranchSummary } from '../../../../types';
 import type { ProjectListContentProps } from '../../../../types/componentTypes';
 
 // Mock the UI components
-jest.mock('../../../../components/ui/shimmer-badge', () => ({
+vi.mock('../../../../components/ui/shimmer-badge', () => ({
   ShimmerBadge: ({ children, className, ...props }: any) => (
     <span className={className} {...props}>{children}</span>
   ),
 }));
 
-jest.mock('../../../../components/ui/shimmer-button', () => ({
+vi.mock('../../../../components/ui/shimmer-button', () => ({
   ShimmerButton: ({ children, onClick, className, ...props }: any) => (
     <button onClick={onClick} className={className} {...props}>
       {children}
@@ -22,7 +21,7 @@ jest.mock('../../../../components/ui/shimmer-button', () => ({
 }));
 
 // Mock the BranchItem component
-jest.mock('../../../../components/ProjectList/components/BranchItem', () => ({
+vi.mock('../../../../components/ProjectList/components/BranchItem', () => ({
   BranchItem: ({ branch, onSelect, onShowDetails, onDelete, taskCount }: any) => (
     <li data-testid={`branch-${branch.id}`}>
       <button onClick={() => onSelect('project-1', branch.id)}>
@@ -90,18 +89,18 @@ describe('ProjectListContent', () => {
     fadingOutBranches: new Set(),
     deletingBranches: new Set(),
     animatingCounts: new Map(),
-    onToggleProject: jest.fn(),
-    onSelectBranch: jest.fn(),
-    onShowProjectDetails: jest.fn(),
-    onShowBranchDetails: jest.fn(),
-    onCreateBranch: jest.fn(),
-    onEditProject: jest.fn(),
-    onDeleteProject: jest.fn(),
-    onDeleteBranch: jest.fn(),
+    onToggleProject: vi.fn(),
+    onSelectBranch: vi.fn(),
+    onShowProjectDetails: vi.fn(),
+    onShowBranchDetails: vi.fn(),
+    onCreateBranch: vi.fn(),
+    onEditProject: vi.fn(),
+    onDeleteProject: vi.fn(),
+    onDeleteBranch: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders empty state when no projects', () => {

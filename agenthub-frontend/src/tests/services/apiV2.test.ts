@@ -8,27 +8,33 @@ import {
   refreshTokenAndRetry
 } from '../../services/apiV2';
 
-// Mock js-cookie
-jest.mock('js-cookie', () => ({
-  get: jest.fn(),
-  set: jest.fn(),
-  remove: jest.fn()
-}));
+// Mock js-cookie with default export for Vitest compatibility
+vi.mock('js-cookie', () => {
+  const mockCookies = {
+    get: vi.fn(),
+    set: vi.fn(),
+    remove: vi.fn()
+  };
+  return {
+    default: mockCookies,
+    ...mockCookies
+  };
+});
 
 // Mock fetch globally
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock logger
-jest.mock('../../utils/logger', () => ({
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
+vi.mock('../../utils/logger', () => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
 }));
 
 // Mock request deduplication
-jest.mock('../../utils/requestDeduplication', () => ({
-  deduplicateRequest: jest.fn((fn) => fn()),
+vi.mock('../../utils/requestDeduplication', () => ({
+  deduplicateRequest: vi.fn((fn) => fn()),
 }));
 
 // Mock import.meta.env
@@ -39,17 +45,17 @@ describe('apiV2.ts', () => {
   const mockRefreshToken = 'refresh-token-123';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     (global.fetch as any).mockReset();
-    (Cookies.get as jest.Mock).mockReset();
-    (Cookies.set as jest.Mock).mockReset();
-    (Cookies.remove as jest.Mock).mockReset();
+    (Cookies.get as any).mockReset();
+    (Cookies.set as any).mockReset();
+    (Cookies.remove as any).mockReset();
     // Mock window.dispatchEvent
-    window.dispatchEvent = jest.fn();
+    window.dispatchEvent = vi.fn();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Token Refresh and Retry', () => {
@@ -58,10 +64,10 @@ describe('apiV2.ts', () => {
         const newToken = 'new-access-token';
         const newRefreshToken = 'new-refresh-token';
         
-        (Cookies.get as jest.Mock).mockReturnValueOnce(mockRefreshToken);
+        (Cookies.get as any).mockReturnValueOnce(mockRefreshToken);
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue({
+          json: vi.fn().mockResolvedValue({
             access_token: newToken,
             refresh_token: newRefreshToken
           })
@@ -86,11 +92,11 @@ describe('apiV2.ts', () => {
       });
 
       it('should handle refresh failure', async () => {
-        (Cookies.get as jest.Mock).mockReturnValueOnce(mockRefreshToken);
+        (Cookies.get as any).mockReturnValueOnce(mockRefreshToken);
         (global.fetch as any).mockResolvedValue({
           ok: false,
           status: 401,
-          json: jest.fn().mockResolvedValue({ detail: 'Invalid refresh token' })
+          json: vi.fn().mockResolvedValue({ detail: 'Invalid refresh token' })
         });
 
         await expect(refreshTokenAndRetry()).rejects.toThrow('Token refresh failed');
@@ -101,7 +107,7 @@ describe('apiV2.ts', () => {
   describe('Authentication Helpers', () => {
     describe('isAuthenticated', () => {
       it('should return true when token exists', () => {
-        (Cookies.get as jest.Mock).mockReturnValue(mockToken);
+        (Cookies.get as any).mockReturnValue(mockToken);
 
         const result = isAuthenticated();
 
@@ -110,7 +116,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should return false when token does not exist', () => {
-        (Cookies.get as jest.Mock).mockReturnValue(null);
+        (Cookies.get as any).mockReturnValue(null);
 
         const result = isAuthenticated();
 
@@ -120,7 +126,7 @@ describe('apiV2.ts', () => {
 
     describe('getCurrentUserId', () => {
       it('should extract user ID from JWT token', () => {
-        (Cookies.get as jest.Mock).mockReturnValue(mockToken);
+        (Cookies.get as any).mockReturnValue(mockToken);
 
         const userId = getCurrentUserId();
 
@@ -128,7 +134,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should return null when no token exists', () => {
-        (Cookies.get as jest.Mock).mockReturnValue(null);
+        (Cookies.get as any).mockReturnValue(null);
 
         const userId = getCurrentUserId();
 
@@ -136,7 +142,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should return null for invalid token format', () => {
-        (Cookies.get as jest.Mock).mockReturnValue('invalid-token');
+        (Cookies.get as any).mockReturnValue('invalid-token');
 
         const userId = getCurrentUserId();
 
@@ -144,7 +150,7 @@ describe('apiV2.ts', () => {
       });
 
       it('should handle malformed JWT payload', () => {
-        (Cookies.get as jest.Mock).mockReturnValue('header.invalidbase64.signature');
+        (Cookies.get as any).mockReturnValue('header.invalidbase64.signature');
 
         const userId = getCurrentUserId();
 
@@ -153,7 +159,7 @@ describe('apiV2.ts', () => {
 
       it('should use user_id field if sub is not present', () => {
         const tokenWithUserId = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidXNlci00NTYiLCJuYW1lIjoiVGVzdCBVc2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.vYD6h5b8_3olg6eKvLkYLpH6hR-WzG65P0-qGLKNc7M';
-        (Cookies.get as jest.Mock).mockReturnValue(tokenWithUserId);
+        (Cookies.get as any).mockReturnValue(tokenWithUserId);
 
         const userId = getCurrentUserId();
 
@@ -164,7 +170,7 @@ describe('apiV2.ts', () => {
 
   describe('Task API V2', () => {
     beforeEach(() => {
-      (Cookies.get as jest.Mock).mockReturnValue(mockToken);
+      (Cookies.get as any).mockReturnValue(mockToken);
     });
 
     describe('getTasks', () => {
@@ -175,7 +181,7 @@ describe('apiV2.ts', () => {
         ];
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockTasks)
+          json: vi.fn().mockResolvedValue(mockTasks)
         });
 
         const result = await taskApiV2.getTasks();
@@ -197,7 +203,7 @@ describe('apiV2.ts', () => {
         const mockTasks = [{ id: '1', title: 'Branch Task' }];
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockTasks)
+          json: vi.fn().mockResolvedValue(mockTasks)
         });
 
         const result = await taskApiV2.getTasks({ git_branch_id: 'branch-123' });
@@ -219,14 +225,14 @@ describe('apiV2.ts', () => {
         (global.fetch as any).mockResolvedValue({
           ok: false,
           status: 401,
-          json: jest.fn().mockResolvedValue({ detail: 'Token expired' })
+          json: vi.fn().mockResolvedValue({ detail: 'Token expired' })
         });
 
         // Mock dynamic import of js-cookie
         const mockCookiesDefault = {
-          remove: jest.fn()
+          remove: vi.fn()
         };
-        jest.spyOn(global, 'import' as any).mockResolvedValue({
+        vi.spyOn(global, 'import' as any).mockResolvedValue({
           default: mockCookiesDefault
         });
 
@@ -244,7 +250,7 @@ describe('apiV2.ts', () => {
         (global.fetch as any).mockResolvedValue({
           ok: false,
           status: 500,
-          json: jest.fn().mockResolvedValue({ detail: 'Server error' })
+          json: vi.fn().mockResolvedValue({ detail: 'Server error' })
         });
 
         await expect(taskApiV2.getTasks()).rejects.toThrow('Server error');
@@ -254,7 +260,7 @@ describe('apiV2.ts', () => {
         (global.fetch as any).mockResolvedValue({
           ok: false,
           status: 400,
-          json: jest.fn().mockRejectedValue(new Error('Parse error'))
+          json: vi.fn().mockRejectedValue(new Error('Parse error'))
         });
 
         await expect(taskApiV2.getTasks()).rejects.toThrow('Request failed with status 400');
@@ -268,7 +274,7 @@ describe('apiV2.ts', () => {
         const mockTask = { id: taskId, title: 'Test Task' };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockTask)
+          json: vi.fn().mockResolvedValue(mockTask)
         });
 
         const result = await taskApiV2.getTask(taskId);
@@ -300,7 +306,7 @@ describe('apiV2.ts', () => {
         const mockCreatedTask = { id: 'new-id', ...taskData };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockCreatedTask)
+          json: vi.fn().mockResolvedValue(mockCreatedTask)
         });
 
         const result = await taskApiV2.createTask(taskData);
@@ -324,7 +330,7 @@ describe('apiV2.ts', () => {
         const mockCreatedTask = { id: 'new-id', ...minimalData };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockCreatedTask)
+          json: vi.fn().mockResolvedValue(mockCreatedTask)
         });
 
         const result = await taskApiV2.createTask(minimalData);
@@ -348,7 +354,7 @@ describe('apiV2.ts', () => {
         const mockUpdatedTask = { id: taskId, ...updates };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockUpdatedTask)
+          json: vi.fn().mockResolvedValue(mockUpdatedTask)
         });
 
         const result = await taskApiV2.updateTask(taskId, updates);
@@ -375,7 +381,7 @@ describe('apiV2.ts', () => {
         const mockResponse = { success: true };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockResponse)
+          json: vi.fn().mockResolvedValue(mockResponse)
         });
 
         const result = await taskApiV2.deleteTask(taskId);
@@ -409,7 +415,7 @@ describe('apiV2.ts', () => {
         };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockCompletedTask)
+          json: vi.fn().mockResolvedValue(mockCompletedTask)
         });
 
         const result = await taskApiV2.completeTask(taskId, completionData);
@@ -433,7 +439,7 @@ describe('apiV2.ts', () => {
         const mockResponse = { id: taskId, status: 'done' };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockResponse)
+          json: vi.fn().mockResolvedValue(mockResponse)
         });
 
         await taskApiV2.completeTask(taskId, minimalData);
@@ -451,7 +457,7 @@ describe('apiV2.ts', () => {
         (global.fetch as any).mockResolvedValue({
           ok: true,
           status: 204,
-          json: jest.fn().mockRejectedValue(new Error('No content'))
+          json: vi.fn().mockRejectedValue(new Error('No content'))
         });
 
         const result = await taskApiV2.deleteTask(taskId);
@@ -466,7 +472,7 @@ describe('apiV2.ts', () => {
 
   describe('Project API V2', () => {
     beforeEach(() => {
-      (Cookies.get as jest.Mock).mockReturnValue(mockToken);
+      (Cookies.get as any).mockReturnValue(mockToken);
     });
 
     describe('getProjects', () => {
@@ -477,7 +483,7 @@ describe('apiV2.ts', () => {
         ];
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockProjects)
+          json: vi.fn().mockResolvedValue(mockProjects)
         });
 
         const result = await projectApiV2.getProjects();
@@ -506,7 +512,7 @@ describe('apiV2.ts', () => {
         const mockCreatedProject = { id: 'proj-123', ...projectData };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockCreatedProject)
+          json: vi.fn().mockResolvedValue(mockCreatedProject)
         });
 
         const result = await projectApiV2.createProject(projectData);
@@ -538,7 +544,7 @@ describe('apiV2.ts', () => {
         const mockUpdatedProject = { id: projectId, ...updates };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockUpdatedProject)
+          json: vi.fn().mockResolvedValue(mockUpdatedProject)
         });
 
         const result = await projectApiV2.updateProject(projectId, updates);
@@ -565,7 +571,7 @@ describe('apiV2.ts', () => {
         const mockResponse = { success: true };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockResponse)
+          json: vi.fn().mockResolvedValue(mockResponse)
         });
 
         const result = await projectApiV2.deleteProject(projectId);
@@ -587,7 +593,7 @@ describe('apiV2.ts', () => {
 
   describe('Agent API V2', () => {
     beforeEach(() => {
-      (Cookies.get as jest.Mock).mockReturnValue(mockToken);
+      (Cookies.get as any).mockReturnValue(mockToken);
     });
 
     describe('getAgents', () => {
@@ -598,7 +604,7 @@ describe('apiV2.ts', () => {
         ];
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockAgents)
+          json: vi.fn().mockResolvedValue(mockAgents)
         });
 
         const result = await agentApiV2.getAgents();
@@ -628,7 +634,7 @@ describe('apiV2.ts', () => {
         const mockRegisteredAgent = { id: 'agent-123', ...agentData };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockRegisteredAgent)
+          json: vi.fn().mockResolvedValue(mockRegisteredAgent)
         });
 
         const result = await agentApiV2.registerAgent(agentData);
@@ -655,7 +661,7 @@ describe('apiV2.ts', () => {
         const mockResponse = { id: 'agent-456', ...minimalData };
         (global.fetch as any).mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue(mockResponse)
+          json: vi.fn().mockResolvedValue(mockResponse)
         });
 
         const result = await agentApiV2.registerAgent(minimalData);
@@ -670,7 +676,7 @@ describe('apiV2.ts', () => {
 
   describe('Error Handling', () => {
     beforeEach(() => {
-      (Cookies.get as jest.Mock).mockReturnValue(mockToken);
+      (Cookies.get as any).mockReturnValue(mockToken);
     });
 
     it('should handle network errors', async () => {
@@ -682,7 +688,7 @@ describe('apiV2.ts', () => {
     it('should handle JSON parsing errors in response', async () => {
       (global.fetch as any).mockResolvedValue({
         ok: true,
-        json: jest.fn().mockRejectedValue(new Error('Invalid JSON'))
+        json: vi.fn().mockRejectedValue(new Error('Invalid JSON'))
       });
 
       await expect(taskApiV2.getTasks()).rejects.toThrow('Invalid JSON');
@@ -694,7 +700,7 @@ describe('apiV2.ts', () => {
       const mockResponse = { tasks: [] };
       (global.fetch as any).mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue(mockResponse)
+        json: vi.fn().mockResolvedValue(mockResponse)
       });
 
       await taskApiV2.getTasks();
@@ -719,10 +725,10 @@ describe('apiV2.ts', () => {
       jest.resetModules();
       const { taskApiV2: freshTaskApiV2 } = await import('../../services/apiV2');
       
-      (Cookies.get as jest.Mock).mockReturnValue(mockToken);
+      (Cookies.get as any).mockReturnValue(mockToken);
       (global.fetch as any).mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue([])
+        json: vi.fn().mockResolvedValue([])
       });
 
       await freshTaskApiV2.getTasks();

@@ -34,7 +34,7 @@ class MockWebSocket {
 jest.useFakeTimers();
 
 // Mock config
-jest.mock('../../config/environment', () => ({
+vi.mock('../../config/environment', () => ({
   config: {
     websocket: {
       url: 'ws://localhost:8000',
@@ -48,13 +48,13 @@ jest.mock('../../config/environment', () => ({
 }));
 
 // Mock logger
-jest.mock('../../utils/logger', () => ({
+vi.mock('../../utils/logger', () => ({
   __esModule: true,
   default: {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn()
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
   }
 }));
 
@@ -66,18 +66,18 @@ describe('WebSocketClient', () => {
   const token = 'test-token-abc';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     jest.clearAllTimers();
     client = new WebSocketClient(token);
   });
 
   afterEach(() => {
     client.disconnect();
-    jest.restoreAllMocks();
-    (logger.debug as jest.Mock).mockClear();
-    (logger.info as jest.Mock).mockClear();
-    (logger.warn as jest.Mock).mockClear();
-    (logger.error as jest.Mock).mockClear();
+    vi.restoreAllMocks();
+    (logger.debug as any).mockClear();
+    (logger.info as any).mockClear();
+    (logger.warn as any).mockClear();
+    (logger.error as any).mockClear();
   });
 
   describe('constructor', () => {
@@ -90,7 +90,7 @@ describe('WebSocketClient', () => {
   describe('connect()', () => {
     beforeEach(() => {
       // Capture WebSocket instance when created
-      jest.spyOn(global as any, 'WebSocket').mockImplementation((url: string) => {
+      vi.spyOn(global as any, 'WebSocket').mockImplementation((url: string) => {
         mockWs = new MockWebSocket(url);
         return mockWs;
       });
@@ -106,7 +106,7 @@ describe('WebSocketClient', () => {
     it('should handle missing WebSocket URL configuration', () => {
       // Mock config without websocket URL
       jest.resetModules();
-      jest.mock('../../config/environment', () => ({
+      vi.mock('../../config/environment', () => ({
         config: {
           websocket: {
             url: '',
@@ -119,7 +119,7 @@ describe('WebSocketClient', () => {
         }
       }));
       
-      const errorSpy = jest.fn();
+      const errorSpy = vi.fn();
       const { WebSocketClient: WSClient } = require('../../services/WebSocketClient');
       const testClient = new WSClient(token);
       testClient.on('error', errorSpy);
@@ -154,7 +154,7 @@ describe('WebSocketClient', () => {
 
   describe('handleOpen', () => {
     it('should emit connected event and start heartbeat', () => {
-      const connectedSpy = jest.fn();
+      const connectedSpy = vi.fn();
       client.on('connected', connectedSpy);
       
       client.connect();
@@ -170,12 +170,12 @@ describe('WebSocketClient', () => {
   });
 
   describe('handleMessage', () => {
-    let updateSpy: jest.Mock;
-    let userActionSpy: jest.Mock;
+    let updateSpy: any;
+    let userActionSpy: any;
 
     beforeEach(() => {
-      updateSpy = jest.fn();
-      userActionSpy = jest.fn();
+      updateSpy = vi.fn();
+      userActionSpy = vi.fn();
       client.on('update', updateSpy);
       client.on('userAction', userActionSpy);
       client.connect();
@@ -397,7 +397,7 @@ describe('WebSocketClient', () => {
         mockWs.onmessage?.(messageEvent);
       });
 
-      const updateSpy = jest.fn();
+      const updateSpy = vi.fn();
       client.on('update', updateSpy);
 
       // Fast forward to process batch
@@ -416,7 +416,7 @@ describe('WebSocketClient', () => {
     beforeEach(() => {
       client.connect();
       mockWs.readyState = WebSocket.OPEN;
-      mockWs.send = jest.fn();
+      mockWs.send = vi.fn();
     });
 
     it('should send v2.0 formatted message', () => {
@@ -431,7 +431,7 @@ describe('WebSocketClient', () => {
 
       client.send(message);
 
-      const sentMessage = JSON.parse((mockWs.send as jest.Mock).mock.calls[0][0]);
+      const sentMessage = JSON.parse((mockWs.send as any).mock.calls[0][0]);
       
       expect(sentMessage).toMatchObject({
         version: '2.0',
@@ -455,7 +455,7 @@ describe('WebSocketClient', () => {
 
   describe('handleError', () => {
     it('should emit error event', () => {
-      const errorSpy = jest.fn();
+      const errorSpy = vi.fn();
       client.on('error', errorSpy);
       
       client.connect();
@@ -492,7 +492,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should not reconnect on authentication failure', () => {
-      const authFailureSpy = jest.fn();
+      const authFailureSpy = vi.fn();
       client.on('authenticationFailed', authFailureSpy);
       
       const closeEvent = new CloseEvent('close', {
@@ -525,7 +525,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should emit reconnectFailed after max attempts', () => {
-      const reconnectFailedSpy = jest.fn();
+      const reconnectFailedSpy = vi.fn();
       client.on('reconnectFailed', reconnectFailedSpy);
       
       // Simulate max reconnection attempts
@@ -546,7 +546,7 @@ describe('WebSocketClient', () => {
     beforeEach(() => {
       client.connect();
       mockWs.readyState = WebSocket.OPEN;
-      mockWs.send = jest.fn();
+      mockWs.send = vi.fn();
     });
 
     it('should send heartbeat every 30 seconds', () => {
@@ -556,7 +556,7 @@ describe('WebSocketClient', () => {
       // Fast forward 30 seconds
       jest.advanceTimersByTime(30000);
       
-      const sentMessage = JSON.parse((mockWs.send as jest.Mock).mock.calls[0][0]);
+      const sentMessage = JSON.parse((mockWs.send as any).mock.calls[0][0]);
       
       expect(sentMessage).toMatchObject({
         type: 'heartbeat',
@@ -617,7 +617,7 @@ describe('WebSocketClient', () => {
       // Fast forward - should not process batch
       jest.advanceTimersByTime(500);
       
-      const updateSpy = jest.fn();
+      const updateSpy = vi.fn();
       client.on('update', updateSpy);
       expect(updateSpy).not.toHaveBeenCalled();
     });

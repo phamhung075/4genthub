@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from './test-utils';
 import { vi } from 'vitest';
 import App from '../App';
 
@@ -22,7 +22,10 @@ vi.mock('../contexts/ThemeContext', () => ({
 
 // Mock the toast provider
 vi.mock('../components/ui/toast', () => ({
-  ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+  ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useToast: () => ({ toast: vi.fn() }),
+  useSuccessToast: () => vi.fn(),
+  useErrorToast: () => vi.fn()
 }));
 
 // Mock the auth components

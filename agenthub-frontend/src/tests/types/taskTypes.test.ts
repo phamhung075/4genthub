@@ -258,7 +258,7 @@ describe('taskTypes', () => {
       });
 
       it('should create valid LazyTaskListProps with optional callback', () => {
-        const mockCallback = jest.fn();
+        const mockCallback = vi.fn();
         const props: LazyTaskListProps = {
           projectId: 'proj-789',
           taskTreeId: 'tree-012',
@@ -349,9 +349,9 @@ describe('taskTypes', () => {
 
     describe('TaskRowProps', () => {
       it('should create valid TaskRowProps object', () => {
-        const mockToggle = jest.fn();
-        const mockOpenDialog = jest.fn();
-        const mockHover = jest.fn();
+        const mockToggle = vi.fn();
+        const mockOpenDialog = vi.fn();
+        const mockHover = vi.fn();
 
         const props: TaskRowProps = {
           summary: {
@@ -466,9 +466,9 @@ describe('taskTypes', () => {
           isLoading: false,
           projectId: 'proj-mob-001',
           taskTreeId: 'tree-mob-001',
-          onToggleExpansion: jest.fn(),
-          onOpenDialog: jest.fn(),
-          onHover: jest.fn(),
+          onToggleExpansion: vi.fn(),
+          onOpenDialog: vi.fn(),
+          onHover: vi.fn(),
           elementRef: mockRef
         };
 
@@ -532,9 +532,9 @@ describe('taskTypes', () => {
           isLoading: false,
           projectId: 'proj-desk-001',
           taskTreeId: 'tree-desk-001',
-          onToggleExpansion: jest.fn(),
-          onOpenDialog: jest.fn(),
-          onHover: jest.fn(),
+          onToggleExpansion: vi.fn(),
+          onOpenDialog: vi.fn(),
+          onHover: vi.fn(),
           elementRef: mockRef
         };
 
@@ -582,7 +582,7 @@ describe('taskTypes', () => {
 
     describe('TaskRowActionsProps', () => {
       it('should create valid TaskRowActionsProps with default variant', () => {
-        const mockOpenDialog = jest.fn();
+        const mockOpenDialog = vi.fn();
         const props: TaskRowActionsProps = {
           taskId: 'task-action-001',
           projectId: 'proj-action-001',
@@ -598,7 +598,7 @@ describe('taskTypes', () => {
       });
 
       it('should create valid TaskRowActionsProps with mobile variant', () => {
-        const mockOpenDialog = jest.fn();
+        const mockOpenDialog = vi.fn();
         const props: TaskRowActionsProps = {
           taskId: 'task-action-002',
           projectId: 'proj-action-002',
@@ -611,7 +611,7 @@ describe('taskTypes', () => {
       });
 
       it('should create valid TaskRowActionsProps with desktop variant', () => {
-        const mockOpenDialog = jest.fn();
+        const mockOpenDialog = vi.fn();
         const props: TaskRowActionsProps = {
           taskId: 'task-action-003',
           projectId: 'proj-action-003',

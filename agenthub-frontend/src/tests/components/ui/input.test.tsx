@@ -1,20 +1,19 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { render, screen, fireEvent } from './../../test-utils';
 import userEvent from '@testing-library/user-event';
 import { Input } from '../../../components/ui/input';
 import { cn } from '../../../lib/utils';
 
 // Mock the cn utility
-jest.mock('../../../lib/utils', () => ({
-  cn: jest.fn((...args: any[]) => args.filter(Boolean).join(' ')),
+vi.mock('../../../lib/utils', () => ({
+  cn: vi.fn((...args: any[]) => args.filter(Boolean).join(' ')),
 }));
 
 describe('Input', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Ensure the mock is working
-    (cn as jest.Mock).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
+    (cn as any).mockImplementation((...args: any[]) => args.filter(Boolean).join(' '));
   });
 
   it('renders with default props', () => {
@@ -72,7 +71,7 @@ describe('Input', () => {
   });
 
   it('handles value and onChange', () => {
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
     render(<Input value="test" onChange={handleChange} />);
     
     const input = screen.getByRole('textbox');
@@ -151,8 +150,8 @@ describe('Input', () => {
   });
 
   it('handles onFocus and onBlur events', () => {
-    const handleFocus = jest.fn();
-    const handleBlur = jest.fn();
+    const handleFocus = vi.fn();
+    const handleBlur = vi.fn();
     
     render(<Input onFocus={handleFocus} onBlur={handleBlur} />);
     
@@ -166,7 +165,7 @@ describe('Input', () => {
   });
 
   it('handles onKeyDown event', () => {
-    const handleKeyDown = jest.fn();
+    const handleKeyDown = vi.fn();
     render(<Input onKeyDown={handleKeyDown} />);
     
     const input = screen.getByRole('textbox');
@@ -219,7 +218,7 @@ describe('Input', () => {
   });
 
   it('handles form submission', () => {
-    const handleSubmit = jest.fn((e) => e.preventDefault());
+    const handleSubmit = vi.fn((e) => e.preventDefault());
     render(
       <form onSubmit={handleSubmit}>
         <Input name="test" defaultValue="test value" />

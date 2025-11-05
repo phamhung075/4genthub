@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from './../../test-utils';
 import { ToastProvider, useToast, useSuccessToast, useErrorToast } from '../../../components/ui/toast';
 
 // Test component that uses toast hooks
@@ -51,7 +51,7 @@ const WrappedTestComponent: React.FC = () => (
 
 describe('Toast Component', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders success toast correctly', async () => {
@@ -77,7 +77,7 @@ describe('Toast Component', () => {
   });
 
   it('renders toast with action button', async () => {
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation();
     render(<WrappedTestComponent />);
     
     fireEvent.click(screen.getByTestId('show-info'));

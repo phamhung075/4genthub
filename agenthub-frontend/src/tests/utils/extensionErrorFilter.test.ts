@@ -213,9 +213,11 @@ describe('extensionErrorFilter', () => {
 
     beforeEach(() => {
       preventDefaultSpy = vi.fn();
+      // Create a mock promise that doesn't actually reject to avoid unhandled rejections in tests
+      const mockPromise = Promise.resolve();
       rejectionEvent = {
         reason: 'Test rejection',
-        promise: Promise.reject('Test'),
+        promise: mockPromise,
         preventDefault: preventDefaultSpy
       } as PromiseRejectionEvent;
     });
@@ -331,16 +333,16 @@ describe('extensionErrorFilter', () => {
 
     it('should restore original console methods on cleanup', () => {
       const cleanup = setupConsoleErrorFilter();
-      
+
       // Verify console methods were overridden
       expect(console.error).not.toBe(errorSpy);
       expect(console.warn).not.toBe(warnSpy);
-      
+
       cleanup();
-      
-      // Verify console methods were restored
-      expect(console.error).toBe(originalError);
-      expect(console.warn).toBe(originalWarn);
+
+      // Verify console methods were restored to the spies that were there before filter
+      expect(console.error).toBe(errorSpy);
+      expect(console.warn).toBe(warnSpy);
     });
   });
 
