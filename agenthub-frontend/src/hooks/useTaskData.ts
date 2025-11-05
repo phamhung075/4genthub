@@ -1,37 +1,13 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Task } from '../api';
 import { listTasks } from '../api';
 import { getFullTask } from '../api-lazy';
-import logger from '../utils/logger';
 import { TaskSummary } from '../types/taskTypes';
 import type { UseTaskDataOptions, UseTaskDataReturn } from '../types/hookTypes';
 
 export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions): UseTaskDataReturn {
-  // Reset state when taskTreeId changes
-  const prevTaskTreeId = useRef<string>();
-
-  // Core state
-  const [taskSummaries, setTaskSummaries] = useState<TaskSummary[]>([]);
-  const [fullTasks, setFullTasks] = useState<Map<string, Task>>(new Map());
-  const [totalTasks, setTotalTasks] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingTasks, setLoadingTasks] = useState<Set<string>>(new Set());
-
-  // Loading state ref to prevent infinite loops
-  const isLoadingRef = useRef(false);
-
-  // Reset state when taskTreeId changes
-  useEffect(() => {
-    if (prevTaskTreeId.current && prevTaskTreeId.current !== taskTreeId) {
-      setTaskSummaries([]);
-      setFullTasks(new Map());
-      setTotalTasks(0);
-      setError(null);
-      setLoadingTasks(new Set());
-    }
-    prevTaskTreeId.current = taskTreeId;
-  }, [taskTreeId]);
+  const queryClient = useQueryClient();
 
   // Helper function to convert full task to task summary
   const convertToTaskSummary = useCallback((task: any): TaskSummary => {
@@ -45,7 +21,7 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
       title: task.title,
       status: task.status,
       priority: task.priority,
-      subtask_count: task.subtask_count ?? task.subtasks?.length ?? 0, // Use denormalized count from API, fallback to array length
+      subtask_count: task.subtask_count ?? task.subtasks?.length ?? 0,
       assignees_count: task.assignees?.length || 0,
       assignees: task.assignees || [],
       has_dependencies: dependencyCount > 0,
@@ -55,285 +31,111 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
     };
   }, []);
 
-  // Fallback API call to load full tasks
-  const loadFullTasksFallback = useCallback(async () => {
-    try {
+  // Main query for task list
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['tasks', taskTreeId],
+    queryFn: async () => {
       const taskList = await listTasks({ git_branch_id: taskTreeId });
-
-      // Ensure taskList is a valid array
       const validTaskList = Array.isArray(taskList) ? taskList : [];
-
-      // CRITICAL FIX: Filter out subtasks (tasks with parent_task_id)
-      // Subtasks should only appear nested under their parent, not as top-level tasks
       const topLevelTasks = validTaskList.filter(task => !task.parent_task_id);
 
-      // Convert to task summaries (only top-level tasks)
-      const summaries: TaskSummary[] = topLevelTasks.map(convertToTaskSummary);
-
-      setTaskSummaries(summaries);
-      setTotalTasks(summaries.length);
-
-      // Store full tasks for immediate access (including subtasks for expansion)
-      const taskMap = new Map();
-      validTaskList.forEach(task => taskMap.set(task.id, task));
-      setFullTasks(taskMap);
-
-      // Clear any existing errors on successful load
-      setError(null);
-
-    } catch (e: any) {
-      logger.error('Error loading tasks in loadFullTasksFallback', {
-        component: 'useTaskData',
-        error: e
+      // Store all tasks (including subtasks) in cache for quick access
+      validTaskList.forEach(task => {
+        queryClient.setQueryData(['task', task.id], task);
       });
-      setError(e.message);
-      throw e;
-    }
-  }, [taskTreeId, convertToTaskSummary]);
 
-  // Load task summaries (initial load)
-  const loadTaskSummaries = useCallback(async (page = 1) => {
-    // Prevent duplicate calls while loading
-    if (isLoadingRef.current) {
-      logger.debug('Already loading tasks, skipping duplicate call', {
-        component: 'useTaskData'
-      });
-      return;
-    }
+      return {
+        summaries: topLevelTasks.map(convertToTaskSummary),
+        allTasks: validTaskList
+      };
+    },
+    enabled: !!taskTreeId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 
-    logger.info('Loading task summaries', {
-      component: 'useTaskData',
-      page
-    });
-
-    isLoadingRef.current = true;
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Use fallback method for now - TODO: implement lightweight endpoint
-      await loadFullTasksFallback();
-    } catch (error) {
-      logger.error('Failed to load task summaries', {
-        component: 'useTaskData',
-        error
-      });
-    } finally {
-      isLoadingRef.current = false;
-      setLoading(false);
-    }
-  }, [loadFullTasksFallback]);
-
-  // Load full task data on demand
+  // Load full task on demand
   const loadFullTask = useCallback(async (taskId: string): Promise<Task | null> => {
-    if (fullTasks.has(taskId)) {
-      return fullTasks.get(taskId) || null;
-    }
-
-    if (loadingTasks.has(taskId)) {
-      return null; // Already loading
-    }
-
-    setLoadingTasks(prev => {
-      const newSet = new Set(prev);
-      newSet.add(taskId);
-      return newSet;
-    });
-
     try {
-      const task = await getFullTask(taskId);
-
-      if (task) {
-        setFullTasks(prev => {
-          const newMap = new Map(prev);
-          newMap.set(taskId, task);
-          return newMap;
-        });
-      }
-
-      setLoadingTasks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(taskId);
-        return newSet;
+      const task = await queryClient.fetchQuery({
+        queryKey: ['task', taskId],
+        queryFn: () => getFullTask(taskId),
+        staleTime: 5 * 60 * 1000, // 5 minutes for individual tasks
       });
-
-      return task;
-
+      return task || null;
     } catch (e) {
-      logger.error('Failed to load task', {
-        component: 'useTaskData',
-        taskId,
-        error: e
-      });
-
-      setLoadingTasks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(taskId);
-        return newSet;
-      });
-
       return null;
     }
-  }, [fullTasks, loadingTasks]);
+  }, [queryClient]);
 
   // Update task from external data (e.g., WebSocket)
   const updateTaskFromData = useCallback((taskData: Task) => {
-    // DEBUG: Log incoming task data for subtask_count tracking
-    logger.warn('🔍 [useTaskData] updateTaskFromData called:', {
-      taskId: taskData?.id,
-      taskTitle: taskData?.title,
-      hasSubtaskCount: 'subtask_count' in taskData,
-      subtaskCount: taskData?.subtask_count,
-      isSubtask: !!taskData?.parent_task_id,
-      taskDataKeys: taskData ? Object.keys(taskData) : []
-    });
+    // Update individual task cache
+    queryClient.setQueryData(['task', taskData.id], taskData);
 
-    // CRITICAL FIX: Don't update summaries for subtasks
-    // Subtasks should only be stored in fullTasks map
-    if (taskData.parent_task_id) {
-      // This is a subtask - only update in fullTasks map
-      setFullTasks(prev => {
-        const newMap = new Map(prev);
-        newMap.set(taskData.id, taskData);
-        return newMap;
+    // Update task list cache if it's a top-level task
+    if (!taskData.parent_task_id) {
+      queryClient.setQueryData(['tasks', taskTreeId], (old: any) => {
+        if (!old) return old;
+        const updatedSummaries = old.summaries.map((task: TaskSummary) =>
+          task.id === taskData.id ? convertToTaskSummary(taskData) : task
+        );
+        return { ...old, summaries: updatedSummaries };
       });
-
-      if (onTasksChanged) {
-        onTasksChanged();
-      }
-      return;
     }
 
-    // This is a top-level task - update summaries
-    const updatedSummary = convertToTaskSummary(taskData);
-
-    // DEBUG: Log the converted summary to verify subtask_count is preserved
-    logger.warn('🔍 [useTaskData] Converted summary:', {
-      taskId: updatedSummary.id,
-      subtaskCount: updatedSummary.subtask_count,
-      summaryKeys: Object.keys(updatedSummary)
-    });
-
-    setTaskSummaries(prev => prev.map(task =>
-      task.id === taskData.id ? updatedSummary : task
-    ));
-
-    setFullTasks(prev => {
-      const newMap = new Map(prev);
-      newMap.set(taskData.id, taskData);
-      return newMap;
-    });
-
-    if (onTasksChanged) {
-      onTasksChanged();
-    }
-  }, [convertToTaskSummary, onTasksChanged]);
+    onTasksChanged?.();
+  }, [queryClient, taskTreeId, convertToTaskSummary, onTasksChanged]);
 
   // Add new task
   const addNewTask = useCallback((taskData: Task) => {
-    logger.debug('🔍 [useTaskData] addNewTask called with:', {
-      hasData: !!taskData,
-      taskId: taskData?.id,
-      taskTitle: taskData?.title,
-      isSubtask: !!taskData?.parent_task_id,
-      dataKeys: taskData ? Object.keys(taskData) : [],
-      fullData: taskData
-    });
+    // Add to individual task cache
+    queryClient.setQueryData(['task', taskData.id], taskData);
 
-    // CRITICAL FIX: Don't add subtasks to main task list
-    // Subtasks should only appear nested under their parent task
-    if (taskData.parent_task_id) {
-      logger.debug('✅ [useTaskData] Adding subtask to fullTasks map:', {
-        subtaskId: taskData.id,
-        parentTaskId: taskData.parent_task_id
+    // Add to task list if it's a top-level task
+    if (!taskData.parent_task_id) {
+      queryClient.setQueryData(['tasks', taskTreeId], (old: any) => {
+        if (!old) return old;
+        const newSummary = convertToTaskSummary(taskData);
+        return {
+          ...old,
+          summaries: [newSummary, ...old.summaries]
+        };
       });
-
-      // This is a subtask - only store in fullTasks map, don't add to summaries
-      setFullTasks(prev => {
-        const newMap = new Map(prev);
-        newMap.set(taskData.id, taskData);
-        logger.debug('✅ [useTaskData] Subtask added, fullTasks size:', newMap.size);
-        return newMap;
-      });
-
-      if (onTasksChanged) {
-        onTasksChanged();
-      }
-      return;
     }
 
-    logger.debug('✅ [useTaskData] Adding top-level task to summaries:', {
-      taskId: taskData.id,
-      taskTitle: taskData.title
-    });
-
-    // This is a top-level task - add to summaries
-    const newSummary = convertToTaskSummary(taskData);
-    logger.debug('✅ [useTaskData] Converted to summary:', newSummary);
-
-    setTaskSummaries(prev => {
-      // Prevent duplicates
-      if (prev.some(t => t.id === taskData.id)) {
-        logger.debug('⚠️ [useTaskData] Task already exists in summaries, skipping duplicate');
-        return prev;
-      }
-      logger.debug('✅ [useTaskData] Adding task to summaries, previous count:', prev.length);
-      const newSummaries = [newSummary, ...prev];
-      logger.debug('✅ [useTaskData] New summaries count:', newSummaries.length);
-      return newSummaries;
-    });
-
-    setTotalTasks(prev => {
-      const newTotal = prev + 1;
-      logger.debug('✅ [useTaskData] Updated totalTasks:', prev, '->', newTotal);
-      return newTotal;
-    });
-
-    setFullTasks(prev => {
-      const newMap = new Map(prev);
-      newMap.set(taskData.id, taskData);
-      logger.debug('✅ [useTaskData] Added task to fullTasks, size:', newMap.size);
-      return newMap;
-    });
-
-    if (onTasksChanged) {
-      logger.debug('✅ [useTaskData] Calling onTasksChanged callback');
-      onTasksChanged();
-    }
-  }, [convertToTaskSummary, onTasksChanged]);
+    onTasksChanged?.();
+  }, [queryClient, taskTreeId, convertToTaskSummary, onTasksChanged]);
 
   // Remove task
   const removeTask = useCallback((taskId: string) => {
-    setTaskSummaries(prev => prev.filter(task => task.id !== taskId));
-    setTotalTasks(prev => Math.max(0, prev - 1));
-
-    setFullTasks(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(taskId);
-      return newMap;
+    queryClient.removeQueries({ queryKey: ['task', taskId] });
+    queryClient.setQueryData(['tasks', taskTreeId], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        summaries: old.summaries.filter((task: TaskSummary) => task.id !== taskId)
+      };
     });
 
-    if (onTasksChanged) {
-      onTasksChanged();
-    }
-  }, [onTasksChanged]);
+    onTasksChanged?.();
+  }, [queryClient, taskTreeId, onTasksChanged]);
 
   return {
     // State
-    taskSummaries,
-    fullTasks,
-    totalTasks,
-    loading,
-    error,
-    loadingTasks,
+    taskSummaries: data?.summaries ?? [],
+    fullTasks: new Map(), // Deprecated: use loadFullTask instead
+    totalTasks: data?.summaries?.length ?? 0,
+    loading: isLoading,
+    error: error?.message ?? null,
+    loadingTasks: new Set(), // Deprecated: React Query handles loading states
 
     // Actions
-    loadTaskSummaries,
+    loadTaskSummaries: refetch,
     loadFullTask,
     updateTaskFromData,
     addNewTask,
     removeTask,
-    setTotalTasks,
+    setTotalTasks: () => {}, // No-op: React Query manages this
 
     // Utilities
     convertToTaskSummary,
