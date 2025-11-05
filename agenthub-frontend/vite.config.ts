@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -100,7 +101,17 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-  plugins: [react(), hmrDebugPlugin],
+  plugins: [
+    react(),
+    hmrDebugPlugin,
+    // Bundle analyzer - generates stats.html after build
+    visualizer({
+      filename: './build/stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+    })
+  ],
   server: {
     host: '0.0.0.0',
     port: 3800,
@@ -130,7 +141,34 @@ export default defineConfig(({ mode }) => {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.css']
   },
   build: {
-    outDir: 'build'
+    outDir: 'build',
+    // Optimize chunk splitting
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separate vendor chunks for better caching
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': [
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-collapsible',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-tooltip',
+          ],
+          'mui-vendor': [
+            '@mui/material',
+            '@mui/icons-material',
+            '@emotion/react',
+            '@emotion/styled',
+          ],
+          'state-vendor': ['zustand'],
+          'animation-vendor': ['framer-motion'],
+          'utils-vendor': ['date-fns', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+        },
+      },
+    },
+    // Increase chunk size warning limit since we're splitting intentionally
+    chunkSizeWarningLimit: 600,
   },
   define: {
     // Fix for React 19 compatibility
