@@ -10,6 +10,7 @@ vi.mock('../../../../services/AnimationFactory', () => ({
   animationFactory: {
     registerElement: vi.fn(),
     unregisterElement: vi.fn(),
+    animate: vi.fn().mockReturnValue(true),
   },
   AnimationType: {
     TASK_COMPLETE: 'TASK_COMPLETE',
