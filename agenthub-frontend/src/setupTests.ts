@@ -7,9 +7,14 @@
  * The override is necessary for clean test output and doesn't affect application code
  */
 
+import { afterEach, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+
+// Enable auto-mocking for animation services
+vi.mock('./services/AnimationFactory');
+vi.mock('./services/taskDeletionTracker');
+vi.mock('./services/branchDeletionTracker');
 
 // Cleanup after each test
 afterEach(() => {
