@@ -2,5 +2,9 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.30",
     "sass": "^1.89.2"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.90.6",
+    "rollup-plugin-visualizer": "^6.0.5"
   }
 }
