@@ -1,6 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { useTaskWebSocket as useTaskWebSocketV2 } from './useWebSocketV2';
-import { useEntityChanges } from './useChangeSubscription';
 import logger from '../utils/logger';
 
 interface UseTaskWebSocketOptions {
@@ -117,17 +116,9 @@ export function useTaskWebSocket({
     }, 200); // 200ms debounce delay
   }, [taskTreeId, onTaskUpdate]);
 
-  // Subscribe to centralized change pool for real-time updates
-  useEntityChanges(
-    'useTaskWebSocket',
-    ['task', 'subtask'],
-    handleTaskChanges,
-    {
-      branchId: taskTreeId,
-      projectId: projectId,
-      enabled: true
-    }
-  );
+  // Real-time updates now handled by useRealtimeSync + React Query cache
+  // Components will automatically re-render when cache updates
+  // No need for manual subscription - React Query handles this
 
   // Cleanup debounce timer on unmount
   useEffect(() => {

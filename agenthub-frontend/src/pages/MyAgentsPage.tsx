@@ -43,6 +43,9 @@ import {
   DialogFooter,
 } from '../components/ui/dialog';
 import logger from '../utils/logger';
+import { useAuth } from '../contexts/AuthContext';
+import { useWebSocket } from '../hooks/useWebSocketV2';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 /**
  * My Agents Page Component
@@ -50,6 +53,12 @@ import logger from '../utils/logger';
  */
 export const MyAgentsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, tokens } = useAuth();
+
+  // WebSocket integration for real-time updates
+  const webSocketClient = useWebSocket(user?.id || '', tokens?.access_token || '');
+  useRealtimeSync(webSocketClient.client, true);
+
   const { instances, loading, error, loadInstances, deleteInstance, createInstance, bulkCreateInstances, toggleEnabled, updateInstance } = useUserAgentInstances();
   const { templates, loading: templatesLoading } = useAgentTemplates();
 

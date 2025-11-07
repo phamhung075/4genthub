@@ -12,6 +12,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { agentManagementApiV2 } from '../services/apiV2';
 import logger from '../utils/logger';
+import { useSuccessToast, useWarningToast } from '../components/ui/toast';
 import type {
   AgentTemplate,
   UserAgentInstance,
@@ -91,6 +92,8 @@ interface UseUserAgentInstancesReturn {
  */
 export function useUserAgentInstances(): UseUserAgentInstancesReturn {
   const queryClient = useQueryClient();
+  const showSuccess = useSuccessToast();
+  const showWarning = useWarningToast();
 
   // Query for listing instances
   const { data, isLoading, error, refetch } = useQuery({
@@ -110,9 +113,14 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
   const createMutation = useMutation({
     mutationFn: (data: CreateInstanceRequest) => agentManagementApiV2.createInstance(data),
     onSuccess: (newInstance) => {
+      // Optimistic update
       queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
         [...old, newInstance]
       );
+      // CRITICAL FIX: Invalidate to trigger re-render
+      queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
+      // CRITICAL FIX: Direct notification (backup to WebSocket)
+      showSuccess(`Agent "${newInstance.agent_name}" created successfully`);
       logger.info(`Created instance: ${newInstance.agent_name}`);
     },
   });
@@ -122,9 +130,14 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
     mutationFn: ({ instanceId, data }: { instanceId: string; data: UpdateInstanceRequest }) =>
       agentManagementApiV2.updateInstance(instanceId, data),
     onSuccess: (updatedInstance, { instanceId }) => {
+      // Optimistic update
       queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
         old.map(inst => inst.id === instanceId ? updatedInstance : inst)
       );
+      // CRITICAL FIX: Invalidate to trigger re-render
+      queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
+      // CRITICAL FIX: Direct notification (backup to WebSocket)
+      showSuccess(`Agent "${updatedInstance.agent_name}" updated successfully`);
       logger.info(`Updated instance: ${instanceId}`);
     },
   });
@@ -133,9 +146,14 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
   const deleteMutation = useMutation({
     mutationFn: (instanceId: string) => agentManagementApiV2.deleteInstance(instanceId),
     onSuccess: (response, instanceId) => {
+      // Optimistic update
       queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
         old.filter(inst => inst.id !== instanceId)
       );
+      // CRITICAL FIX: Invalidate to trigger re-render
+      queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
+      // CRITICAL FIX: Direct notification (backup to WebSocket)
+      showWarning('Agent deleted successfully');
       logger.info(`Deleted instance: ${instanceId}`);
     },
   });
