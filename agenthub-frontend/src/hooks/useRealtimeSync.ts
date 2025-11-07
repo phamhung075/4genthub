@@ -1,9 +1,22 @@
 // Custom hook for WebSocket → React Query cache synchronization
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Branch, Project, Subtask, Task } from '../types/api.types';
-import type { WSMessage } from '../types/websocketTypes';
 import logger from '../utils/logger';
+import { useSuccessToast, useInfoToast, useWarningToast } from '../components/ui/toast';
+import {
+  type WSMessage,
+  isBranchDeletePayload,
+  isSubtaskDeletePayload,
+  isProjectDeletePayload,
+  isTaskDeletePayload,
+  getEntityId,
+  getDisplayName
+} from '../types/websocket-protocol';
+
+// 🔥 GLOBAL toast deduplication tracker (module-level, shared across ALL hook instances)
+// This prevents duplicate toasts when multiple components use useRealtimeSync
+const globalRecentToastsMap = new Map<string, number>();
 
 /**
  * Hook to sync WebSocket events with React Query cache
@@ -19,9 +32,40 @@ export const useRealtimeSync = (
   const queryClient = useQueryClient();
   const handlersRef = useRef<Map<string, (message: WSMessage) => void>>(new Map());
 
+  // Initialize toast notifications
+  const showSuccess = useSuccessToast();
+  const showInfo = useInfoToast();
+  const showWarning = useWarningToast();
+
+  // Helper to deduplicate toasts GLOBALLY (prevents toasts from multiple hook instances)
+  const showToastOnce = useCallback((key: string, showFn: () => void) => {
+    const now = Date.now();
+    const lastShown = globalRecentToastsMap.get(key);
+
+    // Only show if not shown in last 2 seconds
+    if (!lastShown || now - lastShown > 2000) {
+      showFn();
+      globalRecentToastsMap.set(key, now);
+
+      // Cleanup old entries after 5 seconds
+      setTimeout(() => {
+        const current = globalRecentToastsMap.get(key);
+        if (current === now) {
+          globalRecentToastsMap.delete(key);
+        }
+      }, 5000);
+    } else {
+      // Log deduplication for debugging
+      logger.debug('[useRealtimeSync] Toast deduplicated (shown recently)', {
+        key,
+        lastShownMs: now - lastShown,
+        threshold: 2000
+      });
+    }
+  }, []);
+
   useEffect(() => {
     if (!enabled || !webSocketClient) {
-      logger.debug('[useRealtimeSync] Sync disabled or no client');
       return;
     }
 
@@ -32,153 +76,376 @@ export const useRealtimeSync = (
       const { action, data } = message.payload;
       const taskData = data.primary as Task;
 
-      if (!taskData?.id) {
+      // Use getEntityId helper for safe ID extraction (with fallback to metadata)
+      const taskId = getEntityId(message);
+      if (!taskId) {
         logger.warn('[useRealtimeSync] Task update missing ID');
         return;
       }
 
-      logger.debug('[useRealtimeSync] Task event:', action, taskData.id);
+      logger.debug('[useRealtimeSync] Task event:', action, taskId);
+      const taskTitle = getDisplayName(message);
 
       switch (action) {
         case 'created':
-          // Invalidate tasks list to refetch with new task
+          // Direct cache update - add new task to the lists (check for duplicates)
           if (taskData.git_branch_id) {
-            queryClient.invalidateQueries({ queryKey: ['tasks', taskData.git_branch_id] });
+            queryClient.setQueryData<Task[]>(
+              ['tasks', taskData.git_branch_id],
+              (old) => {
+                if (!old) return [taskData];
+
+                // ✨ FIX: Check if task already exists (from optimistic update)
+                const exists = old.some(t => t.id === taskId);
+                if (exists) {
+                  return old.map(t => t.id === taskId ? taskData : t);
+                }
+
+                return [...old, taskData];
+              }
+            );
           }
-          queryClient.invalidateQueries({ queryKey: ['tasks'] });
+
+          // Also add to generic tasks list (check for duplicates)
+          queryClient.setQueryData<Task[]>(['tasks'], (old) => {
+            if (!old) return [taskData];
+
+            // ✨ FIX: Check if task already exists
+            const exists = old.some(t => t.id === taskId);
+            if (exists) {
+              return old.map(t => t.id === taskId ? taskData : t);
+            }
+
+            return [...old, taskData];
+          });
+
+          // 🔥 CRITICAL FIX: Invalidate branchSummaries to update parent branch's task_count in sidebar
+          if (taskData.git_branch_id) {
+            queryClient.invalidateQueries({ queryKey: ['branchSummaries'] });
+          }
+
+          // Show success toast (deduplicated)
+          showToastOnce(`task-created-${taskId}`, () => {
+            showSuccess(`Task "${taskTitle}" created successfully`);
+          });
           break;
 
         case 'updated':
-          // Update individual task cache
-          queryClient.setQueryData(['task', taskData.id, false], taskData);
-          queryClient.setQueryData(['task', taskData.id, true], taskData);
+          // CRITICAL: Delay cache update to allow update animation to play (~150ms)
+          // If we update immediately, React re-renders before animation triggers
+          setTimeout(() => {
 
-          // Update task in the tasks list
-          if (taskData.git_branch_id) {
-            queryClient.setQueryData<Task[]>(
-              ['tasks', taskData.git_branch_id],
-              (old) => {
-                if (!old) return old;
-                return old.map(t => t.id === taskData.id ? taskData : t);
-              }
-            );
+            // Update individual task cache
+            queryClient.setQueryData(['task', taskId, false], taskData);
+            queryClient.setQueryData(['task', taskId, true], taskData);
+
+            // Update task in the tasks list
+            if (taskData.git_branch_id) {
+              queryClient.setQueryData<Task[]>(
+                ['tasks', taskData.git_branch_id],
+                (old) => {
+                  if (!old) return old;
+                  return old.map(t => t.id === taskId ? taskData : t);
+                }
+              );
+            }
+
+            // Update in generic tasks list
+            queryClient.setQueryData<Task[]>(['tasks'], (old) => {
+              if (!old) return old;
+              return old.map(t => t.id === taskId ? taskData : t);
+            });
+          }, 150); // Match UPDATE animation duration from WebSocketAnimationService.ts
+
+          // 🔇 SUPPRESS toast for automatic task updates (subtask count changes)
+          // Only show toast if this is a real user-initiated task update
+          // Automatic updates from subtask operations shouldn't show toasts (prevents duplicates)
+          const isAutomaticUpdate = message.metadata?.source === 'system' ||
+                                    message.metadata?.event_type === 'subtask_count_update';
+
+          if (!isAutomaticUpdate) {
+            // Show info toast (deduplicated) only for real updates
+            showToastOnce(`task-updated-${taskId}`, () => {
+              showInfo(`Task "${taskTitle}" updated`);
+            });
           }
-
-          // Update in generic tasks list
-          queryClient.setQueryData<Task[]>(['tasks'], (old) => {
-            if (!old) return old;
-            return old.map(t => t.id === taskData.id ? taskData : t);
-          });
           break;
 
         case 'deleted':
-          // Remove from all caches
-          queryClient.removeQueries({ queryKey: ['task', taskData.id] });
+          // 🔍 DEBUG: Log payload structure for validation
 
-          if (taskData.git_branch_id) {
-            queryClient.setQueryData<Task[]>(
-              ['tasks', taskData.git_branch_id],
-              (old) => {
-                if (!old) return old;
-                return old.filter(t => t.id !== taskData.id);
-              }
-            );
+          // Type guard validation: ensure payload has required fields for delete
+          if (!isTaskDeletePayload(data.primary)) {
+            const invalidData = data.primary as any;
+            logger.warn('[useRealtimeSync] Task delete payload validation failed - missing required fields');
+            return;
           }
 
-          queryClient.setQueryData<Task[]>(['tasks'], (old) => {
-            if (!old) return old;
-            return old.filter(t => t.id !== taskData.id);
+
+          // Show warning toast FIRST (before cache update)
+          showToastOnce(`task-deleted-${taskId}`, () => {
+            showWarning(`Task "${taskTitle}" deleted`);
           });
+
+          // CRITICAL: Delay cache update to allow delete animation to play (~600ms)
+          setTimeout(() => {
+
+            // Remove from individual task cache
+            queryClient.removeQueries({ queryKey: ['task', taskId] });
+
+            // Remove from branch-specific tasks cache
+            if (taskData.git_branch_id) {
+              const beforeBranchCache = queryClient.getQueryData<Task[]>(['tasks', taskData.git_branch_id]);
+
+              queryClient.setQueryData<Task[]>(
+                ['tasks', taskData.git_branch_id],
+                (old) => {
+                  if (!old) {
+                    return old;
+                  }
+                  return old.filter(t => t.id !== taskId);
+                }
+              );
+
+              const afterBranchCache = queryClient.getQueryData<Task[]>(['tasks', taskData.git_branch_id]);
+            }
+
+            // Remove from generic tasks cache
+            const beforeGenericCache = queryClient.getQueryData<Task[]>(['tasks']);
+
+            queryClient.setQueryData<Task[]>(['tasks'], (old) => {
+              if (!old) {
+                return old;
+              }
+              return old.filter(t => t.id !== taskId);
+            });
+
+            const afterGenericCache = queryClient.getQueryData<Task[]>(['tasks']);
+
+            // 🔥 CRITICAL FIX: Invalidate branchSummaries to update parent branch's task_count in sidebar
+            if (taskData.git_branch_id) {
+              queryClient.invalidateQueries({ queryKey: ['branchSummaries'] });
+            }
+
+          }, 600);
           break;
 
         case 'completed':
-          // Mark as completed in cache
-          const completedTask = { ...taskData, status: 'done', progress_percentage: 100 };
-          queryClient.setQueryData(['task', taskData.id, false], completedTask);
-          queryClient.setQueryData(['task', taskData.id, true], completedTask);
+          // Show success toast FIRST (immediate user feedback)
+          showToastOnce(`task-completed-${taskId}`, () => {
+            showSuccess(`Task "${taskTitle}" completed`);
+          });
 
-          if (taskData.git_branch_id) {
-            queryClient.setQueryData<Task[]>(
-              ['tasks', taskData.git_branch_id],
-              (old) => {
-                if (!old) return old;
-                return old.map(t => t.id === taskData.id ? completedTask : t);
-              }
-            );
-          }
+          // CRITICAL: Delay cache update to allow completion animation to play (~150ms)
+          // If we update immediately, React re-renders before animation triggers
+          setTimeout(() => {
+            // ✨ CRITICAL FIX: Completion payload is MINIMAL (id, title, status, completion_summary, testing_notes, completed_at)
+            // We must MERGE with existing task data, not replace entirely, to preserve fields like git_branch_id, created_at, etc.
+
+            // ✅ FIX: Get git_branch_id from generic tasks list (where task definitely exists)
+            const genericTasks = queryClient.getQueryData<Task[]>(['tasks']);
+            const existingTask = genericTasks?.find(t => t.id === taskId);
+            const branchId = existingTask?.git_branch_id;
+
+            // Update individual task cache (merge with existing data)
+            queryClient.setQueryData(['task', taskId, false], (old: Task | undefined) => {
+              if (!old) return existingTask ? { ...existingTask, ...taskData, status: 'done' } : taskData;
+              return { ...old, ...taskData, status: 'done' };
+            });
+            queryClient.setQueryData(['task', taskId, true], (old: Task | undefined) => {
+              if (!old) return existingTask ? { ...existingTask, ...taskData, status: 'done' } : taskData;
+              return { ...old, ...taskData, status: 'done' };
+            });
+
+            // Update task in branch-specific cache (use branchId from existing task)
+            if (branchId) {
+              queryClient.setQueryData<Task[]>(
+                ['tasks', branchId],
+                (old) => {
+                  if (!old) return old;
+                  return old.map(t => t.id === taskId ? { ...t, ...taskData, status: 'done' } : t);
+                }
+              );
+            }
+
+            // ✨ FIX: Also update generic tasks list cache (merge with existing data)
+            queryClient.setQueryData<Task[]>(['tasks'], (old) => {
+              if (!old) return old;
+              return old.map(t => t.id === taskId ? { ...t, ...taskData, status: 'done' } : t);
+            });
+          }, 150); // Match COMPLETE animation duration from WebSocketAnimationService.ts
           break;
       }
     };
 
     // Handler for subtask updates
     const handleSubtaskUpdate = (message: WSMessage) => {
+      // CRITICAL FIX: Validate message structure before processing
+      if (!message?.payload?.data?.primary) {
+        logger.error('[useRealtimeSync] Subtask update missing payload.data.primary', { message });
+        return;
+      }
+
       const { action, data } = message.payload;
       const subtaskData = data.primary as Subtask;
 
-      if (!subtaskData?.id) {
+      // Additional validation: ensure subtaskData is an object
+      if (!subtaskData || typeof subtaskData !== 'object' || Array.isArray(subtaskData)) {
+        logger.error('[useRealtimeSync] Subtask data is not a valid object', { subtaskData });
+        return;
+      }
+
+      // Use getEntityId helper for safe ID extraction
+      const subtaskId = getEntityId(message);
+      if (action !== 'deleted' && !subtaskId) {
         logger.warn('[useRealtimeSync] Subtask update missing ID');
         return;
       }
 
-      logger.debug('[useRealtimeSync] Subtask event:', action, subtaskData.id);
+      logger.debug('[useRealtimeSync] Subtask event:', action, subtaskId || 'unknown');
 
       const taskId = subtaskData.task_id || subtaskData.parent_task_id;
+      const subtaskTitle = getDisplayName(message);
+
+      // Validate taskId for non-delete operations
+      if (action !== 'deleted' && !taskId) {
+        logger.error('[useRealtimeSync] Subtask missing task_id/parent_task_id', {
+          action,
+          subtaskId,
+          subtaskData
+        });
+        return;
+      }
 
       switch (action) {
         case 'created':
-          // Invalidate subtasks list and parent task
+          // Direct cache update - add new subtask to the list (check for duplicates)
           if (taskId) {
-            queryClient.invalidateQueries({ queryKey: ['subtasks', taskId] });
-            queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+            queryClient.setQueryData<Subtask[]>(
+              ['subtasks', taskId],
+              (old) => {
+                if (!old) return [subtaskData];
+
+                // ✨ FIX: Check if subtask already exists (from optimistic update)
+                const exists = old.some(s => s.id === subtaskData.id);
+                if (exists) {
+                  return old.map(s => s.id === subtaskData.id ? subtaskData : s);
+                }
+
+                return [...old, subtaskData];
+              }
+            );
+
+            // 🔥 REMOVED invalidateQueries - causes queuing and delays
+            // Parent task update will arrive separately via WebSocket (see line 382 in backend)
+            // This prevents React Query refetch from blocking subsequent operations
+
+            // Parent task counts updated by separate WebSocket message (backend line 382)
+            // No need to invalidate here - cache is already updated with fresh data
           }
+
+          // Show success toast (deduplicated)
+          showToastOnce(`subtask-created-${subtaskData.id}`, () => {
+            showSuccess(`Subtask "${subtaskTitle}" created successfully`);
+          });
           break;
 
         case 'updated':
-          // Update subtask in the subtasks list
-          if (taskId) {
-            queryClient.setQueryData<Subtask[]>(
-              ['subtasks', taskId],
-              (old) => {
-                if (!old) return old;
-                return old.map(s => s.id === subtaskData.id ? subtaskData : s);
-              }
-            );
+          // CRITICAL: Delay cache update to allow update animation to play (~150ms)
+          // If we update immediately, React re-renders before animation triggers
+          setTimeout(() => {
 
-            // Also invalidate parent task to update counts
-            queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-          }
+            // Update subtask in the subtasks list
+            if (taskId) {
+              queryClient.setQueryData<Subtask[]>(
+                ['subtasks', taskId],
+                (old) => {
+                  if (!old) return old;
+                  return old.map(s => s.id === subtaskData.id ? subtaskData : s);
+                }
+              );
+
+              // Also invalidate parent task to update counts
+              queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+            }
+          }, 150); // Match UPDATE animation duration from WebSocketAnimationService.ts
+
+          // Show info toast (deduplicated)
+          showToastOnce(`subtask-updated-${subtaskData.id}`, () => {
+            showInfo(`Subtask "${subtaskTitle}" updated`);
+          });
           break;
 
         case 'deleted':
-          // Remove from cache
-          if (taskId) {
-            queryClient.setQueryData<Subtask[]>(
-              ['subtasks', taskId],
-              (old) => {
-                if (!old) return old;
-                return old.filter(s => s.id !== subtaskData.id);
-              }
-            );
+          // 🔍 DEBUG: Log payload structure for validation
 
-            queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+          // Validate delete payload using type guard
+          if (!isSubtaskDeletePayload(subtaskData)) {
+            const data = subtaskData as any; // Cast for error checking
+            const missingFields = [];
+            if (!data?.id) missingFields.push('id');
+            if (!data?.task_id && !data?.parent_task_id) missingFields.push('task_id');
+
+            logger.warn('[useRealtimeSync] Invalid subtask delete payload', {
+              data: subtaskData,
+              reason: `Missing required fields: ${missingFields.join(', ')}`,
+            });
+            return;
           }
+
+
+          // Show warning toast FIRST (before cache update)
+          showToastOnce(`subtask-deleted-${subtaskData.id}`, () => {
+            showWarning(`Subtask "${subtaskTitle}" deleted`);
+          });
+
+          // CRITICAL: Delay cache update to allow delete animation to play (~600ms)
+          setTimeout(() => {
+
+            // Remove from cache
+            if (taskId) {
+              const beforeCache = queryClient.getQueryData<Subtask[]>(['subtasks', taskId]);
+
+              queryClient.setQueryData<Subtask[]>(
+                ['subtasks', taskId],
+                (old) => {
+                  if (!old) {
+                    return old;
+                  }
+                  return old.filter(s => s.id !== subtaskData.id);
+                }
+              );
+
+              const afterCache = queryClient.getQueryData<Subtask[]>(['subtasks', taskId]);
+
+              queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+            } else {
+            }
+          }, 600);
           break;
 
         case 'completed':
-          // Mark as completed
-          const completedSubtask = { ...subtaskData, status: 'done', progress_percentage: 100 };
+          // Show success toast FIRST (immediate user feedback)
+          showToastOnce(`subtask-completed-${subtaskData.id}`, () => {
+            showSuccess(`Subtask "${subtaskTitle}" completed`);
+          });
 
-          if (taskId) {
-            queryClient.setQueryData<Subtask[]>(
-              ['subtasks', taskId],
-              (old) => {
-                if (!old) return old;
-                return old.map(s => s.id === subtaskData.id ? completedSubtask : s);
-              }
-            );
+          // CRITICAL: Delay cache update to allow completion animation to play (~150ms)
+          // If we update immediately, React re-renders before animation triggers
+          setTimeout(() => {
+            // Use subtaskData directly - backend already sends complete subtask with status='done'
+            if (taskId) {
+              queryClient.setQueryData<Subtask[]>(
+                ['subtasks', taskId],
+                (old) => {
+                  if (!old) return old;
+                  return old.map(s => s.id === subtaskData.id ? subtaskData : s);
+                }
+              );
 
-            queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-          }
+              queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+            }
+          }, 150); // Match COMPLETE animation duration from WebSocketAnimationService.ts
           break;
       }
     };
@@ -187,6 +454,7 @@ export const useRealtimeSync = (
     const handleProjectUpdate = (message: WSMessage) => {
       const { action, data } = message.payload;
       const projectData = data.primary as Project;
+
 
       if (!projectData?.id) {
         logger.warn('[useRealtimeSync] Project update missing ID');
@@ -197,26 +465,98 @@ export const useRealtimeSync = (
 
       switch (action) {
         case 'created':
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
+
+          // Direct cache update - add new project to the list (check for duplicates)
+          queryClient.setQueryData<Project[]>(['projects'], (old) => {
+            if (!old) {
+              return [projectData];
+            }
+
+            // ✨ FIX: Check if project already exists (from optimistic update)
+            const exists = old.some(p => p.id === projectData.id);
+            if (exists) {
+              return old.map(p => p.id === projectData.id ? projectData : p);
+            }
+
+            return [...old, projectData];
+          });
+
+
+          // Show success toast (deduplicated to prevent double toasts from dual broadcasts)
+          showToastOnce(`project-created-${projectData.id}`, () => {
+            showSuccess(`Project "${projectData.name}" created successfully`);
+          });
           break;
 
         case 'updated':
-          queryClient.setQueryData(['projects', projectData.id], projectData);
 
-          queryClient.setQueryData<Project[]>(['projects'], (old) => {
-            if (!old) return old;
-            return old.map(p => p.id === projectData.id ? projectData : p);
+          // CRITICAL: Delay cache update to allow update animation to play (~150ms)
+          // If we update immediately, React re-renders before animation triggers
+          setTimeout(() => {
+
+            queryClient.setQueryData(['projects', projectData.id], projectData);
+
+            queryClient.setQueryData<Project[]>(['projects'], (old) => {
+              if (!old) return old;
+              return old.map(p => p.id === projectData.id ? projectData : p);
+            });
+          }, 150); // Match UPDATE animation duration from WebSocketAnimationService.ts
+
+          // Show info toast (deduplicated)
+          showToastOnce(`project-updated-${projectData.id}`, () => {
+            showInfo(`Project "${projectData.name}" updated`);
           });
           break;
 
         case 'deleted':
-          queryClient.removeQueries({ queryKey: ['projects', projectData.id] });
+          // Validate payload using type guard
+          if (!isProjectDeletePayload(projectData)) {
+            logger.warn('[useRealtimeSync] Project delete payload validation failed', {
+              payload: projectData,
+              requiredFields: ['id', 'name']
+            });
+            return;
+          }
 
-          queryClient.setQueryData<Project[]>(['projects'], (old) => {
-            if (!old) return old;
-            return old.filter(p => p.id !== projectData.id);
-          });
+
+          // Show warning toast FIRST (before cache update)
+          // Use getDisplayName helper for consistent display name extraction
+          try {
+            const displayName = getDisplayName(message);
+            showToastOnce(`project-deleted-${projectData.id}`, () => {
+              showWarning(`Project "${displayName}" deleted`);
+            });
+          } catch (err) {
+          }
+
+          // CRITICAL: Delay cache update to allow delete animation to play (~600ms)
+          // If we update immediately, React unmounts the component and animation can't play
+          setTimeout(() => {
+
+            // Only update cache, DON'T invalidate/refetch
+            queryClient.setQueryData<Project[]>(['projects'], (old) => {
+              if (!old) {
+                return old;
+              }
+              const filtered = old.filter(p => p.id !== projectData.id);
+              return filtered;
+            });
+
+            // Also remove individual project query cache
+            queryClient.setQueryData(['projects', projectData.id], undefined);
+
+            // Verify deletion persisted after another 400ms (total 1 second from start)
+            setTimeout(() => {
+              const currentProjects = queryClient.getQueryData<Project[]>(['projects']);
+              const projectExists = currentProjects?.some(p => p.id === projectData.id);
+              if (projectExists) {
+              } else {
+              }
+            }, 400);
+          }, 600);
           break;
+
+        default:
       }
     };
 
@@ -225,83 +565,278 @@ export const useRealtimeSync = (
       const { action, data } = message.payload;
       const branchData = data.primary as Branch;
 
-      if (!branchData?.id) {
+      const branchId = getEntityId(message);
+      if (!branchId) {
         logger.warn('[useRealtimeSync] Branch update missing ID');
         return;
       }
 
-      logger.debug('[useRealtimeSync] Branch event:', action, branchData.id);
+      logger.debug('[useRealtimeSync] Branch event:', action, branchId);
 
       const projectId = branchData.project_id;
+      const branchName = getDisplayName(message);
 
       switch (action) {
         case 'created':
+          // Direct cache update - add new branch to the list (check for duplicates)
           if (projectId) {
-            queryClient.invalidateQueries({ queryKey: ['branches', projectId] });
+            // 1. Update ['branches', projectId] cache
+            queryClient.setQueryData<Branch[]>(
+              ['branches', projectId],
+              (old) => {
+                if (!old) return [branchData];
+
+                // ✨ FIX: Check if branch already exists (from optimistic update)
+                const exists = old.some(b => b.id === branchData.id);
+                if (exists) {
+                  return old.map(b => b.id === branchData.id ? branchData : b);
+                }
+
+                return [...old, branchData];
+              }
+            );
+
+            // 2. Update ['branchSummaries'] cache
+            const branchSummariesQueries = queryClient.getQueriesData<{ branches: any[]; projects: any[] }>({
+              queryKey: ['branchSummaries']
+            });
+
+            branchSummariesQueries.forEach(([queryKey, data]) => {
+              if (data?.branches) {
+                // ✨ FIX: Check if branch summary already exists
+                const exists = data.branches.some((b: any) => b.id === branchData.id);
+
+                if (exists) {
+                  queryClient.setQueryData(queryKey, {
+                    ...data,
+                    branches: data.branches.map((b: any) =>
+                      b.id === branchData.id ? {
+                        ...b,
+                        name: branchData.name || branchData.git_branch_name || b.name,
+                        git_branch_name: branchData.git_branch_name || branchData.name || b.git_branch_name,
+                        status: branchData.status || b.status
+                      } : b
+                    )
+                  });
+                } else {
+                  // Create a branch summary object from the branch data
+                  const newSummary = {
+                    id: branchData.id,
+                    project_id: branchData.project_id,
+                    name: branchData.name || branchData.git_branch_name || '',
+                    git_branch_name: branchData.git_branch_name || branchData.name || '',
+                    status: branchData.status || 'active',
+                    task_count: 0,
+                    completed_tasks: 0,
+                    in_progress_tasks: 0,
+                    blocked_tasks: 0,
+                    todo_tasks: 0,
+                    progress_percentage: 0
+                  };
+
+                  queryClient.setQueryData(queryKey, {
+                    ...data,
+                    branches: [...data.branches, newSummary]
+                  });
+                }
+              }
+            });
+
+            // 3. 🔥 CRITICAL FIX: Invalidate branchSummaries to update sidebar counts
+            queryClient.invalidateQueries({ queryKey: ['branchSummaries'] });
+            // Also invalidate project to update branch count
             queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
           }
+
+          // Show success toast (deduplicated)
+          showToastOnce(`branch-created-${branchData.id}`, () => {
+            showSuccess(`Branch "${branchName}" created successfully`);
+          });
           break;
 
         case 'updated':
-          if (projectId) {
-            queryClient.setQueryData<Branch[]>(
-              ['branches', projectId],
-              (old) => {
-                if (!old) return old;
-                return old.map(b => b.id === branchData.id ? branchData : b);
-              }
-            );
-          }
+          // CRITICAL: Delay cache update to allow update animation to play (~150ms)
+          // If we update immediately, React re-renders before animation triggers
+          setTimeout(() => {
+
+            if (projectId) {
+              // 1. Update ['branches', projectId] cache
+              queryClient.setQueryData<Branch[]>(
+                ['branches', projectId],
+                (old) => {
+                  if (!old) return old;
+                  return old.map(b => b.id === branchData.id ? branchData : b);
+                }
+              );
+
+              // 2. Update ['branchSummaries'] cache
+              const branchSummariesQueries = queryClient.getQueriesData<{ branches: any[]; projects: any[] }>({
+                queryKey: ['branchSummaries']
+              });
+
+              branchSummariesQueries.forEach(([queryKey, data]) => {
+                if (data?.branches) {
+                  queryClient.setQueryData(queryKey, {
+                    ...data,
+                    branches: data.branches.map((b: any) => {
+                      if (b.id === branchData.id) {
+                        // Update summary with new branch data
+                        return {
+                          ...b,
+                          name: branchData.name || branchData.git_branch_name || b.name,
+                          git_branch_name: branchData.git_branch_name || branchData.name || b.git_branch_name,
+                          status: branchData.status || b.status
+                        };
+                      }
+                      return b;
+                    })
+                  });
+                }
+              });
+            }
+          }, 150); // Match UPDATE animation duration from WebSocketAnimationService.ts
+
+          // Show info toast (deduplicated)
+          showToastOnce(`branch-updated-${branchData.id}`, () => {
+            showInfo(`Branch "${branchName}" updated`);
+          });
           break;
 
         case 'deleted':
-          if (projectId) {
-            queryClient.setQueryData<Branch[]>(
-              ['branches', projectId],
-              (old) => {
-                if (!old) return old;
-                return old.filter(b => b.id !== branchData.id);
-              }
-            );
+          // 🔍 DEBUG: Log payload structure for TDD verification
 
-            queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
-            // Also invalidate tasks for this branch
-            queryClient.invalidateQueries({ queryKey: ['tasks', branchData.id] });
+          // Validate payload with type guard before processing
+          if (!isBranchDeletePayload(branchData)) {
+            const invalidData = branchData as any; // Cast for error logging
+            logger.warn('[useRealtimeSync] Invalid branch delete payload - missing required fields', branchData);
+            return;
           }
+
+
+          // Show warning toast FIRST (before cache update)
+          showToastOnce(`branch-deleted-${branchData.id}`, () => {
+            showWarning(`Branch "${branchName}" deleted`);
+          });
+
+          // CRITICAL: Delay cache update to allow delete animation to play (~600ms)
+          setTimeout(() => {
+
+            if (projectId) {
+              // 1. Update ['branches', projectId] cache (for detail views)
+              const beforeCache = queryClient.getQueryData<Branch[]>(['branches', projectId]);
+
+              queryClient.setQueryData<Branch[]>(
+                ['branches', projectId],
+                (old) => {
+                  if (!old) {
+                    return old;
+                  }
+                  const filtered = old.filter(b => b.id !== branchData.id);
+                  return filtered;
+                }
+              );
+
+              const afterCache = queryClient.getQueryData<Branch[]>(['branches', projectId]);
+
+              // 2. Update ['branchSummaries'] cache (for ProjectList component)
+              // Get all branchSummaries queries (there might be multiple with different projectIds filters)
+              const branchSummariesQueries = queryClient.getQueriesData<{ branches: any[]; projects: any[] }>({
+                queryKey: ['branchSummaries']
+              });
+
+
+              // Update each branchSummaries query to remove the deleted branch
+              branchSummariesQueries.forEach(([queryKey, data]) => {
+                if (data?.branches) {
+                  const beforeSummaries = data.branches.length;
+                  queryClient.setQueryData(queryKey, {
+                    ...data,
+                    branches: data.branches.filter((b: any) => b.id !== branchData.id)
+                  });
+                  const afterSummaries = queryClient.getQueryData<{ branches: any[] }>(queryKey)?.branches.length || 0;
+                }
+              });
+
+              // 3. 🔥 CRITICAL FIX: Remove cached data for the deleted branch
+              // Don't invalidate (refetch), just remove the cache entries
+              queryClient.removeQueries({ queryKey: ['branch', branchData.id] });
+              queryClient.removeQueries({ queryKey: ['tasks', branchData.id] });
+
+              // 4. Invalidate aggregate queries to update counts
+              queryClient.invalidateQueries({ queryKey: ['branchSummaries'] });
+              queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+
+            } else {
+            }
+          }, 600);
           break;
       }
     };
 
-    // Generic message handler
-    const handleMessage = (message: WSMessage) => {
-      // Only process v2.0 update messages
-      if (message.version !== '2.0' || message.type !== 'update') {
+    // Handler for agent instance updates
+    const handleAgentUpdate = (message: WSMessage) => {
+      const { action, data } = message.payload;
+      const agentData = data.primary as any;
+
+      if (!agentData || typeof agentData !== 'object' || Array.isArray(agentData) || !agentData.id) {
+        logger.warn('[useRealtimeSync] Agent update missing ID or invalid data');
         return;
       }
 
-      const { entity } = message.payload;
+      logger.debug('[useRealtimeSync] Agent event:', action, agentData.id);
 
-      // Route to appropriate handler based on entity type
-      switch (entity) {
-        case 'task':
-          handleTaskUpdate(message);
-          break;
-        case 'subtask':
-          handleSubtaskUpdate(message);
-          break;
-        case 'project':
-          handleProjectUpdate(message);
-          break;
-        case 'branch':
-          handleBranchUpdate(message);
-          break;
-        default:
-          logger.debug('[useRealtimeSync] Unknown entity type:', entity);
-      }
+      // Always invalidate the userAgentInstances list to ensure UI refresh
+      queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
+      queryClient.invalidateQueries({ queryKey: ['agentTemplates'] });
+    };
 
-      // Handle cascade data if present
-      if (message.payload.data.cascade) {
-        const cascade = message.payload.data.cascade;
+    // Generic message handler with comprehensive error handling
+    const handleMessage = (message: WSMessage) => {
+      try {
+        // Only process v2.0 update messages
+        if (message.version !== '2.0' || message.type !== 'update') {
+          return;
+        }
+
+        const { entity } = message.payload;
+
+        // CRITICAL FIX: Wrap each entity handler in try-catch to prevent crashes
+        // This ensures one failing handler doesn't break WebSocket connection
+        try {
+          // Route to appropriate handler based on entity type
+          switch (entity as string) {
+            case 'task':
+              handleTaskUpdate(message);
+              break;
+            case 'subtask':
+              handleSubtaskUpdate(message);
+              break;
+            case 'project':
+              handleProjectUpdate(message);
+              break;
+            case 'branch':
+              handleBranchUpdate(message);
+              break;
+            case 'agent':
+            case 'agent_instance':
+              handleAgentUpdate(message);
+              break;
+            default:
+              logger.debug('[useRealtimeSync] Unknown entity type:', entity);
+          }
+        } catch (handlerError) {
+          // CRITICAL: Log but don't throw - preserve WebSocket connection
+          logger.error(`[useRealtimeSync] Error in ${entity} handler:`, {
+            error: handlerError,
+            message: message,
+            stack: handlerError instanceof Error ? handlerError.stack : undefined
+          });
+          // Don't re-throw - let WebSocket continue processing other messages
+        }
+
+        // Handle cascade data if present
+        if (message.payload.data.cascade) {
+          const cascade = message.payload.data.cascade;
 
         if (cascade.tasks && Array.isArray(cascade.tasks)) {
           cascade.tasks.forEach((task: Task) => {
@@ -332,23 +867,26 @@ export const useRealtimeSync = (
           queryClient.invalidateQueries({ queryKey: ['projects'] });
         }
       }
+      } catch (error) {
+        logger.error('[useRealtimeSync] Error handling WebSocket message:', error);
+        // Don't break the event listener - log error and continue
+      }
     };
 
     // Store handler reference
-    handlersRef.current.set('message', handleMessage);
+    handlersRef.current.set('update', handleMessage);
 
-    // Subscribe to WebSocket messages
-    webSocketClient.on('message', handleMessage);
-
-    logger.info('[useRealtimeSync] Real-time sync initialized');
+    // Subscribe to WebSocket update events (WebSocketClient emits 'update', not 'message')
+    webSocketClient.on('update', handleMessage);
+    logger.info('[useRealtimeSync] Real-time sync initialized - listening to "update" events');
 
     // Cleanup
     return () => {
       logger.info('[useRealtimeSync] Cleaning up real-time sync');
-      webSocketClient.off('message', handleMessage);
-      handlersRef.current.delete('message');
+      webSocketClient.off('update', handleMessage);
+      handlersRef.current.delete('update');
     };
-  }, [webSocketClient, enabled, queryClient]);
+  }, [webSocketClient, enabled, queryClient, showSuccess, showInfo, showWarning, showToastOnce]);
 
   return {
     enabled,
