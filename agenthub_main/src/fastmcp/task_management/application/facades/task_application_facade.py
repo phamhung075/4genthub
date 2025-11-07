@@ -524,11 +524,33 @@ class TaskApplicationFacade:
                 # Broadcast task creation event ONLY if this was a new creation (not a duplicate)
                 if not was_already_created:
                     try:
+                        from ...domain.websocket_protocol import TaskCreatePayload
+
+                        # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                        try:
+                            payload = TaskCreatePayload(
+                                id=task_payload.get("id") or task_response.task.id,
+                                title=task_payload.get("title") or task_response.task.title,
+                                description=task_payload.get("description"),
+                                status=task_payload.get("status") or task_response.task.status,
+                                priority=task_payload.get("priority") or task_response.task.priority,
+                                git_branch_id=request.git_branch_id,
+                                assignees=task_payload.get("assignees"),
+                                labels=task_payload.get("labels"),
+                                created_at=task_payload.get("created_at")
+                            )
+                            validated_task_data = payload.model_dump()
+                            logger.info(f"✅ Task create payload validated for {task_response.task.id}")
+                        except Exception as validation_error:
+                            logger.error(f"❌ Task create payload validation failed: {validation_error}")
+                            # Fallback to dict (maintains backward compatibility)
+                            validated_task_data = task_payload
+
                         WebSocketNotificationService.sync_broadcast_task_event(
                             event_type="created",
                             task_id=task_response.task.id,
                             user_id=derived_user_id or "system",
-                            task_data=task_payload,
+                            task_data=validated_task_data,
                             git_branch_id=request.git_branch_id,
                             project_id=derived_project_id
                         )
@@ -583,13 +605,36 @@ class TaskApplicationFacade:
                 # Broadcast task update event ONLY if this was a meaningful update (not a duplicate)
                 if was_actually_updated:
                     try:
+                        from ...domain.websocket_protocol import TaskUpdatePayload
+
                         # Get user_id from request or use "system"
                         user_id = getattr(request, 'user_id', None) or "system"
+
+                        # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                        try:
+                            payload = TaskUpdatePayload(
+                                id=task_dict.get("id") or task_id,
+                                title=task_dict.get("title") or task_response.task.title,
+                                description=task_dict.get("description"),
+                                status=task_dict.get("status") or task_response.task.status,
+                                priority=task_dict.get("priority") or task_response.task.priority,
+                                git_branch_id=task_dict.get("git_branch_id") or task_response.task.git_branch_id,
+                                assignees=task_dict.get("assignees"),
+                                labels=task_dict.get("labels"),
+                                updated_at=task_dict.get("updated_at")
+                            )
+                            validated_task_data = payload.model_dump()
+                            logger.info(f"✅ Task update payload validated for {task_id}")
+                        except Exception as validation_error:
+                            logger.error(f"❌ Task update payload validation failed: {validation_error}")
+                            # Fallback to dict (maintains backward compatibility)
+                            validated_task_data = task_dict
+
                         WebSocketNotificationService.sync_broadcast_task_event(
                             event_type="updated",
                             task_id=task_id,
                             user_id=user_id,
-                            task_data=task_dict
+                            task_data=validated_task_data
                         )
                         logger.info(f"Broadcasted task update notification for MEANINGFUL update of task {task_id}")
 
@@ -648,7 +693,6 @@ class TaskApplicationFacade:
     
     def get_task(self, task_id: str, include_context: bool = True, include_dependencies: bool = True) -> Dict[str, Any]:
         """Get a task by ID with optional context data (sync-friendly)."""
-        print(f"DEBUG FACADE: get_task called with task_id={task_id}, include_context={include_context}")
         import asyncio
         try:
             # Validate input at application boundary
@@ -928,6 +972,15 @@ class TaskApplicationFacade:
             result = self._delete_task_use_case.execute(task_id, cascade=True, user_id=user_id)
             success = result.get("success", False)
 
+            # ✅ FIX: If pre-fetch failed but use case succeeded, use title from use case result
+            if success and not task_data_snapshot and result.get("title"):
+                task_data_snapshot = {
+                    "id": task_id,
+                    "title": result.get("title"),  # From use case (fetched before deletion)
+                    "git_branch_id": task_context.get("parent_branch_id") if task_context else None
+                }
+                logger.info(f"✅ Using title from use case result: {result.get('title')}")
+
             if success:
                 # Broadcast task deletion event with pre-fetched data snapshot
                 try:
@@ -938,11 +991,36 @@ class TaskApplicationFacade:
 
                     logger.info(f"🔔 DELETE: Broadcasting with user_id={notification_user_id} (task_owner={task_owner_user_id}, provided={user_id})")
 
+                    # Convert task_data_snapshot dict to TaskDeletePayload for type safety
+                    from ...domain.websocket_protocol import convert_task_delete_legacy
+
+                    if task_data_snapshot:
+                        try:
+                            task_delete_payload = convert_task_delete_legacy(task_data_snapshot)
+                            logger.info(f"✅ Converted task_data_snapshot to TaskDeletePayload: id={task_delete_payload.id}, title={task_delete_payload.title}")
+
+                            # Use typed payload dict for WebSocket broadcast
+                            typed_task_data = task_delete_payload.model_dump()
+                        except Exception as conversion_error:
+                            logger.warning(f"Failed to convert task_data_snapshot to TaskDeletePayload: {conversion_error}. Using original snapshot as fallback.")
+                            typed_task_data = task_data_snapshot  # Fallback to original dict
+                    else:
+                        logger.warning("task_data_snapshot is None, using minimal fallback payload")
+                        # Create minimal fallback payload when snapshot is unavailable
+                        from ...domain.websocket_protocol import TaskDeletePayload
+                        fallback_payload = TaskDeletePayload(
+                            id=task_id,
+                            title=task_context.get('task_title', f"Task {task_id[:8]}") if task_context else f"Task {task_id[:8]}",
+                            git_branch_id=task_context.get('parent_branch_id') if task_context else None
+                        )
+                        typed_task_data = fallback_payload.model_dump()
+                        logger.info(f"✅ Created fallback TaskDeletePayload: {typed_task_data}")
+
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="deleted",
                         task_id=task_id,
                         user_id=notification_user_id,
-                        task_data=task_data_snapshot,  # ✅ FIX: Pass pre-deletion snapshot for animation
+                        task_data=typed_task_data,  # ✅ Now using typed payload dict
                         pre_fetched_context=task_context
                     )
                 except Exception as e:
@@ -1049,10 +1127,12 @@ class TaskApplicationFacade:
                             logger.info(f"✅ Fetched task data with completion_summary: {task_data.get('completion_summary', '')[:80]}...")
                         else:
                             logger.warning(f"Could not fetch task from repository for completion broadcast")
-                            task_data = {"task_id": task_id, "status": response.get("status", "done")}
+                            # ✅ FIX: Include minimal title for toast notification (fallback will show Task ID if unavailable)
+                            task_data = {"task_id": task_id, "status": response.get("status", "done"), "title": response.get("title")}
                     except Exception as fetch_error:
                         logger.warning(f"Error fetching task data for broadcast: {fetch_error}")
-                        task_data = {"task_id": task_id, "status": response.get("status", "done")}
+                        # ✅ FIX: Include minimal title for toast notification (fallback will show Task ID if unavailable)
+                        task_data = {"task_id": task_id, "status": response.get("status", "done"), "title": response.get("title")}
 
                     git_branch_id = task_data.get("git_branch_id") if task_data else None
 
@@ -1067,11 +1147,30 @@ class TaskApplicationFacade:
                         except Exception as e:
                             logger.warning(f"Could not derive project_id from git_branch_id: {e}")
 
+                    # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                    from ...domain.websocket_protocol import TaskCompletePayload
+
+                    try:
+                        payload = TaskCompletePayload(
+                            id=task_data.get("id") or task_id,
+                            title=task_data.get("title", f"Task {task_id[:8]}"),
+                            status='done',
+                            completion_summary=task_data.get("completion_summary"),
+                            testing_notes=task_data.get("testing_notes"),
+                            completed_at=task_data.get("completed_at")
+                        )
+                        validated_task_data = payload.model_dump()
+                        logger.info(f"✅ Task complete payload validated for {task_id}")
+                    except Exception as validation_error:
+                        logger.error(f"❌ Task complete payload validation failed: {validation_error}")
+                        # Fallback to dict (maintains backward compatibility)
+                        validated_task_data = task_data
+
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="completed",
                         task_id=task_id,
                         user_id=user_id or "system",  # Use provided user_id or fallback to "system"
-                        task_data=task_data,
+                        task_data=validated_task_data,
                         git_branch_id=git_branch_id,  # Add git_branch_id for filtering and cascade updates
                         project_id=project_id  # Add project_id for filtering
                     )
@@ -1386,11 +1485,12 @@ class TaskApplicationFacade:
             # Convert to lightweight summaries
             task_summaries = []
             for task in tasks_to_process:
+                # CRITICAL FIX: Serialize enums to their string values for JSON compatibility
                 summary = {
                     "id": task.id,
                     "title": task.title,
-                    "status": task.status,
-                    "priority": task.priority,
+                    "status": task.status.value if hasattr(task.status, 'value') else str(task.status),
+                    "priority": task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
                     "git_branch_id": task.git_branch_id if hasattr(task, 'git_branch_id') else None,  # Required by frontend
                     "project_id": task.project_id if hasattr(task, 'project_id') else None,  # Required by frontend
                     "created_at": task.created_at.isoformat() if hasattr(task.created_at, 'isoformat') else str(task.created_at),
