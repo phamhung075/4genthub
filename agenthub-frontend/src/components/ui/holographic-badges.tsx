@@ -158,7 +158,8 @@ export const HolographicPriorityBadge: React.FC<HolographicPriorityBadgeProps> =
     lg: 'px-4 py-2 text-base gap-2'
   }
 
-  const config = priorityConfig[priority]
+  // ✨ FIX: Provide fallback for undefined or invalid priority
+  const config = priorityConfig[priority] || priorityConfig.medium
 
   return (
     <div

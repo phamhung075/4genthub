@@ -8,7 +8,7 @@ export { LazySubtaskListRefactored as default } from "./LazySubtaskListRefactore
 // Hook exports (for testing and reuse)
 export { useSubtaskData } from "./hooks/useSubtaskData";
 export { useSubtaskFilters } from "./hooks/useSubtaskFilters";
-export { useSubtaskWebSocket } from "./hooks/useSubtaskWebSocket";
+// useSubtaskWebSocket removed - subtasks now handled by useRealtimeSync + React Query
 export { useSubtaskExpansion } from "./hooks/useSubtaskExpansion";
 export { useSubtaskDialogs } from "./hooks/useSubtaskDialogs";
 

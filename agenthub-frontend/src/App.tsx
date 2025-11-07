@@ -28,7 +28,6 @@ const BranchDetailsDialog = lazy(() => import('./components/BranchDetailsDialog'
 const GlobalContextDialog = lazy(() => import('./components/GlobalContextDialog'));
 const ProjectDetailsDialog = lazy(() => import('./components/ProjectDetailsDialog'));
 const ProjectList = lazy(() => import('./components/ProjectList'));
-const WebSocketToastBridge = lazy(() => import('./components/WebSocketToastBridge').then(m => ({ default: m.WebSocketToastBridge })));
 const WebSocketStatusBadge = lazy(() => import('./components/WebSocketStatusBadge').then(m => ({ default: m.WebSocketStatusBadge })));
 const LazyTaskList = lazy(() => import('./components/LazyTaskList'));
 
@@ -219,9 +218,6 @@ function App() {
   return (
     <ThemeProvider>
       <ToastProvider>
-          <Suspense fallback={null}>
-            <WebSocketToastBridge />
-          </Suspense>
           <Suspense fallback={<LoadingFallback />}>
             <AuthWrapper>
               <ConditionalWebSocketBadge />

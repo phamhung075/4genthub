@@ -10,7 +10,7 @@ import { useWebSocket } from "../../hooks/useWebSocketV2";
 import { useRealtimeSync } from "../../hooks/useRealtimeSync";
 import { BranchSummary, Project } from "../../types";
 import logger from "../../utils/logger";
-import { useErrorToast, useSuccessToast } from "../ui/toast";
+import { useErrorToast } from "../ui/toast";
 
 const ProjectList: React.FC<ProjectListProps> = ({
   onSelect,
@@ -56,7 +56,6 @@ const ProjectList: React.FC<ProjectListProps> = ({
   const branchMutations = useBranchMutations();
 
   // Toast notifications
-  const showSuccessToast = useSuccessToast();
   const showErrorToast = useErrorToast();
 
   // Convert bulk summaries to project-keyed format for compatibility with existing UI
@@ -145,11 +144,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
         description: form.description
       });
 
-      showSuccessToast(
-        'Project created successfully',
-        `Project "${form.name}" has been created.`
-      );
-
+      // Note: Success toast is handled by WebSocket (backend confirmation)
+      // This prevents duplicate toasts from both component and WebSocket
       closeDialog('create');
     } catch (e: any) {
       showErrorToast('Failed to create project', e.message);
@@ -171,11 +167,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
         }
       });
 
-      showSuccessToast(
-        'Project updated successfully',
-        `Project has been renamed to "${form.name}".`
-      );
-
+      // Note: Success toast is handled by WebSocket (backend confirmation)
+      // This prevents duplicate toasts from both component and WebSocket
       closeDialog('edit');
     } catch (e: any) {
       showErrorToast('Failed to update project', e.message);
@@ -225,11 +218,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
         }
       });
 
-      showSuccessToast(
-        'Branch created successfully',
-        `Branch "${form.name}" has been created in project "${showCreateBranch.name}".`
-      );
-
+      // Note: Success toast is handled by WebSocket (backend confirmation)
+      // This prevents duplicate toasts from both component and WebSocket
       closeDialog('createBranch');
     } catch (e: any) {
       showErrorToast('Failed to create branch', e.message);

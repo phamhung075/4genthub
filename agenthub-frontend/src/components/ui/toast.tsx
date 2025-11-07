@@ -205,9 +205,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts([]);
   }, []);
 
-  // Note: Event bus listening is now handled by WebSocketToastBridge
-  // This prevents duplicate toasts when both ToastProvider and WebSocketToastBridge
-  // listen to the same toastEventBus events
+  // Toast notifications are triggered directly via useRealtimeSync
+  // which handles WebSocket messages and calls toast hooks directly
+  // Toast deduplication (2-second window) is handled in useRealtimeSync
 
   return (
     <ToastContext.Provider value={{ toasts, showToast, dismissToast, dismissAll }}>
