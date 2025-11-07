@@ -1,6 +1,203 @@
 {
   "absolute_docs": {
-    "obsolete_docs": [],
+    "obsolete_docs": [
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/manual-context-implementation-guide.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/00-understanding-mcp-context.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/REORGANIZATION_SUMMARY.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/02-synchronization.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/manual-context-system-implementation-phases.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/manual-context-system-technical-architecture.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/01-architecture.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/CORRECTIONS_SUMMARY.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/AI-CONTEXT-REALISTIC-APPROACH.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/index.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/04-implementation-guide.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/manual-context-system-gap-analysis.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/context-management-architectural-review.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/README.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/context-system-old-2025-11-07/05-workflow-patterns.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.906245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/phase2-domain-verification-2025-10-26.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/claude-hooks-refactoring-architecture.md"
+      },
+      {
+        "moved_date": "2025-11-03T13:13:19.976962",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/Agent-Sharing-and-Import-System.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.906245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/unified-timestamp-architecture.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.906245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/type-system-mapping.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/implementation-methodology-pattern.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.906245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/repository-pagination-migration-guide.md"
+      },
+      {
+        "moved_date": "2025-11-03T12:59:28.559525",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/agent-system-architecture-optimization-results.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.906245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/task-versioning-analysis.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/Architecture_Technique.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/clean-code-enforcement.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/cascade-calculator-ddd-refactoring.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/domain-driven-design-layers.md"
+      },
+      {
+        "moved_date": "2025-11-03T13:04:53.047715",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/User-Specific-Agent-System-Architecture.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/domain-events-catalog.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/index.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.906245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/session-type-detection.md"
+      },
+      {
+        "moved_date": "2025-11-03T13:42:58.838974",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/mcp-injection-architecture-optimization-results.md"
+      },
+      {
+        "moved_date": "2025-11-03T13:15:23.835859",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/Agent-Sharing-and-Import-System-optimization-results.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/architecture.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/architecture-thinking.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/dependency-management-engine-architecture.md"
+      },
+      {
+        "moved_date": "2025-11-03T12:57:32.363092",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/agent-system-architecture.md"
+      },
+      {
+        "moved_date": "2025-11-03T13:07:09.272039",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/User-Specific-Agent-System-Architecture-optimization-results.md"
+      },
+      {
+        "moved_date": "2025-11-03T13:40:12.918085",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/mcp-injection-architecture.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/design-patterns-in-architecture.md"
+      },
+      {
+        "moved_date": "2025-11-01T12:01:19.795222",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/Simplified-Agent-System-MCP-and-REST-APIs.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/context-hierarchy-system.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.906245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/system-architecture-overview.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.906245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/prompt-analyze.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/README.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.906245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/type-system-quality-checklist.md"
+      },
+      {
+        "moved_date": "2025-10-27T16:08:52.902245",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/database-architecture.md"
+      },
+      {
+        "moved_date": "2025-11-01T11:50:22.329845",
+        "path": "_obsolete_docs/core-architecture-old-2025-11-07/Clean-Migration-Strategy.md"
+      }
+    ],
     "tracked_files": {
       "scripts/docker-menu.sh": {
         "doc_path": "_absolute_docs/scripts/docker-menu.sh.md",
@@ -22,6 +219,361 @@
         }
       ],
       "path": "_absolute_docs/scripts"
+    },
+    "_obsolete_docs/context-system-old-2025-11-07": {
+      "count": 15,
+      "files": [
+        {
+          "hash": "77495fa6a0c03a1580797d1c477e229e",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "manual-context-implementation-guide.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/manual-context-implementation-guide.md",
+          "size": 67147
+        },
+        {
+          "hash": "fbb344344746a46808906d1d6564d24b",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "00-understanding-mcp-context.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/00-understanding-mcp-context.md",
+          "size": 6761
+        },
+        {
+          "hash": "b69c433e21faa937a32c24662553060b",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "REORGANIZATION_SUMMARY.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/REORGANIZATION_SUMMARY.md",
+          "size": 4243
+        },
+        {
+          "hash": "e896edace08e6c2a53cf4b1e08657d9c",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "02-synchronization.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/02-synchronization.md",
+          "size": 8487
+        },
+        {
+          "hash": "42987435633c787f94d1e3da7bf6914a",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "manual-context-system-implementation-phases.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/manual-context-system-implementation-phases.md",
+          "size": 21200
+        },
+        {
+          "hash": "501f1a3b6515862298eeca108094abe8",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "manual-context-system-technical-architecture.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/manual-context-system-technical-architecture.md",
+          "size": 19672
+        },
+        {
+          "hash": "3a1e6d0472e9e95af3f3ab85f657e20d",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "01-architecture.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/01-architecture.md",
+          "size": 4482
+        },
+        {
+          "hash": "389b101c182bc81234aee07c0ebd22aa",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "CORRECTIONS_SUMMARY.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/CORRECTIONS_SUMMARY.md",
+          "size": 3087
+        },
+        {
+          "hash": "18805f2182b58a0df3ccee79091f9c68",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "AI-CONTEXT-REALISTIC-APPROACH.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/AI-CONTEXT-REALISTIC-APPROACH.md",
+          "size": 14032
+        },
+        {
+          "hash": "5444fc676d29100c9f27133443cb7b74",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "index.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/index.md",
+          "size": 2736
+        },
+        {
+          "hash": "a5de684e6e5defd1b6e83b6ed7555084",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "04-implementation-guide.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/04-implementation-guide.md",
+          "size": 14896
+        },
+        {
+          "hash": "c1d7ba5d71d820280260f0b5b9ea4c1c",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "manual-context-system-gap-analysis.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/manual-context-system-gap-analysis.md",
+          "size": 16829
+        },
+        {
+          "hash": "6e2383efa70ce873a7e0a16e0002986c",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "context-management-architectural-review.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/context-management-architectural-review.md",
+          "size": 11038
+        },
+        {
+          "hash": "f75eb91b99323f89841ec7cf40b7d25a",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "README.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/README.md",
+          "size": 4427
+        },
+        {
+          "hash": "e82e77d89ac6ea2a1dafc7515d5457c1",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "05-workflow-patterns.md",
+          "path": "_obsolete_docs/context-system-old-2025-11-07/05-workflow-patterns.md",
+          "size": 15268
+        }
+      ],
+      "path": "_obsolete_docs/context-system-old-2025-11-07"
+    },
+    "_obsolete_docs/core-architecture-old-2025-11-07": {
+      "count": 34,
+      "files": [
+        {
+          "hash": "dc24a1c59418320fc85e498f286228d4",
+          "modified": "2025-10-27T16:08:52.906245",
+          "name": "phase2-domain-verification-2025-10-26.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/phase2-domain-verification-2025-10-26.md",
+          "size": 23230
+        },
+        {
+          "hash": "ecfe6c884554eba0685b104218229d09",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "claude-hooks-refactoring-architecture.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/claude-hooks-refactoring-architecture.md",
+          "size": 18470
+        },
+        {
+          "hash": "bf071d91a3eb0c9a3a2d5f41d1132d14",
+          "modified": "2025-11-03T13:13:19.976962",
+          "name": "Agent-Sharing-and-Import-System.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/Agent-Sharing-and-Import-System.md",
+          "size": 14492
+        },
+        {
+          "hash": "82f1cb835bab6c37ea12e7042e53bd2e",
+          "modified": "2025-10-27T16:08:52.906245",
+          "name": "unified-timestamp-architecture.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/unified-timestamp-architecture.md",
+          "size": 41053
+        },
+        {
+          "hash": "1db8205bcbf46835cbc39d2a155b2d89",
+          "modified": "2025-10-27T16:08:52.906245",
+          "name": "type-system-mapping.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/type-system-mapping.md",
+          "size": 10760
+        },
+        {
+          "hash": "e0483c7ac4e33e1819c982c82c0411ae",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "implementation-methodology-pattern.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/implementation-methodology-pattern.md",
+          "size": 4266
+        },
+        {
+          "hash": "291f63b347044fb124a5459b66d7a9ef",
+          "modified": "2025-10-27T16:08:52.906245",
+          "name": "repository-pagination-migration-guide.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/repository-pagination-migration-guide.md",
+          "size": 13079
+        },
+        {
+          "hash": "8344effe1753a8786c8a2ea4f98070ec",
+          "modified": "2025-11-03T12:59:28.559525",
+          "name": "agent-system-architecture-optimization-results.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/agent-system-architecture-optimization-results.md",
+          "size": 11244
+        },
+        {
+          "hash": "5ae84e6e149566182a3bb71eecf66956",
+          "modified": "2025-10-27T16:08:52.906245",
+          "name": "task-versioning-analysis.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/task-versioning-analysis.md",
+          "size": 22924
+        },
+        {
+          "hash": "08f1fdd98eef938ebf846aacddf57564",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "Architecture_Technique.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/Architecture_Technique.md",
+          "size": 29248
+        },
+        {
+          "hash": "26e673b631363afeb56868763818cda1",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "clean-code-enforcement.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/clean-code-enforcement.md",
+          "size": 8906
+        },
+        {
+          "hash": "c4a5176f7a5e4e97b30e49a5249c98cf",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "cascade-calculator-ddd-refactoring.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/cascade-calculator-ddd-refactoring.md",
+          "size": 13572
+        },
+        {
+          "hash": "568cf89812357afaa2be2d64eddc18c3",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "domain-driven-design-layers.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/domain-driven-design-layers.md",
+          "size": 19045
+        },
+        {
+          "hash": "24a09f4ee180ddab59a7faed2cd63253",
+          "modified": "2025-11-03T13:04:53.047715",
+          "name": "User-Specific-Agent-System-Architecture.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/User-Specific-Agent-System-Architecture.md",
+          "size": 21788
+        },
+        {
+          "hash": "83e27d310ea4d30243f3749c7346bc92",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "domain-events-catalog.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/domain-events-catalog.md",
+          "size": 31916
+        },
+        {
+          "hash": "a5a17258e332da5423485824d6d31320",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "index.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/index.md",
+          "size": 23888
+        },
+        {
+          "hash": "d7331d162d9cdc48de9fbf4a31bff66d",
+          "modified": "2025-10-27T16:08:52.906245",
+          "name": "session-type-detection.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/session-type-detection.md",
+          "size": 4364
+        },
+        {
+          "hash": "3779c50bbb803a22d8c56e85415f1448",
+          "modified": "2025-11-03T13:42:58.838974",
+          "name": "mcp-injection-architecture-optimization-results.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/mcp-injection-architecture-optimization-results.md",
+          "size": 27743
+        },
+        {
+          "hash": "0c80c95070a53917c97ccdca524651fd",
+          "modified": "2025-11-03T13:15:23.835859",
+          "name": "Agent-Sharing-and-Import-System-optimization-results.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/Agent-Sharing-and-Import-System-optimization-results.md",
+          "size": 19222
+        },
+        {
+          "hash": "0e9db02a476abe42edf8d6b11b4b1b6c",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "architecture.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/architecture.md",
+          "size": 11461
+        },
+        {
+          "hash": "7ecde5b1b4747f1bdf67c6117005ca8c",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "architecture-thinking.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/architecture-thinking.md",
+          "size": 15178
+        },
+        {
+          "hash": "f0cc19dad2860b415072cd94f243c4b5",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "dependency-management-engine-architecture.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/dependency-management-engine-architecture.md",
+          "size": 18954
+        },
+        {
+          "hash": "35d76caf1cefc7d9ebb220ec30a9c11f",
+          "modified": "2025-11-03T12:57:32.363092",
+          "name": "agent-system-architecture.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/agent-system-architecture.md",
+          "size": 23478
+        },
+        {
+          "hash": "f182bc04e45bc117ad1669ce65b7ca4e",
+          "modified": "2025-11-03T13:07:09.272039",
+          "name": "User-Specific-Agent-System-Architecture-optimization-results.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/User-Specific-Agent-System-Architecture-optimization-results.md",
+          "size": 20585
+        },
+        {
+          "hash": "70d35ad8231057082ed4a80c982f7be6",
+          "modified": "2025-11-03T13:40:12.918085",
+          "name": "mcp-injection-architecture.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/mcp-injection-architecture.md",
+          "size": 22723
+        },
+        {
+          "hash": "9e7dacddaf71fdced6e9c098b94a7003",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "design-patterns-in-architecture.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/design-patterns-in-architecture.md",
+          "size": 34824
+        },
+        {
+          "hash": "22ee90d5232a042c82c55eb9b3da5ed3",
+          "modified": "2025-11-01T12:01:19.795222",
+          "name": "Simplified-Agent-System-MCP-and-REST-APIs.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/Simplified-Agent-System-MCP-and-REST-APIs.md",
+          "size": 24312
+        },
+        {
+          "hash": "625c2c6c27016d8e4277e8e4552c800f",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "context-hierarchy-system.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/context-hierarchy-system.md",
+          "size": 22270
+        },
+        {
+          "hash": "a188d623099da579ced4d67774acd2ef",
+          "modified": "2025-10-27T16:08:52.906245",
+          "name": "system-architecture-overview.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/system-architecture-overview.md",
+          "size": 19028
+        },
+        {
+          "hash": "3e8655875e5419e4816635dccf2f33d4",
+          "modified": "2025-10-27T16:08:52.906245",
+          "name": "prompt-analyze.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/prompt-analyze.md",
+          "size": 20661
+        },
+        {
+          "hash": "85d16e04184626bc307cb309c6af9ae2",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "README.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/README.md",
+          "size": 2315
+        },
+        {
+          "hash": "4c1c445bf782030277895d234556908e",
+          "modified": "2025-10-27T16:08:52.906245",
+          "name": "type-system-quality-checklist.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/type-system-quality-checklist.md",
+          "size": 8507
+        },
+        {
+          "hash": "76e727b1ce7ec64452c334ac384220c7",
+          "modified": "2025-10-27T16:08:52.902245",
+          "name": "database-architecture.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/database-architecture.md",
+          "size": 9231
+        },
+        {
+          "hash": "c9db64a19e7f0c4023244595aad1a410",
+          "modified": "2025-11-01T11:50:22.329845",
+          "name": "Clean-Migration-Strategy.md",
+          "path": "_obsolete_docs/core-architecture-old-2025-11-07/Clean-Migration-Strategy.md",
+          "size": 17573
+        }
+      ],
+      "path": "_obsolete_docs/core-architecture-old-2025-11-07"
     },
     "_workplace/workers": {
       "count": 1,
@@ -448,417 +1000,6 @@
         }
       ],
       "path": "claude-code"
-    },
-    "context-system": {
-      "count": 22,
-      "files": [
-        {
-          "hash": "77495fa6a0c03a1580797d1c477e229e",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "manual-context-implementation-guide.md",
-          "path": "context-system/manual-context-implementation-guide.md",
-          "size": 67147
-        },
-        {
-          "hash": "fbb344344746a46808906d1d6564d24b",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "00-understanding-mcp-context.md",
-          "path": "context-system/00-understanding-mcp-context.md",
-          "size": 6761
-        },
-        {
-          "hash": "b69c433e21faa937a32c24662553060b",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "REORGANIZATION_SUMMARY.md",
-          "path": "context-system/REORGANIZATION_SUMMARY.md",
-          "size": 4243
-        },
-        {
-          "hash": "e896edace08e6c2a53cf4b1e08657d9c",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "02-synchronization.md",
-          "path": "context-system/02-synchronization.md",
-          "size": 8487
-        },
-        {
-          "hash": "42987435633c787f94d1e3da7bf6914a",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "manual-context-system-implementation-phases.md",
-          "path": "context-system/manual-context-system-implementation-phases.md",
-          "size": 21200
-        },
-        {
-          "hash": "f483314ca2264f97f44de2da29c96061",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "context-system-complete-guide.md",
-          "path": "context-system/context-system-complete-guide.md",
-          "size": 18560
-        },
-        {
-          "hash": "06452c0f1b3d4711b1d8ce200f145298",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "CONTEXT_UPDATE_IMPLEMENTATION.md",
-          "path": "context-system/CONTEXT_UPDATE_IMPLEMENTATION.md",
-          "size": 86036
-        },
-        {
-          "hash": "c68893f7b38c410216a6ebed8a6d684d",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "CONTEXT_DATA_MODELS.md",
-          "path": "context-system/CONTEXT_DATA_MODELS.md",
-          "size": 33269
-        },
-        {
-          "hash": "501f1a3b6515862298eeca108094abe8",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "manual-context-system-technical-architecture.md",
-          "path": "context-system/manual-context-system-technical-architecture.md",
-          "size": 19672
-        },
-        {
-          "hash": "3a1e6d0472e9e95af3f3ab85f657e20d",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "01-architecture.md",
-          "path": "context-system/01-architecture.md",
-          "size": 4482
-        },
-        {
-          "hash": "389b101c182bc81234aee07c0ebd22aa",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "CORRECTIONS_SUMMARY.md",
-          "path": "context-system/CORRECTIONS_SUMMARY.md",
-          "size": 3087
-        },
-        {
-          "hash": "18805f2182b58a0df3ccee79091f9c68",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "AI-CONTEXT-REALISTIC-APPROACH.md",
-          "path": "context-system/AI-CONTEXT-REALISTIC-APPROACH.md",
-          "size": 14032
-        },
-        {
-          "hash": "5444fc676d29100c9f27133443cb7b74",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "index.md",
-          "path": "context-system/index.md",
-          "size": 2736
-        },
-        {
-          "hash": "2a9cf3527e91c20865b1ca0a2b187d00",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "user-scoped-global-context.md",
-          "path": "context-system/user-scoped-global-context.md",
-          "size": 4843
-        },
-        {
-          "hash": "a5de684e6e5defd1b6e83b6ed7555084",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "04-implementation-guide.md",
-          "path": "context-system/04-implementation-guide.md",
-          "size": 14896
-        },
-        {
-          "hash": "c1d7ba5d71d820280260f0b5b9ea4c1c",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "manual-context-system-gap-analysis.md",
-          "path": "context-system/manual-context-system-gap-analysis.md",
-          "size": 16829
-        },
-        {
-          "hash": "c7a4b67bf7758e0c8c829db114488f3d",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "CONTEXT_UPDATE_EXAMPLES.md",
-          "path": "context-system/CONTEXT_UPDATE_EXAMPLES.md",
-          "size": 9835
-        },
-        {
-          "hash": "6e2383efa70ce873a7e0a16e0002986c",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "context-management-architectural-review.md",
-          "path": "context-system/context-management-architectural-review.md",
-          "size": 11038
-        },
-        {
-          "hash": "f75eb91b99323f89841ec7cf40b7d25a",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "README.md",
-          "path": "context-system/README.md",
-          "size": 4427
-        },
-        {
-          "hash": "a62fd49296386ea1ca8e90c3790abcdb",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "03-api-reference.md",
-          "path": "context-system/03-api-reference.md",
-          "size": 8553
-        },
-        {
-          "hash": "fb12acc8d545122aae3d9ef81dcfd0bc",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "context-database-schema-complete.md",
-          "path": "context-system/context-database-schema-complete.md",
-          "size": 12565
-        },
-        {
-          "hash": "e82e77d89ac6ea2a1dafc7515d5457c1",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "05-workflow-patterns.md",
-          "path": "context-system/05-workflow-patterns.md",
-          "size": 15268
-        }
-      ],
-      "path": "context-system"
-    },
-    "core-architecture": {
-      "count": 35,
-      "files": [
-        {
-          "hash": "72ad16444d92300d0c5e873469b605b6",
-          "modified": "2025-11-07T22:55:53.536909",
-          "name": "agenthub-system-architecture.md",
-          "path": "core-architecture/agenthub-system-architecture.md",
-          "size": 38486
-        },
-        {
-          "hash": "dc24a1c59418320fc85e498f286228d4",
-          "modified": "2025-10-27T16:08:52.906245",
-          "name": "phase2-domain-verification-2025-10-26.md",
-          "path": "core-architecture/phase2-domain-verification-2025-10-26.md",
-          "size": 23230
-        },
-        {
-          "hash": "ecfe6c884554eba0685b104218229d09",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "claude-hooks-refactoring-architecture.md",
-          "path": "core-architecture/claude-hooks-refactoring-architecture.md",
-          "size": 18470
-        },
-        {
-          "hash": "bf071d91a3eb0c9a3a2d5f41d1132d14",
-          "modified": "2025-11-03T13:13:19.976962",
-          "name": "Agent-Sharing-and-Import-System.md",
-          "path": "core-architecture/Agent-Sharing-and-Import-System.md",
-          "size": 14492
-        },
-        {
-          "hash": "82f1cb835bab6c37ea12e7042e53bd2e",
-          "modified": "2025-10-27T16:08:52.906245",
-          "name": "unified-timestamp-architecture.md",
-          "path": "core-architecture/unified-timestamp-architecture.md",
-          "size": 41053
-        },
-        {
-          "hash": "1db8205bcbf46835cbc39d2a155b2d89",
-          "modified": "2025-10-27T16:08:52.906245",
-          "name": "type-system-mapping.md",
-          "path": "core-architecture/type-system-mapping.md",
-          "size": 10760
-        },
-        {
-          "hash": "e0483c7ac4e33e1819c982c82c0411ae",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "implementation-methodology-pattern.md",
-          "path": "core-architecture/implementation-methodology-pattern.md",
-          "size": 4266
-        },
-        {
-          "hash": "291f63b347044fb124a5459b66d7a9ef",
-          "modified": "2025-10-27T16:08:52.906245",
-          "name": "repository-pagination-migration-guide.md",
-          "path": "core-architecture/repository-pagination-migration-guide.md",
-          "size": 13079
-        },
-        {
-          "hash": "8344effe1753a8786c8a2ea4f98070ec",
-          "modified": "2025-11-03T12:59:28.559525",
-          "name": "agent-system-architecture-optimization-results.md",
-          "path": "core-architecture/agent-system-architecture-optimization-results.md",
-          "size": 11244
-        },
-        {
-          "hash": "5ae84e6e149566182a3bb71eecf66956",
-          "modified": "2025-10-27T16:08:52.906245",
-          "name": "task-versioning-analysis.md",
-          "path": "core-architecture/task-versioning-analysis.md",
-          "size": 22924
-        },
-        {
-          "hash": "08f1fdd98eef938ebf846aacddf57564",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "Architecture_Technique.md",
-          "path": "core-architecture/Architecture_Technique.md",
-          "size": 29248
-        },
-        {
-          "hash": "26e673b631363afeb56868763818cda1",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "clean-code-enforcement.md",
-          "path": "core-architecture/clean-code-enforcement.md",
-          "size": 8906
-        },
-        {
-          "hash": "c4a5176f7a5e4e97b30e49a5249c98cf",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "cascade-calculator-ddd-refactoring.md",
-          "path": "core-architecture/cascade-calculator-ddd-refactoring.md",
-          "size": 13572
-        },
-        {
-          "hash": "568cf89812357afaa2be2d64eddc18c3",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "domain-driven-design-layers.md",
-          "path": "core-architecture/domain-driven-design-layers.md",
-          "size": 19045
-        },
-        {
-          "hash": "24a09f4ee180ddab59a7faed2cd63253",
-          "modified": "2025-11-03T13:04:53.047715",
-          "name": "User-Specific-Agent-System-Architecture.md",
-          "path": "core-architecture/User-Specific-Agent-System-Architecture.md",
-          "size": 21788
-        },
-        {
-          "hash": "83e27d310ea4d30243f3749c7346bc92",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "domain-events-catalog.md",
-          "path": "core-architecture/domain-events-catalog.md",
-          "size": 31916
-        },
-        {
-          "hash": "a5a17258e332da5423485824d6d31320",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "index.md",
-          "path": "core-architecture/index.md",
-          "size": 23888
-        },
-        {
-          "hash": "d7331d162d9cdc48de9fbf4a31bff66d",
-          "modified": "2025-10-27T16:08:52.906245",
-          "name": "session-type-detection.md",
-          "path": "core-architecture/session-type-detection.md",
-          "size": 4364
-        },
-        {
-          "hash": "3779c50bbb803a22d8c56e85415f1448",
-          "modified": "2025-11-03T13:42:58.838974",
-          "name": "mcp-injection-architecture-optimization-results.md",
-          "path": "core-architecture/mcp-injection-architecture-optimization-results.md",
-          "size": 27743
-        },
-        {
-          "hash": "0c80c95070a53917c97ccdca524651fd",
-          "modified": "2025-11-03T13:15:23.835859",
-          "name": "Agent-Sharing-and-Import-System-optimization-results.md",
-          "path": "core-architecture/Agent-Sharing-and-Import-System-optimization-results.md",
-          "size": 19222
-        },
-        {
-          "hash": "0e9db02a476abe42edf8d6b11b4b1b6c",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "architecture.md",
-          "path": "core-architecture/architecture.md",
-          "size": 11461
-        },
-        {
-          "hash": "7ecde5b1b4747f1bdf67c6117005ca8c",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "architecture-thinking.md",
-          "path": "core-architecture/architecture-thinking.md",
-          "size": 15178
-        },
-        {
-          "hash": "f0cc19dad2860b415072cd94f243c4b5",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "dependency-management-engine-architecture.md",
-          "path": "core-architecture/dependency-management-engine-architecture.md",
-          "size": 18954
-        },
-        {
-          "hash": "35d76caf1cefc7d9ebb220ec30a9c11f",
-          "modified": "2025-11-03T12:57:32.363092",
-          "name": "agent-system-architecture.md",
-          "path": "core-architecture/agent-system-architecture.md",
-          "size": 23478
-        },
-        {
-          "hash": "f182bc04e45bc117ad1669ce65b7ca4e",
-          "modified": "2025-11-03T13:07:09.272039",
-          "name": "User-Specific-Agent-System-Architecture-optimization-results.md",
-          "path": "core-architecture/User-Specific-Agent-System-Architecture-optimization-results.md",
-          "size": 20585
-        },
-        {
-          "hash": "70d35ad8231057082ed4a80c982f7be6",
-          "modified": "2025-11-03T13:40:12.918085",
-          "name": "mcp-injection-architecture.md",
-          "path": "core-architecture/mcp-injection-architecture.md",
-          "size": 22723
-        },
-        {
-          "hash": "9e7dacddaf71fdced6e9c098b94a7003",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "design-patterns-in-architecture.md",
-          "path": "core-architecture/design-patterns-in-architecture.md",
-          "size": 34824
-        },
-        {
-          "hash": "22ee90d5232a042c82c55eb9b3da5ed3",
-          "modified": "2025-11-01T12:01:19.795222",
-          "name": "Simplified-Agent-System-MCP-and-REST-APIs.md",
-          "path": "core-architecture/Simplified-Agent-System-MCP-and-REST-APIs.md",
-          "size": 24312
-        },
-        {
-          "hash": "625c2c6c27016d8e4277e8e4552c800f",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "context-hierarchy-system.md",
-          "path": "core-architecture/context-hierarchy-system.md",
-          "size": 22270
-        },
-        {
-          "hash": "a188d623099da579ced4d67774acd2ef",
-          "modified": "2025-10-27T16:08:52.906245",
-          "name": "system-architecture-overview.md",
-          "path": "core-architecture/system-architecture-overview.md",
-          "size": 19028
-        },
-        {
-          "hash": "3e8655875e5419e4816635dccf2f33d4",
-          "modified": "2025-10-27T16:08:52.906245",
-          "name": "prompt-analyze.md",
-          "path": "core-architecture/prompt-analyze.md",
-          "size": 20661
-        },
-        {
-          "hash": "85d16e04184626bc307cb309c6af9ae2",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "README.md",
-          "path": "core-architecture/README.md",
-          "size": 2315
-        },
-        {
-          "hash": "4c1c445bf782030277895d234556908e",
-          "modified": "2025-10-27T16:08:52.906245",
-          "name": "type-system-quality-checklist.md",
-          "path": "core-architecture/type-system-quality-checklist.md",
-          "size": 8507
-        },
-        {
-          "hash": "76e727b1ce7ec64452c334ac384220c7",
-          "modified": "2025-10-27T16:08:52.902245",
-          "name": "database-architecture.md",
-          "path": "core-architecture/database-architecture.md",
-          "size": 9231
-        },
-        {
-          "hash": "c9db64a19e7f0c4023244595aad1a410",
-          "modified": "2025-11-01T11:50:22.329845",
-          "name": "Clean-Migration-Strategy.md",
-          "path": "core-architecture/Clean-Migration-Strategy.md",
-          "size": 17573
-        }
-      ],
-      "path": "core-architecture"
     },
     "development-guides": {
       "count": 36,
@@ -1893,7 +2034,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-07T22:55:53.710159",
+  "generated_at": "2025-11-07T23:30:23.809593",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1902,7 +2043,65 @@
         ]
       }
     },
-    "_obsolete_docs": {},
+    "_obsolete_docs": {
+      "context-system-old-2025-11-07": {
+        "files": [
+          "00-understanding-mcp-context.md",
+          "01-architecture.md",
+          "02-synchronization.md",
+          "04-implementation-guide.md",
+          "05-workflow-patterns.md",
+          "AI-CONTEXT-REALISTIC-APPROACH.md",
+          "CORRECTIONS_SUMMARY.md",
+          "README.md",
+          "REORGANIZATION_SUMMARY.md",
+          "context-management-architectural-review.md",
+          "index.md",
+          "manual-context-implementation-guide.md",
+          "manual-context-system-gap-analysis.md",
+          "manual-context-system-implementation-phases.md",
+          "manual-context-system-technical-architecture.md"
+        ]
+      },
+      "core-architecture-old-2025-11-07": {
+        "files": [
+          "Agent-Sharing-and-Import-System-optimization-results.md",
+          "Agent-Sharing-and-Import-System.md",
+          "Architecture_Technique.md",
+          "Clean-Migration-Strategy.md",
+          "README.md",
+          "Simplified-Agent-System-MCP-and-REST-APIs.md",
+          "User-Specific-Agent-System-Architecture-optimization-results.md",
+          "User-Specific-Agent-System-Architecture.md",
+          "agent-system-architecture-optimization-results.md",
+          "agent-system-architecture.md",
+          "architecture-thinking.md",
+          "architecture.md",
+          "cascade-calculator-ddd-refactoring.md",
+          "claude-hooks-refactoring-architecture.md",
+          "clean-code-enforcement.md",
+          "context-hierarchy-system.md",
+          "database-architecture.md",
+          "dependency-management-engine-architecture.md",
+          "design-patterns-in-architecture.md",
+          "domain-driven-design-layers.md",
+          "domain-events-catalog.md",
+          "implementation-methodology-pattern.md",
+          "index.md",
+          "mcp-injection-architecture-optimization-results.md",
+          "mcp-injection-architecture.md",
+          "phase2-domain-verification-2025-10-26.md",
+          "prompt-analyze.md",
+          "repository-pagination-migration-guide.md",
+          "session-type-detection.md",
+          "system-architecture-overview.md",
+          "task-versioning-analysis.md",
+          "type-system-mapping.md",
+          "type-system-quality-checklist.md",
+          "unified-timestamp-architecture.md"
+        ]
+      }
+    },
     "_workplace": {
       "workers": {
         "files": [
@@ -1993,71 +2192,6 @@
         "phase3-development-guides-optimization-results.md",
         "phase3-hook-migration-complete.md",
         "token-optimization-comparison.md"
-      ]
-    },
-    "context-system": {
-      "files": [
-        "00-understanding-mcp-context.md",
-        "01-architecture.md",
-        "02-synchronization.md",
-        "03-api-reference.md",
-        "04-implementation-guide.md",
-        "05-workflow-patterns.md",
-        "AI-CONTEXT-REALISTIC-APPROACH.md",
-        "CONTEXT_DATA_MODELS.md",
-        "CONTEXT_UPDATE_EXAMPLES.md",
-        "CONTEXT_UPDATE_IMPLEMENTATION.md",
-        "CORRECTIONS_SUMMARY.md",
-        "README.md",
-        "REORGANIZATION_SUMMARY.md",
-        "context-database-schema-complete.md",
-        "context-management-architectural-review.md",
-        "context-system-complete-guide.md",
-        "index.md",
-        "manual-context-implementation-guide.md",
-        "manual-context-system-gap-analysis.md",
-        "manual-context-system-implementation-phases.md",
-        "manual-context-system-technical-architecture.md",
-        "user-scoped-global-context.md"
-      ]
-    },
-    "core-architecture": {
-      "files": [
-        "Agent-Sharing-and-Import-System-optimization-results.md",
-        "Agent-Sharing-and-Import-System.md",
-        "Architecture_Technique.md",
-        "Clean-Migration-Strategy.md",
-        "README.md",
-        "Simplified-Agent-System-MCP-and-REST-APIs.md",
-        "User-Specific-Agent-System-Architecture-optimization-results.md",
-        "User-Specific-Agent-System-Architecture.md",
-        "agent-system-architecture-optimization-results.md",
-        "agent-system-architecture.md",
-        "agenthub-system-architecture.md",
-        "architecture-thinking.md",
-        "architecture.md",
-        "cascade-calculator-ddd-refactoring.md",
-        "claude-hooks-refactoring-architecture.md",
-        "clean-code-enforcement.md",
-        "context-hierarchy-system.md",
-        "database-architecture.md",
-        "dependency-management-engine-architecture.md",
-        "design-patterns-in-architecture.md",
-        "domain-driven-design-layers.md",
-        "domain-events-catalog.md",
-        "implementation-methodology-pattern.md",
-        "index.md",
-        "mcp-injection-architecture-optimization-results.md",
-        "mcp-injection-architecture.md",
-        "phase2-domain-verification-2025-10-26.md",
-        "prompt-analyze.md",
-        "repository-pagination-migration-guide.md",
-        "session-type-detection.md",
-        "system-architecture-overview.md",
-        "task-versioning-analysis.md",
-        "type-system-mapping.md",
-        "type-system-quality-checklist.md",
-        "unified-timestamp-architecture.md"
       ]
     },
     "development-guides": {
@@ -2242,5 +2376,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 250
+  "total_files": 242
 }
