@@ -610,8 +610,15 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 34,
+      "count": 35,
       "files": [
+        {
+          "hash": "72ad16444d92300d0c5e873469b605b6",
+          "modified": "2025-11-07T22:55:53.536909",
+          "name": "agenthub-system-architecture.md",
+          "path": "core-architecture/agenthub-system-architecture.md",
+          "size": 38486
+        },
         {
           "hash": "dc24a1c59418320fc85e498f286228d4",
           "modified": "2025-10-27T16:08:52.906245",
@@ -1339,14 +1346,56 @@
       "path": "operations"
     },
     "reports-status": {
-      "count": 4,
+      "count": 10,
       "files": [
+        {
+          "hash": "6ed31b90d433dd530adf461f02cbd06e",
+          "modified": "2025-11-07T17:30:39.385324",
+          "name": "mcp-tools-comprehensive-validation-2025-11-07.md",
+          "path": "reports-status/mcp-tools-comprehensive-validation-2025-11-07.md",
+          "size": 16041
+        },
+        {
+          "hash": "68aedfa1b22e903bebc39dc09450dd59",
+          "modified": "2025-11-07T14:00:35.615999",
+          "name": "websocket-v2-comprehensive-fix-2025-11-07.md",
+          "path": "reports-status/websocket-v2-comprehensive-fix-2025-11-07.md",
+          "size": 11694
+        },
         {
           "hash": "aa027c11aa121f1eb680f40d38d2da7a",
           "modified": "2025-11-04T14:54:09.582110",
           "name": "deep-dead-code-analysis-typescript-2025-11-04.md",
           "path": "reports-status/deep-dead-code-analysis-typescript-2025-11-04.md",
           "size": 12375
+        },
+        {
+          "hash": "d575d4db0870475ca4d5c03440a1dd8f",
+          "modified": "2025-11-07T18:28:54.308636",
+          "name": "dead-code-analysis-websocket-v2-2025-11-07.md",
+          "path": "reports-status/dead-code-analysis-websocket-v2-2025-11-07.md",
+          "size": 13230
+        },
+        {
+          "hash": "f7e4d37895590c3198d7f44349a13709",
+          "modified": "2025-11-07T17:54:25.338531",
+          "name": "mcp-tools-validation-results-2025-11-07.md",
+          "path": "reports-status/mcp-tools-validation-results-2025-11-07.md",
+          "size": 12154
+        },
+        {
+          "hash": "e41e5b61bfd6a020170eaee53bea4e95",
+          "modified": "2025-11-07T21:36:29.634794",
+          "name": "dead-code-final-cleanup-2025-11-07.md",
+          "path": "reports-status/dead-code-final-cleanup-2025-11-07.md",
+          "size": 6393
+        },
+        {
+          "hash": "8778d2b3717d4eb379f8ddaad7d878bf",
+          "modified": "2025-11-07T20:12:01.838270",
+          "name": "mcp-tools-extended-validation-2025-11-07.md",
+          "path": "reports-status/mcp-tools-extended-validation-2025-11-07.md",
+          "size": 13825
         },
         {
           "hash": "24ba155f5186186c8874aa61a6860936",
@@ -1844,7 +1893,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-05T13:32:35.028170",
+  "generated_at": "2025-11-07T22:55:53.710159",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1984,6 +2033,7 @@
         "User-Specific-Agent-System-Architecture.md",
         "agent-system-architecture-optimization-results.md",
         "agent-system-architecture.md",
+        "agenthub-system-architecture.md",
         "architecture-thinking.md",
         "architecture.md",
         "cascade-calculator-ddd-refactoring.md",
@@ -2114,8 +2164,14 @@
       "files": [
         "dead-code-analysis-2025-11-04.md",
         "dead-code-analysis-phase2-2025-11-04.md",
+        "dead-code-analysis-websocket-v2-2025-11-07.md",
+        "dead-code-final-cleanup-2025-11-07.md",
         "deep-dead-code-analysis-typescript-2025-11-04.md",
-        "websocket-animation-architecture-analysis.md"
+        "mcp-tools-comprehensive-validation-2025-11-07.md",
+        "mcp-tools-extended-validation-2025-11-07.md",
+        "mcp-tools-validation-results-2025-11-07.md",
+        "websocket-animation-architecture-analysis.md",
+        "websocket-v2-comprehensive-fix-2025-11-07.md"
       ]
     },
     "setup-guides": {
@@ -2186,5 +2242,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 243
+  "total_files": 250
 }
