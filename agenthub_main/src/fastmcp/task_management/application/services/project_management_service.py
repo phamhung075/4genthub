@@ -78,11 +78,61 @@ class ProjectManagementService:
     async def create_project(self, name: str, description: str = "") -> Dict[str, Any]:
         """Create a new project with auto-generated UUID"""
         try:
+            logger.info(f"🔵 create_project called - name: {name}, user_id: {self._user_id}")
+
             # Use user-scoped repository instead of the default one
             user_scoped_repo = self._get_user_scoped_repository()
             use_case = CreateProjectUseCase(user_scoped_repo)
             # Pass `None` for project_id so the use-case auto-generates one.
-            return await use_case.execute(None, name, description)
+            result = await use_case.execute(None, name, description)
+
+            logger.info(f"🔵 Use case result - success: {result.get('success')}, project_id: {result.get('project', {}).get('id')}")
+
+            # CRITICAL FIX: Ensure WebSocket broadcast is sent with correct user_id
+            # The use case tries to extract user_id from repository, but this may fail
+            # As a safety net, if we have user_id in service, always broadcast
+            if result.get("success") and self._user_id:
+                logger.info(f"🔵 Entering broadcast block - user_id: {self._user_id}")
+                try:
+                    from .websocket_notification_service import WebSocketNotificationService
+                    from ...domain.websocket_protocol import ProjectCreatePayload
+
+                    raw_project_data = result.get("project", {})
+
+                    logger.info(f"🔵 About to call sync_broadcast_project_event - project_id: {raw_project_data.get('id')}, user_id: {self._user_id}")
+
+                    # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                    # This prevents "missing ID" bugs by enforcing required fields
+                    try:
+                        payload = ProjectCreatePayload(
+                            id=raw_project_data.get("id"),
+                            name=raw_project_data.get("name"),
+                            description=raw_project_data.get("description"),
+                            created_at=raw_project_data.get("created_at"),
+                            updated_at=raw_project_data.get("updated_at")
+                        )
+                        project_data = payload.model_dump()
+                        logger.info(f"✅ Project create payload validated: {project_data}")
+                    except Exception as validation_error:
+                        logger.error(f"❌ Project create payload validation failed: {validation_error}")
+                        # Fallback to dict (maintains backward compatibility during migration)
+                        project_data = raw_project_data
+
+                    # Always broadcast from service layer to ensure frontend updates
+                    # This guarantees user_id is correct even if use case extraction failed
+                    WebSocketNotificationService.sync_broadcast_project_event(
+                        event_type="created",
+                        project_id=project_data.get("id"),
+                        user_id=self._user_id,
+                        project_data=project_data
+                    )
+                    logger.info(f"✅ Service layer WebSocket broadcast COMPLETED for project: {project_data.get('id')}")
+                except Exception as ws_error:
+                    logger.error(f"❌ Service layer WebSocket broadcast EXCEPTION: {ws_error}", exc_info=True)
+            else:
+                logger.warning(f"⚠️  Broadcast skipped - success: {result.get('success')}, user_id: {self._user_id}")
+
+            return result
         except Exception as e:
             logger.error(f"Failed to create project: {e}")
             return {"success": False, "error": str(e)}
@@ -134,7 +184,42 @@ class ProjectManagementService:
         try:
             user_scoped_repo = self._get_user_scoped_repository()
             use_case = UpdateProjectUseCase(user_scoped_repo)
-            return await use_case.execute(project_id, name, description)
+            result = await use_case.execute(project_id, name, description)
+
+            # CRITICAL FIX: Ensure WebSocket broadcast for updates
+            if result.get("success") and self._user_id:
+                try:
+                    from .websocket_notification_service import WebSocketNotificationService
+                    from ...domain.websocket_protocol import ProjectUpdatePayload
+
+                    raw_project_data = result.get("project", {})
+
+                    # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                    try:
+                        payload = ProjectUpdatePayload(
+                            id=raw_project_data.get("id") or project_id,
+                            name=raw_project_data.get("name"),
+                            description=raw_project_data.get("description"),
+                            updated_at=raw_project_data.get("updated_at")
+                        )
+                        project_data = payload.model_dump()
+                        logger.info(f"✅ Project update payload validated: {project_data}")
+                    except Exception as validation_error:
+                        logger.error(f"❌ Project update payload validation failed: {validation_error}")
+                        # Fallback to dict (maintains backward compatibility during migration)
+                        project_data = raw_project_data
+
+                    WebSocketNotificationService.sync_broadcast_project_event(
+                        event_type="updated",
+                        project_id=project_id,
+                        user_id=self._user_id,
+                        project_data=project_data
+                    )
+                    logger.info(f"✅ Service layer WebSocket broadcast for updated project: {project_id}")
+                except Exception as ws_error:
+                    logger.warning(f"Service layer WebSocket broadcast failed: {ws_error}")
+
+            return result
         except Exception as e:
             logger.error(f"Failed to update project {project_id}: {e}")
             return {"success": False, "error": str(e)}
@@ -302,18 +387,39 @@ class ProjectManagementService:
             if deleted and verify_project is None:
                 logger.info(f"[DEBUG] Successfully deleted project {project_id} - verified gone from database")
 
-                # Send WebSocket notification with user context
+                # CRITICAL FIX: Service layer WebSocket broadcast (sync to ensure completion)
+                # This is the safety net that ensures broadcast happens even if use case fails
+                #
+                # TYPE-SAFE PAYLOAD: Using Pydantic model for compile-time + runtime validation
+                # This prevents "missing ID" bugs by enforcing required fields
                 try:
+                    logger.info(f"🔵 [DELETE] About to call sync_broadcast_project_event - project_id: {project_id}, user_id: {self._user_id}")
                     from ..services.websocket_notification_service import WebSocketNotificationService
-                    await WebSocketNotificationService.broadcast_project_event(
+                    from ...domain.websocket_protocol import ProjectDeletePayload
+
+                    # ✅ NEW: Type-safe payload construction with Pydantic validation
+                    # Pydantic will raise ValidationError if required fields are missing
+                    try:
+                        payload = ProjectDeletePayload(
+                            id=project_id,
+                            name=project.name
+                        )
+                        project_data = payload.model_dump()
+                        logger.info(f"✅ Project delete payload validated: {project_data}")
+                    except Exception as validation_error:
+                        logger.error(f"❌ Project delete payload validation failed: {validation_error}")
+                        # Fallback to dict (maintains backward compatibility during migration)
+                        project_data = {"id": project_id, "name": project.name}
+
+                    WebSocketNotificationService.sync_broadcast_project_event(
                         event_type="deleted",
                         project_id=project_id,
                         user_id=self._user_id,
-                        project_data={"name": project.name}
+                        project_data=project_data
                     )
-                    logger.info(f"Sent WebSocket notification for project {project_id} deletion")
+                    logger.info(f"✅ [DELETE] Service layer WebSocket broadcast COMPLETED for project: {project_id}")
                 except Exception as ws_error:
-                    logger.warning(f"Failed to send WebSocket notification: {ws_error}")
+                    logger.error(f"❌ [DELETE] Service layer WebSocket broadcast EXCEPTION: {ws_error}", exc_info=True)
 
                 return {
                     "success": True,

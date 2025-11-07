@@ -1585,6 +1585,11 @@ async def broadcast_data_change(
         logger.warning(f"   Connection Client IDs: {[conn.client_id for conn in connections.values()]}")
 
     # Prepare the message in v2.0 format
+    # CRITICAL FIX: Set source to "user" for CRUD operations (create/update/delete/complete)
+    # triggered by user actions to ensure proper notification and animation handling
+    user_triggered_events = ["created", "updated", "deleted", "completed", "assigned", "unassigned"]
+    source = "user" if event_type in user_triggered_events else "system"
+
     message = {
         "id": f"broadcast-{entity_type}-{random.randint(100000, 999999)}",
         "version": "2.0",
@@ -1599,7 +1604,7 @@ async def broadcast_data_change(
             }
         },
         "metadata": {
-            "source": "system",
+            "source": source,  # FIXED: Now correctly identifies user-triggered vs system actions
             "userId": user_id,
             "entity_type": entity_type,
             "entity_id": entity_id,
