@@ -13,6 +13,8 @@ This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for
 - Restart after code change: `echo "R" | ./docker-system/docker-menu.sh`
 - Server entry point: `fastmcp.server.mcp_entry_point`
 - Docker menu rebuild: `./docker-system/docker-menu.sh` → option R
+- Run tests: `./scripts/test-menu.sh` or `python scripts/run-tests.py`
+- Database schema verification: `python scripts/verify_init_schema.py`
 
 **Critical Principles:**
 - Keycloak is source of truth for user authentication
@@ -329,6 +331,36 @@ echo "R" | ./docker-system/docker-menu.sh
 - **Docker restart**: Required to view code changes in dev mode
 - **PostgreSQL**: Must be running for dev environment
 - **Tests**: Run before committing (use appropriate test category)
+
+---
+
+## 🗄️ Database Schema Management
+
+**Schema File**: `agenthub_main/src/fastmcp/task_management/infrastructure/database/init_schema_postgresql.sql`
+
+| Script | Purpose | When to Use |
+|--------|---------|-------------|
+| `scripts/verify_init_schema.py` | Verify SQL file matches database (tables + columns) | After database changes or ORM updates |
+| `scripts/deep_verify_schema.py` | Deep verification (types, constraints, FKs) | Before production deployment |
+| `scripts/check_fk_cascade.py` | Check foreign key CASCADE behavior | Verify architectural compliance |
+| `scripts/generate_schema_sql.py` | Regenerate SQL from actual database | After ORM model changes |
+
+**Quick Commands**:
+```bash
+# Verify schema matches database
+python scripts/verify_init_schema.py
+
+# Deep verification with types/constraints
+python scripts/deep_verify_schema.py
+
+# Regenerate SQL file from current database
+python scripts/generate_schema_sql.py
+```
+
+**Critical Architecture Note**:
+- Database uses **NO CASCADE** on all foreign keys (intentional DDD design)
+- Application layer handles all cascading deletions via domain events
+- Business logic stays in code, not database triggers
 
 ---
 
