@@ -22,7 +22,7 @@ class ApiResponse(BaseModel):
 class TaskResponse(BaseModel):
     """Task response matching frontend TaskResponse interface"""
     success: bool = True
-    task: TaskDTO
+    task: Optional[TaskDTO] = None
     error: Optional[str] = None
     message: Optional[str] = None
     timestamp: Optional[str] = None
@@ -55,7 +55,7 @@ class TaskSummariesResponse(BaseModel):
 class SubtaskResponse(BaseModel):
     """Subtask response matching frontend SubtaskResponse interface"""
     success: bool = True
-    subtask: SubtaskDTO
+    subtask: Optional[SubtaskDTO] = None
     error: Optional[str] = None
     message: Optional[str] = None
     timestamp: Optional[str] = None
@@ -74,7 +74,7 @@ class SubtasksResponse(BaseModel):
 class ProjectResponse(BaseModel):
     """Project response matching frontend ProjectResponse interface"""
     success: bool = True
-    project: ProjectDTO
+    project: Optional[ProjectDTO] = None
     error: Optional[str] = None
     message: Optional[str] = None
     timestamp: Optional[str] = None
@@ -93,7 +93,7 @@ class ProjectsResponse(BaseModel):
 class BranchResponse(BaseModel):
     """Branch response matching frontend BranchResponse interface"""
     success: bool = True
-    branch: BranchDTO
+    branch: Optional[BranchDTO] = None
     error: Optional[str] = None
     message: Optional[str] = None
     timestamp: Optional[str] = None

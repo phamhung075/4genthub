@@ -50,7 +50,7 @@ export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' |
 
 /**
  * Event types across the system (MERGED from multiple sources)
- * Includes all possible event types from WebSocketNotificationService and changePoolService
+ * Used by useRealtimeSync for WebSocket message processing
  */
 export type EventType = 'created' | 'updated' | 'deleted' | 'completed' | 'assigned' | 'unassigned' | 'archived' | 'restored';
 
