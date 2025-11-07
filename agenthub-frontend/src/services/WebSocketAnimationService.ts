@@ -2,7 +2,7 @@
  * WebSocket Animation Service - Refactored
  *
  * This service handles ONLY visual animations for WebSocket events.
- * It does NOT handle notifications - that's the responsibility of WebSocketNotificationService.
+ * It does NOT handle notifications - that's handled by useRealtimeSync with direct toast hooks.
  * Uses centralized AnimationFactory for all animation coordination.
  * Follows single responsibility principle for clean architecture.
  */
@@ -258,9 +258,12 @@ class WebSocketAnimationService {
 
     // Map WebSocket actions to animation types (same mapping as tasks)
     let animationType: AnimationType | null = null;
+    let delay = 150; // Default delay for UPDATE/DELETE
+
     switch (action) {
       case 'created':
         animationType = 'create';
+        delay = 500; // Longer delay for CREATE - React needs time to render new element
         break;
       case 'updated':
         animationType = 'update';
@@ -275,8 +278,15 @@ class WebSocketAnimationService {
     }
 
     // FIX: Defer animation until after DOM element exists
+    // CREATE events need longer delay (500ms) for React to render + register element
     requestAnimationFrame(() => {
       setTimeout(() => {
+        logger.debug(`🎬 WebSocketAnimationService: Attempting branch animation after ${delay}ms delay:`, {
+          branchId,
+          animationType,
+          action
+        });
+
         // Trigger animation via centralized factory
         const success = animationFactory.animate(branchId, animationType!, 'websocket');
 
@@ -285,7 +295,7 @@ class WebSocketAnimationService {
           animationType,
           success
         });
-      }, 150); // 150ms delay ensures DOM is ready
+      }, delay);
     });
   }
 
@@ -315,9 +325,12 @@ class WebSocketAnimationService {
 
     // Map WebSocket actions to animation types
     let animationType: AnimationType | null = null;
+    let delay = 150; // Default delay for UPDATE/DELETE
+
     switch (action) {
       case 'created':
         animationType = 'create';
+        delay = 500; // Longer delay for CREATE - React needs time to render new element
         break;
       case 'updated':
         animationType = 'update';
@@ -332,8 +345,15 @@ class WebSocketAnimationService {
     }
 
     // FIX: Defer animation until after DOM element exists
+    // CREATE events need longer delay (500ms) for React to render + register element
     requestAnimationFrame(() => {
       setTimeout(() => {
+        logger.debug(`🎬 WebSocketAnimationService: Attempting project animation after ${delay}ms delay:`, {
+          projectId,
+          animationType,
+          action
+        });
+
         // Trigger animation via centralized factory
         const success = animationFactory.animate(projectId, animationType!, 'websocket');
 
@@ -342,7 +362,7 @@ class WebSocketAnimationService {
           animationType,
           success
         });
-      }, 150); // 150ms delay ensures DOM is ready
+      }, delay);
     });
   }
 
