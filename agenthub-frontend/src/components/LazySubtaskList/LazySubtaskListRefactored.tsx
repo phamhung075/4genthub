@@ -4,7 +4,7 @@
 
 import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { useSuccessToast, useErrorToast } from "../ui/toast";
+import { useErrorToast } from "../ui/toast";
 import logger from "../../utils/logger";
 
 // React Query hooks
@@ -54,16 +54,8 @@ export function LazySubtaskListRefactored({
   parentTaskId
 }: LazySubtaskListProps) {
 
-  // Toast notifications
-  const showSuccessToast = useSuccessToast();
+  // Toast notifications (only error toasts - success handled by WebSocket)
   const showErrorToast = useErrorToast();
-
-  logger.debug('🚀 [LazySubtaskList] Component MOUNTED/RENDERING', {
-    parentTaskId,
-    projectId,
-    taskTreeId,
-    timestamp: Date.now()
-  });
 
   // URL parameter monitoring - safely handle when not in a route context
   let subtaskId: string | undefined;
@@ -111,14 +103,6 @@ export function LazySubtaskListRefactored({
 
   // Filtering and sorting hook
   const { filteredSubtasks } = useSubtaskFilters(subtasks);
-
-  // 🔴 DEBUG: Track subtask data
-  logger.debug('🔍 [LazySubtaskList] Subtask data state', {
-    subtasksCount: subtasks.length,
-    filteredSubtasksCount: filteredSubtasks.length,
-    subtaskIds: subtasks.map(s => s.id),
-    subtaskTitles: subtasks.map(s => s.title)
-  });
 
   // Animation and expansion state hook
   const {
@@ -223,8 +207,8 @@ export function LazySubtaskListRefactored({
       // Close the delete dialog immediately
       closeAllDialogs();
 
-      // Show success notification
-      showSuccessToast('Subtask deleted successfully', 'The subtask has been removed from the list');
+      // Note: Success toast is handled by WebSocket (backend confirmation)
+      // This prevents duplicate toasts from both component and WebSocket
 
     } catch (error) {
       logger.error('Error deleting subtask:', error);

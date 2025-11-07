@@ -47,6 +47,7 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
   return (
     <div
       ref={desktopElementRef}
+      data-project-id={project.id}
       className={cn(
         "group relative flex items-center justify-between p-2 rounded-md hover:bg-background-hover transition-colors cursor-pointer",
         animationClass

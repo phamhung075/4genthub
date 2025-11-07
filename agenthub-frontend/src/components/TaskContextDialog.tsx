@@ -6,7 +6,6 @@ import { FileText, Save, Edit, X, Copy, Check as CheckIcon, Info, CheckSquare, G
 import { Task } from "../api";
 import { getTaskContext, updateTaskContext, getBranchContext, getProjectContext, getGlobalContext } from "../api";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
-import { useEntityChanges } from "../hooks/useChangeSubscription";
 import logger from "../utils/logger";
 
 interface TaskContextDialogProps {
@@ -199,33 +198,13 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
     }
   }, [task?.id, initialContext]);
 
-  // WebSocket subscription for real-time task updates
-  // CRITICAL FIX: Listen for task updates and refresh context automatically
-  const handleTaskUpdate = useCallback(async (notification?: any) => {
-    if (!task?.id || !open) return;
-
-    // Check if this notification is for the current task
-    if (notification?.entityId === task.id && notification?.entityType === 'task') {
-      logger.info('[TaskContextDialog] Received WebSocket task update, refreshing context', {
-        taskId: task.id,
-        eventType: notification.eventType
-      });
-
-      // Re-fetch task context to get updated progress_history
-      await fetchTaskContext();
-    }
-  }, [task?.id, open, fetchTaskContext]);
-
-  // Subscribe to task changes via WebSocket
-  useEntityChanges(
-    'TaskContextDialog',
-    'task',
-    handleTaskUpdate,
-    {
-      entityIds: task?.id ? [task.id] : undefined,
-      enabled: open && !!task?.id // Only subscribe when dialog is open and task exists
-    }
-  );
+  // Real-time updates now handled by useRealtimeSync + React Query cache
+  // When AI agents use MCP tools, backend broadcasts WebSocket 'update' events
+  // → useRealtimeSync receives them and updates React Query cache via setQueryData()
+  // → Components automatically re-render with fresh data from cache
+  // → No need for manual WebSocket subscriptions in individual components
+  //
+  // If manual refresh needed, fetchTaskContext() can be called explicitly
 
   // Fetch context when dialog opens
   useEffect(() => {

@@ -168,7 +168,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
         assignees: taskData.assignees || []
       });
 
-      showSuccess('Task created successfully');
+      // Note: Success toast is handled by WebSocket (backend confirmation)
       closeDialog();
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
@@ -176,7 +176,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     } finally {
       setSaving(false);
     }
-  }, [closeDialog, onTasksChanged, taskTreeId, showError, showSuccess, setSaving, taskMutations]);
+  }, [closeDialog, onTasksChanged, taskTreeId, showError, setSaving, taskMutations]);
 
   const handleUpdateTask = useCallback(async (taskId: string, updates: any) => {
     setSaving(true);
@@ -186,7 +186,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
         updates
       });
 
-      showSuccess('Task updated successfully');
+      // Note: Success toast is handled by WebSocket (backend confirmation)
       closeDialog();
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
@@ -194,19 +194,19 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     } finally {
       setSaving(false);
     }
-  }, [closeDialog, onTasksChanged, showError, showSuccess, setSaving, taskMutations]);
+  }, [closeDialog, onTasksChanged, showError, setSaving, taskMutations]);
 
   const handleDeleteTask = useCallback(async (taskId: string) => {
     closeDialog();
     try {
       await taskMutations.deleteTaskAsync(taskId);
 
-      showSuccess('Task deleted successfully');
+      // Note: Success toast is handled by WebSocket (backend confirmation)
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
       showError(`Failed to delete task: ${error.message || 'Unknown error'}`);
     }
-  }, [closeDialog, onTasksChanged, showError, showSuccess, taskMutations]);
+  }, [closeDialog, onTasksChanged, showError, taskMutations]);
 
   // Effects
   useEffect(() => {
