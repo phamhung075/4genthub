@@ -28,6 +28,7 @@ export class WebSocketClient extends EventEmitter {
 
   constructor(
     private token: string,
+    private userId?: string,
     wsConfig?: Partial<WebSocketConfig>
   ) {
     super();
