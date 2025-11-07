@@ -109,5 +109,6 @@ class DeleteTaskUseCase:
 
         return {
             "success": stats["task_deleted"],
+            "title": task_title,  # ✅ FIX: Include title for WebSocket notification
             **stats
         } 

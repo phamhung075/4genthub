@@ -14,11 +14,12 @@ class RemoveSubtaskUseCase:
         if not subtask:
             raise ValueError(f"Subtask {id} not found in task {task_id}")
 
-        # Get branch ID and status before deletion for event
+        # Get branch ID, status, and title before deletion for event and WebSocket payload
         parent_task_obj = self._task_repository.find_by_id(self._convert_to_task_id(task_id))
         branch_id = parent_task_obj.git_branch_id if parent_task_obj and hasattr(parent_task_obj, 'git_branch_id') else None
         subtask_status = 'done' if subtask.is_completed else 'todo'
         is_subtask_completed = subtask.is_completed
+        subtask_title = subtask.title  # ✅ FIX: Capture title before deletion for WebSocket payload
 
         # Remove the subtask
         success = self._subtask_repository.remove_subtask(task_id, id)
@@ -87,7 +88,7 @@ class RemoveSubtaskUseCase:
 
         response = RemoveSubtaskResponse(
             success=success,
-            subtask={"id": str(id)},
+            subtask={"id": str(id), "title": subtask_title},  # ✅ FIX: Include title for WebSocket notification
             progress=progress
         )
         return asdict(response)

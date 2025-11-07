@@ -26,6 +26,8 @@ from ..services.websocket_notification_service import WebSocketNotificationServi
 from ..services.minimal_response_serializer import MinimalResponseSerializer
 from ...infrastructure.database.models import Subtask as SubtaskModel
 from ...infrastructure.database.database_config import get_session
+from ...domain.websocket_protocol import SubtaskDeletePayload, create_delete_message
+from ...domain.value_objects.subtask_id import SubtaskId
 
 logger = logging.getLogger(__name__)
 
@@ -332,12 +334,33 @@ class SubtaskApplicationFacade:
             # Convert subtask response to dict for broadcasting
             subtask_dict = response.subtask if isinstance(response.subtask, dict) else response.subtask.__dict__
 
+            # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+            from ...domain.websocket_protocol import SubtaskCreatePayload
+
+            try:
+                payload = SubtaskCreatePayload(
+                    id=subtask_dict.get("id"),
+                    title=subtask_dict.get("title"),
+                    description=subtask_dict.get("description"),
+                    status=subtask_dict.get("status", "todo"),
+                    task_id=task_id,
+                    progress_percentage=subtask_dict.get("progress_percentage"),
+                    created_at=subtask_dict.get("created_at"),
+                    updated_at=subtask_dict.get("updated_at")  # ✅ FIX: Include updated_at for frontend validation
+                )
+                validated_subtask_data = payload.model_dump()
+                logger.info(f"✅ Subtask create payload validated for {subtask_dict.get('id')}")
+            except Exception as validation_error:
+                logger.error(f"❌ Subtask create payload validation failed: {validation_error}")
+                # Fallback to dict (maintains backward compatibility)
+                validated_subtask_data = subtask_dict
+
             WebSocketNotificationService.sync_broadcast_subtask_event(
                 event_type="created",
                 subtask_id=subtask_dict.get("id"),
                 task_id=task_id,
                 user_id=user_id,
-                subtask_data=subtask_dict
+                subtask_data=validated_subtask_data
             )
 
             # CRITICAL: Broadcast parent task update to refresh data in frontend
@@ -346,21 +369,25 @@ class SubtaskApplicationFacade:
                 parent_task = task_repository.find_by_id(TaskId.from_string(task_id))
                 if parent_task:
                     # Convert to dict for WebSocket broadcast
+                    # CRITICAL FIX: Serialize enums to their string values for JSON compatibility
                     parent_task_dict = {
                         "id": str(parent_task.id),
                         "title": parent_task.title,
-                        "status": parent_task.status,
-                        "priority": parent_task.priority,
+                        "status": parent_task.status.value if hasattr(parent_task.status, 'value') else str(parent_task.status),
+                        "priority": parent_task.priority.value if hasattr(parent_task.priority, 'value') else str(parent_task.priority),
                         "assignees": parent_task.assignees or [],
                         "has_dependencies": len(parent_task.dependencies) > 0 if parent_task.dependencies else False,
                         "has_context": bool(parent_task.context_id)
                     }
 
+                    # FIX: Add metadata to suppress duplicate notification toasts
+                    # Frontend checks for source='system' to skip showing toasts for automatic updates
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="updated",
                         task_id=task_id,
                         user_id=user_id,
-                        task_data=parent_task_dict
+                        task_data=parent_task_dict,
+                        metadata={"source": "system", "event_type": "subtask_count_update"}
                     )
                     logger.info(f"✅ Broadcasted parent task update after subtask creation")
             except Exception as parent_error:
@@ -436,12 +463,32 @@ class SubtaskApplicationFacade:
                 # Convert subtask response to dict for broadcasting (minimal serialization)
                 subtask_dict = MinimalResponseSerializer.serialize_subtask_minimal(response.subtask, "update")
 
+                # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                from ...domain.websocket_protocol import SubtaskUpdatePayload
+
+                try:
+                    payload = SubtaskUpdatePayload(
+                        id=subtask_dict.get("id") or actual_subtask_id,
+                        title=subtask_dict.get("title"),
+                        description=subtask_dict.get("description"),
+                        status=subtask_dict.get("status"),
+                        task_id=task_id,
+                        progress_percentage=subtask_dict.get("progress_percentage"),
+                        created_at=subtask_dict.get("created_at"),  # ✅ FIX: Include created_at for frontend validation
+                        updated_at=subtask_dict.get("updated_at")
+                    )
+                    validated_subtask_data = payload.model_dump()
+                    logger.info(f"✅ Subtask update payload validated for {actual_subtask_id}")
+                except Exception as validation_error:
+                    logger.error(f"❌ Subtask update payload validation failed: {validation_error}")
+                    validated_subtask_data = subtask_dict
+
                 WebSocketNotificationService.sync_broadcast_subtask_event(
                     event_type="updated",
                     subtask_id=actual_subtask_id,
                     task_id=task_id,
                     user_id=user_id,
-                    subtask_data=subtask_dict
+                    subtask_data=validated_subtask_data
                 )
             except Exception as e:
                 logger.warning(f"Failed to broadcast subtask update: {e}")
@@ -478,10 +525,11 @@ class SubtaskApplicationFacade:
         actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
         if not actual_subtask_id:
             raise ValueError("subtask_id is required (either as parameter or in subtask_data)")
-        
+
         # Create use case with context-specific repositories
         remove_subtask_use_case = self._remove_subtask_use_case or RemoveSubtaskUseCase(task_repository, subtask_repository)
-        
+
+        # ✅ FIX: Use case now returns subtask title in result (no need to fetch separately)
         result = remove_subtask_use_case.execute(task_id, actual_subtask_id)
         response = {
             "success": result["success"],
@@ -497,12 +545,38 @@ class SubtaskApplicationFacade:
                 context = self._derive_context_from_task(task_id)
                 user_id = context.get("user_id", "system")
 
+                # 🎯 USE SubtaskDeletePayload (type-safe, validated payload)
+                # ✅ FIX: Get title from use case result (returned in result['subtask']['title'])
+                subtask_title = result.get("subtask", {}).get("title")
+
+                # Apply fallback if title is still missing (shouldn't happen unless use case failed)
+                if not subtask_title:
+                    subtask_title = f"Subtask {actual_subtask_id[:8]}"
+                    logger.warning(f"📝 Using fallback title for subtask deletion: '{subtask_title}'")
+
+                # Create type-safe payload with validation
+                delete_payload = SubtaskDeletePayload(
+                    id=actual_subtask_id,
+                    task_id=task_id,
+                    title=subtask_title
+                )
+
+                # Create WebSocket message using typed payload
+                ws_message = create_delete_message(
+                    entity='subtask',
+                    payload=delete_payload,
+                    user_id=user_id
+                )
+
+                # Convert to dict for WebSocket broadcast
+                subtask_data_for_broadcast = delete_payload.model_dump()
+
                 WebSocketNotificationService.sync_broadcast_subtask_event(
                     event_type="deleted",
                     subtask_id=actual_subtask_id,
                     task_id=task_id,
                     user_id=user_id,
-                    subtask_data={"id": actual_subtask_id, "deleted": True}
+                    subtask_data=subtask_data_for_broadcast
                 )
 
                 # CRITICAL: Broadcast parent task update to refresh data in frontend
@@ -511,21 +585,25 @@ class SubtaskApplicationFacade:
                     parent_task = task_repository.find_by_id(TaskId.from_string(task_id))
                     if parent_task:
                         # Convert to dict for WebSocket broadcast
+                        # CRITICAL FIX: Serialize enums to their string values for JSON compatibility
                         parent_task_dict = {
                             "id": str(parent_task.id),
                             "title": parent_task.title,
-                            "status": parent_task.status,
-                            "priority": parent_task.priority,
+                            "status": parent_task.status.value if hasattr(parent_task.status, 'value') else str(parent_task.status),
+                            "priority": parent_task.priority.value if hasattr(parent_task.priority, 'value') else str(parent_task.priority),
                             "assignees": parent_task.assignees or [],
                             "has_dependencies": len(parent_task.dependencies) > 0 if parent_task.dependencies else False,
                             "has_context": bool(parent_task.context_id)
                         }
 
+                        # FIX: Add metadata to suppress duplicate notification toasts
+                        # Frontend checks for source='system' to skip showing toasts for automatic updates
                         WebSocketNotificationService.sync_broadcast_task_event(
                             event_type="updated",
                             task_id=task_id,
                             user_id=user_id,
-                            task_data=parent_task_dict
+                            task_data=parent_task_dict,
+                            metadata={"source": "system", "event_type": "subtask_count_update"}
                         )
                         logger.info(f"✅ Broadcasted parent task update after subtask deletion")
                 except Exception as parent_error:
@@ -710,18 +788,41 @@ class SubtaskApplicationFacade:
                     enriched_subtask_data = {
                         "id": actual_subtask_id,
                         "status": "done",
+                        "title": subtask.title,  # ✅ FIX: Include title for toast notification
                         "completion_summary": completion_summary or "",
                         "testing_notes": testing_notes or "",
                         "progress_percentage": 100,
                     }
 
                 logger.info(f"🎯 COMPLETION_BROADCAST: About to call WebSocketNotificationService with event_type='completed'")
+
+                # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                from ...domain.websocket_protocol import SubtaskCompletePayload
+
+                try:
+                    payload = SubtaskCompletePayload(
+                        id=enriched_subtask_data.get("id") or actual_subtask_id,
+                        title=enriched_subtask_data.get("title", f"Subtask {actual_subtask_id[:8]}"),
+                        status='done',
+                        task_id=task_id,
+                        completion_summary=enriched_subtask_data.get("completion_summary"),
+                        progress_percentage=100,
+                        created_at=enriched_subtask_data.get("created_at"),  # ✅ FIX: Include created_at for frontend validation
+                        updated_at=enriched_subtask_data.get("updated_at"),  # ✅ FIX: Include updated_at for frontend validation
+                        completed_at=enriched_subtask_data.get("completed_at")
+                    )
+                    validated_subtask_data = payload.model_dump()
+                    logger.info(f"✅ Subtask complete payload validated for {actual_subtask_id}")
+                except Exception as validation_error:
+                    logger.error(f"❌ Subtask complete payload validation failed: {validation_error}")
+                    validated_subtask_data = enriched_subtask_data
+
                 WebSocketNotificationService.sync_broadcast_subtask_event(
                     event_type="completed",
                     subtask_id=actual_subtask_id,
                     task_id=task_id,
                     user_id=user_id,
-                    subtask_data=enriched_subtask_data
+                    subtask_data=validated_subtask_data
                 )
                 logger.info(f"🎯 COMPLETION_BROADCAST: Successfully called WebSocketNotificationService.sync_broadcast_subtask_event with event_type='completed'")
             except Exception as e:
