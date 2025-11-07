@@ -6,7 +6,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Removed
+
+**Dead Code Cleanup - Legacy Code Removal** (2025-11-08)
+- **Migrations directory** (18 files): Removed entire `infrastructure/database/migrations/` directory (17 Python + 1 SQL file, all superseded by `auto_migration.py`)
+- **Migration tests** (3 files): Removed `tests/unit/task_management/infrastructure/migrations/` and `tests/unit/task_management/infrastructure/database/migrations/`
+- **Database infrastructure** (2 files): Removed `migration_runner.py` (async migrations - optional/unused), `add_composite_indexes.py` (never imported)
+- SQL migration files (7): Removed manual migration files (002-007) - superseded by `init_schema_postgresql.sql`
+- Obsolete files (10): Removed `.obsolete`, `.backup`, `.old` files across codebase
+- Obsolete tests (5): Removed tests using deleted services (`realtime-updates.test.tsx`, `LazyTaskList.test.tsx`, `LazyTaskList.realtime.test.tsx`, `ProjectList.test.tsx`, `TaskContextDialog.test.tsx`)
+- Obsolete controller (1): Removed `call_agent_mcp_controller.obsolete/` directory and all contents
+- Analysis scripts (30): Removed one-time use analysis, diagnostic, and benchmark scripts
+- Purpose: Clean breaks in development phase, reduce maintenance burden, eliminate confusion
+- Migration strategy: Runtime migrations via `auto_migration.py`, clean DB init via `init_schema_postgresql.sql`
+- Result: ~3500+ lines of dead code removed, cleaner codebase structure
+
 ### Added
+
+**Database Schema Management Tools** (2025-11-08)
+- Schema verification scripts (3): `verify_init_schema.py`, `deep_verify_schema.py`, `check_fk_cascade.py`
+- Schema generation: `generate_schema_sql.py` - Auto-generate SQL from actual database
+- Inspection tools (2): `inspect_database.py`, `compare_schema.py` - Database analysis
+- Verification report: `schema_verification_report.md` - Complete validation results
+- Documentation: Added Database Schema Management section to `CLAUDE.local.md`
+- Result: init_schema_postgresql.sql verified 100% accurate (27 tables, all columns match)
 
 **MCP WebSocket Polling - Pydantic Validation** (2025-11-07)
 - Type-safe WebSocket polling scripts with comprehensive Pydantic validation

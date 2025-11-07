@@ -201,7 +201,8 @@ class Task(Base):
     context_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID)
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)
     progress_state: Mapped[ProgressState] = mapped_column(Enum(ProgressState), default=ProgressState.INITIAL, nullable=False)
-    completed_subtasks: Mapped[int] = mapped_column(Integer, default=0)  # Count of completed subtasks
+    completed_subtasks: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=0)  # Count of completed subtasks
+    subtask_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=0)  # Total count of subtasks
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED (using String for Keycloak UUID)
     
     # AI Agent System Prompts and Context - Permanent fields for AI task execution

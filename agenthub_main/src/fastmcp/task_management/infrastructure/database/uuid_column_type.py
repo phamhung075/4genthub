@@ -28,14 +28,22 @@ class UnifiedUUID(TypeDecorator):
     UUID column type that adapts to the database engine:
     - PostgreSQL: Uses native UUID type
     - SQLite: Uses VARCHAR(36)
-    
+
     Always stores and returns string representations for consistency.
     """
-    
+
     # Use UUID as the default impl to fix schema validation reporting
     # The load_dialect_impl method will handle the correct database-specific type
     impl = UUID
     cache_ok = True
+
+    def __repr__(self):
+        """Return string representation for inspection tools."""
+        return "UUID"
+
+    def __str__(self):
+        """Return string representation matching PostgreSQL type."""
+        return "UUID"
     
     def load_dialect_impl(self, dialect):
         """Load the appropriate column type based on the database dialect."""
