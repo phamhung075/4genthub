@@ -7,8 +7,6 @@ import {
   getWebSocketState,
 } from '../store/websocket';
 import { webSocketAnimationService } from '../services/WebSocketAnimationService';
-import { initializeWebSocketIntegration } from '../services/changePoolService';
-import { notificationService } from '../services/notificationService';
 import logger from '../utils/logger';
 import {
   validateWebSocketMessage,
@@ -104,7 +102,7 @@ export function useWebSocket(userId: string, token: string) {
     }
 
     // Create new WebSocket client
-    const client = new WebSocketClient(token);
+    const client = new WebSocketClient(token, userId);
     clientRef.current = client;
     globalWebSocketClient = client;
 
@@ -171,8 +169,6 @@ export function useWebSocket(userId: string, token: string) {
     logger.info('[useWebSocket] Initializing WebSocket integrations for new client', undefined, 'useWebSocketV2.ts');
 
     webSocketAnimationService.init(client);
-    const cleanupChangePool = initializeWebSocketIntegration(client);
-    const cleanupNotifications = notificationService.initializeWebSocketListener(client);
 
     // Mark integrations as initialized
     globalIntegrationsInitialized = true;
@@ -182,8 +178,6 @@ export function useWebSocket(userId: string, token: string) {
 
     // Cleanup on unmount or credential change
     return () => {
-      cleanupChangePool();
-      cleanupNotifications();
       clientRef.current = null;
       logger.debug('[useWebSocket] Component cleanup executed', undefined, 'useWebSocketV2.ts');
     };

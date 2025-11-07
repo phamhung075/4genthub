@@ -68,6 +68,9 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
   const warnings: ValidationWarning[] = [];
   const minimal = isMinimalMode(data);
 
+  // ✅ FIX: Detect completion payloads - they have minimal structure
+  const isCompletionPayload = endpoint.includes('/completed') || data.status === 'done' && !data.git_branch_id;
+
   // Log minimal mode detection for debugging
   if (minimal && import.meta.env.DEV) {
     logger.debug('🎯 [Response Validation] Minimal mode detected - relaxed validation applied', {
@@ -78,8 +81,9 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
     });
   }
 
-  // Required UUID fields (always required)
-  const alwaysRequiredUUIDs = ['id', 'git_branch_id'];
+  // Required UUID fields (always required, except for completion payloads)
+  // ✅ FIX: Completion payloads only require 'id', not 'git_branch_id'
+  const alwaysRequiredUUIDs = isCompletionPayload ? ['id'] : ['id', 'git_branch_id'];
   alwaysRequiredUUIDs.forEach(field => {
     if (!data[field]) {
       errors.push({
@@ -157,23 +161,26 @@ export function validateTask(data: any, endpoint: string): ValidationResult {
     });
   }
 
-  // Timestamp fields
-  const timestampFields = ['created_at', 'updated_at'];
-  timestampFields.forEach(field => {
-    if (!data[field]) {
-      errors.push({
-        field,
-        expected: 'ISO 8601 datetime string',
-        actual: String(data[field]),
-        message: `${field} is missing`
-      });
-    } else if (!isValidISO8601(data[field])) {
-      warnings.push({
-        field,
-        message: `${field} is not valid ISO 8601 format: ${data[field]}`
-      });
-    }
-  });
+  // Timestamp fields (optional for completion payloads)
+  // ✅ FIX: Completion payloads don't include created_at/updated_at, only completed_at
+  if (!isCompletionPayload) {
+    const timestampFields = ['created_at', 'updated_at'];
+    timestampFields.forEach(field => {
+      if (!data[field]) {
+        errors.push({
+          field,
+          expected: 'ISO 8601 datetime string',
+          actual: String(data[field]),
+          message: `${field} is missing`
+        });
+      } else if (!isValidISO8601(data[field])) {
+        warnings.push({
+          field,
+          message: `${field} is not valid ISO 8601 format: ${data[field]}`
+        });
+      }
+    });
+  }
 
   // updated_at should be >= created_at
   if (data.created_at && data.updated_at) {
@@ -268,6 +275,9 @@ export function validateSubtask(data: any, endpoint: string): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
 
+  // ✅ FIX: Detect completion payloads - they have minimal structure
+  const isCompletionPayload = endpoint.includes('/completed') || data.status === 'done' && data.progress_percentage === 100;
+
   // Required UUID fields
   if (!isValidUUID(data.id)) {
     errors.push({
@@ -297,8 +307,9 @@ export function validateSubtask(data: any, endpoint: string): ValidationResult {
     });
   }
 
-  // Timestamp fields
-  const timestampFields = ['created_at', 'updated_at'];
+  // Timestamp fields (optional for completion payloads)
+  // ✅ FIX: Completion payloads have optional timestamps
+  const timestampFields = isCompletionPayload ? [] : ['created_at', 'updated_at'];
   timestampFields.forEach(field => {
     if (!data[field]) {
       errors.push({
