@@ -85,11 +85,12 @@ class WebSocketPayloadBuilder:
             }
         """
         # Core identifiers from domain task
+        # CRITICAL FIX: Ensure enums are serialized to their string values, not enum objects
         payload = {
             "id": str(task.id.value if hasattr(task.id, 'value') else task.id),
             "title": task.title,
-            "status": str(task.status),
-            "priority": str(task.priority),
+            "status": task.status.value if hasattr(task.status, 'value') else str(task.status),
+            "priority": task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
         }
 
         # Relationship data (from task_response if available, else from task)

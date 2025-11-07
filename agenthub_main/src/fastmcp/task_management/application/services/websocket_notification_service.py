@@ -639,6 +639,7 @@ class WebSocketNotificationService:
         git_branch_id = kwargs.get('git_branch_id', args[4] if len(args) > 4 else None)
         project_id = kwargs.get('project_id', args[5] if len(args) > 5 else None)
         pre_fetched_context = kwargs.get('pre_fetched_context', None)
+        custom_metadata = kwargs.get('metadata', None)  # FIX: Accept custom metadata parameter
 
         # DUPLICATE DETECTION: Check if this is a duplicate notification
         if _is_duplicate_notification(event_type, "task", task_id, user_id):
@@ -655,7 +656,8 @@ class WebSocketNotificationService:
             task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
 
         # Prepare enhanced metadata with titles and parent context
-        metadata = {}
+        # FIX: Start with custom metadata if provided, then add standard fields
+        metadata = custom_metadata.copy() if custom_metadata else {}
         if git_branch_id:
             metadata["git_branch_id"] = git_branch_id
         if project_id:

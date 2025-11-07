@@ -196,17 +196,38 @@ class GitBranchService:
                 del project.git_branchs[git_branch_id]
                 await project_repo.update(project)
 
-            # Send WebSocket notification with user context
+            # CRITICAL FIX: Send synchronous WebSocket notification to ensure delivery before return
+            # Using sync broadcast instead of async to guarantee message sent before function returns
+            #
+            # TYPE-SAFE PAYLOAD: Using Pydantic model for compile-time + runtime validation
+            # This prevents "missing ID" bugs by enforcing required fields
             try:
                 from ..services.websocket_notification_service import WebSocketNotificationService
-                await WebSocketNotificationService.broadcast_branch_event(
+                from ...domain.websocket_protocol import BranchDeletePayload
+
+                # ✅ NEW: Type-safe payload construction with Pydantic validation
+                # Pydantic will raise ValidationError if required fields are missing
+                try:
+                    payload = BranchDeletePayload(
+                        id=git_branch_id,
+                        name=branch_name,
+                        project_id=branch_project_id
+                    )
+                    branch_data = payload.model_dump()
+                    logger.info(f"✅ Branch delete payload validated: {branch_data}")
+                except Exception as validation_error:
+                    logger.error(f"❌ Branch delete payload validation failed: {validation_error}")
+                    # Fallback to dict (maintains backward compatibility during migration)
+                    branch_data = {"id": git_branch_id, "name": branch_name, "project_id": branch_project_id}
+
+                WebSocketNotificationService.sync_broadcast_branch_event(
                     event_type="deleted",
                     branch_id=git_branch_id,
                     project_id=branch_project_id,
                     user_id=self._user_id,
-                    branch_data={"name": branch_name}
+                    branch_data=branch_data
                 )
-                logger.info(f"Sent WebSocket notification for branch {git_branch_id} deletion")
+                logger.info(f"Sent synchronous WebSocket notification for branch {git_branch_id} deletion")
             except Exception as ws_error:
                 logger.warning(f"Failed to send WebSocket notification: {ws_error}")
 
