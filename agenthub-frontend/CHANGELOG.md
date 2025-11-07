@@ -2,6 +2,69 @@
 
 ## [Unreleased]
 
+### Removed
+- **🧹 Final Session Cleanup - Debug Artifacts** - 2025-11-07
+  - Removed debug print statement from backend task facade
+  - Deleted obsolete cleanup script (remove_console_logs.py)
+  - Files: Backend `task_application_facade.py:696` (1 line removed), Scripts `remove_console_logs.py.obsolete` (deleted)
+  - Impact: No debug statements in production code
+  - Note: Backend requires restart to apply
+
+- **🧹 Production Code Cleanup - Debug Console Statements** - 2025-11-07
+  - Removed 188 lines of debug console.log/warn/error statements from useRealtimeSync.ts
+  - Production code now exclusively uses logger framework (logger.debug/warn/error/info)
+  - Cleaner browser console output in production environment
+  - Impact: Better log level control, production-ready logging, ~21% file size reduction
+  - Files: `src/hooks/useRealtimeSync.ts` (1,067 lines → 879 lines)
+  - Logger coverage: 24 strategic logger calls remain for proper debugging
+  - Related: ai_docs/reports-status/dead-code-analysis-websocket-v2-2025-11-07.md
+
+### Fixed
+- **🔧 Branch Deletion Cache Cleanup** - 2025-11-07
+  - Fixed cache issues after branch deletion where stale cache entries caused errors
+  - **Root Cause**: Using `invalidateQueries` on deleted branch data caused React Query to refetch non-existent resources
+  - **Solution**: Use `removeQueries` instead of `invalidateQueries` for deleted branch caches
+  - Now properly removes cache for `['branch', branchId]` and `['tasks', branchId]`
+  - Still invalidates aggregate queries (`branchSummaries`, `projects`) to update counts
+  - Files: `src/hooks/useRealtimeSync.ts` (lines 746-753)
+  - Impact: No more cache errors after branch deletion, cleaner cache state
+
+- **🎨 Task/Subtask Completion & Deletion - Animations & Toast Names** - 2025-11-07
+  - Fixed completion/deletion events not triggering animations or updating status properly
+  - Fixed toast notifications showing IDs instead of actual names (both completion AND deletion)
+  - **Root Cause #1**: Immediate cache update caused React to re-render before animation could play
+  - **Root Cause #2**: Creating new object instead of using backend data caused status not to update
+  - **Root Cause #3**: Backend error fallback paths missing title field for both completion and deletion
+  - **Solution**:
+    1. Frontend: Added 150ms delay for completion, 600ms for deletion before cache update
+    2. Frontend: Use backend data directly (no manual status override)
+    3. Backend Completion: Include `title` in error fallback paths for WebSocket broadcasts
+    4. Backend Deletion: Return `title` from use cases so facade can use it for WebSocket
+  - Toast shows immediately with actual names (not "Task d1009e28" or "Subtask 566f6044")
+  - Cache updates with complete backend data after animation completes
+  - Pattern now consistent: CREATE (500ms), UPDATE (150ms), DELETE (600ms), COMPLETE (150ms)
+  - Files:
+    - Frontend: `src/hooks/useRealtimeSync.ts` (task/subtask handlers)
+    - Backend Completion: `subtask_application_facade.py:799`, `task_application_facade.py:1123,1127`
+    - Backend Deletion: `remove_subtask.py:22,91`, `delete_task.py:112`, `subtask_application_facade.py:550`, `task_application_facade.py:977-983`
+  - Impact: All animations visible, status updates correct, all toasts show names not IDs
+  - **Note**: Backend changes require server restart to take effect
+
+- **🔥 CRITICAL: WebSocket Count Synchronization** - 2025-11-07
+  - Fixed sidebar counts not updating in real-time when WebSocket events fire
+  - Branch count on projects now updates immediately when branches are created/deleted
+  - Task count on branches now updates immediately when tasks are created/deleted
+  - **Root Cause**: WebSocket handlers updated entity caches but not aggregate count cache (`branchSummaries`)
+  - **Solution**: Added strategic React Query cache invalidation at 4 critical points:
+    1. TASK_CREATED - Invalidates `branchSummaries` to refresh parent branch task count
+    2. TASK_DELETED - Invalidates `branchSummaries` after 600ms animation delay
+    3. BRANCH_CREATED - Invalidates `branchSummaries` to refresh project branch count
+    4. BRANCH_DELETED - Invalidates `branchSummaries` after 600ms animation delay
+  - **Impact**: UX significantly improved - users see counts update instantly without page refresh
+  - **Performance**: ~100ms latency per count update (acceptable for accuracy guarantee)
+  - Files modified: `src/hooks/useRealtimeSync.ts` (lines 126, 264, 739, 903)
+  - Related: ai_docs/reports-status/mcp-tools-comprehensive-validation-2025-11-07.md (Issue #1)
+
 ### Changed
 - **⚡ Bundle Size Optimization - 70% Reduction** - 2025-11-05
   - Reduced initial bundle from 1,973KB (459KB gzipped) to 502KB (138KB gzipped)

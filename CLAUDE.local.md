@@ -333,11 +333,48 @@ echo "R" | ./docker-system/docker-menu.sh
 ---
 
 ## 🔗 Additional Resources
+
+**📘 PRIMARY SYSTEM DOCUMENTATION**: `ai_docs/core-architecture/agenthub-system-architecture.md`
+- **Complete Technical Reference**: Single source of truth for entire system architecture
+- **Covers**: Frontend (React/TypeScript), Backend (DDD/FastMCP), API Layer, MCP Tools, WebSocket v2.0, Auth, Database, Context Management, Real-time Sync
+- **Use For**: Understanding system flow, debugging issues, implementing new features, onboarding
+- **Status**: ✅ Validated 2025-11-07 | 100% comprehensive | Token-optimized
+
+**Other Resources**:
 - **Comprehensive Rules**: See CLAUDE.md for complete agent switching, MCP tasks, and delegation models
 - **Vision System**: Refer to CLAUDE.md for workflow guidance and progress tracking details
 - **Agent Library**: 32 specialized agents documented in CLAUDE.md
 - **Troubleshooter**: Use Task tool to launch Claude Code troubleshooter agent when needed
 ---
+
+## 🔧 WebSocket Protocol v2.0 - Comprehensive Fix (2025-11-07) - ✅ RESOLVED
+
+**📄 Complete Documentation**: `ai_docs/reports-status/websocket-v2-comprehensive-fix-2025-11-07.md`
+
+### Critical Issues Fixed
+
+| Issue | Impact | Status |
+|-------|--------|--------|
+| **WebSocket crashes after first message** | CRITICAL - UI freezes, no updates | ✅ Fixed - Error handling in useRealtimeSync.ts |
+| **Timestamp validation failures** | Frontend validation breaks | ✅ Fixed - Backend payloads updated |
+| **Duplicate toast notifications** | UX - 2 toasts per operation | ✅ Fixed - WebSocket = single source |
+| **DELETE operations don't update UI** | Cache sync broken | ✅ Fixed - Dual cache update |
+| **1000+ LOC dead code** | Maintenance burden | ✅ Removed - Legacy services deleted |
+
+### Key Files Modified
+- `useRealtimeSync.ts` - Try-catch wrapper, dual cache updates, toast deduplication
+- `websocket_protocol.py` - Timestamp fields (SubtaskCreatePayload, SubtaskUpdatePayload, SubtaskCompletePayload)
+- `subtask_application_facade.py` - Payload construction (lines 341-350, 466-475, 802-812)
+- `LazySubtaskListRefactored.tsx` - Removed duplicate toasts, cleaned debug logs
+- `LazyTaskListRefactored.tsx` - Removed component-level success toasts
+
+### Testing Verified
+- TDD Tests: 7 comprehensive tests (all PASS)
+- Manual Workflow: CREATE → UPDATE → COMPLETE → DELETE (all working)
+- Animation Timing: CREATE 500ms, UPDATE/DELETE 150ms (WebSocketAnimationService.ts:261-366)
+
+---
+
 ##  Key Learning:
 When modifying Python backend code, always restart the backend process to load changes.
 Python caches imported modules in memory, so file edits alone aren't sufficient—the process must be killed and restarted to pick up new code.
