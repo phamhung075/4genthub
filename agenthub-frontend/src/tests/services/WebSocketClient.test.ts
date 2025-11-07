@@ -68,7 +68,7 @@ describe('WebSocketClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     jest.clearAllTimers();
-    client = new WebSocketClient(token);
+    client = new WebSocketClient(token, 'test-user-id');
   });
 
   afterEach(() => {
