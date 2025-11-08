@@ -8,6 +8,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Docker Build Failure - Missing rollup-plugin-visualizer** (2025-11-08)
+- **Issue**: Docker build failing at `pnpm run build` step with `Cannot find module 'rollup-plugin-visualizer'`
+- **Root cause**: Package imported in `vite.config.ts:6` but missing from `package.json` devDependencies
+- **Fix**: Added `"rollup-plugin-visualizer": "^5.12.0"` to package.json devDependencies
+- **Impact**: Docker builds now succeed; bundle analyzer generates stats.html for build optimization
+- **File**: `agenthub-frontend/package.json:76`
+
 **Critical Schema Bugs - Production Database Initialization** (2025-11-08)
 - **Bug #1 - task_labels composite key**: Fixed duplicate PRIMARY KEY declarations causing "multiple primary keys not allowed" error
   - Before: `task_id UUID PRIMARY KEY, label_id VARCHAR PRIMARY KEY` (❌ TWO separate primary keys)
