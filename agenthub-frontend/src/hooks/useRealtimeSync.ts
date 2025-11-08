@@ -763,11 +763,67 @@ export const useRealtimeSync = (
         return;
       }
 
-      logger.debug('[useRealtimeSync] Agent event:', action, agentData.id);
+      const agentId = agentData.id;
+      const agentName = agentData.name || agentData.agent_name || message.metadata?.agent_name || `Agent ${agentId.slice(0, 8)}`;
 
-      // Always invalidate the userAgentInstances list to ensure UI refresh
-      queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
-      queryClient.invalidateQueries({ queryKey: ['agentTemplates'] });
+      logger.debug('[useRealtimeSync] Agent event:', action, agentId);
+
+      switch (action) {
+        case 'created':
+          // Optimistic update: add new agent to cache
+          queryClient.setQueryData(['userAgentInstances'], (old: any[] = []) => {
+            // Check if agent already exists (from optimistic update)
+            const exists = old.some((a: any) => a.id === agentId);
+            if (exists) {
+              return old.map((a: any) => a.id === agentId ? agentData : a);
+            }
+            return [...old, agentData];
+          });
+
+          // Show success toast (deduplicated)
+          showToastOnce(`agent-created-${agentId}`, () => {
+            showSuccess(`Agent "${agentName}" created successfully`);
+          });
+          break;
+
+        case 'updated':
+          // Optimistic update: update existing agent in cache
+          queryClient.setQueryData(['userAgentInstances'], (old: any[] = []) => {
+            if (!old) return old;
+            return old.map((a: any) => a.id === agentId ? { ...a, ...agentData } : a);
+          });
+
+          // Show info toast (deduplicated)
+          showToastOnce(`agent-updated-${agentId}`, () => {
+            showInfo(`Agent "${agentName}" updated`);
+          });
+          break;
+
+        case 'deleted':
+          // Show warning toast FIRST
+          showToastOnce(`agent-deleted-${agentId}`, () => {
+            showWarning(`Agent "${agentName}" deleted`);
+          });
+
+          // Optimistic update: remove agent from cache (with delay for animation)
+          setTimeout(() => {
+            queryClient.setQueryData(['userAgentInstances'], (old: any[] = []) => {
+              if (!old) return old;
+              return old.filter((a: any) => a.id !== agentId);
+            });
+          }, 150); // Small delay to allow delete animation
+          break;
+
+        default:
+          // For unknown actions, just invalidate the cache
+          logger.debug(`[useRealtimeSync] Unknown agent action: ${action}, invalidating cache`);
+          queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
+      }
+
+      // Also invalidate agent templates in case template-related changes occurred
+      if (action === 'created' || action === 'updated') {
+        queryClient.invalidateQueries({ queryKey: ['agentTemplates'] });
+      }
     };
 
     // Generic message handler with comprehensive error handling

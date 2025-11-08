@@ -84,6 +84,7 @@ class AgentOperationFactory:
         agent_id = kwargs.get("agent_id")
         name = kwargs.get("name")
         call_agent = kwargs.get("call_agent")
+        user_id = kwargs.get("user_id")  # Extract user_id for WebSocket broadcasts
 
         if operation == "register":
             return self._crud_handler.register_agent(
@@ -92,6 +93,7 @@ class AgentOperationFactory:
                 agent_id=agent_id,
                 name=name,
                 call_agent=call_agent,
+                user_id=user_id,
             )
 
         elif operation == "get":
@@ -109,11 +111,12 @@ class AgentOperationFactory:
                 agent_id=agent_id,
                 name=name,
                 call_agent=call_agent,
+                user_id=user_id,
             )
 
         elif operation == "unregister":
             return self._crud_handler.unregister_agent(
-                facade=facade, project_id=project_id, agent_id=agent_id
+                facade=facade, project_id=project_id, agent_id=agent_id, user_id=user_id
             )
 
         else:
