@@ -6,6 +6,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+**Critical Schema Bugs - Production Database Initialization** (2025-11-08)
+- **Bug #1 - task_labels composite key**: Fixed duplicate PRIMARY KEY declarations causing "multiple primary keys not allowed" error
+  - Before: `task_id UUID PRIMARY KEY, label_id VARCHAR PRIMARY KEY` (❌ TWO separate primary keys)
+  - After: `PRIMARY KEY (task_id, label_id)` (✅ Composite primary key for junction table)
+  - Location: `init_schema_postgresql.sql:358-366`
+- **Bug #2 - task_dependencies sequence**: Fixed sequence lifecycle issue causing "relation does not exist" error
+  - Problem: Sequence created at line 17 → `DROP CASCADE` at line 34 drops sequence → table creation at line 348 references missing sequence
+  - Solution: Moved sequence creation AFTER all DROP statements (now line 54-56)
+  - Location: `init_schema_postgresql.sql:54-56`
+- **Impact**: Schema now initializes successfully - all 27 tables created without errors in production
+- **Root cause**: Auto-generated schema from `generate_schema_sql.py` didn't handle edge cases (composite keys, sequence CASCADE dependencies)
+- **Lesson**: Generated schemas require manual review for junction tables and sequence ordering
+
 ### Removed
 
 **Dead Code Cleanup - Legacy Code Removal** (2025-11-08)
