@@ -307,6 +307,30 @@ async def create_instance(
             # TODO: Implement customization method in facade
             logger.info("Customizations requested but not yet implemented")
 
+        # Broadcast WebSocket event for real-time UI updates
+        try:
+            from ....task_management.application.services.websocket_notification_service import WebSocketNotificationService
+            agent_data = {
+                "id": str(instance.id.value),
+                "user_id": str(instance.user_id.value),
+                "template_id": str(instance.template_id.value),
+                "agent_name": instance.agent_name,
+                "name": instance.agent_name,
+                "is_customized": instance.is_customized,
+                "is_enabled": instance.is_enabled,
+                "visibility": instance.visibility,
+                "usage_count": instance.usage_count,
+            }
+            WebSocketNotificationService.sync_broadcast_agent_event(
+                event_type="created",
+                agent_id=str(instance.id.value),
+                project_id="default",
+                user_id=str(current_user.id),
+                agent_data=agent_data
+            )
+        except Exception as ws_error:
+            logger.warning(f"Failed to broadcast WebSocket event: {ws_error}")
+
         return UserAgentInstanceResponse(
             id=str(instance.id.value),
             user_id=str(instance.user_id.value),
@@ -366,6 +390,38 @@ async def bulk_create_instances(
         # Create instances for all templates (facade handles duplicate checking)
         created_instances = facade.bulk_create_instances(user_id=user_id, template_slugs=None)
 
+        # Broadcast WebSocket events for each created instance (real-time UI updates)
+        from ....task_management.application.services.websocket_notification_service import WebSocketNotificationService
+        for instance in created_instances:
+            try:
+                # Prepare agent data for WebSocket payload
+                agent_data = {
+                    "id": str(instance.id.value),
+                    "user_id": str(instance.user_id.value),
+                    "template_id": str(instance.template_id.value),
+                    "agent_name": instance.agent_name,
+                    "name": instance.agent_name,  # Include both for compatibility
+                    "is_customized": instance.is_customized,
+                    "is_enabled": instance.is_enabled,
+                    "visibility": instance.visibility,
+                    "usage_count": instance.usage_count,
+                    "last_used_at": instance.last_used_at.isoformat() if instance.last_used_at else None,
+                    "created_at": instance.created_at.isoformat() if instance.created_at else None,
+                    "updated_at": instance.updated_at.isoformat() if instance.updated_at else None,
+                }
+
+                # Emit WebSocket event for this agent creation
+                WebSocketNotificationService.sync_broadcast_agent_event(
+                    event_type="created",
+                    agent_id=str(instance.id.value),
+                    project_id="default",  # User agent instances are not project-scoped
+                    user_id=str(current_user.id),
+                    agent_data=agent_data
+                )
+            except Exception as ws_error:
+                # Don't fail the entire bulk creation if WebSocket fails
+                logger.warning(f"Failed to broadcast WebSocket event for agent {instance.agent_name}: {ws_error}")
+
         # Convert to response format
         instance_responses = [
             UserAgentInstanceResponse(
@@ -389,7 +445,7 @@ async def bulk_create_instances(
             for instance in created_instances
         ]
 
-        logger.info(f"Bulk created {len(instance_responses)} agent instances")
+        logger.info(f"Bulk created {len(instance_responses)} agent instances with WebSocket notifications")
         return instance_responses
 
     except Exception as e:
@@ -440,6 +496,30 @@ async def update_instance(
             output_format=request.output_format,
             visibility=request.visibility
         )
+
+        # Broadcast WebSocket event for real-time UI updates
+        try:
+            from ....task_management.application.services.websocket_notification_service import WebSocketNotificationService
+            agent_data = {
+                "id": str(updated_instance.id.value),
+                "user_id": str(updated_instance.user_id.value),
+                "template_id": str(updated_instance.template_id.value),
+                "agent_name": updated_instance.agent_name,
+                "name": updated_instance.agent_name,
+                "is_customized": updated_instance.is_customized,
+                "is_enabled": updated_instance.is_enabled,
+                "visibility": updated_instance.visibility,
+                "usage_count": updated_instance.usage_count,
+            }
+            WebSocketNotificationService.sync_broadcast_agent_event(
+                event_type="updated",
+                agent_id=str(updated_instance.id.value),
+                project_id="default",
+                user_id=str(current_user.id),
+                agent_data=agent_data
+            )
+        except Exception as ws_error:
+            logger.warning(f"Failed to broadcast WebSocket event: {ws_error}")
 
         # Build response
         return UserAgentInstanceResponse(
@@ -503,6 +583,19 @@ async def delete_instance(
         user_id = UserId(current_user.id)
         logger.info(f"User {current_user.email} deleting instance: {instance_id}")
 
+        # Get instance first to retrieve name for WebSocket notification
+        agent_name = None
+        try:
+            user_instances = facade.get_user_instances(user_id=user_id)
+            matching_instance = next((inst for inst in user_instances if str(inst.id.value) == instance_id), None)
+            if matching_instance:
+                agent_name = matching_instance.agent_name
+                logger.info(f"Found agent name for WebSocket: {agent_name}")
+            else:
+                logger.warning(f"Instance {instance_id} not found in user's instances")
+        except Exception as e:
+            logger.warning(f"Could not retrieve instance name before delete: {e}")
+
         # Delete instance using facade
         success = facade.delete_instance(
             user_id=user_id,
@@ -514,6 +607,25 @@ async def delete_instance(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete instance"
             )
+
+        # Broadcast WebSocket event for real-time UI updates
+        try:
+            from ....task_management.application.services.websocket_notification_service import WebSocketNotificationService
+            agent_data = {
+                "id": instance_id,
+                "user_id": str(current_user.id),
+                "name": agent_name,
+                "agent_name": agent_name,  # Include both for compatibility
+            }
+            WebSocketNotificationService.sync_broadcast_agent_event(
+                event_type="deleted",
+                agent_id=instance_id,
+                project_id="default",
+                user_id=str(current_user.id),
+                agent_data=agent_data
+            )
+        except Exception as ws_error:
+            logger.warning(f"Failed to broadcast WebSocket event: {ws_error}")
 
         return SuccessResponse(
             success=True,

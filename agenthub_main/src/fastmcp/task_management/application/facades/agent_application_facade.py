@@ -40,7 +40,7 @@ class AgentApplicationFacade:
         self._get_agent_use_case = GetAgentUseCase(agent_repository)
         self._list_agents_use_case = ListAgentsUseCase(agent_repository)
     
-    def register_agent(self, project_id: str, agent_id: str = None, name: str = None, call_agent: str = None) -> Dict[str, Any]:
+    def register_agent(self, project_id: str, agent_id: str = None, name: str = None, call_agent: str = None, user_id: str = None) -> Dict[str, Any]:
         """Register a new agent to a project"""
         try:
             # Create request DTO
@@ -50,15 +50,26 @@ class AgentApplicationFacade:
                 name=name,
                 call_agent=call_agent
             )
-            
+
             # Execute use case
             response = self._register_agent_use_case.execute(request)
-            
+
             if response.success:
+                # Broadcast WebSocket event for real-time UI updates
+                from ..services.websocket_notification_service import WebSocketNotificationService
+                agent_dict = asdict(response.agent)
+                WebSocketNotificationService.sync_broadcast_agent_event(
+                    event_type="created",
+                    agent_id=agent_dict.get("id", agent_id),
+                    project_id=project_id,
+                    user_id=user_id or "system",
+                    agent_data=agent_dict
+                )
+
                 return {
                     "success": True,
                     "action": "register",
-                    "agent": asdict(response.agent),
+                    "agent": agent_dict,
                     "message": response.message,
                     "hint": f"Agent '{name}' successfully registered and ready for assignment"
                 }
@@ -120,7 +131,7 @@ class AgentApplicationFacade:
                 "hint": "An unexpected error occurred. Please check the logs or try again."
             }
     
-    def unregister_agent(self, project_id: str, agent_id: str) -> Dict[str, Any]:
+    def unregister_agent(self, project_id: str, agent_id: str, user_id: str = None) -> Dict[str, Any]:
         """Unregister an agent from a project"""
         try:
             # Create request DTO
@@ -128,11 +139,21 @@ class AgentApplicationFacade:
                 project_id=project_id,
                 agent_id=agent_id
             )
-            
+
             # Execute use case
             response = self._unregister_agent_use_case.execute(request)
-            
+
             if response.success:
+                # Broadcast WebSocket event for real-time UI updates
+                from ..services.websocket_notification_service import WebSocketNotificationService
+                WebSocketNotificationService.sync_broadcast_agent_event(
+                    event_type="deleted",
+                    agent_id=response.agent_id,
+                    project_id=project_id,
+                    user_id=user_id or "system",
+                    agent_data=response.agent_data
+                )
+
                 return {
                     "success": True,
                     "action": "unregister",
@@ -300,11 +321,22 @@ class AgentApplicationFacade:
             logger.error(f"Unexpected error in list_agents: {e}")
             return {"success": False, "action": "list", "error": f"Unexpected error in listing agents: {str(e)}", "metadata": {"project_id": project_id, "timestamp": datetime.now().isoformat()}}
     
-    def update_agent(self, project_id: str, agent_id: str, name: str = None, call_agent: str = None) -> Dict[str, Any]:
+    def update_agent(self, project_id: str, agent_id: str, name: str = None, call_agent: str = None, user_id: str = None) -> Dict[str, Any]:
         """Update agent information"""
         try:
             # Create request DTO - using a direct repository call since use case might not be fully defined yet
             updated_agent = self._agent_repository.update_agent(project_id, agent_id, name, call_agent)
+
+            # Broadcast WebSocket event for real-time UI updates
+            from ..services.websocket_notification_service import WebSocketNotificationService
+            WebSocketNotificationService.sync_broadcast_agent_event(
+                event_type="updated",
+                agent_id=agent_id,
+                project_id=project_id,
+                user_id=user_id or "system",
+                agent_data=updated_agent
+            )
+
             return {
                 "success": True,
                 "action": "update",

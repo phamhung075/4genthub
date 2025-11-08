@@ -30,6 +30,7 @@ class AgentCRUDHandler:
         agent_id: str | None,
         name: str,
         call_agent: str | None,
+        user_id: str | None = None,
     ) -> dict[str, Any]:
         """Register a new agent."""
 
@@ -38,7 +39,7 @@ class AgentCRUDHandler:
             if not agent_id:
                 agent_id = str(uuid.uuid4())
 
-            result = facade.register_agent(project_id, agent_id, name, call_agent)
+            result = facade.register_agent(project_id, agent_id, name, call_agent, user_id)
 
             return self._response_formatter.create_success_response(
                 operation="register",
@@ -122,11 +123,12 @@ class AgentCRUDHandler:
         agent_id: str,
         name: str | None,
         call_agent: str | None,
+        user_id: str | None = None,
     ) -> dict[str, Any]:
         """Update an existing agent."""
 
         try:
-            result = facade.update_agent(project_id, agent_id, name, call_agent)
+            result = facade.update_agent(project_id, agent_id, name, call_agent, user_id)
 
             return self._response_formatter.create_success_response(
                 operation="update",
@@ -149,12 +151,12 @@ class AgentCRUDHandler:
             )
 
     def unregister_agent(
-        self, facade: AgentApplicationFacade, project_id: str, agent_id: str
+        self, facade: AgentApplicationFacade, project_id: str, agent_id: str, user_id: str | None = None
     ) -> dict[str, Any]:
         """Unregister an agent."""
 
         try:
-            result = facade.unregister_agent(project_id, agent_id)
+            result = facade.unregister_agent(project_id, agent_id, user_id)
 
             return self._response_formatter.create_success_response(
                 operation="unregister",

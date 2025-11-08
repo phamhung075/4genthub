@@ -119,7 +119,8 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
       // Convert frontend request (with null) to API input (with undefined)
       const apiInput: ApiCreateInstanceInput = toApiInput(data) as ApiCreateInstanceInput;
       const response = await agentManagementApiV2.createInstance(apiInput);
-      return response.instance;
+      // Backend returns instance directly, not wrapped
+      return response.instance || response as any;
     },
     onSuccess: (newInstance: UserAgentInstance) => {
       // Optimistic update
@@ -128,8 +129,7 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
       );
       // CRITICAL FIX: Invalidate to trigger re-render
       queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
-      // CRITICAL FIX: Direct notification (backup to WebSocket)
-      showSuccess(`Agent "${newInstance.agent_name}" created successfully`);
+      // Note: Toast notification handled by WebSocket real-time updates (shows agent name)
       logger.info(`Created instance: ${newInstance.agent_name}`);
     },
   });
@@ -138,7 +138,8 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
   const bulkCreateMutation = useMutation({
     mutationFn: async () => {
       const response = await agentManagementApiV2.bulkCreateInstances();
-      return response.instances;
+      // Backend returns instances array directly
+      return response.instances || response as any;
     },
     onSuccess: (newInstances: UserAgentInstance[]) => {
       // Optimistic update - add all new instances
@@ -165,7 +166,8 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
       // Convert frontend request (with null) to API input (with undefined)
       const apiInput: ApiUpdateInstanceInput = toApiInput(data) as ApiUpdateInstanceInput;
       const response = await agentManagementApiV2.updateInstance(instanceId, apiInput);
-      return response.instance;
+      // Backend returns instance directly, not wrapped
+      return response.instance || response as any;
     },
     onSuccess: (updatedInstance: UserAgentInstance, { instanceId }) => {
       // Optimistic update
@@ -174,8 +176,7 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
       );
       // CRITICAL FIX: Invalidate to trigger re-render
       queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
-      // CRITICAL FIX: Direct notification (backup to WebSocket)
-      showSuccess(`Agent "${updatedInstance.agent_name}" updated successfully`);
+      // Note: Toast notification handled by WebSocket real-time updates (shows agent name)
       logger.info(`Updated instance: ${instanceId}`);
     },
   });
@@ -190,8 +191,7 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
       );
       // CRITICAL FIX: Invalidate to trigger re-render
       queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
-      // CRITICAL FIX: Direct notification (backup to WebSocket)
-      showWarning('Agent deleted successfully');
+      // Note: Toast notification handled by WebSocket real-time updates (shows agent name)
       logger.info(`Deleted instance: ${instanceId}`);
     },
   });
