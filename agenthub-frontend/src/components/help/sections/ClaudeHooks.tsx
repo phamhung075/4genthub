@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card } from '../../ui/card';
 import CommandBox from '../shared/CommandBox';
 import { Webhook } from 'lucide-react';

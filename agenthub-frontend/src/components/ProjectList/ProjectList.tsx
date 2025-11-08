@@ -8,7 +8,7 @@ import { useBranchSummaries } from "../../hooks/useBranchSummaries";
 import { useBranchMutations } from "../../hooks/useBranches";
 import { useWebSocket } from "../../hooks/useWebSocketV2";
 import { useRealtimeSync } from "../../hooks/useRealtimeSync";
-import { BranchSummary, Project } from "../../types";
+import { BranchSummary } from "../../types";
 import logger from "../../utils/logger";
 import { useErrorToast } from "../ui/toast";
 
@@ -180,7 +180,6 @@ const ProjectList: React.FC<ProjectListProps> = ({
 
   const handleDeleteProjectWrapper = async () => {
     if (!showDelete) return;
-    const projectName = showDelete.name;
 
     setSaving(true);
     setError(null);

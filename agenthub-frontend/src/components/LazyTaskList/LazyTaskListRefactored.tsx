@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getAvailableAgents, listAgents } from "../../api";
 import { useAuth } from "../../contexts/AuthContext";
-import { useErrorToast, useSuccessToast } from "../ui/toast";
+import { useErrorToast } from "../ui/toast";
 import logger from "../../utils/logger";
 
 // React Query hooks
@@ -18,15 +18,13 @@ import { useDialogManager } from "./hooks/useDialogManager";
 import { TaskListHeader, TaskListContent, TaskSearchSection, DialogSection } from "./components";
 
 // Types
-import { LazyTaskListProps, TASKS_PER_PAGE } from "../../types/taskTypes";
+import { LazyTaskListProps, TASKS_PER_PAGE, TaskActiveDialog } from "../../types/taskTypes";
 
 const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTasksChanged }) => {
   // Get URL parameters
   const { taskId: urlTaskId, subtaskId } = useParams<{ taskId?: string; subtaskId?: string }>();
-  const navigate = useNavigate();
   const { user, tokens } = useAuth();
   const showError = useErrorToast();
-  const showSuccess = useSuccessToast();
 
   // State for mobile responsiveness
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -267,7 +265,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
         totalTasks={tasks.length}
         isConnected={isConnected}
         loading={loading}
-        onRefresh={() => loadTaskSummaries()}
+        onRefresh={async () => { await loadTaskSummaries(); }}
         onCreateNew={() => openDialog('create')}
       />
 
@@ -288,7 +286,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       />
 
       <DialogSection
-        activeDialog={activeDialog}
+        activeDialog={activeDialog as TaskActiveDialog}
         fullTasks={fullTasks}
         taskSummaries={displayTasks}
         agents={agents}

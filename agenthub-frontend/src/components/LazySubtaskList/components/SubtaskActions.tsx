@@ -1,7 +1,6 @@
 // SubtaskActions component - Action buttons for LazySubtaskList
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import React from "react";
 import { Plus } from "lucide-react";
 import { Button } from "../../ui/button";
 

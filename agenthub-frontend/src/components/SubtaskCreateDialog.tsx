@@ -25,7 +25,7 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
   const [description, setDescription] = useState("");
 
   // Use React Query mutation hook
-  const { createSubtask, isCreating, createError } = useSubtaskMutations();
+  const { createSubtaskAsync, isCreating, createError } = useSubtaskMutations();
 
   // Reset form when dialog opens/closes
   React.useEffect(() => {
@@ -41,7 +41,7 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
     }
 
     try {
-      const result = await createSubtask({
+      const result = await createSubtaskAsync({
         taskId: parentTaskId,
         subtask: {
           title: title.trim(),
@@ -49,10 +49,8 @@ const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
         }
       });
 
-      if (result) {
-        onCreated(result);
-        onClose();
-      }
+      onCreated(result);
+      onClose();
     } catch (e: any) {
       // Error is already handled by the mutation hook
       console.error('Failed to create subtask:', e);

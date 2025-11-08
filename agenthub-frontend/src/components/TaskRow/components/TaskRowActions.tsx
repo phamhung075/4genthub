@@ -5,8 +5,6 @@ import { TaskRowActionsProps } from '../../../types/taskTypes';
 
 export const TaskRowActions: React.FC<TaskRowActionsProps> = ({
   taskId,
-  projectId,
-  taskTreeId,
   onOpenDialog,
   variant = 'desktop'
 }) => {

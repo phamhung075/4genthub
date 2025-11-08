@@ -3,6 +3,9 @@ import { Circle, Timer, CheckCircle2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { ProgressState } from "../../types/componentTypes";
 
+// Re-export ProgressState for use by other components
+export type { ProgressState };
+
 interface ProgressStepperProps {
   currentState: ProgressState;
   size?: 'sm' | 'md' | 'lg';

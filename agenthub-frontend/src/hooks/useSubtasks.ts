@@ -35,6 +35,8 @@ export const useSubtasks = (taskId: string | undefined) => {
  * @returns Query result with subtask data, loading state, and error
  */
 export const useSubtask = (subtaskId: string | undefined, includeContext: boolean = false) => {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ['subtask', subtaskId, includeContext],
     queryFn: async () => {
@@ -71,7 +73,7 @@ export const useSubtaskMutations = () => {
   // Create subtask mutation
   const createMutation = useMutation({
     mutationFn: async ({ taskId, subtask }: { taskId: string; subtask: Partial<Subtask> }) => {
-      logger.debug('[useSubtaskMutations] Creating subtask for task:', taskId, subtask);
+      logger.debug('[useSubtaskMutations] Creating subtask for task', { taskId, subtask });
       return await createSubtask(taskId, subtask);
     },
     onMutate: async ({ taskId, subtask }) => {
@@ -105,7 +107,7 @@ export const useSubtaskMutations = () => {
 
       return { previousSubtasks, taskId };
     },
-    onError: (err, { taskId }, context: any) => {
+    onError: (err, _, context: any) => {
       logger.error('[useSubtaskMutations] Create failed:', err);
       // Rollback on error
       if (context?.previousSubtasks) {
@@ -125,7 +127,7 @@ export const useSubtaskMutations = () => {
   // Update subtask mutation
   const updateMutation = useMutation({
     mutationFn: async ({ subtaskId, updates }: { subtaskId: string; updates: Partial<Subtask> }) => {
-      logger.debug('[useSubtaskMutations] Updating subtask:', subtaskId, updates);
+      logger.debug('[useSubtaskMutations] Updating subtask', { subtaskId, updates });
       return await updateSubtask(subtaskId, updates);
     },
     onMutate: async ({ subtaskId, updates }) => {
@@ -133,7 +135,7 @@ export const useSubtaskMutations = () => {
       let taskId: string | undefined;
       const allSubtasksQueries = queryClient.getQueriesData<Subtask[]>({ queryKey: ['subtasks'] });
 
-      for (const [queryKey, subtasks] of allSubtasksQueries) {
+      for (const [, subtasks] of allSubtasksQueries) {
         if (subtasks) {
           const subtask = subtasks.find(s => s.id === subtaskId);
           if (subtask) {
@@ -163,13 +165,13 @@ export const useSubtaskMutations = () => {
 
       return { previousSubtasks, taskId };
     },
-    onError: (err, { subtaskId }, context: any) => {
+    onError: (err, _, context: any) => {
       logger.error('[useSubtaskMutations] Update failed:', err);
       if (context?.previousSubtasks && context?.taskId) {
         queryClient.setQueryData(['subtasks', context.taskId], context.previousSubtasks);
       }
     },
-    onSuccess: (data, { subtaskId }) => {
+    onSuccess: (data) => {
       logger.debug('[useSubtaskMutations] Subtask updated:', data);
       const taskId = data.task_id;
 
@@ -193,7 +195,7 @@ export const useSubtaskMutations = () => {
       let taskId: string | undefined;
       const allSubtasksQueries = queryClient.getQueriesData<Subtask[]>({ queryKey: ['subtasks'] });
 
-      for (const [queryKey, subtasks] of allSubtasksQueries) {
+      for (const [, subtasks] of allSubtasksQueries) {
         if (subtasks) {
           const subtask = subtasks.find(s => s.id === subtaskId);
           if (subtask) {
@@ -221,7 +223,7 @@ export const useSubtaskMutations = () => {
 
       return { previousSubtasks, taskId };
     },
-    onError: (err, subtaskId, context: any) => {
+    onError: (err, _, context: any) => {
       logger.error('[useSubtaskMutations] Delete failed:', err);
       if (context?.previousSubtasks && context?.taskId) {
         queryClient.setQueryData(['subtasks', context.taskId], context.previousSubtasks);
@@ -255,7 +257,7 @@ export const useSubtaskMutations = () => {
       let taskId: string | undefined;
       const allSubtasksQueries = queryClient.getQueriesData<Subtask[]>({ queryKey: ['subtasks'] });
 
-      for (const [queryKey, subtasks] of allSubtasksQueries) {
+      for (const [, subtasks] of allSubtasksQueries) {
         if (subtasks) {
           const subtask = subtasks.find(s => s.id === subtaskId);
           if (subtask) {
@@ -287,13 +289,13 @@ export const useSubtaskMutations = () => {
 
       return { previousSubtasks, taskId };
     },
-    onError: (err, { subtaskId }, context: any) => {
+    onError: (err, _, context: any) => {
       logger.error('[useSubtaskMutations] Complete failed:', err);
       if (context?.previousSubtasks && context?.taskId) {
         queryClient.setQueryData(['subtasks', context.taskId], context.previousSubtasks);
       }
     },
-    onSuccess: (data, { subtaskId }) => {
+    onSuccess: (data) => {
       logger.debug('[useSubtaskMutations] Subtask completed:', data);
       const taskId = data.task_id;
 

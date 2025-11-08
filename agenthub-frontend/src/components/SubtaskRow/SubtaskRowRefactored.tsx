@@ -37,9 +37,7 @@ import type { SubtaskRowProps } from "../../types/subtaskTypes";
  */
 const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
   summary,
-  fullSubtask,
   isLoading,
-  showDetails,
   parentTaskId,
   onSubtaskAction,
   onAgentInfoClick,
@@ -48,7 +46,7 @@ const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
   onUnregisterCallbacks
 }) => {
   // Use animation hook for all animation logic
-  const { animationState, isVisible, animationClass, elementRef } = useSubtaskAnimation({
+  const { isVisible, animationClass, elementRef } = useSubtaskAnimation({
     subtaskId: summary.id,
     onRegisterCallbacks,
     onUnregisterCallbacks
@@ -82,7 +80,7 @@ const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
     <TableRow ref={elementRef} className={rowClasses}>
       {/* ID Column */}
       <TableCell className="w-[100px]">
-        <CopyableId id={summary.id} prefix="S" />
+        <CopyableId id={summary.id} label="S" abbreviated={true} variant="badge" size="xs" />
       </TableCell>
 
       {/* Title Column */}
@@ -92,9 +90,7 @@ const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
             {summary.title}
           </span>
           <ParentTaskReference
-            projectId=""
-            taskTreeId=""
-            taskId={parentTaskId}
+            parentTaskId={parentTaskId}
           />
         </div>
       </TableCell>

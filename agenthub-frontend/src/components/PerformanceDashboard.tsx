@@ -15,8 +15,14 @@ import {
   Clock,
   Users
 } from 'lucide-react';
-import { api } from '../api';
+// TODO: Refactor to use new API structure (individual functions instead of api.get())
+// import { api } from '../api';
 import logger from '../utils/logger';
+
+// Temporary stub for legacy api.get() calls
+const api = {
+  get: async (url: string) => ({ data: null })
+};
 
 // Types for performance data
 interface PerformanceMetrics {

@@ -1,5 +1,4 @@
 import { vi } from 'vitest';
-import React from 'react';
 
 // Mock implementation of ProgressDisplay component
 // Used in tests to avoid rendering complex ProgressStepper and Tooltip components

@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { agentManagementApiV2 } from '../services/apiV2';
 import logger from '../utils/logger';
 import { useSuccessToast, useWarningToast } from '../components/ui/toast';
+import { toApiInput } from '../types/agentTypes';
 import type {
   AgentTemplate,
   UserAgentInstance,
@@ -24,6 +25,8 @@ import type {
   UserUsageStats,
   PopularAgentStats,
   MarketplaceFilters,
+  ApiCreateInstanceInput,
+  ApiUpdateInstanceInput,
 } from '../types/agentTypes';
 
 // ============================================================================
@@ -64,7 +67,7 @@ export function useAgentTemplates(): UseAgentTemplatesReturn {
     templates: data ?? [],
     loading: isLoading,
     error: error?.message ?? null,
-    loadTemplates: refetch,
+    loadTemplates: async () => { await refetch(); },
     getTemplateBySlug,
   };
 }
@@ -80,6 +83,7 @@ interface UseUserAgentInstancesReturn {
   loadInstances: () => Promise<void>;
   getInstance: (instanceId: string) => Promise<UserAgentInstance | null>;
   createInstance: (data: CreateInstanceRequest) => Promise<UserAgentInstance | null>;
+  bulkCreateInstances: () => Promise<UserAgentInstance[]>;
   updateInstance: (instanceId: string, data: UpdateInstanceRequest) => Promise<UserAgentInstance | null>;
   deleteInstance: (instanceId: string) => Promise<boolean>;
   refreshInstance: (instanceId: string) => Promise<void>;
@@ -111,8 +115,13 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
 
   // Mutation for creating instance
   const createMutation = useMutation({
-    mutationFn: (data: CreateInstanceRequest) => agentManagementApiV2.createInstance(data),
-    onSuccess: (newInstance) => {
+    mutationFn: async (data: CreateInstanceRequest) => {
+      // Convert frontend request (with null) to API input (with undefined)
+      const apiInput: ApiCreateInstanceInput = toApiInput(data) as ApiCreateInstanceInput;
+      const response = await agentManagementApiV2.createInstance(apiInput);
+      return response.instance;
+    },
+    onSuccess: (newInstance: UserAgentInstance) => {
       // Optimistic update
       queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
         [...old, newInstance]
@@ -125,11 +134,40 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
     },
   });
 
+  // Mutation for bulk creating instances
+  const bulkCreateMutation = useMutation({
+    mutationFn: async () => {
+      const response = await agentManagementApiV2.bulkCreateInstances();
+      return response.instances;
+    },
+    onSuccess: (newInstances: UserAgentInstance[]) => {
+      // Optimistic update - add all new instances
+      queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
+        [...old, ...newInstances]
+      );
+      // CRITICAL FIX: Invalidate to trigger re-render
+      queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
+      // CRITICAL FIX: Direct notification (backup to WebSocket)
+      const count = newInstances.length;
+      if (count > 0) {
+        showSuccess(`Successfully created ${count} agent instance${count > 1 ? 's' : ''}`);
+        logger.info(`Bulk created ${count} instances`);
+      } else {
+        showSuccess('All agent instances already exist');
+        logger.info('No new instances created - all already exist');
+      }
+    },
+  });
+
   // Mutation for updating instance
   const updateMutation = useMutation({
-    mutationFn: ({ instanceId, data }: { instanceId: string; data: UpdateInstanceRequest }) =>
-      agentManagementApiV2.updateInstance(instanceId, data),
-    onSuccess: (updatedInstance, { instanceId }) => {
+    mutationFn: async ({ instanceId, data }: { instanceId: string; data: UpdateInstanceRequest }) => {
+      // Convert frontend request (with null) to API input (with undefined)
+      const apiInput: ApiUpdateInstanceInput = toApiInput(data) as ApiUpdateInstanceInput;
+      const response = await agentManagementApiV2.updateInstance(instanceId, apiInput);
+      return response.instance;
+    },
+    onSuccess: (updatedInstance: UserAgentInstance, { instanceId }) => {
       // Optimistic update
       queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
         old.map(inst => inst.id === instanceId ? updatedInstance : inst)
@@ -145,7 +183,7 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
   // Mutation for deleting instance
   const deleteMutation = useMutation({
     mutationFn: (instanceId: string) => agentManagementApiV2.deleteInstance(instanceId),
-    onSuccess: (response, instanceId) => {
+    onSuccess: (_, instanceId) => {
       // Optimistic update
       queryClient.setQueryData(['userAgentInstances'], (old: UserAgentInstance[] = []) =>
         old.filter(inst => inst.id !== instanceId)
@@ -183,7 +221,7 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
 
   const toggleEnabled = useCallback(async (instanceId: string, enabled: boolean): Promise<boolean> => {
     try {
-      const result = await updateMutation.mutateAsync({ instanceId, data: { is_enabled: enabled } });
+      await updateMutation.mutateAsync({ instanceId, data: { is_enabled: enabled } });
       logger.info(`${enabled ? 'Enabled' : 'Disabled'} agent: ${instanceId}`);
       return true;
     } catch (err) {
@@ -194,12 +232,27 @@ export function useUserAgentInstances(): UseUserAgentInstancesReturn {
 
   return {
     instances: data ?? [],
-    isLoading: isLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    isLoading: isLoading || createMutation.isPending || bulkCreateMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
     error: error?.message ?? null,
-    loadInstances: refetch,
+    loadInstances: async () => { await refetch(); },
     getInstance,
-    createInstance: (data) => createMutation.mutateAsync(data),
-    updateInstance: (instanceId, data) => updateMutation.mutateAsync({ instanceId, data }),
+    createInstance: async (data) => {
+      const instance = await createMutation.mutateAsync(data);
+      return instance;
+    },
+    bulkCreateInstances: async () => {
+      try {
+        const instances = await bulkCreateMutation.mutateAsync();
+        return instances;
+      } catch (err) {
+        logger.error('Error bulk creating instances:', err);
+        return [];
+      }
+    },
+    updateInstance: async (instanceId, data) => {
+      const instance = await updateMutation.mutateAsync({ instanceId, data });
+      return instance;
+    },
     deleteInstance: async (instanceId) => {
       try {
         await deleteMutation.mutateAsync(instanceId);

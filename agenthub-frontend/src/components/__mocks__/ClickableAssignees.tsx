@@ -18,10 +18,8 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
   assignees,
   task,
   onAgentClick,
-  variant = "secondary",
   className = "",
-  showAsString = false,
-  compact = false
+  showAsString = false
 }) => {
   if (showAsString) {
     return <span data-testid="clickable-assignees">{assignees.join(', ')}</span>;

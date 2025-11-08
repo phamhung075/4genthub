@@ -83,8 +83,11 @@ export const useTaskMutations = () => {
           status: newTask.status || 'todo',
           priority: newTask.priority || 'medium',
           git_branch_id: newTask.git_branch_id,
+          project_id: newTask.project_id || '',
           assignees: newTask.assignees || [],
           labels: newTask.labels || [],
+          has_dependencies: false,
+          has_context: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           subtask_count: 0,
@@ -99,7 +102,7 @@ export const useTaskMutations = () => {
 
       return { previousTasks, git_branch_id: newTask.git_branch_id };
     },
-    onError: (err, newTask, context: any) => {
+    onError: (err, _, context: any) => {
       logger.error('[useTaskMutations] Create failed:', err);
       // Rollback on error
       if (context?.previousTasks && context?.git_branch_id) {
@@ -118,7 +121,7 @@ export const useTaskMutations = () => {
   // Update task mutation
   const updateMutation = useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Task> }) => {
-      logger.debug('[useTaskMutations] Updating task:', taskId, updates);
+      logger.debug('[useTaskMutations] Updating task', { taskId, updates });
       return await updateTask(taskId, updates);
     },
     onMutate: async ({ taskId, updates }) => {
@@ -205,7 +208,7 @@ export const useTaskMutations = () => {
 
       return { previousTask, previousTasks, git_branch_id };
     },
-    onError: (err, taskId, context: any) => {
+    onError: (err, _, context: any) => {
       logger.error('[useTaskMutations] Delete failed:', err);
       if (context?.previousTasks && context?.git_branch_id) {
         queryClient.setQueryData(['tasks', context.git_branch_id], context.previousTasks);

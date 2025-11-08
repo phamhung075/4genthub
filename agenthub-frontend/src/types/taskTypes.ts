@@ -2,6 +2,8 @@
 // Consolidated Task Types for the entire application
 // ============================================
 
+import type { ProgressHistoryEntry } from './utilityTypes';
+
 // ============================================
 // Core Task Types
 // ============================================
@@ -48,6 +50,8 @@ export interface TaskSummary {
   updated_at?: string;
   subtask_count?: number; // Total number of subtasks
   completed_subtasks?: number; // Number of completed subtasks
+  dependencies?: string[]; // Array of dependency task IDs
+  subtasks?: any[]; // Array of subtask objects or IDs
 }
 
 /**
@@ -69,12 +73,9 @@ export interface TaskSummary {
  */
 /**
  * ProgressEntry - Individual progress entry with timestamp
+ * @see {import('./utilityTypes').ProgressHistoryEntry}
+ * Note: Import from utilityTypes - duplicate removed to avoid barrel export conflicts
  */
-export interface ProgressEntry {
-  content: string;
-  timestamp: string;
-  progress_number: number;
-}
 
 export interface SubtaskSummary {
   id: string;
@@ -83,7 +84,7 @@ export interface SubtaskSummary {
   priority: string;
   assignees?: string[];
   progress_percentage?: number;
-  progress_history?: Record<string, ProgressEntry>;  // Detailed progress tracking
+  progress_history?: Record<string, ProgressHistoryEntry>;  // Detailed progress tracking
   progress_count?: number;  // Number of progress entries
   created_at?: string;
   updated_at?: string;
@@ -121,10 +122,19 @@ export interface LazyTaskListProps {
   onTasksChanged?: () => void;
 }
 
-export type DialogType = 'details' | 'edit' | 'delete' | 'complete' | 'context' | 'assign' | 'agent-info' | 'subtask-details' | 'subtask-edit' | 'subtask-complete';
+// Dialog types
+export type TaskDialogType = 'details' | 'edit' | 'delete' | 'complete' | 'context' | 'assign' | 'agent-info' | 'agent-response' | 'create';
+export type SubtaskDialogType = 'subtask-details' | 'subtask-edit' | 'subtask-complete';
+export type DialogType = TaskDialogType | SubtaskDialogType;
 
 export interface ActiveDialog {
   type: DialogType | null;
+  taskId?: string;
+  data?: any;
+}
+
+export interface TaskActiveDialog {
+  type: TaskDialogType | null;
   taskId?: string;
   data?: any;
 }

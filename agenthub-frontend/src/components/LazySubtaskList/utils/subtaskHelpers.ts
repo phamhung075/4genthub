@@ -16,7 +16,6 @@ export function subtaskToSummary(subtask: Subtask): SubtaskSummary {
     title: subtask.title,
     status: subtask.status,
     priority: subtask.priority,
-    assignees_count: subtask.assignees?.length || 0,
     assignees: subtask.assignees,
     progress_percentage: subtask.progress_percentage
   };
@@ -200,7 +199,6 @@ function hasSubtaskChanged(oldSubtask: SubtaskSummary, newSubtask: SubtaskSummar
     oldSubtask.status !== newSubtask.status ||
     oldSubtask.priority !== newSubtask.priority ||
     oldSubtask.progress_percentage !== newSubtask.progress_percentage ||
-    oldSubtask.assignees_count !== newSubtask.assignees_count ||
     JSON.stringify(oldSubtask.assignees) !== JSON.stringify(newSubtask.assignees)
   );
 }

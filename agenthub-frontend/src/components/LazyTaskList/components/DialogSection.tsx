@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { TaskSummary } from "../../../types/taskTypes";
+import { TaskSummary, TaskActiveDialog } from "../../../types/taskTypes";
 
 // Lazy-loaded dialog components
 const TaskDetailsDialog = lazy(() => import("../../TaskDetailsDialog"));
@@ -10,11 +10,7 @@ const TaskContextDialog = lazy(() => import("../../TaskContextDialog"));
 const DeleteConfirmDialog = lazy(() => import("../../DeleteConfirmDialog"));
 
 interface DialogSectionProps {
-  activeDialog: {
-    type: 'details' | 'edit' | 'create' | 'assign' | 'context' | 'complete' | 'delete' | 'agent-response' | 'agent-info' | null;
-    taskId?: string;
-    data?: any;
-  };
+  activeDialog: TaskActiveDialog;
   fullTasks: Map<string, any>;
   taskSummaries: TaskSummary[];
   agents: any[];

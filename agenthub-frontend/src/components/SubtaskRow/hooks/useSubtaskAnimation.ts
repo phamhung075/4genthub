@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { animationFactory, AnimationType } from '../../../services/AnimationFactory';
 import logger from '../../../utils/logger';
 import { taskDeletionTracker } from '../../../services/taskDeletionTracker';
-import type { SubtaskAnimationState, AnimationCallbacks } from '../../../types/subtaskTypes';
+import type { SubtaskAnimationState, AnimationCallbacks } from '../../../types/animationTypes';
 
 interface UseSubtaskAnimationProps {
   subtaskId: string;

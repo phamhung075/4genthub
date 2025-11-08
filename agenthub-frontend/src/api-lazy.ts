@@ -2,22 +2,18 @@
 // Provides lightweight endpoints for improved performance
 
 import Cookies from 'js-cookie';
-import { Project, Subtask, Task } from './api';
+import { Subtask } from './api';
 import { API_BASE_URL } from './config/environment';
 import {
-  projectApiV2,
   subtaskApiV2,
   taskApiV2
 } from './services/apiV2';
 import logger from './utils/logger';
-import { TaskSummary, SubtaskSummary } from './types/taskTypes';
+import { SubtaskSummary } from './types/taskTypes';
 import { BranchSummary } from './types/api.types';
 
 export type { TaskSummary, SubtaskSummary } from './types/taskTypes';
 export type { BranchSummary } from './types/api.types';
-
-// --- Import Lazy Loading Interfaces ---
-import type { TaskSummariesResponse } from './types/serviceTypes';
 
 // --- Task Lazy Loading ---
 export const getFullTask = async (task_id: string): Promise<any> => {
