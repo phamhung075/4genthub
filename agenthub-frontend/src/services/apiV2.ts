@@ -61,7 +61,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
         if (originalUrl && originalInit) {
           const newToken = Cookies.get('access_token');
           if (newToken) {
-            const newHeaders = { ...originalInit.headers };
+            const newHeaders: Record<string, string> = { ...originalInit.headers } as Record<string, string>;
             newHeaders['Authorization'] = `Bearer ${newToken}`;
 
             const retryResponse = await fetch(originalUrl, {
@@ -984,7 +984,7 @@ export const agentApiV2 = {
 
 export const agentManagementApiV2 = {
   // List all agent templates from agent-library
-  listTemplates: async () => {
+  listTemplates: async (): Promise<import('../types/agentTypes').AgentTemplateListResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/templates`, {
       method: 'GET',
       headers: getAuthHeaders(),
@@ -994,7 +994,7 @@ export const agentManagementApiV2 = {
   },
 
   // Get specific template by slug
-  getTemplate: async (slug: string) => {
+  getTemplate: async (slug: string): Promise<import('../types/agentTypes').ApiInstanceResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/templates/${slug}`, {
       method: 'GET',
       headers: getAuthHeaders(),
@@ -1004,7 +1004,7 @@ export const agentManagementApiV2 = {
   },
 
   // List user's agent instances
-  listUserInstances: async () => {
+  listUserInstances: async (): Promise<import('../types/agentTypes').UserAgentInstanceListResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances`, {
       method: 'GET',
       headers: getAuthHeaders(),
@@ -1014,7 +1014,7 @@ export const agentManagementApiV2 = {
   },
 
   // Get specific user agent instance
-  getUserInstance: async (instanceId: string) => {
+  getUserInstance: async (instanceId: string): Promise<import('../types/agentTypes').ApiInstanceResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
@@ -1024,16 +1024,7 @@ export const agentManagementApiV2 = {
   },
 
   // Create/customize agent instance from template
-  createInstance: async (data: {
-    template_slug: string;
-    agent_name?: string;
-    system_prompt?: string;
-    tools?: string[];
-    capabilities?: Record<string, any>;
-    rules?: string[];
-    output_format?: string;
-    visibility?: 'private' | 'public';
-  }) => {
+  createInstance: async (data: import('../types/agentTypes').ApiCreateInstanceInput): Promise<import('../types/agentTypes').ApiInstanceResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances`, {
       method: 'POST',
       headers: {
@@ -1047,7 +1038,7 @@ export const agentManagementApiV2 = {
   },
 
   // Bulk create agent instances for all available templates
-  bulkCreateInstances: async () => {
+  bulkCreateInstances: async (): Promise<import('../types/agentTypes').ApiBulkCreateResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/bulk-create`, {
       method: 'POST',
       headers: {
@@ -1060,16 +1051,7 @@ export const agentManagementApiV2 = {
   },
 
   // Update agent instance
-  updateInstance: async (instanceId: string, data: {
-    agent_name?: string;
-    is_enabled?: boolean;
-    system_prompt?: string;
-    tools?: string[];
-    capabilities?: Record<string, any>;
-    rules?: string[];
-    output_format?: string;
-    visibility?: 'private' | 'public';
-  }) => {
+  updateInstance: async (instanceId: string, data: import('../types/agentTypes').ApiUpdateInstanceInput): Promise<import('../types/agentTypes').ApiInstanceResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}`, {
       method: 'PUT',
       headers: {
@@ -1083,7 +1065,7 @@ export const agentManagementApiV2 = {
   },
 
   // Delete agent instance
-  deleteInstance: async (instanceId: string) => {
+  deleteInstance: async (instanceId: string): Promise<import('../types/agentTypes').ApiDeleteResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),

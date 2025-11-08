@@ -122,7 +122,6 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
 }) => {
   const [projectContext, setProjectContext] = useState<any>(null);
   const [globalContext, setGlobalContext] = useState<any>(null);
-  const [showInheritance, setShowInheritance] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);

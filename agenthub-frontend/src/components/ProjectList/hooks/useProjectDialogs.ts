@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Project } from "../../../api";
 import type {
-  ProjectFormData,
-  DeleteBranchDialogState,
   ProjectDialogType,
   UseProjectDialogsReturn
 } from "../../../types/hookTypes";
+import type { ProjectFormData, DeleteBranchDialogState } from "../../../types/componentTypes";
 
 export const useProjectDialogs = (): UseProjectDialogsReturn => {
   const [showCreate, setShowCreate] = useState(false);

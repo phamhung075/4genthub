@@ -72,7 +72,7 @@ export const useBranchMutations = () => {
   // Create branch mutation
   const createMutation = useMutation({
     mutationFn: async ({ projectId, branch }: { projectId: string; branch: Partial<Branch> }) => {
-      logger.debug('[useBranchMutations] Creating branch for project:', projectId, branch);
+      logger.debug('[useBranchMutations] Creating branch for project', { projectId, branch });
       return await createBranch(projectId, branch);
     },
     onMutate: async ({ projectId, branch }) => {
@@ -105,7 +105,7 @@ export const useBranchMutations = () => {
 
       return { previousBranches, projectId };
     },
-    onError: (err, { projectId }, context: any) => {
+    onError: (err, _, context: any) => {
       logger.error('[useBranchMutations] Create failed:', err);
       // Rollback on error
       if (context?.previousBranches) {
@@ -125,7 +125,7 @@ export const useBranchMutations = () => {
   // Update branch mutation
   const updateMutation = useMutation({
     mutationFn: async ({ branchId, updates }: { branchId: string; updates: Partial<Branch> }) => {
-      logger.debug('[useBranchMutations] Updating branch:', branchId, updates);
+      logger.debug('[useBranchMutations] Updating branch', { branchId, updates });
       return await updateBranch(branchId, updates);
     },
     onMutate: async ({ branchId, updates }) => {
@@ -133,7 +133,7 @@ export const useBranchMutations = () => {
       let projectId: string | undefined;
       const allBranchesQueries = queryClient.getQueriesData<Branch[]>({ queryKey: ['branches'] });
 
-      for (const [queryKey, branches] of allBranchesQueries) {
+      for (const [, branches] of allBranchesQueries) {
         if (branches) {
           const branch = branches.find(b => b.id === branchId);
           if (branch) {
@@ -163,13 +163,13 @@ export const useBranchMutations = () => {
 
       return { previousBranches, projectId };
     },
-    onError: (err, { branchId }, context: any) => {
+    onError: (err, _, context: any) => {
       logger.error('[useBranchMutations] Update failed:', err);
       if (context?.previousBranches && context?.projectId) {
         queryClient.setQueryData(['branches', context.projectId], context.previousBranches);
       }
     },
-    onSuccess: (data, { branchId }) => {
+    onSuccess: (data) => {
       logger.debug('[useBranchMutations] Branch updated:', data);
       const projectId = data.project_id;
 
@@ -193,7 +193,7 @@ export const useBranchMutations = () => {
       let projectId: string | undefined;
       const allBranchesQueries = queryClient.getQueriesData<Branch[]>({ queryKey: ['branches'] });
 
-      for (const [queryKey, branches] of allBranchesQueries) {
+      for (const [, branches] of allBranchesQueries) {
         if (branches) {
           const branch = branches.find(b => b.id === branchId);
           if (branch) {
@@ -221,7 +221,7 @@ export const useBranchMutations = () => {
 
       return { previousBranches, projectId };
     },
-    onError: (err, branchId, context: any) => {
+    onError: (err, _, context: any) => {
       logger.error('[useBranchMutations] Delete failed:', err);
       if (context?.previousBranches && context?.projectId) {
         queryClient.setQueryData(['branches', context.projectId], context.previousBranches);

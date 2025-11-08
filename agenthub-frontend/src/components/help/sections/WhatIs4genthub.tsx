@@ -15,7 +15,17 @@ interface WhatIs4genthubProps {
   toggleSection: (sectionId: string) => void;
 }
 
-const WhatIs4genthub: React.FC<WhatIs4genthubProps> = ({ expandedSections, toggleSection }) => {
+export interface HelpSectionData {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactElement;
+  content: React.ReactElement;
+  isExpanded: boolean;
+  onToggle: () => void;
+}
+
+const WhatIs4genthub = ({ expandedSections, toggleSection }: WhatIs4genthubProps): HelpSectionData => {
   const sectionData = {
     id: 'what-is-4genthub',
     title: 'What is 4genthub MCP?',

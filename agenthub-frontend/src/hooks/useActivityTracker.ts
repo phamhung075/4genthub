@@ -21,7 +21,7 @@ export const useActivityTracker = (options: ActivityTrackerOptions = {}) => {
 
   const { tokens, refreshToken, isAuthenticated } = useAuth();
   const lastActivityRef = useRef<Date>(new Date());
-  const refreshTimerRef = useRef<NodeJS.Timeout>();
+  const refreshTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const scheduleTokenRefresh = useCallback(() => {
     if (!tokens?.access_token || !isAuthenticated) return;

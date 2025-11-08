@@ -217,6 +217,7 @@ export interface WSMetadata {
 
   // Display metadata (for toasts)
   project_name?: string;
+  project_title?: string;  // Alias for project_name
   branch_title?: string;
   task_title?: string;
   subtask_title?: string;

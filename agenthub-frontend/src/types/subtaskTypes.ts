@@ -3,6 +3,7 @@
 // ============================================
 
 import type { SubtaskSummary } from "./taskTypes";
+import type { AnimationCallbacks, SubtaskAnimationState } from "./animationTypes";
 
 /**
  * Main props for LazySubtaskList component
@@ -196,13 +197,12 @@ export interface SubtaskRowProps {
   onUnregisterCallbacks?: (subtaskId: string) => void;
 }
 
-export interface AnimationCallbacks {
-  playCreateAnimation: () => void;
-  playDeleteAnimation: () => void;
-  playUpdateAnimation: () => void;
-}
-
-export type SubtaskAnimationState = 'none' | 'creating' | 'deleting' | 'updating';
+/**
+ * Animation callback types
+ * @see {import('./animationTypes').AnimationCallbacks}
+ * @see {import('./animationTypes').SubtaskAnimationState}
+ * Note: Import from animationTypes - duplicates removed to avoid barrel export conflicts
+ */
 
 export interface SubtaskRowActionsProps {
   subtaskId: string;

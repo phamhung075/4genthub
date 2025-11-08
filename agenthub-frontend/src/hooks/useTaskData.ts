@@ -22,10 +22,8 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
       status: task.status,
       priority: task.priority,
       subtask_count: task.subtask_count ?? task.subtasks?.length ?? 0,
-      assignees_count: task.assignees?.length || 0,
       assignees: task.assignees || [],
       has_dependencies: dependencyCount > 0,
-      dependency_count: dependencyCount,
       has_context: Boolean(task.context_id || task.context_data),
       created_at: task.created_at
     };
@@ -130,7 +128,7 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
     loadingTasks: new Set(), // Deprecated: React Query handles loading states
 
     // Actions
-    loadTaskSummaries: refetch,
+    loadTaskSummaries: async () => { await refetch(); },
     loadFullTask,
     updateTaskFromData,
     addNewTask,

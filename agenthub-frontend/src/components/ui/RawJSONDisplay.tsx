@@ -26,8 +26,8 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
     return jsonString.split('\n').length;
   };
 
-  const formatJSON = (data: any, indent: number = 0, path: string = 'root'): JSX.Element[] => {
-    const elements: JSX.Element[] = [];
+  const formatJSON = (data: any, indent: number = 0, path: string = 'root'): React.ReactElement[] => {
+    const elements: React.ReactElement[] = [];
     const spacing = '  '.repeat(indent);
 
     if (Array.isArray(data)) {
@@ -81,7 +81,7 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
           // Add comma after closing bracket/brace if not last item
           if (index < entries.length - 1) {
             const lastIdx = elements.length - 1;
-            const lastElement = elements[lastIdx];
+            const lastElement = elements[lastIdx] as React.ReactElement<{ className?: string; children?: React.ReactNode }>;
             // Create a new element with comma appended
             elements[lastIdx] = (
               <div key={`${lastElement.key}-comma`} className={lastElement.props.className}>

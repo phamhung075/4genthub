@@ -10,6 +10,7 @@ import {
   UsingMCPTools,
   WhatIs4genthub
 } from '../components/help';
+import type { HelpSectionData } from '../components/help/sections/WhatIs4genthub';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 
@@ -25,7 +26,7 @@ export const HelpSetup: React.FC = () => {
   };
 
   // Create section data from components
-  const helpSections = [
+  const helpSections: HelpSectionData[] = [
     WhatIs4genthub({ expandedSections, toggleSection }),
     GettingStartedGuide({ expandedSections, toggleSection }),
     MCPConfiguration({ expandedSections, toggleSection }),

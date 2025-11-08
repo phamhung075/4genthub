@@ -26,7 +26,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
   branch,
   onClose
 }) => {
-  const { user, token } = useAuth();
+  const { user, tokens } = useAuth();
   const [branchContext, setBranchContext] = useState<any>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
@@ -34,7 +34,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
   const [jsonCopied, setJsonCopied] = useState(false);
 
   // Initialize WebSocket connection for real-time branch updates
-  const { isConnected } = useBranchWebSocket(user?.id || '', token || '', branch?.id);
+  const { isConnected } = useBranchWebSocket(user?.id || '', tokens?.access_token || '', branch?.id);
 
   // Fetch branch context when dialog opens
   useEffect(() => {

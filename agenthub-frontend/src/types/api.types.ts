@@ -79,9 +79,13 @@ export interface Task {
   labels?: string[];
   details?: string;
   progress_percentage?: number;
+  progress_state?: any; // Optional progress state (computed from status/percentage if not provided)
   subtasks?: Subtask[] | string[]; // Phase 2: Can be array of subtask objects (without parent_task_id) or subtask IDs
   parent_task_id?: string; // Identifies if this task is actually a subtask
   progress_history?: Record<string, any>; // Progress history entries
+  subtask_count?: number; // Total number of subtasks
+  completed_subtasks?: number; // Number of completed subtasks
+  progress_count?: number; // Number of progress history entries
 }
 
 export interface Subtask {
@@ -96,8 +100,11 @@ export interface Subtask {
   progress_percentage?: number;
   created_at?: string;
   updated_at?: string;
+  completed_at?: string; // Timestamp when subtask was completed
   progress_notes?: string;
   completion_summary?: string;
+  progress_history?: Record<string, import('./utilityTypes').ProgressHistoryEntry>; // Detailed progress tracking
+  progress_count?: number; // Number of progress entries
 }
 
 export interface Project {

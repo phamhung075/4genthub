@@ -2,8 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import type { TaskSummary, TaskStatus, TaskPriority } from '../types/taskTypes';
 import type {
   GroupBy,
-  SortBy,
-  SortOrder,
   TaskGroup,
   TaskSorting,
   UseTaskGroupingReturn

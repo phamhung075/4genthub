@@ -6,7 +6,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import './theme/global.scss';
+import './theme/global.css';
 import './styles/notifications.css';
 
 // Configure React Query with optimal defaults
@@ -24,7 +24,6 @@ const queryClient = new QueryClient({
 // Initialize extension error filter at the earliest possible point
 // This must happen before any other code to catch all extension errors
 import { initializeExtensionErrorFilter } from './utils/extensionErrorFilter';
-import logger from './utils/logger';
 import { debugLoggerConfig } from './config/logger.config';
 initializeExtensionErrorFilter();
 
@@ -33,12 +32,12 @@ debugLoggerConfig();
 
 // Initialize logging system safely - only for errors
 try {
-  import('./utils/loggerExport').then(({ logger }) => {
+  import('./utils/loggerExport').then(() => {
     // Logger initialized successfully - no need to log startup
-  }).catch(error => {
+  }).catch(() => {
     // Silent fallback - logging system unavailable
   });
-} catch (error) {
+} catch {
   // Silent fallback - basic mode
 }
 
@@ -51,7 +50,7 @@ root.render(
       <BrowserRouter>
         <App />
       </BrowserRouter>
-      <ReactQueryDevtools initialIsOpen={false} position="bottom-left" />
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </React.StrictMode>
 );

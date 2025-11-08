@@ -122,7 +122,7 @@ export function getCompletionSummary(contextData?: ContextData): string | null {
 /**
  * Check if context data is using legacy format (always false now)
  */
-export function isLegacyFormat(contextData?: ContextData): boolean {
+export function isLegacyFormat(_contextData?: ContextData): boolean {
   return false; // No legacy support
 }
 

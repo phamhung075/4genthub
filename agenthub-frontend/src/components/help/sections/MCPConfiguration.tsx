@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card } from '../../ui/card';
 import RawJSONDisplay from '../../ui/RawJSONDisplay';
 import { Settings, Lightbulb } from 'lucide-react';
@@ -8,7 +7,7 @@ interface MCPConfigurationProps {
   toggleSection: (sectionId: string) => void;
 }
 
-const MCPConfiguration: React.FC<MCPConfigurationProps> = ({ expandedSections, toggleSection }) => {
+const MCPConfiguration= ({ expandedSections, toggleSection }: MCPConfigurationProps): HelpSectionData => {
   const mcpConfigExample = {
     mcpServers: {
         "sequential-thinking": {

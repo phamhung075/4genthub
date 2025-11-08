@@ -3,7 +3,7 @@
 
 import logger from './logger';
 
-import type { TokenPermissions, ResourceAccess, DecodedToken } from '../types/authTypes';
+import type { TokenPermissions, DecodedToken } from '../types/authTypes';
 
 export class TokenPermissionParser {
   /**
