@@ -35,6 +35,35 @@ AUTO FEATURES: Progress history tracking | Agent inheritance | Parent progress r
 
 BEST PRACTICES: Update with progress_notes every step | Complete with detailed summary | Use progress_percentage over status | Let assignees inherit
 
+**Progress Documentation Requirements**: The 'progress_notes' parameter is MANDATORY for 'update' and 'complete' actions. This builds timestamped progress history and ensures visibility into work progress. Operations will fail without this field.
+
+USAGE EXAMPLES:
+```python
+# ❌ WRONG - Will fail validation
+manage_subtask(action="update", task_id="xxx", subtask_id="yyy", progress_percentage=50)
+
+# ✅ CORRECT - Includes required progress_notes
+manage_subtask(
+    action="update",
+    task_id="xxx",
+    subtask_id="yyy",
+    progress_percentage=50,
+    progress_notes="Completed UI mockup, starting on API integration"
+)
+
+# ❌ WRONG - Complete without progress_notes
+manage_subtask(action="complete", task_id="xxx", subtask_id="yyy", completion_summary="Done")
+
+# ✅ CORRECT - Complete with both required fields
+manage_subtask(
+    action="complete",
+    task_id="xxx",
+    subtask_id="yyy",
+    completion_summary="Completed JWT token structure with proper expiry times",
+    progress_notes="Final review completed, structure documented"
+)
+```
+
 ERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic | Context updates→don't block
 """
 
@@ -48,8 +77,8 @@ MANAGE_SUBTASK_PARAMETERS_DESCRIPTION = {
     "priority": "Subtask priority: 'low', 'medium', 'high', 'urgent', 'critical'. Default: inherits from parent",
     "assignees": "Agent identifiers - **Inherits from parent task if not specified**. Use @agent-name format. Comma-separated for multiple: 'coding-agent,@test-orchestrator-agent'. Leave empty to inherit parent's agents automatically.",
     "progress_percentage": "Integer 0-100 representing completion. Automatically maps to status (0=todo, 1-99=in_progress, 100=done). Use this instead of status field",
-    "progress_notes": "Brief description of current work status that builds progress history. Use this to track what you're doing at each update. Creates timestamped progress entries automatically. Example: 'Completed UI mockup, starting on API integration'",
-    "completion_summary": "Detailed summary of what was accomplished. BE SPECIFIC! Required for complete action. Example: 'Implemented JWT authentication with refresh tokens, 2-hour expiry, and secure httpOnly cookies'",
+    "progress_notes": "[REQUIRED for 'update' and 'complete' actions] Brief description of current work status that builds progress history. MANDATORY for update and complete operations. Creates timestamped progress entries automatically. Minimum 10 characters. Example: 'Completed UI mockup, starting on API integration'",
+    "completion_summary": "[REQUIRED for 'complete' action] Detailed summary of what was accomplished. BE SPECIFIC! MANDATORY for complete operations. Example: 'Implemented JWT authentication with refresh tokens, 2-hour expiry, and secure httpOnly cookies'",
     "testing_notes": "Notes about testing performed. Example: 'Tested login flow with valid/invalid credentials, verified token refresh'",
     "insights_found": "Important discoveries or learnings. Comma-separated string or JSON array. Example: 'Found existing utility function for validation,Discovered performance bottleneck in query'",
     "challenges_overcome": "Challenges faced and how they were resolved. Comma-separated string or JSON array",
