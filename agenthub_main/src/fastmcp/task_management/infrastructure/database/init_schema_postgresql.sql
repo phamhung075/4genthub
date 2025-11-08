@@ -10,17 +10,11 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ================================================================================
--- SEQUENCES
--- ================================================================================
-
--- Sequence for task_dependencies table
-CREATE SEQUENCE IF NOT EXISTS task_dependencies_id_seq;
-
--- ================================================================================
 -- DROP TABLES
 -- ================================================================================
 
 -- Drop existing tables in reverse dependency order
+-- NOTE: CASCADE will also drop associated sequences, so we recreate sequences AFTER drops
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS user_token_balances CASCADE;
 DROP TABLE IF EXISTS user_sessions CASCADE;
@@ -52,6 +46,14 @@ DROP TABLE IF EXISTS agent_import_history CASCADE;
 -- ================================================================================
 -- CREATE TABLES
 -- ================================================================================
+
+-- ================================================================================
+-- SEQUENCES
+-- ================================================================================
+
+-- Sequence for task_dependencies table
+-- NOTE: Created AFTER drops because CASCADE removes sequences
+CREATE SEQUENCE IF NOT EXISTS task_dependencies_id_seq;
 
 -- Table: agent_import_history
 CREATE TABLE agent_import_history (
@@ -354,11 +356,13 @@ CREATE TABLE task_dependencies (
 );
 
 -- Table: task_labels
+-- Junction table linking tasks to labels (many-to-many relationship)
 CREATE TABLE task_labels (
-    task_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    label_id VARCHAR PRIMARY KEY,
+    task_id UUID NOT NULL,
+    label_id VARCHAR NOT NULL,
     user_id VARCHAR NOT NULL,
-    applied_at TIMESTAMP NOT NULL
+    applied_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (task_id, label_id)  -- Composite primary key
 );
 
 -- Table: tasks
