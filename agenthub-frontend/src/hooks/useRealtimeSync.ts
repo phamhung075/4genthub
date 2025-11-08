@@ -233,10 +233,27 @@ export const useRealtimeSync = (
             // ✨ CRITICAL FIX: Completion payload is MINIMAL (id, title, status, completion_summary, testing_notes, completed_at)
             // We must MERGE with existing task data, not replace entirely, to preserve fields like git_branch_id, created_at, etc.
 
-            // ✅ FIX: Get git_branch_id from generic tasks list (where task definitely exists)
+            // ✅ FIX: Get git_branch_id from ALL possible cache locations
+            // First try generic tasks list, then try taskData from WebSocket payload
             const genericTasks = queryClient.getQueryData<Task[]>(['tasks']);
             const existingTask = genericTasks?.find(t => t.id === taskId);
-            const branchId = existingTask?.git_branch_id;
+            const branchId = existingTask?.git_branch_id || taskData.git_branch_id;
+
+            // 🔥 CRITICAL FIX: If we still don't have branchId, search all ['tasks', *] caches
+            let resolvedBranchId = branchId;
+            if (!resolvedBranchId) {
+              const allTaskCaches = queryClient.getQueriesData<Task[]>({ queryKey: ['tasks'] });
+              for (const [queryKey, tasks] of allTaskCaches) {
+                if (tasks && Array.isArray(tasks)) {
+                  const found = tasks.find(t => t.id === taskId);
+                  if (found?.git_branch_id) {
+                    resolvedBranchId = found.git_branch_id;
+                    logger.debug(`[useRealtimeSync] Found branchId from cache:`, queryKey, resolvedBranchId);
+                    break;
+                  }
+                }
+              }
+            }
 
             // Update individual task cache (merge with existing data)
             queryClient.setQueryData(['task', taskId, false], (old: Task | undefined) => {
@@ -248,15 +265,18 @@ export const useRealtimeSync = (
               return { ...old, ...taskData, status: 'done' };
             });
 
-            // Update task in branch-specific cache (use branchId from existing task)
-            if (branchId) {
+            // Update task in branch-specific cache (use resolved branchId)
+            if (resolvedBranchId) {
               queryClient.setQueryData<Task[]>(
-                ['tasks', branchId],
+                ['tasks', resolvedBranchId],
                 (old) => {
                   if (!old) return old;
                   return old.map(t => t.id === taskId ? { ...t, ...taskData, status: 'done' } : t);
                 }
               );
+              logger.debug(`[useRealtimeSync] Updated task ${taskId} status to 'done' in branch cache:`, resolvedBranchId);
+            } else {
+              logger.warn(`[useRealtimeSync] Could not resolve branchId for completed task ${taskId} - branch-specific cache not updated`);
             }
 
             // ✨ FIX: Also update generic tasks list cache (merge with existing data)
