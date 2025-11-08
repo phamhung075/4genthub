@@ -60,8 +60,23 @@ class ProjectApplicationFacade:
                 await validator.validate_project_name(name, effective_user_id)
 
             except Exception as e:
-                # Return validation errors to frontend
-                return {"success": False, "error": str(e)}
+                # Build enhanced error response
+                error_msg = str(e)
+                error_response = {
+                    "success": False,
+                    "error": error_msg
+                }
+
+                # Add helpful hints for duplicate project names
+                if "already exists" in error_msg.lower():
+                    error_response["error_code"] = "DUPLICATE_PROJECT_NAME"
+                    error_response["hint"] = "Use manage_project(action='list') to see all existing projects"
+                    error_response["suggested_actions"] = [
+                        {"action": "list", "description": "View all existing projects"},
+                        {"action": "get", "name": name, "description": f"Get details of existing project '{name}'"}
+                    ]
+
+                return error_response
 
             # If validation passes, proceed with creation
             service = self._project_service.with_user(effective_user_id) if effective_user_id else self._project_service
@@ -104,8 +119,23 @@ class ProjectApplicationFacade:
                     await validator.validate_project_name(name, effective_user_id, project_id)
 
                 except Exception as e:
-                    # Return validation errors to frontend
-                    return {"success": False, "error": str(e)}
+                    # Build enhanced error response
+                    error_msg = str(e)
+                    error_response = {
+                        "success": False,
+                        "error": error_msg
+                    }
+
+                    # Add helpful hints for duplicate project names
+                    if "already exists" in error_msg.lower():
+                        error_response["error_code"] = "DUPLICATE_PROJECT_NAME"
+                        error_response["hint"] = "Use manage_project(action='list') to see all existing projects"
+                        error_response["suggested_actions"] = [
+                            {"action": "list", "description": "View all existing projects"},
+                            {"action": "get", "name": name, "description": f"Get details of existing project '{name}'"}
+                        ]
+
+                    return error_response
 
             return await self._project_service.update_project(project_id, name, description)
 

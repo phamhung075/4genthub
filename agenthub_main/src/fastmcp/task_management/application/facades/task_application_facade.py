@@ -1607,10 +1607,51 @@ class TaskApplicationFacade:
                     message = f"Dependency {dependency_id} already exists for task {task_id}"
                     logger.info(f"Dependency {dependency_id} already exists for task {task_id}")
 
+            task_dict = MinimalResponseSerializer.serialize_task_minimal(task, "update")
+
+            # 🔥 CRITICAL FIX: Broadcast WebSocket event after dependency change
+            # This ensures UI updates in real-time with agent names and dependency data
+            try:
+                from ...domain.websocket_protocol import TaskUpdatePayload
+                from ...infrastructure.notifications.websocket_notification_service import WebSocketNotificationService
+
+                # Get user_id (use "system" as fallback for background operations)
+                user_id = "system"
+
+                # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                try:
+                    payload = TaskUpdatePayload(
+                        id=task_dict.get("id") or task_id,
+                        title=task_dict.get("title") or task.title,
+                        description=task_dict.get("description"),
+                        status=task_dict.get("status") or task.status,
+                        priority=task_dict.get("priority") or task.priority,
+                        git_branch_id=task_dict.get("git_branch_id") or task.git_branch_id,
+                        assignees=task_dict.get("assignees"),
+                        labels=task_dict.get("labels"),
+                        updated_at=task_dict.get("updated_at")
+                    )
+                    validated_task_data = payload.model_dump()
+                    logger.info(f"✅ Task dependency add payload validated for {task_id}")
+                except Exception as validation_error:
+                    logger.error(f"❌ Task dependency add payload validation failed: {validation_error}")
+                    # Fallback to dict (maintains backward compatibility)
+                    validated_task_data = task_dict
+
+                WebSocketNotificationService.sync_broadcast_task_event(
+                    event_type="updated",
+                    task_id=task_id,
+                    user_id=user_id,
+                    task_data=validated_task_data
+                )
+                logger.info(f"Broadcasted task update notification after adding dependency to task {task_id}")
+            except Exception as e:
+                logger.warning(f"Failed to broadcast task update after dependency add: {e}")
+
             return {
                 "success": True,
                 "message": message,
-                "task": MinimalResponseSerializer.serialize_task_minimal(task, "update")
+                "task": task_dict
             }
         except (TaskNotFoundError, ValueError) as e:
             return {"success": False, "error": str(e)}
@@ -1648,10 +1689,51 @@ class TaskApplicationFacade:
                 message = f"Dependency {dependency_id} not found on task {task_id}"
                 logger.info(f"Dependency {dependency_id} not found on task {task_id}")
 
+            task_dict = MinimalResponseSerializer.serialize_task_minimal(task, "update")
+
+            # 🔥 CRITICAL FIX: Broadcast WebSocket event after dependency change
+            # This ensures UI updates in real-time with agent names and dependency data
+            try:
+                from ...domain.websocket_protocol import TaskUpdatePayload
+                from ...infrastructure.notifications.websocket_notification_service import WebSocketNotificationService
+
+                # Get user_id (use "system" as fallback for background operations)
+                user_id = "system"
+
+                # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                try:
+                    payload = TaskUpdatePayload(
+                        id=task_dict.get("id") or task_id,
+                        title=task_dict.get("title") or task.title,
+                        description=task_dict.get("description"),
+                        status=task_dict.get("status") or task.status,
+                        priority=task_dict.get("priority") or task.priority,
+                        git_branch_id=task_dict.get("git_branch_id") or task.git_branch_id,
+                        assignees=task_dict.get("assignees"),
+                        labels=task_dict.get("labels"),
+                        updated_at=task_dict.get("updated_at")
+                    )
+                    validated_task_data = payload.model_dump()
+                    logger.info(f"✅ Task dependency remove payload validated for {task_id}")
+                except Exception as validation_error:
+                    logger.error(f"❌ Task dependency remove payload validation failed: {validation_error}")
+                    # Fallback to dict (maintains backward compatibility)
+                    validated_task_data = task_dict
+
+                WebSocketNotificationService.sync_broadcast_task_event(
+                    event_type="updated",
+                    task_id=task_id,
+                    user_id=user_id,
+                    task_data=validated_task_data
+                )
+                logger.info(f"Broadcasted task update notification after removing dependency from task {task_id}")
+            except Exception as e:
+                logger.warning(f"Failed to broadcast task update after dependency remove: {e}")
+
             return {
                 "success": True,
                 "message": message,
-                "task": MinimalResponseSerializer.serialize_task_minimal(task, "update")
+                "task": task_dict
             }
         except (TaskNotFoundError, ValueError) as e:
             return {"success": False, "error": str(e)}

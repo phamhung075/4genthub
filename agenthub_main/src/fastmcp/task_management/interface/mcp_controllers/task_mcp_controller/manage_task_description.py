@@ -44,6 +44,30 @@ VISION (Auto): Task enrichment | Priority estimation | Workflow hints | Progress
 
 BEST PRACTICES: Create before work | Specific titles | Update status | Detailed summaries | Search first | Define deps upfront | Use labels
 
+PROGRESS UPDATES: When updating 'status' or 'progress_percentage', you MUST include the 'details' parameter with at least 10 characters describing the progress made. This enforces documentation best practices and ensures all changes are tracked.
+
+Examples:
+```python
+# ❌ WRONG - Will fail validation
+manage_task(action="update", task_id="xxx", status="in_progress")
+
+# ✅ CORRECT - Includes required details
+manage_task(
+    action="update",
+    task_id="xxx",
+    status="in_progress",
+    details="Started implementation of authentication module"
+)
+
+# ✅ CORRECT - Progress percentage with details
+manage_task(
+    action="update",
+    task_id="xxx",
+    progress_percentage=50,
+    details="Completed database schema design and API endpoint structure"
+)
+```
+
 DEPENDENCIES: Sequential (A→B→C) | Parallel | Blocking | Cross-feature | Add IF task needs output OR sequence part
 
 ERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic | Vision→don't block
@@ -58,7 +82,7 @@ MANAGE_TASK_PARAMETERS_DESCRIPTION = {
     "description": "Detailed task description with acceptance criteria. Optional but recommended for: create. Include technical approach, dependencies, and success criteria.",
     "status": "Task status: 'todo', 'in_progress', 'blocked', 'review', 'testing', 'done', 'cancelled'. Optional. Changes automatically: create→todo, update→in_progress, complete→done",
     "priority": "Task priority: 'low', 'medium', 'high', 'urgent', 'critical'. Default: 'medium'. Higher priority tasks returned first by 'next' action.",
-    "details": "Additional implementation notes, technical details, or context. Updated during work. Optional for: create, update",
+    "details": "[REQUIRED when updating status or progress_percentage] Progress notes describing what changed (minimum 10 characters). This field is MANDATORY when updating status or progress to ensure all changes are documented. Optional for: create",
     "estimated_effort": "Time estimate like '2 hours', '3 days', '1 week'. Helps with planning. Optional for: create, update",
     "progress_percentage": "Task completion percentage (0-100). Optional for 'update'. Automatically maps to status transitions and progress tracking when supplied.",
     "assignees": "User identifiers - accepts string (single user) or comma-separated string (multiple users). Optional. Examples: 'user1' or 'user1,user2'. Default: current user",
