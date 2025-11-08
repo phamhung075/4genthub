@@ -350,7 +350,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
   };
 
   // Render nested data with level-based styling
-  const renderNestedData = (data: any, depth: number = 0): JSX.Element => {
+  const renderNestedData = (data: any, depth: number = 0): React.ReactElement => {
     const style = getLevelStyling(depth);
     
     if (data === null || data === undefined) {

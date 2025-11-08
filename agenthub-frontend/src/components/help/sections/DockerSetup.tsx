@@ -1,5 +1,4 @@
 import { HardDrive } from 'lucide-react';
-import React from 'react';
 import { Card } from '../../ui/card';
 import CommandBox from '../shared/CommandBox';
 

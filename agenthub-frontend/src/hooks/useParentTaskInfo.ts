@@ -39,10 +39,7 @@ export const useParentTaskInfo = (parentTaskId: string): UseParentTaskInfoReturn
       logger.debug('[useParentTaskInfo] Fetching parent task info for:', parentTaskId);
 
       try {
-        const response = await getTask(parentTaskId);
-
-        // Handle both response.task and direct task response formats
-        const taskData = response?.task || response;
+        const taskData = await getTask(parentTaskId);
 
         if (taskData && taskData.id) {
           const info: ParentTaskInfo = {

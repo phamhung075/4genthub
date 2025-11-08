@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card } from '../../ui/card';
 import CommandBox from '../shared/CommandBox';
 import { Play, Zap } from 'lucide-react';
@@ -8,7 +7,7 @@ interface GettingStartedGuideProps {
   toggleSection: (sectionId: string) => void;
 }
 
-const GettingStartedGuide: React.FC<GettingStartedGuideProps> = ({ expandedSections, toggleSection }) => {
+const GettingStartedGuide= ({ expandedSections, toggleSection }: GettingStartedGuideProps): HelpSectionData => {
   const sectionData = {
     id: 'getting-started',
     title: 'Getting Started Guide',

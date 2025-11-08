@@ -48,7 +48,7 @@ export const AgentConfigEditor: React.FC<AgentConfigEditorProps> = ({
   onSave,
   onCancel,
 }) => {
-  const { updateInstance, loading, error } = useUserAgentInstances();
+  const { updateInstance, isLoading: loading, error } = useUserAgentInstances();
 
   // Local state for editing
   const [systemPrompt, setSystemPrompt] = useState(instance.system_prompt || '');

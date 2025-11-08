@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Task } from "../api";
 import { useTaskAnimation } from "../hooks/useTaskAnimation";
 import logger from "../utils/logger";
+import type { TaskSummary } from "../types/taskTypes";
 import ClickableAssignees from "./ClickableAssignees";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -12,19 +13,6 @@ import { ProgressDisplayEnhanced } from "./ui/ProgressDisplay";
 import { TableCell, TableRow } from "./ui/table";
 
 import LazySubtaskList from "./LazySubtaskList";
-import "./TaskRow.animations.css";
-
-// Lightweight task summary interface
-interface TaskSummary {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  assignees: string[];
-  has_dependencies: boolean;
-  dependencies?: string[];
-  subtasks?: any[]; // Array of subtask objects or IDs
-}
 
 interface TaskRowProps {
   summary: TaskSummary;
@@ -37,11 +25,6 @@ interface TaskRowProps {
   taskTreeId: string;
   isMobile: boolean;
   isNew?: boolean; // Flag indicating this is a newly created task (should start hidden)
-
-  // Animation event callbacks from parent (placeholders)
-  onPlayCreateAnimation: () => void;
-  onPlayDeleteAnimation: () => void;
-  onPlayUpdateAnimation: () => void;
 
   // Other callbacks
   onToggleExpansion: () => void;
@@ -68,9 +51,6 @@ const TaskRow: React.FC<TaskRowProps> = ({
   taskTreeId,
   isMobile,
   isNew = false,
-  onPlayCreateAnimation,
-  onPlayDeleteAnimation,
-  onPlayUpdateAnimation,
   onToggleExpansion,
   onOpenDialog,
   onHover,
@@ -104,7 +84,6 @@ const TaskRow: React.FC<TaskRowProps> = ({
   const {
     animationState,
     isVisible,
-    animationClass,
     mobileElementRef,
     desktopElementRef,
     playCreateAnimation,
@@ -155,7 +134,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
       case 'deleting':
         return `${baseClasses} taskRowDeleteAnimation border-red-500 bg-red-100 dark:bg-red-950`;
       case 'updating':
-        return `${baseClasses} task-updating-animation`;
+        return `${baseClasses} taskRowUpdateAnimation`;
       default:
         return baseClasses + (
           isHighlighted

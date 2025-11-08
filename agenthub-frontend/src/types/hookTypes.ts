@@ -159,6 +159,7 @@ export interface UseDialogManagerReturn {
 // =============================================================================
 
 import type { Project } from '../api';
+import type { ProjectFormData, DeleteBranchDialogState } from './componentTypes';
 
 /**
  * Options for useProjectData hook
@@ -211,10 +212,11 @@ export interface UseProjectAnimationsReturn {
 export type ProjectDialogType = 'create' | 'edit' | 'delete' | 'createBranch' | 'deleteBranch';
 
 /**
- * Project form data structure (re-exported from componentTypes for convenience)
+ * Project form data structure and dialog state
+ * @see {import('./componentTypes').ProjectFormData}
+ * @see {import('./componentTypes').DeleteBranchDialogState}
+ * Note: Import directly from componentTypes - re-exports removed to avoid barrel export conflicts
  */
-import type { ProjectFormData, DeleteBranchDialogState } from './componentTypes';
-export type { ProjectFormData, DeleteBranchDialogState };
 
 /**
  * Return type for useProjectDialogs hook

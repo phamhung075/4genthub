@@ -2,7 +2,7 @@
  * Browser-compatible EventEmitter implementation
  * Replaces Node.js 'events' module for browser use
  */
-
+import logger from './logger';
 type EventHandler = (...args: any[]) => void;
 
 export class EventEmitter {

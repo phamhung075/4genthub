@@ -186,7 +186,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const id = Math.random().toString(36).substring(2, 9);
     const newToast: Toast = { ...toast, id };
 
-    logger.debug('🍞 ToastProvider: Creating toast with ID:', id, 'toast:', newToast);
+    logger.debug('🍞 ToastProvider: Creating toast', { id, toast: newToast });
 
     setToasts(prev => {
       const newToasts = [...prev, newToast];

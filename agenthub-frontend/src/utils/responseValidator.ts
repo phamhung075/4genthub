@@ -5,13 +5,6 @@
  */
 
 import logger from './logger';
-import type {
-  Task,
-  Subtask,
-  Project,
-  GitBranch,
-  Context,
-} from '../types/api.types';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -507,9 +500,7 @@ export function validateGitBranch(data: any, endpoint: string): ValidationResult
     if (typeof data.success !== 'boolean') {
       warnings.push({
         field: 'success',
-        expected: 'boolean',
-        actual: typeof data.success,
-        message: 'success field should be a boolean'
+        message: `success field should be a boolean, got ${typeof data.success}`
       });
     }
   } else {

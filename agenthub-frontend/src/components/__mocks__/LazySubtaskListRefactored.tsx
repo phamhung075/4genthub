@@ -16,9 +16,6 @@ interface LazySubtaskListProps {
 
 export const LazySubtaskListRefactored: React.FC<LazySubtaskListProps> = ({
   taskId,
-  onSubtaskUpdate,
-  onSubtaskDelete,
-  onSubtaskCreate,
   className = "",
   readonly = false,
   showHeader = true

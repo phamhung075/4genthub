@@ -30,7 +30,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
   const [isExpanded, setIsExpanded] = useState(true); // Track expansion state
 
   // Store the entire nested data structure for editing
-  const [editingData, setEditingData] = useState<GlobalContext | null>(null);
+  const [, setEditingData] = useState<GlobalContext | null>(null);
 
   // Raw JSON editing state
   const [rawJsonText, setRawJsonText] = useState<string>('');
@@ -50,19 +50,6 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
       setJsonValidationError('');
     }
   }, [open]);
-
-  // Helper function to check if a value has actual data (non-recursive for objects)
-  const hasData = (value: any): boolean => {
-    if (value === null || value === undefined) return false;
-    if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'number' || typeof value === 'boolean') return true;
-    if (Array.isArray(value)) return value.length > 0;
-    if (typeof value === 'object') {
-      // For objects, just check if they have keys - don't recurse
-      return Object.keys(value).length > 0;
-    }
-    return false;
-  };
 
   // Helper function to recursively filter out properties with no data
   const filterEmptyProperties = (obj: any): any => {

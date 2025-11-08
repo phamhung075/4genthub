@@ -43,15 +43,18 @@ export interface LoggerConfig {
   enabled: boolean;
   level: LogLevel;
   showTimestamp: boolean;
+  showLogLevel: boolean;      // Display log level in output
+  showFilePath: boolean;       // Display file path in output
+  colorize: boolean;           // Apply color to console output
   outputs: {
     console: boolean;
     localStorage: boolean;
     remote: boolean;
   };
   remoteEndpoint?: string;
+  maxStorageSize: number;      // Maximum localStorage size in bytes (was: maxStorageEntries)
   batchSize: number;
   batchInterval: number;
-  maxStorageEntries: number;
 }
 
 export interface LoggerMetadata {

@@ -88,11 +88,12 @@ export function validateWebSocketMessage(message: WSMessage): WSValidationResult
       if (data.cascade) {
         if (typeof data.cascade !== 'object') {
           errors.push('cascade data is not an object');
-        } else {
+        } else if (data.cascade) {
           // Check cascade structure
-          const cascadeLevels = ['parent_task', 'branch', 'project'];
+          const cascadeLevels = ['parent_task', 'branch', 'project'] as const;
           cascadeLevels.forEach(level => {
-            if (data.cascade[level] && typeof data.cascade[level] !== 'object') {
+            const cascadeData = data.cascade as Record<string, any>;
+            if (cascadeData?.[level] && typeof cascadeData[level] !== 'object') {
               errors.push(`cascade.${level} is not an object`);
             }
           });

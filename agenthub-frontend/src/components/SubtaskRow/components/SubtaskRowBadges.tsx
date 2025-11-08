@@ -14,12 +14,12 @@ export const SubtaskRowBadges: React.FC<SubtaskRowBadgesProps> = ({
   return (
     <>
       <HolographicStatusBadge
-        status={status}
+        status={status as "done" | "todo" | "in_progress" | "blocked" | "review" | "testing" | "cancelled"}
         className="mr-2 text-xs"
       />
 
       <HolographicPriorityBadge
-        priority={priority}
+        priority={priority as "critical" | "low" | "medium" | "high" | "urgent"}
         className="mr-2 text-xs"
       />
 

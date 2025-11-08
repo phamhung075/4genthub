@@ -1,7 +1,7 @@
 // SubtaskListContent component - Main table content for LazySubtaskList
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "../../ui/table";
 import { SubtaskSummary } from "../../../types/taskTypes";
 import { Subtask } from "../../../api";

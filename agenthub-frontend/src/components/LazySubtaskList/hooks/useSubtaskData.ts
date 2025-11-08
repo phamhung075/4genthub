@@ -1,8 +1,8 @@
 // useSubtaskData hook - Data fetching and management for LazySubtaskList
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import { useState, useCallback, useRef } from "react";
-import { deleteSubtask, getSubtask, listSubtasks, Subtask } from "../../../api";
+import { useState, useCallback } from "react";
+import { getSubtask, listSubtasks, Subtask } from "../../../api";
 import { getSubtaskSummaries } from "../../../api-lazy";
 import { SubtaskSummary } from "../../../types/taskTypes";
 import { taskDeletionTracker } from "../../../services/taskDeletionTracker";
@@ -10,8 +10,7 @@ import type { UseSubtaskDataReturn } from "../../../types/subtaskTypes";
 import {
   subtaskToSummary,
   isValidSubtaskId,
-  logSubtaskError,
-  createEmptySubtaskDataState
+  logSubtaskError
 } from "../utils/subtaskHelpers";
 import logger from "../../../utils/logger";
 
@@ -25,7 +24,7 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
   const [fullSubtasks, setFullSubtasks] = useState<Map<string, Subtask>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadingSubtasks, setLoadingSubtasks] = useState<Set<string>>(new Set());
+  const [loadingSubtasks] = useState<Set<string>>(new Set());
   const [hasLoaded, setHasLoaded] = useState(false);
   const [subscriptionEnabled, setSubscriptionEnabled] = useState(false);
 

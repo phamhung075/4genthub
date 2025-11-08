@@ -322,3 +322,104 @@ export interface AgentSharingState {
   is_sharing: boolean;
   error?: string | null;
 }
+
+// ============================================================================
+// API Contract Types (Backend Communication)
+// ============================================================================
+
+/**
+ * API input types use `undefined` for optional fields (not `null`)
+ * This matches the backend API expectations exactly
+ */
+
+/**
+ * API input for creating an agent instance
+ * Converts null to undefined for API compatibility
+ */
+export interface ApiCreateInstanceInput {
+  template_slug: string;
+  agent_name?: string;
+  system_prompt?: string;
+  tools?: string[];
+  capabilities?: Record<string, any>;
+  rules?: string[];
+  output_format?: string;
+  visibility?: 'private' | 'public';
+}
+
+/**
+ * API input for updating an agent instance
+ * Converts null to undefined for API compatibility
+ */
+export interface ApiUpdateInstanceInput {
+  agent_name?: string;
+  is_enabled?: boolean;
+  system_prompt?: string;
+  tools?: string[];
+  capabilities?: Record<string, any>;
+  rules?: string[];
+  output_format?: string;
+  visibility?: 'private' | 'public';
+  share_token?: string;
+}
+
+/**
+ * API response for single instance operations
+ */
+export interface ApiInstanceResponse {
+  success: boolean;
+  instance: UserAgentInstance;
+  message?: string;
+}
+
+/**
+ * API response for bulk create instances
+ */
+export interface ApiBulkCreateResponse {
+  success: boolean;
+  instances: UserAgentInstance[];
+  created_count: number;
+  skipped_count: number;
+  message?: string;
+}
+
+/**
+ * API response for delete operations
+ */
+export interface ApiDeleteResponse {
+  success: boolean;
+  message?: string;
+}
+
+/**
+ * Utility type to convert CreateInstanceRequest to API input
+ */
+export type ToApiInput<T> = {
+  [K in keyof T]: T[K] extends string | null | undefined
+    ? T[K] extends null
+      ? undefined
+      : T[K]
+    : T[K] extends string[] | null | undefined
+    ? T[K] extends null
+      ? undefined
+      : T[K]
+    : T[K] extends Record<string, any> | null | undefined
+    ? T[K] extends null
+      ? undefined
+      : T[K]
+    : T[K];
+};
+
+/**
+ * Helper function to convert frontend request to API input
+ * Removes null values and converts them to undefined
+ */
+export function toApiInput<T extends Record<string, any>>(request: T): ToApiInput<T> {
+  const result: any = {};
+  for (const [key, value] of Object.entries(request)) {
+    if (value !== null && value !== undefined) {
+      result[key] = value;
+    }
+  }
+  return result as ToApiInput<T>;
+}

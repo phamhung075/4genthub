@@ -6,7 +6,6 @@ import {
     Settings,
     Terminal
 } from 'lucide-react';
-import React from 'react';
 import { Card } from '../../ui/card';
 import RawJSONDisplay from '../../ui/RawJSONDisplay';
 
@@ -15,7 +14,7 @@ interface UsingMCPToolsProps {
   toggleSection: (sectionId: string) => void;
 }
 
-const UsingMCPTools: React.FC<UsingMCPToolsProps> = ({ expandedSections, toggleSection }) => {
+const UsingMCPTools= ({ expandedSections, toggleSection }: UsingMCPToolsProps): HelpSectionData => {
   const mcpToolExamples = {
     taskManagement: {
       create: {

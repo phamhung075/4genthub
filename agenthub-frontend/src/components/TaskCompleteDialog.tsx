@@ -24,7 +24,7 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
   const [testingNotes, setTestingNotes] = useState("");
 
   // Use React Query mutation hook
-  const { completeTask, isCompleting, completeError } = useTaskMutations();
+  const { completeTaskAsync, isCompleting, completeError } = useTaskMutations();
 
   // Reset form when task changes
   React.useEffect(() => {
@@ -40,16 +40,14 @@ export const TaskCompleteDialog: React.FC<TaskCompleteDialogProps> = ({
     }
 
     try {
-      const result = await completeTask({
+      const result = await completeTaskAsync({
         taskId: task.id,
         completion_summary: completionSummary,
         testing_notes: testingNotes || undefined
       });
 
-      if (result) {
-        onComplete(result);
-        onClose();
-      }
+      onComplete(result);
+      onClose();
     } catch (e: any) {
       // Error is already handled by the mutation hook
       console.error('Failed to complete task:', e);

@@ -4,7 +4,6 @@
  */
 
 import type { Project } from './api.types';
-import type { BranchSummary } from './api.types';
 
 // =============================================================================
 // Component Props
@@ -28,11 +27,10 @@ export interface ProjectListProps {
 
 /**
  * Form data structure for project creation/editing
+ * @deprecated Import from componentTypes instead
+ * @see {import('./componentTypes').ProjectFormData}
  */
-export interface ProjectFormData {
-  name: string;
-  description: string;
-}
+// REMOVED: Duplicate of componentTypes.ProjectFormData - import from there instead
 
 // =============================================================================
 // Dialog State Types
@@ -40,8 +38,7 @@ export interface ProjectFormData {
 
 /**
  * State for branch deletion dialog
+ * @deprecated Import from componentTypes instead
+ * @see {import('./componentTypes').DeleteBranchDialogState}
  */
-export interface DeleteBranchDialogState {
-  project: Project;
-  branch: BranchSummary;
-}
+// REMOVED: Duplicate of componentTypes.DeleteBranchDialogState - import from there instead

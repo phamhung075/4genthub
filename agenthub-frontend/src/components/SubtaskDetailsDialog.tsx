@@ -139,7 +139,7 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
   };
 
   // Show loading state when dialog is open but no subtask data yet
-  if (!fullSubtask && !loading && open) {
+  if (!fullSubtask && open && loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
@@ -154,7 +154,8 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
     );
   }
 
-  if (!fullSubtask && !loading) {
+  // Early return if no subtask - TypeScript will know fullSubtask is non-null after this
+  if (!fullSubtask) {
     return null;
   }
 
