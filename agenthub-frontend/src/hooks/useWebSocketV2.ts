@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { WebSocketClient, WSMessage } from '../services/WebSocketClient';
 import {
   useIsConnected,

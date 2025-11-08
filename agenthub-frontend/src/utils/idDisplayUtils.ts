@@ -1,5 +1,5 @@
 // Utility functions for displaying IDs and copying them to clipboard
-
+import logger from './logger';
 /**
  * Abbreviates a UUID for display while keeping enough characters for identification
  * @param id The full UUID to abbreviate

@@ -9,7 +9,6 @@ import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holograph
 import { TableCell, TableRow } from "./ui/table";
 import logger from "../utils/logger";
 import styles from "./SubtaskRow.module.css";
-import "../styles/subtask-animations.css";
 
 // Using SubtaskSummary interface from api-lazy.ts
 
@@ -18,12 +17,6 @@ interface SubtaskRowProps {
   fullSubtask: Subtask | null;
   isLoading: boolean;
   showDetails: boolean;
-  parentTaskId: string; // Add parent task ID for context display
-
-  // Animation event callbacks from parent (placeholders)
-  onPlayCreateAnimation: () => void;
-  onPlayDeleteAnimation: () => void;
-  onPlayUpdateAnimation: () => void;
 
   // Other callbacks
   onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void;
@@ -44,10 +37,6 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   fullSubtask,
   isLoading,
   showDetails,
-  parentTaskId,
-  onPlayCreateAnimation,
-  onPlayDeleteAnimation,
-  onPlayUpdateAnimation,
   onSubtaskAction,
   onAgentInfoClick,
   onDeleteSubtask,
@@ -90,7 +79,6 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   const {
     animationState,
     isVisible,
-    animationClass,
     elementRef,
     isNew: isNewFromHook
   } = useSubtaskAnimation({

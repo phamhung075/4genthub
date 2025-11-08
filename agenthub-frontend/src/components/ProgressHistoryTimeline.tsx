@@ -4,9 +4,10 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { parseProgressHistory, formatProgressEntryForDisplay } from '../utils/progressHistoryUtils';
+import type { ProgressHistoryObject } from '../types/utilityTypes';
 
 interface ProgressHistoryTimelineProps {
-  progressHistory?: string | object;
+  progressHistory?: string | ProgressHistoryObject;
   progressCount?: number;
   variant?: 'full' | 'compact' | 'summary';
   maxHeight?: string;

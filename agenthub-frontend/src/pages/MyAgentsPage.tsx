@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useUserAgentInstances, useAgentTemplates } from '../hooks/useAgentManagement';
 import { useNavigate } from 'react-router-dom';
-import type { UserAgentInstance, AgentTemplate } from '../types/agentTypes';
+import type { UserAgentInstance, AgentTemplate, UpdateInstanceRequest } from '../types/agentTypes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -59,7 +59,7 @@ export const MyAgentsPage: React.FC = () => {
   const webSocketClient = useWebSocket(user?.id || '', tokens?.access_token || '');
   useRealtimeSync(webSocketClient.client, true);
 
-  const { instances, loading, error, loadInstances, deleteInstance, createInstance, bulkCreateInstances, toggleEnabled, updateInstance } = useUserAgentInstances();
+  const { instances, isLoading: loading, error, loadInstances, deleteInstance, createInstance, bulkCreateInstances, toggleEnabled, updateInstance } = useUserAgentInstances();
   const { templates, loading: templatesLoading } = useAgentTemplates();
 
   // Local state
@@ -615,9 +615,6 @@ export const MyAgentsPage: React.FC = () => {
                     Templates: {templates.length}
                   </div>
                 )}
-                <div>
-                  Default: {instances.filter(i => i.visibility === 'default').length}
-                </div>
                 <div>
                   Private: {instances.filter(i => i.visibility === 'private').length}
                 </div>

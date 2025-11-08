@@ -1,6 +1,4 @@
 import React from "react";
-import { Project } from "../../../api";
-import { BranchSummary } from "../../../types";
 import type { ProjectListContentProps } from "../../../types/componentTypes";
 import { BranchItem } from "./BranchItem";
 import { ProjectItem } from "./ProjectItem";
@@ -21,6 +19,9 @@ export const ProjectListContent: React.FC<ProjectListContentProps> = ({
   onDeleteProject,
   onDeleteBranch,
 }) => {
+  // Provide default no-op handlers for optional callbacks
+  const handleSelectBranch = onSelectBranch || (() => {});
+  const handleShowBranchDetails = onShowBranchDetails || undefined;
   if (projects.length === 0) {
     return <div className="text-xs text-muted-foreground">No projects found.</div>;
   }
@@ -82,8 +83,8 @@ export const ProjectListContent: React.FC<ProjectListContentProps> = ({
                     selected={selected}
                     taskCount={taskCounts[branch.id] ?? 0}
                     isAnimatingCount={animatingCounts.get(branch.id) || null}
-                    onSelect={onSelectBranch}
-                    onShowDetails={onShowBranchDetails}
+                    onSelect={handleSelectBranch}
+                    onShowDetails={handleShowBranchDetails}
                     onDelete={onDeleteBranch}
                     project={project}
                   />
@@ -98,8 +99,8 @@ export const ProjectListContent: React.FC<ProjectListContentProps> = ({
                     selected={selected}
                     taskCount={tree.task_count !== undefined ? tree.task_count : (taskCounts[tree.id as string] ?? 0)}
                     isAnimatingCount={animatingCounts.get(tree.id) || null}
-                    onSelect={onSelectBranch}
-                    onShowDetails={onShowBranchDetails}
+                    onSelect={handleSelectBranch}
+                    onShowDetails={handleShowBranchDetails}
                     onDelete={onDeleteBranch}
                     project={project}
                   />

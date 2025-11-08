@@ -50,6 +50,9 @@ export interface WSMessage {
     entity_type?: string;
     entity_id?: string;
     event_type?: string;
+    // Project-specific metadata
+    project_title?: string;
+    project_name?: string;
     // Task-specific metadata
     task_title?: string;
     parent_task_title?: string;

@@ -4,7 +4,6 @@
 import {
     agentApiV2,
     branchApiV2,
-    connectionApiV2,
     contextApiV2,
     getCurrentUserId,
     isAuthenticated,
@@ -149,7 +148,7 @@ export const listSubtasks = async (task_id: string, options?: SubtaskRequestOpti
     return response.subtasks || [];
 };
 
-export const getSubtask = async (task_id: string, subtask_id: string, options?: SubtaskRequestOptions): Promise<Subtask> => {
+export const getSubtask = async (_task_id: string, subtask_id: string, options?: SubtaskRequestOptions): Promise<Subtask> => {
     // Use simple endpoint with authentication - task_id kept for API consistency but not used
     const response = await subtaskApiV2.getSubtask(subtask_id, options?.includeContext) as SubtaskResponse;
     return response.subtask || response;

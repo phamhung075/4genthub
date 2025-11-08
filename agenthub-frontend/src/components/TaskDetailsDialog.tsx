@@ -8,7 +8,7 @@ import { Task, Subtask, getTask, getTaskContext, getCurrentUserId } from "../api
 import ClickableAssignees from "./ClickableAssignees";
 import { formatContextDisplay } from "../utils/contextHelpers";
 import logger from "../utils/logger";
-import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon, Settings, Shield, Database, Globe, FolderOpen, Code, GitBranch } from "lucide-react";
+import { FileText, Info, ChevronRight, Layers, Copy, Check as CheckIcon, Settings } from "lucide-react";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import { CopyableId } from "./ui/CopyableId";
@@ -46,7 +46,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   const displayTask = fullTask || task;
 
   // WebSocket integration for real-time updates
-  const { isConnected } = useTaskWebSocket({
+  useTaskWebSocket({
     userId: userId || '',
     token: token || '',
     taskTreeId: displayTask?.git_branch_id || '',

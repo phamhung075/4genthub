@@ -1,9 +1,8 @@
 import React from "react";
-import { Project } from "../../../api";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "../../ui/dialog";
 import { Input } from "../../ui/input";
 import { ShimmerButton } from "../../ui/shimmer-button";
-import type { DeleteBranchDialogState, ProjectFormData, ProjectDialogsProps } from "../../../types/componentTypes";
+import type { ProjectDialogsProps } from "../../../types/componentTypes";
 
 export const ProjectDialogs: React.FC<ProjectDialogsProps> = ({
   showCreate,
@@ -156,8 +155,8 @@ export const ProjectDialogs: React.FC<ProjectDialogsProps> = ({
               size="sm"
               disabled={
                 saving ||
-                (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
+                Boolean(showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
+                Boolean(showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
               }
               title={
                 (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1)

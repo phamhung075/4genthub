@@ -326,7 +326,7 @@ class ComprehensiveLogger {
       return;
     }
 
-    this.groupStack.push({ name, collapsed });
+    this.groupStack.push({ name, collapsed, startTime: Date.now() });
 
     // INTENTIONAL: Native console.group API for grouping log output
     // This is a console-specific feature that must use native console methods

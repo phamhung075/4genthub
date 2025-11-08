@@ -28,7 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def initialize_database():
-    """Initialize PostgreSQL database schema"""
+    """Initialize PostgreSQL database schema and populate agent templates"""
 
     try:
         logger.info("=" * 60)
@@ -48,13 +48,7 @@ def initialize_database():
 
         # Initialize the database (creates tables if missing)
         logger.info("Checking database tables...")
-        if initialize_database_on_startup():
-            logger.info("=" * 60)
-            logger.info("✅ DATABASE INITIALIZATION SUCCESSFUL!")
-            logger.info("All required tables are present and verified")
-            logger.info("=" * 60)
-            return 0
-        else:
+        if not initialize_database_on_startup():
             logger.error("=" * 60)
             logger.error("❌ DATABASE INITIALIZATION FAILED!")
             logger.error("Some tables could not be created")
@@ -62,6 +56,65 @@ def initialize_database():
             logger.error("=" * 60)
             # Return 0 anyway to not break container startup
             return 0
+
+        logger.info("✅ Database tables verified")
+
+        # Populate agent templates if they don't exist
+        logger.info("\n" + "=" * 60)
+        logger.info("Checking Agent Templates...")
+        logger.info("=" * 60)
+
+        try:
+            from fastmcp.agent_management.application.services import YAMLAgentTemplateLoader
+            from fastmcp.agent_management.infrastructure.repositories import ORMAgentTemplateRepository
+
+            # Check if templates already exist
+            repository = ORMAgentTemplateRepository()
+            existing_templates = repository.find_all()
+
+            if existing_templates and len(existing_templates) > 0:
+                logger.info(f"✅ Found {len(existing_templates)} existing agent templates")
+                logger.info("Skipping agent population (already populated)")
+            else:
+                logger.info("No agent templates found, populating from YAML files...")
+
+                # Load agent library path
+                agent_library_path = Path(__file__).parent.parent / "agent-library"
+
+                if not agent_library_path.exists():
+                    logger.warning(f"⚠️  Agent library not found at: {agent_library_path}")
+                    logger.warning("Skipping agent population")
+                else:
+                    # Load and populate templates
+                    loader = YAMLAgentTemplateLoader(str(agent_library_path))
+                    templates = loader.load_all_agents()
+
+                    if templates:
+                        logger.info(f"📖 Loaded {len(templates)} agent templates from YAML")
+
+                        saved_count = 0
+                        for template in templates:
+                            try:
+                                repository.save(template)
+                                saved_count += 1
+                            except Exception as e:
+                                logger.error(f"❌ Error saving template {template.slug}: {e}")
+
+                        logger.info(f"✅ Successfully populated {saved_count} agent templates")
+                    else:
+                        logger.warning("⚠️  No agent templates found in YAML files")
+
+        except Exception as e:
+            logger.error(f"⚠️  Agent template population failed: {e}")
+            logger.error("Continuing without agent templates...")
+            import traceback
+            traceback.print_exc()
+
+        logger.info("=" * 60)
+        logger.info("✅ DATABASE INITIALIZATION SUCCESSFUL!")
+        logger.info("All required tables are present and verified")
+        logger.info("=" * 60)
+        return 0
 
     except ImportError as e:
         logger.error(f"Import error: {e}")

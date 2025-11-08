@@ -75,7 +75,6 @@ export function LazySubtaskListRefactored({
   // React Query hooks
   const { data: subtasks = [], isLoading: loading, error, refetch: loadSubtaskSummaries } = useSubtasks(parentTaskId);
   const subtaskMutations = useSubtaskMutations();
-  const queryClient = useQueryClient();
 
   // Track full subtask loads
   const [loadedSubtaskIds, setLoadedSubtaskIds] = React.useState<Set<string>>(new Set());
@@ -109,7 +108,6 @@ export function LazySubtaskListRefactored({
     showDetails,
     registerRowCallbacks,
     unregisterRowCallbacks,
-    setShowDetails,
     setEditingSubtask,
     editingSubtask,
     isOpeningDialog
@@ -290,7 +288,7 @@ export function LazySubtaskListRefactored({
           subtaskSummaries={filteredSubtasks}
           parentTaskId={parentTaskId}
           onDeleteDialogChange={(open) => !open && closeAllDialogs()}
-          onActiveDialogChange={(dialog) => {/* handle */}}
+          onActiveDialogChange={() => {/* handle */}}
           onDetailsDialogChange={(open) => !open && handleSubtaskDialogClose()}
           onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
           onCreateDialogChange={(open) => !open && closeAllDialogs()}
@@ -345,7 +343,7 @@ export function LazySubtaskListRefactored({
         subtaskSummaries={filteredSubtasks}
         parentTaskId={parentTaskId}
         onDeleteDialogChange={(open) => !open && closeAllDialogs()}
-        onActiveDialogChange={(dialog) => {/* handle */}}
+        onActiveDialogChange={() => {/* handle */}}
         onDetailsDialogChange={(open) => !open && handleSubtaskDialogClose()}
         onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
         onCreateDialogChange={(open) => !open && closeAllDialogs()}

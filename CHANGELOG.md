@@ -8,6 +8,54 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Production Error - Missing bulkCreateInstances Export** (2025-11-08)
+- **Issue**: Production bulk agent creation failing with `TypeError: ae is not a function` error
+- **Root cause**: `useUserAgentInstances` hook missing `bulkCreateInstances` function export despite being used in `MyAgentsPage.tsx:62,239`
+- **Impact**: Users unable to create all agent instances at once on production (https://www.4genthub.com/), "Create All" button broken
+- **Fix**: Added missing `bulkCreateInstances` mutation and export to hook
+  - Added `bulkCreateMutation` with React Query pattern (optimistic updates + cache invalidation)
+  - Added function to TypeScript interface `UseUserAgentInstancesReturn`
+  - Included in loading state tracking
+  - Success toast shows count of created instances
+- **Files modified**:
+  - `src/hooks/useAgentManagement.ts:83` - Added interface signature
+  - `src/hooks/useAgentManagement.ts:129-149` - Added mutation implementation
+  - `src/hooks/useAgentManagement.ts:220,225-233` - Added to return statement and loading state
+- **Testing**: Build successful, TypeScript compilation passed, follows existing mutation patterns
+
+**TypeScript Type System - Proper API Contract Types** (2025-11-08)
+- **Issue**: Type errors in `useAgentManagement.ts` due to `null` vs `undefined` mismatch between frontend and API
+- **Root cause**: Frontend types use `null` for JSON compatibility, but backend API expects `undefined` for optional fields
+- **Solution**: Created proper API contract types instead of using `as any` casts
+  - **New types added** (7 types):
+    - `ApiCreateInstanceInput` - Input type with `undefined` for optional fields
+    - `ApiUpdateInstanceInput` - Update input type matching API expectations
+    - `ApiInstanceResponse` - Properly typed single instance response
+    - `ApiBulkCreateResponse` - Bulk create response with instance array
+    - `ApiDeleteResponse` - Delete operation response
+    - `ToApiInput<T>` - Utility type to convert `null` to `undefined`
+    - `toApiInput()` - Helper function for runtime conversion
+  - **API service updated**: All agent management methods now have proper return types
+  - **Hook updated**: Uses `toApiInput()` helper to convert requests, no more `as any`
+  - **Additional fixes**:
+    - Fixed `Authorization` header type error in apiV2.ts (added `Record<string, string>` type)
+    - Fixed `MyAgentsPage.tsx` missing `UpdateInstanceRequest` import
+    - Fixed `loading` vs `isLoading` property mismatch
+    - Fixed invalid visibility comparison (`'default'` not valid for instances)
+- **Files modified**:
+  - `src/types/agentTypes.ts:326-425` - Added API contract types and helper function
+  - `src/services/apiV2.ts:64,987-1075` - Added proper return types + fixed Authorization header
+  - `src/hooks/useAgentManagement.ts:16-30,118-168` - Removed `as any`, using typed conversions
+  - `src/pages/MyAgentsPage.tsx:29,62,619` - Fixed imports, property name, visibility filter
+- **Benefits**:
+  - ✅ **Type safety**: Compile-time error checking instead of runtime crashes
+  - ✅ **No `as any`**: Eliminated all type assertions that hide bugs
+  - ✅ **IDE support**: Full autocomplete and refactoring capabilities
+  - ✅ **Clear contract**: Explicit separation between internal and API types
+  - ✅ **Maintainable**: Easy to update when API changes
+  - ✅ **Zero errors**: All agent management files now compile cleanly
+- **Testing**: TypeScript compilation clean (0 errors in agent management files), production build successful (15.01s)
+
 **Docker Build Failure - Missing rollup-plugin-visualizer** (2025-11-08)
 - **Issue**: Docker build failing at `pnpm run build` step with `Cannot find module 'rollup-plugin-visualizer'`
 - **Root cause**: Package imported in `vite.config.ts:6` but missing from `package.json` devDependencies

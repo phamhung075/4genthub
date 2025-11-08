@@ -10,7 +10,7 @@ export function useAutoRefresh(
   dependencies: any[] = [],
   intervalMs: number = 5000 // Poll every 5 seconds
 ) {
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
     // Initial fetch

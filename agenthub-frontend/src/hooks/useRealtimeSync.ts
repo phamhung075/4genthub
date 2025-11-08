@@ -176,7 +176,6 @@ export const useRealtimeSync = (
 
           // Type guard validation: ensure payload has required fields for delete
           if (!isTaskDeletePayload(data.primary)) {
-            const invalidData = data.primary as any;
             logger.warn('[useRealtimeSync] Task delete payload validation failed - missing required fields');
             return;
           }
@@ -195,8 +194,6 @@ export const useRealtimeSync = (
 
             // Remove from branch-specific tasks cache
             if (taskData.git_branch_id) {
-              const beforeBranchCache = queryClient.getQueryData<Task[]>(['tasks', taskData.git_branch_id]);
-
               queryClient.setQueryData<Task[]>(
                 ['tasks', taskData.git_branch_id],
                 (old) => {
@@ -206,21 +203,15 @@ export const useRealtimeSync = (
                   return old.filter(t => t.id !== taskId);
                 }
               );
-
-              const afterBranchCache = queryClient.getQueryData<Task[]>(['tasks', taskData.git_branch_id]);
             }
 
             // Remove from generic tasks cache
-            const beforeGenericCache = queryClient.getQueryData<Task[]>(['tasks']);
-
             queryClient.setQueryData<Task[]>(['tasks'], (old) => {
               if (!old) {
                 return old;
               }
               return old.filter(t => t.id !== taskId);
             });
-
-            const afterGenericCache = queryClient.getQueryData<Task[]>(['tasks']);
 
             // 🔥 CRITICAL FIX: Invalidate branchSummaries to update parent branch's task_count in sidebar
             if (taskData.git_branch_id) {
@@ -404,8 +395,6 @@ export const useRealtimeSync = (
 
             // Remove from cache
             if (taskId) {
-              const beforeCache = queryClient.getQueryData<Subtask[]>(['subtasks', taskId]);
-
               queryClient.setQueryData<Subtask[]>(
                 ['subtasks', taskId],
                 (old) => {
@@ -415,8 +404,6 @@ export const useRealtimeSync = (
                   return old.filter(s => s.id !== subtaskData.id);
                 }
               );
-
-              const afterCache = queryClient.getQueryData<Subtask[]>(['subtasks', taskId]);
 
               queryClient.invalidateQueries({ queryKey: ['task', taskId] });
             } else {
@@ -707,7 +694,6 @@ export const useRealtimeSync = (
 
           // Validate payload with type guard before processing
           if (!isBranchDeletePayload(branchData)) {
-            const invalidData = branchData as any; // Cast for error logging
             logger.warn('[useRealtimeSync] Invalid branch delete payload - missing required fields', branchData);
             return;
           }
@@ -723,8 +709,6 @@ export const useRealtimeSync = (
 
             if (projectId) {
               // 1. Update ['branches', projectId] cache (for detail views)
-              const beforeCache = queryClient.getQueryData<Branch[]>(['branches', projectId]);
-
               queryClient.setQueryData<Branch[]>(
                 ['branches', projectId],
                 (old) => {
@@ -736,8 +720,6 @@ export const useRealtimeSync = (
                 }
               );
 
-              const afterCache = queryClient.getQueryData<Branch[]>(['branches', projectId]);
-
               // 2. Update ['branchSummaries'] cache (for ProjectList component)
               // Get all branchSummaries queries (there might be multiple with different projectIds filters)
               const branchSummariesQueries = queryClient.getQueriesData<{ branches: any[]; projects: any[] }>({
@@ -748,12 +730,10 @@ export const useRealtimeSync = (
               // Update each branchSummaries query to remove the deleted branch
               branchSummariesQueries.forEach(([queryKey, data]) => {
                 if (data?.branches) {
-                  const beforeSummaries = data.branches.length;
                   queryClient.setQueryData(queryKey, {
                     ...data,
                     branches: data.branches.filter((b: any) => b.id !== branchData.id)
                   });
-                  const afterSummaries = queryClient.getQueryData<{ branches: any[] }>(queryKey)?.branches.length || 0;
                 }
               });
 

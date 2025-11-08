@@ -1,6 +1,5 @@
 // MCP Token Service - Generate and manage tokens for MCP requests
 import Cookies from 'js-cookie';
-import { taskApiV2 } from './apiV2';
 import { API_BASE_URL } from '../config/environment';
 import logger from '../utils/logger';
 

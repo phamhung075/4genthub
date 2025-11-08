@@ -1,7 +1,7 @@
 // SubtaskDialogs component - All dialog components for LazySubtaskList
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import React, { Suspense, lazy } from "react";
+import { Suspense, lazy } from "react";
 import { Subtask } from "../../../api";
 import { SubtaskSummary } from "../../../types/taskTypes";
 import { Button } from "../../ui/button";
@@ -37,7 +37,6 @@ interface SubtaskDialogsProps {
   // Dialog handlers
   onDeleteDialogChange: (open: boolean) => void;
   onActiveDialogChange: (dialog: ActiveDialogState) => void;
-  onDetailsDialogChange: (open: boolean) => void;
   onAgentInfoDialogChange: (open: boolean) => void;
   onCreateDialogChange: (open: boolean) => void;
   onEditingSubtaskChange: (subtask: Subtask | null) => void;
@@ -70,7 +69,6 @@ export function SubtaskDialogs({
   parentTaskId,
   onDeleteDialogChange,
   onActiveDialogChange,
-  onDetailsDialogChange,
   onAgentInfoDialogChange,
   onCreateDialogChange,
   onEditingSubtaskChange,

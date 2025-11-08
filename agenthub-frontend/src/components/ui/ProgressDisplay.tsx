@@ -1,6 +1,7 @@
 import React from "react";
 import { ProgressStepper, getProgressStateFromTask, type ProgressState } from "./progress-stepper";
 import { getProgressSummary, cleanProgressText, getLatestProgress } from "../../utils/progressHistoryUtils";
+import type { ProgressHistoryObject } from "../../types/utilityTypes";
 import {
   Tooltip,
   TooltipContent,
@@ -13,7 +14,7 @@ interface ProgressDisplayProps {
   status?: string;
   progressPercentage?: number;
   progressState?: ProgressState;
-  progressHistory?: string | object;
+  progressHistory?: string | ProgressHistoryObject;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'compact';
   showLabels?: boolean;

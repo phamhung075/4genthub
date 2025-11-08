@@ -25,6 +25,7 @@ export interface SignupResult {
   message?: string;
   access_token?: string;
   refresh_token?: string;
+  auto_login_token?: string;
 }
 
 export interface JWTPayload {

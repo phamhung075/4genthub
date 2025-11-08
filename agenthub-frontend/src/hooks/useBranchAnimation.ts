@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { animationFactory, AnimationType } from '../services/AnimationFactory';
-import { Branch } from '../types/api.types';
+import { Branch, BranchSummary } from '../types/api.types';
 import logger from '../utils/logger';
 import { branchDeletionTracker } from '../services/branchDeletionTracker';
 
@@ -11,7 +11,7 @@ import { branchDeletionTracker } from '../services/branchDeletionTracker';
 type BranchAnimationState = 'none' | 'creating' | 'deleting' | 'updating';
 
 export function useBranchAnimation(
-  branch: Branch,
+  branch: Branch | BranchSummary,
   isMobile: boolean = false
 ) {
   const [animationState, setAnimationState] = useState<BranchAnimationState>('none');
@@ -20,9 +20,9 @@ export function useBranchAnimation(
   const desktopElementRef = useRef<HTMLDivElement>(null);
 
   // Track previous values to detect updates
-  const prevNameRef = useRef<string>(branch.git_branch_name);
+  const prevNameRef = useRef<string>(branch.git_branch_name || branch.name || '');
   const prevStatusRef = useRef<string | undefined>(branch.status);
-  const prevDescriptionRef = useRef<string | undefined>(branch.description);
+  const prevDescriptionRef = useRef<string | undefined>('description' in branch ? branch.description : undefined);
   const hasMountedRef = useRef(false);
 
   const playCreateAnimation = useCallback((source: 'websocket' | 'mount' = 'mount') => {
@@ -125,10 +125,11 @@ export function useBranchAnimation(
   // Mount-time animation check for newly created branches
   useEffect(() => {
     // ALWAYS try to animate on first mount - the component only mounts when a branch is added
+    const createdAt = 'created_at' in branch ? branch.created_at : undefined;
     logger.debug('🎬 [useBranchAnimation] Mount-time check', {
       branchId: branch.id,
-      hasCreatedAt: !!branch.created_at,
-      createdAt: branch.created_at
+      hasCreatedAt: !!createdAt,
+      createdAt
     }, 'useBranchAnimation.ts');
 
     // Small delay to ensure DOM is ready, then trigger animation
@@ -147,9 +148,11 @@ export function useBranchAnimation(
     }
 
     // Check if ANY field changed
-    const nameChanged = prevNameRef.current !== branch.git_branch_name;
+    const branchName = branch.git_branch_name || branch.name || '';
+    const nameChanged = prevNameRef.current !== branchName;
     const statusChanged = prevStatusRef.current !== branch.status;
-    const descriptionChanged = prevDescriptionRef.current !== branch.description;
+    const branchDescription = 'description' in branch ? branch.description : undefined;
+    const descriptionChanged = prevDescriptionRef.current !== branchDescription;
 
     if (nameChanged || statusChanged || descriptionChanged) {
       logger.debug('🎬 [useBranchAnimation] Branch update detected', {
@@ -158,18 +161,18 @@ export function useBranchAnimation(
         statusChanged,
         descriptionChanged,
         oldName: prevNameRef.current,
-        newName: branch.git_branch_name
+        newName: branchName
       }, 'useBranchAnimation.ts');
 
       // Trigger update animation
       playUpdateAnimation('websocket');
 
       // Update refs for next comparison
-      prevNameRef.current = branch.git_branch_name;
+      prevNameRef.current = branchName;
       prevStatusRef.current = branch.status;
-      prevDescriptionRef.current = branch.description;
+      prevDescriptionRef.current = branchDescription;
     }
-  }, [branch.git_branch_name, branch.status, branch.description, playUpdateAnimation]); // Run when any field changes
+  }, [branch.git_branch_name, branch.name, branch.status, 'description' in branch ? branch.description : undefined, playUpdateAnimation]); // Run when any field changes
 
   // Detect when branch is marked for deletion and trigger delete animation
   useEffect(() => {

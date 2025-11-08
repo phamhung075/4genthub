@@ -88,7 +88,7 @@ export const useProjectMutations = () => {
 
       return { previousProjects };
     },
-    onError: (err, newProject, context) => {
+    onError: (err, _, context) => {
       logger.error('[useProjectMutations] Create failed:', err);
       // Rollback on error
       if (context?.previousProjects) {
@@ -105,7 +105,7 @@ export const useProjectMutations = () => {
   // Update project mutation
   const updateMutation = useMutation({
     mutationFn: async ({ projectId, updates }: { projectId: string; updates: Partial<Project> }) => {
-      logger.debug('[useProjectMutations] Updating project:', projectId, updates);
+      logger.debug('[useProjectMutations] Updating project', { projectId, updates });
       return await updateProject(projectId, updates);
     },
     onMutate: async ({ projectId, updates }) => {
@@ -173,13 +173,13 @@ export const useProjectMutations = () => {
 
       return { previousProjects };
     },
-    onError: (err, projectId, context) => {
+    onError: (err, _, context) => {
       logger.error('[useProjectMutations] Delete failed:', err);
       if (context?.previousProjects) {
         queryClient.setQueryData(['projects'], context.previousProjects);
       }
     },
-    onSuccess: (data, projectId) => {
+    onSuccess: (_, projectId) => {
       logger.debug('[useProjectMutations] Project deleted:', projectId);
       // Remove from cache and invalidate
       queryClient.removeQueries({ queryKey: ['projects', projectId] });

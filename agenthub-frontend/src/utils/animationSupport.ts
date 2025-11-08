@@ -5,6 +5,8 @@
  * to ensure consistent behavior across all browsers.
  */
 
+import logger from './logger';
+
 // Cache for feature detection results
 let propertySupport: boolean | null = null;
 let animationSupport: boolean | null = null;

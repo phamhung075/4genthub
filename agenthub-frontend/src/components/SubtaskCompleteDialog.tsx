@@ -26,7 +26,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
   const [challengesOvercome, setChallengesOvercome] = useState("");
 
   // Use React Query mutation hook
-  const { completeSubtask, isCompleting, completeError } = useSubtaskMutations();
+  const { completeSubtaskAsync, isCompleting, completeError } = useSubtaskMutations();
 
   // Reset form when subtask changes
   React.useEffect(() => {
@@ -52,15 +52,13 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
         notes += `\n\nChallenges Overcome:\n${challengesOvercome}`;
       }
 
-      const result = await completeSubtask({
+      const result = await completeSubtaskAsync({
         subtaskId: subtask.id,
         completion_notes: notes
       });
 
-      if (result) {
-        onComplete(result);
-        onClose();
-      }
+      onComplete(result);
+      onClose();
     } catch (e: any) {
       // Error is already handled by the mutation hook
       console.error('Failed to complete subtask:', e);

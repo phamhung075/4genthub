@@ -1,7 +1,7 @@
 // SubtaskListHeader component - Header section with progress for LazySubtaskList
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import React from "react";
+// React import removed - using new JSX transform
 import { Plus } from "lucide-react";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
