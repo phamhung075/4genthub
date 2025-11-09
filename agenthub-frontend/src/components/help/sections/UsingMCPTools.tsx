@@ -13,9 +13,10 @@ import type { HelpSectionData } from './WhatIs4genthub';
 interface UsingMCPToolsProps {
   expandedSections: Record<string, boolean>;
   toggleSection: (sectionId: string) => void;
+  deploymentMode?: 'local' | 'cloud';
 }
 
-const UsingMCPTools= ({ expandedSections, toggleSection }: UsingMCPToolsProps): HelpSectionData => {
+const UsingMCPTools= ({ expandedSections, toggleSection, deploymentMode }: UsingMCPToolsProps): HelpSectionData => {
   const mcpToolExamples = {
     taskManagement: {
       create: {
@@ -113,13 +114,15 @@ const UsingMCPTools= ({ expandedSections, toggleSection }: UsingMCPToolsProps): 
             </div>
           </div>
 
-          <div>
-            <h5 className="text-md font-semibold mb-3">Calling an Agent</h5>
-            <RawJSONDisplay
-              jsonData={mcpToolExamples.agentManagement.callAgent}
-              title="Call Agent Example"
-              fileName="call-agent.json"
-            />
+          <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200 dark:border-green-800">
+            <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">
+              ✨ Automatic AI Management
+            </h5>
+            <p className="text-sm text-green-800 dark:text-green-200">
+              Agent calls and context creation are handled automatically by the AI system.
+              You don't need to manually call agents or create contexts - just interact naturally
+              with Claude Code and the system manages these operations behind the scenes.
+            </p>
           </div>
         </div>
 
@@ -150,11 +153,12 @@ const UsingMCPTools= ({ expandedSections, toggleSection }: UsingMCPToolsProps): 
             </div>
           </div>
 
-          <RawJSONDisplay
-            jsonData={mcpToolExamples.contextManagement.create}
-            title="Create Context Example"
-            fileName="create-context.json"
-          />
+          <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Automatic Context Inheritance:</strong> Each level automatically inherits from its parent.
+              The AI system manages context creation, updates, and inheritance without manual intervention.
+            </p>
+          </div>
         </div>
 
         <div>

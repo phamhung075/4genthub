@@ -13,6 +13,7 @@ import {
 interface WhatIs4genthubProps {
   expandedSections: Record<string, boolean>;
   toggleSection: (sectionId: string) => void;
+  deploymentMode?: 'local' | 'cloud';
 }
 
 export interface HelpSectionData {
@@ -25,7 +26,7 @@ export interface HelpSectionData {
   onToggle: () => void;
 }
 
-const WhatIs4genthub = ({ expandedSections, toggleSection }: WhatIs4genthubProps): HelpSectionData => {
+const WhatIs4genthub = ({ expandedSections, toggleSection, deploymentMode }: WhatIs4genthubProps): HelpSectionData => {
   const sectionData = {
     id: 'what-is-4genthub',
     title: 'What is 4genthub MCP?',
@@ -54,7 +55,7 @@ const WhatIs4genthub = ({ expandedSections, toggleSection }: WhatIs4genthubProps
                 variant="ghost"
                 size="sm"
                 className="text-white hover:text-gray-200"
-                onClick={() => window.open('https://github.com/phamhung075/4genthub', '_blank')}
+                onClick={() => window.open('https://github.com/phamhung075/4genthub-hooks', '_blank')}
               >
                 <ExternalLink className="h-4 w-4" />
               </Button>

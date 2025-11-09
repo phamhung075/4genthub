@@ -1,21 +1,153 @@
 import { Card } from '../../ui/card';
 import CommandBox from '../shared/CommandBox';
+import DeploymentTabs from '../shared/DeploymentTabs';
 import { Play, Zap } from 'lucide-react';
 import type { HelpSectionData } from './WhatIs4genthub';
 
 interface GettingStartedGuideProps {
   expandedSections: Record<string, boolean>;
   toggleSection: (sectionId: string) => void;
+  deploymentMode?: 'local' | 'cloud';
 }
 
-const GettingStartedGuide= ({ expandedSections, toggleSection }: GettingStartedGuideProps): HelpSectionData => {
-  const sectionData = {
-    id: 'getting-started',
-    title: 'Getting Started Guide',
-    description: '3-minute quick start with automated setup script - simplified configuration process',
-    icon: <Play className="h-6 w-6 text-green-500" />,
-    content: (
-      <div className="space-y-6">
+const GettingStartedGuide= ({ expandedSections, toggleSection, deploymentMode = 'cloud' }: GettingStartedGuideProps): HelpSectionData => {
+
+  // Local Development Content
+  const localContent = (
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-6 rounded-lg border border-blue-200 dark:border-blue-800 mb-6">
+        <h3 className="text-xl font-bold mb-2 text-blue-900 dark:text-blue-100">💻 Local Development Setup</h3>
+        <p className="text-blue-800 dark:text-blue-200">
+          Run 4genthub on your own machine with Docker - perfect for development, testing, and learning.
+        </p>
+      </div>
+
+      <div>
+        <h4 className="text-lg font-semibold mb-3">Quick Start</h4>
+        <div className="space-y-4">
+          <Card className="p-4 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950">
+            <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Step 1: Prerequisites</h5>
+            <div className="space-y-3">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                Ensure you have Docker and Docker Compose installed:
+              </p>
+              <ul className="list-disc list-inside text-sm text-blue-800 dark:text-blue-200 space-y-1 ml-4">
+                <li>Docker 20.10+ and Docker Compose 2.0+</li>
+                <li>Python 3.8+ for client setup</li>
+                <li>Git for cloning repositories</li>
+              </ul>
+            </div>
+          </Card>
+
+          <Card className="p-4 border-l-4 border-green-500 bg-green-50 dark:bg-green-950">
+            <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">Step 2: Clone & Run Backend</h5>
+            <div className="space-y-3">
+              <CommandBox
+                command="git clone https://github.com/phamhung075/4genthub.git"
+                title="Clone core platform"
+                description="Main 4genthub repository"
+              />
+              <CommandBox
+                command="cd 4genthub && ./docker-system/docker-menu.sh"
+                title="Run Docker setup menu"
+                description="Interactive menu to build and start services"
+              />
+              <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg mt-3">
+                <p className="text-xs font-semibold text-green-900 dark:text-green-100">
+                  ✅ Backend runs on: http://localhost:8000
+                </p>
+                <p className="text-xs font-semibold text-green-900 dark:text-green-100">
+                  ✅ Frontend runs on: http://localhost:3800
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 border-l-4 border-purple-500 bg-purple-50 dark:bg-purple-950">
+            <h5 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">Step 3: Setup Client Hooks</h5>
+            <div className="space-y-3">
+              <p className="text-sm text-purple-800 dark:text-purple-200">
+                Add client hooks to your development project:
+              </p>
+              <CommandBox
+                command="cd your-project && git submodule add https://github.com/phamhung075/4genthub-hooks.git .claude"
+                title="Add hooks as git submodule"
+                description="Recommended for easy updates"
+              />
+              <CommandBox
+                command="python3 .claude/setup.py"
+                title="Run automated setup wizard"
+                description="Configures MCP connection to localhost:8000"
+              />
+              <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-lg mt-3">
+                <p className="text-xs text-purple-800 dark:text-purple-200">
+                  Setup wizard will configure .mcp.json to point to http://localhost:8000/mcp
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950">
+            <h5 className="font-semibold text-orange-900 dark:text-orange-100 mb-2">Step 4: Create User & Get Token</h5>
+            <div className="space-y-3">
+              <p className="text-sm text-orange-800 dark:text-orange-200">
+                Register on your local instance:
+              </p>
+              <ol className="list-decimal list-inside text-sm text-orange-800 dark:text-orange-200 space-y-1 ml-4">
+                <li>Visit http://localhost:3800</li>
+                <li>Click "Register" and create account</li>
+                <li>Verify email (check logs if not receiving)</li>
+                <li>Go to Dashboard → API Tokens</li>
+                <li>Generate token and add to .mcp.json</li>
+              </ol>
+            </div>
+          </Card>
+
+          <Card className="p-4 border-l-4 border-indigo-500 bg-indigo-50 dark:bg-indigo-950">
+            <h5 className="font-semibold text-indigo-900 dark:text-indigo-100 mb-2">Step 5: Launch Claude Code</h5>
+            <div className="space-y-3">
+              <CommandBox
+                command="claude-code ."
+                title="Start Claude Code in your project"
+                description="MCP will connect to localhost:8000"
+              />
+              <div className="bg-indigo-100 dark:bg-indigo-900 p-3 rounded-lg mt-3">
+                <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mb-1">Expected Status:</p>
+                <code className="text-xs bg-indigo-200 dark:bg-indigo-800 px-2 py-1 rounded">
+                  🎯 Active: master-orchestrator-agent | 🔗 MCP: ✅ Connected (localhost:8000)
+                </code>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <div className="bg-amber-50 dark:bg-amber-950 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+        <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-2 flex items-center">
+          <Zap className="h-4 w-4 mr-2" />
+          Local Development Benefits
+        </h4>
+        <div className="grid md:grid-cols-2 gap-4 mt-3">
+          <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
+            <li>✅ Full control over configuration</li>
+            <li>✅ No internet required (after setup)</li>
+            <li>✅ Instant code changes (rebuild required)</li>
+            <li>✅ Perfect for testing & learning</li>
+          </ul>
+          <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
+            <li>✅ Debug backend and frontend</li>
+            <li>✅ Custom agent development</li>
+            <li>✅ Database access for inspection</li>
+            <li>✅ Zero hosting costs</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Cloud Content (existing content)
+  const cloudContent = (
+    <div className="space-y-6">
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-6 rounded-lg border border-blue-200 dark:border-blue-800 mb-6">
           <h3 className="text-xl font-bold mb-2 text-blue-900 dark:text-blue-100">⚡ 3-Minute Quick Start with Automated Setup</h3>
           <p className="text-blue-800 dark:text-blue-200">
@@ -306,7 +438,20 @@ const GettingStartedGuide= ({ expandedSections, toggleSection }: GettingStartedG
             </ul>
           </div>
         </div>
-      </div>
+    </div>
+  );
+
+  const sectionData = {
+    id: 'getting-started',
+    title: 'Getting Started Guide',
+    description: '3-minute quick start - local Docker setup or cloud hosted service',
+    icon: <Play className="h-6 w-6 text-green-500" />,
+    content: (
+      <DeploymentTabs
+        localContent={localContent}
+        cloudContent={cloudContent}
+        defaultMode={deploymentMode}
+      />
     ),
     isExpanded: expandedSections['getting-started'],
     onToggle: () => toggleSection('getting-started')

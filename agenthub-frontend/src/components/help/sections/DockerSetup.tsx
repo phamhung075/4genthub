@@ -1,13 +1,38 @@
 import { HardDrive } from 'lucide-react';
 import { Card } from '../../ui/card';
 import CommandBox from '../shared/CommandBox';
+import DeploymentTabs from '../shared/DeploymentTabs';
+import RawJSONDisplay from '../../ui/RawJSONDisplay';
 
 interface DockerSetupProps {
   expandedSections: Record<string, boolean>;
   toggleSection: (sectionId: string) => void;
+  deploymentMode?: 'local' | 'cloud';
 }
 
-const DockerSetup = ({ expandedSections, toggleSection }: DockerSetupProps) => {
+const DockerSetup = ({ expandedSections, toggleSection, deploymentMode = 'cloud' }: DockerSetupProps) => {
+  // Cloud MCP configuration
+  const mcpConfigCloudExample = {
+    mcpServers: {
+      "sequential-thinking": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-sequential-thinking"
+        ],
+        "env": {}
+      },
+      "agenthub_http": {
+        "type": "http",
+        "url": "https://api.4genthub.com/mcp",
+        "headers": {
+          "Accept": "application/json, text/event-stream",
+          "Authorization": "Bearer <your-api-key-from-dashboard>"
+        }
+      }
+    }
+  };
+
   const dockerMenuOptions = [
     { key: "1", name: "🚀 Backend + Frontend Only", desc: "Start backend (port 8000) and frontend (port 3800). Requires database already running (option B)." },
     { key: "2", name: "☁️ Supabase Cloud", desc: "Use remote Supabase database without Redis. Good for cloud testing." },
@@ -28,20 +53,16 @@ const DockerSetup = ({ expandedSections, toggleSection }: DockerSetupProps) => {
     { key: "0", name: "🚪 Exit", desc: "Exit the Docker management menu." }
   ];
 
-  const sectionData = {
-    id: 'docker-setup',
-    title: 'Docker Setup with docker-menu.sh',
-    description: 'Interactive Docker management for local development and testing',
-    icon: <HardDrive className="h-6 w-6 text-cyan-500" />,
-    content: (
-      <div className="space-y-6">
-        {/* Local Usage Notice */}
-        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            <strong>💡 Local Development Tool:</strong> This menu is designed for local development and testing only.
-            For production deployments, use CapRover or your cloud platform's Docker orchestration.
-          </p>
-        </div>
+  // Local Development Content
+  const localContent = (
+    <div className="space-y-6">
+      {/* Local Usage Notice */}
+      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          <strong>💡 Local Development Tool:</strong> This menu is designed for local development and testing only.
+          For production deployments, use CapRover or your cloud platform's Docker orchestration.
+        </p>
+      </div>
 
         <div>
           <h4 className="text-lg font-semibold mb-3">Access Methods</h4>
@@ -222,7 +243,103 @@ const DockerSetup = ({ expandedSections, toggleSection }: DockerSetupProps) => {
             </Card>
           </div>
         </div>
+    </div>
+  );
+
+  // Cloud Deployment Content
+  const cloudContent = (
+    <div className="space-y-6">
+      {/* Cloud Notice */}
+      <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+        <p className="text-sm text-purple-800 dark:text-purple-200">
+          <strong>☁️ Cloud Deployment:</strong> Using 4genthub hosted at{' '}
+          <a href="https://www.4genthub.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">
+            www.4genthub.com
+          </a>. No Docker installation or infrastructure management required.
+        </p>
       </div>
+
+      <div>
+        <h4 className="text-lg font-semibold mb-3">Getting Started with Cloud</h4>
+        <Card className="p-4 bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
+          <ol className="text-sm text-purple-800 dark:text-purple-200 space-y-2 list-decimal list-inside">
+            <li>Visit <a href="https://www.4genthub.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">www.4genthub.com</a></li>
+            <li>Sign up for an account (free tier available)</li>
+            <li>Get your API credentials from the dashboard</li>
+            <li>Configure your MCP client with the cloud endpoint</li>
+            <li>Start using 32+ AI agents immediately!</li>
+          </ol>
+        </Card>
+      </div>
+
+      <div>
+        <h4 className="text-lg font-semibold mb-3">Cloud vs Local Comparison</h4>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="p-4">
+            <h5 className="font-semibold text-purple-900 dark:text-purple-100 mb-3">☁️ Cloud Benefits</h5>
+            <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside">
+              <li>Zero installation or setup</li>
+              <li>Automatic updates and scaling</li>
+              <li>Enterprise-grade infrastructure</li>
+              <li>Managed backups and monitoring</li>
+              <li>24/7 availability and support</li>
+              <li>Pay-as-you-go pricing</li>
+            </ul>
+          </Card>
+
+          <Card className="p-4">
+            <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">💻 Local Benefits</h5>
+            <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-disc list-inside">
+              <li>Full control over data and privacy</li>
+              <li>No internet dependency after setup</li>
+              <li>Customizable configuration</li>
+              <li>Perfect for development and testing</li>
+              <li>Learn system architecture hands-on</li>
+              <li>No monthly fees</li>
+            </ul>
+          </Card>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="text-lg font-semibold mb-3">Cloud Configuration</h4>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">
+          Copy this configuration and replace <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">&lt;your-api-key-from-dashboard&gt;</code> with your actual API key:
+        </p>
+        <RawJSONDisplay
+          jsonData={mcpConfigCloudExample}
+          title="MCP Configuration for Cloud"
+          fileName="claude_desktop_config.json"
+        />
+      </div>
+
+      <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+        <h4 className="text-lg font-semibold mb-2 text-amber-900 dark:text-amber-100">
+          💡 Need Help?
+        </h4>
+        <p className="text-sm text-amber-800 dark:text-amber-200 mb-3">
+          For cloud deployment support, enterprise features, or custom solutions:
+        </p>
+        <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1 list-disc list-inside">
+          <li>Email: <a href="mailto:support@4genthub.com" className="underline font-medium">support@4genthub.com</a></li>
+          <li>Discord: <a href="https://discord.gg/zmhMpK6N" target="_blank" rel="noopener noreferrer" className="underline font-medium">Join our community</a></li>
+          <li>Documentation: <a href="https://docs.4genthub.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">docs.4genthub.com</a></li>
+        </ul>
+      </div>
+    </div>
+  );
+
+  const sectionData = {
+    id: 'docker-setup',
+    title: 'Docker Setup & Deployment',
+    description: 'Setup guide for both local development and cloud deployment',
+    icon: <HardDrive className="h-6 w-6 text-cyan-500" />,
+    content: (
+      <DeploymentTabs
+        localContent={localContent}
+        cloudContent={cloudContent}
+        defaultMode={deploymentMode}
+      />
     ),
     isExpanded: expandedSections['docker-setup'],
     onToggle: () => toggleSection('docker-setup')

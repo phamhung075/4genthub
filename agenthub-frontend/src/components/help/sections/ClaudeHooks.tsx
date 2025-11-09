@@ -5,9 +5,10 @@ import { Webhook } from 'lucide-react';
 interface ClaudeHooksProps {
   expandedSections: Record<string, boolean>;
   toggleSection: (sectionId: string) => void;
+  deploymentMode?: 'local' | 'cloud';
 }
 
-const ClaudeHooks = ({ expandedSections, toggleSection }: ClaudeHooksProps) => {
+const ClaudeHooks = ({ expandedSections, toggleSection, deploymentMode }: ClaudeHooksProps) => {
   const sectionData = {
     id: 'claude-hooks',
     title: 'Claude Code Hook System',
