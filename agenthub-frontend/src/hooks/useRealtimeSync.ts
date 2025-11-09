@@ -372,7 +372,9 @@ export const useRealtimeSync = (
                 ['subtasks', taskId],
                 (old) => {
                   if (!old) return old;
-                  return old.map(s => s.id === subtaskData.id ? subtaskData : s);
+                  // ✅ FIX: Merge with existing data to preserve fields that might not be in the update payload
+                  // This prevents loss of title, description, or other fields if backend sends partial data
+                  return old.map(s => s.id === subtaskData.id ? { ...s, ...subtaskData } : s);
                 }
               );
 
@@ -440,13 +442,14 @@ export const useRealtimeSync = (
           // CRITICAL: Delay cache update to allow completion animation to play (~150ms)
           // If we update immediately, React re-renders before animation triggers
           setTimeout(() => {
-            // Use subtaskData directly - backend already sends complete subtask with status='done'
+            // ✅ FIX: Merge with existing data to preserve fields even during completion
             if (taskId) {
               queryClient.setQueryData<Subtask[]>(
                 ['subtasks', taskId],
                 (old) => {
                   if (!old) return old;
-                  return old.map(s => s.id === subtaskData.id ? subtaskData : s);
+                  // Merge with existing data, ensuring status='done' is applied
+                  return old.map(s => s.id === subtaskData.id ? { ...s, ...subtaskData, status: 'done' } : s);
                 }
               );
 

@@ -1,185 +1,151 @@
-# AI Test Fix Loop Integration Guide
+# AI Test Fix Loop - Integration Guide
 
-## How to Use the Optimized Test Fix Loop
+## Quick Start
 
-### Quick Start for AI Agents
+```bash
+# 1. Identify failures
+./test-menu.sh  # Option 2: Run Failed Tests Only
 
-When you need to fix failing tests automatically:
+# 2. Start optimized loop
+./loop-worker_testfix_optimized.sh
+```
 
-1. **Run test-menu.sh first** to identify failures:
-   ```bash
-   ./test-menu.sh
-   # Choose option 2 (Run Failed Tests Only)
-   ```
+**What It Does:**
+1. Reads failed tests from `.pytest_cache/test-menu-cache.json`
+2. Sends ONLY current failing test to AI (minimal context)
+3. Verifies fix automatically
+4. Updates JSON cache status → "passed"
+5. Continues with next test
 
-2. **Start the optimized loop worker**:
-   ```bash
-   ./loop-worker_testfix_optimized.sh
-   ```
+---
 
-3. **The loop will**:
-   - Read failed tests from `.pytest_cache/test-menu-cache.json`
-   - Send ONLY the current failing test to you (minimal context)
-   - Verify your fix automatically
-   - Update test status to "passed" in JSON cache
-   - Continue with next test
+## Optimized vs Original
 
-### Key Improvements Over Original Script
+| Feature | Original | Optimized | Savings |
+|---------|----------|-----------|---------|
+| Context Size | Exponential growth | Constant ~200 lines | 96% |
+| Token Usage | 10K+ after 5 iterations | ~2K per iteration | 80% |
+| Cost (10 iterations) | ~$0.50 | ~$0.05 | 90% |
+| Test Selection | Manual | Automatic from cache | - |
+| Progress Tracking | Accumulated context | Separate JSON | - |
+| Verification | Manual | Automatic pytest | - |
+| Cache Integration | None | Full | - |
 
-| Feature | Original | Optimized |
-|---------|----------|-----------|
-| Context Size | Grows exponentially (all history) | Constant (~200 lines max) |
-| Token Usage | 10K+ after 5 iterations | ~2K per iteration |
-| Test Selection | Manual in instructions | Automatic from cache |
-| Progress Tracking | In accumulated context | Separate JSON file |
-| Verification | Manual | Automatic with pytest |
-| Cache Integration | None | Full integration |
+---
 
-### Context Structure (What AI Receives)
+## Context Structure (Per Iteration)
 
 Each iteration sends ONLY:
 1. Current failing test path
-2. Last 50 lines of test failure output
+2. Last 50 lines of failure output
 3. First 100 lines of test file
-4. Minimal progress summary (2-3 lines)
+4. Progress summary (2-3 lines)
 5. Clear action items
 
-### File Locations
+---
 
-- **Test Cache**: `.pytest_cache/`
-  - `test-menu-cache.json` - Consolidated cache (tests status, hashes, statistics)
-  - `test-menu-last-run.log` - Last test run output
+## File Locations
 
-- **Worker Files**: `ai_docs/_workplace/workers/fix_tests_loop/`
-  - `current_context.md` - What's sent to AI (small)
-  - `progress.json` - Session statistics
-  - `session.log` - Full execution log
-  - `instructions.md` - Custom instructions (optional)
+### Test Cache
+- `.pytest_cache/test-menu-cache.json` - Test status, hashes, statistics
+- `.pytest_cache/test-menu-last-run.log` - Last run output
 
-### Custom Instructions
+### Worker Files
+- `ai_docs/_workplace/workers/fix_tests_loop/`
+  - `current_context.md` - AI input (small)
+  - `progress.json` - Session stats
+  - `session.log` - Full log
+  - `instructions.md` - Custom guidelines (optional)
 
-Create `instructions.md` to add specific guidelines:
+---
 
+## Custom Instructions (Optional)
+
+Create `instructions.md` for specific guidelines:
 ```markdown
 # Custom Test Fix Instructions
-
 - Focus on import errors first
-- Update deprecated APIs to new versions
-- Follow DDD patterns in all fixes
-- Don't modify test logic, only fix syntax/imports
+- Update deprecated APIs
+- Follow DDD patterns
+- Don't modify test logic
 ```
 
-### For AI: Understanding Test Failures
+---
 
-When the loop sends you a test to fix:
+## For AI: Fixing Tests
 
-1. **Read the failure output** - Usually shows the exact error
-2. **Common fixes needed**:
-   - Import path corrections
-   - API updates (deprecated methods)
-   - Missing test fixtures
-   - Incorrect assertions
+When loop sends you a test:
+1. Read failure output (shows exact error)
+2. Apply common fixes: Import paths | API updates | Missing fixtures | Incorrect assertions
+3. Use Edit tool to fix test file
+4. Script verifies automatically
 
-3. **Use the Edit tool** to fix the test file directly
-4. **The script will verify** your fix automatically
+---
 
-### Monitoring Progress
-
-While the loop runs, you can monitor:
+## Monitoring Progress
 
 ```bash
 # Watch progress
 tail -f ai_docs/_workplace/workers/fix_tests_loop/session.log
 
-# Check cache statistics
-cat .pytest_cache/test-menu-cache.json | jq '.statistics'
-# Shows: {total_tests, passed, failed, untested}
+# Cache statistics
+jq '.statistics' .pytest_cache/test-menu-cache.json
 
 # List failed tests
-cat .pytest_cache/test-menu-cache.json | jq -r '.tests | to_entries[] | select(.value.status == "failed") | .key'
+jq -r '.tests | to_entries[] | select(.value.status == "failed") | .key' .pytest_cache/test-menu-cache.json
 
-# List passed tests
-cat .pytest_cache/test-menu-cache.json | jq -r '.tests | to_entries[] | select(.value.status == "passed") | .key'
-
-# View worker progress stats
+# Worker progress
 cat ai_docs/_workplace/workers/fix_tests_loop/progress.json
 ```
 
-### Token Efficiency Tips
+---
 
-The optimized script saves tokens by:
-- **No history accumulation** - Each iteration is independent
-- **Minimal context** - Only what's needed for current test
-- **Smart truncation** - Large outputs are limited
-- **Cache-based state** - Progress tracked outside context
-- **Focused prompts** - Clear, specific instructions
+## When to Use Which Script
 
-### Comparison: Token Usage
+| Script | Use When |
+|--------|----------|
+| **Original** (`loop-worker_testfix.sh`) | Need full history \| Complex multi-file fixes \| Manual intervention |
+| **Optimized** (`loop-worker_testfix_optimized.sh`) | Many similar failures \| Automatic verification \| Minimize token costs \| Overnight runs |
 
-**Original Script** (after 10 iterations):
-- Context: ~50,000 tokens (accumulated)
-- Cost: ~$0.50 per session
+---
 
-**Optimized Script** (after 10 iterations):
-- Context: ~2,000 tokens per iteration
-- Cost: ~$0.05 per session
+## test-menu.sh Integration
 
-### When to Use Each Script
-
-**Use Original** (`loop-worker_testfix.sh`) when:
-- Need full history context
-- Complex multi-file fixes
-- Manual intervention between iterations
-
-**Use Optimized** (`loop-worker_testfix_optimized.sh`) when:
-- Fixing many similar test failures
-- Want automatic verification
-- Need to minimize token costs
-- Running overnight/unattended
-
-### Integration with test-menu.sh
-
-The scripts work together using the unified JSON cache:
-
-1. **test-menu.sh** - Identifies and caches test status in `.pytest_cache/test-menu-cache.json`
-2. **loop-worker_testfix_optimized.sh** - Reads failed tests from JSON cache, fixes them
-3. **test-menu.sh** - Verifies all fixes by running tests and updating JSON cache
-
-This creates an efficient workflow with a single source of truth:
+**Workflow:**
 ```
-test-menu.sh → update JSON cache → loop-worker → fix tests → test-menu.sh → verify & update JSON
+test-menu.sh → JSON cache → loop-worker → fixes → test-menu.sh → verify & update
 ```
 
-**Benefits of JSON cache integration:**
-- Single source of truth for test status
+**Benefits:**
+- Single source of truth
 - Atomic updates (no race conditions)
 - Rich metadata (hashes, timestamps, run counts)
 - Easy querying with jq
 
-### Working with the JSON Cache
+---
 
-The new JSON cache provides structured data access:
-
-#### Query Examples
+## JSON Cache Queries
 
 ```bash
-# Get overall statistics
+# Statistics
 jq '.statistics' .pytest_cache/test-menu-cache.json
 
-# Count failed tests
+# Count failed
 jq '[.tests[] | select(.status == "failed")] | length' .pytest_cache/test-menu-cache.json
 
-# Find tests that changed since last run
+# Tests changed since last run
 jq -r '.tests | to_entries[] | select(.value.status == "failed") | "\(.key) (hash: \(.value.hash))"' .pytest_cache/test-menu-cache.json
 
-# Get test run history
+# Test run history
 jq '.runs | last' .pytest_cache/test-menu-cache.json
 
-# Find tests with most failures (by run_count)
+# Most failures (by run_count)
 jq -r '.tests | to_entries | sort_by(.value.run_count) | reverse | .[] | select(.value.status == "failed") | "\(.key): \(.value.run_count) runs"' .pytest_cache/test-menu-cache.json
 ```
 
-#### Cache Structure
+---
+
+## Cache Structure
 
 ```json
 {
@@ -211,3 +177,14 @@ jq -r '.tests | to_entries | sort_by(.value.run_count) | reverse | .[] | select(
   ]
 }
 ```
+
+---
+
+## Token Efficiency
+
+**How optimized script saves tokens:**
+- No history accumulation (independent iterations)
+- Minimal context (only what's needed)
+- Smart truncation (limited large outputs)
+- Cache-based state (progress tracked outside)
+- Focused prompts (clear, specific)
