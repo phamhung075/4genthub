@@ -8,330 +8,210 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
-**Production Error - Missing bulkCreateInstances Export** (2025-11-08)
-- **Issue**: Production bulk agent creation failing with `TypeError: ae is not a function` error
-- **Root cause**: `useUserAgentInstances` hook missing `bulkCreateInstances` function export despite being used in `MyAgentsPage.tsx:62,239`
-- **Impact**: Users unable to create all agent instances at once on production (https://www.4genthub.com/), "Create All" button broken
-- **Fix**: Added missing `bulkCreateInstances` mutation and export to hook
-  - Added `bulkCreateMutation` with React Query pattern (optimistic updates + cache invalidation)
-  - Added function to TypeScript interface `UseUserAgentInstancesReturn`
-  - Included in loading state tracking
-  - Success toast shows count of created instances
-- **Files modified**:
-  - `src/hooks/useAgentManagement.ts:83` - Added interface signature
-  - `src/hooks/useAgentManagement.ts:129-149` - Added mutation implementation
-  - `src/hooks/useAgentManagement.ts:220,225-233` - Added to return statement and loading state
-- **Testing**: Build successful, TypeScript compilation passed, follows existing mutation patterns
+**GitHub Actions Pipeline** (2025-11-09)
+- Updated Python 3.11 → 3.14, replaced Black/isort/flake8 with Ruff (10-100x faster)
+- Fixed dependency installation to use `pyproject.toml` instead of missing `requirements.txt`
+- Pipeline now passes Code Quality and Test Suite stages
+- Files: `.github/workflows/production-deployment.yml:34,88-108,149-154`
 
-**TypeScript Type System - Proper API Contract Types** (2025-11-08)
-- **Issue**: Type errors in `useAgentManagement.ts` due to `null` vs `undefined` mismatch between frontend and API
-- **Root cause**: Frontend types use `null` for JSON compatibility, but backend API expects `undefined` for optional fields
-- **Solution**: Created proper API contract types instead of using `as any` casts
-  - **New types added** (7 types):
-    - `ApiCreateInstanceInput` - Input type with `undefined` for optional fields
-    - `ApiUpdateInstanceInput` - Update input type matching API expectations
-    - `ApiInstanceResponse` - Properly typed single instance response
-    - `ApiBulkCreateResponse` - Bulk create response with instance array
-    - `ApiDeleteResponse` - Delete operation response
-    - `ToApiInput<T>` - Utility type to convert `null` to `undefined`
-    - `toApiInput()` - Helper function for runtime conversion
-  - **API service updated**: All agent management methods now have proper return types
-  - **Hook updated**: Uses `toApiInput()` helper to convert requests, no more `as any`
-  - **Additional fixes**:
-    - Fixed `Authorization` header type error in apiV2.ts (added `Record<string, string>` type)
-    - Fixed `MyAgentsPage.tsx` missing `UpdateInstanceRequest` import
-    - Fixed `loading` vs `isLoading` property mismatch
-    - Fixed invalid visibility comparison (`'default'` not valid for instances)
-- **Files modified**:
-  - `src/types/agentTypes.ts:326-425` - Added API contract types and helper function
-  - `src/services/apiV2.ts:64,987-1075` - Added proper return types + fixed Authorization header
-  - `src/hooks/useAgentManagement.ts:16-30,118-168` - Removed `as any`, using typed conversions
-  - `src/pages/MyAgentsPage.tsx:29,62,619` - Fixed imports, property name, visibility filter
-- **Benefits**:
-  - ✅ **Type safety**: Compile-time error checking instead of runtime crashes
-  - ✅ **No `as any`**: Eliminated all type assertions that hide bugs
-  - ✅ **IDE support**: Full autocomplete and refactoring capabilities
-  - ✅ **Clear contract**: Explicit separation between internal and API types
-  - ✅ **Maintainable**: Easy to update when API changes
-  - ✅ **Zero errors**: All agent management files now compile cleanly
-- **Testing**: TypeScript compilation clean (0 errors in agent management files), production build successful (15.01s)
+**Production Bulk Agent Creation** (2025-11-08)
+- Fixed "Create All" button crash (`TypeError: ae is not a function`)
+- Root cause: Missing `bulkCreateInstances` export in `useUserAgentInstances` hook
+- Files: `src/hooks/useAgentManagement.ts:83,129-149,220,225-233`
 
-**Docker Build Failure - Missing rollup-plugin-visualizer** (2025-11-08)
-- **Issue**: Docker build failing at `pnpm run build` step with `Cannot find module 'rollup-plugin-visualizer'`
-- **Root cause**: Package imported in `vite.config.ts:6` but missing from `package.json` devDependencies
-- **Fix**: Added `"rollup-plugin-visualizer": "^5.12.0"` to package.json devDependencies
-- **Impact**: Docker builds now succeed; bundle analyzer generates stats.html for build optimization
-- **File**: `agenthub-frontend/package.json:76`
+**TypeScript Type System** (2025-11-08)
+- Eliminated all `as any` casts with proper API contract types
+- Created 7 new types: `ApiCreateInstanceInput`, `ApiUpdateInstanceInput`, `ApiInstanceResponse`, `ApiBulkCreateResponse`, `ApiDeleteResponse`, `ToApiInput<T>`, `toApiInput()`
+- Fixed `null` vs `undefined` mismatch between frontend and backend
+- Benefits: Compile-time safety, full IDE autocomplete, zero type errors
+- Files: `src/types/agentTypes.ts:326-425`, `src/services/apiV2.ts:64,987-1075`, `src/hooks/useAgentManagement.ts`, `src/pages/MyAgentsPage.tsx`
 
-**Critical Schema Bugs - Production Database Initialization** (2025-11-08)
-- **Bug #1 - task_labels composite key**: Fixed duplicate PRIMARY KEY declarations causing "multiple primary keys not allowed" error
-  - Before: `task_id UUID PRIMARY KEY, label_id VARCHAR PRIMARY KEY` (❌ TWO separate primary keys)
-  - After: `PRIMARY KEY (task_id, label_id)` (✅ Composite primary key for junction table)
-  - Location: `init_schema_postgresql.sql:358-366`
-- **Bug #2 - task_dependencies sequence**: Fixed sequence lifecycle issue causing "relation does not exist" error
-  - Problem: Sequence created at line 17 → `DROP CASCADE` at line 34 drops sequence → table creation at line 348 references missing sequence
-  - Solution: Moved sequence creation AFTER all DROP statements (now line 54-56)
-  - Location: `init_schema_postgresql.sql:54-56`
-- **Impact**: Schema now initializes successfully - all 27 tables created without errors in production
-- **Root cause**: Auto-generated schema from `generate_schema_sql.py` didn't handle edge cases (composite keys, sequence CASCADE dependencies)
-- **Lesson**: Generated schemas require manual review for junction tables and sequence ordering
+**Docker Build** (2025-11-08)
+- Added missing `rollup-plugin-visualizer` to `package.json` devDependencies
+- Resolves build failure at `pnpm run build` step
 
-### Removed
+**Database Schema** (2025-11-08)
+- Fixed `task_labels` composite key (duplicate PRIMARY KEY declarations)
+- Fixed `task_dependencies` sequence lifecycle (created before DROP CASCADE)
+- All 27 tables now initialize successfully
+- File: `init_schema_postgresql.sql:54-56,358-366`
 
-**Dead Code Cleanup - Legacy Code Removal** (2025-11-08)
-- **Migrations directory** (18 files): Removed entire `infrastructure/database/migrations/` directory (17 Python + 1 SQL file, all superseded by `auto_migration.py`)
-- **Migration tests** (3 files): Removed `tests/unit/task_management/infrastructure/migrations/` and `tests/unit/task_management/infrastructure/database/migrations/`
-- **Database infrastructure** (2 files): Removed `migration_runner.py` (async migrations - optional/unused), `add_composite_indexes.py` (never imported)
-- SQL migration files (7): Removed manual migration files (002-007) - superseded by `init_schema_postgresql.sql`
-- Obsolete files (10): Removed `.obsolete`, `.backup`, `.old` files across codebase
-- Obsolete tests (5): Removed tests using deleted services (`realtime-updates.test.tsx`, `LazyTaskList.test.tsx`, `LazyTaskList.realtime.test.tsx`, `ProjectList.test.tsx`, `TaskContextDialog.test.tsx`)
-- Obsolete controller (1): Removed `call_agent_mcp_controller.obsolete/` directory and all contents
-- Analysis scripts (30): Removed one-time use analysis, diagnostic, and benchmark scripts
-- Purpose: Clean breaks in development phase, reduce maintenance burden, eliminate confusion
-- Migration strategy: Runtime migrations via `auto_migration.py`, clean DB init via `init_schema_postgresql.sql`
-- Result: ~3500+ lines of dead code removed, cleaner codebase structure
+**WebSocket Animations** (2025-11-07)
+- Fixed UPDATE operations not triggering animations (race condition: React Query's synchronous `setQueryData` vs async animations)
+- Solution: Delayed cache updates (150ms) for UPDATE, matching DELETE pattern
+- Files: `useRealtimeSync.ts:576-597,763-811,135-176,398-424`
 
-### Added
-
-**Database Schema Management Tools** (2025-11-08)
-- Schema verification scripts (3): `verify_init_schema.py`, `deep_verify_schema.py`, `check_fk_cascade.py`
-- Schema generation: `generate_schema_sql.py` - Auto-generate SQL from actual database
-- Inspection tools (2): `inspect_database.py`, `compare_schema.py` - Database analysis
-- Verification report: `schema_verification_report.md` - Complete validation results
-- Documentation: Added Database Schema Management section to `CLAUDE.local.md`
-- Result: init_schema_postgresql.sql verified 100% accurate (27 tables, all columns match)
-
-**MCP WebSocket Polling - Pydantic Validation** (2025-11-07)
-- Type-safe WebSocket polling scripts with comprehensive Pydantic validation
-- Files: `.claude/bin/poll_mcp_websocket.py` (single task/subtask), `poll_mcp_websocket_parallel.py` (parallel)
-- Features: Validation against `TaskCompletePayload`/`SubtaskCompletePayload`, detailed error tables, color-coded output, debug mode (`--debug`), graceful degradation
-- Output: JSON includes `validation_passed`, `validation_error` fields
-- Benefits: Early payload mismatch detection, clear error messages, type-safe data handling, visual feedback (⚠️ for failures)
-
-**Comprehensive System Architecture Documentation** (2025-11-07)
-- Single source of truth: `ai_docs/core-architecture/agenthub-system-architecture.md` (38KB, ~1500 lines, token-optimized)
-- Coverage: Frontend (React/TypeScript), Backend (DDD/FastMCP), API, MCP Tools, WebSocket v2.0, Auth, Database, Context, Real-time Sync
-- Consolidation: Moved 50+ obsolete docs (34 core-architecture, 15 context-system, 6 api-integration .obsolete files) to `ai_docs/_obsolete_docs/`
-- Result: `ai_docs/core-architecture/` contains ONLY authoritative system documentation
-- Reference: Added to `CLAUDE.local.md` as "📘 PRIMARY SYSTEM DOCUMENTATION"
-- Structure: 14 sections covering system overview, architecture stack, development workflow, testing, patterns
-
-**Agent Import - Public Shared Reference Model** (2025-11-05)
-- Imported agents remain public with independent share tokens (viral sharing network)
-- Each import generates unique 64-char token (prevents DB constraint violation)
-- Original creator retains edit rights; importers have read-only access
-- New API fields: `is_imported`, `original_creator_id`, `is_read_only`
-- Files: `agent_sharing_service.py:188-215`, `agent_management_routes.py:424-436`, `models.py:86-89`
-
-**Parallel Execution System - cclaude-wait-parallel** (2025-11-04)
-- WebSocket multiplexer pattern for parallel subtask monitoring
-- Components: `.claude/bin/cclaude-wait-parallel` (bash wrapper), `poll_mcp_websocket_parallel.py` (multiplexer)
-- Features: True parallel execution, live progress table, blocking wait, aggregated JSON results
-- Performance: 67% time savings vs sequential (3×60s tasks: 180s → 60s)
-- Usage: `cclaude-wait-parallel <agent> <task_id> <sub1> <sub2> <sub3> [...]`
-- Docs: `ai_docs/development-guides/cclaude-wait-parallel-guide.md`, `parallel-execution-architecture.md`
-
-**Agent Skills - changelog-updater** (2025-11-03)
-- 4 files (905 lines, ~14KB): SKILL.md (format/instructions), EXAMPLES.md (real-world), TEMPLATES.md (copy-paste), VALIDATION.md (quality checks)
-- Token optimized: Tables over prose, pattern statements, consolidated format
-- Auto-discovery: Claude uses automatically when "update changelog" mentioned
-
-**Phase 2 MCP Response Optimizations** (2025-11-03)
-- Minimal search/list results: 4 essential fields (id, title, status, priority) vs 20+ fields
-- Token impact: 96% reduction (40,000 → 1,500 tokens per 10 results)
-- Required fields: `progress_notes`/`details` (10+ chars) for updates, `completion_summary` (20+ chars) for completions
-- Files: `search_handler.py`, `crud_handler.py` (task/subtask)
-- User tip: "Use manage_task(action='get', task_id='...') for full details"
-
-**Agent Files Token Optimization** (2025-11-03)
-- Rewrote 31 `.claude/agents/*.md` files to minimal YAML headers
-- Reduction: 1,878 → 832 lines (55.7% savings, ~2,000-2,500 tokens per file)
-- Architecture: Agent files = metadata only; full instructions loaded via `mcp__agenthub_http__call_agent()`
-- Format: YAML header + MCP initialization + minimal use case reference (avg 26 lines vs 80 lines)
-
-**Agent Management System**
-- 33 specialized agents (coding, testing, docs, DevOps, security, ML, architecture)
-- Agent switching: `call_agent()` loads complete instructions + transforms role
-- Dynamic tool enforcement: Permissions from `tools` array in call_agent response
-- Token savings: Agent switching ~1,200 tokens (70% reduction vs delegation ~4,000 tokens)
-
-**CLI Tools**
-- `cclaude` (async): Delegate to separate terminal, non-blocking, parallel execution
-- `cclaude-wait` (sync): Delegate with blocking + JSON results, sequential workflows
-- `cclaude-wait-parallel`: Parallel subtasks with live progress (replicates Task tool)
-- Both support task_id and subtask_id delegation patterns
-
-**Documentation System**
-- ai_docs/ with 17 standard folders (kebab-case enforced)
-- Auto-generated index.json (metadata, hashes, timestamps)
-- _absolute_docs pattern for file-specific documentation enforcement
-- _obsolete_docs for auto-archival when source files deleted
-
-### Fixed
-
-**WebSocket UPDATE Animations - Race Condition Fix** (2025-11-07)
-- Problem: UPDATE operations not triggering animations (WebSocket messages arrive, hooks configured, but animations never play)
-- Root cause: React Query's `setQueryData` (0ms, synchronous) executes before animation (~150ms, async), component re-renders before animation plays
-- Solution: Delayed cache updates for UPDATE operations (150ms `setTimeout` wrapper, matching DELETE pattern)
-- Impact: All entity types (project, branch, task, subtask) now show 150ms highlight animation on update
-- Files: `useRealtimeSync.ts:576-597,763-811,135-176,398-424`, `ProjectItem.tsx:50` (added data-project-id)
-
-**WebSocket Subtask Real-Time Sync - Quadruple Fix** (2025-11-07)
+**WebSocket Subtask Sync** (2025-11-07)
 
 | Issue | Root Cause | Solution |
 |-------|-----------|----------|
-| 22.22% validation failures | Schema mismatch (backend sends both timestamps, frontend expects one) | Aligned TypeScript types: added `updated_at` to CreatePayload, `created_at` to UpdatePayload |
-| 4× duplicate toasts | Per-hook-instance deduplication (multiple components = multiple toasts) | Global toast deduplication (module-level `globalRecentToastsMap`) |
-| Automatic task updates spam | No filtering of system-generated updates (subtask count changes) | Filter toasts: check `metadata.source === 'system'` or `event_type === 'subtask_count_update'` |
-| Create delays/queuing | `invalidateQueries()` blocking React Query mutation queue | Removed invalidation (WebSocket already updates cache) |
+| 22.22% validation failures | Schema mismatch (timestamps) | Aligned TypeScript types with backend |
+| 4× duplicate toasts | Per-hook deduplication | Global toast deduplication map |
+| Automatic task update spam | No filtering of system events | Filter `metadata.source === 'system'` |
+| Create delays/queuing | `invalidateQueries()` blocking | Removed (WebSocket handles updates) |
 
 - Files: `websocket-protocol.ts:125,135-136,152-153`, `useRealtimeSync.ts:17-19,40-65,145-156,327-332`
-- Impact: 0% validation failures, single toast per operation, fast sequential creates
 
-**WebSocket Real-Time Sync - Delete Operations + Dead Code Cleanup** (2025-11-06)
-- Problem: Delete operations not triggering frontend updates, animations, or notifications
-- Root causes: Async broadcast timing, immediate cache update unmounting component, no toast deduplication, event bus with 0 subscribers
-- Solutions:
-  1. Backend: `sync_broadcast_project_event()` safety net (uses `asyncio.run()` to ensure completion)
-  2. Frontend: Delayed cache update (600ms) + immediate toast, `setQueryData(undefined)` prevents refetch
-  3. Frontend: Time-based toast deduplication (2-second window)
-  4. Dead code cleanup: Removed 4 legacy services (~200 lines, ~8KB)
-- Removed files: `changePoolService`, `toastEventBus`, `WebSocketToastBridge`, `notificationService`, `WebSocketNotificationService`, `useSubtaskWebSocket`, related tests
-- Architecture: WebSocket → useRealtimeSync → Toast (3 layers vs 6)
-- Impact: Reliable delete broadcasts, smooth animations, no duplicates, 75% fewer services, 66% fewer listeners, 8KB smaller bundle
-- Files: `project_management_service.py:354-368`, `useRealtimeSync.ts:29-57,276-325`, 6 deleted services
-- Docs: `ai_docs/troubleshooting-guides/websocket-realtime-sync-fix.md`, `ai_docs/reports-status/dead-code-analysis-websocket-sync.md`
+**WebSocket Delete Operations** (2025-11-06)
+- Backend: `sync_broadcast_project_event()` safety net (ensures completion)
+- Frontend: Delayed cache update (600ms) + immediate toast, time-based deduplication (2s window)
+- Applied to all entity types: Project, Branch, Task, Subtask
+- Files: `project_management_service.py:354-368`, `git_branch_service.py:199-212`, `useRealtimeSync.ts:29-57,276-325`
 
-**WebSocket Real-Time Sync - Branch/Task/Subtask CUD Operations** (2025-11-06)
-- Applied project delete pattern to all entity types
-- Backend: `sync_broadcast_branch_event()` for delete operations (`git_branch_service.py:199-212`)
-- Frontend: Toast notifications + delayed delete cache updates (600ms) for smooth animations
-- Handlers: Branch (lines 332-401), Task (lines 74-179), Subtask (lines 181-276)
-- Impact: Consistent UX across all entity types, no duplicates, smooth delete animations
-
-**WebSocket Protocol v2.0 - Type-Safe Communication Models** (2025-11-06)
-- Problem: No compile-time or runtime validation, implicit contracts, easy to miss required fields
-- Solution: Comprehensive type-safe protocol models
-  - TypeScript: `websocket-protocol.ts` (payload interfaces, type guards, helpers)
-  - Python: `websocket_protocol.py` (Pydantic models, validators, factory functions)
-  - Migration pattern: `BranchDeletePayload` with validation, fallback to dict for backward compatibility
-- Benefits: Compile-time safety, runtime validation, self-documenting, consistency enforcement, IDE autocomplete, refactoring safety
-- Files: `websocket-protocol.ts` (395 lines), `websocket_protocol.py` (450 lines), `git_branch_service.py:206-221`
+**WebSocket Protocol v2.0** (2025-11-06)
+- Type-safe communication: TypeScript interfaces + Python Pydantic models
+- Benefits: Compile-time + runtime validation, self-documenting, IDE autocomplete
+- Files: `websocket-protocol.ts` (395 lines), `websocket_protocol.py` (450 lines)
 - Docs: `ai_docs/core-architecture/websocket-protocol-migration-guide.md`
 
-**WebSocket Real-Time Sync - Branch Delete Payload Fix** (2025-11-06)
-- Problem: "Branch update missing ID" validation errors
-- Root cause: Branch delete payload inconsistency (only `name`, missing `id` and `project_id`)
-- Solution: Added ID and project_id to branch delete payload: `{"id": git_branch_id, "name": branch_name, "project_id": branch_project_id}`
-- Impact: No validation errors, smooth animations, consistent payload structure
-- File: `git_branch_service.py:208`
+**Agent Management** (2025-11-05)
+- Fixed read-only validation (AttributeError on private agent edits)
+- Fixed non-UUID user ID support (dev environment JWT tokens)
+- Files: `agent_management_facade.py:346-353`, `agent_management_routes.py:430,469-474,927-937`
 
-**Agent Update - Read-Only Validation** (2025-11-05)
-- Problem: Private agents couldn't be edited (AttributeError: 'get_user_instance' not found)
-- Solution: Moved read-only validation from route to facade's `update_instance` method
-- Returns HTTP 403 Forbidden for read-only violations, private agents editable
-- Files: `agent_management_facade.py:346-353`, `agent_management_routes.py:430,469-474`
+**Test Infrastructure** (2025-11-05)
+- Created `__mocks__` directory with `AnimationFactory.ts`, deletion trackers
+- Reduced uncaught exceptions 19 → 4 (79% reduction)
+- Updated `setupTests.ts` for global service mocking
 
-**Agent Import - Non-UUID User ID Support** (2025-11-05)
-- Problem: Development JWT tokens contain non-UUID user IDs (e.g., 'dev-user-001'), causing import failures
-- Solution: Convert non-UUID IDs to deterministic UUID v5 (null namespace)
-- Impact: Agent imports work in both dev and production environments
-- File: `agent_management_routes.py:927-937`
+**Agent Name Display** (2025-11-03)
+- Fixed session start hook showing "Agent: unknown"
+- Changed field reference from `name` to `agent_name` in `simple_formatter.py:86`
 
-**Test Infrastructure - AnimationFactory Mocking** (2025-11-05)
-- Problem: 68% test suite failing (TypeError: animationFactory.animate is not a function)
-- Solution: Created `__mocks__` directory with `AnimationFactory.ts`, `taskDeletionTracker.ts`, `branchDeletionTracker.ts`
-- Updated `setupTests.ts` to globally enable service mocking via `vi.mock()`
-- Impact: Uncaught exceptions 19 → 4 (79% reduction), reusable mock infrastructure
-- Remaining: 68/89 test files failing (assertion mismatches, outdated expectations)
-- Docs: `ai_docs/testing-qa/frontend-qa-status-2025-11-05.md`
-- Commit: `816c417e`
-
-**Agent Name Display Fix** (2025-11-03)
-- Problem: Session start hook showed "Agent: unknown" instead of actual agent name
-- Root cause: Field name mismatch (AgentMessageProvider uses `agent_name`, SimpleFormatter expects `name`)
-- Solution: Changed `simple_formatter.py:86` from `role.get('name', 'unknown')` to `role.get('agent_name', 'unknown')`
-- Impact: Proper agent identification in session context
-- Time: 5 minutes
-
-**Claude Hooks Path References** (2025-11-03)
-- Updated `config_validator.py` path construction (`scripts/claude-hooks` → `.claude/hooks`)
+**Claude Hooks** (2025-11-03)
+- Updated path references: `scripts/claude-hooks` → `.claude/hooks`
 - Fixed `_find_project_root()` traversal logic
-- Updated test paths in `pre_tool_use.py` and config files
-- Result: Hooks load correctly, file protection active
 
-**Repository & Database**
-- User ID propagation via with_user methods
-- Git branch creation (update → save pattern)
-- SQLAlchemy session lifecycle management
-- UUID validation across system
-- ORM model alignment with database schema
+### Removed
+
+**Backend Cleanup** (2025-11-09)
+- Removed 410+ lines of legacy code:
+  - `mcp_bridge.py` (248 lines) - Replaced by HTTP FastMCP
+  - `verify_user_id_fix.py` (145 lines) - One-time verification script
+  - `mock_supabase.py` (17 lines) - Replaced by inline mock
+  - `tests/hooks/` - 16 legacy hook test files
+  - `examples/` - Empty directory
+
+**Dead Code Cleanup** (2025-11-08)
+- Migrations: 18 files superseded by `auto_migration.py` + `init_schema_postgresql.sql`
+- Obsolete files: 10 `.obsolete`, `.backup`, `.old` files
+- Obsolete tests: 5 test files using deleted services
+- Analysis scripts: 30 one-time use diagnostic/benchmark scripts
+- WebSocket services: 4 legacy services (~200 lines, ~8KB)
+  - `changePoolService`, `toastEventBus`, `WebSocketToastBridge`, `notificationService`
+- Total: ~3,700+ lines removed
+
+**Phase 2 Dead Code** (2025-11-04)
+- 568 lines: Example tests, unused Keycloak integration, dead API functions, test fixtures
+- Fixed duplicate `UseTaskDataOptions`/`UseTaskDataReturn`
+- Impact: Single-source-of-truth enforcement, zero breaking changes
+
+**Token Optimization** (2025-11-03)
+- Removed EnrichmentService (566 lines, 500-800 tokens per operation)
+- Removed hint system infrastructure (1,864 lines, 4,500-7,000 tokens per session)
+- Visual indicators: Frontend computes status emojis, progress bars (620-980 tokens saved)
+
+### Added
+
+**Database Schema Tools** (2025-11-08)
+- Verification: `verify_init_schema.py`, `deep_verify_schema.py`, `check_fk_cascade.py`
+- Generation: `generate_schema_sql.py` - Auto-generate SQL from database
+- Inspection: `inspect_database.py`, `compare_schema.py`
+- Documentation: Added section to `CLAUDE.local.md`
+
+**MCP WebSocket Polling** (2025-11-07)
+- Type-safe polling scripts with Pydantic validation
+- Files: `poll_mcp_websocket.py` (single), `poll_mcp_websocket_parallel.py` (parallel)
+- Features: Validation against payloads, color-coded output, debug mode, graceful degradation
+
+**System Architecture Docs** (2025-11-07)
+- Single source of truth: `ai_docs/core-architecture/agenthub-system-architecture.md` (38KB, ~1500 lines)
+- Coverage: Frontend, Backend (DDD/FastMCP), API, MCP, WebSocket v2.0, Auth, Database, Context
+- Moved 50+ obsolete docs to `ai_docs/_obsolete_docs/`
+
+**Agent Import System** (2025-11-05)
+- Public shared reference model: Imported agents remain public with unique share tokens
+- New fields: `is_imported`, `original_creator_id`, `is_read_only`
+- Original creator retains edit rights; importers read-only
+- Files: `agent_sharing_service.py:188-215`, `agent_management_routes.py:424-436`
+
+**Parallel Execution** (2025-11-04)
+- `cclaude-wait-parallel`: WebSocket multiplexer for parallel subtask monitoring
+- Features: True parallel execution, live progress table, aggregated JSON results
+- Performance: 67% time savings (3×60s tasks: 180s → 60s)
+- Docs: `ai_docs/development-guides/cclaude-wait-parallel-guide.md`
+
+**Changelog Skills** (2025-11-03)
+- `changelog-updater` skill: 4 files (905 lines, ~14KB)
+- SKILL.md (format), EXAMPLES.md (real-world), TEMPLATES.md (copy-paste), VALIDATION.md (quality)
+- Auto-discovery when "update changelog" mentioned
+
+**Agent Management System**
+- 33 specialized agents (coding, testing, docs, DevOps, security, ML, architecture)
+- Agent switching: `call_agent()` loads instructions + transforms role
+- Token savings: ~1,200 tokens (70% reduction vs delegation ~4,000 tokens)
+
+**CLI Tools**
+- `cclaude` (async): Non-blocking, parallel execution
+- `cclaude-wait` (sync): Blocking + JSON results
+- `cclaude-wait-parallel`: Parallel subtasks with live progress
+- All support task_id and subtask_id delegation
+
+**Documentation System**
+- 17 standard folders (kebab-case enforced)
+- Auto-generated `index.json` (metadata, hashes, timestamps)
+- `_absolute_docs` pattern for file-specific documentation
+- `_obsolete_docs` for auto-archival
 
 ### Changed
 
-**CHANGELOG.md Optimization - 97.5% Size Reduction** (2025-11-03)
-- Consolidated Unreleased section: 331 lines (271KB, ~42k tokens) → 170 lines (6.8KB, ~1k tokens)
-- Eliminated duplicate section headers, applied token optimization techniques
-- Preserved 100% essential information + complete version history
-- Result: 48.6% fewer lines, 97.5% smaller file, professional scannable format
+**CHANGELOG Optimization** (2025-11-03)
+- Consolidated Unreleased: 331 lines (271KB, ~42k tokens) → 170 lines (6.8KB, ~1k tokens)
+- 48.6% fewer lines, 97.5% smaller file, 100% essential information preserved
 
-**Phase 2 Dead Code Cleanup - 568 Lines Removed** (2025-11-04)
-- Priority 1 (~300 lines): Example test files, unused Keycloak integration, dead API functions
-- Priority 2 (~230 lines): Test fixtures, logger config presets
-- Priority 3 (38 lines net): Fixed duplicate `UseTaskDataOptions`/`UseTaskDataReturn`, colocated 5 single-use component props
-- Impact: Cleaner codebase, single-source-of-truth enforcement, zero breaking changes
-- Commits: `1d34f9a5`, `4a50019c`, `00e1ead2`
+**MCP Response Optimizations** (2025-11-03)
 
-**Token Optimization Suite - 21-28k Tokens Saved Per Session** (2025-11-03)
+| Optimization | Savings | Details |
+|--------------|---------|---------|
+| Minimal search/list results | 96% (40k → 1.5k tokens per 10 results) | 4 fields vs 20+ fields |
+| Tool descriptions | 10,600 tokens | Tables, emoji removal, prose compression |
+| MinimalResponseSerializer | 6,000-8,000 tokens | No input echo (70-75% per operation) |
+| Visual indicators | 620-980 tokens | Frontend computes status/progress |
+| Dead code prevention | 4,500-7,000 tokens | Removed hint/enrichment services |
+| **TOTAL** | **21,720-26,580 tokens** | **10.9-13.3% of 200k context** |
 
-| Optimization | Savings | Impact |
-|--------------|---------|--------|
-| MCP Tool Descriptions | 10,600 tokens | 60-70% reduction via tables, emoji removal, prose compression |
-| Dead Code Prevention | 4,500-7,000 tokens | Removed unused hint/enrichment services |
-| MinimalResponseSerializer | 6,000-8,000 tokens | Eliminated echo responses (70-75% per operation) |
-| Visual Indicators Removal | 620-980 tokens | Removed status emojis, progress bars |
-| **TOTAL** | **21,720-26,580 tokens** | **10.9-13.3% of 200k context window** |
+**Agent Files Optimization** (2025-11-03)
+- Rewrote 31 `.claude/agents/*.md` to minimal YAML headers
+- 1,878 → 832 lines (55.7% savings, ~2,000-2,500 tokens per file)
+- Format: YAML header + MCP init + minimal use case (avg 26 vs 80 lines)
 
-**ai_docs Optimization Results** (2025-11-03)
-- Phase 2 (Core Architecture): 4 docs, 68-78% reduction, ~16,500-18,500 tokens saved
-- Phase 3 (Development Guides): 2 docs, 69.8% reduction (4,122→1,209 lines), ~5,800-6,500 tokens saved
-- Techniques: Mermaid→tables (85%), code examples→patterns (92%), ASCII→tables (81%), prose→numbered tables (70-80%)
+**ai_docs Optimization** (2025-11-03)
+- Phase 2 (Core): 4 docs, 68-78% reduction, ~16,500-18,500 tokens saved
+- Phase 3 (Guides): 2 docs, 69.8% reduction (4,122→1,209 lines), ~5,800-6,500 tokens saved
 - Cumulative: ~24,630-28,130 tokens per session (10-12% of 200k budget)
 
-**Dead Code Cleanup - 2,430 Lines Removed** (2025-11-03)
-- Removed EnrichmentService (566 lines, 500-800 token bloat per operation)
-- Removed hint system infrastructure (1,864 lines: matrix, post-action hints, unified system, bridge, interceptor)
-- Impact: Prevented 4,500-7,000 tokens per session
+**Hooks System** (2025-11-03)
+- Migrated: `scripts/claude-hooks/` → `.claude/hooks/`
+- Updated all path references in validators, protection system, configs
 
-**MCP Response Architecture** (2025-11-03)
-- MinimalResponseSerializer: Returns only IDs, timestamps, computed values (not input echo)
-- Visual indicators removed: Frontend computes status emojis, progress bars, context availability
-- Philosophy: "Don't echo back what caller already knows" - 70-75% reduction per operation
-
-**Hooks System Migration** (2025-11-03)
-- Migrated from `scripts/claude-hooks/` to `.claude/hooks/`
-- Updated all path references in config_validator, pre_tool_use, test paths config
-- File system protection, documentation enforcement, session tracking operational
-
-**Architecture Changes**
-- Removed backward compatibility code (dev phase = clean breaks allowed)
+**Architecture**
 - ORM model = source of truth (update DB to match ORM, never reverse)
-- Test fixing hierarchy: Prompt Input → ORM Model → Database → Tests → Code
-- Dynamic tool enforcement replaces static tool permissions
+- Test hierarchy: Prompt Input → ORM → Database → Tests → Code
+- No backward compatibility in dev phase (clean breaks allowed)
+- Dynamic tool enforcement replaces static permissions
 
 ---
 
 ## [0.0.5] - 2025-09-26
 
 ### Added
-- Frontend type system consolidation in `src/types/`
-- Documentation system (auto-indexing, selective enforcement, _absolute_docs pattern)
-- File system protection (root restrictions, kebab-case enforcement)
+- Frontend type system consolidation (`src/types/`)
+- Documentation system (auto-indexing, `_absolute_docs` pattern)
+- File system protection (root restrictions, kebab-case)
 
 ### Fixed
 - Repository user ID propagation (with_user methods)
 - Git branch creation (update → save)
-- Removed duplicate test files
 
 ### Changed
 - Removed obsolete frontend debug scripts
@@ -341,61 +221,61 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [0.0.4] - 2025-09-23
 
 ### Added
-- **Dynamic Tool Enforcement v2.0**: Static → dynamic permissions from call_agent response
+- Dynamic Tool Enforcement v2.0 (permissions from call_agent response)
 - Agent system documentation (33 specialized agents)
 - MCP task management (4-tier context hierarchy)
-- AI-powered task enrichment and progress tracking
+- AI-powered task enrichment
 
 ### Fixed
-- Context system type safety improvements
+- Context system type safety
 
 ### Changed
-- Major CLAUDE.md update (orchestration guidelines, session types, token economy)
+- Major CLAUDE.md update (orchestration, session types, token economy)
 
 ---
 
 ## [0.0.3] - 2025-09-19
 
 ### Added
-- **Keycloak Integration**: JWT auth, automatic token refresh, RBAC, multi-tenant isolation
-- **WebSocket Real-time Updates**: Live task/project updates with auto-reconnection
-- Frontend performance optimizations (lazy loading, virtualization, memoization)
+- Keycloak Integration (JWT auth, auto refresh, RBAC, multi-tenant)
+- WebSocket real-time updates (auto-reconnection)
+- Frontend performance (lazy loading, virtualization, memoization)
 
 ### Fixed
-- Docker integration (configs, health checks, startup sequencing)
-- Database schema (ORM model alignment)
+- Docker integration (configs, health checks, startup)
+- Database schema (ORM alignment)
 
 ### Changed
-- Test organization restructure (unit/, integration/, e2e/, performance/)
+- Test organization (unit/, integration/, e2e/, performance/)
 
 ---
 
 ## [0.0.2] - 2025-09-17
 
 ### Added
-- Context management (4-tier hierarchical inheritance with smart caching)
-- Agent management (33 specialized agents with dynamic tools)
-- Vision system (AI-powered task enrichment)
+- Context management (4-tier hierarchical inheritance)
+- Agent management (33 specialized agents)
+- Vision system (AI task enrichment)
 
 ### Fixed
-- SQLAlchemy session management lifecycle
-- UUID validation across system
+- SQLAlchemy session lifecycle
+- UUID validation
 
 ### Changed
-- Domain model refactoring (improved DDD implementation)
+- Domain model refactoring (improved DDD)
 
 ---
 
 ## [0.0.1] - 2025-09-16
 
 ### Added
-- Initial project setup (FastMCP server, SQLite/PostgreSQL, React frontend)
+- Initial setup (FastMCP server, PostgreSQL/SQLite, React frontend)
 - Core domain models (Project, Task, GitBranch, Agent, Context)
 - Basic MCP tools (CRUD operations)
 - Docker development environment
 
 ### Fixed
-- Initial setup issues (database connections, env loading, Docker permissions)
+- Initial setup issues (database, env loading, Docker permissions)
 
 ---
 
