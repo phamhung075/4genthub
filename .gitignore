@@ -22,7 +22,6 @@
 # Keycloak sensitive configuration
 .env.keycloak
 !.env.keycloak.example
-!.env.claude
 # =============================================================================
 # 🚨 SECURITY: PREVENT SECRET LEAKS
 # =============================================================================
