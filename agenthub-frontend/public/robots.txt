@@ -1,3 +1,13 @@
 # https://www.robotstxt.org/robotstxt.html
+# 4genthub - AI Development Platform
+
+# Allow all search engines
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /dashboard/
+Disallow: /profile
+Disallow: /tokens
+Disallow: /agents/my-agents
+
+# Sitemap
+Sitemap: https://www.4genthub.com/sitemap.xml

@@ -1,6 +1,7 @@
 {
-  "short_name": "agenthub",
-  "name": "agenthub Task Management System",
+  "short_name": "4genthub",
+  "name": "4genthub - AI Development Platform",
+  "description": "Enterprise-grade MCP platform with 32 specialized AI agents for modern development",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,20 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#6366f1",
+  "background_color": "#ffffff",
+  "categories": ["productivity", "development", "business"],
+  "orientation": "portrait-primary"
 }
