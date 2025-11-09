@@ -198,19 +198,42 @@ class ProjectEventHandlers:
         """
         logger.info(
             f"Project statistics updated: {event.project_id} - "
-            f"Tasks: {event.total_tasks} (completed: {event.completed_tasks})"
+            f"Branches: {event.branch_count}, Tasks: {event.total_tasks} (completed: {event.completed_tasks})"
         )
 
         project_key = str(event.project_id)
 
         # Update statistics
         self.project_stats[project_key].update({
+            "branch_count": event.branch_count,
             "total_tasks": event.total_tasks,
             "completed_tasks": event.completed_tasks,
             "active_tasks": event.active_tasks,
-            "completion_rate": event.completion_percentage / 100.0,
+            "completion_rate": event.overall_progress_percentage / 100.0,
             "stats_updated_at": event.occurred_at
         })
+
+        # Send WebSocket notification to update frontend cache
+        try:
+            from ...application.services.websocket_notification_service import WebSocketNotificationService
+
+            await WebSocketNotificationService.broadcast_project_event(
+                event_type="updated",
+                project_id=str(event.project_id),
+                user_id=event.user_id if hasattr(event, 'user_id') and event.user_id else "system",
+                project_data={
+                    "id": str(event.project_id),
+                    "branch_count": event.branch_count,
+                    "task_count": event.total_tasks,
+                    "completed_tasks": event.completed_tasks,
+                    "in_progress_tasks": event.in_progress_tasks,
+                    "todo_tasks": event.todo_tasks,
+                    "progress_percentage": event.overall_progress_percentage
+                }
+            )
+            logger.info(f"✅ Sent WebSocket notification for project {event.project_id} statistics update")
+        except Exception as ws_error:
+            logger.warning(f"Failed to send WebSocket notification for project statistics: {ws_error}")
 
         # Check if health assessment is needed
         await self._assess_project_health(event.project_id, event)
@@ -223,7 +246,7 @@ class ProjectEventHandlers:
                     "total_tasks": event.total_tasks,
                     "completed_tasks": event.completed_tasks,
                     "active_tasks": event.active_tasks,
-                    "completion_percentage": event.completion_percentage
+                    "completion_percentage": event.overall_progress_percentage
                 }
             )
 
