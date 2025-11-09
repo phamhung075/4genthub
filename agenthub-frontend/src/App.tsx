@@ -38,6 +38,7 @@ const TokenManagement = lazy(() => import('./pages/TokenManagement').then(m => (
 const HelpSetup = lazy(() => import('./pages/HelpSetup').then(m => ({ default: m.HelpSetup })));
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
 const MyAgentsPage = lazy(() => import('./pages/MyAgentsPage').then(m => ({ default: m.MyAgentsPage })));
+const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -214,6 +215,23 @@ function ConditionalWebSocketBadge() {
   );
 }
 
+// Home component that shows landing page for anonymous users or redirects to dashboard
+function Home() {
+  const { isAuthenticated } = useAuth();
+
+  // Redirect authenticated users to dashboard
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Show landing page for anonymous users
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <LandingPage />
+    </Suspense>
+  );
+}
+
 function App() {
   return (
     <ThemeProvider>
@@ -243,7 +261,17 @@ function App() {
               <EmailVerification />
             </Suspense>
           } />
-          
+          <Route path="/help-setup" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <HelpSetup />
+            </Suspense>
+          } />
+          <Route path="/register" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <SignupForm />
+            </Suspense>
+          } />
+
           {/* Protected routes with Suspense */}
           <Route
             path="/dashboard"
@@ -318,18 +346,6 @@ function App() {
             }
           />
           <Route
-            path="/help"
-            element={
-              <Suspense fallback={<LoadingFallback />}>
-                <ProtectedRoute>
-                  <AppLayout>
-                    <HelpSetup />
-                  </AppLayout>
-                </ProtectedRoute>
-              </Suspense>
-            }
-          />
-          <Route
             path="/agents/marketplace"
             element={
               <Suspense fallback={<LoadingFallback />}>
@@ -366,11 +382,11 @@ function App() {
             }
           />*/}
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Home route - shows landing page for anonymous users or redirects to dashboard */}
+          <Route path="/" element={<Home />} />
 
-          {/* Catch-all route for unmatched paths */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Catch-all route for unmatched paths - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AuthWrapper>
           </Suspense>

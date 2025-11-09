@@ -11,6 +11,15 @@ interface ThemeContextType {
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// Custom hook to use the theme context
+export const useTheme = () => {
+  const context = React.useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
 interface ThemeProviderProps {
   children: ReactNode;
   defaultTheme?: Theme;
