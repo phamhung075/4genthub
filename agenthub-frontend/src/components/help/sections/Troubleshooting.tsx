@@ -1,20 +1,18 @@
 import { Card } from '../../ui/card';
 import CommandBox from '../shared/CommandBox';
+import DeploymentTabs from '../shared/DeploymentTabs';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 
 interface TroubleshootingProps {
   expandedSections: Record<string, boolean>;
   toggleSection: (sectionId: string) => void;
+  deploymentMode?: 'local' | 'cloud';
 }
 
-const Troubleshooting = ({ expandedSections, toggleSection }: TroubleshootingProps) => {
-  const sectionData = {
-    id: 'troubleshooting',
-    title: 'Troubleshooting',
-    description: 'Common issues and solutions for 4genthub development',
-    icon: <HelpCircle className="h-6 w-6 text-red-500" />,
-    content: (
-      <div className="space-y-6">
+const Troubleshooting = ({ expandedSections, toggleSection, deploymentMode = 'cloud' }: TroubleshootingProps) => {
+  // Local Development Troubleshooting Content
+  const localContent = (
+    <div className="space-y-6">
         <div>
           <h4 className="text-lg font-semibold mb-3">Common Issues</h4>
 
@@ -63,6 +61,7 @@ const Troubleshooting = ({ expandedSections, toggleSection }: TroubleshootingPro
               <p><strong>Problem:</strong> AI agents don't respond or give errors</p>
               <p><strong>Solutions:</strong></p>
               <ul className="list-disc list-inside ml-4 space-y-1">
+                <li><strong>Create Missing Agents:</strong> Go to <strong>My Agents</strong> page (http://localhost:3800/agents/my-agents) and create agents that are missing. You can either use default agent templates or create all 32 specialized agents.</li>
                 <li>Check MCP server is running: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">curl http://localhost:8000/health</code></li>
                 <li>Verify agent is properly loaded with <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">mcp__agenthub_http__call_agent</code></li>
                 <li>Check agent tools are available (Dynamic Tool Enforcement v2.0)</li>
@@ -248,22 +247,186 @@ const Troubleshooting = ({ expandedSections, toggleSection }: TroubleshootingPro
             </Card>
 
             <Card className="p-4 bg-gray-50 dark:bg-gray-900">
-              <h5 className="font-semibold mb-2">GitHub Issues</h5>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+              <h5 className="font-semibold mb-2">GitHub Repositories</h5>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                 Report bugs and request features
               </p>
-              <a
-                href="https://github.com/phamhung075/4genthub/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                GitHub Issues
-              </a>
+              <div className="space-y-2">
+                <a
+                  href="https://github.com/phamhung075/4genthub-hooks/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium block"
+                >
+                  4genthub-hooks (Main Repository)
+                </a>
+                <a
+                  href="https://github.com/phamhung075/4genthub/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium block"
+                >
+                  4genthub (Core Platform)
+                </a>
+              </div>
             </Card>
           </div>
         </div>
       </div>
+  );
+
+  // Cloud Deployment Troubleshooting Content
+  const cloudContent = (
+    <div className="space-y-6">
+      <div>
+        <h4 className="text-lg font-semibold mb-3">Common Issues</h4>
+
+        <Card className="p-4 bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800 mb-4">
+          <h5 className="font-semibold text-red-900 dark:text-red-100 flex items-center mb-2">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            MCP Connection Failed
+          </h5>
+          <div className="text-sm text-red-800 dark:text-red-200 space-y-2">
+            <p><strong>Problem:</strong> Claude Code cannot connect to 4genthub cloud service</p>
+            <p><strong>Solutions:</strong></p>
+            <ul className="list-disc list-inside ml-4 space-y-1">
+              <li>Verify API key in claude_desktop_config.json is correct</li>
+              <li>Check internet connection</li>
+              <li>Confirm API key hasn't expired (check dashboard)</li>
+              <li>Ensure URL is https://api.4genthub.com/mcp (not localhost)</li>
+              <li>Check for service status at status.4genthub.com</li>
+            </ul>
+          </div>
+        </Card>
+
+        <Card className="p-4 bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 mb-4">
+          <h5 className="font-semibold text-amber-900 dark:text-amber-100 flex items-center mb-2">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Invalid API Key
+          </h5>
+          <div className="text-sm text-amber-800 dark:text-amber-200 space-y-2">
+            <p><strong>Problem:</strong> Getting "401 Unauthorized" or "Invalid API Key" errors</p>
+            <p><strong>Solutions:</strong></p>
+            <ul className="list-disc list-inside ml-4 space-y-1">
+              <li>Log in to <a href="https://www.4genthub.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">www.4genthub.com</a></li>
+              <li>Go to Dashboard → Settings → API Keys</li>
+              <li>Generate a new API key if current one is invalid</li>
+              <li>Copy the FULL key including "Bearer" prefix if shown</li>
+              <li>Update claude_desktop_config.json with new key</li>
+              <li>Restart Claude Code to apply changes</li>
+            </ul>
+          </div>
+        </Card>
+
+        <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 mb-4">
+          <h5 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center mb-2">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Agent Not Responding
+          </h5>
+          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+            <p><strong>Problem:</strong> AI agents don't respond or give timeout errors</p>
+            <p><strong>Solutions:</strong></p>
+            <ul className="list-disc list-inside ml-4 space-y-1">
+              <li><strong>Create Missing Agents:</strong> Go to <strong>My Agents</strong> page at <a href="https://www.4genthub.com/agents/my-agents" target="_blank" rel="noopener noreferrer" className="underline font-medium">www.4genthub.com/agents/my-agents</a> and create agents that are missing. You can either use default agent templates or create all 32 specialized agents.</li>
+              <li>Check your internet connection stability</li>
+              <li>Verify account has active subscription (if required)</li>
+              <li>Check for rate limiting (too many requests)</li>
+              <li>Restart Claude Code application</li>
+              <li>Contact support if issue persists</li>
+            </ul>
+          </div>
+        </Card>
+
+        <Card className="p-4 bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800 mb-4">
+          <h5 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center mb-2">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Network/Connectivity Issues
+          </h5>
+          <div className="text-sm text-purple-800 dark:text-purple-200 space-y-2">
+            <p><strong>Problem:</strong> Intermittent connection drops or slow responses</p>
+            <p><strong>Solutions:</strong></p>
+            <ul className="list-disc list-inside ml-4 space-y-1">
+              <li>Check firewall settings allow HTTPS connections</li>
+              <li>Verify corporate proxy settings if behind VPN</li>
+              <li>Try disabling VPN temporarily to test</li>
+              <li>Check DNS resolution: ping api.4genthub.com</li>
+              <li>Contact network administrator if on corporate network</li>
+            </ul>
+          </div>
+        </Card>
+      </div>
+
+      <div>
+        <h4 className="text-lg font-semibold mb-3">Diagnostic Commands</h4>
+        <div className="space-y-3">
+          <CommandBox
+            command="curl -H 'Authorization: Bearer YOUR_API_KEY' https://api.4genthub.com/mcp/health"
+            title="Test Cloud MCP Connection"
+            description="Should return health status from cloud service"
+          />
+
+          <CommandBox
+            command="ping api.4genthub.com"
+            title="Check Cloud Connectivity"
+            description="Test network connection to 4genthub cloud"
+          />
+
+          <CommandBox
+            command="nslookup api.4genthub.com"
+            title="Check DNS Resolution"
+            description="Verify domain name resolves correctly"
+          />
+        </div>
+      </div>
+
+      <div>
+        <h4 className="text-lg font-semibold mb-3">Getting Help</h4>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="p-4 bg-gray-50 dark:bg-gray-900">
+            <h5 className="font-semibold mb-2">Discord Community</h5>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+              Join our community for real-time support
+            </p>
+            <a
+              href="https://discord.gg/zmhMpK6N"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              discord.gg/zmhMpK6N
+            </a>
+          </Card>
+
+          <Card className="p-4 bg-gray-50 dark:bg-gray-900">
+            <h5 className="font-semibold mb-2">Support Portal</h5>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+              Submit tickets and check service status
+            </p>
+            <a
+              href="https://support.4genthub.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              support.4genthub.com
+            </a>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+
+  const sectionData = {
+    id: 'troubleshooting',
+    title: 'Troubleshooting',
+    description: 'Common issues and solutions for 4genthub',
+    icon: <HelpCircle className="h-6 w-6 text-red-500" />,
+    content: (
+      <DeploymentTabs
+        localContent={localContent}
+        cloudContent={cloudContent}
+        defaultMode={deploymentMode}
+      />
     ),
     isExpanded: expandedSections['troubleshooting'],
     onToggle: () => toggleSection('troubleshooting')
