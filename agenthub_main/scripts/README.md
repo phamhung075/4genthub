@@ -123,13 +123,24 @@ python agenthub_main/scripts/test_runner.py
 - **Essential scripts only** - Removed obsolete debugging and one-off scripts
 - **Single source of truth** - `init_database.py` is the authoritative database setup
 
-### Removed During Cleanup (2025-09-25)
-- All Supabase-related scripts (89 files removed)
-- All migration scripts (replaced by `init_database.py`)
-- All backward compatibility scripts
-- Duplicate authentication test scripts
-- Obsolete debugging and development scripts
-- **Total reduction**: 143 → 54 files (62% reduction)
+### Cleanup History
+
+#### Phase 1: 2025-11-09 - Obsolete Scripts Marked
+Scripts were marked with `.obsolete` extension (reversible pattern):
+- **Migration scripts** (5 files) - Replaced by `init_database.py`
+- **One-off fix scripts** (12 files) - Historical bug fixes no longer needed
+- **Duplicate auth check scripts** (9 files) - Consolidated to `jwt-authentication-verification.py`
+- **Cleanup scripts** (11 files) - One-time migration utilities
+- **Duplicate setup scripts** (9 files) - Consolidated to 2 essential scripts
+- **Output/result files** (4 files) - Should not be in version control
+- **Clean code validation** (1 folder) - One-time validation scripts
+
+**Total marked obsolete**: 51 files
+**Active scripts after cleanup**: 96 files (67 Python + 29 Shell)
+**Reduction**: 144 → 96 files (33% reduction)
+
+To permanently delete: `find agenthub_main/scripts -name "*.obsolete" -delete`
+To restore: `mv file.obsolete file`
 
 ### Safety & Security
 - Always backup database before running schema scripts

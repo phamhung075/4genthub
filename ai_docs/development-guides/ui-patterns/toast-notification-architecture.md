@@ -1,663 +1,381 @@
-# Toast Notification System Architecture
+# Toast Notification Architecture (Token-Optimized)
 
-## Table of Contents
-1. [Architecture Overview](#architecture-overview)
-2. [Component Relationships](#component-relationships)
-3. [Data Flow Diagram](#data-flow-diagram)
-4. [Files and Components](#files-and-components)
-5. [Technical Implementation](#technical-implementation)
-6. [Usage Guidelines](#usage-guidelines)
-7. [Best Practices](#best-practices)
-8. [Code Examples](#code-examples)
-9. [Troubleshooting](#troubleshooting)
+## System Overview
 
-## Architecture Overview
+**Toast notifications in agenthub are triggered exclusively by WebSocket events**, with global deduplication to prevent spam. Components use only error toasts for client-side validation failures.
 
-The toast notification system is a decoupled, event-driven architecture that provides real-time user feedback across the application. It consists of multiple layers working together to deliver notifications from various sources (WebSocket events, service calls, user actions) to a unified UI component.
+### Core Principle
+> **WebSocket is the single source of truth for success notifications**. Components trigger error toasts only for client-side failures that don't reach the API.
 
-### System Design Principles
+---
 
-- **Decoupling**: Services emit notifications without knowing about UI implementation
-- **Event-Driven**: Uses an event bus pattern for loose coupling between components
-- **Deduplication**: Multiple layers prevent duplicate notifications from overwhelming users
-- **Flexibility**: Supports various notification types, actions, and customization
-- **Real-time**: Integrates with WebSocket for instant notifications
+## Architecture Layers
 
-### Architecture Layers
+| Layer | Component | Purpose | Location |
+|-------|-----------|---------|----------|
+| **UI** | `ToastProvider` + `ToastContainer` | React Context, visual rendering | `toast.tsx` |
+| **Integration** | `useRealtimeSync` | WebSocket handler, cache sync, toast triggering | `useRealtimeSync.ts` |
+| **Data Source** | WebSocket v2.0 | Real-time entity updates from backend | `useWebSocketV2.ts` |
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     UI Layer                                 │
-│  ┌─────────────────┐    ┌─────────────────────────────────┐ │
-│  │  ToastProvider  │◄──►│      ToastContainer             │ │
-│  │  (Context)      │    │      (Visual Components)        │ │
-│  └─────────────────┘    └─────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                           ▲
-                           │
-┌─────────────────────────────────────────────────────────────┐
-│                   Bridge Layer                               │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │            WebSocketToastBridge                         │ │
-│  │            (Event Bus Subscriber)                       │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                           ▲
-                           │
-┌─────────────────────────────────────────────────────────────┐
-│                 Event Bus Layer                              │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │                 ToastEventBus (with EventQueue and EventWorker)                           │ │
-│  │              (1-second deduplication)                   │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                           ▲
-                           │
-┌─────────────────────────────────────────────────────────────┐
-│                 Service Layer                                │
-│  ┌─────────────────┐    ┌─────────────────────────────────┐ │
-│  │Notification     │    │    Other Services               │ │
-│  │Service          │    │    (API calls, etc.)           │ │
-│  │(5-sec dedup)    │    │                                 │ │
-│  └─────────────────┘    └─────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                           ▲
-                           │
-┌─────────────────────────────────────────────────────────────┐
-│                 Data Source Layer                            │
-│  ┌─────────────────┐    ┌─────────────────────────────────┐ │
-│  │  WebSocket      │    │    Direct Service Calls         │ │
-│  │  Messages       │    │    (User Actions)               │ │
-│  └─────────────────┘    └─────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
+**Flow**: WebSocket message → `useRealtimeSync` → Global deduplication → Toast hook → Context → UI
 
-## Component Relationships
+---
 
-### Core Components
+## Key Files
 
-1. **ToastEventBus (with EventQueue and EventWorker)** - Central event dispatcher with deduplication
-2. **NotificationService** - Higher-level service with WebSocket integration
-3. **WebSocketToastBridge** - Connects event bus to React context
-4. **ToastProvider** - React context provider for UI state
-5. **ToastContainer** - Visual rendering of toast notifications
+### 1. `toast.tsx` (267 lines)
 
-### Dependency Graph
+**Exports**:
+- `ToastProvider` - React Context wrapping entire app
+- `ToastContainer` - Visual toast rendering
+- `useToast()` - Base hook (returns `showToast`, `dismissToast`, `dismissAll`)
+- `useSuccessToast()` - Convenience hook for success messages
+- `useErrorToast()` - Convenience hook for errors (8s duration)
+- `useWarningToast()` - Convenience hook for warnings
+- `useInfoToast()` - Convenience hook for info messages
 
-```
-App.tsx
-├── ToastProvider (wraps entire app)
-│   ├── ToastContainer (renders toasts)
-│   └── WebSocketToastBridge (subscribes to events)
-│       └── toastEventBus (with EventQueue and EventWorker) (event dispatcher)
-│           ├── NotificationService (higher-level API)
-│           └── Direct service calls
-└── Other Components (can use toast hooks)
-```
+**Toast Types**:
+| Type | Icon | Duration | Use Case |
+|------|------|----------|----------|
+| `success` | CheckCircle | 5s | Operation completed (WebSocket only) |
+| `error` | XCircle | 8s | Client validation failures |
+| `warning` | AlertCircle | 5s | Deletions (WebSocket only) |
+| `info` | Info | 5s | Updates (WebSocket only) |
 
-## Data Flow Diagram
-
-### Standard Notification Flow
-
-```mermaid
-sequenceDiagram
-    participant WS as WebSocket
-    participant NS as NotificationService
-    participant TEB as ToastEventBus (with EventQueue and EventWorker)
-    participant WSTB as WebSocketToastBridge
-    participant TP as ToastProvider
-    participant TC as ToastContainer
-
-    WS->>NS: WebSocket message received
-    NS->>NS: Check 5-second deduplication
-    NS->>TEB: Call convenience method (success/error/etc)
-    TEB->>TEB: Check 1-second deduplication
-    TEB->>WSTB: Emit ToastEvent to subscribers
-    WSTB->>TP: Call showToast()
-    TP->>TP: Generate unique ID, add to state
-    TP->>TC: Re-render with new toast
-    TC->>TC: Auto-dismiss after duration
-```
-
-### Direct Service Call Flow
-
-```mermaid
-sequenceDiagram
-    participant Service as Any Service
-    participant TEB as ToastEventBus (with EventQueue and EventWorker)
-    participant WSTB as WebSocketToastBridge
-    participant TP as ToastProvider
-    participant TC as ToastContainer
-
-    Service->>TEB: toastEventBus (with EventQueue and EventWorker).success("Message")
-    TEB->>TEB: Check 1-second deduplication
-    TEB->>WSTB: Emit ToastEvent
-    WSTB->>TP: Call showToast()
-    TP->>TC: Render toast notification
-```
-
-## Files and Components
-
-### 1. `/src/services/toastEventBus (with EventQueue and EventWorker).ts`
-
-**Purpose**: Central event bus for toast notifications with deduplication
-
-**Key Features**:
-- Singleton pattern for global access
-- 1-second deduplication window
-- Legacy and modern API support
-- Convenience methods for different toast types
-
-**Core Interface**:
-```typescript
-export interface ToastEvent {
-  type: ToastEventType;
-  title: string;
-  description?: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-}
-
-class ToastEventBus (with EventQueue and EventWorker) {
-  subscribe(callback: (event: ToastEvent) => void): () => void
-  emit(typeOrEvent: string | ToastEvent, message?: string, options?: any): void
-  success(title: string, description?: string, action?: ToastEvent['action']): void
-  error(title: string, description?: string, action?: ToastEvent['action']): void
-  warning(title: string, description?: string, action?: ToastEvent['action']): void
-  info(title: string, description?: string, action?: ToastEvent['action']): void
-}
-```
-
-### 2. `/src/services/notificationService.ts`
-
-**Purpose**: Higher-level notification service with WebSocket integration
-
-**Key Features**:
-- 5-second deduplication for entity changes
-- WebSocket message processing
-- Browser notification support
-- Audio feedback
-- Entity-specific notification formatting
-
-**Core Interface**:
-```typescript
-class NotificationService {
-  notifyEntityChange(entityType: EntityType, eventType: EventType, entityName?: string, entityId?: string, userName?: string): void
-  success(message: string, options?: NotificationOptions): void
-  error(message: string, options?: NotificationOptions): void
-  warning(message: string, options?: NotificationOptions): void
-  info(message: string, options?: NotificationOptions): void
-  initializeWebSocketListener(webSocketClient: any): () => void
-}
-```
-
-### 3. `/src/components/WebSocketToastBridge.tsx`
-
-**Purpose**: Bridge between event bus and React toast context
-
-**Key Features**:
-- Subscribes to toastEventBus (with EventQueue and EventWorker) on mount
-- Converts ToastEvent objects to toast context calls
-- Handles browser notification permissions
-- No visual rendering (pure logic component)
-
-**Implementation Pattern**:
-```typescript
-export const WebSocketToastBridge: React.FC = () => {
-  const { showToast } = useToast();
-
-  useEffect(() => {
-    const unsubscribe = toastEventBus (with EventQueue and EventWorker).subscribe((event: ToastEvent) => {
-      showToast({
-        type: event.type,
-        title: event.title,
-        description: event.description,
-        action: event.action,
-        duration: event.type === 'error' ? 8000 : 5000
-      });
-    });
-
-    return unsubscribe;
-  }, []);
-
-  return null;
-};
-```
-
-### 4. `/src/components/ui/toast.tsx`
-
-**Purpose**: React context and UI components for toast display
-
-**Key Features**:
-- React Context for global toast state
-- Multiple toast type variants (success, error, warning, info)
+**Features**:
 - Auto-dismiss with pause on hover
-- Action button support
-- Accessibility features (ARIA roles)
+- Stacking with animation delays (100ms per toast)
+- Design system colors (success/error/warning/info variants)
+- Action buttons (optional)
 
-**Core Interface**:
+### 2. `useRealtimeSync.ts` (955 lines)
+
+**Responsibility**: **Single source of truth for all toast notifications**
+
+**Key Features**:
+- Handles WebSocket v2.0 protocol messages
+- Updates React Query cache with delays for animations
+- **Global toast deduplication** (prevents duplicates from multiple hook instances)
+- Triggers all success/info/warning toasts
+
+**Deduplication Logic** (lines 17-65):
 ```typescript
-interface ToastContextType {
-  toasts: Toast[];
-  showToast: (toast: Omit<Toast, 'id'>) => string;
-  dismissToast: (id: string) => void;
-  dismissAll: () => void;
-}
+// Global map shared across ALL hook instances
+const globalRecentToastsMap = new Map<string, number>();
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }>
-export const ToastContainer: React.FC
-export const useToast: () => ToastContextType
-```
-
-### 5. `/src/App.tsx` - Integration Point
-
-**Purpose**: Application root with toast system initialization
-
-**Key Integration**:
-```typescript
-function App() {
-  return (
-    <ReduxProvider store={store}>
-      <ThemeProvider>
-        <ToastProvider>                {/* Toast context */}
-          <WebSocketToastBridge />     {/* Event bus bridge */}
-          <AuthWrapper>
-            {/* App routes */}
-          </AuthWrapper>
-        </ToastProvider>
-      </ThemeProvider>
-    </ReduxProvider>
-  );
-}
-```
-
-## Technical Implementation
-
-### Deduplication Mechanism
-
-The system implements a two-tier deduplication strategy:
-
-#### Level 1: ToastEventBus (with EventQueue and EventWorker) (1-second window)
-```typescript
-private shouldDeduplicate(key: string): boolean {
+// Only show toast if not shown in last 2 seconds
+const showToastOnce = (key: string, showFn: () => void) => {
   const now = Date.now();
-  const lastEmitted = this.recentMessages.get(key);
+  const lastShown = globalRecentToastsMap.get(key);
 
-  if (lastEmitted && (now - lastEmitted) < this.DEDUPLICATION_WINDOW) {
-    return true; // Skip duplicate
+  if (!lastShown || now - lastShown > 2000) {
+    showFn();
+    globalRecentToastsMap.set(key, now);
   }
-
-  this.recentMessages.set(key, now);
-  return false;
 }
 ```
 
-#### Level 2: NotificationService (5-second window)
+**Toast Triggers by Entity**:
+
+| Entity | Actions | Toast Type | Key Format |
+|--------|---------|-----------|-----------|
+| **Task** | created | success | `task-created-${id}` |
+| | updated | info (if not system) | `task-updated-${id}` |
+| | completed | success | `task-completed-${id}` |
+| | deleted | warning | `task-deleted-${id}` |
+| **Subtask** | created | success | `subtask-created-${id}` |
+| | updated | info | `subtask-updated-${id}` |
+| | completed | success | `subtask-completed-${id}` |
+| | deleted | warning | `subtask-deleted-${id}` |
+| **Project** | created | success | `project-created-${id}` |
+| | updated | info | `project-updated-${id}` |
+| | deleted | warning | `project-deleted-${id}` |
+| **Branch** | created | success | `branch-created-${id}` |
+| | updated | info | `branch-updated-${id}` |
+| | deleted | warning | `branch-deleted-${id}` |
+| **Agent** | created | success | `agent-created-${id}` |
+| | updated | info | `agent-updated-${id}` |
+| | deleted | warning | `agent-deleted-${id}` |
+
+**Critical Implementation Details**:
+
 ```typescript
-private isDuplicate(entityType: EntityType, eventType: EventType, entityId?: string): boolean {
-  const key = `${entityType}:${eventType}:${entityId || 'unknown'}`;
-  const now = Date.now();
-  const lastNotification = this.recentNotifications.get(key);
-
-  if (lastNotification && (now - lastNotification) < 5000) {
-    return true; // Skip duplicate
-  }
-
-  this.recentNotifications.set(key, now);
-  return false;
+// Suppress automatic task updates (subtask count changes)
+const isAutomaticUpdate = message.metadata?.source === 'system' ||
+                          message.metadata?.event_type === 'subtask_count_update';
+if (!isAutomaticUpdate) {
+  showToastOnce(`task-updated-${taskId}`, () => {
+    showInfo(`Task "${taskTitle}" updated`);
+  });
 }
 ```
 
-### Event Flow Architecture
+**Animation Coordination**:
+- **DELETE**: Toast shown FIRST, cache update delayed 600ms (allows delete animation)
+- **UPDATE**: Toast shown immediately, cache update delayed 150ms (allows update animation)
+- **COMPLETE**: Toast shown FIRST, cache update delayed 150ms (allows completion animation)
+- **CREATE**: Toast + cache update immediate (no animation delay needed)
 
-1. **Data Sources** generate events (WebSocket, user actions, API responses)
-2. **NotificationService** processes WebSocket messages and applies entity-level deduplication
-3. **ToastEventBus (with EventQueue and EventWorker)** receives notifications and applies general deduplication
-4. **WebSocketToastBridge** subscribes to the event bus and forwards to React context
-5. **ToastProvider** manages UI state and renders notifications
-6. **ToastContainer** displays visual notifications with auto-dismiss logic
+### 3. Component Usage
 
-### Memory Management
-
-- **Automatic Cleanup**: Both deduplication systems clean up old entries to prevent memory leaks
-- **Timer Management**: Toast auto-dismiss timers are properly cleaned up on component unmount
-- **Event Subscription**: Unsubscribe functions are called during cleanup
-
-## Usage Guidelines
-
-### Basic Usage
-
-#### For Simple Notifications
+**LazyTaskListRefactored.tsx** (line 27):
 ```typescript
-import { toastEventBus (with EventQueue and EventWorker) } from '../services/toastEventBus (with EventQueue and EventWorker)';
-
-// Convenience methods (recommended)
-toastEventBus (with EventQueue and EventWorker).success('Operation completed successfully');
-toastEventBus (with EventQueue and EventWorker).error('Failed to save changes');
-toastEventBus (with EventQueue and EventWorker).warning('Network connection unstable');
-toastEventBus (with EventQueue and EventWorker).info('New version available');
+const showError = useErrorToast();
+// ONLY error toasts - success handled by WebSocket
 ```
 
-#### For Complex Notifications
+**LazySubtaskListRefactored.tsx** (line 58):
 ```typescript
-toastEventBus (with EventQueue and EventWorker).success('File uploaded', 'Document.pdf uploaded successfully', {
-  label: 'View File',
-  onClick: () => openFile('document.pdf')
-});
+const showErrorToast = useErrorToast();
+// ONLY error toasts - success handled by WebSocket
 ```
 
-#### In React Components
-```typescript
-import { useToast } from '../components/ui/toast';
+**Why components don't use success toasts**:
+- **Problem**: Duplicate toasts (component + WebSocket both triggering)
+- **Solution**: Components handle ONLY client-side validation errors
+- **API operations**: WebSocket broadcasts success → `useRealtimeSync` shows toast
 
-function MyComponent() {
-  const { showToast } = useToast();
+---
 
-  const handleAction = () => {
-    // Direct toast context usage
-    showToast({
-      type: 'success',
-      title: 'Action completed',
-      description: 'Your changes have been saved'
-    });
-  };
-}
+## Data Flow (Actual Implementation)
+
+### Success Flow (API Operation)
+```
+User clicks "Create Task"
+↓
+Component calls API mutation
+↓
+API creates task
+↓
+WebSocket broadcasts "task created" message
+↓
+useRealtimeSync receives message
+↓
+Global deduplication check (2s window)
+↓
+showToastOnce(`task-created-${id}`, () => showSuccess(...))
+↓
+ToastProvider adds toast to context
+↓
+ToastContainer renders toast
+↓
+Auto-dismiss after 5s (pauses on hover)
 ```
 
-#### For Entity Changes (WebSocket Integration)
-```typescript
-import { notificationService } from '../services/notificationService';
-
-// Entity-specific notifications (automatically formatted)
-notificationService.notifyEntityChange('task', 'completed', 'User Authentication Task', 'task-123', 'John Doe');
-// Result: "Task 'User Authentication Task' was completed by John Doe"
+### Error Flow (Client Validation)
+```
+User enters invalid data
+↓
+Component validation fails
+↓
+Component calls showErrorToast("Invalid data")
+↓
+ToastProvider adds toast to context
+↓
+ToastContainer renders toast (8s duration)
 ```
 
-### WebSocket Integration Setup
-
-The notification service automatically integrates with WebSocket v2.0:
-
-```typescript
-// In your WebSocket hook or service
-const webSocketClient = new WebSocketClient();
-const cleanup = notificationService.initializeWebSocketListener(webSocketClient);
-
-// Cleanup on component unmount
-return cleanup;
-```
+---
 
 ## Best Practices
 
-### Do's ✅
+### ✅ DO
 
-1. **Use Convenience Methods**: Prefer `toastEventBus (with EventQueue and EventWorker).success()` over manual event objects
-2. **Provide Context**: Include descriptions for complex operations
-3. **Use Actions Sparingly**: Only for toasts that need user interaction
-4. **Keep Messages Concise**: Toast titles should be brief and clear
-5. **Use Appropriate Types**:
-   - `success` for completed operations
-   - `error` for failures requiring attention
-   - `warning` for potential issues
-   - `info` for general information
+| Practice | Reason |
+|----------|--------|
+| **Use `useErrorToast` in components** | Client-side validation failures |
+| **Let WebSocket handle success** | Prevents duplicates, consistent UX |
+| **Trust global deduplication** | Handles multiple hook instances |
+| **Keep messages concise** | Toast titles <50 chars |
 
-### Don'ts ❌
+### ❌ DON'T
 
-1. **Don't Spam Notifications**: The deduplication system helps, but be mindful
-2. **Don't Use for Long Messages**: Keep descriptions under 2 lines
-3. **Don't Override Durations Unnecessarily**: Default durations are optimized
-4. **Don't Create Manual Toast Objects**: Use the provided APIs instead
-5. **Don't Bypass the Event Bus**: Always go through toastEventBus (with EventQueue and EventWorker) or notificationService
+| Practice | Why Not |
+|----------|---------|
+| **Call success toast in components** | WebSocket already shows it → duplicates |
+| **Show toasts for every update** | Spam users (automatic updates suppressed) |
+| **Override deduplication** | Breaks spam prevention |
+| **Use toasts for long messages** | Max 2 lines description |
 
-### Performance Considerations
+---
 
-1. **Deduplication**: Two-tier system prevents notification spam
-2. **Memory Management**: Automatic cleanup of old deduplication entries
-3. **Event Subscription**: Proper cleanup prevents memory leaks
-4. **Lazy Loading**: Toast components only render when needed
+## Configuration
 
-### Accessibility
+### Toast Durations
 
-1. **ARIA Roles**: Toast containers include proper `role="alert"` attributes
-2. **Keyboard Navigation**: Close buttons are keyboard accessible
-3. **Screen Reader Support**: Toast content is announced to screen readers
-4. **Color Contrast**: Toast variants meet WCAG accessibility standards
+| Type | Default | Override | Use Case |
+|------|---------|----------|----------|
+| success | 5000ms | `duration: 3000` | Quick confirmations |
+| error | 8000ms | `duration: 10000` | Critical errors needing attention |
+| warning | 5000ms | `duration: 6000` | Deletions, important warnings |
+| info | 5000ms | `duration: 4000` | Informational updates |
 
-## Code Examples
+### Deduplication Window
 
-### Basic Notification Examples
+**Global**: 2000ms (2 seconds) in `useRealtimeSync.ts:46`
 
-```typescript
-// Simple success message
-toastEventBus (with EventQueue and EventWorker).success('Settings saved successfully');
+**Cleanup**: Toast keys removed after 5s (line 51-56)
 
-// Error with description
-toastEventBus (with EventQueue and EventWorker).error('Upload failed', 'File size exceeds 10MB limit');
-
-// Warning with action
-toastEventBus (with EventQueue and EventWorker).warning('Unsaved changes', 'You have unsaved changes that will be lost', {
-  label: 'Save Now',
-  onClick: () => saveChanges()
-});
-
-// Info notification
-toastEventBus (with EventQueue and EventWorker).info('System maintenance scheduled for tonight at 2 AM');
-```
-
-### WebSocket Integration Example
-
-```typescript
-// Automatic entity change notifications
-// When a WebSocket message arrives:
-{
-  "type": "update",
-  "payload": {
-    "entity": "task",
-    "action": "completed",
-    "data": {
-      "primary": {
-        "id": "task-123",
-        "title": "User Authentication Implementation",
-        "status": "completed"
-      }
-    }
-  },
-  "metadata": {
-    "source": "user",
-    "userName": "John Doe"
-  }
-}
-
-// Automatically generates:
-// Toast: "Task 'User Authentication Implementation' was completed by John Doe"
-```
-
-### Custom Service Integration
-
-```typescript
-// In your service file
-import { toastEventBus (with EventQueue and EventWorker) } from '../services/toastEventBus (with EventQueue and EventWorker)';
-
-class ApiService {
-  async saveData(data: any) {
-    try {
-      const result = await api.post('/data', data);
-      toastEventBus (with EventQueue and EventWorker).success('Data saved successfully');
-      return result;
-    } catch (error) {
-      toastEventBus (with EventQueue and EventWorker).error('Failed to save data', error.message);
-      throw error;
-    }
-  }
-
-  async uploadFile(file: File) {
-    try {
-      const result = await api.upload('/files', file);
-      toastEventBus (with EventQueue and EventWorker).success('File uploaded', `${file.name} uploaded successfully`, {
-        label: 'View File',
-        onClick: () => this.openFile(result.id)
-      });
-      return result;
-    } catch (error) {
-      toastEventBus (with EventQueue and EventWorker).error('Upload failed', `Could not upload ${file.name}`);
-      throw error;
-    }
-  }
-}
-```
-
-### React Hook Usage
-
-```typescript
-// Using toast context directly in components
-function TaskForm() {
-  const { showToast } = useToast();
-  const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async (data: TaskData) => {
-    setSaving(true);
-    try {
-      await taskService.create(data);
-      showToast({
-        type: 'success',
-        title: 'Task created',
-        description: `"${data.title}" has been created successfully`
-      });
-    } catch (error) {
-      showToast({
-        type: 'error',
-        title: 'Failed to create task',
-        description: error.message,
-        duration: 8000 // Longer duration for errors
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-}
-```
-
-### Advanced Deduplication Example
-
-```typescript
-// This will only show one notification even if called multiple times rapidly
-for (let i = 0; i < 10; i++) {
-  toastEventBus (with EventQueue and EventWorker).success('Batch operation completed', `Processed item ${i}`);
-}
-// Result: Only one notification is shown due to 1-second deduplication window
-
-// Entity changes are deduplicated separately with longer window
-notificationService.notifyEntityChange('task', 'updated', 'My Task', 'task-123');
-notificationService.notifyEntityChange('task', 'updated', 'My Task', 'task-123'); // Deduplicated
-// Result: Only one notification for this specific task update
-```
+---
 
 ## Troubleshooting
 
-### Common Issues
+| Symptom | Cause | Solution |
+|---------|-------|----------|
+| **No toast appears** | WebSocket disconnected | Check `useWebSocket` connection status |
+| **Duplicate toasts** | Component calling success toast | Remove component toast, rely on WebSocket |
+| **Toast shows but no cache update** | Animation timing mismatch | Check setTimeout delays (150ms/600ms) |
+| **Automatic update toasts spamming** | Missing system source check | Verify `isAutomaticUpdate` logic (line 163-171) |
 
-#### Issue 1: Notifications Not Appearing
-**Symptoms**: Toast events are emitted but no visual notifications appear
+---
 
-**Debugging Steps**:
-1. Check browser console for WebSocketToastBridge logs
-2. Verify ToastProvider wraps the entire app
-3. Ensure WebSocketToastBridge is included in component tree
-4. Check if showToast is being called with correct parameters
+## WebSocket v2.0 Integration
 
-**Solution**:
+**Setup** (in `App.tsx` or layout component):
 ```typescript
-// Verify in App.tsx
-<ToastProvider>
-  <WebSocketToastBridge />
-  {/* Rest of app */}
-</ToastProvider>
+const { user, tokens } = useAuth();
+const webSocketClient = useWebSocket(user?.id || '', tokens?.access_token || '');
+useRealtimeSync(webSocketClient.client, true);
 ```
 
-#### Issue 2: Duplicate Notifications
-**Symptoms**: Same notification appears multiple times
-
-**Debugging Steps**:
-1. Check deduplication logs in browser console
-2. Verify that you're not calling both toastEventBus (with EventQueue and EventWorker) AND showToast for the same event
-3. Check if multiple services are triggering the same notification
-
-**Solution**:
-- Use only one notification method per event
-- Rely on the deduplication system
-- Check for proper cleanup of event listeners
-
-#### Issue 3: WebSocket Notifications Not Working
-**Symptoms**: Manual notifications work but WebSocket-triggered ones don't
-
-**Debugging Steps**:
-1. Verify WebSocket connection is established
-2. Check if notificationService.initializeWebSocketListener() was called
-3. Look for WebSocket message processing logs
-4. Verify message format matches expected structure
-
-**Solution**:
+**Message Format** (WebSocket v2.0 Protocol):
 ```typescript
-// Ensure WebSocket listener is initialized
-useEffect(() => {
-  const cleanup = notificationService.initializeWebSocketListener(webSocketClient);
-  return cleanup;
-}, [webSocketClient]);
+{
+  version: "2.0",
+  type: "update",
+  payload: {
+    entity: "task" | "subtask" | "project" | "branch" | "agent",
+    action: "created" | "updated" | "completed" | "deleted",
+    data: {
+      primary: { ...entityData },
+      cascade: { ...relatedEntities }
+    }
+  },
+  metadata: {
+    source: "user" | "system",
+    event_type?: "subtask_count_update"
+  }
+}
 ```
 
-#### Issue 4: Notifications Not Auto-Dismissing
-**Symptoms**: Toast notifications stay visible indefinitely
+---
 
-**Debugging Steps**:
-1. Check if duration is set correctly
-2. Verify timer cleanup in useEffect
-3. Check for JavaScript errors preventing timer execution
+## Implementation Examples
 
-**Solution**:
+### Component Error Toast
 ```typescript
-// Ensure proper duration is set
-toastEventBus (with EventQueue and EventWorker).success('Message', 'Description'); // Uses default 5s
-// Or explicitly set duration
-showToast({ type: 'info', title: 'Message', duration: 3000 });
+// ✅ CORRECT: Component validates, shows error
+const handleSubmit = async () => {
+  if (!title.trim()) {
+    showErrorToast("Title is required");
+    return;
+  }
+
+  // API handles success toast via WebSocket
+  await createTask({ title });
+};
 ```
 
-### Debug Console Output
-
-The system provides extensive console logging for debugging:
-
-```
-📝 ToastEventBus (with EventQueue and EventWorker).subscribe() called - adding legacy listener
-📡 ToastEventBus (with EventQueue and EventWorker).emit() called with: success Operation completed
-🔔 WebSocketToastBridge: Received toast event from toastEventBus (with EventQueue and EventWorker)
-🍞 ToastProvider.showToast() called with: {type: 'success', title: 'Operation completed'}
-✅ WebSocketToastBridge: Called showToast, returned ID: abc123
-```
-
-### Performance Monitoring
-
-Monitor these metrics for system health:
-
-1. **Deduplication Rate**: Check console for "DEDUPLICATING" messages
-2. **Memory Usage**: Monitor recentMessages and recentNotifications Maps
-3. **Event Subscription**: Ensure proper cleanup of event listeners
-4. **Toast Count**: Monitor active toast count in ToastProvider state
-
-### Testing the System
-
+### WebSocket Success Toast
 ```typescript
-// Test basic functionality
-toastEventBus (with EventQueue and EventWorker).success('Test notification');
-
-// Test deduplication
-toastEventBus (with EventQueue and EventWorker).success('Duplicate test');
-toastEventBus (with EventQueue and EventWorker).success('Duplicate test'); // Should be deduplicated
-
-// Test WebSocket integration
-// Trigger a WebSocket message and verify notification appears
-
-// Test cleanup
-// Navigate away and back, ensure no memory leaks
+// ✅ CORRECT: useRealtimeSync handles WebSocket messages
+switch (action) {
+  case 'created':
+    showToastOnce(`task-created-${taskId}`, () => {
+      showSuccess(`Task "${taskTitle}" created successfully`);
+    });
+    break;
+}
 ```
 
-This comprehensive architecture provides a robust, scalable, and user-friendly notification system that handles real-time updates while preventing notification spam through intelligent deduplication.
+### ❌ WRONG: Component Success Toast
+```typescript
+// ❌ WRONG: Creates duplicate (component + WebSocket)
+const handleSubmit = async () => {
+  await createTask({ title });
+  showSuccessToast("Task created"); // DON'T DO THIS
+};
+```
+
+---
+
+## Memory Management
+
+**Automatic Cleanup**:
+1. **Toast auto-dismiss**: Timers cleaned up on unmount (toast.tsx:77-82)
+2. **Deduplication map**: Keys removed after 5s (useRealtimeSync.ts:51-56)
+3. **WebSocket listeners**: Unsubscribed on hook cleanup (useRealtimeSync.ts:943-947)
+
+**Performance**:
+- Global deduplication prevents O(n²) duplicate checks
+- Toast keys are UUIDs + entity IDs (unique, collision-free)
+- Map cleanup prevents memory leaks
+
+---
+
+## Testing Toast System
+
+### Manual Testing
+```typescript
+// 1. Test WebSocket toast (use browser console)
+// Trigger task creation → verify single success toast
+
+// 2. Test deduplication
+// Rapid task updates → verify single info toast
+
+// 3. Test component error
+// Submit invalid form → verify error toast (8s duration)
+
+// 4. Test animation coordination
+// Delete task → verify toast shows, then item disappears (600ms delay)
+```
+
+### Verification Checklist
+- [ ] WebSocket connected (`useWebSocket.isConnected`)
+- [ ] `useRealtimeSync` hook active
+- [ ] No component-level success toasts (only errors)
+- [ ] Toasts auto-dismiss after duration
+- [ ] Pause-on-hover works
+- [ ] No duplicate toasts (global deduplication working)
+
+---
+
+## Migration from Legacy System
+
+**Before (DEPRECATED - does not exist in codebase)**:
+- `toastEventBus` service
+- `NotificationService` with 5s deduplication
+- `WebSocketToastBridge` component
+- Dual deduplication (1s + 5s)
+
+**After (CURRENT - as of WebSocket v2.0 refactor 2025-11-07)**:
+- Direct toast hooks in `toast.tsx`
+- Single deduplication in `useRealtimeSync` (2s global)
+- No bridge component needed
+- Simplified architecture (70% fewer LOC)
+
+**Key Changes**:
+| Aspect | Old | New |
+|--------|-----|-----|
+| **Deduplication** | 2-tier (1s + 5s) | Single global (2s) |
+| **Integration** | Bridge component | Direct hooks |
+| **Location** | Separate services | `useRealtimeSync` |
+| **Complexity** | 3 files, 500+ LOC | 1 file, 65 LOC |
+
+---
+
+## Summary
+
+**Architecture**: WebSocket → `useRealtimeSync` (global dedup) → Toast hooks → Context → UI
+
+**Key Files**:
+- `toast.tsx` - React Context, hooks, UI components
+- `useRealtimeSync.ts` - WebSocket handler, toast triggering, deduplication
+
+**Deduplication**: Global `Map<string, number>` with 2s window, shared across all hook instances
+
+**Component Usage**: **Error toasts only** - WebSocket handles all success notifications
+
+**Animation Coordination**: Toast timing synced with cache updates (150ms/600ms delays)
+
+**Result**: Zero duplicate toasts, consistent UX, minimal code (simplified in WebSocket v2.0 refactor)

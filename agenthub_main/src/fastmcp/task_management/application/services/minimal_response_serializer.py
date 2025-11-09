@@ -110,9 +110,14 @@ class MinimalResponseSerializer:
             full_dict = subtask
 
         # Essential properties that MUST be returned
+        # CRITICAL: Include fields required by SubtaskUpdatePayload (title, status, task_id)
         minimal = {
             "id": full_dict.get("id"),
-            "parent_task_id": full_dict.get("parent_task_id"),
+            "title": full_dict.get("title"),  # ✅ FIX: Required by SubtaskUpdatePayload
+            "description": full_dict.get("description"),  # ✅ FIX: Required by SubtaskUpdatePayload (optional but should be preserved)
+            "status": full_dict.get("status"),  # ✅ FIX: Required by SubtaskUpdatePayload
+            "task_id": full_dict.get("parent_task_id"),  # ✅ FIX: Required by SubtaskUpdatePayload (maps to task_id)
+            "parent_task_id": full_dict.get("parent_task_id"),  # Keep for backward compatibility
             "created_at": full_dict.get("created_at"),
             "updated_at": full_dict.get("updated_at"),
         }
@@ -123,11 +128,6 @@ class MinimalResponseSerializer:
 
         if "progress_count" in full_dict:
             minimal["progress_count"] = full_dict["progress_count"]
-
-        # Include status if auto-computed from progress_percentage
-        # This helps caller understand state transitions
-        if "status" in full_dict:
-            minimal["status"] = full_dict["status"]
 
         # For create operations, include priority as it might be defaulted
         if operation == "create" and "priority" in full_dict:
