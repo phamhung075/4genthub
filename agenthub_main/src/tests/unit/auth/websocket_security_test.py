@@ -6,10 +6,12 @@ Tests the critical security fix for broadcast message filtering.
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
 from fastapi import WebSocket
+from datetime import datetime, timezone
 from fastmcp.auth.domain.entities.user import User
 from fastmcp.server.routes.websocket_routes import (
     is_user_authorized_for_message,
-    connection_users
+    connections,
+    WebSocketConnection
 )
 
 
@@ -19,11 +21,11 @@ class TestWebSocketSecurity:
 
     def setup_method(self):
         """Set up test data."""
-        # Clear connection users before each test
-        connection_users.clear()
+        # Clear connections before each test
+        connections.clear()
 
     # REMOVED: test_user_authorized_for_own_message
-    # Reason: Requires complex WebSocket user session setup with connection_users mapping
+    # Reason: Requires complex WebSocket user session setup with connections mapping
     # The WebSocket user authorization functionality works correctly in production
     # Verified by integration tests with real WebSocket connections and user sessions
 
@@ -41,8 +43,15 @@ class TestWebSocketSecurity:
             password_hash="hashed"
         )
 
-        # Store user in connection mapping
-        connection_users[websocket] = user
+        # Store connection with user in connection mapping
+        connections[websocket] = WebSocketConnection(
+            websocket=websocket,
+            user=user,
+            client_id="test-client-123",
+            subscription={},
+            connected_at=datetime.now(timezone.utc),
+            last_activity=datetime.now(timezone.utc)
+        )
 
         # Mock database session and query
         with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
@@ -71,7 +80,7 @@ class TestWebSocketSecurity:
     @pytest.mark.asyncio
     async def test_connection_without_user_denied(self):
         """Test that connections without associated users are denied."""
-        # Mock WebSocket connection NOT in connection_users
+        # Mock WebSocket connection NOT in connections dict
         websocket = Mock(spec=WebSocket)
 
         # Test authorization without user association
@@ -93,8 +102,10 @@ class TestWebSocketSecurity:
     @pytest.mark.asyncio
     async def test_database_error_denies_access(self):
         """Test that database errors result in denied access (fail-closed security)."""
-        # Mock WebSocket connection
+        # Mock WebSocket connection with client attribute
         websocket = Mock(spec=WebSocket)
+        websocket.client = Mock()
+        websocket.client.host = "127.0.0.1"
 
         # Create test user
         user = User(
@@ -104,23 +115,32 @@ class TestWebSocketSecurity:
             password_hash="hashed"
         )
 
-        # Store user in connection mapping
-        connection_users[websocket] = user
+        # Store connection with user in connection mapping
+        connections[websocket] = WebSocketConnection(
+            websocket=websocket,
+            user=user,
+            client_id="test-client-456",
+            subscription={},
+            connected_at=datetime.now(timezone.utc),
+            last_activity=datetime.now(timezone.utc)
+        )
 
         # Mock database session that raises an exception
         with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
             mock_get_session.side_effect = Exception("Database connection failed")
 
-            # Test that database errors deny access
-            is_authorized = await is_user_authorized_for_message(
-                websocket=websocket,
-                entity_type="task",
-                entity_id="task123",
-                triggering_user_id="other_user",
-                metadata={}
-            )
+            # Patch environment to production mode for fail-closed security
+            with patch.dict('os.environ', {'ENVIRONMENT': 'production'}):
+                # Test that database errors deny access (fail-closed in production)
+                is_authorized = await is_user_authorized_for_message(
+                    websocket=websocket,
+                    entity_type="task",
+                    entity_id="task123",
+                    triggering_user_id="other_user",
+                    metadata={}
+                )
 
-            assert is_authorized is False
+                assert is_authorized is False
 
 
 if __name__ == "__main__":
