@@ -47,7 +47,7 @@ dependencies = [
     "prometheus-client>=0.21.1", # Prometheus metrics for observability
 ]
 requires-python = ">=3.14"
-readme = "README.md"
+readme = "../README.md"
 license = "Apache-2.0"
 
 keywords = [
