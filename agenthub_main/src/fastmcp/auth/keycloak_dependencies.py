@@ -69,18 +69,31 @@ async def get_current_user_universal(
 ) -> User:
     """
     Get the current authenticated user from either Keycloak or local JWT token.
-    
+
     This dependency first tries to validate as a Keycloak token (RS256),
     then falls back to local JWT validation (HS256).
     """
+    # Check AUTH_ENABLED bypass
+    auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() == "true"
+
+    if not auth_enabled:
+        # Return default dev user
+        logger.warning("🔓 AUTH_ENABLED=false - Returning default user (development mode)")
+        return User(
+            id=os.getenv("DEFAULT_USER_ID", "dev-user-00000000-0000-0000-0000-000000000000"),
+            email=os.getenv("DEFAULT_USER_EMAIL", "dev@localhost"),
+            username=os.getenv("DEFAULT_USERNAME", "developer"),
+            password_hash="bypass-no-auth"
+        )
+
     token = credentials.credentials
-    
+
     # First, try to decode as Keycloak token (without verification to check structure)
     try:
         # Decode without verification to check issuer
         unverified_payload = jwt.decode(token, options={"verify_signature": False})
         issuer = unverified_payload.get("iss", "")
-        
+
         # Check if this is a Keycloak token
         if KEYCLOAK_URL and issuer.startswith(KEYCLOAK_URL):
             logger.debug("Detected Keycloak token, validating with Keycloak")
@@ -88,7 +101,7 @@ async def get_current_user_universal(
         else:
             logger.debug("Not a Keycloak token, trying local validation")
             return validate_local_token(token)
-            
+
     except jwt.DecodeError:
         # If we can't even decode it, try local validation
         logger.debug("Failed to decode token structure, trying local validation")

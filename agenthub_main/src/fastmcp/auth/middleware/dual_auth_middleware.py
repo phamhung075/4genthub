@@ -71,23 +71,41 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         """
         Process request and apply unified authentication.
-        
+
         A single token authenticates for all request types.
-        
+
         Args:
             request: Incoming HTTP request
             call_next: Next middleware in chain
-            
+
         Returns:
             HTTP response
         """
+        # Check if authentication is globally disabled
+        import os
+        auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() == "true"
+
+        if not auth_enabled:
+            # Development mode: Bypass auth and inject default user
+            logger.warning("🔓 AUTH_ENABLED=false - Bypassing authentication (development mode)")
+            request.state.user_id = os.getenv("DEFAULT_USER_ID", "dev-user-00000000-0000-0000-0000-000000000000")
+            request.state.auth_type = "bypass"
+            request.state.auth_info = {
+                'user_id': request.state.user_id,
+                'email': os.getenv("DEFAULT_USER_EMAIL", "dev@localhost"),
+                'auth_method': 'bypass_dev_mode',
+                'username': os.getenv("DEFAULT_USERNAME", "developer")
+            }
+            logger.info(f"🔓 Injected default user: {request.state.user_id} ({request.state.auth_info['email']})")
+            return await call_next(request)
+
         # Detect request type (for logging and error formatting only)
         request_type = self._detect_request_type(request)
-        
+
         # Add debug logging
         logger.debug(f"🔍 UNIFIED AUTH: Processing {request.method} {request.url.path}")
         logger.debug(f"🔍 UNIFIED AUTH: Request type: {request_type} (for error formatting)")
-        
+
         # Skip authentication for certain paths
         skip_auth_result = self._should_skip_auth(request)
         if skip_auth_result:
