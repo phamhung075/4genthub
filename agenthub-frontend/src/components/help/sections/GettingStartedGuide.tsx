@@ -1,6 +1,7 @@
 import { Card } from '../../ui/card';
 import CommandBox from '../shared/CommandBox';
 import { Play, Zap } from 'lucide-react';
+import type { HelpSectionData } from './WhatIs4genthub';
 
 interface GettingStartedGuideProps {
   expandedSections: Record<string, boolean>;
@@ -22,7 +23,7 @@ const GettingStartedGuide= ({ expandedSections, toggleSection }: GettingStartedG
           </p>
           <div className="mt-2 p-2 bg-white/50 dark:bg-black/50 rounded">
             <code className="text-sm font-mono text-blue-900 dark:text-blue-100">
-              python3 .claude/hooks/setup_hooks.py
+              python3 .claude/setup.py
             </code>
             <span className="text-xs text-blue-700 dark:text-blue-300 ml-2">← One command does it all!</span>
           </div>
@@ -50,43 +51,43 @@ const GettingStartedGuide= ({ expandedSections, toggleSection }: GettingStartedG
             </Card>
 
             <Card className="p-4 border-l-4 border-green-500 bg-green-50 dark:bg-green-950">
-              <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">Step 2: Install Python 3.12</h5>
+              <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">Step 2: Install Python 3.14 (Recommended) or 3.8+</h5>
               <div className="space-y-3">
                 <p className="text-sm text-green-800 dark:text-green-200 mb-3">
-                  4genthub requires Python 3.12 (exact version) for the client hooks:
+                  4genthub is optimized for Python 3.14 but works with Python 3.8+ for the client hooks:
                 </p>
 
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-green-900 dark:text-green-100">Linux (Ubuntu/Debian):</div>
                   <CommandBox
-                    command="sudo apt update && sudo apt install python3.12 python3.12-venv"
-                    title="Install Python 3.12"
-                    description=""
+                    command="sudo apt update && sudo apt install python3.14 python3.14-venv"
+                    title="Install Python 3.14 (Recommended)"
+                    description="Falls back to python3 if 3.14 unavailable"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-green-900 dark:text-green-100">macOS:</div>
                   <CommandBox
-                    command="brew install python@3.12"
+                    command="brew install python@3.14"
                     title="Install using Homebrew"
-                    description=""
+                    description="Or use pyenv for version management"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-green-900 dark:text-green-100">Windows (WSL):</div>
                   <CommandBox
-                    command="sudo apt update && sudo apt install python3.12 python3.12-venv"
+                    command="sudo apt update && sudo apt install python3.14 python3.14-venv"
                     title="Install in WSL Ubuntu"
                     description="First ensure WSL is installed with Ubuntu"
                   />
                 </div>
 
                 <CommandBox
-                  command="python3.12 --version"
+                  command="python3 --version"
                   title="Verify Installation"
-                  description="Should output: Python 3.12.x"
+                  description="Should output: Python 3.8+ (3.14 recommended for best performance)"
                 />
               </div>
             </Card>
@@ -112,8 +113,8 @@ const GettingStartedGuide= ({ expandedSections, toggleSection }: GettingStartedG
 
                 <CommandBox
                   command="git submodule add git@github.com:phamhung075/4genthub-hooks.git .claude"
-                  title="Add 4genthub-hooks as submodule"
-                  description=""
+                  title="⭐ Add 4genthub-hooks as submodule (RECOMMENDED)"
+                  description="Easy updates across all projects with one command!"
                 />
 
                 <CommandBox
@@ -123,55 +124,59 @@ const GettingStartedGuide= ({ expandedSections, toggleSection }: GettingStartedG
                 />
 
                 <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-lg">
-                  <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2">🎯 Simplified Setup - Run ONE Command:</p>
+                  <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2">🎯 Automated Setup Wizard - Run ONE Command:</p>
 
                   <CommandBox
-                    command="python3 .claude/hooks/setup_hooks.py"
-                    title="Run Automated Setup"
-                    description="Handles all configuration automatically"
+                    command="python3 .claude/setup.py"
+                    title="Run Automated Setup Wizard"
+                    description="Interactive wizard with Python auto-detection"
                   />
 
                   <p className="text-xs text-purple-800 dark:text-purple-200 mt-3 mb-2">
-                    This setup script automatically:
+                    The wizard will guide you through 3 quick questions:
                   </p>
-                  <ul className="text-xs text-purple-700 dark:text-purple-300 space-y-1 ml-4 list-disc list-inside">
-                    <li>✅ Creates settings.json from template with correct paths</li>
-                    <li>✅ Updates .gitignore to exclude local files</li>
-                    <li>✅ Untracks configuration files from git</li>
-                    <li>✅ Validates all required hook files</li>
-                    <li>✅ Tests hook execution</li>
-                  </ul>
-
-                  <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mt-3 mb-2">Then follow the prompts to:</p>
-
-                  <ol className="text-xs text-purple-700 dark:text-purple-300 space-y-2 ml-4 list-decimal list-inside">
-                    <li>
-                      <strong>Copy CLAUDE configuration files</strong> (if not present):
-                      <div className="ml-4 mt-1">
-                        <code className="text-xs bg-purple-200 dark:bg-purple-800 px-1 rounded">
-                          cp .claude/copy-to-root-project-rename-to:CLAUDE.md CLAUDE.md
-                        </code>
-                      </div>
-                    </li>
-                    <li>
-                      <strong>Create API configuration</strong>:
-                      <div className="ml-4 mt-1">
-                        <code className="text-xs bg-purple-200 dark:bg-purple-800 px-1 rounded">
-                          cp .claude/.mcp.json.sample .mcp.json
-                        </code>
-                      </div>
-                    </li>
-                    <li>
-                      <strong>Configure hook protection</strong> (customize for your project):
-                      <div className="ml-4 mt-1 text-xs text-purple-600 dark:text-purple-400">
-                        Review and edit the files in .claude/hooks/config/
-                      </div>
-                    </li>
+                  <ol className="text-xs text-purple-700 dark:text-purple-300 space-y-1 ml-4 list-decimal list-inside">
+                    <li><strong>Python path?</strong> Auto-detected (just press Enter)</li>
+                    <li><strong>Which AI tool?</strong> Claude Code / Codex / Both</li>
+                    <li><strong>Token strategy?</strong> Economic (recommended) / Max Performance</li>
                   </ol>
 
-                  <p className="text-xs text-purple-800 dark:text-purple-200 mt-3">
-                    ⚠️ Don't forget to edit <strong>.mcp.json</strong> and add your API token from Step 1
+                  <p className="text-xs text-purple-800 dark:text-purple-200 mt-3 mb-2">
+                    Setup automatically handles:
                   </p>
+                  <ul className="text-xs text-purple-700 dark:text-purple-300 space-y-1 ml-4 list-disc list-inside">
+                    <li>✅ Creates settings.json from template with correct paths (9 locations updated)</li>
+                    <li>✅ Deploys configuration files (__claude_hook__allowed_root_files, __claude_hook__valid_test_paths)</li>
+                    <li>✅ Copies appropriate rules files (CLAUDE.md, CLAUDE.local.md, AGENTS.md based on choice)</li>
+                    <li>✅ Deploys .env.claude environment configuration (for logging paths, AI_DOCS, etc.)</li>
+                    <li>✅ Validates all configurations</li>
+                    <li>✅ Works in any nested project structure (paths auto-detected)</li>
+                  </ul>
+
+                  <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mt-3 mb-2">🤖 Next: Generate Project-Specific Rules (RECOMMENDED)</p>
+                  <p className="text-xs text-purple-800 dark:text-purple-200 mb-2">
+                    In Claude Code, run this command to auto-generate a custom CLAUDE.local.md tailored to YOUR project:
+                  </p>
+                  <div className="ml-4 mb-2">
+                    <code className="text-xs bg-purple-200 dark:bg-purple-800 px-2 py-1 rounded">
+                      /generate-local-rules
+                    </code>
+                    <span className="text-xs text-purple-700 dark:text-purple-300 ml-2">or shorter:</span>
+                    <code className="text-xs bg-purple-200 dark:bg-purple-800 px-2 py-1 rounded ml-1">
+                      /init-local
+                    </code>
+                  </div>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                    Analyzes your project structure, detects tech stack, and creates project-specific configuration!
+                  </p>
+
+                  <p className="text-xs text-purple-800 dark:text-purple-200 mt-3">
+                    ⚠️ Don't forget to:
+                  </p>
+                  <ul className="text-xs text-purple-700 dark:text-purple-300 space-y-1 ml-4 list-disc list-inside">
+                    <li>Edit <strong>.mcp.json</strong> and add your API token from Step 1</li>
+                    <li>Review <strong>.env.claude</strong> to customize logging paths (optional - defaults work for most projects)</li>
+                  </ul>
                 </div>
               </div>
             </Card>
@@ -254,9 +259,31 @@ const GettingStartedGuide= ({ expandedSections, toggleSection }: GettingStartedG
           <ul className="text-xs text-red-700 dark:text-red-300 space-y-1 ml-4 list-disc list-inside">
             <li>The error message shows EXACTLY which files are missing</li>
             <li>Follow the provided fix commands to resolve</li>
-            <li>Run <code className="bg-red-200 dark:bg-red-800 px-1 rounded">python3 .claude/hooks/setup_hooks.py</code> again if needed</li>
+            <li>Run <code className="bg-red-200 dark:bg-red-800 px-1 rounded">python3 .claude/setup.py</code> again if needed (idempotent - safe to re-run)</li>
             <li>All 5 required files must exist: settings.json, .mcp.json, CLAUDE.md, and both hook config files</li>
           </ul>
+        </div>
+
+        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800 mb-6">
+          <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            🔄 Updating Hooks Across All Projects
+          </h4>
+          <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+            If you used git submodule (recommended), you can update .claude hooks across all your projects:
+          </p>
+          <CommandBox
+            command="git submodule update --remote .claude"
+            title="Update Single Project"
+            description="Updates .claude to latest version in current project"
+          />
+          <CommandBox
+            command='find ~/projects -name ".gitmodules" -execdir git submodule update --remote .claude \;'
+            title="Update All Projects Simultaneously 🚀"
+            description="Updates .claude in all projects with one command!"
+          />
+          <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+            This is why git submodule is recommended - update once, applies to all projects!
+          </p>
         </div>
 
         <div className="bg-amber-50 dark:bg-amber-950 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
