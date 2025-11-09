@@ -55,6 +55,12 @@ export const IS_STAGING = ENVIRONMENT === 'staging';
 // Debug Configuration
 export const DEBUG_MODE = getEnvVar('VITE_DEBUG', 'false') === 'true';
 
+// Authentication Configuration
+export const DISABLE_AUTH = getEnvVar('VITE_DISABLE_AUTH', 'false') === 'true';
+
+// Feature Flags
+export const ENABLE_MARKETPLACE = getEnvVar('VITE_ENABLE_MARKETPLACE', 'true') === 'true';
+
 // Application Configuration
 export const APP_NAME = getEnvVar('VITE_APP_NAME', 'agenthub');
 
@@ -99,6 +105,15 @@ if (IS_DEVELOPMENT || DEBUG_MODE) {
   console.info('  - Final WS_URL:', WS_URL);
   console.info('  - IS_DEVELOPMENT:', IS_DEVELOPMENT);
   console.info('  - DEBUG_MODE:', DEBUG_MODE);
+  console.info('  - DISABLE_AUTH:', DISABLE_AUTH);
+  console.info('  - ENABLE_MARKETPLACE:', ENABLE_MARKETPLACE);
+
+  // Warn if authentication is disabled
+  if (DISABLE_AUTH) {
+    console.warn('⚠️  WARNING: Authentication is DISABLED (VITE_DISABLE_AUTH=true)');
+    console.warn('⚠️  This should ONLY be used in local development!');
+    console.warn('⚠️  Users can access the app without logging in.');
+  }
 
   // Log if URL was auto-upgraded to HTTPS
   if (configuredApiUrl !== API_BASE_URL) {
