@@ -109,6 +109,59 @@ const Troubleshooting = ({ expandedSections, toggleSection }: TroubleshootingPro
               </ul>
             </div>
           </Card>
+
+          <Card className="p-4 bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 mb-4">
+            <h5 className="font-semibold text-amber-900 dark:text-amber-100 flex items-center mb-2">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Authentication Issues
+            </h5>
+            <div className="text-sm text-amber-800 dark:text-amber-200 space-y-2">
+              <p><strong>Problem:</strong> Getting "Unauthorized" errors or can't login</p>
+              <p><strong>Solutions:</strong></p>
+
+              <div className="mt-3 mb-2">
+                <strong className="block mb-1">If using Keycloak (AUTH_ENABLED=true):</strong>
+                <ul className="list-disc list-inside ml-4 space-y-1">
+                  <li>Verify Keycloak is running and accessible</li>
+                  <li>Check KEYCLOAK_URL, KEYCLOAK_REALM in .env file</li>
+                  <li>Ensure client is configured in Keycloak admin</li>
+                  <li>Verify JWT_SECRET_KEY matches between frontend and backend</li>
+                  <li>Check token expiry time (default: 1 hour)</li>
+                </ul>
+              </div>
+
+              <div className="mt-3 mb-2">
+                <strong className="block mb-1">If bypassing auth (AUTH_ENABLED=false):</strong>
+                <ul className="list-disc list-inside ml-4 space-y-1">
+                  <li>Verify <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">AUTH_ENABLED=false</code> in .env or .env.dev</li>
+                  <li>Verify <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">VITE_DISABLE_AUTH=true</code> for frontend</li>
+                  <li>Restart services: <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">./build-menu.sh</code> option R</li>
+                  <li>Check backend logs for "🔓 AUTH_ENABLED=false - Bypassing authentication"</li>
+                  <li>Verify DEFAULT_USER_ID is set (or using default dev user)</li>
+                </ul>
+              </div>
+
+              <div className="mt-3 p-2 bg-amber-100 dark:bg-amber-900 rounded">
+                <p className="font-semibold mb-1">Quick Fix - Enable Auth Bypass:</p>
+                <ol className="list-decimal list-inside space-y-1 text-xs">
+                  <li>Edit .env: Set <code className="bg-amber-200 dark:bg-amber-800 px-1 rounded">AUTH_ENABLED=false</code></li>
+                  <li>Edit .env: Set <code className="bg-amber-200 dark:bg-amber-800 px-1 rounded">VITE_DISABLE_AUTH=true</code></li>
+                  <li>Run: <code className="bg-amber-200 dark:bg-amber-800 px-1 rounded">./build-menu.sh</code> → Option R (Restart)</li>
+                  <li>Or view complete guide: <code className="bg-amber-200 dark:bg-amber-800 px-1 rounded">./build-menu.sh</code> → Option A</li>
+                </ol>
+              </div>
+
+              <div className="mt-3">
+                <strong className="block mb-1">Common Error Messages:</strong>
+                <ul className="list-disc list-inside ml-4 space-y-1 text-xs">
+                  <li><code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">"Token expired"</code> → Re-login or enable auth bypass</li>
+                  <li><code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">"Invalid token"</code> → Check JWT_SECRET_KEY consistency</li>
+                  <li><code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">"Keycloak not configured"</code> → Set AUTH_ENABLED=false or configure Keycloak</li>
+                  <li><code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">"401 Unauthorized"</code> → Enable auth bypass or provide valid token</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
         </div>
 
         <div>
@@ -142,6 +195,24 @@ const Troubleshooting = ({ expandedSections, toggleSection }: TroubleshootingPro
               command="./build-menu.sh"
               title="Access Docker Menu"
               description="Interactive menu for all Docker operations"
+            />
+
+            <CommandBox
+              command="./build-menu.sh auth-help"
+              title="View Auth Bypass Documentation"
+              description="Complete guide to bypassing authentication for local development"
+            />
+
+            <CommandBox
+              command="grep 'AUTH_ENABLED\|VITE_DISABLE_AUTH' .env .env.dev 2>/dev/null"
+              title="Check Auth Configuration"
+              description="Show current authentication settings from environment files"
+            />
+
+            <CommandBox
+              command="docker logs agenthub-backend 2>&1 | grep -i 'auth\|bypass'"
+              title="Check Auth Status in Logs"
+              description="View authentication-related log messages"
             />
 
             <CommandBox

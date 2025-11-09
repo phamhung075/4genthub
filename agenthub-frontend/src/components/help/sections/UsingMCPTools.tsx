@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../../ui/card';
 import RawJSONDisplay from '../../ui/RawJSONDisplay';
+import type { HelpSectionData } from './WhatIs4genthub';
 
 interface UsingMCPToolsProps {
   expandedSections: Record<string, boolean>;

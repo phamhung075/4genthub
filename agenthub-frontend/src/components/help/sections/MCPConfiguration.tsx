@@ -1,6 +1,7 @@
 import { Card } from '../../ui/card';
 import RawJSONDisplay from '../../ui/RawJSONDisplay';
 import { Settings, Lightbulb } from 'lucide-react';
+import type { HelpSectionData } from './WhatIs4genthub';
 
 interface MCPConfigurationProps {
   expandedSections: Record<string, boolean>;
