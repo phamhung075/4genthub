@@ -7,6 +7,7 @@ import { Brand } from './ui/Brand';
 import { MenuBar } from './ui/glow-menu';
 import UserProfileDropdown from './UserProfileDropdown';
 import { WebSocketStatus } from './WebSocketStatus';
+import { ENABLE_MARKETPLACE } from '../config/environment';
 
 export const Header: React.FC = () => {
   const authContext = useContext(AuthContext);
@@ -21,8 +22,8 @@ export const Header: React.FC = () => {
 
   const { user } = authContext;
 
-  // Define menu items for the glow menu with original vibrant colors
-  const menuItems = [
+  // Define all menu items for the glow menu with original vibrant colors
+  const allMenuItems = [
     {
       icon: Home,
       label: "Dashboard",
@@ -43,6 +44,7 @@ export const Header: React.FC = () => {
       href: "/agents/marketplace",
       gradient: "radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(219,39,119,0.06) 50%, rgba(190,24,93,0) 100%)",
       iconColor: "text-pink-500",
+      enabled: ENABLE_MARKETPLACE, // Conditionally enabled based on environment
     },
     {
       icon: Users,
@@ -80,6 +82,9 @@ export const Header: React.FC = () => {
       iconColor: theme === 'dark' ? "text-yellow-500" : "text-indigo-500",
     },
   ];
+
+  // Filter menu items based on environment flags
+  const menuItems = allMenuItems.filter(item => item.enabled !== false);
 
   // Get the current active item based on the current route
   const getActiveItem = () => {
@@ -142,13 +147,15 @@ export const Header: React.FC = () => {
                   >
                     <Home className="h-5 w-5" />
                   </Link>
-                  <Link
-                    to="/agents/marketplace"
-                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-                    title="Agent Marketplace"
-                  >
-                    <Store className="h-5 w-5" />
-                  </Link>
+                  {ENABLE_MARKETPLACE && (
+                    <Link
+                      to="/agents/marketplace"
+                      className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                      title="Agent Marketplace"
+                    >
+                      <Store className="h-5 w-5" />
+                    </Link>
+                  )}
                   <Link
                     to="/agents/my-agents"
                     className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"

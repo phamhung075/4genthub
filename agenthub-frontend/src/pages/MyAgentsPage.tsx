@@ -46,6 +46,7 @@ import logger from '../utils/logger';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocketV2';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
+import { ENABLE_MARKETPLACE } from '../config/environment';
 
 /**
  * My Agents Page Component
@@ -460,13 +461,15 @@ export const MyAgentsPage: React.FC = () => {
               >
                 Private
               </Button>
-              <Button
-                variant={selectedVisibility === 'public' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedVisibility('public')}
-              >
-                Public
-              </Button>
+              {ENABLE_MARKETPLACE && (
+                <Button
+                  variant={selectedVisibility === 'public' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedVisibility('public')}
+                >
+                  Public
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
