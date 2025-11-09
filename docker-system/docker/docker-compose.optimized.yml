@@ -42,6 +42,8 @@ services:
       - APP_LOG_LEVEL=WARNING
       - PYTHONOPTIMIZE=1
       - WEB_CONCURRENCY=2
+      # Authentication (can be overridden via environment)
+      - AUTH_ENABLED=${AUTH_ENABLED:-true}
     volumes:
       - backend-data:/app/data
     ports:
@@ -71,6 +73,9 @@ services:
     environment:
       - NODE_ENV=production
       - VITE_API_URL=http://localhost:8000
+      # Feature flags (can be overridden via environment)
+      - VITE_DISABLE_AUTH=${VITE_DISABLE_AUTH:-false}
+      - VITE_ENABLE_MARKETPLACE=${VITE_ENABLE_MARKETPLACE:-true}
     volumes:
       - frontend-static:/usr/share/nginx/html:ro
     ports:

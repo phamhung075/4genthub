@@ -27,6 +27,10 @@ ARG VITE_KEYCLOAK_URL=https://your-keycloak-server.com
 ARG VITE_KEYCLOAK_REALM=your-realm
 ARG VITE_KEYCLOAK_CLIENT_ID=your-client-id
 
+# Group 4: Feature Flags - Application behavior toggles
+ARG VITE_DISABLE_AUTH=false
+ARG VITE_ENABLE_MARKETPLACE=true
+
 # Convert build args to environment variables with defaults (consolidated for faster builds)
 # Group 1: Node and environment configuration
 ENV NODE_ENV=${NODE_ENV} \
@@ -45,6 +49,10 @@ ENV VITE_KEYCLOAK_URL=${VITE_KEYCLOAK_URL} \
 # Group 4: Build metadata
 ENV VITE_BUILD_TIME=${VITE_BUILD_TIME} \
     VITE_BUILD_SHA=${VITE_BUILD_SHA}
+
+# Group 5: Feature flags
+ENV VITE_DISABLE_AUTH=${VITE_DISABLE_AUTH} \
+    VITE_ENABLE_MARKETPLACE=${VITE_ENABLE_MARKETPLACE}
 
 # Copy package files from frontend directory (project uses pnpm)
 COPY agenthub-frontend/package.json ./
@@ -132,6 +140,12 @@ echo "  Keycloak URL: ${VITE_KEYCLOAK_URL:-Not configured}"
 echo "  Keycloak Realm: ${VITE_KEYCLOAK_REALM:-Not configured}"
 echo "  Keycloak Client: ${VITE_KEYCLOAK_CLIENT_ID:-Not configured}"
 echo "  Debug Mode: ${VITE_ENABLE_DEBUG:-false}"
+echo "  Auth Bypass: ${VITE_DISABLE_AUTH:-false}"
+echo "  Marketplace Enabled: ${VITE_ENABLE_MARKETPLACE:-true}"
+if [ "${VITE_DISABLE_AUTH:-false}" = "true" ]; then
+    echo "  ⚠️  WARNING: Authentication is DISABLED"
+    echo "  ⚠️  This should ONLY be used in local development!"
+fi
 echo "================================================"
 
 # Build and serve the application (no hot-reload in Docker)

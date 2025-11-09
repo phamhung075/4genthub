@@ -336,9 +336,100 @@ show_header() {
     echo -e "${RESET}"
     echo -e "${YELLOW}Backend: Port ${FASTMCP_PORT:-8000} | Frontend: Port ${FRONTEND_PORT:-3800}${RESET}"
     echo -e "${YELLOW}Database: ${DATABASE_TYPE:-postgresql} (${DATABASE_HOST:-localhost}:${DATABASE_PORT:-5432})${RESET}"
-    echo -e "${YELLOW}Auth: ${AUTH_PROVIDER:-keycloak} (enabled: ${AUTH_ENABLED:-true})${RESET}"
+
+    # Enhanced auth status display with bypass indicator
+    if [[ "${AUTH_ENABLED:-true}" == "false" ]]; then
+        echo -e "${GREEN}🔓 Auth: BYPASSED for Development (No Keycloak needed)${RESET}"
+        echo -e "${CYAN}   → Backend: Using DEFAULT_USER_ID=${DEFAULT_USER_ID:-dev-user-*}${RESET}"
+        echo -e "${CYAN}   → Frontend: VITE_DISABLE_AUTH=${VITE_DISABLE_AUTH:-true}${RESET}"
+    else
+        echo -e "${YELLOW}🔐 Auth: ${AUTH_PROVIDER:-keycloak} (enabled: ${AUTH_ENABLED:-true})${RESET}"
+    fi
+
     echo -e "${YELLOW}All builds use --no-cache (provenance optimized)${RESET}"
     echo ""
+}
+
+# Show authentication bypass help
+show_auth_help() {
+    clear
+    echo -e "${CYAN}${BOLD}"
+    echo "╔════════════════════════════════════════════════════════════════════╗"
+    echo "║          Authentication Bypass - Development Mode Setup         ║"
+    echo "╚════════════════════════════════════════════════════════════════════╝"
+    echo -e "${RESET}"
+    echo ""
+    echo -e "${GREEN}${BOLD}📖 Overview${RESET}"
+    echo "────────────────────────────────────────────────────────────────────"
+    echo "When working locally, you can bypass Keycloak authentication to develop"
+    echo "without needing an external authentication server running."
+    echo ""
+    echo -e "${CYAN}${BOLD}🔧 How to Enable Auth Bypass${RESET}"
+    echo "────────────────────────────────────────────────────────────────────"
+    echo "1. Edit your .env or .env.dev file and set:"
+    echo ""
+    echo -e "   ${YELLOW}# Backend: Bypass all authentication${RESET}"
+    echo -e "   ${GREEN}AUTH_ENABLED=false${RESET}"
+    echo ""
+    echo -e "   ${YELLOW}# Frontend: Disable auth UI${RESET}"
+    echo -e "   ${GREEN}VITE_DISABLE_AUTH=true${RESET}"
+    echo ""
+    echo "2. Restart your development environment:"
+    echo -e "   ${CYAN}./docker-menu.sh${RESET} → Option ${BOLD}R${RESET} (Restart Dev Mode)"
+    echo ""
+    echo -e "${MAGENTA}${BOLD}⚙️  What Happens When Bypassed${RESET}"
+    echo "────────────────────────────────────────────────────────────────────"
+    echo -e "${YELLOW}Backend (AUTH_ENABLED=false):${RESET}"
+    echo "  ✅ All API requests bypass authentication middleware"
+    echo "  ✅ Default user context injected automatically:"
+    echo -e "     • User ID: ${CYAN}${DEFAULT_USER_ID:-dev-user-00000000-0000-0000-0000-000000000000}${RESET}"
+    echo -e "     • Email: ${CYAN}${DEFAULT_USER_EMAIL:-dev@localhost}${RESET}"
+    echo -e "     • Username: ${CYAN}${DEFAULT_USERNAME:-developer}${RESET}"
+    echo "  ✅ No Keycloak connection required"
+    echo "  ✅ Logs will show: 🔓 AUTH_ENABLED=false - Bypassing authentication"
+    echo ""
+    echo -e "${YELLOW}Frontend (VITE_DISABLE_AUTH=true):${RESET}"
+    echo "  ✅ Login/signup forms hidden"
+    echo "  ✅ Direct access to all features"
+    echo "  ✅ No token management needed"
+    echo ""
+    echo -e "${RED}${BOLD}🔐 Production Configuration${RESET}"
+    echo "────────────────────────────────────────────────────────────────────"
+    echo "⚠️  For production deployment, always use:"
+    echo -e "   ${GREEN}AUTH_ENABLED=true${RESET}"
+    echo -e "   ${GREEN}VITE_DISABLE_AUTH=false${RESET}"
+    echo ""
+    echo -e "${CYAN}${BOLD}📋 Environment Variables Reference${RESET}"
+    echo "────────────────────────────────────────────────────────────────────"
+    echo -e "${YELLOW}Backend Auth Control:${RESET}"
+    echo "  AUTH_ENABLED=false          → Bypass authentication"
+    echo "  DEFAULT_USER_ID=<uuid>      → Custom dev user ID"
+    echo "  DEFAULT_USER_EMAIL=<email>  → Custom dev user email"
+    echo "  DEFAULT_USERNAME=<name>     → Custom dev username"
+    echo ""
+    echo -e "${YELLOW}Frontend Auth Control:${RESET}"
+    echo "  VITE_DISABLE_AUTH=true      → Hide login UI"
+    echo ""
+    echo -e "${GREEN}${BOLD}✅ Current Configuration${RESET}"
+    echo "────────────────────────────────────────────────────────────────────"
+    if [[ "${AUTH_ENABLED:-true}" == "false" ]]; then
+        echo -e "  Backend Auth: ${GREEN}BYPASSED ✓${RESET}"
+        echo -e "  Default User: ${CYAN}${DEFAULT_USER_ID:-dev-user-*} (${DEFAULT_USER_EMAIL:-dev@localhost})${RESET}"
+    else
+        echo -e "  Backend Auth: ${YELLOW}ENABLED (Keycloak required)${RESET}"
+    fi
+
+    if [[ "${VITE_DISABLE_AUTH:-false}" == "true" ]]; then
+        echo -e "  Frontend Auth: ${GREEN}BYPASSED ✓${RESET}"
+    else
+        echo -e "  Frontend Auth: ${YELLOW}ENABLED (Login required)${RESET}"
+    fi
+    echo ""
+    echo -e "${CYAN}💡 Tip: This is perfect for local development, testing, and demos!${RESET}"
+    echo ""
+    echo "────────────────────────────────────────────────────────────────────"
+    echo -e "Press ${BOLD}Enter${RESET} to return to main menu..."
+    read
 }
 
 # Show main menu
@@ -360,6 +451,7 @@ show_main_menu() {
     echo "────────────────────────────────────────────────"
     echo "  D) 🚀 Start Dev Mode (Backend + Frontend locally)"
     echo "  R) 🔄 Restart Dev Mode (Apply new changes)"
+    echo "  A) 🔓 Auth Bypass Help (Local dev without Keycloak)"
     echo ""
     echo -e "${GREEN}${BOLD}⚡ Performance Mode (Low-Resource PC)${RESET}"
     echo "────────────────────────────────────────────────"
@@ -1691,6 +1783,7 @@ main() {
             stop-dev) stop_dev_mode; exit 0 ;;
             restart-dev) restart_dev_mode; exit 0 ;;
             start-dev) start_dev_mode; exit 0 ;;
+            auth-help) show_auth_help; exit 0 ;;
             0) exit 0 ;;  # Quick exit without menu
             *) echo "Unknown argument: $1"; exit 1 ;;
         esac
@@ -1712,6 +1805,7 @@ main() {
             [Xx]) clean_database_volume ;;
             [Dd]) start_dev_mode ;;
             [Rr]) restart_dev_mode ;;
+            [Aa]) show_auth_help ;;
             [Pp]) start_optimized_mode ;;
             [Mm]) monitor_performance ;;
             4) show_service_status ;;

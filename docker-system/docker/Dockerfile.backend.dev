@@ -128,6 +128,11 @@ echo "  Database Name: ${DATABASE_NAME}"
 echo "  Environment: ${ENV:-development}"
 echo "  Debug Mode: ${APP_DEBUG:-false}"
 echo "  Server Port: ${FASTMCP_PORT} (REST API + MCP Protocol)"
+echo "  Auth Enabled: ${AUTH_ENABLED:-true}"
+if [ "${AUTH_ENABLED:-true}" = "false" ]; then
+    echo "  ⚠️  WARNING: Authentication is DISABLED"
+    echo "  ⚠️  This should ONLY be used in local development!"
+fi
 echo "================================================"
 
 # Wait for database to be ready

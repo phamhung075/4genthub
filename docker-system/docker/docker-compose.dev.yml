@@ -99,6 +99,9 @@ services:
       VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID}
       VITE_ENV: ${VITE_ENV}
       NODE_ENV: ${NODE_ENV}
+      # Feature flags
+      VITE_DISABLE_AUTH: ${VITE_DISABLE_AUTH:-false}
+      VITE_ENABLE_MARKETPLACE: ${VITE_ENABLE_MARKETPLACE:-true}
     ports:
       - "${FRONTEND_PORT}:3800"
     depends_on:
