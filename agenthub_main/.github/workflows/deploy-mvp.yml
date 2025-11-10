@@ -73,14 +73,13 @@ jobs:
 
       - name: Run tests
         if: ${{ !inputs.skip_tests }}
-        env:
-          DATABASE_TYPE: postgresql
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_DB: agenthub_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
         run: |
+          export DATABASE_TYPE=postgresql
+          export POSTGRES_HOST=localhost
+          export POSTGRES_PORT=5432
+          export POSTGRES_DB=agenthub_test
+          export POSTGRES_USER=postgres
+          export POSTGRES_PASSWORD=postgres
           uv run pytest tests/ -v --tb=short
 
       - name: Run linting
