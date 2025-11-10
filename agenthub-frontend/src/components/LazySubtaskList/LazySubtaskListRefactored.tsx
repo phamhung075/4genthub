@@ -129,6 +129,7 @@ export function LazySubtaskListRefactored({
     openCompleteDialog,
     openDeleteDialog,
     closeAllDialogs,
+    setActiveDialog, // Add setActiveDialog to control active dialog state
     isClosingRef // Get the ref from the hook
   } = useSubtaskDialogs(projectId, taskTreeId);
 
@@ -288,7 +289,7 @@ export function LazySubtaskListRefactored({
           subtaskSummaries={filteredSubtasks}
           parentTaskId={parentTaskId}
           onDeleteDialogChange={(open) => !open && closeAllDialogs()}
-          onActiveDialogChange={() => {/* handle */}}
+          onActiveDialogChange={setActiveDialog}
           onDetailsDialogChange={(open) => !open && handleSubtaskDialogClose()}
           onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
           onCreateDialogChange={(open) => !open && closeAllDialogs()}
@@ -343,7 +344,7 @@ export function LazySubtaskListRefactored({
         subtaskSummaries={filteredSubtasks}
         parentTaskId={parentTaskId}
         onDeleteDialogChange={(open) => !open && closeAllDialogs()}
-        onActiveDialogChange={() => {/* handle */}}
+        onActiveDialogChange={setActiveDialog}
         onDetailsDialogChange={(open) => !open && handleSubtaskDialogClose()}
         onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
         onCreateDialogChange={(open) => !open && closeAllDialogs()}
