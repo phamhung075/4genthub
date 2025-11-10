@@ -74,6 +74,13 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests with coverage
+        env:
+          DATABASE_TYPE: postgresql
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agenthub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         run: |
           uv run pytest \
             --cov=src/fastmcp/agenthub \
@@ -264,10 +271,24 @@ jobs:
         run: uv sync --locked
 
       - name: Run integration tests
+        env:
+          DATABASE_TYPE: postgresql
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agenthub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         run: |
           uv run pytest tests/ -v --tb=short
 
       - name: Test task management MCP server
+        env:
+          DATABASE_TYPE: postgresql
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agenthub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         run: |
           # Test that the MCP server can start and respond
           timeout 10s uv run python -c "
