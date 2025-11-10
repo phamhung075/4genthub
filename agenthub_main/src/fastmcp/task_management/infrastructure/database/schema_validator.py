@@ -140,7 +140,6 @@ class SchemaValidator:
         # Generate summary
         summary = {
             'total_models': len(self.models),
-            'validated_models': len(validated_models),
             'issues_count': len(issues),
             'warnings_count': len(warnings),
             'status': 'PASS' if not issues else 'FAIL',
