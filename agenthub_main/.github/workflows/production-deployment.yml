@@ -4,6 +4,13 @@ env:
   PY_COLORS: 1
   MINIMUM_COVERAGE: 95
   MAX_PERFORMANCE_REGRESSION: 5
+  # Database configuration for tests
+  DATABASE_TYPE: postgresql
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: agenthub_test
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
 
 on:
   push:
@@ -37,6 +44,22 @@ jobs:
     timeout-minutes: 10
     outputs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: agenthub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v4
 
@@ -211,6 +234,22 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
       fail-fast: false
     timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: agenthub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v4
 
