@@ -12,7 +12,7 @@ os.environ['PDBPP_HIJACK_PDB'] = '0'
 
 try:
     from .server.mcp_entry_point import main
-except ImportError as e:
+except ImportError as _:
     # If import fails during container startup, try adding paths
     sys.path.insert(0, '/app/src')
     sys.path.insert(0, '/app')
