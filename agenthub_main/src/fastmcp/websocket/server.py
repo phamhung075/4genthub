@@ -8,21 +8,21 @@ and provides dual-track message processing.
 NO backward compatibility - clean v2.0 implementation only.
 """
 
-import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from datetime import UTC, datetime
+from typing import Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, HTTPException, Depends
-from starlette.applications import Starlette
-from starlette.routing import WebSocketRoute, Route
+from fastapi import (
+    FastAPI,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from starlette.responses import JSONResponse
-from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.routing import Route, WebSocketRoute
 
-from ..auth.keycloak_auth import KeycloakAuth, TokenValidation
-from ..task_management.infrastructure.database.database_config import get_db_config
-from .connection_manager import ConnectionManager
+from ..auth.keycloak_auth import KeycloakAuth
 from .batch_processor import BatchProcessor
+from .connection_manager import ConnectionManager
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class WebSocketServer:
 
         # Server state
         self.is_running = False
-        self.startup_time: Optional[str] = None
+        self.startup_time: str | None = None
 
         # Register WebSocket endpoints
         self._register_endpoints()
@@ -192,7 +192,7 @@ class WebSocketServer:
             await self.batch_processor.start()
 
             self.is_running = True
-            self.startup_time = datetime.now(timezone.utc).isoformat()
+            self.startup_time = datetime.now(UTC).isoformat()
 
             logger.info("WebSocketServer v2.0 started successfully")
 
@@ -224,7 +224,7 @@ class WebSocketServer:
         except Exception as e:
             logger.error(f"Error stopping WebSocketServer: {e}")
 
-    async def get_health_status(self) -> Dict[str, Any]:
+    async def get_health_status(self) -> dict[str, Any]:
         """
         Get WebSocket server health status.
 
@@ -250,7 +250,7 @@ class WebSocketServer:
             }
         }
 
-    async def get_detailed_stats(self) -> Dict[str, Any]:
+    async def get_detailed_stats(self) -> dict[str, Any]:
         """
         Get detailed WebSocket server statistics.
 
@@ -276,7 +276,7 @@ class WebSocketServer:
             }
         }
 
-    async def broadcast_message(self, message_data: Dict[str, Any]) -> bool:
+    async def broadcast_message(self, message_data: dict[str, Any]) -> bool:
         """
         Broadcast a message to all connected users (API endpoint).
 
@@ -323,7 +323,7 @@ class WebSocketServer:
         """
         return self.connection_manager.is_user_connected(user_id)
 
-    async def send_message_to_user(self, user_id: str, message_data: Dict[str, Any]) -> bool:
+    async def send_message_to_user(self, user_id: str, message_data: dict[str, Any]) -> bool:
         """
         Send message to specific user (API endpoint).
 
@@ -345,10 +345,10 @@ class WebSocketServer:
 
 
 # Global WebSocket server instance
-websocket_server: Optional[WebSocketServer] = None
+websocket_server: WebSocketServer | None = None
 
 
-def get_websocket_server() -> Optional[WebSocketServer]:
+def get_websocket_server() -> WebSocketServer | None:
     """
     Get the global WebSocket server instance.
 

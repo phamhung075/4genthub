@@ -13,17 +13,17 @@ try:
     from ...domain.entities.task import Task
     from ...domain.entities.project import Project  
     from ...domain.entities.git_branch import GitBranch
-except ImportError as e:
+except ImportError:
     pass
 
 try:
     from ...domain.repositories.task_repository import TaskRepository
     from ...domain.repositories.project_repository import ProjectRepository
     from ...domain.repositories.git_branch_repository import GitBranchRepository
-except ImportError as e:
+except ImportError:
     pass
 
 try:
     from ...domain.value_objects import AgentRole, EstimatedEffort, EffortLevel, CommonLabel, LabelValidator
-except ImportError as e:
+except ImportError:
     pass

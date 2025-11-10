@@ -5,15 +5,15 @@ This module provides authentication middleware for MCP tools using Keycloak toke
 It validates tokens from Keycloak and manages MCP tool access.
 """
 
-import os
 import logging
-import httpx
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timezone, timedelta
+import os
+from datetime import UTC, datetime, timedelta
 from functools import wraps
-from fastapi import HTTPException, Request, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
+from typing import Any
+
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from .keycloak_integration import KeycloakAuthProvider
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class MCPKeycloakAuth:
 
         logger.info(f"MCP Keycloak Auth initialized (enabled: {self.mcp_auth_enabled})")
 
-    async def validate_mcp_token(self, token: str) -> Dict[str, Any]:
+    async def validate_mcp_token(self, token: str) -> dict[str, Any]:
         """
         Validate MCP token from Keycloak
 
@@ -114,7 +114,7 @@ class MCPKeycloakAuth:
                 detail="Authentication service error"
             )
 
-    def _build_mcp_permissions(self, roles: List[str]) -> List[str]:
+    def _build_mcp_permissions(self, roles: list[str]) -> list[str]:
         """
         Build MCP permissions based on user roles
 
@@ -156,7 +156,7 @@ class MCPKeycloakAuth:
         # Remove duplicates
         return list(set(permissions))
 
-    def _merge_tool_permissions(self, target: Dict[str, List[str]], source: Dict[str, List[str]]) -> None:
+    def _merge_tool_permissions(self, target: dict[str, list[str]], source: dict[str, list[str]]) -> None:
         """
         Merge tool permissions by combining lists instead of overwriting them
 
@@ -171,7 +171,7 @@ class MCPKeycloakAuth:
             else:
                 target[category] = tools[:]
 
-    def _get_allowed_tools(self, roles: List[str]) -> Dict[str, List[str]]:
+    def _get_allowed_tools(self, roles: list[str]) -> dict[str, list[str]]:
         """
         Get list of allowed MCP tools based on roles
 
@@ -215,7 +215,7 @@ class MCPKeycloakAuth:
     async def get_current_user(
         self,
         credentials: HTTPAuthorizationCredentials = Depends(security)
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         FastAPI dependency to get current authenticated user
 
@@ -310,7 +310,7 @@ class MCPKeycloakAuth:
             return wrapper
         return decorator
 
-    async def create_mcp_session(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_mcp_session(self, user_data: dict[str, Any]) -> dict[str, Any]:
         """
         Create MCP session for authenticated user
 
@@ -320,7 +320,7 @@ class MCPKeycloakAuth:
         Returns:
             MCP session data
         """
-        session_id = f"mcp-{user_data['sub']}-{datetime.now(timezone.utc).timestamp()}"
+        session_id = f"mcp-{user_data['sub']}-{datetime.now(UTC).timestamp()}"
 
         session = {
             "session_id": session_id,
@@ -329,8 +329,8 @@ class MCPKeycloakAuth:
             "roles": user_data.get("roles", []),
             "permissions": user_data.get("mcp_permissions", []),
             "tools": user_data.get("mcp_tools", {}),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+            "created_at": datetime.now(UTC).isoformat(),
+            "expires_at": (datetime.now(UTC) + timedelta(hours=24)).isoformat()
         }
 
         # Store session in cache/database if needed
@@ -340,8 +340,8 @@ class MCPKeycloakAuth:
     async def validate_tool_request(
         self,
         tool_name: str,
-        user_data: Dict[str, Any],
-        parameters: Optional[Dict[str, Any]] = None
+        user_data: dict[str, Any],
+        parameters: dict[str, Any] | None = None
     ) -> bool:
         """
         Validate if user can execute specific tool with parameters
@@ -386,7 +386,7 @@ mcp_auth = MCPKeycloakAuth()
 # FastAPI dependencies
 async def get_mcp_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     FastAPI dependency for MCP authentication
 

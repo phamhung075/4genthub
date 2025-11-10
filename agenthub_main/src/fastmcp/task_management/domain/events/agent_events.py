@@ -5,9 +5,10 @@ These events track agent assignments, workload, collaboration, and coordination.
 All events follow the standardized BaseDomainEvent pattern.
 """
 
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
+
 from .base import BaseDomainEvent
 
 
@@ -18,9 +19,9 @@ class AgentAssigned(BaseDomainEvent):
     task_id: str = ""
     role: str = ""
     assigned_by: str = ""
-    responsibilities: List[str] = field(default_factory=list)
-    estimated_hours: Optional[float] = None
-    due_date: Optional[datetime] = None
+    responsibilities: list[str] = field(default_factory=list)
+    estimated_hours: float | None = None
+    due_date: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -30,8 +31,8 @@ class AgentUnassigned(BaseDomainEvent):
     task_id: str = ""
     unassigned_by: str = ""
     reason: str = ""
-    handoff_to_agent: Optional[str] = None
-    handoff_notes: Optional[str] = None
+    handoff_to_agent: str | None = None
+    handoff_notes: str | None = None
 
 
 @dataclass(frozen=True)
@@ -42,8 +43,8 @@ class WorkHandoffRequested(BaseDomainEvent):
     to_agent_id: str = ""
     task_id: str = ""
     work_summary: str = ""
-    completed_items: List[str] = field(default_factory=list)
-    remaining_items: List[str] = field(default_factory=list)
+    completed_items: list[str] = field(default_factory=list)
+    remaining_items: list[str] = field(default_factory=list)
     handoff_notes: str = ""
 
 
@@ -53,7 +54,7 @@ class WorkHandoffAccepted(BaseDomainEvent):
     handoff_id: str = ""
     accepted_by: str = ""
     task_id: str = ""
-    acceptance_notes: Optional[str] = None
+    acceptance_notes: str | None = None
 
 
 @dataclass(frozen=True)
@@ -81,12 +82,12 @@ class ConflictDetected(BaseDomainEvent):
     """Event raised when a conflict is detected"""
     conflict_id: str = ""
     conflict_type: str = ""  # concurrent_edit, resource_contention, etc.
-    involved_agents: List[str] = field(default_factory=list)
+    involved_agents: list[str] = field(default_factory=list)
     task_id: str = ""
     description: str = ""
-    conflicting_elements: Dict[str, Any] = field(default_factory=dict)
+    conflicting_elements: dict[str, Any] = field(default_factory=dict)
     impact_assessment: str = "low"  # low, medium, high, critical
-    suggested_resolution: Optional[str] = None
+    suggested_resolution: str | None = None
 
 
 @dataclass(frozen=True)
@@ -97,8 +98,8 @@ class ConflictResolved(BaseDomainEvent):
     resolved_by: str = ""
     task_id: str = ""
     resolution_details: str = ""
-    winning_agent: Optional[str] = None
-    compromise_details: Optional[Dict[str, Any]] = None
+    winning_agent: str | None = None
+    compromise_details: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -106,11 +107,11 @@ class AgentCollaborationStarted(BaseDomainEvent):
     """Event raised when agents start collaborating"""
     collaboration_id: str = ""
     initiating_agent: str = ""
-    collaborating_agents: List[str] = field(default_factory=list)
+    collaborating_agents: list[str] = field(default_factory=list)
     task_id: str = ""
     collaboration_type: str = "general"  # general, pair_programming, review, brainstorming
-    objectives: List[str] = field(default_factory=list)
-    expected_duration_hours: Optional[float] = None
+    objectives: list[str] = field(default_factory=list)
+    expected_duration_hours: float | None = None
 
 
 @dataclass(frozen=True)
@@ -118,9 +119,9 @@ class AgentCollaborationEnded(BaseDomainEvent):
     """Event raised when collaboration ends"""
     collaboration_id: str = ""
     task_id: str = ""
-    outcomes: List[str] = field(default_factory=list)
-    decisions_made: Dict[str, str] = field(default_factory=dict)
-    follow_up_actions: List[Dict[str, Any]] = field(default_factory=list)
+    outcomes: list[str] = field(default_factory=list)
+    decisions_made: dict[str, str] = field(default_factory=dict)
+    follow_up_actions: list[dict[str, Any]] = field(default_factory=list)
     duration_hours: float = 0.0
 
 
@@ -129,10 +130,10 @@ class AgentStatusBroadcast(BaseDomainEvent):
     """Event raised when agent broadcasts status"""
     agent_id: str = ""
     status: str = ""  # available, busy, blocked, offline
-    current_task_id: Optional[str] = None
-    current_activity: Optional[str] = None
-    blocker_description: Optional[str] = None
-    estimated_availability: Optional[datetime] = None
+    current_task_id: str | None = None
+    current_activity: str | None = None
+    blocker_description: str | None = None
+    estimated_availability: datetime | None = None
     workload_percentage: float = 0.0
 
 
@@ -141,11 +142,11 @@ class AgentWorkloadRebalanced(BaseDomainEvent):
     """Event raised when workload is rebalanced"""
     rebalance_id: str = ""
     initiated_by: str = ""
-    agents_affected: List[str] = field(default_factory=list)
-    tasks_reassigned: Dict[str, str] = field(default_factory=dict)  # task_id -> new_agent_id
+    agents_affected: list[str] = field(default_factory=list)
+    tasks_reassigned: dict[str, str] = field(default_factory=dict)  # task_id -> new_agent_id
     reason: str = ""
-    workload_before: Dict[str, int] = field(default_factory=dict)  # agent_id -> task_count
-    workload_after: Dict[str, int] = field(default_factory=dict)
+    workload_before: dict[str, int] = field(default_factory=dict)  # agent_id -> task_count
+    workload_after: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -172,9 +173,9 @@ class AgentEscalationRaised(BaseDomainEvent):
     task_id: str = ""
     reason: str = ""
     severity: str = "medium"  # low, medium, high, critical
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     requested_action: str = ""
-    deadline: Optional[datetime] = None
+    deadline: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -184,8 +185,8 @@ class AgentEscalationResolved(BaseDomainEvent):
     resolved_by: str = ""
     task_id: str = ""
     resolution: str = ""
-    actions_taken: List[str] = field(default_factory=list)
-    guidance_provided: Optional[str] = None
+    actions_taken: list[str] = field(default_factory=list)
+    guidance_provided: str | None = None
 
 
 @dataclass(frozen=True)
@@ -193,11 +194,11 @@ class AgentCommunicationSent(BaseDomainEvent):
     """Event raised when agent sends communication"""
     message_id: str = ""
     from_agent_id: str = ""
-    to_agent_ids: List[str] = field(default_factory=list)
+    to_agent_ids: list[str] = field(default_factory=list)
     message_type: str = "status_update"  # status_update, question, response, notification
     subject: str = ""
     priority: str = "normal"  # low, normal, high, urgent
-    task_id: Optional[str] = None
+    task_id: str | None = None
     requires_response: bool = False
 
 
@@ -206,14 +207,14 @@ class AgentPerformanceEvaluated(BaseDomainEvent):
     """Event raised when agent performance is evaluated"""
     agent_id: str = ""
     evaluation_id: str = ""
-    evaluated_by: Optional[str] = None  # None if system-generated
-    task_id: Optional[str] = None
+    evaluated_by: str | None = None  # None if system-generated
+    task_id: str | None = None
     quality_score: float = 0.0  # 0-1
     timeliness_score: float = 0.0  # 0-1
     collaboration_score: float = 0.0  # 0-1
     overall_score: float = 0.0  # 0-1
-    strengths: List[str] = field(default_factory=list)
-    areas_for_improvement: List[str] = field(default_factory=list)
+    strengths: list[str] = field(default_factory=list)
+    areas_for_improvement: list[str] = field(default_factory=list)
 
 
 __all__ = [

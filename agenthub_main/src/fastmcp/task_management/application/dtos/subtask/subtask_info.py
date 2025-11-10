@@ -1,10 +1,10 @@
 """Information about a subtask from tasks.json"""
 
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Optional
+from dataclasses import asdict, dataclass
 
-from ....domain.value_objects.task_status import TaskStatus
 from ....domain.value_objects.priority import Priority
+from ....domain.value_objects.task_status import TaskStatus
+
 
 @dataclass
 class SubtaskInfo:
@@ -13,16 +13,16 @@ class SubtaskInfo:
     title: str
     description: str
     status: TaskStatus
-    assignees: List[str]
+    assignees: list[str]
     progress_notes: str
-    dependencies: List[str]
+    dependencies: list[str]
     priority: Priority
     details: str
     test_strategy: str
     estimated_effort: str
-    subtasks: List['SubtaskInfo']
+    subtasks: list['SubtaskInfo']
     
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         subtask_dict = asdict(self)
         subtask_dict['status'] = self.status.value
         subtask_dict['priority'] = self.priority.value

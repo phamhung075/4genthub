@@ -5,14 +5,15 @@ It automatically invalidates cache on all mutation operations.
 """
 
 import json
-import os
 import logging
-from typing import Optional, List, Any, Dict
+import os
+from typing import Any
+
 import redis
 from redis.exceptions import RedisError
 
-from ....domain.repositories.subtask_repository import SubtaskRepository
 from ....domain.entities.subtask import Subtask
+from ....domain.repositories.subtask_repository import SubtaskRepository
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +33,11 @@ class CachedSubtaskRepository:
         self.enabled = self.redis_client is not None
 
     @property
-    def user_id(self) -> Optional[str]:
+    def user_id(self) -> str | None:
         """Proxy user_id from base repository for authentication checks"""
         return getattr(self.base_repo, 'user_id', None)
     
-    def _init_redis(self) -> Optional[redis.Redis]:
+    def _init_redis(self) -> redis.Redis | None:
         """Initialize Redis connection with fallback"""
         try:
             client = redis.Redis(
@@ -86,7 +87,7 @@ class CachedSubtaskRepository:
             except RedisError as e:
                 logger.warning(f"[Cache] Failed to invalidate pattern {pattern}: {e}")
     
-    def _get_cached(self, key: str) -> Optional[Any]:
+    def _get_cached(self, key: str) -> Any | None:
         """Get value from cache"""
         if not self.enabled:
             return None
@@ -116,7 +117,7 @@ class CachedSubtaskRepository:
     
     # === Delegated Methods with Caching ===
     
-    def get_by_id(self, subtask_id: str) -> Optional[Subtask]:
+    def get_by_id(self, subtask_id: str) -> Subtask | None:
         """Get subtask by ID with caching"""
         cache_key = f"id:{subtask_id}"
         
@@ -134,7 +135,7 @@ class CachedSubtaskRepository:
         
         return result
     
-    def get_by_task_id(self, task_id: str) -> List[Subtask]:
+    def get_by_task_id(self, task_id: str) -> list[Subtask]:
         """Get all subtasks for a task with caching"""
         cache_key = f"task:{task_id}"
         
@@ -152,7 +153,7 @@ class CachedSubtaskRepository:
         
         return result
 
-    def find_by_parent_task_id(self, parent_task_id) -> List[Subtask]:
+    def find_by_parent_task_id(self, parent_task_id) -> list[Subtask]:
         """Find all subtasks for a parent task with caching"""
         # Convert to string if it's a TaskId object
         task_id_str = parent_task_id.value if hasattr(parent_task_id, 'value') else str(parent_task_id)
@@ -195,7 +196,7 @@ class CachedSubtaskRepository:
             self._invalidate_pattern("search:*")
             # Also invalidate parent task cache
             self._invalidate_pattern(f"task:id:{subtask.task_id}")
-            logger.info(f"[Cache] Invalidated subtask caches after create")
+            logger.info("[Cache] Invalidated subtask caches after create")
         
         return result
     
@@ -211,7 +212,7 @@ class CachedSubtaskRepository:
             self._invalidate_pattern("search:*")
             # Also invalidate parent task cache
             self._invalidate_pattern(f"task:id:{subtask.task_id}")
-            logger.info(f"[Cache] Invalidated subtask caches after update")
+            logger.info("[Cache] Invalidated subtask caches after update")
         
         return result
     
@@ -231,7 +232,7 @@ class CachedSubtaskRepository:
                 self._invalidate_pattern(f"task:id:{subtask.task_id}")
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated subtask caches after delete")
+            logger.info("[Cache] Invalidated subtask caches after delete")
         
         return result
     
@@ -247,7 +248,7 @@ class CachedSubtaskRepository:
             self._invalidate_pattern("search:*")
             # Also invalidate parent task cache
             self._invalidate_pattern(f"task:id:{task_id}")
-            logger.info(f"[Cache] Invalidated all subtask caches after bulk delete")
+            logger.info("[Cache] Invalidated all subtask caches after bulk delete")
         
         return result
     
@@ -266,7 +267,7 @@ class CachedSubtaskRepository:
                 # Also invalidate parent task cache  
                 self._invalidate_pattern(f"task:id:{subtask.task_id}")
             self._invalidate_pattern("list:*")
-            logger.info(f"[Cache] Invalidated subtask caches after remove")
+            logger.info("[Cache] Invalidated subtask caches after remove")
         
         return result
     
@@ -284,7 +285,7 @@ class CachedSubtaskRepository:
                 self._invalidate_pattern(f"task:{subtask.task_id}:*")
                 # Also invalidate parent task cache
                 self._invalidate_pattern(f"task:id:{subtask.task_id}")
-            logger.info(f"[Cache] Invalidated subtask caches after progress update")
+            logger.info("[Cache] Invalidated subtask caches after progress update")
         
         return result
     

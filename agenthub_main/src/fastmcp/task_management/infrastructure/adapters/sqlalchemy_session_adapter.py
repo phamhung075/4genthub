@@ -1,11 +1,16 @@
 """SQLAlchemy Session Adapter - Infrastructure Layer"""
 
-from typing import Any, Optional, Type, List
 from contextlib import contextmanager
+from typing import Any
+
 from sqlalchemy.orm import Session
 
-from ...domain.interfaces.database_session import IDatabaseSession, IQuery, IDatabaseSessionFactory
-from ..database.database_config import get_db_session, get_db_config
+from ...domain.interfaces.database_session import (
+    IDatabaseSession,
+    IDatabaseSessionFactory,
+    IQuery,
+)
+from ..database.database_config import get_db_config, get_db_session
 
 
 class SQLAlchemyQuery(IQuery):
@@ -22,11 +27,11 @@ class SQLAlchemyQuery(IQuery):
         """Filter the query by keyword arguments"""
         return SQLAlchemyQuery(self._query.filter_by(**kwargs))
     
-    def first(self) -> Optional[Any]:
+    def first(self) -> Any | None:
         """Return the first result or None"""
         return self._query.first()
     
-    def all(self) -> List[Any]:
+    def all(self) -> list[Any]:
         """Return all results"""
         return self._query.all()
     
@@ -53,7 +58,7 @@ class SQLAlchemySessionAdapter(IDatabaseSession):
     def __init__(self, session: Session):
         self._session = session
     
-    def query(self, model_class: Type[Any]) -> IQuery:
+    def query(self, model_class: type[Any]) -> IQuery:
         """Create a query for the given model class"""
         return SQLAlchemyQuery(self._session.query(model_class))
     

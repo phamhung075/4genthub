@@ -2,11 +2,12 @@
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Optional, List
+from datetime import UTC, datetime
 from enum import Enum
 
-from fastmcp.task_management.domain.entities.base.base_timestamp_entity import BaseTimestampEntity
+from fastmcp.task_management.domain.entities.base.base_timestamp_entity import (
+    BaseTimestampEntity,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,33 +38,33 @@ class User(BaseTimestampEntity):
     password_hash: str = ""  # Never store plain passwords
 
     # Optional fields
-    id: Optional[str] = None
-    full_name: Optional[str] = None
+    id: str | None = None
+    full_name: str | None = None
     status: UserStatus = UserStatus.PENDING_VERIFICATION
-    roles: List[UserRole] = field(default_factory=lambda: [UserRole.USER])
+    roles: list[UserRole] = field(default_factory=lambda: [UserRole.USER])
     
     # Authentication tracking
     email_verified: bool = False
-    email_verified_at: Optional[datetime] = None
-    last_login_at: Optional[datetime] = None
+    email_verified_at: datetime | None = None
+    last_login_at: datetime | None = None
     failed_login_attempts: int = 0
-    locked_until: Optional[datetime] = None
+    locked_until: datetime | None = None
     
     # Password management
-    password_changed_at: Optional[datetime] = None
-    password_reset_token: Optional[str] = None
-    password_reset_expires: Optional[datetime] = None
+    password_changed_at: datetime | None = None
+    password_reset_token: str | None = None
+    password_reset_expires: datetime | None = None
     
     # JWT refresh tokens (storing token family for security)
-    refresh_token_family: Optional[str] = None
+    refresh_token_family: str | None = None
     refresh_token_version: int = 0
     
     # Metadata (timestamps inherited from BaseTimestampEntity)
-    created_by: Optional[str] = None
+    created_by: str | None = None
     
     # Project associations
-    project_ids: List[str] = field(default_factory=list)
-    default_project_id: Optional[str] = None
+    project_ids: list[str] = field(default_factory=list)
+    default_project_id: str | None = None
     
     # Additional metadata
     metadata: dict = field(default_factory=dict)
@@ -100,7 +101,7 @@ class User(BaseTimestampEntity):
         """Check if account is temporarily locked"""
         if not self.locked_until:
             return False
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         return current_time < self.locked_until
     
     def can_login(self) -> bool:
@@ -115,7 +116,7 @@ class User(BaseTimestampEntity):
         # Lock account after 5 failed attempts
         if self.failed_login_attempts >= 5:
             from datetime import timedelta
-            current_time = datetime.now(timezone.utc)
+            current_time = datetime.now(UTC)
             self.locked_until = current_time + timedelta(minutes=30)
             logger.warning(f"Account locked for user {self.username} due to failed login attempts")
     
@@ -123,14 +124,14 @@ class User(BaseTimestampEntity):
         """Record a successful login"""
         self.failed_login_attempts = 0
         self.locked_until = None
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self.last_login_at = current_time
         self.touch("login_successful")
     
     def verify_email(self):
         """Mark email as verified"""
         self.email_verified = True
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self.email_verified_at = current_time
         if self.status == UserStatus.PENDING_VERIFICATION:
             self.status = UserStatus.ACTIVE
@@ -138,9 +139,9 @@ class User(BaseTimestampEntity):
     
     def initiate_password_reset(self, token: str, expires_in_hours: int = 24):
         """Initiate password reset process"""
-        from datetime import timezone, timedelta
+        from datetime import timedelta
         self.password_reset_token = token
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self.password_reset_expires = current_time + timedelta(hours=expires_in_hours)
         self.touch("password_reset_initiated")
     
@@ -149,7 +150,7 @@ class User(BaseTimestampEntity):
         self.password_hash = new_password_hash
         self.password_reset_token = None
         self.password_reset_expires = None
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self.password_changed_at = current_time
         self.refresh_token_version += 1  # Invalidate all existing refresh tokens
         self.touch("password_reset_completed")
@@ -157,7 +158,7 @@ class User(BaseTimestampEntity):
     def change_password(self, new_password_hash: str):
         """Change user password"""
         self.password_hash = new_password_hash
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self.password_changed_at = current_time
         self.refresh_token_version += 1  # Invalidate all existing refresh tokens
         self.touch("password_changed")

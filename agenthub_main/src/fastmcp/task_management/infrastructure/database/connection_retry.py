@@ -6,12 +6,14 @@ particularly useful for cloud databases like Supabase that may have transient
 connection issues.
 """
 
-import time
 import logging
-from typing import Optional, Callable, Any, TypeVar
+import time
+from collections.abc import Callable
 from functools import wraps
-from sqlalchemy.exc import OperationalError, DatabaseError, TimeoutError
+from typing import TypeVar
+
 from psycopg2 import OperationalError as Psycopg2OperationalError
+from sqlalchemy.exc import OperationalError, TimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +104,7 @@ def calculate_delay(
 
 
 def with_connection_retry(
-    config: Optional[ConnectionRetryConfig] = None
+    config: ConnectionRetryConfig | None = None
 ) -> Callable:
     """
     Decorator to add retry logic to database operations.
@@ -155,7 +157,7 @@ class ConnectionPool:
     Enhanced connection pool with retry logic and health checks.
     """
     
-    def __init__(self, engine, retry_config: Optional[ConnectionRetryConfig] = None):
+    def __init__(self, engine, retry_config: ConnectionRetryConfig | None = None):
         self.engine = engine
         self.retry_config = retry_config or ConnectionRetryConfig()
         self._healthy = True

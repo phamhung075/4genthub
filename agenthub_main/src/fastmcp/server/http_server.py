@@ -7,20 +7,21 @@ from contextvars import ContextVar
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 # Using Keycloak authentication - MCP auth components not needed
-from mcp.server.auth.provider import AccessToken  # Still needed for TokenVerifierAdapter
+from mcp.server.auth.provider import (
+    AccessToken,  # Still needed for TokenVerifierAdapter
+)
 from mcp.server.lowlevel.server import LifespanResultT
 from mcp.server.sse import SseServerTransport
 from mcp.server.streamable_http import EventStore
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
-from starlette.middleware.authentication import AuthenticationMiddleware
+from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import BaseRoute, Mount, Route
 from starlette.types import Lifespan, Receive, Scope, Send
-from starlette.middleware.cors import CORSMiddleware
-from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from fastmcp.server.auth.auth import OAuthProvider
 from fastmcp.utilities.logging import get_logger
@@ -29,7 +30,7 @@ logger = get_logger(__name__)
 
 # Import WebSocket and broadcast routes if available
 try:
-    from fastmcp.server.routes import websocket_routes, broadcast_routes
+    from fastmcp.server.routes import broadcast_routes, websocket_routes
     WEBSOCKET_AVAILABLE = True
 except ImportError:
     logger.info("WebSocket routes not available - real-time updates disabled")
@@ -37,7 +38,9 @@ except ImportError:
 
 # Import Keycloak request context middleware
 try:
-    from fastmcp.auth.middleware.request_context_middleware import RequestContextMiddleware
+    from fastmcp.auth.middleware.request_context_middleware import (
+        RequestContextMiddleware,
+    )
     KEYCLOAK_MIDDLEWARE_AVAILABLE = True
 except ImportError:
     logger.warning("Keycloak RequestContextMiddleware not available - user context will not be propagated")
@@ -356,12 +359,12 @@ def _register_websocket_lifecycle(v2_app) -> None:
         v2_app: FastAPI/Starlette app instance to register routes on
     """
     try:
+        from .routes.websocket_routes import router as websocket_router
         from .routes.websocket_routes import (
-            router as websocket_router,
-            start_retry_queue_processor,
-            stop_retry_queue_processor,
             start_notification_cleanup_task,
-            stop_notification_cleanup_task
+            start_retry_queue_processor,
+            stop_notification_cleanup_task,
+            stop_retry_queue_processor,
         )
         v2_app.include_router(websocket_router)
         logger.info("✅ WebSocket routes registered at /ws/realtime")
@@ -450,15 +453,16 @@ def create_sse_app(
     
     # Add user-scoped V2 routes using the same pattern as Supabase auth
     try:
-        from .routes.project_routes import router as project_router
-        from .routes.task_user_routes import router as task_router
-        from .routes.task_routes import task_summary_router
-        from .routes.branch_routes import router as branch_router
-        from .routes.agent_routes import router as agent_router
-        from .routes.subtask_routes import router as subtask_router
-        from .routes.connection_routes import router as connection_router
-        from ..agent_management.interface.rest import router as agent_management_router
         from fastapi import FastAPI
+
+        from ..agent_management.interface.rest import router as agent_management_router
+        from .routes.agent_routes import router as agent_router
+        from .routes.branch_routes import router as branch_router
+        from .routes.connection_routes import router as connection_router
+        from .routes.project_routes import router as project_router
+        from .routes.subtask_routes import router as subtask_router
+        from .routes.task_routes import task_summary_router
+        from .routes.task_user_routes import router as task_router
 
         # Create a minimal FastAPI app for V2 routes
         v2_app = FastAPI()
@@ -739,15 +743,16 @@ def create_streamable_http_app(
     
     # Add user-scoped V2 routes for streamable HTTP
     try:
-        from .routes.project_routes import router as project_router
-        from .routes.task_user_routes import router as task_router
-        from .routes.task_routes import task_summary_router
-        from .routes.branch_routes import router as branch_router
-        from .routes.agent_routes import router as agent_router
-        from .routes.subtask_routes import router as subtask_router
-        from .routes.connection_routes import router as connection_router
-        from ..agent_management.interface.rest import router as agent_management_router
         from fastapi import FastAPI
+
+        from ..agent_management.interface.rest import router as agent_management_router
+        from .routes.agent_routes import router as agent_router
+        from .routes.branch_routes import router as branch_router
+        from .routes.connection_routes import router as connection_router
+        from .routes.project_routes import router as project_router
+        from .routes.subtask_routes import router as subtask_router
+        from .routes.task_routes import task_summary_router
+        from .routes.task_user_routes import router as task_router
 
         # Create a minimal FastAPI app for V2 routes
         v2_app = FastAPI()
@@ -798,13 +803,14 @@ def create_streamable_http_app(
         _register_websocket_lifecycle(v2_app)
 
         # Add simplified MCP registration endpoints directly to FastAPI app
-        import uuid
         import time
+        import uuid
+        from typing import Any, Dict
+
         import fastapi
-        from typing import Dict, Any
         
         # Store active registrations (in production, use Redis or database)
-        active_registrations: Dict[str, Dict[str, Any]] = {}
+        active_registrations: dict[str, dict[str, Any]] = {}
         
         from fastapi import Request
         

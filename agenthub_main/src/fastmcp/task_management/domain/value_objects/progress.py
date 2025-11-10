@@ -8,10 +8,11 @@ This module provides value objects for tracking task progress with support for:
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import uuid4
 
 
@@ -39,13 +40,13 @@ class ProgressStatus(Enum):
 @dataclass(frozen=True)
 class ProgressMetadata:
     """Additional metadata for progress tracking."""
-    blockers: List[str] = field(default_factory=list)
-    dependencies: List[str] = field(default_factory=list)
+    blockers: list[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
     confidence_level: float = 1.0  # 0.0 to 1.0
-    notes: Optional[str] = None
-    estimated_completion: Optional[datetime] = None
+    notes: str | None = None
+    estimated_completion: datetime | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "blockers": self.blockers,
@@ -56,7 +57,7 @@ class ProgressMetadata:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> ProgressMetadata:
+    def from_dict(cls, data: dict[str, Any]) -> ProgressMetadata:
         """Create from dictionary representation."""
         return cls(
             blockers=data.get("blockers", []),
@@ -73,20 +74,20 @@ class ProgressSnapshot:
     """Immutable snapshot of progress at a point in time."""
     id: str = field(default_factory=lambda: str(uuid4()))
     task_id: str = ""
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     progress_type: ProgressType = ProgressType.GENERAL
     percentage: float = 0.0  # 0-100
     status: ProgressStatus = ProgressStatus.NOT_STARTED
-    description: Optional[str] = None
+    description: str | None = None
     metadata: ProgressMetadata = field(default_factory=ProgressMetadata)
-    agent_id: Optional[str] = None
+    agent_id: str | None = None
     
     def __post_init__(self):
         """Validate progress percentage."""
         if not 0 <= self.percentage <= 100:
             raise ValueError(f"Progress percentage must be between 0 and 100, got {self.percentage}")
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "id": self.id,
@@ -101,12 +102,12 @@ class ProgressSnapshot:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> ProgressSnapshot:
+    def from_dict(cls, data: dict[str, Any]) -> ProgressSnapshot:
         """Create from dictionary representation."""
         return cls(
             id=data.get("id", str(uuid4())),
             task_id=data.get("task_id", ""),
-            timestamp=datetime.fromisoformat(data["timestamp"]) if "timestamp" in data else datetime.now(timezone.utc),
+            timestamp=datetime.fromisoformat(data["timestamp"]) if "timestamp" in data else datetime.now(UTC),
             progress_type=ProgressType(data.get("progress_type", "general")),
             percentage=data.get("percentage", 0.0),
             status=ProgressStatus(data.get("status", "not_started")),
@@ -120,8 +121,8 @@ class ProgressSnapshot:
 class ProgressTimeline:
     """Aggregate tracking the timeline of progress updates."""
     task_id: str
-    snapshots: List[ProgressSnapshot] = field(default_factory=list)
-    milestones: Dict[str, float] = field(default_factory=dict)  # name -> percentage
+    snapshots: list[ProgressSnapshot] = field(default_factory=list)
+    milestones: dict[str, float] = field(default_factory=dict)  # name -> percentage
     
     def add_snapshot(self, snapshot: ProgressSnapshot) -> None:
         """Add a new progress snapshot to the timeline."""
@@ -130,11 +131,11 @@ class ProgressTimeline:
         self.snapshots.append(snapshot)
         self.snapshots.sort(key=lambda s: s.timestamp)
     
-    def get_latest_snapshot(self) -> Optional[ProgressSnapshot]:
+    def get_latest_snapshot(self) -> ProgressSnapshot | None:
         """Get the most recent progress snapshot."""
         return self.snapshots[-1] if self.snapshots else None
     
-    def get_snapshots_by_type(self, progress_type: ProgressType) -> List[ProgressSnapshot]:
+    def get_snapshots_by_type(self, progress_type: ProgressType) -> list[ProgressSnapshot]:
         """Get all snapshots of a specific progress type."""
         return [s for s in self.snapshots if s.progress_type == progress_type]
     
@@ -144,7 +145,7 @@ class ProgressTimeline:
             return 0.0
         
         # Get latest snapshot for each progress type
-        latest_by_type: Dict[ProgressType, ProgressSnapshot] = {}
+        latest_by_type: dict[ProgressType, ProgressSnapshot] = {}
         for snapshot in self.snapshots:
             if (snapshot.progress_type not in latest_by_type or 
                 snapshot.timestamp > latest_by_type[snapshot.progress_type].timestamp):
@@ -171,12 +172,12 @@ class ProgressTimeline:
         current_progress = self.get_overall_progress()
         return current_progress >= self.milestones[name]
     
-    def get_progress_trend(self, hours: int = 24) -> List[ProgressSnapshot]:
+    def get_progress_trend(self, hours: int = 24) -> list[ProgressSnapshot]:
         """Get progress snapshots from the last N hours."""
-        cutoff = datetime.now(timezone.utc).timestamp() - (hours * 3600)
+        cutoff = datetime.now(UTC).timestamp() - (hours * 3600)
         return [s for s in self.snapshots if s.timestamp.timestamp() > cutoff]
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "task_id": self.task_id,
@@ -192,8 +193,8 @@ class ProgressCalculationStrategy:
     
     @staticmethod
     def calculate_weighted_average(
-        progress_values: Dict[str, float], 
-        weights: Optional[Dict[str, float]] = None
+        progress_values: dict[str, float], 
+        weights: dict[str, float] | None = None
     ) -> float:
         """Calculate weighted average of progress values."""
         if not progress_values:
@@ -221,7 +222,7 @@ class ProgressCalculationStrategy:
     
     @staticmethod
     def calculate_from_subtasks(
-        subtask_progress: List[Dict[str, Any]], 
+        subtask_progress: list[dict[str, Any]], 
         include_blocked: bool = False
     ) -> float:
         """Calculate progress from subtasks."""
@@ -246,8 +247,8 @@ class ProgressCalculationStrategy:
     
     @staticmethod
     def calculate_by_milestones(
-        completed_milestones: List[str],
-        all_milestones: Dict[str, float]
+        completed_milestones: list[str],
+        all_milestones: dict[str, float]
     ) -> float:
         """Calculate progress based on completed milestones."""
         if not all_milestones:

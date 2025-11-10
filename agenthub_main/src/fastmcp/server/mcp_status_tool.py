@@ -11,17 +11,18 @@ Purpose: Provide real-time status updates for MCP clients
 
 import logging
 import time
-from typing import Dict, Any
 from datetime import datetime
+from typing import Any
 
 from fastmcp.server.context import Context
+
 from .connection_manager import get_connection_manager
 from .connection_status_broadcaster import get_status_broadcaster
 
 logger = logging.getLogger(__name__)
 
 
-async def get_mcp_status(ctx: Context, include_details: bool = True) -> Dict[str, Any]:
+async def get_mcp_status(ctx: Context, include_details: bool = True) -> dict[str, Any]:
     """
     Get comprehensive MCP server status information
     
@@ -168,7 +169,7 @@ async def get_mcp_status(ctx: Context, include_details: bool = True) -> Dict[str
         }
 
 
-async def register_for_status_updates(ctx: Context) -> Dict[str, Any]:
+async def register_for_status_updates(ctx: Context) -> dict[str, Any]:
     """
     Register the current session for real-time status updates
     
@@ -280,7 +281,7 @@ def register_mcp_status_tools(server):
         broadcast_info = status_info.get("broadcast_info", {})
         if broadcast_info.get("broadcasting_active"):
             response += "**Real-time Updates:**\n"
-            response += f"- Broadcasting Active: ✅\n"
+            response += "- Broadcasting Active: ✅\n"
             response += f"- Registered Clients: {broadcast_info.get('registered_clients', 0)}\n"
             if broadcast_info.get("last_broadcast"):
                 last_broadcast = broadcast_info["last_broadcast"]
@@ -344,7 +345,7 @@ def register_mcp_status_tools(server):
         
         if result.get("success"):
             response = "✅ **Successfully Registered for Status Updates**\n\n"
-            response += f"**Session Information:**\n"
+            response += "**Session Information:**\n"
             response += f"- Session ID: {result.get('session_id', 'unknown')}\n"
             response += f"- Update Interval: {result.get('update_interval', 30)} seconds\n"
             response += f"- Immediate Events: {', '.join(result.get('immediate_events', []))}\n\n"

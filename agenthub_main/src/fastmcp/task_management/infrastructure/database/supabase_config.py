@@ -6,13 +6,13 @@ Supabase provides a PostgreSQL database with additional features like real-time 
 authentication, and storage.
 """
 
-import os
 import logging
-from typing import Optional, Dict, Any
-from sqlalchemy import create_engine, Engine, event, pool, text
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import QueuePool
+import os
 import urllib.parse
+
+from sqlalchemy import Engine, event, text
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import QueuePool
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +35,8 @@ class SupabaseConfig:
         # Database connection URL
         self.database_url = self._get_supabase_database_url()
         
-        self.engine: Optional[Engine] = None
-        self.SessionLocal: Optional[sessionmaker] = None
+        self.engine: Engine | None = None
+        self.SessionLocal: sessionmaker | None = None
         
         # Initialize database connection
         self._initialize_database()
@@ -90,7 +90,7 @@ class SupabaseConfig:
                 if is_self_hosted:
                     # For self-hosted with self-signed certificates, use prefer mode
                     database_url += "?sslmode=prefer"
-                    logger.info(f"🔒 Self-hosted Supabase detected, using sslmode=prefer for self-signed certificate")
+                    logger.info("🔒 Self-hosted Supabase detected, using sslmode=prefer for self-signed certificate")
                 else:
                     # For cloud Supabase, always require SSL
                     ssl_cert_env = os.getenv("SUPABASE_SSL_CERT_PATH", "prod-ca-2021.crt")
@@ -204,7 +204,7 @@ class SupabaseConfig:
     
     def get_session(self) -> Session:
         """Get a new database session with retry logic"""
-        from .connection_retry import with_connection_retry, DEFAULT_RETRY_CONFIG
+        from .connection_retry import DEFAULT_RETRY_CONFIG, with_connection_retry
         
         @with_connection_retry(DEFAULT_RETRY_CONFIG)
         def _get_session_with_retry():
@@ -217,7 +217,7 @@ class SupabaseConfig:
             try:
                 from sqlalchemy import text
                 session.execute(text("SELECT 1"))
-            except Exception as e:
+            except Exception:
                 session.close()
                 raise
             
@@ -242,7 +242,7 @@ class SupabaseConfig:
 
 
 # Singleton instance
-_supabase_config: Optional[SupabaseConfig] = None
+_supabase_config: SupabaseConfig | None = None
 
 
 def get_supabase_config() -> SupabaseConfig:

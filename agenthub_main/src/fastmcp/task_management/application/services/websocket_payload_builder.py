@@ -20,8 +20,7 @@ Usage:
     await websocket_manager.broadcast(event="task.created", data=payload)
 """
 
-from typing import Dict, Any, Optional
-from datetime import datetime
+from typing import Any
 
 
 class WebSocketPayloadBuilder:
@@ -32,7 +31,7 @@ class WebSocketPayloadBuilder:
         task,
         task_response=None,
         include_progress_history: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build complete WebSocket payload for task events.
 
         This method constructs a comprehensive payload that includes all fields
@@ -163,7 +162,7 @@ class WebSocketPayloadBuilder:
         return payload
 
     @staticmethod
-    def estimate_payload_size(payload: Dict[str, Any]) -> int:
+    def estimate_payload_size(payload: dict[str, Any]) -> int:
         """Estimate the size of a WebSocket payload in bytes.
 
         This is useful for monitoring message sizes and ensuring they stay
@@ -179,7 +178,7 @@ class WebSocketPayloadBuilder:
         return len(json.dumps(payload).encode('utf-8'))
 
     @staticmethod
-    def build_lightweight_payload(task, task_response=None) -> Dict[str, Any]:
+    def build_lightweight_payload(task, task_response=None) -> dict[str, Any]:
         """Build a lightweight payload for high-frequency updates.
 
         This variant excludes progress_history to minimize message size

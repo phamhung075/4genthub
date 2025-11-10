@@ -6,12 +6,12 @@ dismissal, and feedback collection.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
-from .base import DomainEvent, create_event_metadata
-from ..value_objects.hints import HintType, HintPriority
+from ..value_objects.hints import HintPriority, HintType
+from .base import DomainEvent
 
 
 @dataclass(frozen=True)
@@ -43,13 +43,13 @@ class HintGenerated(DomainEvent):
     suggested_action: str = ""
     source_rule: str = ""
     confidence: float = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
     @property
     def event_type(self) -> str:
         return "hint_generated"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
             "event_type": self.event_type,
@@ -84,14 +84,14 @@ class HintAccepted(DomainEvent):
     hint_id: UUID = field(default_factory=uuid4)
     task_id: UUID = field(default_factory=uuid4)
     user_id: str = ""
-    action_taken: Optional[str] = None
-    acceptance_context: Dict[str, Any] = field(default_factory=dict)
+    action_taken: str | None = None
+    acceptance_context: dict[str, Any] = field(default_factory=dict)
     
     @property
     def event_type(self) -> str:
         return "hint_accepted"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
             "event_type": self.event_type,
@@ -122,14 +122,14 @@ class HintDismissed(DomainEvent):
     hint_id: UUID = field(default_factory=uuid4)
     task_id: UUID = field(default_factory=uuid4)
     user_id: str = ""
-    reason: Optional[str] = None
-    dismissal_context: Dict[str, Any] = field(default_factory=dict)
+    reason: str | None = None
+    dismissal_context: dict[str, Any] = field(default_factory=dict)
     
     @property
     def event_type(self) -> str:
         return "hint_dismissed"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
             "event_type": self.event_type,
@@ -163,15 +163,15 @@ class HintFeedbackProvided(DomainEvent):
     task_id: UUID = field(default_factory=uuid4)
     user_id: str = ""
     was_helpful: bool = False
-    feedback_text: Optional[str] = None
-    effectiveness_score: Optional[float] = None
-    improvement_suggestions: Optional[str] = None
+    feedback_text: str | None = None
+    effectiveness_score: float | None = None
+    improvement_suggestions: str | None = None
     
     @property
     def event_type(self) -> str:
         return "hint_feedback_provided"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
             "event_type": self.event_type,
@@ -207,13 +207,13 @@ class HintPatternDetected(DomainEvent):
     pattern_description: str = ""
     confidence: float = 0
     affected_tasks: list[UUID] = field(default_factory=list)
-    suggested_rule: Optional[Dict[str, Any]] = None
+    suggested_rule: dict[str, Any] | None = None
     
     @property
     def event_type(self) -> str:
         return "hint_pattern_detected"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
             "event_type": self.event_type,
@@ -251,14 +251,14 @@ class HintEffectivenessCalculated(DomainEvent):
     accepted_count: int = 0
     dismissed_count: int = 0
     effectiveness_score: float = 0
-    period_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    period_start: datetime = field(default_factory=lambda: datetime.now(UTC))
+    period_end: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     @property
     def event_type(self) -> str:
         return "hint_effectiveness_calculated"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
             "event_type": self.event_type,

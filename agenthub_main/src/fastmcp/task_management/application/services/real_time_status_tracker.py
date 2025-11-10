@@ -6,15 +6,13 @@ workload, and performance metrics across the system.
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Set, Any, Callable
-from datetime import datetime, timezone, timedelta
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from enum import Enum
-import json
+from typing import Any
 
 from ...domain.entities.agent_session import AgentSession, SessionState
-from ...domain.value_objects.coordination import AgentCommunication
-from ...domain.events.agent_events import AgentStatusBroadcast
 from ...infrastructure.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
@@ -39,11 +37,11 @@ class StatusSnapshot:
     timestamp: datetime
     state: SessionState
     health_score: float
-    active_tasks: List[str]
-    resource_usage: Dict[str, float]
-    performance_metrics: Dict[str, Any]
-    last_error: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    active_tasks: list[str]
+    resource_usage: dict[str, float]
+    performance_metrics: dict[str, Any]
+    last_error: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -51,11 +49,11 @@ class StatusSubscription:
     """Subscription for status updates"""
     subscription_id: str
     subscriber_id: str
-    agent_patterns: List[str]  # Agent ID patterns to subscribe to
-    update_types: Set[StatusUpdateType]
-    callback: Optional[Callable] = None
-    webhook_url: Optional[str] = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    agent_patterns: list[str]  # Agent ID patterns to subscribe to
+    update_types: set[StatusUpdateType]
+    callback: Callable | None = None
+    webhook_url: str | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     active: bool = True
 
 
@@ -74,7 +72,7 @@ class RealTimeStatusTracker:
     
     def __init__(
         self,
-        event_bus: Optional[EventBus] = None,
+        event_bus: EventBus | None = None,
         history_retention_hours: int = 24,
         snapshot_interval_seconds: int = 30,
         anomaly_threshold: float = 0.8
@@ -86,23 +84,23 @@ class RealTimeStatusTracker:
         self.anomaly_threshold = anomaly_threshold
         
         # Active sessions tracking
-        self.active_sessions: Dict[str, AgentSession] = {}
-        self.session_by_agent: Dict[str, str] = {}  # agent_id -> session_id
+        self.active_sessions: dict[str, AgentSession] = {}
+        self.session_by_agent: dict[str, str] = {}  # agent_id -> session_id
         
         # Status history
-        self.status_history: Dict[str, List[StatusSnapshot]] = {}  # agent_id -> snapshots
+        self.status_history: dict[str, list[StatusSnapshot]] = {}  # agent_id -> snapshots
         self.max_history_size = 1000  # Per agent
         
         # Subscriptions
-        self.subscriptions: Dict[str, StatusSubscription] = {}
+        self.subscriptions: dict[str, StatusSubscription] = {}
         
         # Performance tracking
-        self.performance_baselines: Dict[str, Dict[str, float]] = {}  # agent_id -> metrics
-        self.anomaly_counts: Dict[str, int] = {}  # agent_id -> count
+        self.performance_baselines: dict[str, dict[str, float]] = {}  # agent_id -> metrics
+        self.anomaly_counts: dict[str, int] = {}  # agent_id -> count
         
         # Background tasks
-        self._monitoring_task: Optional[asyncio.Task] = None
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._monitoring_task: asyncio.Task | None = None
+        self._cleanup_task: asyncio.Task | None = None
         self._is_running = False
     
     async def start(self) -> None:
@@ -189,9 +187,9 @@ class RealTimeStatusTracker:
         self,
         agent_id: str,
         status: SessionState,
-        current_task_id: Optional[str] = None,
-        current_activity: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        current_task_id: str | None = None,
+        current_activity: str | None = None,
+        metadata: dict[str, Any] | None = None
     ) -> None:
         """Update agent status in real-time"""
         session_id = self.session_by_agent.get(agent_id)
@@ -236,7 +234,7 @@ class RealTimeStatusTracker:
         task_id: str,
         progress_percentage: float,
         status: str,
-        details: Optional[str] = None
+        details: str | None = None
     ) -> None:
         """Report task progress update"""
         session_id = self.session_by_agent.get(agent_id)
@@ -271,7 +269,7 @@ class RealTimeStatusTracker:
         resource_type: str,
         used_amount: float,
         allocated_amount: float,
-        resource_id: Optional[str] = None
+        resource_id: str | None = None
     ) -> None:
         """Report resource usage update"""
         session_id = self.session_by_agent.get(agent_id)
@@ -319,7 +317,7 @@ class RealTimeStatusTracker:
         agent_id: str,
         error_type: str,
         error_message: str,
-        error_context: Optional[Dict[str, Any]] = None
+        error_context: dict[str, Any] | None = None
     ) -> None:
         """Report an error from an agent"""
         session_id = self.session_by_agent.get(agent_id)
@@ -335,7 +333,7 @@ class RealTimeStatusTracker:
         session.metadata["last_error"] = {
             "type": error_type,
             "message": error_message,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "context": error_context
         }
         
@@ -354,7 +352,7 @@ class RealTimeStatusTracker:
             }
         )
     
-    async def get_agent_status(self, agent_id: str) -> Optional[StatusSnapshot]:
+    async def get_agent_status(self, agent_id: str) -> StatusSnapshot | None:
         """Get current status for an agent"""
         session_id = self.session_by_agent.get(agent_id)
         if not session_id:
@@ -366,7 +364,7 @@ class RealTimeStatusTracker:
         
         return self._create_snapshot(session)
     
-    async def get_all_agent_statuses(self) -> Dict[str, StatusSnapshot]:
+    async def get_all_agent_statuses(self) -> dict[str, StatusSnapshot]:
         """Get current status for all active agents"""
         statuses = {}
         for session in self.active_sessions.values():
@@ -376,8 +374,8 @@ class RealTimeStatusTracker:
     async def get_agent_history(
         self,
         agent_id: str,
-        hours: Optional[int] = None
-    ) -> List[StatusSnapshot]:
+        hours: int | None = None
+    ) -> list[StatusSnapshot]:
         """Get status history for an agent"""
         if agent_id not in self.status_history:
             return []
@@ -385,7 +383,7 @@ class RealTimeStatusTracker:
         history = self.status_history[agent_id]
         
         if hours:
-            cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+            cutoff = datetime.now(UTC) - timedelta(hours=hours)
             return [s for s in history if s.timestamp >= cutoff]
         
         return history.copy()
@@ -393,17 +391,17 @@ class RealTimeStatusTracker:
     async def subscribe_to_updates(
         self,
         subscriber_id: str,
-        agent_patterns: List[str],
-        update_types: Optional[Set[StatusUpdateType]] = None,
-        callback: Optional[Callable] = None,
-        webhook_url: Optional[str] = None
+        agent_patterns: list[str],
+        update_types: set[StatusUpdateType] | None = None,
+        callback: Callable | None = None,
+        webhook_url: str | None = None
     ) -> str:
         """Subscribe to status updates"""
         if not update_types:
             update_types = set(StatusUpdateType)
         
         subscription = StatusSubscription(
-            subscription_id=f"sub_{subscriber_id}_{datetime.now(timezone.utc).timestamp()}",
+            subscription_id=f"sub_{subscriber_id}_{datetime.now(UTC).timestamp()}",
             subscriber_id=subscriber_id,
             agent_patterns=agent_patterns,
             update_types=update_types,
@@ -428,7 +426,7 @@ class RealTimeStatusTracker:
         return StatusSnapshot(
             agent_id=session.agent_id,
             session_id=session.session_id,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             state=session.state,
             health_score=session.calculate_health_score(),
             active_tasks=list(session.active_tasks),
@@ -444,7 +442,7 @@ class RealTimeStatusTracker:
             last_error=session.metadata.get("last_error", {}).get("message"),
             metadata={
                 "project_id": session.project_id,
-                "uptime_seconds": (datetime.now(timezone.utc) - session.started_at).total_seconds()
+                "uptime_seconds": (datetime.now(UTC) - session.started_at).total_seconds()
             }
         )
     
@@ -466,7 +464,7 @@ class RealTimeStatusTracker:
         self,
         agent_id: str,
         update_type: StatusUpdateType,
-        data: Dict[str, Any]
+        data: dict[str, Any]
     ) -> None:
         """Notify subscribers of status change"""
         for subscription in self.subscriptions.values():
@@ -491,7 +489,7 @@ class RealTimeStatusTracker:
                 "subscription_id": subscription.subscription_id,
                 "agent_id": agent_id,
                 "update_type": update_type.value,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "data": data
             }
             
@@ -520,7 +518,7 @@ class RealTimeStatusTracker:
         self,
         agent_id: str,
         anomaly_type: str,
-        details: Dict[str, Any]
+        details: dict[str, Any]
     ) -> None:
         """Detect and handle anomalies"""
         self.anomaly_counts[agent_id] = self.anomaly_counts.get(agent_id, 0) + 1
@@ -611,7 +609,7 @@ class RealTimeStatusTracker:
         """Background task to cleanup old history"""
         while self._is_running:
             try:
-                cutoff = datetime.now(timezone.utc) - timedelta(hours=self.history_retention_hours)
+                cutoff = datetime.now(UTC) - timedelta(hours=self.history_retention_hours)
                 
                 for agent_id in list(self.status_history.keys()):
                     history = self.status_history[agent_id]
@@ -631,7 +629,7 @@ class RealTimeStatusTracker:
                 logger.error(f"Error in history cleanup: {e}")
                 await asyncio.sleep(300)  # 5 minutes before retry
     
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get tracker metrics"""
         return {
             "active_sessions": len(self.active_sessions),

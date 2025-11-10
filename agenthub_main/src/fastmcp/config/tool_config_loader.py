@@ -5,12 +5,12 @@ This module provides configuration loading and validation for server tools,
 allowing dynamic enabling/disabling of tools based on YAML configuration.
 """
 
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Set
-import yaml
+from typing import Any
 
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class ToolConfigError(Exception):
 class ToolConfigLoader:
     """Loads and manages tool configuration from YAML files."""
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: str | None = None):
         """
         Initialize the tool configuration loader.
 
@@ -32,7 +32,7 @@ class ToolConfigLoader:
                         If None, uses default path in src/config/tool_config.yaml
         """
         self.config_path = config_path or self._get_default_config_path()
-        self.config_data: Dict[str, Any] = {}
+        self.config_data: dict[str, Any] = {}
         self.environment = self._detect_environment()
 
     def _get_default_config_path(self) -> str:
@@ -51,7 +51,7 @@ class ToolConfigLoader:
             return "production"
         return "development"
 
-    def load_config(self) -> Dict[str, Any]:
+    def load_config(self) -> dict[str, Any]:
         """
         Load the tool configuration from YAML file.
 
@@ -68,7 +68,7 @@ class ToolConfigLoader:
                 logger.warning(f"Tool config file not found at {config_path}, using defaults")
                 return self._get_default_config()
 
-            with open(config_path, 'r', encoding='utf-8') as file:
+            with open(config_path, encoding='utf-8') as file:
                 self.config_data = yaml.safe_load(file)
 
             # Validate configuration
@@ -85,7 +85,7 @@ class ToolConfigLoader:
         except Exception as e:
             raise ToolConfigError(f"Failed to load config file: {e}")
 
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> dict[str, Any]:
         """Get default configuration when file is missing."""
         return {
             "version": "1.0.0",
@@ -133,7 +133,7 @@ class ToolConfigLoader:
         for group_name, group_config in tools.items():
             self._validate_tool_group(group_name, group_config)
 
-    def _validate_tool_group(self, group_name: str, group_config: Dict[str, Any]) -> None:
+    def _validate_tool_group(self, group_name: str, group_config: dict[str, Any]) -> None:
         """Validate a tool group configuration."""
         if not isinstance(group_config, dict):
             raise ToolConfigError(f"Tool group '{group_name}' must be a dictionary")
@@ -157,7 +157,7 @@ class ToolConfigLoader:
             logger.info(f"Applying {self.environment} environment overrides")
             self._merge_config(self.config_data, env_overrides)
 
-    def _merge_config(self, base: Dict[str, Any], override: Dict[str, Any]) -> None:
+    def _merge_config(self, base: dict[str, Any], override: dict[str, Any]) -> None:
         """Recursively merge override configuration into base configuration."""
         for key, value in override.items():
             if key in base and isinstance(base[key], dict) and isinstance(value, dict):
@@ -200,7 +200,7 @@ class ToolConfigLoader:
 
         return tool_enabled
 
-    def get_tool_config(self, group_name: str, tool_name: str) -> Dict[str, Any]:
+    def get_tool_config(self, group_name: str, tool_name: str) -> dict[str, Any]:
         """
         Get configuration for a specific tool.
 
@@ -214,7 +214,7 @@ class ToolConfigLoader:
         group_config = self.config_data.get("tools", {}).get(group_name, {})
         return group_config.get("tools", {}).get(tool_name, {})
 
-    def get_enabled_tools(self, group_name: str) -> List[str]:
+    def get_enabled_tools(self, group_name: str) -> list[str]:
         """
         Get list of enabled tools in a group.
 
@@ -240,7 +240,7 @@ class ToolConfigLoader:
         return enabled_tools
 
     def validate_dependencies(self, group_name: str, tool_name: str,
-                            available_dependencies: Set[str]) -> bool:
+                            available_dependencies: set[str]) -> bool:
         """
         Validate that all dependencies for a tool are available.
 

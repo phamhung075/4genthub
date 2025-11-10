@@ -5,16 +5,15 @@ This module provides authentication endpoints that handle login
 with Keycloak or Supabase based on configuration.
 """
 
-import os
-import httpx
-import logging
-import time
 import asyncio
-from fastapi import APIRouter, HTTPException, Depends, Request
-from fastapi.responses import JSONResponse
+import logging
+import os
+import time
+from datetime import UTC
+
+import httpx
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, field_validator
-from typing import Optional, Dict, Any, List
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
@@ -34,15 +33,15 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    refresh_token: Optional[str] = None
-    expires_in: Optional[int] = None
-    user_id: Optional[str] = None
-    email: Optional[str] = None
+    refresh_token: str | None = None
+    expires_in: int | None = None
+    user_id: str | None = None
+    email: str | None = None
 
 class RegisterRequest(BaseModel):
     email: str
     password: str
-    username: Optional[str] = None
+    username: str | None = None
     
     @field_validator('password')
     @classmethod
@@ -110,11 +109,11 @@ class RegisterResponse(BaseModel):
     success: bool = True
     user_id: str
     email: str
-    username: Optional[str] = None
+    username: str | None = None
     message: str = "User registered successfully"
     message_type: str = "success"  # success, error, warning, info
     display_color: str = "green"  # green for success
-    next_steps: Optional[List[str]] = None
+    next_steps: list[str] | None = None
 
 async def get_keycloak_admin_token():
     """
@@ -705,8 +704,9 @@ async def login(request: LoginRequest):
                 logger.warning("Keycloak unavailable in development mode, issuing local JWT token")
 
                 # Issue a local JWT token for development
-                import jwt
                 from datetime import datetime, timedelta
+
+                import jwt
 
                 jwt_secret = os.getenv("JWT_SECRET_KEY")
                 if jwt_secret:
@@ -715,8 +715,8 @@ async def login(request: LoginRequest):
                         "sub": f"dev-user-{hash(request.email) % 10000}",  # Consistent user ID for same email
                         "email": request.email,
                         "username": request.email.split('@')[0],
-                        "iat": datetime.now(timezone.utc),
-                        "exp": datetime.now(timezone.utc) + timedelta(hours=24),  # 24-hour expiry for development
+                        "iat": datetime.now(UTC),
+                        "exp": datetime.now(UTC) + timedelta(hours=24),  # 24-hour expiry for development
                         "type": "local_dev"
                     }
 
@@ -1124,8 +1124,9 @@ async def dev_login():
     logger.info("Development login endpoint accessed")
 
     # Issue a local JWT token for development
+    from datetime import datetime, timedelta
+
     import jwt
-    from datetime import datetime, timezone, timedelta
 
     jwt_secret = os.getenv("JWT_SECRET_KEY")
     if not jwt_secret:
@@ -1136,8 +1137,8 @@ async def dev_login():
         "sub": "dev-user-001",
         "email": "dev@example.com",
         "username": "dev-user",
-        "iat": datetime.now(timezone.utc),
-        "exp": datetime.now(timezone.utc) + timedelta(hours=24),  # 24-hour expiry for development
+        "iat": datetime.now(UTC),
+        "exp": datetime.now(UTC) + timedelta(hours=24),  # 24-hour expiry for development
         "type": "local_dev"
     }
 
@@ -1151,7 +1152,7 @@ async def dev_login():
     )
 
 @router.post("/logout")
-async def logout(refresh_token: Optional[str] = None):
+async def logout(refresh_token: str | None = None):
     """
     Logout endpoint that revokes tokens if supported.
     """

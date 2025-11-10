@@ -21,10 +21,10 @@ import logging
 import queue
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Callable, Dict, List, Optional, Any
-from uuid import uuid4
+from datetime import UTC, datetime
+from typing import Any
 
 from fastmcp.task_management.domain.events.base import BaseDomainEvent
 
@@ -40,9 +40,9 @@ class EventQueueItem:
     """Item in the event processing queue with retry tracking."""
     event: BaseDomainEvent
     attempt_number: int = 0
-    first_attempt_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_attempt_at: Optional[datetime] = None
-    last_error: Optional[str] = None
+    first_attempt_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_attempt_at: datetime | None = None
+    last_error: str | None = None
 
 
 @dataclass
@@ -50,7 +50,7 @@ class DeadLetterEvent:
     """Failed event for Dead Letter Queue storage."""
     event_id: str
     event_type: str
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     error_message: str
     attempt_count: int
     first_attempt_at: datetime
@@ -78,7 +78,7 @@ class EventWorker:
 
     def __init__(
         self,
-        event_handlers: Dict[type, List[Callable]],
+        event_handlers: dict[type, list[Callable]],
         max_queue_size: int = 10000,
         heartbeat_interval: int = 10
     ):
@@ -93,10 +93,10 @@ class EventWorker:
         self._event_handlers = event_handlers
         self._queue: queue.Queue[EventQueueItem] = queue.Queue(maxsize=max_queue_size)
         self._running = False
-        self._worker_thread: Optional[threading.Thread] = None
+        self._worker_thread: threading.Thread | None = None
         self._heartbeat_interval = heartbeat_interval
-        self._last_heartbeat: Optional[datetime] = None
-        self._dead_letter_queue: List[DeadLetterEvent] = []
+        self._last_heartbeat: datetime | None = None
+        self._dead_letter_queue: list[DeadLetterEvent] = []
         self._stats = {
             'events_processed': 0,
             'events_failed': 0,
@@ -179,7 +179,7 @@ class EventWorker:
         while self._running:
             try:
                 # Update heartbeat
-                self._last_heartbeat = datetime.now(timezone.utc)
+                self._last_heartbeat = datetime.now(UTC)
 
                 # Get next event from queue (blocking with timeout for heartbeat)
                 try:
@@ -224,7 +224,7 @@ class EventWorker:
         for handler in handlers:
             try:
                 # Update queue item metadata
-                queue_item.last_attempt_at = datetime.now(timezone.utc)
+                queue_item.last_attempt_at = datetime.now(UTC)
 
                 # Execute handler
                 handler(event)
@@ -358,7 +358,7 @@ class EventWorker:
             error_message=queue_item.last_error or "Unknown error",
             attempt_count=queue_item.attempt_number + 1,
             first_attempt_at=queue_item.first_attempt_at,
-            final_failure_at=datetime.now(timezone.utc)
+            final_failure_at=datetime.now(UTC)
         )
 
         self._dead_letter_queue.append(dead_letter_event)
@@ -394,7 +394,7 @@ class EventWorker:
         if drained_count > 0:
             logger.info(f"Drained {drained_count} events from queue")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get worker statistics.
 
@@ -414,7 +414,7 @@ class EventWorker:
 
         return stats
 
-    def get_dead_letter_events(self) -> List[DeadLetterEvent]:
+    def get_dead_letter_events(self) -> list[DeadLetterEvent]:
         """
         Get all events in Dead Letter Queue.
 
@@ -434,17 +434,17 @@ class EventWorker:
             return False
 
         # Check if heartbeat is recent (within 2x interval)
-        time_since_heartbeat = (datetime.now(timezone.utc) - self._last_heartbeat).total_seconds()
+        time_since_heartbeat = (datetime.now(UTC) - self._last_heartbeat).total_seconds()
         return time_since_heartbeat < (self._heartbeat_interval * 2)
 
 
 # Global worker instance (singleton)
-_global_worker: Optional[EventWorker] = None
+_global_worker: EventWorker | None = None
 _worker_lock = threading.Lock()
 
 
 def get_event_worker(
-    event_handlers: Optional[Dict[type, List[Callable]]] = None,
+    event_handlers: dict[type, list[Callable]] | None = None,
     **kwargs
 ) -> EventWorker:
     """

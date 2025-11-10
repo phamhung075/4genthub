@@ -3,7 +3,6 @@ DTO for agent assignment requests.
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -13,7 +12,7 @@ class AssignAgentRequest:
     project_id: str
     agent_id: str
     git_branch_id: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
     
     def validate(self) -> None:
         """Validate the request data."""

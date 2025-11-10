@@ -1,10 +1,10 @@
 """Coordination Value Objects for Multi-Agent Workflows"""
 
-from typing import Dict, List, Optional, Set, Any
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
-from datetime import datetime, timezone
-from uuid import UUID
+from typing import Any
+
 
 class CoordinationType(Enum):
     """Types of agent coordination patterns"""
@@ -65,25 +65,25 @@ class CoordinationRequest:
     
     # Request details
     reason: str
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     priority: str = "medium"  # low, medium, high, critical
-    deadline: Optional[datetime] = None
+    deadline: datetime | None = None
     
     # Handoff-specific fields
-    handoff_notes: Optional[str] = None
-    completion_criteria: List[str] = field(default_factory=list)
+    handoff_notes: str | None = None
+    completion_criteria: list[str] = field(default_factory=list)
     
     # Review-specific fields
-    review_items: List[str] = field(default_factory=list)
-    review_checklist: Dict[str, bool] = field(default_factory=dict)
+    review_items: list[str] = field(default_factory=list)
+    review_checklist: dict[str, bool] = field(default_factory=dict)
     
     def is_expired(self) -> bool:
         """Check if request has expired"""
         if not self.deadline:
             return False
-        return datetime.now(timezone.utc) > self.deadline
+        return datetime.now(UTC) > self.deadline
     
-    def to_notification(self) -> Dict[str, Any]:
+    def to_notification(self) -> dict[str, Any]:
         """Convert to notification format for target agent"""
         return {
             "type": f"coordination_{self.coordination_type.value}",
@@ -106,26 +106,26 @@ class WorkAssignment:
     assigned_at: datetime
     
     # Assignment details
-    role: Optional[str] = None
-    responsibilities: List[str] = field(default_factory=list)
-    deliverables: List[str] = field(default_factory=list)
-    constraints: Dict[str, Any] = field(default_factory=dict)
+    role: str | None = None
+    responsibilities: list[str] = field(default_factory=list)
+    deliverables: list[str] = field(default_factory=list)
+    constraints: dict[str, Any] = field(default_factory=dict)
     
     # Timeline
-    estimated_hours: Optional[float] = None
-    due_date: Optional[datetime] = None
+    estimated_hours: float | None = None
+    due_date: datetime | None = None
     
     # Collaboration
-    collaborating_agents: List[str] = field(default_factory=list)
-    reporting_to: Optional[str] = None
+    collaborating_agents: list[str] = field(default_factory=list)
+    reporting_to: str | None = None
     
     def is_overdue(self) -> bool:
         """Check if assignment is overdue"""
         if not self.due_date:
             return False
-        return datetime.now(timezone.utc) > self.due_date
+        return datetime.now(UTC) > self.due_date
     
-    def to_task_context(self) -> Dict[str, Any]:
+    def to_task_context(self) -> dict[str, Any]:
         """Convert to task context format"""
         return {
             "assignment": {
@@ -152,19 +152,19 @@ class WorkHandoff:
     
     # Handoff content
     work_summary: str = ""
-    completed_items: List[str] = field(default_factory=list)
-    remaining_items: List[str] = field(default_factory=list)
-    known_issues: List[str] = field(default_factory=list)
+    completed_items: list[str] = field(default_factory=list)
+    remaining_items: list[str] = field(default_factory=list)
+    known_issues: list[str] = field(default_factory=list)
     handoff_notes: str = ""
     
     # Supporting materials
-    artifacts: Dict[str, str] = field(default_factory=dict)  # name -> location
-    documentation_links: List[str] = field(default_factory=list)
+    artifacts: dict[str, str] = field(default_factory=dict)  # name -> location
+    documentation_links: list[str] = field(default_factory=list)
     
     # Status tracking
-    accepted_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    rejection_reason: Optional[str] = None
+    accepted_at: datetime | None = None
+    completed_at: datetime | None = None
+    rejection_reason: str | None = None
     
     def accept(self) -> None:
         """Accept the handoff"""
@@ -172,7 +172,7 @@ class WorkHandoff:
             raise ValueError(f"Cannot accept handoff in status {self.status}")
         
         self.status = HandoffStatus.ACCEPTED
-        self.accepted_at = datetime.now(timezone.utc)
+        self.accepted_at = datetime.now(UTC)
     
     def reject(self, reason: str) -> None:
         """Reject the handoff"""
@@ -188,9 +188,9 @@ class WorkHandoff:
             raise ValueError(f"Cannot complete handoff in status {self.status}")
         
         self.status = HandoffStatus.COMPLETED
-        self.completed_at = datetime.now(timezone.utc)
+        self.completed_at = datetime.now(UTC)
     
-    def to_handoff_package(self) -> Dict[str, Any]:
+    def to_handoff_package(self) -> dict[str, Any]:
         """Create complete handoff package"""
         return {
             "handoff_id": self.handoff_id,
@@ -217,23 +217,23 @@ class ConflictResolution:
     """Resolution of conflicts between agents"""
     conflict_id: str
     conflict_type: ConflictType
-    involved_agents: List[str]
+    involved_agents: list[str]
     task_id: str
     detected_at: datetime
     
     # Conflict details
     description: str
-    conflicting_elements: Dict[str, Any] = field(default_factory=dict)
+    conflicting_elements: dict[str, Any] = field(default_factory=dict)
     impact_assessment: str = "low"  # low, medium, high, critical
     
     # Resolution
-    resolution_strategy: Optional[ResolutionStrategy] = None
-    resolved_by: Optional[str] = None
-    resolution_details: Optional[str] = None
-    resolved_at: Optional[datetime] = None
+    resolution_strategy: ResolutionStrategy | None = None
+    resolved_by: str | None = None
+    resolution_details: str | None = None
+    resolved_at: datetime | None = None
     
     # Voting (if applicable)
-    votes: Dict[str, str] = field(default_factory=dict)  # agent_id -> choice
+    votes: dict[str, str] = field(default_factory=dict)  # agent_id -> choice
     
     def is_resolved(self) -> bool:
         """Check if conflict is resolved"""
@@ -247,13 +247,13 @@ class ConflictResolution:
         self.resolution_strategy = strategy
         self.resolved_by = resolved_by
         self.resolution_details = details
-        self.resolved_at = datetime.now(timezone.utc)
+        self.resolved_at = datetime.now(UTC)
     
     def add_vote(self, agent_id: str, choice: str) -> None:
         """Add agent vote for resolution"""
         self.votes[agent_id] = choice
     
-    def get_vote_summary(self) -> Dict[str, int]:
+    def get_vote_summary(self) -> dict[str, int]:
         """Get summary of votes"""
         summary = {}
         for choice in self.votes.values():
@@ -265,8 +265,8 @@ class AgentCommunication:
     """Communication between agents"""
     message_id: str
     from_agent_id: str
-    to_agent_ids: List[str]  # Can be broadcast
-    task_id: Optional[str]
+    to_agent_ids: list[str]  # Can be broadcast
+    task_id: str | None
     sent_at: datetime
     
     # Message content
@@ -276,13 +276,13 @@ class AgentCommunication:
     priority: str = "normal"  # low, normal, high, urgent
     
     # Threading
-    in_reply_to: Optional[str] = None
-    thread_id: Optional[str] = None
+    in_reply_to: str | None = None
+    thread_id: str | None = None
     
     # Metadata
     requires_response: bool = False
-    response_deadline: Optional[datetime] = None
-    attachments: List[str] = field(default_factory=list)
+    response_deadline: datetime | None = None
+    attachments: list[str] = field(default_factory=list)
     
     def is_broadcast(self) -> bool:
         """Check if message is broadcast"""
@@ -297,7 +297,7 @@ class AgentCommunication:
             return True
         
         if self.response_deadline:
-            hours_until_deadline = (self.response_deadline - datetime.now(timezone.utc)).total_seconds() / 3600
+            hours_until_deadline = (self.response_deadline - datetime.now(UTC)).total_seconds() / 3600
             return hours_until_deadline <= 2
         
         return False
@@ -309,18 +309,18 @@ class CoordinationMessage:
     message_id: str
     message_type: str  # handoff_request, status_update, resource_request, etc.
     from_agent_id: str
-    to_agent_id: Optional[str]  # None for broadcast
+    to_agent_id: str | None  # None for broadcast
     timestamp: datetime
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     priority: str = "normal"  # low, normal, high, urgent
     requires_response: bool = False
-    correlation_id: Optional[str] = None
+    correlation_id: str | None = None
     
     def is_broadcast(self) -> bool:
         """Check if message is a broadcast"""
         return self.to_agent_id is None
     
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         """Convert to JSON-serializable dict"""
         return {
             "message_id": self.message_id,

@@ -6,8 +6,8 @@ to repository classes for consistent cache management.
 """
 
 import logging
-from typing import Optional, Dict, Any, List
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +61,8 @@ class CacheInvalidationMixin:
         entity_type: str,
         entity_id: str,
         operation: CacheOperation,
-        user_id: Optional[str] = None,
-        level: Optional[str] = None,
+        user_id: str | None = None,
+        level: str | None = None,
         propagate: bool = True
     ):
         """
@@ -109,7 +109,7 @@ class CacheInvalidationMixin:
     def _invalidate_context_cache(
         self,
         context_id: str,
-        level: Optional[str],
+        level: str | None,
         user_id: str,
         operation: CacheOperation,
         propagate: bool
@@ -254,10 +254,10 @@ class CacheInvalidationMixin:
     def invalidate_bulk(
         self,
         entity_type: str,
-        entity_ids: List[str],
+        entity_ids: list[str],
         operation: CacheOperation,
-        user_id: Optional[str] = None,
-        level: Optional[str] = None
+        user_id: str | None = None,
+        level: str | None = None
     ):
         """
         Invalidate cache for multiple entities.
@@ -286,7 +286,7 @@ class CacheInvalidationMixin:
             if user_id:
                 self._propagate_context_invalidation(level, entity_ids[0], user_id)
     
-    def invalidate_all_user_cache(self, user_id: Optional[str] = None):
+    def invalidate_all_user_cache(self, user_id: str | None = None):
         """
         Invalidate all caches for a user.
         
@@ -315,10 +315,10 @@ class CacheInvalidationMixin:
         self,
         entity_type: str,
         entity_id: str,
-        data: Dict[str, Any],
-        user_id: Optional[str] = None,
-        level: Optional[str] = None,
-        ttl: Optional[int] = None
+        data: dict[str, Any],
+        user_id: str | None = None,
+        level: str | None = None,
+        ttl: int | None = None
     ):
         """
         Warm cache with new data after updates.

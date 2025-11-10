@@ -20,9 +20,9 @@ Clean Code Requirements:
 
 import logging
 import time
-from typing import Dict, Optional, Set, Any, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .protocols.cascade_data_provider import CascadeDataProvider
@@ -45,15 +45,15 @@ class CascadeResult:
 
     entity_id: str
     entity_type: EntityType
-    affected_tasks: Set[str]
-    affected_subtasks: Set[str]
-    affected_branches: Set[str]
-    affected_projects: Set[str]
-    affected_contexts: Set[str]
+    affected_tasks: set[str]
+    affected_subtasks: set[str]
+    affected_branches: set[str]
+    affected_projects: set[str]
+    affected_contexts: set[str]
     calculation_time_ms: float
     cache_hit: bool = False
 
-    def get_all_affected_ids(self) -> Set[str]:
+    def get_all_affected_ids(self) -> set[str]:
         """Get all affected entity IDs regardless of type"""
         return (
             self.affected_tasks |
@@ -91,14 +91,14 @@ class CascadeCalculator:
                           (e.g., SQLAlchemyCascadeDataProvider)
         """
         self._data_provider = data_provider
-        self._cache: Dict[str, CascadeResult] = {}
+        self._cache: dict[str, CascadeResult] = {}
         self._cache_ttl_seconds = 300  # 5 minutes cache TTL
-        self._cache_timestamps: Dict[str, float] = {}
+        self._cache_timestamps: dict[str, float] = {}
 
     async def calculate_cascade(
         self,
         entity_id: str,
-        entity_type: Optional[EntityType] = None,
+        entity_type: EntityType | None = None,
         use_cache: bool = True
     ) -> CascadeResult:
         """
@@ -435,7 +435,7 @@ class CascadeCalculator:
         self._cache_timestamps.clear()
         logger.debug("Cascade calculator cache cleared")
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics for monitoring"""
         return {
             "cache_size": len(self._cache),

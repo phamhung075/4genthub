@@ -1,8 +1,8 @@
 """MCP Status Broadcasting Service Implementation"""
 
 import logging
-from typing import Dict, Any
 from datetime import datetime
+from typing import Any
 
 from ...domain.services.status_broadcasting_service import StatusBroadcastingService
 from ...domain.value_objects.status_update import StatusUpdate
@@ -14,9 +14,9 @@ class MCPStatusBroadcastingService(StatusBroadcastingService):
     """Infrastructure implementation of StatusBroadcastingService that integrates with MCP infrastructure"""
     
     def __init__(self):
-        self._registered_clients: Dict[str, Dict[str, Any]] = {}
+        self._registered_clients: dict[str, dict[str, Any]] = {}
     
-    def register_client_for_updates(self, session_id: str, client_info: Dict[str, Any]) -> StatusUpdate:
+    def register_client_for_updates(self, session_id: str, client_info: dict[str, Any]) -> StatusUpdate:
         """Register a client for status updates"""
         try:
             # Store client registration info
@@ -27,7 +27,6 @@ class MCPStatusBroadcastingService(StatusBroadcastingService):
             
             # Try to register with the existing status broadcaster
             try:
-                from ....server.connection_status_broadcaster import get_status_broadcaster
                 # In a real async implementation, this would await the status broadcaster
                 logger.info(f"Client {session_id} registered for status updates")
             except Exception as e:
@@ -48,7 +47,6 @@ class MCPStatusBroadcastingService(StatusBroadcastingService):
                 
                 # Try to unregister with the existing status broadcaster
                 try:
-                    from ....server.connection_status_broadcaster import get_status_broadcaster
                     # In a real async implementation, this would await the status broadcaster
                     logger.info(f"Client {session_id} unregistered from status updates")
                 except Exception as e:
@@ -66,7 +64,6 @@ class MCPStatusBroadcastingService(StatusBroadcastingService):
         try:
             # Try to broadcast using the existing status broadcaster
             try:
-                from ....server.connection_status_broadcaster import get_status_broadcaster
                 # In a real async implementation, this would await the status broadcaster
                 logger.info(f"Broadcasting status update: {update.event_type}")
                 return True
@@ -82,12 +79,11 @@ class MCPStatusBroadcastingService(StatusBroadcastingService):
         """Get the number of registered clients"""
         return len(self._registered_clients)
     
-    def get_last_broadcast_info(self) -> Dict[str, Any]:
+    def get_last_broadcast_info(self) -> dict[str, Any]:
         """Get information about the last broadcast"""
         try:
             # Try to get info from the existing status broadcaster
             try:
-                from ....server.connection_status_broadcaster import get_status_broadcaster
                 # In a real async implementation, this would await the status broadcaster
                 return {
                     "last_broadcast_time": None,
@@ -105,7 +101,7 @@ class MCPStatusBroadcastingService(StatusBroadcastingService):
             logger.error(f"Error getting last broadcast info: {e}")
             return {"error": str(e)}
     
-    def validate_broadcasting_infrastructure(self) -> Dict[str, Any]:
+    def validate_broadcasting_infrastructure(self) -> dict[str, Any]:
         """Validate status broadcasting infrastructure"""
         try:
             # Check if status broadcaster is available

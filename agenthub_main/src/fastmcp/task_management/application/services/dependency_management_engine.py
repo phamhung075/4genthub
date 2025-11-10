@@ -6,19 +6,21 @@ MCP dependency framework with intelligent analysis, automated detection, and exe
 """
 
 import logging
-import asyncio
-from typing import List, Dict, Optional, Set, Any, Tuple
-from datetime import datetime, timezone
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
 
+from fastmcp.task_management.application.dtos.task.dependency_info import (
+    DependencyInfo,
+    DependencyRelationships,
+)
+from fastmcp.task_management.application.services.dependency_resolver_service import (
+    DependencyResolverService,
+)
+from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
-from fastmcp.task_management.application.dtos.task.dependency_info import (
-    DependencyInfo, DependencyChain, DependencyRelationships
-)
-from fastmcp.task_management.application.services.dependency_resolver_service import DependencyResolverService
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ class DependencyHint:
     confidence_score: float
     suggestion_reason: str
     suggestion_type: SuggestionType
-    evidence: Dict[str, Any] = field(default_factory=dict)
+    evidence: dict[str, Any] = field(default_factory=dict)
     
     def __post_init__(self):
         """Validate confidence score"""
@@ -60,20 +62,20 @@ class DependencyHint:
 class DependencySuggestion:
     """A suggestion for adding a dependency relationship"""
     hint: DependencyHint
-    target_task_info: Optional[DependencyInfo] = None
+    target_task_info: DependencyInfo | None = None
     status: SuggestionStatus = SuggestionStatus.PENDING
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass
 class EnhancedDependencyRelationships:
     """Enhanced dependency relationships including AI suggestions"""
     basic_relationships: DependencyRelationships
-    ai_suggestions: List[DependencySuggestion] = field(default_factory=list)
+    ai_suggestions: list[DependencySuggestion] = field(default_factory=list)
     suggestion_summary: str = ""
     optimization_score: float = 0.0
-    performance_metrics: Dict[str, Any] = field(default_factory=dict)
+    performance_metrics: dict[str, Any] = field(default_factory=dict)
 
 
 class ContentAnalyzer:
@@ -101,7 +103,7 @@ class ContentAnalyzer:
     def __init__(self, task_repository: TaskRepository):
         self.task_repository = task_repository
     
-    def analyze_task_content(self, task) -> List[DependencyHint]:
+    def analyze_task_content(self, task) -> list[DependencyHint]:
         """
         Analyze task content to identify potential dependencies
         
@@ -152,7 +154,7 @@ class ContentAnalyzer:
         
         return " ".join(content_parts).lower()
     
-    def _get_all_tasks_for_analysis(self, current_task) -> List:
+    def _get_all_tasks_for_analysis(self, current_task) -> list:
         """Get all tasks except current one for dependency analysis"""
         try:
             all_tasks = self.task_repository.find_all()
@@ -162,7 +164,7 @@ class ContentAnalyzer:
             logger.error(f"Error fetching tasks for analysis: {e}")
             return []
     
-    def _analyze_dependency_keywords(self, task, content_text: str, all_tasks: List) -> List[DependencyHint]:
+    def _analyze_dependency_keywords(self, task, content_text: str, all_tasks: list) -> list[DependencyHint]:
         """Analyze content for dependency keywords"""
         hints = []
         
@@ -199,7 +201,7 @@ class ContentAnalyzer:
         
         return hints
     
-    def _analyze_file_dependencies(self, task, content_text: str, all_tasks: List) -> List[DependencyHint]:
+    def _analyze_file_dependencies(self, task, content_text: str, all_tasks: list) -> list[DependencyHint]:
         """Analyze file references to identify dependencies"""
         hints = []
         
@@ -247,7 +249,7 @@ class ContentAnalyzer:
         
         return hints
     
-    def _analyze_agent_dependencies(self, task, all_tasks: List) -> List[DependencyHint]:
+    def _analyze_agent_dependencies(self, task, all_tasks: list) -> list[DependencyHint]:
         """Analyze agent assignments to identify resource dependencies"""
         hints = []
         
@@ -303,7 +305,7 @@ class DependencyManagementEngine:
         self,
         dependency_resolver: DependencyResolverService,
         task_repository: TaskRepository,
-        user_id: Optional[str] = None
+        user_id: str | None = None
     ):
         self.dependency_resolver = dependency_resolver
         self.task_repository = task_repository
@@ -382,7 +384,7 @@ class DependencyManagementEngine:
                 performance_metrics={"error": str(e)}
             )
     
-    def suggest_dependencies(self, task_id: str) -> List[DependencySuggestion]:
+    def suggest_dependencies(self, task_id: str) -> list[DependencySuggestion]:
         """
         Generate dependency suggestions for a task
         
@@ -439,7 +441,7 @@ class DependencyManagementEngine:
             logger.error(f"Error generating dependency suggestions for task {task_id}: {e}")
             return []
     
-    async def _generate_ai_suggestions(self, task_id: str) -> List[DependencySuggestion]:
+    async def _generate_ai_suggestions(self, task_id: str) -> list[DependencySuggestion]:
         """Generate AI-powered dependency suggestions (async for future ML integration)"""
         # For now, use content analysis (synchronous)
         # Future: Add async ML model inference, semantic analysis, etc.
@@ -448,7 +450,7 @@ class DependencyManagementEngine:
     def _calculate_optimization_score(
         self, 
         basic_relationships: DependencyRelationships, 
-        ai_suggestions: List[DependencySuggestion]
+        ai_suggestions: list[DependencySuggestion]
     ) -> float:
         """Calculate a score indicating how much the AI suggestions could improve the task"""
         if not ai_suggestions:
@@ -464,7 +466,7 @@ class DependencyManagementEngine:
         
         return (suggestion_score + coverage_score) / 2
     
-    def _generate_suggestion_summary(self, suggestions: List[DependencySuggestion]) -> str:
+    def _generate_suggestion_summary(self, suggestions: list[DependencySuggestion]) -> str:
         """Generate human-readable summary of AI suggestions"""
         if not suggestions:
             return "No AI suggestions available"
@@ -484,7 +486,7 @@ class DependencyManagementEngine:
         else:
             return f"Found {total} low-confidence AI suggestions"
     
-    def get_performance_metrics(self) -> Dict[str, Any]:
+    def get_performance_metrics(self) -> dict[str, Any]:
         """Get performance metrics for the engine"""
         return self.performance_metrics.copy()
     

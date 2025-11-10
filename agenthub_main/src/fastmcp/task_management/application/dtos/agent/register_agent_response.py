@@ -1,7 +1,7 @@
 """Register Agent Response DTO"""
 
 from dataclasses import dataclass
-from typing import Optional
+
 from .agent_response import AgentResponse
 
 
@@ -10,9 +10,9 @@ class RegisterAgentResponse:
     """Response DTO for agent registration"""
     
     success: bool
-    agent: Optional[AgentResponse] = None
-    message: Optional[str] = None
-    error: Optional[str] = None
+    agent: AgentResponse | None = None
+    message: str | None = None
+    error: str | None = None
     
     @classmethod
     def success_response(cls, agent: AgentResponse, message: str = "Agent registered successfully") -> "RegisterAgentResponse":

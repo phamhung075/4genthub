@@ -6,12 +6,17 @@ Provides seamless integration for AI-enhanced task operations.
 
 import logging
 import uuid
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone
+from typing import Any
 
-from ....ai_task_planning.application.services.ai_planning_service import AITaskPlanningService
-from ....ai_task_planning.domain.entities.planning_request import PlanningRequest, RequirementItem, PlanningContext
-from ....ai_task_planning.domain.entities.task_plan import TaskPlan, PlannedTask
+from ....ai_task_planning.application.services.ai_planning_service import (
+    AITaskPlanningService,
+)
+from ....ai_task_planning.domain.entities.planning_request import (
+    PlanningContext,
+    PlanningRequest,
+    RequirementItem,
+)
+from ....ai_task_planning.domain.entities.task_plan import TaskPlan
 from ..dtos.task.create_task_request import CreateTaskRequest
 from ..facades.task_application_facade import TaskApplicationFacade
 
@@ -34,7 +39,7 @@ class AITaskIntegrationService:
                                           description: str, git_branch_id: str,
                                           context: str = 'new_feature',
                                           auto_create_tasks: bool = True,
-                                          user_id: Optional[str] = None) -> Dict[str, Any]:
+                                          user_id: str | None = None) -> dict[str, Any]:
         """
         Create an AI-enhanced task plan and optionally create MCP tasks.
         
@@ -108,7 +113,7 @@ class AITaskIntegrationService:
     
     async def enhance_task_creation(self, create_request: CreateTaskRequest, 
                                    enable_ai_breakdown: bool = False,
-                                   enable_smart_assignment: bool = False) -> Dict[str, Any]:
+                                   enable_smart_assignment: bool = False) -> dict[str, Any]:
         """
         Enhance task creation with AI capabilities.
         
@@ -161,8 +166,8 @@ class AITaskIntegrationService:
                 'error': f'AI enhancement failed: {str(e)}'
             }
     
-    async def add_ai_insights_to_task_response(self, task_data: Dict[str, Any], 
-                                              action: str = "get") -> Dict[str, Any]:
+    async def add_ai_insights_to_task_response(self, task_data: dict[str, Any], 
+                                              action: str = "get") -> dict[str, Any]:
         """
         Add AI insights to existing task response.
         
@@ -195,7 +200,7 @@ class AITaskIntegrationService:
             # Return original data if AI insights fail
             return task_data
     
-    def _parse_requirements(self, requirements: str) -> List[RequirementItem]:
+    def _parse_requirements(self, requirements: str) -> list[RequirementItem]:
         """Parse requirements string into structured RequirementItem objects"""
         import json
         
@@ -237,7 +242,7 @@ class AITaskIntegrationService:
         return requirement_items
     
     async def _create_mcp_tasks_from_plan(self, task_plan: TaskPlan, git_branch_id: str,
-                                         user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+                                         user_id: str | None = None) -> list[dict[str, Any]]:
         """Create MCP tasks from AI-generated task plan"""
         created_tasks = []
         
@@ -284,7 +289,7 @@ class AITaskIntegrationService:
         return created_tasks
     
     async def _generate_task_breakdown(self, description: str, parent_task_id: str,
-                                     git_branch_id: str) -> Dict[str, Any]:
+                                     git_branch_id: str) -> dict[str, Any]:
         """Generate AI-powered task breakdown"""
         # This would use the requirement analyzer to break down the task
         # For now, return a placeholder
@@ -295,7 +300,7 @@ class AITaskIntegrationService:
             'recommended_approach': 'Standard implementation'
         }
     
-    async def _suggest_optimal_agents(self, task_content: str) -> Dict[str, Any]:
+    async def _suggest_optimal_agents(self, task_content: str) -> dict[str, Any]:
         """Suggest optimal agents based on task content"""
         # This would use agent intelligence to suggest assignments
         # For now, return basic suggestions
@@ -326,7 +331,7 @@ class AITaskIntegrationService:
             'confidence': 0.7
         }
     
-    async def _generate_task_insights(self, title: str, description: str, action: str) -> Dict[str, Any]:
+    async def _generate_task_insights(self, title: str, description: str, action: str) -> dict[str, Any]:
         """Generate AI insights for a task"""
         insights = {
             'complexity_analysis': self._analyze_complexity(title, description),
@@ -337,7 +342,7 @@ class AITaskIntegrationService:
         
         return insights
     
-    def _analyze_complexity(self, title: str, description: str) -> Dict[str, Any]:
+    def _analyze_complexity(self, title: str, description: str) -> dict[str, Any]:
         """Analyze task complexity"""
         content = f"{title} {description}".lower()
         
@@ -367,7 +372,7 @@ class AITaskIntegrationService:
             'factors': 'Keyword-based analysis'
         }
     
-    def _suggest_next_actions(self, action: str) -> List[str]:
+    def _suggest_next_actions(self, action: str) -> list[str]:
         """Suggest next actions based on current action"""
         suggestions = {
             'create': [
@@ -398,7 +403,7 @@ class AITaskIntegrationService:
         
         return suggestions.get(action, ['Continue with standard workflow'])
     
-    def _identify_risks(self, title: str, description: str) -> List[str]:
+    def _identify_risks(self, title: str, description: str) -> list[str]:
         """Identify potential risks"""
         content = f"{title} {description}".lower()
         risks = []
@@ -417,7 +422,7 @@ class AITaskIntegrationService:
         
         return risks if risks else ['No significant risks identified']
     
-    def _suggest_optimizations(self, title: str, description: str) -> List[str]:
+    def _suggest_optimizations(self, title: str, description: str) -> list[str]:
         """Suggest optimization opportunities"""
         content = f"{title} {description}".lower()
         optimizations = []
@@ -436,7 +441,7 @@ class AITaskIntegrationService:
         
         return optimizations if optimizations else ['Standard implementation approach']
     
-    def _generate_ai_insights(self, task_plan: TaskPlan) -> Dict[str, Any]:
+    def _generate_ai_insights(self, task_plan: TaskPlan) -> dict[str, Any]:
         """Generate high-level AI insights for the task plan"""
         return {
             'plan_quality': {

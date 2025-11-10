@@ -1,8 +1,8 @@
 """Branch Statistics Service - Domain Service for Managing Branch Task Counts"""
 
 import logging
-from typing import Optional, Dict, Any, Protocol
 from dataclasses import dataclass
+from typing import Any, Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class TaskRepositoryProtocol(Protocol):
 
 class GitBranchRepositoryProtocol(Protocol):
     """Protocol for git branch repository to avoid infrastructure dependency."""
-    def get(self, branch_id: str) -> Optional[Any]:
+    def get(self, branch_id: str) -> Any | None:
         pass
 
     def update(self, branch_id: str, updates: dict) -> bool:
@@ -75,8 +75,8 @@ class BranchStatisticsService:
         except Exception as e:
             logger.error(f"Failed to update branch statistics on task creation: {e}")
 
-    def on_task_updated(self, task_id: str, old_branch_id: Optional[str],
-                       new_branch_id: Optional[str], old_status: str, new_status: str) -> None:
+    def on_task_updated(self, task_id: str, old_branch_id: str | None,
+                       new_branch_id: str | None, old_status: str, new_status: str) -> None:
         """
         Handle task update event - update branch counts.
 
@@ -174,7 +174,7 @@ class BranchStatisticsService:
             progress_percentage=progress_percentage
         )
 
-    def recalculate_all_branches(self, project_id: Optional[str] = None) -> Dict[str, BranchStatistics]:
+    def recalculate_all_branches(self, project_id: str | None = None) -> dict[str, BranchStatistics]:
         """
         Recalculate statistics for all branches in a project or all branches.
 
@@ -200,7 +200,7 @@ class BranchStatisticsService:
         logger.info(f"Recalculated statistics for {len(results)} branches")
         return results
 
-    def get_branch_statistics(self, branch_id: str) -> Optional[BranchStatistics]:
+    def get_branch_statistics(self, branch_id: str) -> BranchStatistics | None:
         """
         Get current statistics for a branch.
 

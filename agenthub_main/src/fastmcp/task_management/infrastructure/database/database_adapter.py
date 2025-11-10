@@ -6,12 +6,11 @@ Handles JSON operations across different database engines.
 
 import json
 import logging
-from typing import Any, Dict, Optional
 from contextlib import contextmanager
+from typing import Any
+
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
-from .session_manager import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +47,7 @@ class DatabaseAdapter:
         else:
             raise NotImplementedError(f"JSON set not implemented for {self.engine.dialect.name}")
     
-    def json_merge(self, column: str, new_data: Dict[str, Any]) -> str:
+    def json_merge(self, column: str, new_data: dict[str, Any]) -> str:
         """Generate JSON merge expression for different databases."""
         json_data = json.dumps(new_data)
         
@@ -67,7 +66,7 @@ class DatabaseAdapter:
             return json.dumps(value)
         return str(value)
     
-    def parse_json_value(self, value: Optional[str]) -> Any:
+    def parse_json_value(self, value: str | None) -> Any:
         """Parse a JSON value from database."""
         if value is None:
             return None
@@ -78,7 +77,7 @@ class DatabaseAdapter:
                 return value
         return value
     
-    def create_json_contains_condition(self, column: str, search_dict: Dict[str, Any]) -> str:
+    def create_json_contains_condition(self, column: str, search_dict: dict[str, Any]) -> str:
         """Create a condition to check if JSON contains specific key-value pairs."""
         if self.is_postgresql:
             # PostgreSQL: column @> '{"key": "value"}'::jsonb
@@ -102,11 +101,11 @@ class DatabaseAdapter:
         elif self.is_sqlite:
             # SQLite: This is more complex, would need custom function
             # For now, return a placeholder
-            return f"'not_implemented_for_sqlite'"
+            return "'not_implemented_for_sqlite'"
         else:
             raise NotImplementedError(f"JSON keys not implemented for {self.engine.dialect.name}")
     
-    def execute_with_json_result(self, query: str, params: Optional[Dict] = None) -> Any:
+    def execute_with_json_result(self, query: str, params: dict | None = None) -> Any:
         """Execute query and parse JSON results."""
         with self.engine.connect() as conn:
             result = conn.execute(text(query), params or {})

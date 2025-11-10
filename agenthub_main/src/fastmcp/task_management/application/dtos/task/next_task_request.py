@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+
 @dataclass
 class NextTaskRequest:
     """Request DTO for getting the next task"""

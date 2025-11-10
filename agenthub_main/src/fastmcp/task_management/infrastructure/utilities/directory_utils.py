@@ -3,9 +3,8 @@
 Infrastructure utilities for directory management following DDD principles.
 """
 
-from pathlib import Path
 import os
-from typing import Optional
+from pathlib import Path
 
 # Removed problematic tool_path import
 
@@ -52,7 +51,7 @@ def _find_project_root() -> Path:
     return Path(data_path)
 
 
-def ensure_brain_dir(brain_dir: Optional[str] = None) -> Path:
+def ensure_brain_dir(brain_dir: str | None = None) -> Path:
     """
     Ensure brain directory exists.
     

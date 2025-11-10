@@ -7,30 +7,31 @@ NO backward compatibility - clean v2.0 implementation only.
 
 import json
 import logging
-import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from datetime import UTC, datetime
+from typing import Any
 
 from pydantic import ValidationError
 
 from ..task_management.domain.services.cascade_calculator import (
     CascadeCalculator,
     CascadeResult,
-    EntityType as CascadeEntityType
+)
+from ..task_management.domain.services.cascade_calculator import (
+    EntityType as CascadeEntityType,
 )
 from .models import (
-    WSMessage,
-    WSPayload,
-    WSData,
-    WSMetadata,
-    CascadeData,
-    UserUpdateMessage,
     AIBatchMessage,
-    HeartbeatMessage,
+    CascadeData,
     ErrorMessage,
+    HeartbeatMessage,
     SyncMessage,
+    UserUpdateMessage,
+    WSData,
+    WSMessage,
+    WSMetadata,
+    WSPayload,
 )
-from .types import MessageType, EntityType, ActionType, SourceType
+from .types import ActionType, EntityType
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ class InvalidVersionError(ProtocolError):
     pass
 
 
-def validate_message(message: Dict[str, Any]) -> WSMessage:
+def validate_message(message: dict[str, Any]) -> WSMessage:
     """
     Validate and parse a WebSocket message according to v2.0 protocol.
 
@@ -91,12 +92,12 @@ def validate_message(message: Dict[str, Any]) -> WSMessage:
 async def create_user_update(
     entity_type: EntityType,
     action: ActionType,
-    primary_data: Union[Dict[str, Any], List[Dict[str, Any]]],
-    cascade_calculator: Optional[CascadeCalculator] = None,
-    entity_id: Optional[str] = None,
-    user_id: Optional[str] = None,
-    session_id: Optional[str] = None,
-    correlation_id: Optional[str] = None,
+    primary_data: dict[str, Any] | list[dict[str, Any]],
+    cascade_calculator: CascadeCalculator | None = None,
+    entity_id: str | None = None,
+    user_id: str | None = None,
+    session_id: str | None = None,
+    correlation_id: str | None = None,
     sequence: int = 0
 ) -> UserUpdateMessage:
     """
@@ -161,10 +162,10 @@ async def create_user_update(
 
 
 async def create_ai_batch(
-    updates: List[Dict[str, Any]],
+    updates: list[dict[str, Any]],
     batch_id: str,
-    cascade_calculator: Optional[CascadeCalculator] = None,
-    user_id: Optional[str] = None,
+    cascade_calculator: CascadeCalculator | None = None,
+    user_id: str | None = None,
     sequence: int = 0
 ) -> AIBatchMessage:
     """
@@ -229,7 +230,7 @@ async def create_ai_batch(
 
 
 def create_heartbeat(
-    session_id: Optional[str] = None,
+    session_id: str | None = None,
     sequence: int = 0
 ) -> HeartbeatMessage:
     """
@@ -266,10 +267,10 @@ def create_heartbeat(
 
 def create_error(
     error_message: str,
-    error_code: Optional[str] = None,
-    error_details: Optional[Dict[str, Any]] = None,
-    session_id: Optional[str] = None,
-    correlation_id: Optional[str] = None,
+    error_code: str | None = None,
+    error_details: dict[str, Any] | None = None,
+    session_id: str | None = None,
+    correlation_id: str | None = None,
     sequence: int = 0
 ) -> ErrorMessage:
     """
@@ -288,7 +289,7 @@ def create_error(
     """
     error_data = {
         "message": error_message,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(UTC).isoformat()
     }
 
     if error_code:
@@ -320,9 +321,9 @@ def create_error(
 
 
 def create_sync(
-    sync_data: Dict[str, Any],
-    session_id: Optional[str] = None,
-    user_id: Optional[str] = None,
+    sync_data: dict[str, Any],
+    session_id: str | None = None,
+    user_id: str | None = None,
     sequence: int = 0
 ) -> SyncMessage:
     """

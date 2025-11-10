@@ -6,17 +6,17 @@ handling common database operations and session management.
 """
 
 import logging
-from typing import TypeVar, Generic, Type, Optional, List, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from contextlib import contextmanager
+from typing import Any, Generic, TypeVar
 
-from ..database.database_config import get_session
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
+
 from ...domain.exceptions.base_exceptions import (
     DatabaseException,
     DatabaseIntegrityException,
-    ResourceNotFoundException
 )
+from ..database.database_config import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class BaseORMRepository(Generic[ModelType]):
     - Domain layer is responsible for business validation before calling repository
     """
 
-    def __init__(self, model_class: Type[ModelType]):
+    def __init__(self, model_class: type[ModelType]):
         """
         Initialize base repository.
 
@@ -44,7 +44,7 @@ class BaseORMRepository(Generic[ModelType]):
             model_class: The SQLAlchemy model class for this repository
         """
         self.model_class = model_class
-        self._session: Optional[Session] = None
+        self._session: Session | None = None
     
     @contextmanager
     def get_db_session(self):
@@ -155,7 +155,7 @@ class BaseORMRepository(Generic[ModelType]):
                     constraint=constraint_name
                 )
 
-    def _extract_constraint_name(self, error_message: str) -> Optional[str]:
+    def _extract_constraint_name(self, error_message: str) -> str | None:
         """
         Extract constraint name from IntegrityError message.
 
@@ -187,7 +187,7 @@ class BaseORMRepository(Generic[ModelType]):
 
         return None
     
-    def get_by_id(self, id: Any) -> Optional[ModelType]:
+    def get_by_id(self, id: Any) -> ModelType | None:
         """
         Get a record by ID.
         
@@ -202,7 +202,7 @@ class BaseORMRepository(Generic[ModelType]):
                 self.model_class.id == id
             ).first()
     
-    def get_all(self, limit: Optional[int] = None, offset: Optional[int] = None) -> List[ModelType]:
+    def get_all(self, limit: int | None = None, offset: int | None = None) -> list[ModelType]:
         """
         Get all records with optional pagination.
         
@@ -223,7 +223,7 @@ class BaseORMRepository(Generic[ModelType]):
             
             return query.all()
     
-    def update(self, id: Any, **kwargs) -> Optional[ModelType]:
+    def update(self, id: Any, **kwargs) -> ModelType | None:
         """
         Update a record by ID.
         
@@ -314,7 +314,7 @@ class BaseORMRepository(Generic[ModelType]):
             
             return query.count()
     
-    def find_by(self, **filters) -> List[ModelType]:
+    def find_by(self, **filters) -> list[ModelType]:
         """
         Find records by filters.
         
@@ -333,7 +333,7 @@ class BaseORMRepository(Generic[ModelType]):
             
             return query.all()
     
-    def find_one_by(self, **filters) -> Optional[ModelType]:
+    def find_one_by(self, **filters) -> ModelType | None:
         """
         Find one record by filters.
         
@@ -352,7 +352,7 @@ class BaseORMRepository(Generic[ModelType]):
             
             return query.first()
     
-    def bulk_create(self, records: List[Dict[str, Any]]) -> List[ModelType]:
+    def bulk_create(self, records: list[dict[str, Any]]) -> list[ModelType]:
         """
         Create multiple records in a single transaction.
         

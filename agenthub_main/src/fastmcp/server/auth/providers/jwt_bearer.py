@@ -6,17 +6,13 @@ allowing MCP clients to authenticate using API tokens.
 """
 
 import os
-import time
-from typing import Optional, List
-import jwt
-from datetime import datetime
-from sqlalchemy.orm import Session
-from sqlalchemy import Column, String, DateTime, Boolean, Integer, JSON
+from datetime import UTC
 
 from mcp.server.auth.provider import AccessToken
-from fastmcp.server.auth.providers.bearer import BearerAuthProvider
-from fastmcp.auth.mcp_integration.jwt_auth_backend import create_jwt_auth_backend
+
 from fastmcp.auth.interface.fastapi_auth import get_db
+from fastmcp.auth.mcp_integration.jwt_auth_backend import create_jwt_auth_backend
+from fastmcp.server.auth.providers.bearer import BearerAuthProvider
 
 
 class JWTBearerAuthProvider(BearerAuthProvider):
@@ -64,7 +60,6 @@ class JWTBearerAuthProvider(BearerAuthProvider):
         self.check_database = check_database
         
         # Create properly configured JWT backend using factory
-        from fastmcp.auth.mcp_integration.jwt_auth_backend import create_jwt_auth_backend
         self.jwt_backend = create_jwt_auth_backend(
             required_scopes=required_scopes or ["mcp:access"]
         )
@@ -166,12 +161,12 @@ class JWTBearerAuthProvider(BearerAuthProvider):
                 return False
             
             # Check if token has expired
-            from datetime import datetime, timezone
-            if token.expires_at < datetime.now(timezone.utc):
+            from datetime import datetime
+            if token.expires_at < datetime.now(UTC):
                 return False
             
             # Update usage statistics
-            token.last_used_at = datetime.now(timezone.utc)
+            token.last_used_at = datetime.now(UTC)
             token.usage_count += 1
             
             # Check rate limit
@@ -189,7 +184,7 @@ class JWTBearerAuthProvider(BearerAuthProvider):
             if 'db' in locals():
                 db.close()
     
-    def _map_scopes_to_mcp(self, scopes: List[str]) -> List[str]:
+    def _map_scopes_to_mcp(self, scopes: list[str]) -> list[str]:
         """
         Map API token scopes to MCP permissions.
         

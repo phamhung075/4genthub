@@ -12,11 +12,11 @@ Key Features:
 """
 
 import logging
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from enum import Enum
 import math
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -73,19 +73,19 @@ class ContextScore:
     """Detailed score breakdown for a context."""
     context_id: str
     total_score: float
-    factor_scores: Dict[ScoreFactor, float] = field(default_factory=dict)
-    explanations: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    factor_scores: dict[ScoreFactor, float] = field(default_factory=dict)
+    explanations: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass  
 class UserPreferences:
     """User-specific context preferences."""
-    preferred_context_types: List[str] = field(default_factory=list)
+    preferred_context_types: list[str] = field(default_factory=list)
     max_context_size: int = 2000  # Max tokens
-    priority_boost_keywords: List[str] = field(default_factory=list)
-    penalty_keywords: List[str] = field(default_factory=list)
-    agent_preferences: Dict[str, float] = field(default_factory=dict)  # agent_id -> preference score
+    priority_boost_keywords: list[str] = field(default_factory=list)
+    penalty_keywords: list[str] = field(default_factory=list)
+    agent_preferences: dict[str, float] = field(default_factory=dict)  # agent_id -> preference score
 
 
 class ContextPrioritizer:
@@ -101,7 +101,7 @@ class ContextPrioritizer:
     
     def __init__(
         self,
-        default_weights: Optional[ScoringWeights] = None,
+        default_weights: ScoringWeights | None = None,
         recency_decay_hours: float = 24.0,      # Hours for recency decay
         frequency_window_days: int = 30,         # Days for frequency calculation
         size_penalty_threshold: int = 1500      # Token count for size penalty
@@ -121,8 +121,8 @@ class ContextPrioritizer:
         self.size_penalty_threshold = size_penalty_threshold
         
         # Track context access patterns
-        self.context_access_history: Dict[str, List[datetime]] = {}
-        self.context_metadata_cache: Dict[str, Dict[str, Any]] = {}
+        self.context_access_history: dict[str, list[datetime]] = {}
+        self.context_metadata_cache: dict[str, dict[str, Any]] = {}
         
         logger.info("ContextPrioritizer initialized")
     
@@ -130,13 +130,13 @@ class ContextPrioritizer:
     def score_context(
         self,
         context_id: str,
-        context_data: Dict[str, Any],
+        context_data: dict[str, Any],
         query: str,
         semantic_similarity: float,
-        user_preferences: Optional[UserPreferences] = None,
-        project_context: Optional[Dict[str, Any]] = None,
-        current_task: Optional[Dict[str, Any]] = None,
-        weights: Optional[ScoringWeights] = None
+        user_preferences: UserPreferences | None = None,
+        project_context: dict[str, Any] | None = None,
+        current_task: dict[str, Any] | None = None,
+        weights: ScoringWeights | None = None
     ) -> ContextScore:
         """
         Score a context using multiple factors.
@@ -244,14 +244,14 @@ class ContextPrioritizer:
     
     def score_contexts_batch(
         self,
-        contexts: List[Dict[str, Any]],
+        contexts: list[dict[str, Any]],
         query: str,
-        semantic_similarities: Dict[str, float],
-        user_preferences: Optional[UserPreferences] = None,
-        project_context: Optional[Dict[str, Any]] = None,
-        current_task: Optional[Dict[str, Any]] = None,
-        weights: Optional[ScoringWeights] = None
-    ) -> List[ContextScore]:
+        semantic_similarities: dict[str, float],
+        user_preferences: UserPreferences | None = None,
+        project_context: dict[str, Any] | None = None,
+        current_task: dict[str, Any] | None = None,
+        weights: ScoringWeights | None = None
+    ) -> list[ContextScore]:
         """
         Score multiple contexts efficiently.
         
@@ -294,7 +294,7 @@ class ContextPrioritizer:
     
     def _calculate_semantic_score(
         self, 
-        context_data: Dict[str, Any], 
+        context_data: dict[str, Any], 
         query: str, 
         similarity: float
     ) -> float:
@@ -319,7 +319,7 @@ class ContextPrioritizer:
         if not last_access:
             return 0.1  # Low score for never accessed
         
-        hours_ago = (datetime.now(timezone.utc) - last_access).total_seconds() / 3600
+        hours_ago = (datetime.now(UTC) - last_access).total_seconds() / 3600
         
         # Exponential decay: score = exp(-hours / decay_constant)
         decay_score = math.exp(-hours_ago / self.recency_decay_hours)
@@ -333,7 +333,7 @@ class ContextPrioritizer:
             return 0.1  # Low score for never accessed
         
         # Count accesses within frequency window
-        cutoff = datetime.now(timezone.utc) - timedelta(days=self.frequency_window_days)
+        cutoff = datetime.now(UTC) - timedelta(days=self.frequency_window_days)
         recent_accesses = [
             access for access in self.context_access_history[context_id]
             if access > cutoff
@@ -345,7 +345,7 @@ class ContextPrioritizer:
         return min(1.0, frequency_score)
     
     
-    def _calculate_completeness_score(self, context_data: Dict[str, Any]) -> float:
+    def _calculate_completeness_score(self, context_data: dict[str, Any]) -> float:
         """Calculate completeness score based on available data."""
         # Count non-empty fields
         total_fields = 0
@@ -376,7 +376,7 @@ class ContextPrioritizer:
         return completeness
     
     
-    def _calculate_size_penalty(self, context_data: Dict[str, Any]) -> float:
+    def _calculate_size_penalty(self, context_data: dict[str, Any]) -> float:
         """Calculate penalty for oversized contexts."""
         estimated_tokens = self._estimate_tokens(context_data)
         
@@ -392,7 +392,7 @@ class ContextPrioritizer:
     
     def _calculate_user_preference_score(
         self, 
-        context_data: Dict[str, Any], 
+        context_data: dict[str, Any], 
         user_preferences: UserPreferences,
         query: str
     ) -> float:
@@ -431,8 +431,8 @@ class ContextPrioritizer:
     
     def _calculate_project_priority_score(
         self, 
-        context_data: Dict[str, Any], 
-        project_context: Optional[Dict[str, Any]]
+        context_data: dict[str, Any], 
+        project_context: dict[str, Any] | None
     ) -> float:
         """Calculate project-level priority score."""
         base_score = 0.5
@@ -465,8 +465,8 @@ class ContextPrioritizer:
     
     def _calculate_dependency_boost(
         self, 
-        context_data: Dict[str, Any], 
-        current_task: Optional[Dict[str, Any]]
+        context_data: dict[str, Any], 
+        current_task: dict[str, Any] | None
     ) -> float:
         """Calculate boost for dependency relationships."""
         if not current_task:
@@ -496,14 +496,14 @@ class ContextPrioritizer:
         return 0.0
     
     
-    def _estimate_tokens(self, context_data: Dict[str, Any]) -> int:
+    def _estimate_tokens(self, context_data: dict[str, Any]) -> int:
         """Estimate token count for context data."""
         import json
         json_str = json.dumps(context_data, default=str)
         return max(1, len(json_str) // 4)  # Rough approximation
     
     
-    def _extract_searchable_text(self, context_data: Dict[str, Any]) -> str:
+    def _extract_searchable_text(self, context_data: dict[str, Any]) -> str:
         """Extract searchable text from context data."""
         searchable_fields = ['title', 'description', 'details', 'name', 'git_branch_name']
         text_parts = []
@@ -515,7 +515,7 @@ class ContextPrioritizer:
         return ' '.join(text_parts)
     
     
-    def _get_last_access_time(self, context_id: str) -> Optional[datetime]:
+    def _get_last_access_time(self, context_id: str) -> datetime | None:
         """Get last access time for context."""
         if context_id in self.context_access_history:
             access_times = self.context_access_history[context_id]
@@ -523,10 +523,10 @@ class ContextPrioritizer:
         return None
     
     
-    def record_context_access(self, context_id: str, access_time: Optional[datetime] = None) -> None:
+    def record_context_access(self, context_id: str, access_time: datetime | None = None) -> None:
         """Record context access for scoring."""
         if access_time is None:
-            access_time = datetime.now(timezone.utc)
+            access_time = datetime.now(UTC)
         
         if context_id not in self.context_access_history:
             self.context_access_history[context_id] = []
@@ -534,7 +534,7 @@ class ContextPrioritizer:
         self.context_access_history[context_id].append(access_time)
         
         # Keep only recent history to prevent unbounded growth
-        cutoff = datetime.now(timezone.utc) - timedelta(days=self.frequency_window_days * 2)
+        cutoff = datetime.now(UTC) - timedelta(days=self.frequency_window_days * 2)
         self.context_access_history[context_id] = [
             access for access in self.context_access_history[context_id]
             if access > cutoff
@@ -545,7 +545,7 @@ class ContextPrioritizer:
         self, 
         query: str, 
         context_type: str,
-        user_feedback: Optional[Dict[str, float]] = None
+        user_feedback: dict[str, float] | None = None
     ) -> ScoringWeights:
         """
         Dynamically adjust scoring weights based on context.
@@ -587,7 +587,7 @@ class ContextPrioritizer:
         return weights.normalize()
     
     
-    def get_scoring_stats(self) -> Dict[str, Any]:
+    def get_scoring_stats(self) -> dict[str, Any]:
         """Get statistics about scoring performance."""
         total_contexts_tracked = len(self.context_access_history)
         

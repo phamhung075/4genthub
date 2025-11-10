@@ -5,9 +5,9 @@ Value objects for compliance, documentation, and validation requirements.
 """
 
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 
 class DocumentType(Enum):
@@ -25,10 +25,10 @@ class DocumentInfo:
     path: str
     type: DocumentType
     content: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    hash: Optional[str] = None
+    updated_at: datetime | None = None
+    hash: str | None = None
     
     def __post_init__(self):
         """Validate document info on creation"""
@@ -45,7 +45,7 @@ class ComplianceStatus:
     validation_date: datetime
     validator: str
     issues: list[str]
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -54,7 +54,7 @@ class ValidationResult:
     is_valid: bool
     errors: list[str]
     warnings: list[str]
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -68,7 +68,7 @@ class ValidationReport:
     overall_status: bool
     summary: str
     recommendations: list[str]
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     
     @property
     def total_errors(self) -> int:

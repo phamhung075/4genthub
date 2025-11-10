@@ -1,7 +1,6 @@
 """Server Repository Interface"""
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from ..entities.server import Server
 
@@ -10,7 +9,7 @@ class ServerRepository(ABC):
     """Repository interface for Server aggregate"""
     
     @abstractmethod
-    def get_current_server(self) -> Optional[Server]:
+    def get_current_server(self) -> Server | None:
         """Get the current server instance"""
         pass
     

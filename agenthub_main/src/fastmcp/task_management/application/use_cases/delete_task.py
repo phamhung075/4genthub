@@ -1,16 +1,17 @@
 """Delete Task Use Case"""
 
-from typing import Union, Optional, Dict, Any
 import logging
-import asyncio
+from typing import Any
 
-from ...domain.repositories.task_repository import TaskRepository
-from ...domain.repositories.subtask_repository import SubtaskRepository
-from ...domain.value_objects.task_id import TaskId
-from ...domain.events import TaskDeleted
 from ...domain.interfaces.database_session import IDatabaseSessionFactory
 from ...domain.interfaces.logging_service import ILoggingService
-from ...domain.services.cascade_deletion_service import CascadeDeletionService, DeleteScope
+from ...domain.repositories.subtask_repository import SubtaskRepository
+from ...domain.repositories.task_repository import TaskRepository
+from ...domain.services.cascade_deletion_service import (
+    CascadeDeletionService,
+    DeleteScope,
+)
+from ...domain.value_objects.task_id import TaskId
 
 
 class DeleteTaskUseCase:
@@ -18,12 +19,12 @@ class DeleteTaskUseCase:
 
     def __init__(self,
                  task_repository: TaskRepository,
-                 subtask_repository: Optional[SubtaskRepository] = None,
+                 subtask_repository: SubtaskRepository | None = None,
                  branch_repository=None,
                  project_repository=None,
                  context_repository=None,
-                 db_session_factory: Optional[IDatabaseSessionFactory] = None,
-                 logging_service: Optional[ILoggingService] = None):
+                 db_session_factory: IDatabaseSessionFactory | None = None,
+                 logging_service: ILoggingService | None = None):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
         self._branch_repository = branch_repository
@@ -41,7 +42,7 @@ class DeleteTaskUseCase:
             context_repository=context_repository
         )
 
-    def execute(self, task_id: Union[str, int], cascade: bool = True, user_id: str = None) -> Dict[str, Any]:
+    def execute(self, task_id: str | int, cascade: bool = True, user_id: str = None) -> dict[str, Any]:
         """
         Execute the delete task use case with cascade deletion.
 
@@ -84,8 +85,8 @@ class DeleteTaskUseCase:
         # Dispatch TaskDeletedEvent to update branch task counts
         if stats["task_deleted"]:
             try:
-                from ...domain.services.event_dispatcher import dispatch_domain_event
                 from ...domain.events.task_lifecycle_events import TaskDeletedEvent
+                from ...domain.services.event_dispatcher import dispatch_domain_event
 
                 if git_branch_id:
                     event = TaskDeletedEvent(

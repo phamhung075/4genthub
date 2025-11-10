@@ -5,14 +5,15 @@ It automatically invalidates cache on all mutation operations.
 """
 
 import json
-import os
 import logging
-from typing import Optional, List, Any, Dict
+import os
+from typing import Any
+
 import redis
 from redis.exceptions import RedisError
 
-from ....domain.repositories.git_branch_repository import GitBranchRepository
 from ....domain.entities.git_branch import GitBranch
+from ....domain.repositories.git_branch_repository import GitBranchRepository
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +33,11 @@ class CachedGitBranchRepository:
         self.enabled = self.redis_client is not None
 
     @property
-    def user_id(self) -> Optional[str]:
+    def user_id(self) -> str | None:
         """Proxy user_id from base repository for authentication checks"""
         return getattr(self.base_repo, 'user_id', None)
     
-    def _init_redis(self) -> Optional[redis.Redis]:
+    def _init_redis(self) -> redis.Redis | None:
         """Initialize Redis connection with fallback"""
         try:
             client = redis.Redis(
@@ -86,7 +87,7 @@ class CachedGitBranchRepository:
             except RedisError as e:
                 logger.warning(f"[Cache] Failed to invalidate pattern {pattern}: {e}")
     
-    def _get_cached(self, key: str) -> Optional[Any]:
+    def _get_cached(self, key: str) -> Any | None:
         """Get value from cache"""
         if not self.enabled:
             return None
@@ -116,7 +117,7 @@ class CachedGitBranchRepository:
     
     # === Delegated Methods with Caching ===
     
-    def get_by_id(self, branch_id: str) -> Optional[GitBranch]:
+    def get_by_id(self, branch_id: str) -> GitBranch | None:
         """Get git branch by ID with caching"""
         cache_key = f"id:{branch_id}"
         
@@ -134,7 +135,7 @@ class CachedGitBranchRepository:
         
         return result
     
-    def get_by_project_id(self, project_id: str) -> List[GitBranch]:
+    def get_by_project_id(self, project_id: str) -> list[GitBranch]:
         """Get all branches for a project with caching"""
         cache_key = f"project:{project_id}"
         
@@ -152,7 +153,7 @@ class CachedGitBranchRepository:
         
         return result
     
-    async def find_by_name(self, project_id: str, branch_name: str) -> Optional[GitBranch]:
+    async def find_by_name(self, project_id: str, branch_name: str) -> GitBranch | None:
         """Find branch by name within a project - async version"""
         cache_key = f"project:{project_id}:name:{branch_name}"
         
@@ -179,11 +180,11 @@ class CachedGitBranchRepository:
             self._invalidate_pattern(f"project:{project_id}:*")
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated git branch caches after create")
+            logger.info("[Cache] Invalidated git branch caches after create")
         
         return result
     
-    async def create_git_branch(self, project_id: str, git_branch_name: str, git_branch_description: str = "") -> Dict[str, Any]:
+    async def create_git_branch(self, project_id: str, git_branch_name: str, git_branch_description: str = "") -> dict[str, Any]:
         """Create a new git branch - implements abstract method with cache invalidation"""
         result = await self.base_repo.create_git_branch(project_id, git_branch_name, git_branch_description)
         
@@ -192,7 +193,7 @@ class CachedGitBranchRepository:
             self._invalidate_pattern(f"project:{project_id}:*")
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated git branch caches after create")
+            logger.info("[Cache] Invalidated git branch caches after create")
         
         return result
     
@@ -206,7 +207,7 @@ class CachedGitBranchRepository:
             self._invalidate_pattern(f"project:{branch.project_id}:*")
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated git branch caches after update")
+            logger.info("[Cache] Invalidated git branch caches after update")
         
         return result
     
@@ -224,7 +225,7 @@ class CachedGitBranchRepository:
                 self._invalidate_pattern(f"project:{branch.project_id}:*")
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated git branch caches after delete")
+            logger.info("[Cache] Invalidated git branch caches after delete")
         
         return result
     
@@ -241,7 +242,7 @@ class CachedGitBranchRepository:
             if branch:
                 self._invalidate_pattern(f"project:{branch.project_id}:*")
             self._invalidate_pattern("list:*")
-            logger.info(f"[Cache] Invalidated git branch caches after archive")
+            logger.info("[Cache] Invalidated git branch caches after archive")
         
         return result
     
@@ -258,7 +259,7 @@ class CachedGitBranchRepository:
             if branch:
                 self._invalidate_pattern(f"project:{branch.project_id}:*")
             self._invalidate_pattern("list:*")
-            logger.info(f"[Cache] Invalidated git branch caches after restore")
+            logger.info("[Cache] Invalidated git branch caches after restore")
         
         return result
     

@@ -3,8 +3,8 @@
 DDD use case for retrieving rules with proper domain logic.
 """
 
-from typing import Dict, Any, Optional
-from ...domain.entities.rule_entity import RuleContent
+from typing import Any
+
 from ...domain.repositories.rule_repository import RuleRepository
 
 
@@ -14,7 +14,7 @@ class GetRuleUseCase:
     def __init__(self, rule_repository: RuleRepository):
         self._rule_repository = rule_repository
     
-    async def execute(self, rule_path: str) -> Dict[str, Any]:
+    async def execute(self, rule_path: str) -> dict[str, Any]:
         """Get a rule by its path"""
         try:
             rule = await self._rule_repository.get_rule(rule_path)

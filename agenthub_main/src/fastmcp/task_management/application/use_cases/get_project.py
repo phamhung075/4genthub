@@ -1,6 +1,7 @@
 """Get Project Use Case"""
 
-from typing import Dict, Any, Optional
+from typing import Any
+
 from ...domain.repositories.project_repository import ProjectRepository
 
 
@@ -10,7 +11,7 @@ class GetProjectUseCase:
     def __init__(self, project_repository: ProjectRepository):
         self._project_repository = project_repository
 
-    def _build_git_branchs_dict(self, git_branchs: Dict, logger) -> Dict[str, Any]:
+    def _build_git_branchs_dict(self, git_branchs: dict, logger) -> dict[str, Any]:
         """Build git branches dictionary with proper error handling"""
         result = {}
 
@@ -71,7 +72,7 @@ class GetProjectUseCase:
 
         return result
     
-    async def execute(self, project_id: str) -> Dict[str, Any]:
+    async def execute(self, project_id: str) -> dict[str, Any]:
         """Execute the get project use case"""
 
         import logging

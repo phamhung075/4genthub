@@ -5,20 +5,20 @@ Comprehensive metrics collection for monitoring performance benchmarks,
 system health, and optimization effectiveness in real-time and batch modes.
 """
 
-import time
+import asyncio
 import json
 import logging
-import asyncio
 import statistics
-from datetime import datetime, timezone, timedelta
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
-from dataclasses import dataclass, asdict, field
-from collections import defaultdict, deque
 import threading
-import psutil
-import gc
+import time
+from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
+
+import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +30,10 @@ class MetricPoint:
     value: float
     unit: str
     timestamp: datetime
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
     category: str = "general"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "name": self.name,
@@ -68,7 +68,7 @@ class MetricSummary:
     time_range_start: datetime
     time_range_end: datetime
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return asdict(self)
 
@@ -79,7 +79,7 @@ class MetricsCollector:
     def __init__(self, 
                  buffer_size: int = 10000,
                  flush_interval_seconds: int = 60,
-                 output_directory: Optional[Path] = None):
+                 output_directory: Path | None = None):
         """Initialize metrics collector."""
         self.buffer_size = buffer_size
         self.flush_interval = flush_interval_seconds
@@ -146,14 +146,14 @@ class MetricsCollector:
                      name: str, 
                      value: float, 
                      unit: str = "count",
-                     tags: Optional[Dict[str, str]] = None,
+                     tags: dict[str, str] | None = None,
                      category: str = "general") -> None:
         """Record a single metric point."""
         metric = MetricPoint(
             name=name,
             value=value,
             unit=unit,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             tags=tags or {},
             category=category
         )
@@ -169,8 +169,8 @@ class MetricsCollector:
     def record_timing_metric(self, 
                            name: str, 
                            start_time: float, 
-                           end_time: Optional[float] = None,
-                           tags: Optional[Dict[str, str]] = None) -> None:
+                           end_time: float | None = None,
+                           tags: dict[str, str] | None = None) -> None:
         """Record timing metric from start/end times."""
         if end_time is None:
             end_time = time.perf_counter()
@@ -187,7 +187,7 @@ class MetricsCollector:
     def record_size_metric(self,
                           name: str,
                           size_bytes: int,
-                          tags: Optional[Dict[str, str]] = None) -> None:
+                          tags: dict[str, str] | None = None) -> None:
         """Record size metric in bytes."""
         self.record_metric(
             name=name,
@@ -200,7 +200,7 @@ class MetricsCollector:
     def record_percentage_metric(self,
                                name: str,
                                percentage: float,
-                               tags: Optional[Dict[str, str]] = None) -> None:
+                               tags: dict[str, str] | None = None) -> None:
         """Record percentage metric (0-100)."""
         self.record_metric(
             name=name,
@@ -213,7 +213,7 @@ class MetricsCollector:
     def record_rate_metric(self,
                           name: str,
                           rate: float,
-                          tags: Optional[Dict[str, str]] = None) -> None:
+                          tags: dict[str, str] | None = None) -> None:
         """Record rate metric (operations per second)."""
         self.record_metric(
             name=name,
@@ -242,7 +242,7 @@ class MetricsCollector:
         logger.debug(f"Flushed {len(metrics_to_flush)} metrics")
         return len(metrics_to_flush)
     
-    async def _process_metrics_batch(self, metrics: List[MetricPoint]) -> None:
+    async def _process_metrics_batch(self, metrics: list[MetricPoint]) -> None:
         """Process a batch of metrics."""
         # Aggregate metrics by name
         with self._aggregation_lock:
@@ -250,7 +250,7 @@ class MetricsCollector:
                 self._aggregated_metrics[metric.name].append(metric)
         
         # Save to file
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         filename = self.output_directory / f"metrics_batch_{timestamp}.json"
         
         def write_metrics():
@@ -307,7 +307,7 @@ class MetricsCollector:
     
     def get_metric_summary(self, 
                           metric_name: str, 
-                          time_window_hours: Optional[float] = None) -> Optional[MetricSummary]:
+                          time_window_hours: float | None = None) -> MetricSummary | None:
         """Get statistical summary for a metric."""
         with self._aggregation_lock:
             if metric_name not in self._aggregated_metrics:
@@ -317,7 +317,7 @@ class MetricsCollector:
             
             # Filter by time window if specified
             if time_window_hours:
-                cutoff_time = datetime.now(timezone.utc) - timedelta(hours=time_window_hours)
+                cutoff_time = datetime.now(UTC) - timedelta(hours=time_window_hours)
                 metrics = [m for m in metrics if m.timestamp >= cutoff_time]
             
             if not metrics:
@@ -342,12 +342,12 @@ class MetricsCollector:
                 time_range_end=max(m.timestamp for m in metrics)
             )
     
-    def get_all_metric_names(self) -> List[str]:
+    def get_all_metric_names(self) -> list[str]:
         """Get list of all collected metric names."""
         with self._aggregation_lock:
             return list(self._aggregated_metrics.keys())
     
-    def export_prometheus_metrics(self, output_file: Optional[Path] = None) -> str:
+    def export_prometheus_metrics(self, output_file: Path | None = None) -> str:
         """Export metrics in Prometheus format."""
         lines = []
         
@@ -372,10 +372,10 @@ class MetricsCollector:
         
         return prometheus_content
     
-    def generate_performance_report(self, time_window_hours: float = 24) -> Dict[str, Any]:
+    def generate_performance_report(self, time_window_hours: float = 24) -> dict[str, Any]:
         """Generate comprehensive performance report."""
         report = {
-            "report_timestamp": datetime.now(timezone.utc).isoformat(),
+            "report_timestamp": datetime.now(UTC).isoformat(),
             "time_window_hours": time_window_hours,
             "metric_summaries": {},
             "system_health": {},
@@ -432,7 +432,7 @@ class MetricsCollector:
     
     def clear_old_metrics(self, hours_to_keep: float = 24) -> int:
         """Clear metrics older than specified hours."""
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours_to_keep)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=hours_to_keep)
         removed_count = 0
         
         with self._aggregation_lock:
@@ -458,7 +458,7 @@ class MetricsCollector:
 class TimingContext:
     """Context manager for measuring execution time."""
     
-    def __init__(self, collector: MetricsCollector, metric_name: str, tags: Optional[Dict[str, str]] = None):
+    def __init__(self, collector: MetricsCollector, metric_name: str, tags: dict[str, str] | None = None):
         self.collector = collector
         self.metric_name = metric_name
         self.tags = tags
@@ -478,7 +478,7 @@ class TimingContext:
 
 
 # Global metrics collector instance
-_global_collector: Optional[MetricsCollector] = None
+_global_collector: MetricsCollector | None = None
 
 
 def get_global_collector() -> MetricsCollector:
@@ -489,12 +489,12 @@ def get_global_collector() -> MetricsCollector:
     return _global_collector
 
 
-def record_metric(name: str, value: float, unit: str = "count", tags: Optional[Dict[str, str]] = None):
+def record_metric(name: str, value: float, unit: str = "count", tags: dict[str, str] | None = None):
     """Record metric using global collector."""
     get_global_collector().record_metric(name, value, unit, tags)
 
 
-def timing_context(name: str, tags: Optional[Dict[str, str]] = None) -> TimingContext:
+def timing_context(name: str, tags: dict[str, str] | None = None) -> TimingContext:
     """Create timing context using global collector."""
     return TimingContext(get_global_collector(), name, tags)
 

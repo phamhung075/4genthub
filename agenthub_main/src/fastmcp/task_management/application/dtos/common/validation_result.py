@@ -1,14 +1,14 @@
 """Result of input validation"""
 
 from dataclasses import dataclass
-from typing import List
+
 
 @dataclass
 class ValidationResult:
     """Result of input validation"""
     is_valid: bool
-    errors: List[str]
-    warnings: List[str]
+    errors: list[str]
+    warnings: list[str]
     
     def add_error(self, error: str):
         self.errors.append(error)

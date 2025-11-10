@@ -8,16 +8,13 @@ and context.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Dict, Any
-from uuid import UUID
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
-from ..value_objects.hints import (
-    WorkflowHint, HintType, HintPriority, HintMetadata
-)
-from ..value_objects.progress import ProgressType, ProgressStatus
-from ..entities.task import Task
 from ..entities.context import TaskContext
+from ..entities.task import Task
+from ..value_objects.hints import HintMetadata, HintPriority, HintType, WorkflowHint
+from ..value_objects.progress import ProgressType
 
 
 @dataclass
@@ -25,9 +22,9 @@ class RuleContext:
     """Context information for rule evaluation."""
     
     task: Task
-    context: Optional[TaskContext] = None
-    related_tasks: List[Task] = None
-    historical_patterns: Dict[str, Any] = None
+    context: TaskContext | None = None
+    related_tasks: list[Task] = None
+    historical_patterns: dict[str, Any] = None
     
     def __post_init__(self):
         if self.related_tasks is None:
@@ -40,7 +37,7 @@ class HintRule(ABC):
     """Abstract base class for hint generation rules."""
     
     @abstractmethod
-    def evaluate(self, rule_context: RuleContext) -> Optional[WorkflowHint]:
+    def evaluate(self, rule_context: RuleContext) -> WorkflowHint | None:
         """
         Evaluate the rule and generate a hint if applicable.
         
@@ -65,8 +62,8 @@ class ProgressBasedHintRule(HintRule):
     def get_latest_progress(
         self,
         task: Task,
-        progress_type: Optional[ProgressType] = None
-    ) -> Optional[Dict[str, Any]]:
+        progress_type: ProgressType | None = None
+    ) -> dict[str, Any] | None:
         """Get the latest progress entry for a task."""
         if not hasattr(task, 'progress_timeline') or not task.progress_timeline:
             return None
@@ -91,7 +88,7 @@ class StalledProgressRule(ProgressBasedHintRule):
     def rule_name(self) -> str:
         return "stalled_progress"
     
-    def evaluate(self, rule_context: RuleContext) -> Optional[WorkflowHint]:
+    def evaluate(self, rule_context: RuleContext) -> WorkflowHint | None:
         task = rule_context.task
         latest_progress = self.get_latest_progress(task)
         
@@ -99,7 +96,7 @@ class StalledProgressRule(ProgressBasedHintRule):
             return None
         
         last_update = datetime.fromisoformat(latest_progress['timestamp'])
-        stall_duration = datetime.now(timezone.utc) - last_update
+        stall_duration = datetime.now(UTC) - last_update
         
         if stall_duration < timedelta(hours=self.stall_hours):
             return None
@@ -175,7 +172,7 @@ class ImplementationReadyForTestingRule(ProgressBasedHintRule):
     def rule_name(self) -> str:
         return "implementation_ready_for_testing"
     
-    def evaluate(self, rule_context: RuleContext) -> Optional[WorkflowHint]:
+    def evaluate(self, rule_context: RuleContext) -> WorkflowHint | None:
         task = rule_context.task
         
         # Get implementation progress
@@ -221,7 +218,7 @@ class MissingContextRule(HintRule):
     def rule_name(self) -> str:
         return "missing_context"
     
-    def evaluate(self, rule_context: RuleContext) -> Optional[WorkflowHint]:
+    def evaluate(self, rule_context: RuleContext) -> WorkflowHint | None:
         task = rule_context.task
         context = rule_context.context
         
@@ -267,7 +264,7 @@ class MissingContextRule(HintRule):
     def _create_incomplete_context_hint(
         self,
         task: Task,
-        missing_fields: List[str]
+        missing_fields: list[str]
     ) -> WorkflowHint:
         """Create hint for incomplete context."""
         metadata = HintMetadata(
@@ -299,7 +296,7 @@ class ComplexDependencyRule(HintRule):
     def rule_name(self) -> str:
         return "complex_dependencies"
     
-    def evaluate(self, rule_context: RuleContext) -> Optional[WorkflowHint]:
+    def evaluate(self, rule_context: RuleContext) -> WorkflowHint | None:
         task = rule_context.task
         
         # Count dependencies
@@ -340,7 +337,7 @@ class NearCompletionRule(ProgressBasedHintRule):
     def rule_name(self) -> str:
         return "near_completion"
     
-    def evaluate(self, rule_context: RuleContext) -> Optional[WorkflowHint]:
+    def evaluate(self, rule_context: RuleContext) -> WorkflowHint | None:
         task = rule_context.task
         
         # Check overall progress
@@ -394,7 +391,7 @@ class CollaborationNeededRule(HintRule):
     def rule_name(self) -> str:
         return "collaboration_needed"
     
-    def evaluate(self, rule_context: RuleContext) -> Optional[WorkflowHint]:
+    def evaluate(self, rule_context: RuleContext) -> WorkflowHint | None:
         task = rule_context.task
         context = rule_context.context
         
@@ -403,7 +400,7 @@ class CollaborationNeededRule(HintRule):
         
         # Long-running task
         if hasattr(task, 'created_at'):
-            age = datetime.now(timezone.utc) - task.created_at
+            age = datetime.now(UTC) - task.created_at
             status_value = task.status.value if hasattr(task.status, 'value') else str(task.status)
             if age > timedelta(days=7) and status_value not in ["done", "cancelled"]:
                 indicators.append("long_running")

@@ -1,6 +1,7 @@
 """Base exception hierarchy for the task management system."""
 
-from typing import Optional, Dict, Any
+from typing import Any
+
 from ..value_objects import ErrorSeverity
 
 
@@ -10,11 +11,11 @@ class TaskManagementException(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
         recoverable: bool = True,
-        user_message: Optional[str] = None
+        user_message: str | None = None
     ):
         """
         Initialize base exception.
@@ -34,7 +35,7 @@ class TaskManagementException(Exception):
         self.recoverable = recoverable
         self.user_message = user_message or message
         
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert exception to dictionary for serialization."""
         return {
             "error_code": self.error_code,
@@ -53,8 +54,8 @@ class ValidationException(TaskManagementException):
     def __init__(
         self,
         message: str,
-        field: Optional[str] = None,
-        value: Optional[Any] = None,
+        field: str | None = None,
+        value: Any | None = None,
         **kwargs
     ):
         """Initialize validation exception with field details."""
@@ -81,7 +82,7 @@ class ResourceNotFoundException(TaskManagementException):
         self,
         resource_type: str,
         resource_id: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **kwargs
     ):
         """Initialize resource not found exception."""
@@ -108,7 +109,7 @@ class ResourceAlreadyExistsException(TaskManagementException):
         self,
         resource_type: str,
         resource_id: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **kwargs
     ):
         """Initialize resource already exists exception."""
@@ -135,7 +136,7 @@ class OperationNotPermittedException(TaskManagementException):
         self,
         operation: str,
         reason: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **kwargs
     ):
         """Initialize operation not permitted exception."""
@@ -161,8 +162,8 @@ class DatabaseException(TaskManagementException):
     def __init__(
         self,
         message: str,
-        operation: Optional[str] = None,
-        table: Optional[str] = None,
+        operation: str | None = None,
+        table: str | None = None,
         **kwargs
     ):
         """Initialize database exception."""
@@ -208,7 +209,7 @@ class DatabaseIntegrityException(TaskManagementException):
     def __init__(
         self,
         message: str,
-        constraint: Optional[str] = None,
+        constraint: str | None = None,
         **kwargs
     ):
         """Initialize database integrity exception."""
@@ -238,8 +239,8 @@ class ConcurrencyException(TaskManagementException):
     def __init__(
         self,
         message: str,
-        resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
         **kwargs
     ):
         """Initialize concurrency exception."""
@@ -266,7 +267,7 @@ class ExternalServiceException(TaskManagementException):
         self,
         service: str,
         message: str,
-        status_code: Optional[int] = None,
+        status_code: int | None = None,
         **kwargs
     ):
         """Initialize external service exception."""
@@ -291,7 +292,7 @@ class ConfigurationException(TaskManagementException):
     def __init__(
         self,
         message: str,
-        config_key: Optional[str] = None,
+        config_key: str | None = None,
         **kwargs
     ):
         """Initialize configuration exception."""
@@ -315,7 +316,7 @@ class RepositoryError(DatabaseException):
     def __init__(
         self,
         message: str,
-        repository: Optional[str] = None,
+        repository: str | None = None,
         **kwargs
     ):
         """Initialize repository exception."""

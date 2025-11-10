@@ -5,17 +5,16 @@ Provides efficient batch operations for multiple context updates,
 reducing network overhead and database transactions.
 """
 
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
-from enum import Enum
-import logging
 import asyncio
-from datetime import datetime, timezone
+import logging
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
 from ...domain.value_objects.context_enums import ContextLevel
-from ..services.unified_context_service import UnifiedContextService
-from ...domain.interfaces.cache_service import ICacheService
 from ...infrastructure.cache.context_cache import get_context_cache
+from ..services.unified_context_service import UnifiedContextService
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +33,10 @@ class BatchOperation:
     operation: BatchOperationType
     level: ContextLevel
     context_id: str
-    data: Optional[Dict[str, Any]] = None
-    user_id: Optional[str] = None
-    project_id: Optional[str] = None
-    git_branch_id: Optional[str] = None
+    data: dict[str, Any] | None = None
+    user_id: str | None = None
+    project_id: str | None = None
+    git_branch_id: str | None = None
     
     # Additional options
     propagate_changes: bool = True
@@ -50,9 +49,9 @@ class BatchOperationResult:
     """Result of a single batch operation"""
     success: bool
     operation: BatchOperation
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    execution_time_ms: Optional[float] = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
+    execution_time_ms: float | None = None
 
 
 class BatchContextOperations:
@@ -66,12 +65,12 @@ class BatchContextOperations:
     
     async def execute_batch(
         self,
-        operations: List[BatchOperation],
+        operations: list[BatchOperation],
         transaction: bool = True,
         parallel: bool = False,
         stop_on_error: bool = True,
-        user_id: Optional[str] = None
-    ) -> List[BatchOperationResult]:
+        user_id: str | None = None
+    ) -> list[BatchOperationResult]:
         """
         Execute a batch of context operations.
         
@@ -110,9 +109,9 @@ class BatchContextOperations:
     
     async def _execute_transactional(
         self, 
-        operations: List[BatchOperation],
+        operations: list[BatchOperation],
         stop_on_error: bool
-    ) -> List[BatchOperationResult]:
+    ) -> list[BatchOperationResult]:
         """Execute operations in a single transaction"""
         results = []
         
@@ -121,11 +120,11 @@ class BatchContextOperations:
         
         try:
             for op in operations:
-                start_time = datetime.now(timezone.utc)
+                start_time = datetime.now(UTC)
                 
                 try:
                     result = await self._execute_single_operation(op)
-                    execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+                    execution_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
                     
                     results.append(BatchOperationResult(
                         success=True,
@@ -134,7 +133,7 @@ class BatchContextOperations:
                         execution_time_ms=execution_time
                     ))
                 except Exception as e:
-                    execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+                    execution_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
                     
                     results.append(BatchOperationResult(
                         success=False,
@@ -167,18 +166,18 @@ class BatchContextOperations:
     
     async def _execute_sequential(
         self,
-        operations: List[BatchOperation],
+        operations: list[BatchOperation],
         stop_on_error: bool
-    ) -> List[BatchOperationResult]:
+    ) -> list[BatchOperationResult]:
         """Execute operations sequentially"""
         results = []
         
         for op in operations:
-            start_time = datetime.now(timezone.utc)
+            start_time = datetime.now(UTC)
             
             try:
                 result = await self._execute_single_operation(op)
-                execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+                execution_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
                 
                 results.append(BatchOperationResult(
                     success=True,
@@ -187,7 +186,7 @@ class BatchContextOperations:
                     execution_time_ms=execution_time
                 ))
             except Exception as e:
-                execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+                execution_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
                 
                 results.append(BatchOperationResult(
                     success=False,
@@ -210,17 +209,17 @@ class BatchContextOperations:
     
     async def _execute_parallel(
         self,
-        operations: List[BatchOperation],
+        operations: list[BatchOperation],
         stop_on_error: bool
-    ) -> List[BatchOperationResult]:
+    ) -> list[BatchOperationResult]:
         """Execute operations in parallel"""
         
         async def execute_with_timing(op: BatchOperation) -> BatchOperationResult:
-            start_time = datetime.now(timezone.utc)
+            start_time = datetime.now(UTC)
             
             try:
                 result = await self._execute_single_operation(op)
-                execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+                execution_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
                 
                 return BatchOperationResult(
                     success=True,
@@ -229,7 +228,7 @@ class BatchContextOperations:
                     execution_time_ms=execution_time
                 )
             except Exception as e:
-                execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+                execution_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
                 
                 return BatchOperationResult(
                     success=False,
@@ -252,7 +251,7 @@ class BatchContextOperations:
         
         return results
     
-    async def _execute_single_operation(self, op: BatchOperation) -> Dict[str, Any]:
+    async def _execute_single_operation(self, op: BatchOperation) -> dict[str, Any]:
         """Execute a single operation"""
         
         if op.operation == BatchOperationType.CREATE:
@@ -313,7 +312,7 @@ class BatchContextOperations:
         else:
             raise ValueError(f"Unknown operation type: {op.operation}")
     
-    async def _invalidate_caches(self, operations: List[BatchOperation], user_id: str):
+    async def _invalidate_caches(self, operations: list[BatchOperation], user_id: str):
         """Invalidate caches for affected contexts"""
         for op in operations:
             if op.operation != BatchOperationType.DELETE:
@@ -332,11 +331,11 @@ class BatchContextOperations:
     
     async def bulk_create(
         self,
-        contexts: List[Dict[str, Any]],
+        contexts: list[dict[str, Any]],
         level: ContextLevel,
         user_id: str,
         transaction: bool = True
-    ) -> List[BatchOperationResult]:
+    ) -> list[BatchOperationResult]:
         """Create multiple contexts of the same level"""
         operations = [
             BatchOperation(
@@ -359,12 +358,12 @@ class BatchContextOperations:
     
     async def bulk_update(
         self,
-        updates: List[Dict[str, Any]],
+        updates: list[dict[str, Any]],
         level: ContextLevel,
         user_id: str,
         transaction: bool = False,
         parallel: bool = True
-    ) -> List[BatchOperationResult]:
+    ) -> list[BatchOperationResult]:
         """Update multiple contexts of the same level"""
         operations = [
             BatchOperation(
@@ -391,7 +390,7 @@ class BatchContextOperations:
         target_branch_id: str,
         user_id: str,
         include_task_contexts: bool = True
-    ) -> List[BatchOperationResult]:
+    ) -> list[BatchOperationResult]:
         """Copy all contexts from one branch to another"""
         
         # Get all contexts from source branch

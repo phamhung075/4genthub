@@ -1,14 +1,13 @@
 """Context JSON Schema Definition and Validation"""
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
-import json
-from pathlib import Path
+from typing import Any
+
+from ...domain.value_objects.priority import Priority, PriorityLevel
 
 # Import value objects
 from ...domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from ...domain.value_objects.priority import Priority, PriorityLevel
 
 
 @dataclass
@@ -17,11 +16,11 @@ class ContextMetadata:
     task_id: str
     project_id: str
     git_branch_id: str = "main"
-    user_id: Optional[str] = None
+    user_id: str | None = None
     status: TaskStatus = field(default_factory=TaskStatus.todo)
     priority: Priority = field(default_factory=Priority.medium)
-    assignees: List[str] = field(default_factory=list)
-    labels: List[str] = field(default_factory=list)
+    assignees: list[str] = field(default_factory=list)
+    labels: list[str] = field(default_factory=list)
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
     version: str = "1.0"
@@ -33,7 +32,7 @@ class ContextObjective:
     title: str
     description: str = ""
     estimated_effort: str = "medium"
-    due_date: Optional[str] = None
+    due_date: str | None = None
 
 
 @dataclass
@@ -49,20 +48,20 @@ class ContextRequirement:
 @dataclass
 class ContextRequirements:
     """Requirements section"""
-    checklist: List[ContextRequirement] = field(default_factory=list)
-    custom_requirements: List[str] = field(default_factory=list)
-    completion_criteria: List[str] = field(default_factory=list)
+    checklist: list[ContextRequirement] = field(default_factory=list)
+    custom_requirements: list[str] = field(default_factory=list)
+    completion_criteria: list[str] = field(default_factory=list)
 
 
 @dataclass
 class ContextTechnical:
     """Technical details section"""
-    technologies: List[str] = field(default_factory=list)
-    frameworks: List[str] = field(default_factory=list)
-    key_files: List[str] = field(default_factory=list)
-    key_directories: List[str] = field(default_factory=list)
+    technologies: list[str] = field(default_factory=list)
+    frameworks: list[str] = field(default_factory=list)
+    key_files: list[str] = field(default_factory=list)
+    key_directories: list[str] = field(default_factory=list)
     architecture_notes: str = ""
-    patterns_used: List[str] = field(default_factory=list)
+    patterns_used: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -77,9 +76,9 @@ class ContextDependency:
 @dataclass
 class ContextDependencies:
     """Dependencies section"""
-    task_dependencies: List[ContextDependency] = field(default_factory=list)
-    external_dependencies: List[str] = field(default_factory=list)
-    blocked_by: List[str] = field(default_factory=list)
+    task_dependencies: list[ContextDependency] = field(default_factory=list)
+    external_dependencies: list[str] = field(default_factory=list)
+    blocked_by: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -95,9 +94,9 @@ class ContextProgressAction:
 @dataclass
 class ContextProgress:
     """Progress tracking section"""
-    completed_actions: List[ContextProgressAction] = field(default_factory=list)
+    completed_actions: list[ContextProgressAction] = field(default_factory=list)
     current_session_summary: str = ""
-    next_steps: List[str] = field(default_factory=list)
+    next_steps: list[str] = field(default_factory=list)
     completion_percentage: float = 0.0
     time_spent_minutes: int = 0
 
@@ -115,10 +114,10 @@ class ContextInsight:
 @dataclass
 class ContextNotes:
     """Context notes and insights"""
-    agent_insights: List[ContextInsight] = field(default_factory=list)
-    challenges_encountered: List[ContextInsight] = field(default_factory=list)
-    solutions_applied: List[ContextInsight] = field(default_factory=list)
-    decisions_made: List[ContextInsight] = field(default_factory=list)
+    agent_insights: list[ContextInsight] = field(default_factory=list)
+    challenges_encountered: list[ContextInsight] = field(default_factory=list)
+    solutions_applied: list[ContextInsight] = field(default_factory=list)
+    decisions_made: list[ContextInsight] = field(default_factory=list)
     general_notes: str = ""
 
 
@@ -129,7 +128,7 @@ class ContextSubtask:
     title: str
     description: str = ""
     status: TaskStatus = field(default_factory=TaskStatus.todo)
-    assignees: List[str] = field(default_factory=list)
+    assignees: list[str] = field(default_factory=list)
     completed: bool = False
     progress_notes: str = ""
 
@@ -137,7 +136,7 @@ class ContextSubtask:
 @dataclass
 class ContextSubtasks:
     """Subtasks section"""
-    items: List[ContextSubtask] = field(default_factory=list)
+    items: list[ContextSubtask] = field(default_factory=list)
     total_count: int = 0
     completed_count: int = 0
     progress_percentage: float = 0.0
@@ -147,7 +146,7 @@ class ContextSubtasks:
 class ContextCustomSection:
     """Custom extensible section"""
     name: str
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     schema_version: str = "1.0"
 
 
@@ -162,9 +161,9 @@ class TaskContext:
     progress: ContextProgress = field(default_factory=ContextProgress)
     subtasks: ContextSubtasks = field(default_factory=ContextSubtasks)
     notes: ContextNotes = field(default_factory=ContextNotes)
-    custom_sections: List[ContextCustomSection] = field(default_factory=list)
+    custom_sections: list[ContextCustomSection] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert context to dictionary for JSON serialization"""
         def convert_dataclass(obj):
             if isinstance(obj, (TaskStatus, Priority)):
@@ -181,7 +180,7 @@ class TaskContext:
         return convert_dataclass(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'TaskContext':
+    def from_dict(cls, data: dict[str, Any]) -> 'TaskContext':
         """Create TaskContext from dictionary"""
         # Handle metadata with value object conversion
         metadata_data = data.get('metadata', {})
@@ -281,7 +280,7 @@ class ContextSchema:
     SCHEMA_VERSION = "1.0"
     
     @staticmethod
-    def get_default_schema() -> Dict[str, Any]:
+    def get_default_schema() -> dict[str, Any]:
         """Get the default context schema"""
         return {
             "version": ContextSchema.SCHEMA_VERSION,
@@ -445,7 +444,7 @@ class ContextSchema:
         }
     
     @staticmethod
-    def validate_context(context_data: Dict[str, Any]) -> tuple[bool, List[str]]:
+    def validate_context(context_data: dict[str, Any]) -> tuple[bool, list[str]]:
         """Validate context data against schema"""
         errors = []
         

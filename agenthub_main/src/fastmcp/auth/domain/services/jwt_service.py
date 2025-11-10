@@ -6,10 +6,11 @@ This service handles JWT token creation, validation, and refresh token managemen
 
 import logging
 import secrets
-from datetime import datetime, timezone, timedelta
-from typing import Optional, Dict, Any, Tuple
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 import jwt
-from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class JWTService:
                           user_id: str,
                           email: str,
                           roles: list[str],
-                          additional_claims: Optional[Dict[str, Any]] = None,
+                          additional_claims: dict[str, Any] | None = None,
                           audience: str = "mcp-server") -> str:
         """
         Create an access token for API authentication
@@ -56,7 +57,7 @@ class JWTService:
         Returns:
             Encoded JWT access token
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(minutes=self.ACCESS_TOKEN_EXPIRE_MINUTES)
         
         payload = {
@@ -78,8 +79,8 @@ class JWTService:
     
     def create_refresh_token(self,
                            user_id: str,
-                           token_family: Optional[str] = None,
-                           token_version: int = 0) -> Tuple[str, str]:
+                           token_family: str | None = None,
+                           token_version: int = 0) -> tuple[str, str]:
         """
         Create a refresh token for token renewal
         
@@ -91,7 +92,7 @@ class JWTService:
         Returns:
             Tuple of (encoded refresh token, token family ID)
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(days=self.REFRESH_TOKEN_EXPIRE_DAYS)
         
         # Generate new family ID if not provided
@@ -123,7 +124,7 @@ class JWTService:
         Returns:
             Encoded reset token
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=self.RESET_TOKEN_EXPIRE_HOURS)
         
         payload = {
@@ -138,7 +139,7 @@ class JWTService:
         
         return jwt.encode(payload, self.secret_key, algorithm=self.ALGORITHM)
     
-    def verify_token(self, token: str, expected_type: str = "access", expected_audience: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def verify_token(self, token: str, expected_type: str = "access", expected_audience: str | None = None) -> dict[str, Any] | None:
         """
         Verify and decode a JWT token
         
@@ -202,12 +203,12 @@ class JWTService:
             if token_type != expected_type:
                 # Allow api_token type for access token compatibility
                 if expected_type == "access" and token_type == "api_token":
-                    logger.debug(f"Accepting api_token type for access token compatibility")
+                    logger.debug("Accepting api_token type for access token compatibility")
                 elif expected_type == "api_token" and token_type == "access":
-                    logger.debug(f"Accepting access type for api_token compatibility")
+                    logger.debug("Accepting access type for api_token compatibility")
                 elif token_type is None:
                     # Supabase tokens don't have 'type' field, accept them for access tokens
-                    logger.debug(f"Accepting token without 'type' field (likely Supabase token)")
+                    logger.debug("Accepting token without 'type' field (likely Supabase token)")
                 else:
                     logger.warning(f"Token type mismatch: expected {expected_type}, got {token_type}")
                     return None
@@ -224,7 +225,7 @@ class JWTService:
             logger.error(f"Token verification error: {e}")
             return None
     
-    def verify_access_token(self, token: str, expected_audience: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def verify_access_token(self, token: str, expected_audience: str | None = None) -> dict[str, Any] | None:
         """
         Verify an access token
         
@@ -237,7 +238,7 @@ class JWTService:
         """
         return self.verify_token(token, "access", expected_audience)
     
-    def verify_refresh_token(self, token: str) -> Optional[Dict[str, Any]]:
+    def verify_refresh_token(self, token: str) -> dict[str, Any] | None:
         """
         Verify a refresh token
         
@@ -249,7 +250,7 @@ class JWTService:
         """
         return self.verify_token(token, "refresh")
     
-    def verify_reset_token(self, token: str) -> Optional[Dict[str, Any]]:
+    def verify_reset_token(self, token: str) -> dict[str, Any] | None:
         """
         Verify a password reset token
         
@@ -280,7 +281,7 @@ class JWTService:
         Returns:
             Encoded JWT API token
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(days=expires_in_days)
         
         payload = {
@@ -296,7 +297,7 @@ class JWTService:
         
         return jwt.encode(payload, self.secret_key, algorithm=self.ALGORITHM)
     
-    def refresh_access_token(self, refresh_token: str) -> Optional[Tuple[str, str]]:
+    def refresh_access_token(self, refresh_token: str) -> tuple[str, str] | None:
         """
         Use a refresh token to generate new access and refresh tokens
         
@@ -325,8 +326,8 @@ class JWTService:
             {
                 "sub": user_id,
                 "type": "access",
-                "iat": datetime.now(timezone.utc),
-                "exp": datetime.now(timezone.utc) + timedelta(minutes=self.ACCESS_TOKEN_EXPIRE_MINUTES),
+                "iat": datetime.now(UTC),
+                "exp": datetime.now(UTC) + timedelta(minutes=self.ACCESS_TOKEN_EXPIRE_MINUTES),
                 "iss": self.issuer,
                 "jti": secrets.token_hex(16),
             },
@@ -342,7 +343,7 @@ class JWTService:
         
         return new_access_token, new_refresh_token
     
-    def extract_token_from_header(self, authorization_header: str) -> Optional[str]:
+    def extract_token_from_header(self, authorization_header: str) -> str | None:
         """
         Extract token from Authorization header
         
@@ -362,7 +363,7 @@ class JWTService:
         
         return parts[1]
     
-    def get_token_expiry(self, token: str) -> Optional[datetime]:
+    def get_token_expiry(self, token: str) -> datetime | None:
         """
         Get token expiration time
         
@@ -402,4 +403,4 @@ class JWTService:
         if not expiry:
             return True
         
-        return datetime.now(timezone.utc) > expiry
+        return datetime.now(UTC) > expiry

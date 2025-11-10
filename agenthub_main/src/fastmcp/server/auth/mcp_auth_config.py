@@ -6,16 +6,16 @@ making it easy to integrate with the token management system.
 """
 
 import os
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fastmcp.server.auth.providers.jwt_bearer import JWTBearerAuthProvider
+    pass
 
 
 def create_mcp_auth_provider(
     auth_type: str = "jwt",
-    secret_key: Optional[str] = None,
-    required_scopes: Optional[List[str]] = None,
+    secret_key: str | None = None,
+    required_scopes: list[str] | None = None,
     check_database: bool = True,
 ):
     """

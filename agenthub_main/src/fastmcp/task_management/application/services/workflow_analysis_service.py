@@ -6,19 +6,15 @@ suggests optimizations, and learns from historical data.
 """
 
 import logging
-from typing import List, Dict, Any, Optional, Tuple
-from uuid import UUID
-from datetime import datetime
-from datetime import datetime, timezone, timedelta
-from collections import defaultdict
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
+from uuid import UUID
 
-from ...domain.entities.task import Task
 from ...domain.entities.context import TaskContext
-from ...domain.value_objects.progress import ProgressType
-from ...domain.repositories.task_repository import TaskRepository
+from ...domain.entities.task import Task
 from ...domain.repositories.context_repository import ContextRepository
-from ...infrastructure.event_store import EventStore, get_event_store
+from ...domain.repositories.task_repository import TaskRepository
 from ...domain.value_objects.progress import ProgressStatus
 
 logger = logging.getLogger(__name__)
@@ -32,9 +28,9 @@ class WorkflowPattern:
     pattern_type: str  # bottleneck, optimization, success_pattern
     confidence: float
     description: str
-    affected_tasks: List[UUID]
-    recommendations: List[str]
-    metrics: Dict[str, Any]
+    affected_tasks: list[UUID]
+    recommendations: list[str]
+    metrics: dict[str, Any]
 
 
 @dataclass
@@ -43,12 +39,12 @@ class WorkflowAnalysis:
     
     task_id: UUID
     analysis_timestamp: datetime
-    patterns: List[WorkflowPattern]
-    bottlenecks: List[Dict[str, Any]]
-    optimization_opportunities: List[Dict[str, Any]]
-    predicted_completion_time: Optional[timedelta]
-    risk_factors: List[str]
-    success_indicators: List[str]
+    patterns: list[WorkflowPattern]
+    bottlenecks: list[dict[str, Any]]
+    optimization_opportunities: list[dict[str, Any]]
+    predicted_completion_time: timedelta | None
+    risk_factors: list[str]
+    success_indicators: list[str]
 
 
 class WorkflowAnalysisService:
@@ -63,8 +59,8 @@ class WorkflowAnalysisService:
         self,
         task_repository: TaskRepository,
         context_repository: ContextRepository,
-        event_store: Optional[Any] = None,  # EventStore not implemented yet
-        user_id: Optional[str] = None
+        event_store: Any | None = None,  # EventStore not implemented yet
+        user_id: str | None = None
     ):
         self.task_repository = task_repository
         self.context_repository = context_repository
@@ -72,8 +68,8 @@ class WorkflowAnalysisService:
         self._user_id = user_id  # Store user context
         
         # Cache for analysis results
-        self._analysis_cache: Dict[UUID, WorkflowAnalysis] = {}
-        self._pattern_cache: Dict[str, WorkflowPattern] = {}
+        self._analysis_cache: dict[UUID, WorkflowAnalysis] = {}
+        self._pattern_cache: dict[str, WorkflowPattern] = {}
 
     def _get_user_scoped_repository(self, repository: Any) -> Any:
         """Get a user-scoped version of the repository if it supports user context."""
@@ -115,7 +111,7 @@ class WorkflowAnalysisService:
         # Check cache
         if task_id in self._analysis_cache:
             cached = self._analysis_cache[task_id]
-            if (datetime.now(timezone.utc) - cached.analysis_timestamp) < timedelta(hours=1):
+            if (datetime.now(UTC) - cached.analysis_timestamp) < timedelta(hours=1):
                 return cached
         
         # Fetch task and context
@@ -141,7 +137,7 @@ class WorkflowAnalysisService:
         # Create analysis result
         analysis = WorkflowAnalysis(
             task_id=task_id,
-            analysis_timestamp=datetime.now(timezone.utc),
+            analysis_timestamp=datetime.now(UTC),
             patterns=patterns,
             bottlenecks=bottlenecks,
             optimization_opportunities=optimizations,
@@ -155,14 +151,14 @@ class WorkflowAnalysisService:
         
         return analysis
     
-    async def _get_task_context(self, task_id: UUID) -> Optional[TaskContext]:
+    async def _get_task_context(self, task_id: UUID) -> TaskContext | None:
         """Get context for a task."""
         try:
             return await self.context_repository.get_by_task_id(task_id)
         except Exception:
             return None
     
-    async def _get_related_tasks(self, task: Task) -> List[Task]:
+    async def _get_related_tasks(self, task: Task) -> list[Task]:
         """Get tasks related to the given task."""
         related = []
         
@@ -200,9 +196,9 @@ class WorkflowAnalysisService:
     async def _detect_patterns(
         self,
         task: Task,
-        context: Optional[TaskContext],
-        related_tasks: List[Task]
-    ) -> List[WorkflowPattern]:
+        context: TaskContext | None,
+        related_tasks: list[Task]
+    ) -> list[WorkflowPattern]:
         """Detect workflow patterns."""
         patterns = []
         
@@ -217,8 +213,8 @@ class WorkflowAnalysisService:
     def _detect_completion_patterns(
         self,
         task: Task,
-        related_tasks: List[Task]
-    ) -> List[WorkflowPattern]:
+        related_tasks: list[Task]
+    ) -> list[WorkflowPattern]:
         """Detect patterns related to task completion."""
         patterns = []
         
@@ -238,7 +234,7 @@ class WorkflowAnalysisService:
             
             # Check if current task is taking longer
             if hasattr(task, 'created_at'):
-                current_duration = (datetime.now(timezone.utc) - task.created_at).total_seconds() / 3600
+                current_duration = (datetime.now(UTC) - task.created_at).total_seconds() / 3600
                 
                 if current_duration > avg_time * 1.5:
                     pattern = WorkflowPattern(
@@ -265,8 +261,8 @@ class WorkflowAnalysisService:
     def _detect_blocker_patterns(
         self,
         task: Task,
-        related_tasks: List[Task]
-    ) -> List[WorkflowPattern]:
+        related_tasks: list[Task]
+    ) -> list[WorkflowPattern]:
         """Detect patterns related to blockers."""
         patterns = []
         
@@ -299,8 +295,8 @@ class WorkflowAnalysisService:
     def _detect_collaboration_patterns(
         self,
         task: Task,
-        context: Optional[TaskContext]
-    ) -> List[WorkflowPattern]:
+        context: TaskContext | None
+    ) -> list[WorkflowPattern]:
         """Detect patterns suggesting collaboration needs."""
         patterns = []
         
@@ -308,7 +304,7 @@ class WorkflowAnalysisService:
         
         # Check task age
         if hasattr(task, 'created_at'):
-            age = datetime.now(timezone.utc) - task.created_at
+            age = datetime.now(UTC) - task.created_at
             if age > timedelta(days=14) and task.status not in ["done", "cancelled"]:
                 indicators.append("long_running")
         
@@ -344,7 +340,7 @@ class WorkflowAnalysisService:
         
         return patterns
     
-    def _detect_progress_patterns(self, task: Task) -> List[WorkflowPattern]:
+    def _detect_progress_patterns(self, task: Task) -> list[WorkflowPattern]:
         """Detect patterns in task progress."""
         patterns = []
         
@@ -391,15 +387,15 @@ class WorkflowAnalysisService:
     async def _identify_bottlenecks(
         self,
         task: Task,
-        context: Optional[TaskContext]
-    ) -> List[Dict[str, Any]]:
+        context: TaskContext | None
+    ) -> list[dict[str, Any]]:
         """Identify workflow bottlenecks."""
         bottlenecks = []
         
         # Check for stalled progress
         if hasattr(task, 'progress_timeline') and task.progress_timeline:
             last_update = datetime.fromisoformat(task.progress_timeline[-1]['timestamp'])
-            stall_duration = datetime.now(timezone.utc) - last_update
+            stall_duration = datetime.now(UTC) - last_update
             
             if stall_duration > timedelta(hours=48):
                 bottlenecks.append({
@@ -440,9 +436,9 @@ class WorkflowAnalysisService:
     async def _find_optimization_opportunities(
         self,
         task: Task,
-        context: Optional[TaskContext],
-        patterns: List[WorkflowPattern]
-    ) -> List[Dict[str, Any]]:
+        context: TaskContext | None,
+        patterns: list[WorkflowPattern]
+    ) -> list[dict[str, Any]]:
         """Find workflow optimization opportunities."""
         opportunities = []
         
@@ -499,8 +495,8 @@ class WorkflowAnalysisService:
     async def _predict_completion_time(
         self,
         task: Task,
-        related_tasks: List[Task]
-    ) -> Optional[timedelta]:
+        related_tasks: list[Task]
+    ) -> timedelta | None:
         """Predict task completion time based on historical data."""
         if not hasattr(task, 'created_at'):
             return None
@@ -539,7 +535,7 @@ class WorkflowAnalysisService:
         
         # Adjust based on current progress
         progress = getattr(task, 'progress', 0)
-        current_duration = datetime.now(timezone.utc) - task.created_at
+        current_duration = datetime.now(UTC) - task.created_at
         
         if progress > 0:
             # Estimate total time based on current progress
@@ -560,9 +556,9 @@ class WorkflowAnalysisService:
     def _assess_risk_factors(
         self,
         task: Task,
-        context: Optional[TaskContext],
-        patterns: List[WorkflowPattern]
-    ) -> List[str]:
+        context: TaskContext | None,
+        patterns: list[WorkflowPattern]
+    ) -> list[str]:
         """Assess risk factors for task completion."""
         risks = []
         
@@ -595,8 +591,8 @@ class WorkflowAnalysisService:
     def _identify_success_indicators(
         self,
         task: Task,
-        context: Optional[TaskContext]
-    ) -> List[str]:
+        context: TaskContext | None
+    ) -> list[str]:
         """Identify positive indicators for task success."""
         indicators = []
         
@@ -629,7 +625,7 @@ class WorkflowAnalysisService:
     async def get_workflow_recommendations(
         self,
         task_id: UUID
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get actionable workflow recommendations for a task.
         

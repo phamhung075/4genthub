@@ -1,27 +1,20 @@
 """Dependencie Application Service"""
 
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from fastmcp.task_management.application.dtos.dependency import (
     AddDependencyRequest,
-    DependencyResponse
+    DependencyResponse,
 )
-
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
 
 # Use TYPE_CHECKING to avoid circular imports
 if TYPE_CHECKING:
-    from ..use_cases import (
-        AddDependencyUseCase,
-        RemoveDependencyUseCase,
-        GetDependenciesUseCase,
-        ClearDependenciesUseCase,
-        GetBlockingTasksUseCase
-    )
+    pass
 
 class DependencieApplicationService:
     """Application service for dependency operations"""
-    def __init__(self, task_repository: TaskRepository, user_id: Optional[str] = None):
+    def __init__(self, task_repository: TaskRepository, user_id: str | None = None):
         self._task_repository = task_repository
         self._user_id = user_id  # Store user context
         # Lazy initialization of use cases to avoid circular imports
@@ -50,35 +43,45 @@ class DependencieApplicationService:
 
     def add_dependency(self, request: AddDependencyRequest) -> DependencyResponse:
         if self._add_dependency_use_case is None:
-            from fastmcp.task_management.application.use_cases.add_dependency import AddDependencyUseCase
+            from fastmcp.task_management.application.use_cases.add_dependency import (
+                AddDependencyUseCase,
+            )
             repo = self._get_user_scoped_repository(self._task_repository)
             self._add_dependency_use_case = AddDependencyUseCase(repo)
         return self._add_dependency_use_case.execute(request)
 
     def remove_dependency(self, task_id: str, dependency_id: str) -> DependencyResponse:
         if self._remove_dependency_use_case is None:
-            from fastmcp.task_management.application.use_cases.remove_dependency import RemoveDependencyUseCase
+            from fastmcp.task_management.application.use_cases.remove_dependency import (
+                RemoveDependencyUseCase,
+            )
             repo = self._get_user_scoped_repository(self._task_repository)
             self._remove_dependency_use_case = RemoveDependencyUseCase(repo)
         return self._remove_dependency_use_case.execute(task_id, dependency_id)
 
-    def get_dependencies(self, task_id: str) -> Dict[str, Any]:
+    def get_dependencies(self, task_id: str) -> dict[str, Any]:
         if self._get_dependencies_use_case is None:
-            from fastmcp.task_management.application.use_cases.get_dependencies import GetDependenciesUseCase
+            from fastmcp.task_management.application.use_cases.get_dependencies import (
+                GetDependenciesUseCase,
+            )
             repo = self._get_user_scoped_repository(self._task_repository)
             self._get_dependencies_use_case = GetDependenciesUseCase(repo)
         return self._get_dependencies_use_case.execute(task_id)
 
     def clear_dependencies(self, task_id: str) -> DependencyResponse:
         if self._clear_dependencies_use_case is None:
-            from fastmcp.task_management.application.use_cases.clear_dependencies import ClearDependenciesUseCase
+            from fastmcp.task_management.application.use_cases.clear_dependencies import (
+                ClearDependenciesUseCase,
+            )
             repo = self._get_user_scoped_repository(self._task_repository)
             self._clear_dependencies_use_case = ClearDependenciesUseCase(repo)
         return self._clear_dependencies_use_case.execute(task_id)
 
-    def get_blocking_tasks(self, task_id: str) -> Dict[str, Any]:
+    def get_blocking_tasks(self, task_id: str) -> dict[str, Any]:
         if self._get_blocking_tasks_use_case is None:
-            from fastmcp.task_management.application.use_cases.get_blocking_tasks import GetBlockingTasksUseCase
+            from fastmcp.task_management.application.use_cases.get_blocking_tasks import (
+                GetBlockingTasksUseCase,
+            )
             repo = self._get_user_scoped_repository(self._task_repository)
             self._get_blocking_tasks_use_case = GetBlockingTasksUseCase(repo)
         return self._get_blocking_tasks_use_case.execute(task_id) 

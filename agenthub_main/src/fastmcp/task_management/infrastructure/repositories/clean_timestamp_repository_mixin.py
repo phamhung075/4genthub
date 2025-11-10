@@ -8,11 +8,11 @@ through repository implementations.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
-from typing import Generic, Iterable, List, Sequence, TypeVar
+from collections.abc import Iterable, Sequence
+from datetime import UTC, datetime
+from typing import Generic, TypeVar
 
 from ...domain.entities.base.base_timestamp_entity import BaseTimestampEntity
-
 
 T = TypeVar("T", bound=BaseTimestampEntity)
 
@@ -30,12 +30,12 @@ class CleanTimestampRepository(ABC, Generic[T]):
         entities: Sequence[T],
         *,
         reason: str = "repository_bulk_save"
-    ) -> List[T]:
+    ) -> list[T]:
         """Persist multiple entities with a consistent timestamp."""
         if not entities:
             return []
 
-        consistent_timestamp = datetime.now(timezone.utc)
+        consistent_timestamp = datetime.now(UTC)
         for entity in entities:
             # Use touch to capture domain events, then override with consistent timestamp
             entity.touch(reason)
@@ -48,6 +48,6 @@ class CleanTimestampRepository(ABC, Generic[T]):
         """Concrete persistence logic implemented by repositories."""
 
     @abstractmethod
-    def _perform_bulk_save(self, entities: Iterable[T]) -> List[T]:
+    def _perform_bulk_save(self, entities: Iterable[T]) -> list[T]:
         """Concrete bulk persistence logic implemented by repositories."""
 

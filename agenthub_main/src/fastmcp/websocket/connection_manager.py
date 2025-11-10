@@ -12,29 +12,23 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Dict, List, Optional, Set, Any, Union
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..task_management.domain.services.cascade_calculator import (
-    CascadeCalculator,
-    EntityType as CascadeEntityType
-)
+from ..task_management.domain.services.cascade_calculator import CascadeCalculator
+from .models import AIBatchMessage, UserUpdateMessage, WSMessage
 from .protocol import (
-    validate_message,
-    create_user_update,
-    create_ai_batch,
+    InvalidVersionError,
+    MessageSizeError,
+    ProtocolError,
     create_error,
     create_heartbeat,
     create_sync,
-    ProtocolError,
-    InvalidVersionError,
-    MessageSizeError
+    create_user_update,
+    validate_message,
 )
-from .models import WSMessage, UserUpdateMessage, AIBatchMessage
-from .types import EntityType, ActionType, SourceType
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +48,9 @@ class ConnectionManager:
         Args:
             session_factory: Factory function for creating database sessions
         """
-        self.connections: Dict[str, WebSocket] = {}
-        self.user_sessions: Dict[str, str] = {}  # user_id -> session_id
-        self.session_users: Dict[str, str] = {}  # session_id -> user_id
+        self.connections: dict[str, WebSocket] = {}
+        self.user_sessions: dict[str, str] = {}  # user_id -> session_id
+        self.session_users: dict[str, str] = {}  # session_id -> user_id
 
         # AI batching queue and processor
         self.ai_batch_queue: asyncio.Queue = asyncio.Queue()
@@ -67,15 +61,15 @@ class ConnectionManager:
 
         # Database and cascade calculator
         self.session_factory = session_factory
-        self.cascade_calculator: Optional[CascadeCalculator] = None
+        self.cascade_calculator: CascadeCalculator | None = None
 
         # Connection tracking
-        self.active_users: Set[str] = set()
-        self.heartbeat_intervals: Dict[str, float] = {}
+        self.active_users: set[str] = set()
+        self.heartbeat_intervals: dict[str, float] = {}
 
         logger.info("ConnectionManager initialized for WebSocket v2.0 protocol")
 
-    async def connect(self, websocket: WebSocket, user_id: str, session_id: Optional[str] = None) -> str:
+    async def connect(self, websocket: WebSocket, user_id: str, session_id: str | None = None) -> str:
         """
         Accept a new WebSocket connection and perform initial sync.
 
@@ -226,7 +220,7 @@ class ConnectionManager:
         await self.ai_batch_queue.put(message)
         logger.debug("AI message queued for batch processing")
 
-    async def broadcast_immediate(self, message: Union[WSMessage, UserUpdateMessage]) -> None:
+    async def broadcast_immediate(self, message: WSMessage | UserUpdateMessage) -> None:
         """
         Broadcast message immediately to all connected users.
 
@@ -290,7 +284,7 @@ class ConnectionManager:
             logger.error(f"Error sending message to {user_id}: {e}")
             return False
 
-    async def send_error(self, user_id: str, error_message: str, error_code: Optional[str] = None) -> None:
+    async def send_error(self, user_id: str, error_message: str, error_code: str | None = None) -> None:
         """
         Send error message to specific user.
 
@@ -326,7 +320,7 @@ class ConnectionManager:
             sync_data = {
                 "type": "initial_sync",
                 "user_id": user_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "message": "WebSocket v2.0 connection established"
             }
 
@@ -370,7 +364,7 @@ class ConnectionManager:
         self.sequence_counter += 1
         return self.sequence_counter
 
-    def get_connection_stats(self) -> Dict[str, Any]:
+    def get_connection_stats(self) -> dict[str, Any]:
         """
         Get connection statistics for monitoring.
 

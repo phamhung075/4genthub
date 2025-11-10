@@ -6,14 +6,12 @@ enabling immediate updates to connected clients and agents.
 """
 
 import asyncio
-import json
 import logging
-from typing import Dict, Any, List, Optional, Set, Callable
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from collections import defaultdict
-import weakref
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -64,11 +62,11 @@ class ContextEvent:
     level: str
     context_id: str
     user_id: str
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    data: Optional[Dict[str, Any]] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    data: dict[str, Any] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary"""
         return {
             'event_type': self.event_type.value,
@@ -87,9 +85,9 @@ class Subscription:
     client_id: str
     websocket: Any  # WebSocket connection
     scope: SubscriptionScope
-    filters: Dict[str, Any] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_activity: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    filters: dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_activity: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     def matches(self, event: ContextEvent) -> bool:
         """Check if event matches subscription filters"""
@@ -129,9 +127,9 @@ class ContextNotificationService:
     """
     
     def __init__(self):
-        self.subscriptions: Dict[str, Subscription] = {}
+        self.subscriptions: dict[str, Subscription] = {}
         self.event_queue: asyncio.Queue = asyncio.Queue()
-        self.event_handlers: List[Callable] = []
+        self.event_handlers: list[Callable] = []
         self._running = False
         self._task = None
         
@@ -180,7 +178,7 @@ class ContextNotificationService:
                     except Exception as e:
                         logger.error(f"Event handler error: {e}")
                 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # No events, continue
                 continue
             except Exception as e:
@@ -205,7 +203,7 @@ class ContextNotificationService:
                     if hasattr(websocket, 'client_state') and hasattr(websocket, 'send_json'):
                         if websocket.client_state == WebSocketState.CONNECTED:
                             await websocket.send_json(event.to_dict())
-                            subscription.last_activity = datetime.now(timezone.utc)
+                            subscription.last_activity = datetime.now(UTC)
                             self.stats['events_sent'] += 1
                         else:
                             disconnected.append(client_id)
@@ -227,7 +225,7 @@ class ContextNotificationService:
         websocket: Any,
         client_id: str,
         scope: SubscriptionScope,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str, Any] | None = None
     ) -> Subscription:
         """
         Subscribe to context notifications.
@@ -263,7 +261,7 @@ class ContextNotificationService:
                     'type': 'welcome',
                     'client_id': client_id,
                     'scope': scope.value,
-                    'timestamp': datetime.now(timezone.utc).isoformat()
+                    'timestamp': datetime.now(UTC).isoformat()
                 })
         
         return subscription
@@ -282,8 +280,8 @@ class ContextNotificationService:
         level: str,
         context_id: str,
         user_id: str,
-        data: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        data: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None
     ):
         """
         Send notification for context change.
@@ -313,7 +311,7 @@ class ContextNotificationService:
         """Add custom event handler"""
         self.event_handlers.append(handler)
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get service statistics"""
         return {
             **self.stats,
@@ -343,7 +341,7 @@ class ContextNotificationService:
                         if websocket.client_state == WebSocketState.CONNECTED:
                             await websocket.send_json({
                                 'type': 'heartbeat',
-                                'timestamp': datetime.now(timezone.utc).isoformat()
+                                'timestamp': datetime.now(UTC).isoformat()
                             })
                         else:
                             disconnected.append(client_id)
@@ -361,7 +359,7 @@ class WebSocketManager:
     
     def __init__(self, notification_service: ContextNotificationService):
         self.notification_service = notification_service
-        self.active_connections: Set[WebSocket] = set()
+        self.active_connections: set[WebSocket] = set()
     
     async def connect(self, websocket: WebSocket, client_id: str):
         """Accept WebSocket connection"""
@@ -385,7 +383,7 @@ class WebSocketManager:
         self,
         websocket: WebSocket,
         client_id: str,
-        message: Dict[str, Any]
+        message: dict[str, Any]
     ):
         """Handle incoming WebSocket message"""
         
@@ -413,7 +411,7 @@ class WebSocketManager:
             # Respond to ping
             await websocket.send_json({
                 'type': 'pong',
-                'timestamp': datetime.now(timezone.utc).isoformat()
+                'timestamp': datetime.now(UTC).isoformat()
             })
         
         elif msg_type == 'get_stats':

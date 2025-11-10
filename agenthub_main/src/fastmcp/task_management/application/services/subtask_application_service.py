@@ -1,26 +1,35 @@
 """Subtask Application Service"""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastmcp.task_management.application.dtos.subtask import (
     AddSubtaskRequest,
+    SubtaskResponse,
     UpdateSubtaskRequest,
-    SubtaskResponse
 )
-
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.domain.repositories.subtask_repository import SubtaskRepository
 from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
-from fastmcp.task_management.application.use_cases.update_subtask import UpdateSubtaskUseCase
-from fastmcp.task_management.application.use_cases.remove_subtask import RemoveSubtaskUseCase
-from fastmcp.task_management.application.use_cases.complete_subtask import CompleteSubtaskUseCase
-from fastmcp.task_management.application.use_cases.get_subtasks import GetSubtasksUseCase
+from fastmcp.task_management.application.use_cases.complete_subtask import (
+    CompleteSubtaskUseCase,
+)
 from fastmcp.task_management.application.use_cases.get_subtask import GetSubtaskUseCase
+from fastmcp.task_management.application.use_cases.get_subtasks import (
+    GetSubtasksUseCase,
+)
+from fastmcp.task_management.application.use_cases.remove_subtask import (
+    RemoveSubtaskUseCase,
+)
+from fastmcp.task_management.application.use_cases.update_subtask import (
+    UpdateSubtaskUseCase,
+)
+from fastmcp.task_management.domain.repositories.subtask_repository import (
+    SubtaskRepository,
+)
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
 
 
 class SubtaskApplicationService:
     """Application service for subtask operations with DDD support"""
-    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository = None, user_id: Optional[str] = None):
+    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository = None, user_id: str | None = None):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
         self._user_id = user_id  # Store user context
@@ -71,19 +80,19 @@ class SubtaskApplicationService:
     def add_subtask(self, request: AddSubtaskRequest) -> SubtaskResponse:
         return self._add_subtask_use_case.execute(request)
 
-    def remove_subtask(self, task_id: str, id: str) -> Dict[str, Any]:
+    def remove_subtask(self, task_id: str, id: str) -> dict[str, Any]:
         return self._remove_subtask_use_case.execute(task_id, id)
 
     def update_subtask(self, request: UpdateSubtaskRequest) -> SubtaskResponse:
         return self._update_subtask_use_case.execute(request)
 
-    def complete_subtask(self, task_id: str, id: str) -> Dict[str, Any]:
+    def complete_subtask(self, task_id: str, id: str) -> dict[str, Any]:
         return self._complete_subtask_use_case.execute(task_id, id)
 
-    def get_subtasks(self, task_id: str) -> Dict[str, Any]:
+    def get_subtasks(self, task_id: str) -> dict[str, Any]:
         return self._get_subtasks_use_case.execute(task_id)
 
-    def get_subtask(self, task_id: str, id: str) -> Dict[str, Any]:
+    def get_subtask(self, task_id: str, id: str) -> dict[str, Any]:
         """Get a single subtask by ID"""
         return self._get_subtask_use_case.execute(task_id, id)
 

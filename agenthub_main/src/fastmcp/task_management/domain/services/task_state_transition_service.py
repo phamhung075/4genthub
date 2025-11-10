@@ -1,15 +1,13 @@
 """Task State Transition Service - Domain Service for Task Status Business Rules"""
 
 import logging
-from typing import Dict, Any, List, Optional, Tuple, Protocol
-from datetime import datetime, timezone
 from enum import Enum
+from typing import Any, Protocol
 
-from ..entities.task import Task
 from ..entities.subtask import Subtask
-from ..value_objects.task_status import TaskStatus
+from ..entities.task import Task
 from ..value_objects.task_id import TaskId
-from ..exceptions.task_exceptions import TaskStateTransitionError
+from ..value_objects.task_status import TaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +23,7 @@ class TransitionContext(Enum):
 class SubtaskRepositoryProtocol(Protocol):
     """Protocol for subtask repository to avoid infrastructure dependency."""
     
-    def find_by_parent_task_id(self, task_id: TaskId) -> List[Subtask]:
+    def find_by_parent_task_id(self, task_id: TaskId) -> list[Subtask]:
         """Find all subtasks for a given parent task."""
         pass
 
@@ -33,7 +31,7 @@ class SubtaskRepositoryProtocol(Protocol):
 class TaskRepositoryProtocol(Protocol):
     """Protocol for task repository to avoid infrastructure dependency."""
     
-    def find_all(self) -> List[Task]:
+    def find_all(self) -> list[Task]:
         """Find all tasks."""
         pass
 
@@ -57,8 +55,8 @@ class TaskStateTransitionService:
     """
     
     def __init__(self, 
-                 subtask_repository: Optional[SubtaskRepositoryProtocol] = None,
-                 task_repository: Optional[TaskRepositoryProtocol] = None):
+                 subtask_repository: SubtaskRepositoryProtocol | None = None,
+                 task_repository: TaskRepositoryProtocol | None = None):
         """
         Initialize the task state transition service.
         
@@ -72,7 +70,7 @@ class TaskStateTransitionService:
         # Define the state transition rules
         self._transition_rules = self._initialize_transition_rules()
     
-    def can_transition_to(self, task: Task, target_status: TaskStatus, context: TransitionContext = TransitionContext.USER_INITIATED) -> Tuple[bool, Optional[str]]:
+    def can_transition_to(self, task: Task, target_status: TaskStatus, context: TransitionContext = TransitionContext.USER_INITIATED) -> tuple[bool, str | None]:
         """
         Check if a task can transition to a target status.
         
@@ -104,7 +102,7 @@ class TaskStateTransitionService:
             logger.error(f"Error checking transition for task {task.id} to {target_status}: {e}")
             return False, f"Transition validation error: {str(e)}"
     
-    def transition_to(self, task: Task, target_status: TaskStatus, context: TransitionContext = TransitionContext.USER_INITIATED, metadata: Optional[Dict[str, Any]] = None) -> Tuple[bool, Optional[str]]:
+    def transition_to(self, task: Task, target_status: TaskStatus, context: TransitionContext = TransitionContext.USER_INITIATED, metadata: dict[str, Any] | None = None) -> tuple[bool, str | None]:
         """
         Perform a state transition on a task.
         
@@ -143,7 +141,7 @@ class TaskStateTransitionService:
             logger.error(f"Error transitioning task {task.id} to {target_status}: {e}")
             return False, f"Transition failed: {str(e)}"
     
-    def get_allowed_transitions(self, task: Task) -> Dict[str, Dict[str, Any]]:
+    def get_allowed_transitions(self, task: Task) -> dict[str, dict[str, Any]]:
         """
         Get all allowed transitions for a task with their conditions.
         
@@ -176,7 +174,7 @@ class TaskStateTransitionService:
             logger.error(f"Error getting allowed transitions for task {task.id}: {e}")
             return {}
     
-    def suggest_next_status(self, task: Task) -> Optional[Dict[str, Any]]:
+    def suggest_next_status(self, task: Task) -> dict[str, Any] | None:
         """
         Suggest the next logical status for a task based on its current state.
         
@@ -226,7 +224,7 @@ class TaskStateTransitionService:
             logger.error(f"Error suggesting next status for task {task.id}: {e}")
             return None
     
-    def handle_dependency_completion(self, completed_task: Task) -> List[Dict[str, Any]]:
+    def handle_dependency_completion(self, completed_task: Task) -> list[dict[str, Any]]:
         """
         Handle automatic state transitions when a dependency is completed.
         
@@ -273,7 +271,7 @@ class TaskStateTransitionService:
             logger.error(f"Error handling dependency completion for task {completed_task.id}: {e}")
             return []
     
-    def _initialize_transition_rules(self) -> Dict[str, List[str]]:
+    def _initialize_transition_rules(self) -> dict[str, list[str]]:
         """Initialize the state transition rules."""
         return {
             'todo': ['in_progress', 'blocked', 'cancelled'],
@@ -285,7 +283,7 @@ class TaskStateTransitionService:
             'cancelled': []  # Cancelled tasks shouldn't change status
         }
     
-    def _check_transition_prerequisites(self, task: Task, target_status: TaskStatus, context: TransitionContext) -> Tuple[bool, Optional[str]]:
+    def _check_transition_prerequisites(self, task: Task, target_status: TaskStatus, context: TransitionContext) -> tuple[bool, str | None]:
         """Check if prerequisites are met for a specific transition."""
         target_status_str = str(target_status).lower()
         current_status_str = str(task.status).lower()
@@ -315,7 +313,7 @@ class TaskStateTransitionService:
         
         return True, None
     
-    def _perform_pre_transition_actions(self, task: Task, target_status: TaskStatus, context: TransitionContext, metadata: Dict[str, Any]):
+    def _perform_pre_transition_actions(self, task: Task, target_status: TaskStatus, context: TransitionContext, metadata: dict[str, Any]):
         """Perform actions before the status transition."""
         target_status_str = str(target_status).lower()
         
@@ -331,7 +329,7 @@ class TaskStateTransitionService:
                 # This could be a warning rather than blocking the transition
                 logger.warning(f"Task {task.id} completed without completion summary")
     
-    def _perform_post_transition_actions(self, task: Task, old_status: TaskStatus, new_status: TaskStatus, context: TransitionContext, metadata: Dict[str, Any]):
+    def _perform_post_transition_actions(self, task: Task, old_status: TaskStatus, new_status: TaskStatus, context: TransitionContext, metadata: dict[str, Any]):
         """Perform actions after the status transition."""
         new_status_str = str(new_status).lower()
         
@@ -346,7 +344,7 @@ class TaskStateTransitionService:
             # Could send notifications, log blocking reasons, etc.
             logger.info(f"Task {task.id} has been blocked. Reason: {metadata.get('blocking_reason', 'Not specified')}")
     
-    def _find_dependent_tasks(self, completed_task: Task, all_tasks: List[Task]) -> List[Task]:
+    def _find_dependent_tasks(self, completed_task: Task, all_tasks: list[Task]) -> list[Task]:
         """Find tasks that depend on the completed task."""
         dependent_tasks = []
         completed_task_id = str(completed_task.id)
@@ -360,7 +358,7 @@ class TaskStateTransitionService:
         
         return dependent_tasks
     
-    def _all_dependencies_satisfied(self, task: Task, all_tasks: List[Task]) -> bool:
+    def _all_dependencies_satisfied(self, task: Task, all_tasks: list[Task]) -> bool:
         """Check if all dependencies of a task are satisfied."""
         if not hasattr(task, 'dependencies') or not task.dependencies:
             return True
@@ -398,7 +396,7 @@ class TaskStateTransitionService:
         
         return descriptions.get((from_status, to_status), f"Change status from {from_status} to {to_status}")
     
-    def _get_transition_prerequisites_description(self, from_status: str, to_status: str) -> List[str]:
+    def _get_transition_prerequisites_description(self, from_status: str, to_status: str) -> list[str]:
         """Get description of prerequisites for a transition."""
         prerequisites = {
             ('todo', 'in_progress'): ["Task assignee available", "Dependencies satisfied"],
@@ -410,7 +408,7 @@ class TaskStateTransitionService:
         
         return prerequisites.get((from_status, to_status), [])
     
-    def _get_alternative_suggestions(self, task: Task) -> List[str]:
+    def _get_alternative_suggestions(self, task: Task) -> list[str]:
         """Get alternative status suggestions when primary suggestion is blocked."""
         current_status = str(task.status).lower()
         

@@ -18,15 +18,13 @@ Strangler Fig Migration:
 - Old domain/services/orchestrator.py will be removed in Phase 8
 """
 
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
 import logging
 from abc import ABC, abstractmethod
+from datetime import UTC, datetime
 
-from ...domain.entities.project import Project
 from ...domain.entities.agent import Agent, AgentCapability, AgentStatus
 from ...domain.entities.git_branch import GitBranch
-from ...domain.entities.work_session import WorkSession
+from ...domain.entities.project import Project
 from ...domain.entities.task import Task
 from ...domain.value_objects.priority import PriorityLevel
 
@@ -35,7 +33,7 @@ class OrchestrationStrategy(ABC):
     """Abstract base class for orchestration strategies"""
 
     @abstractmethod
-    def assign_work(self, project: Project, available_agents: List[Agent]) -> Dict[str, str]:
+    def assign_work(self, project: Project, available_agents: list[Agent]) -> dict[str, str]:
         """Assign work to agents based on strategy"""
         pass
 
@@ -43,7 +41,7 @@ class OrchestrationStrategy(ABC):
 class CapabilityBasedStrategy(OrchestrationStrategy):
     """Orchestration strategy based on agent capabilities"""
 
-    def assign_work(self, project: Project, available_agents: List[Agent]) -> Dict[str, str]:
+    def assign_work(self, project: Project, available_agents: list[Agent]) -> dict[str, str]:
         assignments = {}
 
         for git_branch_name, tree in project.git_branchs.items():
@@ -57,7 +55,7 @@ class CapabilityBasedStrategy(OrchestrationStrategy):
 
         return assignments
 
-    def _find_best_agent_for_tree(self, tree: GitBranch, agents: List[Agent]) -> Optional[Agent]:
+    def _find_best_agent_for_tree(self, tree: GitBranch, agents: list[Agent]) -> Agent | None:
         """Find the best agent for a specific task tree"""
         available_agents = [agent for agent in agents if agent.is_available()]
 
@@ -96,7 +94,7 @@ class CapabilityBasedStrategy(OrchestrationStrategy):
 
         return base_score + capability_score + language_score + workload_score
 
-    def _analyze_tree_requirements(self, tree: GitBranch) -> Dict:
+    def _analyze_tree_requirements(self, tree: GitBranch) -> dict:
         """Analyze task tree to determine capability requirements"""
         capabilities = set()
         languages = set()
@@ -148,7 +146,7 @@ class ProjectOrchestrator:
         self.strategy = strategy or CapabilityBasedStrategy()
         self.logger = logging.getLogger(__name__)
 
-    def orchestrate_project(self, project: Project) -> Dict[str, any]:
+    def orchestrate_project(self, project: Project) -> dict[str, any]:
         """
         Orchestrate work distribution for a project.
 
@@ -207,7 +205,7 @@ class ProjectOrchestrator:
             "orchestrator_layer": "application"  # Identify which layer handled this
         }
 
-    def coordinate_cross_tree_dependencies(self, project: Project) -> List[Dict]:
+    def coordinate_cross_tree_dependencies(self, project: Project) -> list[dict]:
         """
         Coordinate and validate cross-tree dependencies.
 
@@ -247,7 +245,7 @@ class ProjectOrchestrator:
 
         return dependency_issues
 
-    def balance_workload(self, project: Project) -> Dict[str, any]:
+    def balance_workload(self, project: Project) -> dict[str, any]:
         """
         Balance workload across agents.
 
@@ -318,7 +316,7 @@ class ProjectOrchestrator:
 
                 self.logger.warning(f"Session {session_id} timed out")
 
-    def _detect_conflicts(self, project: Project) -> List[Dict]:
+    def _detect_conflicts(self, project: Project) -> list[dict]:
         """Detect conflicts in the project"""
         conflicts = []
 
@@ -337,7 +335,7 @@ class ProjectOrchestrator:
 
         return conflicts
 
-    def _resolve_conflicts(self, project: Project, conflicts: List[Dict]) -> None:
+    def _resolve_conflicts(self, project: Project, conflicts: list[dict]) -> None:
         """Resolve detected conflicts"""
         for conflict in conflicts:
             if conflict["type"] == "resource_conflict":
@@ -350,7 +348,7 @@ class ProjectOrchestrator:
                         older_session.unlock_resource(conflict["resource"])
                         self.logger.info(f"Resolved resource conflict for {conflict['resource']}")
 
-    def _prioritize_tasks_for_agent(self, agent: Agent, tasks: List[Task]) -> Optional[Task]:
+    def _prioritize_tasks_for_agent(self, agent: Agent, tasks: list[Task]) -> Task | None:
         """Select the highest priority task for the given agent based on preferences"""
         if not tasks:
             return None
@@ -381,10 +379,9 @@ class ProjectOrchestrator:
                 task_created = task.created_at
 
                 if task.created_at.tzinfo is not None and now.tzinfo is None:
-                                        now = now.replace(tzinfo=timezone.utc)
+                                        now = now.replace(tzinfo=UTC)
                 elif task.created_at.tzinfo is None and now.tzinfo is not None:
-                    from datetime import timezone
-                    task_created = task.created_at.replace(tzinfo=timezone.utc)
+                    task_created = task.created_at.replace(tzinfo=UTC)
 
                 age_days = (now - task_created).days
                 score += min(age_days * 0.1, 1.0)

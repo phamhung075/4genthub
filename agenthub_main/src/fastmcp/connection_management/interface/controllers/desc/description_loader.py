@@ -6,10 +6,11 @@ enabling clean separation between documentation and controller logic.
 Follows the same architecture pattern as task management.
 """
 
-import importlib.util
-from typing import Dict, Any, Optional
-from pathlib import Path
 import fnmatch
+import importlib.util
+from pathlib import Path
+from typing import Any
+
 
 class ConnectionDescriptionLoader:
     """
@@ -17,7 +18,7 @@ class ConnectionDescriptionLoader:
     Supports recursive/nested directory traversal for scalable tool documentation loading.
     """
     
-    def __init__(self, base_path: Optional[str] = None):
+    def __init__(self, base_path: str | None = None):
         """
         Initialize the connection description loader.
         
@@ -37,7 +38,7 @@ class ConnectionDescriptionLoader:
         spec.loader.exec_module(module)
         return module
 
-    def _extract_descriptions(self, module) -> Dict[str, Any]:
+    def _extract_descriptions(self, module) -> dict[str, Any]:
         result = {}
         for attr in dir(module):
             if attr.endswith("_DESCRIPTION"):
@@ -48,7 +49,7 @@ class ConnectionDescriptionLoader:
                 result.setdefault(key, {})["parameters"] = getattr(module, attr)
         return result
 
-    def _recursive_scan(self, directory: Path) -> Dict[str, Any]:
+    def _recursive_scan(self, directory: Path) -> dict[str, Any]:
         result = {}
         for entry in directory.iterdir():
             if entry.is_dir():
@@ -65,14 +66,14 @@ class ConnectionDescriptionLoader:
                     print(f"Warning: Could not load {entry}: {e}")
         return result
 
-    def get_all_descriptions(self) -> Dict[str, Any]:
+    def get_all_descriptions(self) -> dict[str, Any]:
         """
         Recursively load all tool descriptions and parameters from the base path.
         Returns a nested dictionary reflecting the directory structure.
         """
         return self._recursive_scan(self.base_path)
 
-    def get_connection_management_descriptions(self) -> Dict[str, Any]:
+    def get_connection_management_descriptions(self) -> dict[str, Any]:
         """Get connection management tool descriptions"""
         all_desc = self.get_all_descriptions()
         # Extract connection management descriptions

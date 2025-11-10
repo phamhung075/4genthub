@@ -5,18 +5,21 @@ This module provides comprehensive subtask management operations
 following proper DDD architecture with API controllers.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Query
-from fastapi.responses import JSONResponse
-from typing import Optional, Dict, Any, List
 import logging
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from fastmcp.auth.domain.entities.user import User
 
 # Import authentication dependencies
 from fastmcp.auth.interface.fastapi_auth import get_current_active_user, get_db
-from fastmcp.auth.domain.entities.user import User
-from sqlalchemy.orm import Session
 
 # Import API controller for proper DDD architecture
-from fastmcp.task_management.interface.api_controllers.subtask_api_controller import SubtaskAPIController
+from fastmcp.task_management.interface.api_controllers.subtask_api_controller import (
+    SubtaskAPIController,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +38,10 @@ subtask_controller = SubtaskAPIController()
 async def create_subtask(
     task_id: str,
     title: str,
-    description: Optional[str] = None,
+    description: str | None = None,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Create a new subtask"""
     try:
         result = subtask_controller.create_subtask(
@@ -69,7 +72,7 @@ async def get_subtask(
     subtask_id: str,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get a specific subtask by ID"""
     try:
         result = subtask_controller.get_subtask(
@@ -96,13 +99,13 @@ async def get_subtask(
 @router.put("/{subtask_id}")
 async def update_subtask(
     subtask_id: str,
-    title: Optional[str] = None,
-    description: Optional[str] = None,
-    status: Optional[str] = None,
-    progress_percentage: Optional[int] = None,
+    title: str | None = None,
+    description: str | None = None,
+    status: str | None = None,
+    progress_percentage: int | None = None,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Update a subtask"""
     try:
         # Prepare update data
@@ -143,7 +146,7 @@ async def delete_subtask(
     subtask_id: str,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Delete a subtask"""
     try:
         result = subtask_controller.delete_subtask(
@@ -172,7 +175,7 @@ async def list_subtasks_for_task(
     task_id: str,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """List all subtasks for a specific task"""
     logger.info(f"🔵 [ROUTE] GET /api/v2/subtasks/task/{task_id} - Request received")
     logger.info(f"🔵 [ROUTE] User ID: {current_user.id}, User Email: {current_user.email}")
@@ -218,10 +221,10 @@ async def list_subtasks_for_task(
 @router.post("/{subtask_id}/complete")
 async def complete_subtask(
     subtask_id: str,
-    completion_notes: Optional[str] = None,
+    completion_notes: str | None = None,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Mark a subtask as complete"""
     try:
         result = subtask_controller.complete_subtask(

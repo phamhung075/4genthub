@@ -5,7 +5,7 @@ Handles progress tracking and parent task context updates for subtask operations
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class ProgressHandler:
                 "updated": True,
                 "progress_content": progress_content,
                 "overall_progress": overall_progress,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
@@ -116,7 +116,7 @@ class ProgressHandler:
                 "cancelled_subtasks": status_counts["cancelled"],
                 "progress_percentage": progress_percentage,
                 "progress_status": progress_status,
-                "last_calculated": datetime.now(timezone.utc).isoformat(),
+                "last_calculated": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
@@ -180,7 +180,7 @@ class ProgressHandler:
         return {
             "calculation_needed": True,
             "task_id": task_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     def _generate_progress_insights(

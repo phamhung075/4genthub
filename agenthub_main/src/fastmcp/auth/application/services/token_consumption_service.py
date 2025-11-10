@@ -6,14 +6,16 @@ adding tokens, getting balance, and managing quotas.
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
+from typing import Any
+
 from sqlalchemy.orm import Session
 
-from ...domain.repositories.token_balance_repository import ITokenBalanceRepository
-from ...infrastructure.repositories.token_balance_repository import TokenBalanceRepository
 from ...config.token_costs import get_operation_cost
+from ...domain.repositories.token_balance_repository import ITokenBalanceRepository
+from ...infrastructure.repositories.token_balance_repository import (
+    TokenBalanceRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,28 +24,28 @@ logger = logging.getLogger(__name__)
 class TokenConsumptionResult:
     """Result of a token consumption attempt"""
     success: bool
-    remaining_balance: Optional[int] = None
-    consumed: Optional[int] = None
-    error_message: Optional[str] = None
-    error_code: Optional[str] = None
-    operation: Optional[str] = None
+    remaining_balance: int | None = None
+    consumed: int | None = None
+    error_message: str | None = None
+    error_code: str | None = None
+    operation: str | None = None
 
 
 @dataclass
 class TokenBalanceResult:
     """Result of getting token balance"""
     success: bool
-    balance: Optional[Dict[str, Any]] = None
-    error_message: Optional[str] = None
+    balance: dict[str, Any] | None = None
+    error_message: str | None = None
 
 
 @dataclass
 class TokenAdditionResult:
     """Result of adding tokens"""
     success: bool
-    new_balance: Optional[int] = None
-    added: Optional[int] = None
-    error_message: Optional[str] = None
+    new_balance: int | None = None
+    added: int | None = None
+    error_message: str | None = None
 
 
 class TokenConsumptionService:
@@ -57,7 +59,7 @@ class TokenConsumptionService:
     - Managing quotas and resets
     """
 
-    def __init__(self, session: Session, token_repository: Optional[ITokenBalanceRepository] = None):
+    def __init__(self, session: Session, token_repository: ITokenBalanceRepository | None = None):
         """
         Initialize token consumption service
 
@@ -72,7 +74,7 @@ class TokenConsumptionService:
         self,
         user_id: str,
         operation: str,
-        custom_cost: Optional[int] = None
+        custom_cost: int | None = None
     ) -> TokenConsumptionResult:
         """
         Consume tokens for a specific MCP operation
@@ -151,7 +153,7 @@ class TokenConsumptionService:
         self,
         user_id: str,
         amount: int,
-        operation: Optional[str] = None
+        operation: str | None = None
     ) -> TokenConsumptionResult:
         """
         Consume a specific amount of tokens
@@ -215,7 +217,7 @@ class TokenConsumptionService:
         self,
         user_id: str,
         amount: int,
-        reason: Optional[str] = None
+        reason: str | None = None
     ) -> TokenAdditionResult:
         """
         Add tokens to user's balance
@@ -336,7 +338,7 @@ class TokenConsumptionService:
         self,
         user_id: str,
         new_quota: int,
-        reason: Optional[str] = None
+        reason: str | None = None
     ) -> TokenAdditionResult:
         """
         Update user's monthly quota
@@ -417,7 +419,7 @@ class TokenConsumptionService:
         self,
         user_id: str,
         operation: str,
-        custom_cost: Optional[int] = None
+        custom_cost: int | None = None
     ) -> tuple[bool, int, int]:
         """
         Check if user has sufficient balance for an operation

@@ -7,10 +7,9 @@ Task → Project → Global with automatic and manual delegation capabilities.
 
 import json
 import logging
-import uuid
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +20,10 @@ class DelegationRequest:
     source_id: str
     target_level: str
     target_id: str
-    delegated_data: Dict[str, Any]
+    delegated_data: dict[str, Any]
     reason: str
     trigger_type: str = "manual"
-    confidence_score: Optional[float] = None
+    confidence_score: float | None = None
 
 @dataclass
 class DelegationResult:
@@ -32,9 +31,9 @@ class DelegationResult:
     success: bool
     delegation_id: str
     processed: bool = False
-    approved: Optional[bool] = None
-    error_message: Optional[str] = None
-    impact_assessment: Optional[Dict[str, Any]] = None
+    approved: bool | None = None
+    error_message: str | None = None
+    impact_assessment: dict[str, Any] | None = None
 
 class ContextDelegationService:
     """
@@ -44,7 +43,7 @@ class ContextDelegationService:
     manual delegation initiated by users or AI agents.
     """
     
-    def __init__(self, repository=None, user_id: Optional[str] = None):
+    def __init__(self, repository=None, user_id: str | None = None):
         """Initialize delegation service"""
         self.repository = repository  # Will be injected
         self._user_id = user_id  # Store user context
@@ -67,7 +66,7 @@ class ContextDelegationService:
         """Create a new service instance scoped to a specific user."""
         return ContextDelegationService(self.repository, user_id)
     
-    def delegate_context(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def delegate_context(self, request: dict[str, Any]) -> dict[str, Any]:
         """
         Synchronous wrapper for delegation processing.
         
@@ -132,9 +131,9 @@ class ContextDelegationService:
     
     async def process_delegation(self, source_level: str, source_id: str, 
                                target_level: str, target_id: str,
-                               delegated_data: Dict[str, Any], reason: str,
+                               delegated_data: dict[str, Any], reason: str,
                                trigger_type: str = "manual",
-                               confidence_score: Optional[float] = None) -> Dict[str, Any]:
+                               confidence_score: float | None = None) -> dict[str, Any]:
         """
         Process a delegation request from source to target context.
         
@@ -217,8 +216,8 @@ class ContextDelegationService:
     # ===============================================
     
     async def evaluate_auto_delegation_triggers(self, context_level: str, context_id: str, 
-                                              context_data: Dict[str, Any], 
-                                              changes: Dict[str, Any]) -> List[DelegationRequest]:
+                                              context_data: dict[str, Any], 
+                                              changes: dict[str, Any]) -> list[DelegationRequest]:
         """
         Evaluate if changes trigger automatic delegation.
         
@@ -272,8 +271,8 @@ class ContextDelegationService:
             logger.error(f"Error evaluating auto-delegation triggers: {e}", exc_info=True)
             return []
     
-    async def _evaluate_pattern_triggers(self, context_id: str, changes: Dict[str, Any], 
-                                       patterns: Dict[str, str]) -> List[DelegationRequest]:
+    async def _evaluate_pattern_triggers(self, context_id: str, changes: dict[str, Any], 
+                                       patterns: dict[str, str]) -> list[DelegationRequest]:
         """Evaluate pattern-based delegation triggers"""
         requests = []
         
@@ -296,8 +295,8 @@ class ContextDelegationService:
         
         return requests
     
-    async def _evaluate_threshold_triggers(self, context_id: str, context_data: Dict[str, Any],
-                                         changes: Dict[str, Any], thresholds: Dict[str, Any]) -> List[DelegationRequest]:
+    async def _evaluate_threshold_triggers(self, context_id: str, context_data: dict[str, Any],
+                                         changes: dict[str, Any], thresholds: dict[str, Any]) -> list[DelegationRequest]:
         """Evaluate threshold-based delegation triggers"""
         requests = []
         
@@ -321,8 +320,8 @@ class ContextDelegationService:
         
         return requests
     
-    async def _evaluate_ai_triggers(self, context_id: str, context_data: Dict[str, Any],
-                                  changes: Dict[str, Any]) -> List[DelegationRequest]:
+    async def _evaluate_ai_triggers(self, context_id: str, context_data: dict[str, Any],
+                                  changes: dict[str, Any]) -> list[DelegationRequest]:
         """Evaluate AI-initiated delegation triggers"""
         requests = []
         
@@ -360,7 +359,7 @@ class ContextDelegationService:
     # ===============================================
     
     async def _execute_delegation(self, delegation_id: str, request: DelegationRequest,
-                                impact_assessment: Dict[str, Any]) -> Dict[str, Any]:
+                                impact_assessment: dict[str, Any]) -> dict[str, Any]:
         """Execute approved delegation"""
         try:
             logger.info(f"Executing delegation {delegation_id}")
@@ -378,7 +377,7 @@ class ContextDelegationService:
             
             # Mark delegation as implemented
             await self._mark_delegation_implemented(delegation_id, {
-                "implemented_at": datetime.now(timezone.utc).isoformat(),
+                "implemented_at": datetime.now(UTC).isoformat(),
                 "implementation_details": {
                     "merged_fields": list(request.delegated_data.keys()),
                     "target_context_updated": True
@@ -406,9 +405,9 @@ class ContextDelegationService:
                 "error": str(e)
             }
     
-    async def _merge_delegated_data(self, target_context: Dict[str, Any], 
-                                  delegated_data: Dict[str, Any],
-                                  request: DelegationRequest) -> Dict[str, Any]:
+    async def _merge_delegated_data(self, target_context: dict[str, Any], 
+                                  delegated_data: dict[str, Any],
+                                  request: DelegationRequest) -> dict[str, Any]:
         """Merge delegated data into target context with conflict resolution"""
         updated_context = target_context.copy()
         
@@ -422,9 +421,9 @@ class ContextDelegationService:
         
         return updated_context
     
-    def _merge_to_global_context(self, global_context: Dict[str, Any], 
-                               delegated_data: Dict[str, Any],
-                               request: DelegationRequest) -> Dict[str, Any]:
+    def _merge_to_global_context(self, global_context: dict[str, Any], 
+                               delegated_data: dict[str, Any],
+                               request: DelegationRequest) -> dict[str, Any]:
         """Merge data into global context"""
         updated = global_context.copy()
         
@@ -451,15 +450,15 @@ class ContextDelegationService:
             "source": f"{request.source_level}:{request.source_id}",
             "data": delegated_data,
             "reason": request.reason,
-            "delegated_at": datetime.now(timezone.utc).isoformat()
+            "delegated_at": datetime.now(UTC).isoformat()
         })
         updated["delegated_insights"] = delegated_insights
         
         return updated
     
-    def _merge_to_project_context(self, project_context: Dict[str, Any], 
-                                delegated_data: Dict[str, Any],
-                                request: DelegationRequest) -> Dict[str, Any]:
+    def _merge_to_project_context(self, project_context: dict[str, Any], 
+                                delegated_data: dict[str, Any],
+                                request: DelegationRequest) -> dict[str, Any]:
         """Merge data into project context"""
         updated = project_context.copy()
         
@@ -486,7 +485,7 @@ class ContextDelegationService:
             "source": f"{request.source_level}:{request.source_id}",
             "data": delegated_data,
             "reason": request.reason,
-            "delegated_at": datetime.now(timezone.utc).isoformat()
+            "delegated_at": datetime.now(UTC).isoformat()
         })
         updated["delegated_insights"] = delegated_insights
         
@@ -497,7 +496,7 @@ class ContextDelegationService:
     # ===============================================
     
     async def get_pending_delegations(self, target_level: str = None, 
-                                    target_id: str = None) -> List[Dict[str, Any]]:
+                                    target_id: str = None) -> list[dict[str, Any]]:
         """Get pending delegations for review"""
         try:
             filters = {"processed": False}
@@ -515,7 +514,7 @@ class ContextDelegationService:
             logger.error(f"Error getting pending delegations: {e}", exc_info=True)
             return []
     
-    async def approve_delegation(self, delegation_id: str, approver: str) -> Dict[str, Any]:
+    async def approve_delegation(self, delegation_id: str, approver: str) -> dict[str, Any]:
         """Approve a pending delegation"""
         try:
             delegation = await self.repository.get_delegation(delegation_id)
@@ -547,7 +546,7 @@ class ContextDelegationService:
             await self.repository.update_delegation(delegation_id, {
                 "approved": True,
                 "processed": True,
-                "processed_at": datetime.now(timezone.utc).isoformat(),
+                "processed_at": datetime.now(UTC).isoformat(),
                 "processed_by": approver
             })
             
@@ -559,13 +558,13 @@ class ContextDelegationService:
             return {"success": False, "error": str(e)}
     
     async def reject_delegation(self, delegation_id: str, reason: str, 
-                              rejector: str) -> Dict[str, Any]:
+                              rejector: str) -> dict[str, Any]:
         """Reject a pending delegation"""
         try:
             await self.repository.update_delegation(delegation_id, {
                 "approved": False,
                 "processed": True,
-                "processed_at": datetime.now(timezone.utc).isoformat(),
+                "processed_at": datetime.now(UTC).isoformat(),
                 "processed_by": rejector,
                 "rejected_reason": reason
             })
@@ -583,7 +582,7 @@ class ContextDelegationService:
     
     def _validate_delegation_request(self, source_level: str, source_id: str,
                                    target_level: str, target_id: str,
-                                   delegated_data: Dict[str, Any]) -> Dict[str, Any]:
+                                   delegated_data: dict[str, Any]) -> dict[str, Any]:
         """Validate delegation request"""
         errors = []
         
@@ -609,7 +608,7 @@ class ContextDelegationService:
             "errors": errors
         }
     
-    def _matches_pattern(self, changes: Dict[str, Any], pattern: str) -> bool:
+    def _matches_pattern(self, changes: dict[str, Any], pattern: str) -> bool:
         """Check if changes match a delegation pattern"""
         pattern_matchers = {
             "security_discovery": lambda c: any("security" in str(v).lower() or "vulnerability" in str(v).lower() for v in c.values()),
@@ -622,16 +621,16 @@ class ContextDelegationService:
         matcher = pattern_matchers.get(pattern)
         return matcher(changes) if matcher else False
     
-    def _extract_pattern_data(self, changes: Dict[str, Any], pattern: str) -> Dict[str, Any]:
+    def _extract_pattern_data(self, changes: dict[str, Any], pattern: str) -> dict[str, Any]:
         """Extract relevant data for pattern-based delegation"""
         return {
             "pattern": pattern,
             "extracted_data": changes,
             "extraction_method": "pattern_matching",
-            "extraction_timestamp": datetime.now(timezone.utc).isoformat()
+            "extraction_timestamp": datetime.now(UTC).isoformat()
         }
     
-    async def get_queue_status(self) -> Dict[str, Any]:
+    async def get_queue_status(self) -> dict[str, Any]:
         """Get delegation queue status for health monitoring"""
         try:
             pending_count = len(await self.get_pending_delegations())
@@ -680,7 +679,7 @@ class ContextDelegationService:
             else:
                 return source_id
     
-    async def _get_context(self, level: str, context_id: str) -> Optional[Dict[str, Any]]:
+    async def _get_context(self, level: str, context_id: str) -> dict[str, Any] | None:
         """Get context from repository"""
         try:
             if level == "global":
@@ -695,7 +694,7 @@ class ContextDelegationService:
             logger.error(f"Error getting context {level}:{context_id}: {e}")
             return None
     
-    async def _update_context(self, level: str, context_id: str, context_data: Dict[str, Any]) -> bool:
+    async def _update_context(self, level: str, context_id: str, context_data: dict[str, Any]) -> bool:
         """Update context in repository"""
         try:
             if level == "global":
@@ -731,7 +730,7 @@ class ContextDelegationService:
             logger.error(f"Error storing delegation request: {e}")
             raise
     
-    async def _assess_delegation_impact(self, request: DelegationRequest) -> Dict[str, Any]:
+    async def _assess_delegation_impact(self, request: DelegationRequest) -> dict[str, Any]:
         """Assess impact of delegation for approval decision"""
         try:
             impact_score = 0
@@ -780,7 +779,7 @@ class ContextDelegationService:
                 "recommendation": "manual_review"
             }
     
-    async def _should_auto_approve(self, request: DelegationRequest, impact_assessment: Dict[str, Any]) -> bool:
+    async def _should_auto_approve(self, request: DelegationRequest, impact_assessment: dict[str, Any]) -> bool:
         """Determine if delegation should be auto-approved"""
         try:
             # Never auto-approve if confidence is too low
@@ -810,7 +809,7 @@ class ContextDelegationService:
             return False
     
     async def _queue_for_review(self, delegation_id: str, request: DelegationRequest, 
-                              impact_assessment: Dict[str, Any]) -> Dict[str, Any]:
+                              impact_assessment: dict[str, Any]) -> dict[str, Any]:
         """Queue delegation for manual review"""
         try:
             # Delegation is already stored, just return queue info
@@ -829,7 +828,7 @@ class ContextDelegationService:
                 "error": str(e)
             }
     
-    async def _mark_delegation_implemented(self, delegation_id: str, implementation_data: Dict[str, Any]) -> bool:
+    async def _mark_delegation_implemented(self, delegation_id: str, implementation_data: dict[str, Any]) -> bool:
         """Mark delegation as successfully implemented"""
         try:
             return await self.repository.update_delegation(delegation_id, {
@@ -849,7 +848,7 @@ class ContextDelegationService:
             return await self.repository.update_delegation(delegation_id, {
                 "processed": True,
                 "approved": False,
-                "processed_at": datetime.now(timezone.utc).isoformat(),
+                "processed_at": datetime.now(UTC).isoformat(),
                 "failure_reason": error_message
             })
             
@@ -857,8 +856,8 @@ class ContextDelegationService:
             logger.error(f"Error marking delegation as failed: {e}")
             return False
     
-    def _exceeds_threshold(self, context_data: Dict[str, Any], changes: Dict[str, Any], 
-                         threshold_name: str, threshold_config: Dict[str, Any]) -> bool:
+    def _exceeds_threshold(self, context_data: dict[str, Any], changes: dict[str, Any], 
+                         threshold_name: str, threshold_config: dict[str, Any]) -> bool:
         """Check if threshold is exceeded"""
         try:
             threshold_type = threshold_config.get("type", "count")
@@ -880,16 +879,16 @@ class ContextDelegationService:
             logger.error(f"Error checking threshold {threshold_name}: {e}")
             return False
     
-    def _extract_threshold_data(self, context_data: Dict[str, Any], threshold_name: str) -> Dict[str, Any]:
+    def _extract_threshold_data(self, context_data: dict[str, Any], threshold_name: str) -> dict[str, Any]:
         """Extract data related to threshold trigger"""
         return {
             "threshold_name": threshold_name,
             "threshold_data": context_data.get(threshold_name, {}),
             "extraction_method": "threshold_trigger",
-            "extraction_timestamp": datetime.now(timezone.utc).isoformat()
+            "extraction_timestamp": datetime.now(UTC).isoformat()
         }
     
-    def _calculate_ai_delegation_confidence(self, changes: Dict[str, Any], pattern: str) -> float:
+    def _calculate_ai_delegation_confidence(self, changes: dict[str, Any], pattern: str) -> float:
         """Calculate AI confidence for delegation patterns"""
         try:
             pattern_weights = {
@@ -922,13 +921,13 @@ class ContextDelegationService:
             logger.error(f"Error calculating AI delegation confidence: {e}")
             return 0.5
     
-    def _extract_ai_pattern_data(self, changes: Dict[str, Any], pattern: str) -> Dict[str, Any]:
+    def _extract_ai_pattern_data(self, changes: dict[str, Any], pattern: str) -> dict[str, Any]:
         """Extract data for AI-detected patterns"""
         return {
             "ai_pattern": pattern,
             "detected_data": changes,
             "extraction_method": "ai_pattern_recognition",
-            "extraction_timestamp": datetime.now(timezone.utc).isoformat(),
+            "extraction_timestamp": datetime.now(UTC).isoformat(),
             "confidence_factors": {
                 "pattern_strength": "high",
                 "reusability_score": "medium",
@@ -936,8 +935,8 @@ class ContextDelegationService:
             }
         }
     
-    async def _evaluate_project_to_global_triggers(self, context_id: str, context_data: Dict[str, Any],
-                                                 changes: Dict[str, Any]) -> List[DelegationRequest]:
+    async def _evaluate_project_to_global_triggers(self, context_id: str, context_data: dict[str, Any],
+                                                 changes: dict[str, Any]) -> list[DelegationRequest]:
         """Evaluate project-level changes for global delegation"""
         requests = []
         

@@ -6,9 +6,9 @@ including hint types, priorities, metadata, and collections.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import List, Optional, Dict, Any
+from typing import Any
 from uuid import UUID, uuid4
 
 
@@ -48,9 +48,9 @@ class HintMetadata:
     source: str
     confidence: float
     reasoning: str
-    related_tasks: List[UUID] = field(default_factory=list)
-    patterns_detected: List[str] = field(default_factory=list)
-    effectiveness_score: Optional[float] = None
+    related_tasks: list[UUID] = field(default_factory=list)
+    patterns_detected: list[str] = field(default_factory=list)
+    effectiveness_score: float | None = None
     
     def __post_init__(self):
         """Validate metadata fields."""
@@ -88,8 +88,8 @@ class WorkflowHint:
     metadata: HintMetadata
     created_at: datetime
     task_id: UUID
-    context_data: Dict[str, Any] = field(default_factory=dict)
-    expires_at: Optional[datetime] = None
+    context_data: dict[str, Any] = field(default_factory=dict)
+    expires_at: datetime | None = None
     
     @classmethod
     def create(
@@ -100,8 +100,8 @@ class WorkflowHint:
         message: str,
         suggested_action: str,
         metadata: HintMetadata,
-        context_data: Optional[Dict[str, Any]] = None,
-        expires_at: Optional[datetime] = None
+        context_data: dict[str, Any] | None = None,
+        expires_at: datetime | None = None
     ) -> "WorkflowHint":
         """
         Factory method to create a new workflow hint.
@@ -126,7 +126,7 @@ class WorkflowHint:
             message=message,
             suggested_action=suggested_action,
             metadata=metadata,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             task_id=task_id,
             context_data=context_data or {},
             expires_at=expires_at
@@ -136,9 +136,9 @@ class WorkflowHint:
         """Check if the hint has expired."""
         if self.expires_at is None:
             return False
-        return datetime.now(timezone.utc) > self.expires_at
+        return datetime.now(UTC) > self.expires_at
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert hint to dictionary representation."""
         return {
             "id": str(self.id),
@@ -164,7 +164,7 @@ class HintCollection:
     """
     
     task_id: UUID
-    hints: List[WorkflowHint] = field(default_factory=list)
+    hints: list[WorkflowHint] = field(default_factory=list)
     
     def add_hint(self, hint: WorkflowHint) -> None:
         """Add a hint to the collection."""
@@ -172,25 +172,25 @@ class HintCollection:
             raise ValueError("Hint task_id must match collection task_id")
         self.hints.append(hint)
     
-    def get_active_hints(self) -> List[WorkflowHint]:
+    def get_active_hints(self) -> list[WorkflowHint]:
         """Get all non-expired hints."""
         return [hint for hint in self.hints if not hint.is_expired()]
     
-    def get_hints_by_type(self, hint_type: HintType) -> List[WorkflowHint]:
+    def get_hints_by_type(self, hint_type: HintType) -> list[WorkflowHint]:
         """Get hints of a specific type."""
         return [
             hint for hint in self.get_active_hints()
             if hint.type == hint_type
         ]
     
-    def get_hints_by_priority(self, priority: HintPriority) -> List[WorkflowHint]:
+    def get_hints_by_priority(self, priority: HintPriority) -> list[WorkflowHint]:
         """Get hints of a specific priority."""
         return [
             hint for hint in self.get_active_hints()
             if hint.priority == priority
         ]
     
-    def get_top_hints(self, limit: int = 3) -> List[WorkflowHint]:
+    def get_top_hints(self, limit: int = 3) -> list[WorkflowHint]:
         """
         Get the top hints by priority and confidence.
         

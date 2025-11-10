@@ -5,9 +5,10 @@ into executable tasks with dependencies and agent assignments.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Set
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
+
 
 class TaskType(Enum):
     """Types of tasks in the plan"""
@@ -42,13 +43,13 @@ class TaskDependency:
     
 class AgentAssignment:
     """Represents assignment of agents to tasks"""
-    def __init__(self, primary_agent: str, supporting_agents: Optional[List[str]] = None, 
-                 effort_percentage: Dict[str, float] = None):
+    def __init__(self, primary_agent: str, supporting_agents: list[str] | None = None, 
+                 effort_percentage: dict[str, float] = None):
         self.primary_agent = primary_agent
         self.supporting_agents = supporting_agents or []
         self.effort_percentage = effort_percentage or {primary_agent: 100.0}
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'primary_agent': self.primary_agent,
             'supporting_agents': self.supporting_agents,
@@ -70,30 +71,30 @@ class PlannedTask:
     phase: ExecutionPhase
     
     # Hierarchy
-    parent_task_id: Optional[str] = None
-    subtask_ids: List[str] = field(default_factory=list)
+    parent_task_id: str | None = None
+    subtask_ids: list[str] = field(default_factory=list)
     
     # Assignment and effort
-    agent_assignment: Optional[AgentAssignment] = None
+    agent_assignment: AgentAssignment | None = None
     estimated_hours: float = 0.0
     estimated_complexity: str = "medium"  # trivial, simple, medium, complex, epic
     
     # Execution details
-    acceptance_criteria: List[str] = field(default_factory=list)
-    technical_requirements: List[str] = field(default_factory=list)
-    file_references: List[str] = field(default_factory=list)
-    code_references: Dict[str, List[str]] = field(default_factory=dict)
+    acceptance_criteria: list[str] = field(default_factory=list)
+    technical_requirements: list[str] = field(default_factory=list)
+    file_references: list[str] = field(default_factory=list)
+    code_references: dict[str, list[str]] = field(default_factory=dict)
     
     # Planning metadata
     priority: str = "medium"
-    tags: List[str] = field(default_factory=list)
-    risks: List[str] = field(default_factory=list)
-    assumptions: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    risks: list[str] = field(default_factory=list)
+    assumptions: list[str] = field(default_factory=list)
     
     # Status tracking
     status: str = "planned"  # planned, created, in_progress, completed
-    mcp_task_id: Optional[str] = None  # Reference to created MCP task
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    mcp_task_id: str | None = None  # Reference to created MCP task
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     def add_subtask(self, subtask: 'PlannedTask'):
         """Add a subtask to this task"""
@@ -128,7 +129,7 @@ class PlannedTask:
         # If no conflicts, tasks can run in parallel
         return True
     
-    def to_mcp_task_request(self) -> Dict[str, Any]:
+    def to_mcp_task_request(self) -> dict[str, Any]:
         """Convert to MCP task creation request format"""
         assignees = [self.agent_assignment.primary_agent] if self.agent_assignment else []
         if self.agent_assignment and self.agent_assignment.supporting_agents:
@@ -169,7 +170,7 @@ class PlannedTask:
             'labels': self.tags
         }
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             'id': self.id,
@@ -209,8 +210,8 @@ class TaskPlan:
     description: str
     
     # Task hierarchy
-    tasks: List[PlannedTask] = field(default_factory=list)
-    dependencies: List[TaskDependency] = field(default_factory=list)
+    tasks: list[PlannedTask] = field(default_factory=list)
+    dependencies: list[TaskDependency] = field(default_factory=list)
     
     # Planning metadata
     total_estimated_hours: float = 0.0
@@ -219,16 +220,16 @@ class TaskPlan:
     risk_level: str = "medium"
     
     # Execution information
-    execution_phases: List[ExecutionPhase] = field(default_factory=list)
-    parallel_execution_groups: List[List[str]] = field(default_factory=list)  # Groups of task IDs that can run in parallel
-    critical_path: List[str] = field(default_factory=list)  # Task IDs on critical path
+    execution_phases: list[ExecutionPhase] = field(default_factory=list)
+    parallel_execution_groups: list[list[str]] = field(default_factory=list)  # Groups of task IDs that can run in parallel
+    critical_path: list[str] = field(default_factory=list)  # Task IDs on critical path
     
     # Agent allocation
-    agent_workload: Dict[str, float] = field(default_factory=dict)  # agent -> estimated hours
-    required_agents: Set[str] = field(default_factory=set)
+    agent_workload: dict[str, float] = field(default_factory=dict)  # agent -> estimated hours
+    required_agents: set[str] = field(default_factory=set)
     
     # Planning metadata
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     created_by: str = "ai_task_planning_engine"
     version: str = "1.0"
     
@@ -266,22 +267,22 @@ class TaskPlan:
         )
         self.dependencies.append(dependency)
     
-    def get_task_by_id(self, task_id: str) -> Optional[PlannedTask]:
+    def get_task_by_id(self, task_id: str) -> PlannedTask | None:
         """Get a task by its ID"""
         for task in self.tasks:
             if task.id == task_id:
                 return task
         return None
     
-    def get_root_tasks(self) -> List[PlannedTask]:
+    def get_root_tasks(self) -> list[PlannedTask]:
         """Get tasks that have no parent (top-level tasks)"""
         return [task for task in self.tasks if task.parent_task_id is None]
     
-    def get_subtasks(self, parent_task_id: str) -> List[PlannedTask]:
+    def get_subtasks(self, parent_task_id: str) -> list[PlannedTask]:
         """Get all subtasks of a given task"""
         return [task for task in self.tasks if task.parent_task_id == parent_task_id]
     
-    def calculate_critical_path(self) -> List[str]:
+    def calculate_critical_path(self) -> list[str]:
         """Calculate and update the critical path through the task network"""
         # Simple implementation - can be enhanced with more sophisticated algorithms
         task_duration = {task.id: task.estimated_hours for task in self.tasks}
@@ -299,7 +300,7 @@ class TaskPlan:
             successors[dep.prerequisite_task_id].append(dep.dependent_task_id)
         
         # Find critical path (simplified - longest path)
-        def calculate_longest_path(task_id: str, visited: Set[str]) -> float:
+        def calculate_longest_path(task_id: str, visited: set[str]) -> float:
             if task_id in visited:
                 return 0  # Avoid cycles
             
@@ -329,7 +330,7 @@ class TaskPlan:
         self.critical_path = critical_tasks
         return self.critical_path
     
-    def find_parallel_execution_groups(self) -> List[List[str]]:
+    def find_parallel_execution_groups(self) -> list[list[str]]:
         """Identify groups of tasks that can be executed in parallel"""
         groups = []
         remaining_tasks = self.tasks.copy()
@@ -360,12 +361,12 @@ class TaskPlan:
         self.parallel_execution_groups = groups
         return groups
     
-    def validate_plan(self) -> tuple[bool, List[str]]:
+    def validate_plan(self) -> tuple[bool, list[str]]:
         """Validate the plan for consistency and completeness"""
         errors = []
         
         # Check for circular dependencies
-        def has_circular_dependency(task_id: str, visited: Set[str], rec_stack: Set[str]) -> bool:
+        def has_circular_dependency(task_id: str, visited: set[str], rec_stack: set[str]) -> bool:
             visited.add(task_id)
             rec_stack.add(task_id)
             
@@ -403,7 +404,7 @@ class TaskPlan:
         
         return len(errors) == 0, errors
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             'id': self.id,

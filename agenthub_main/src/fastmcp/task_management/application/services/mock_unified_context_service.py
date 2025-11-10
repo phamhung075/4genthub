@@ -19,7 +19,9 @@ if str(tests_path) not in sys.path:
 
 try:
     # Import from test fixtures
-    from fixtures.mocks.services.mock_unified_context_service import MockUnifiedContextService
+    from fixtures.mocks.services.mock_unified_context_service import (
+        MockUnifiedContextService,
+    )
     logger.debug("MockUnifiedContextService imported from test fixtures")
     
 except ImportError as e:
@@ -27,9 +29,8 @@ except ImportError as e:
     logger.info("Using inline fallback implementation")
     
     # Fallback inline implementation
-    from typing import Dict, Any, Optional, List
     from datetime import datetime
-    import uuid
+    from typing import Any
     
     class MockUnifiedContextService:
         """Mock unified context service for database-less operation"""
@@ -45,7 +46,7 @@ except ImportError as e:
             context_id: str,
             include_inherited: bool = True,
             force_refresh: bool = False
-        ) -> Optional[Dict[str, Any]]:
+        ) -> dict[str, Any] | None:
             """Get context by level and ID"""
             key = f"{level}:{context_id}"
             return self._contexts.get(key)
@@ -54,9 +55,9 @@ except ImportError as e:
             self,
             level: str,
             context_id: str,
-            data: Dict[str, Any],
-            parent_id: Optional[str] = None
-        ) -> Dict[str, Any]:
+            data: dict[str, Any],
+            parent_id: str | None = None
+        ) -> dict[str, Any]:
             """Create a new context"""
             key = f"{level}:{context_id}"
             context = {
@@ -77,10 +78,10 @@ except ImportError as e:
             self,
             level: str,
             context_id: str,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             merge: bool = True,
             propagate_changes: bool = False
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Update an existing context"""
             key = f"{level}:{context_id}"
             if key not in self._contexts:
@@ -118,7 +119,7 @@ except ImportError as e:
             context_id: str,
             include_inherited: bool = True,
             force_refresh: bool = False
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Resolve context with inheritance"""
             key = f"{level}:{context_id}"
             if key in self._contexts:
@@ -139,9 +140,9 @@ except ImportError as e:
             level: str,
             context_id: str,
             delegate_to: str,
-            delegate_data: Dict[str, Any],
-            delegation_reason: Optional[str] = None
-        ) -> Dict[str, Any]:
+            delegate_data: dict[str, Any],
+            delegation_reason: str | None = None
+        ) -> dict[str, Any]:
             """Delegate context to higher level"""
             # In mock implementation, just log the delegation
             logger.info(f"Mock delegation from {level}:{context_id} to {delegate_to}")
@@ -153,9 +154,9 @@ except ImportError as e:
         
         def list_contexts(
             self,
-            level: Optional[str] = None,
-            filters: Optional[Dict[str, Any]] = None
-        ) -> List[Dict[str, Any]]:
+            level: str | None = None,
+            filters: dict[str, Any] | None = None
+        ) -> list[dict[str, Any]]:
             """List contexts with optional filtering"""
             results = []
             for key, context in self._contexts.items():
@@ -168,8 +169,8 @@ except ImportError as e:
             self,
             level: str,
             context_id: str,
-            insight: Dict[str, Any]
-        ) -> Dict[str, Any]:
+            insight: dict[str, Any]
+        ) -> dict[str, Any]:
             """Add an insight to context"""
             key = f"{level}:{context_id}"
             if key not in self._contexts:
@@ -188,8 +189,8 @@ except ImportError as e:
             self,
             level: str,
             context_id: str,
-            progress: Dict[str, Any]
-        ) -> Dict[str, Any]:
+            progress: dict[str, Any]
+        ) -> dict[str, Any]:
             """Add progress update to context"""
             key = f"{level}:{context_id}"
             if key not in self._contexts:
@@ -207,9 +208,9 @@ except ImportError as e:
         def validate_hierarchy(
             self,
             task_id: str,
-            branch_id: Optional[str] = None,
-            project_id: Optional[str] = None
-        ) -> Dict[str, Any]:
+            branch_id: str | None = None,
+            project_id: str | None = None
+        ) -> dict[str, Any]:
             """Validate context hierarchy"""
             # In mock implementation, always return valid
             return {
@@ -221,7 +222,7 @@ except ImportError as e:
             self,
             level: str,
             context_id: str
-        ) -> List[Dict[str, Any]]:
+        ) -> list[dict[str, Any]]:
             """Get the full hierarchy chain for a context"""
             # In mock implementation, return single context
             key = f"{level}:{context_id}"

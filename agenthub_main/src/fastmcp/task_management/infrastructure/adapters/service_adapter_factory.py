@@ -4,42 +4,47 @@ This factory provides domain interfaces to the application layer,
 ensuring DDD compliance by abstracting infrastructure dependencies.
 """
 
-from typing import Optional
 
-from ...domain.interfaces.database_session import IDatabaseSessionFactory
-from ...domain.interfaces.event_store import IEventStore
-from ...domain.interfaces.notification_service import INotificationService
 from ...domain.interfaces.cache_service import ICacheService
+from ...domain.interfaces.database_session import IDatabaseSessionFactory
 from ...domain.interfaces.event_bus import IEventBus
-from ...domain.interfaces.repository_factory import (
-    IRepositoryFactory, ITaskRepositoryFactory, IProjectRepositoryFactory, 
-    IGitBranchRepositoryFactory
-)
+from ...domain.interfaces.event_store import IEventStore
 from ...domain.interfaces.logging_service import ILoggingService
 from ...domain.interfaces.monitoring_service import IMonitoringService, IProcessMonitor
-from ...domain.interfaces.validation_service import IValidationService, IDocumentValidator
-from ...domain.interfaces.utility_service import IPathResolver, IAgentDocGenerator
-
-from .sqlalchemy_session_adapter import SQLAlchemySessionFactory
-from .event_store_adapter import EventStoreAdapter
-from .cache_service_adapter import CacheServiceAdapter
-from .repository_factory_adapter import (
-    RepositoryFactoryAdapter, TaskRepositoryFactoryAdapter,
-    ProjectRepositoryFactoryAdapter, GitBranchRepositoryFactoryAdapter
+from ...domain.interfaces.notification_service import INotificationService
+from ...domain.interfaces.repository_factory import (
+    IGitBranchRepositoryFactory,
+    IProjectRepositoryFactory,
+    IRepositoryFactory,
+    ITaskRepositoryFactory,
 )
+from ...domain.interfaces.utility_service import IAgentDocGenerator, IPathResolver
+from ...domain.interfaces.validation_service import (
+    IDocumentValidator,
+    IValidationService,
+)
+from .cache_service_adapter import CacheServiceAdapter
+from .event_store_adapter import EventStoreAdapter
+from .repository_factory_adapter import (
+    GitBranchRepositoryFactoryAdapter,
+    ProjectRepositoryFactoryAdapter,
+    RepositoryFactoryAdapter,
+    TaskRepositoryFactoryAdapter,
+)
+from .sqlalchemy_session_adapter import SQLAlchemySessionFactory
 
 
 class ServiceAdapterFactory:
     """Factory for creating domain service interfaces"""
     
     _instance = None
-    _database_session_factory: Optional[IDatabaseSessionFactory] = None
-    _event_store: Optional[IEventStore] = None
-    _cache_service: Optional[ICacheService] = None
-    _repository_factory: Optional[IRepositoryFactory] = None
-    _task_repository_factory: Optional[ITaskRepositoryFactory] = None
-    _project_repository_factory: Optional[IProjectRepositoryFactory] = None
-    _git_branch_repository_factory: Optional[IGitBranchRepositoryFactory] = None
+    _database_session_factory: IDatabaseSessionFactory | None = None
+    _event_store: IEventStore | None = None
+    _cache_service: ICacheService | None = None
+    _repository_factory: IRepositoryFactory | None = None
+    _task_repository_factory: ITaskRepositoryFactory | None = None
+    _project_repository_factory: IProjectRepositoryFactory | None = None
+    _git_branch_repository_factory: IGitBranchRepositoryFactory | None = None
     
     def __new__(cls):
         if cls._instance is None:

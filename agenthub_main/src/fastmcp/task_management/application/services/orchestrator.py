@@ -1,11 +1,9 @@
-from ...domain.value_objects.priority import PriorityLevel
-from typing import Optional
 
 
 class OrchestratorService:
     """Basic orchestrator service placeholder."""
     
-    def __init__(self, user_id: Optional[str] = None):
+    def __init__(self, user_id: str | None = None):
         self._user_id = user_id  # Store user context
     
     def with_user(self, user_id: str) -> 'OrchestratorService':

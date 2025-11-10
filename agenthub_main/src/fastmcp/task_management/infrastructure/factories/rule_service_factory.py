@@ -3,7 +3,7 @@
 Factory for creating rule management services with proper dependency injection following DDD patterns.
 """
 
-from typing import Optional
+
 from ...application.services.rule_application_service import RuleApplicationService
 from ...domain.repositories.rule_repository import RuleRepository
 
@@ -11,7 +11,7 @@ from ...domain.repositories.rule_repository import RuleRepository
 class RuleServiceFactory:
     """Factory for creating rule management services"""
     
-    def __init__(self, rule_repository: Optional[RuleRepository] = None):
+    def __init__(self, rule_repository: RuleRepository | None = None):
         self._rule_repository = rule_repository
     
     def create_rule_application_service(self) -> RuleApplicationService:
@@ -27,6 +27,6 @@ class RuleServiceFactory:
         """Set the rule repository"""
         self._rule_repository = rule_repository
     
-    def get_rule_repository(self) -> Optional[RuleRepository]:
+    def get_rule_repository(self) -> RuleRepository | None:
         """Get the current rule repository"""
         return self._rule_repository

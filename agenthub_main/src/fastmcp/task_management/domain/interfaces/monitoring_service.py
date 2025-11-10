@@ -1,9 +1,9 @@
 """Monitoring Service Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
 from datetime import datetime, timedelta
 from enum import Enum
+from typing import Any
 
 
 class MetricType(Enum):
@@ -25,7 +25,7 @@ class IMetric(ABC):
     
     @property
     @abstractmethod
-    def value(self) -> Union[int, float]:
+    def value(self) -> int | float:
         """Get the metric value"""
         pass
     
@@ -37,7 +37,7 @@ class IMetric(ABC):
     
     @property
     @abstractmethod
-    def labels(self) -> Dict[str, str]:
+    def labels(self) -> dict[str, str]:
         """Get the metric labels"""
         pass
 
@@ -56,7 +56,7 @@ class IProcessMonitor(ABC):
         pass
     
     @abstractmethod
-    def get_process_metrics(self, process_name: str) -> Dict[str, Any]:
+    def get_process_metrics(self, process_name: str) -> dict[str, Any]:
         """Get metrics for a process"""
         pass
     
@@ -66,7 +66,7 @@ class IProcessMonitor(ABC):
         pass
     
     @abstractmethod
-    def get_resource_usage(self, process_name: str) -> Dict[str, Union[int, float]]:
+    def get_resource_usage(self, process_name: str) -> dict[str, int | float]:
         """Get resource usage for a process"""
         pass
 
@@ -75,35 +75,35 @@ class IMonitoringService(ABC):
     """Domain interface for monitoring operations"""
     
     @abstractmethod
-    def record_metric(self, name: str, value: Union[int, float], 
+    def record_metric(self, name: str, value: int | float, 
                      metric_type: MetricType = MetricType.GAUGE,
-                     labels: Optional[Dict[str, str]] = None) -> None:
+                     labels: dict[str, str] | None = None) -> None:
         """Record a metric"""
         pass
     
     @abstractmethod
-    def increment_counter(self, name: str, labels: Optional[Dict[str, str]] = None) -> None:
+    def increment_counter(self, name: str, labels: dict[str, str] | None = None) -> None:
         """Increment a counter metric"""
         pass
     
     @abstractmethod
     def record_timer(self, name: str, duration: timedelta, 
-                    labels: Optional[Dict[str, str]] = None) -> None:
+                    labels: dict[str, str] | None = None) -> None:
         """Record a timer metric"""
         pass
     
     @abstractmethod
-    def get_metrics(self, name_pattern: Optional[str] = None) -> List[IMetric]:
+    def get_metrics(self, name_pattern: str | None = None) -> list[IMetric]:
         """Get metrics by name pattern"""
         pass
     
     @abstractmethod
-    def get_health_status(self) -> Dict[str, Any]:
+    def get_health_status(self) -> dict[str, Any]:
         """Get system health status"""
         pass
     
     @abstractmethod
-    def create_alert(self, name: str, condition: str, threshold: Union[int, float]) -> str:
+    def create_alert(self, name: str, condition: str, threshold: int | float) -> str:
         """Create a monitoring alert"""
         pass
     

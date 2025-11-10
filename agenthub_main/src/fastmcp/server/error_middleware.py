@@ -2,17 +2,22 @@
 
 import time
 import traceback
-from typing import Callable, Dict, Any
+from collections.abc import Callable
+from typing import Any
+
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ..task_management.domain.exceptions.task_exceptions import TaskDomainError, ErrorSeverity
 from ..task_management.domain.exceptions.base_exceptions import (
+    DatabaseException,
+    ResourceNotFoundException,
     TaskManagementException,
     ValidationException,
-    ResourceNotFoundException,
-    DatabaseException
+)
+from ..task_management.domain.exceptions.task_exceptions import (
+    ErrorSeverity,
+    TaskDomainError,
 )
 
 # Try to use custom logger, fall back to standard logging if it fails
@@ -50,7 +55,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             # Log successful requests
             duration = time.time() - start_time
             ctx_logger.info(
-                f"Request completed successfully",
+                "Request completed successfully",
                 extra={
                     "status_code": response.status_code,
                     "duration_ms": round(duration * 1000, 2),
@@ -233,7 +238,7 @@ def create_error_response(
     error_code: str,
     message: str,
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
 ) -> JSONResponse:
     """Create a standardized error response."""
     return JSONResponse(

@@ -7,7 +7,7 @@ This service provides password hashing and verification using bcrypt.
 import logging
 import secrets
 import string
-from typing import Optional
+
 import bcrypt
 
 logger = logging.getLogger(__name__)

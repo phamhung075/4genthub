@@ -1,23 +1,23 @@
 """Task Dependencies Management Use Cases"""
 
-from typing import Dict, Any, List, Union
 from dataclasses import dataclass
+from typing import Any
 
-from ...domain import TaskRepository, TaskId, TaskNotFoundError
+from ...domain import TaskId, TaskNotFoundError, TaskRepository
 
 
 @dataclass
 class AddDependencyRequest:
     """Request to add a dependency"""
-    task_id: Union[str, int]
-    dependency_id: Union[str, int]
+    task_id: str | int
+    dependency_id: str | int
 
 
 @dataclass
 class DependencyResponse:
     """Response containing dependency information"""
     task_id: str
-    dependencies: List[str]
+    dependencies: list[str]
     success: bool
     message: str = ""
 
@@ -28,7 +28,7 @@ class ManageDependenciesUseCase:
     def __init__(self, task_repository: TaskRepository):
         self._task_repository = task_repository
     
-    def _convert_to_task_id(self, task_id: Union[str, int]) -> TaskId:
+    def _convert_to_task_id(self, task_id: str | int) -> TaskId:
         """Convert task_id to TaskId domain object (handle both int and str)"""
         if isinstance(task_id, int):
             return TaskId.from_int(task_id)
@@ -78,7 +78,7 @@ class ManageDependenciesUseCase:
             message=f"Dependency {request.dependency_id} added successfully"
         )
     
-    def remove_dependency(self, task_id: Union[str, int], dependency_id: Union[str, int]) -> DependencyResponse:
+    def remove_dependency(self, task_id: str | int, dependency_id: str | int) -> DependencyResponse:
         """Remove a dependency from a task"""
         task_id_obj = self._convert_to_task_id(task_id)
         dependency_id_obj = self._convert_to_task_id(dependency_id)
@@ -105,7 +105,7 @@ class ManageDependenciesUseCase:
             message=f"Dependency {dependency_id} removed successfully"
         )
     
-    def get_dependencies(self, task_id: Union[str, int]) -> Dict[str, Any]:
+    def get_dependencies(self, task_id: str | int) -> dict[str, Any]:
         """Get all dependencies for a task"""
         task_id_obj = self._convert_to_task_id(task_id)
         task = self._task_repository.find_by_id(task_id_obj)
@@ -133,7 +133,7 @@ class ManageDependenciesUseCase:
             "can_start": task.can_be_started()
         }
     
-    def clear_dependencies(self, task_id: Union[str, int]) -> DependencyResponse:
+    def clear_dependencies(self, task_id: str | int) -> DependencyResponse:
         """Remove all dependencies from a task"""
         task_id_obj = self._convert_to_task_id(task_id)
         task = self._task_repository.find_by_id(task_id_obj)
@@ -152,7 +152,7 @@ class ManageDependenciesUseCase:
             message=f"Cleared {dependency_count} dependencies"
         )
     
-    def get_blocking_tasks(self, task_id: Union[str, int]) -> Dict[str, Any]:
+    def get_blocking_tasks(self, task_id: str | int) -> dict[str, Any]:
         """Get all tasks that are blocked by this task (reverse dependencies)"""
         task_id_obj = self._convert_to_task_id(task_id)
         task = self._task_repository.find_by_id(task_id_obj)

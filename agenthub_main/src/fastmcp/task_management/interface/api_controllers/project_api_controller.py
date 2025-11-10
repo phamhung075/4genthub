@@ -6,7 +6,7 @@ It serves as the interface layer, delegating business logic to application facad
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastmcp.types import (
     ApiResponse,
@@ -84,7 +84,7 @@ class ProjectAPIController:
                 success=True,
                 project=project_dto,
                 message="Project created successfully",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -94,7 +94,7 @@ class ProjectAPIController:
                 project=None,
                 error=str(e),
                 message="Failed to create project",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def list_projects(self, user_id: str, session) -> ProjectsResponse:
@@ -142,7 +142,7 @@ class ProjectAPIController:
                 success=True,
                 projects=project_dtos,
                 total=len(project_dtos),
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -152,7 +152,7 @@ class ProjectAPIController:
                 projects=[],
                 error=str(e),
                 message="Failed to list projects",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def get_project(
@@ -184,7 +184,7 @@ class ProjectAPIController:
                     project=None,
                     error=error_msg,
                     message="Project not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Extract the actual project dict from the response
@@ -210,7 +210,7 @@ class ProjectAPIController:
             return ProjectResponse(
                 success=True,
                 project=project_dto,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -220,7 +220,7 @@ class ProjectAPIController:
                 project=None,
                 error=str(e),
                 message="Failed to get project",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def update_project(
@@ -250,7 +250,7 @@ class ProjectAPIController:
                     project=None,
                     error="Project not found",
                     message="Project not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Delegate to facade - pass individual parameters
@@ -279,7 +279,7 @@ class ProjectAPIController:
                 success=True,
                 project=project_dto,
                 message="Project updated successfully",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -289,7 +289,7 @@ class ProjectAPIController:
                 project=None,
                 error=str(e),
                 message="Failed to update project",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def delete_project(
@@ -318,7 +318,7 @@ class ProjectAPIController:
                     deleted=False,
                     error="Project not found",
                     message="Project not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Delegate to facade
@@ -332,7 +332,7 @@ class ProjectAPIController:
                     deleted=True,
                     id=project_id,
                     message=f"Project {project_id} deleted successfully",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 # Deletion failed
@@ -347,7 +347,7 @@ class ProjectAPIController:
                     deleted=False,
                     error=error_msg,
                     message="Failed to delete project",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -357,7 +357,7 @@ class ProjectAPIController:
                 deleted=False,
                 error=str(e),
                 message="Failed to delete project",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def get_project_health(
@@ -385,7 +385,7 @@ class ProjectAPIController:
                     success=False,
                     error="Project not found",
                     message="Project not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Delegate to facade for health check
@@ -397,7 +397,7 @@ class ProjectAPIController:
                 success=True,
                 data=health_result,
                 message="Project health retrieved successfully",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -408,5 +408,5 @@ class ProjectAPIController:
                 success=False,
                 error=str(e),
                 message="Failed to get project health",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )

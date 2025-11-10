@@ -1,18 +1,17 @@
 """Task Completion Service - Domain Service for Task Completion Business Rules"""
 
 import logging
-from typing import Optional, Dict, Any, Protocol
+from typing import Any, Protocol
 
 from ..entities.task import Task
-from ..repositories.subtask_repository import SubtaskRepository
-from ..value_objects.task_id import TaskId
 from ..exceptions.task_exceptions import TaskCompletionError
+from ..repositories.subtask_repository import SubtaskRepository
 
 
 class TaskContextRepositoryProtocol(Protocol):
     """Protocol for task context repository to avoid infrastructure dependency."""
     
-    def get(self, context_id: str) -> Optional[Dict[str, Any]]:
+    def get(self, context_id: str) -> dict[str, Any] | None:
         """Get task context by ID."""
         pass
 
@@ -27,7 +26,7 @@ class TaskCompletionService:
     including checking subtask completion status and context requirements.
     """
     
-    def __init__(self, subtask_repository: SubtaskRepository, task_context_repository: Optional[TaskContextRepositoryProtocol] = None):
+    def __init__(self, subtask_repository: SubtaskRepository, task_context_repository: TaskContextRepositoryProtocol | None = None):
         """
         Initialize the task completion service.
         
@@ -38,7 +37,7 @@ class TaskCompletionService:
         self._subtask_repository = subtask_repository
         self._task_context_repository = task_context_repository
     
-    def can_complete_task(self, task: Task) -> tuple[bool, Optional[str]]:
+    def can_complete_task(self, task: Task) -> tuple[bool, str | None]:
         """
         Check if a task can be completed based on business rules.
         
@@ -197,7 +196,7 @@ class TaskCompletionService:
         
         return blockers
     
-    def _create_context_required_error(self, task: Task) -> Dict[str, Any]:
+    def _create_context_required_error(self, task: Task) -> dict[str, Any]:
         """Create a user-friendly context required error message."""
         return {
             "error": "Task completion requires context to be created first.",
@@ -226,7 +225,7 @@ class TaskCompletionService:
             ]
         }
     
-    def _create_incomplete_subtasks_error(self, task: Task, incomplete_subtasks: list) -> Dict[str, Any]:
+    def _create_incomplete_subtasks_error(self, task: Task, incomplete_subtasks: list) -> dict[str, Any]:
         """Create a user-friendly incomplete subtasks error message."""
         incomplete_count = len(incomplete_subtasks)
         total_subtasks = len(self._subtask_repository.find_by_parent_task_id(task.id))

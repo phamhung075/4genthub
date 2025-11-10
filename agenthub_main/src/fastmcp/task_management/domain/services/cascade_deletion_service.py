@@ -14,8 +14,8 @@ Clean Code Requirements:
 """
 
 import logging
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class CascadeDeletionService:
         self._project_repository = project_repository
         self._context_repository = context_repository
 
-    def delete_task_cascade(self, task_id: str, scope: DeleteScope = DeleteScope.TASK_FULL) -> Dict[str, Any]:
+    def delete_task_cascade(self, task_id: str, scope: DeleteScope = DeleteScope.TASK_FULL) -> dict[str, Any]:
         """
         Delete a task with cascade deletion of related entities.
 
@@ -124,7 +124,7 @@ class CascadeDeletionService:
 
         return stats
 
-    def delete_branch_cascade(self, branch_id: str) -> Dict[str, Any]:
+    def delete_branch_cascade(self, branch_id: str) -> dict[str, Any]:
         """
         Delete a branch with cascade deletion of all tasks and related entities.
 
@@ -189,7 +189,7 @@ class CascadeDeletionService:
 
         return stats
 
-    def delete_project_cascade(self, project_id: str) -> Dict[str, Any]:
+    def delete_project_cascade(self, project_id: str) -> dict[str, Any]:
         """
         Delete a project with cascade deletion of all branches, tasks and related entities.
 
@@ -280,12 +280,12 @@ class CascadeDeletionService:
             logger.error(f"Error deleting subtasks for task {task_id}: {e}")
             return 0
 
-    def _dispatch_task_deleted_event(self, task_id: str, branch_id: Optional[str],
+    def _dispatch_task_deleted_event(self, task_id: str, branch_id: str | None,
                                     status: str, title: str) -> None:
         """Dispatch task deleted event for statistics update."""
         try:
-            from ..services.event_dispatcher import dispatch_domain_event
             from ..events.task_lifecycle_events import TaskDeletedEvent
+            from ..services.event_dispatcher import dispatch_domain_event
 
             if branch_id:
                 event = TaskDeletedEvent.create(
@@ -299,12 +299,12 @@ class CascadeDeletionService:
         except Exception as e:
             logger.warning(f"Failed to dispatch task deleted event: {e}")
 
-    def _dispatch_branch_deleted_event(self, branch_id: str, project_id: Optional[str],
+    def _dispatch_branch_deleted_event(self, branch_id: str, project_id: str | None,
                                       name: str) -> None:
         """Dispatch branch deleted event for statistics update."""
         try:
-            from ..services.event_dispatcher import dispatch_domain_event
             from ..events.branch_lifecycle_events import BranchDeletedEvent
+            from ..services.event_dispatcher import dispatch_domain_event
 
             if project_id:
                 event = BranchDeletedEvent.create(
@@ -320,8 +320,8 @@ class CascadeDeletionService:
     def _dispatch_project_deleted_event(self, project_id: str, name: str) -> None:
         """Dispatch project deleted event for statistics update."""
         try:
-            from ..services.event_dispatcher import dispatch_domain_event
             from ..events.project_lifecycle_events import ProjectDeletedEvent
+            from ..services.event_dispatcher import dispatch_domain_event
 
             event = ProjectDeletedEvent.create(
                 project_id=project_id,

@@ -1,15 +1,17 @@
 """Get Subtasks Use Case"""
 
-from typing import Union, Any, Dict, List
-from ...domain import TaskRepository, TaskId, TaskNotFoundError
+from typing import Any
+
+from ...domain import TaskId, TaskNotFoundError, TaskRepository
 from ...domain.repositories.subtask_repository import SubtaskRepository
+
 
 class GetSubtasksUseCase:
     def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository = None):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
 
-    def execute(self, task_id: Union[str, int]) -> Dict[str, Any]:
+    def execute(self, task_id: str | int) -> dict[str, Any]:
         task_id_obj = self._convert_to_task_id(task_id)
         task = self._task_repository.find_by_id(task_id_obj)
         if not task:
@@ -53,7 +55,7 @@ class GetSubtasksUseCase:
             "progress": progress
         }
 
-    def _convert_to_task_id(self, task_id: Union[str, int]) -> TaskId:
+    def _convert_to_task_id(self, task_id: str | int) -> TaskId:
         if isinstance(task_id, int):
             return TaskId.from_int(task_id)
         else:

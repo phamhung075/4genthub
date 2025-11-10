@@ -9,13 +9,14 @@ Special optimizations for Supabase cloud database to minimize latency:
 """
 
 import logging
-from typing import List, Optional, Dict, Any
-from sqlalchemy import and_, desc, text
-from sqlalchemy.orm import Session, noload
+from typing import Any
 
-from .task_repository import ORMTaskRepository
-from ...database.models import Task
+from sqlalchemy import and_, desc, text
+from sqlalchemy.orm import noload
+
 from ....domain.entities.task import Task as TaskEntity
+from ...database.models import Task
+from .task_repository import ORMTaskRepository
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class SupabaseOptimizedRepository(ORMTaskRepository):
         logger.info(f"Using Supabase-optimized repository for minimal latency, git_branch_id: {self.git_branch_id}")
     
     def list_tasks_minimal(self, status: str = None, priority: str = None,
-                          assignee_id: str = None, limit: int = 20, offset: int = 0) -> List[Dict[str, Any]]:
+                          assignee_id: str = None, limit: int = 20, offset: int = 0) -> list[dict[str, Any]]:
         """
         Get minimal task data in a single query - no relationships loaded.
         Optimized for Supabase cloud latency.
@@ -125,7 +126,7 @@ class SupabaseOptimizedRepository(ORMTaskRepository):
     
     def list_tasks_no_relations(self, status: str = None, priority: str = None,
                                assignee_id: str = None, limit: int = 50,
-                               offset: int = 0) -> List[TaskEntity]:
+                               offset: int = 0) -> list[TaskEntity]:
         """
         List tasks without loading any relationships.
         Uses noload to explicitly prevent relationship queries.
@@ -187,7 +188,7 @@ class SupabaseOptimizedRepository(ORMTaskRepository):
             due_date=task_model.due_date
         )
     
-    def get_task_with_counts(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_task_with_counts(self, task_id: str) -> dict[str, Any] | None:
         """
         Get a single task with relationship counts only.
         Single query with subqueries for counts.

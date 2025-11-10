@@ -6,9 +6,9 @@ user-based data isolation for all derived repositories.
 """
 
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Any
+
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class BaseUserScopedRepository:
     database queries and setting user_id on all created entities.
     """
     
-    def __init__(self, session: Session, user_id: Optional[str] = None):
+    def __init__(self, session: Session, user_id: str | None = None):
         """
         Initialize the repository with a database session and user context.
         
@@ -62,7 +62,7 @@ class BaseUserScopedRepository:
             
         return new_repo
     
-    def get_user_filter(self) -> Dict[str, Any]:
+    def get_user_filter(self) -> dict[str, Any]:
         """
         Get the filter dictionary for user-scoped queries.
         
@@ -130,7 +130,7 @@ class BaseUserScopedRepository:
         else:
             logger.warning(f"Entity {type(entity).__name__} does not have user_id attribute")
     
-    def set_user_id(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def set_user_id(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Add user_id to data dictionary for entity creation.
         
@@ -145,11 +145,11 @@ class BaseUserScopedRepository:
             logger.debug(f"🚨 USER_ID_DEBUG: Setting user_id in data: {self.user_id}")
         else:
             # Authentication is required - no fallbacks
-            logger.error(f"Repository in system mode - user authentication required")
+            logger.error("Repository in system mode - user authentication required")
             raise ValueError("User authentication required. No user ID provided.")
         return data
     
-    def validate_bulk_operation(self, entities: List[Any]) -> None:
+    def validate_bulk_operation(self, entities: list[Any]) -> None:
         """
         Validate that all entities in a bulk operation belong to the user.
         
@@ -186,7 +186,7 @@ class BaseUserScopedRepository:
         """
         return self._is_system_mode
     
-    def get_current_user_id(self) -> Optional[str]:
+    def get_current_user_id(self) -> str | None:
         """
         Get the current user ID this repository is scoped to.
         
@@ -195,7 +195,7 @@ class BaseUserScopedRepository:
         """
         return self.user_id
     
-    def log_access(self, operation: str, entity_type: str, entity_id: Optional[str] = None) -> None:
+    def log_access(self, operation: str, entity_type: str, entity_id: str | None = None) -> None:
         """
         Log data access for audit purposes.
         

@@ -1,8 +1,7 @@
 """Email Value Object"""
 
-from dataclasses import dataclass
 import re
-from typing import Optional
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

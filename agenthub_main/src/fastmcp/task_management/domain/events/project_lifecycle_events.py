@@ -6,8 +6,8 @@ All project-related events follow consistent patterns.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List
-from datetime import datetime
+from typing import Any
+
 from .base import BaseDomainEvent
 
 
@@ -16,7 +16,7 @@ class ProjectCreatedEvent(BaseDomainEvent):
     """Event raised when a project is created"""
     project_id: str = ""
     name: str = ""
-    description: Optional[str] = None
+    description: str | None = None
     status: str = 'active'
 
 
@@ -24,12 +24,12 @@ class ProjectCreatedEvent(BaseDomainEvent):
 class ProjectUpdatedEvent(BaseDomainEvent):
     """Event raised when a project is updated"""
     project_id: str = ""
-    old_name: Optional[str] = None
-    new_name: Optional[str] = None
-    old_status: Optional[str] = None
-    new_status: Optional[str] = None
-    old_description: Optional[str] = None
-    new_description: Optional[str] = None
+    old_name: str | None = None
+    new_name: str | None = None
+    old_status: str | None = None
+    new_status: str | None = None
+    old_description: str | None = None
+    new_description: str | None = None
 
 
 @dataclass(frozen=True)
@@ -65,8 +65,8 @@ class ProjectHealthChanged(BaseDomainEvent):
     project_id: str = ""
     old_health_status: str = ""
     new_health_status: str = ""
-    health_metrics: Dict[str, Any] = field(default_factory=dict)
-    reason: Optional[str] = None
+    health_metrics: dict[str, Any] = field(default_factory=dict)
+    reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -75,7 +75,7 @@ class ProjectArchived(BaseDomainEvent):
     project_id: str = ""
     name: str = ""
     archived_by: str = ""
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 __all__ = [

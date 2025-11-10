@@ -1,20 +1,20 @@
 """Cache Service Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Dict, List, Union
 from datetime import timedelta
+from typing import Any
 
 
 class ICacheService(ABC):
     """Domain interface for caching operations"""
     
     @abstractmethod
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Get a value from cache"""
         pass
     
     @abstractmethod
-    async def set(self, key: str, value: Any, ttl: Optional[Union[int, timedelta]] = None) -> bool:
+    async def set(self, key: str, value: Any, ttl: int | timedelta | None = None) -> bool:
         """Set a value in cache with optional TTL"""
         pass
     
@@ -34,17 +34,17 @@ class ICacheService(ABC):
         pass
     
     @abstractmethod
-    async def get_many(self, keys: List[str]) -> Dict[str, Any]:
+    async def get_many(self, keys: list[str]) -> dict[str, Any]:
         """Get multiple values from cache"""
         pass
     
     @abstractmethod
-    async def set_many(self, mapping: Dict[str, Any], ttl: Optional[Union[int, timedelta]] = None) -> bool:
+    async def set_many(self, mapping: dict[str, Any], ttl: int | timedelta | None = None) -> bool:
         """Set multiple values in cache"""
         pass
     
     @abstractmethod
-    async def delete_many(self, keys: List[str]) -> int:
+    async def delete_many(self, keys: list[str]) -> int:
         """Delete multiple keys from cache"""
         pass
     
@@ -59,12 +59,12 @@ class ICacheService(ABC):
         pass
     
     @abstractmethod
-    async def expire(self, key: str, ttl: Union[int, timedelta]) -> bool:
+    async def expire(self, key: str, ttl: int | timedelta) -> bool:
         """Set expiration time for a key"""
         pass
     
     @abstractmethod
-    async def get_ttl(self, key: str) -> Optional[int]:
+    async def get_ttl(self, key: str) -> int | None:
         """Get time-to-live for a key in seconds"""
         pass
 

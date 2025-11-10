@@ -17,22 +17,21 @@ NO LEGACY SUPPORT:
 - Clean implementation only
 """
 
-import os
 import logging
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional, List, Union, Callable, TypeVar, Generic
-from contextlib import contextmanager
+import os
+from collections.abc import Callable
+from datetime import UTC, datetime
 from functools import wraps
+from typing import Any, TypeVar
 
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from ..database.database_utils import get_database_utils
 from ...domain.exceptions.base_exceptions import (
+    ConfigurationException,
     DatabaseException,
     ValidationException,
-    ConfigurationException
 )
+from ..database.database_utils import get_database_utils
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ def get_validated_database_type() -> str:
     return database_type.lower()
 
 
-def get_repository_config() -> Dict[str, Any]:
+def get_repository_config() -> dict[str, Any]:
     """Get complete repository configuration with validation.
 
     Returns:
@@ -104,7 +103,7 @@ def get_repository_config() -> Dict[str, Any]:
         raise ConfigurationException(f"Repository configuration error: {str(e)}")
 
 
-def validate_entity_timestamps(entity: Any) -> Dict[str, Any]:
+def validate_entity_timestamps(entity: Any) -> dict[str, Any]:
     """Validate entity timestamps for clean architecture compliance.
 
     Args:
@@ -148,7 +147,7 @@ def validate_entity_timestamps(entity: Any) -> Dict[str, Any]:
                 )
             else:
                 validation_result["created_at"] = created_at.isoformat()
-                if created_at.tzinfo is None or created_at.tzinfo != timezone.utc:
+                if created_at.tzinfo is None or created_at.tzinfo != UTC:
                     validation_result["errors"].append(
                         "created_at must be timezone-aware UTC datetime"
                     )
@@ -162,7 +161,7 @@ def validate_entity_timestamps(entity: Any) -> Dict[str, Any]:
                 )
             else:
                 validation_result["updated_at"] = updated_at.isoformat()
-                if updated_at.tzinfo is None or updated_at.tzinfo != timezone.utc:
+                if updated_at.tzinfo is None or updated_at.tzinfo != UTC:
                     validation_result["errors"].append(
                         "updated_at must be timezone-aware UTC datetime"
                     )
@@ -178,8 +177,8 @@ def validate_entity_timestamps(entity: Any) -> Dict[str, Any]:
         validation_result["timestamps_valid"] = len(validation_result["errors"]) == 0
         validation_result["timezone_compliant"] = (
             validation_result["timestamps_valid"] and
-            created_at and created_at.tzinfo == timezone.utc and
-            updated_at and updated_at.tzinfo == timezone.utc
+            created_at and created_at.tzinfo == UTC and
+            updated_at and updated_at.tzinfo == UTC
         )
 
         return validation_result
@@ -194,7 +193,7 @@ def both_are_datetime(dt1: Any, dt2: Any) -> bool:
     return isinstance(dt1, datetime) and isinstance(dt2, datetime)
 
 
-def normalize_query_params(params: Dict[str, Any]) -> Dict[str, Any]:
+def normalize_query_params(params: dict[str, Any]) -> dict[str, Any]:
     """Normalize and validate query parameters.
 
     Args:
@@ -276,7 +275,7 @@ def with_database_error_handling(func: Callable[..., T]) -> Callable[..., T]:
     return wrapper
 
 
-def get_performance_settings() -> Dict[str, Any]:
+def get_performance_settings() -> dict[str, Any]:
     """Get performance optimization settings for repositories.
 
     Returns:
@@ -295,7 +294,7 @@ def get_performance_settings() -> Dict[str, Any]:
     }
 
 
-def get_repository_health_status() -> Dict[str, Any]:
+def get_repository_health_status() -> dict[str, Any]:
     """Get repository system health status.
 
     Returns:
@@ -316,7 +315,7 @@ def get_repository_health_status() -> Dict[str, Any]:
                 "clean_architecture_mode": config["clean_architecture_mode"]
             },
             "performance_settings": get_performance_settings(),
-            "checked_at": datetime.now(timezone.utc).isoformat()
+            "checked_at": datetime.now(UTC).isoformat()
         }
 
     except Exception as e:
@@ -324,7 +323,7 @@ def get_repository_health_status() -> Dict[str, Any]:
         return {
             "status": "unhealthy",
             "error": str(e),
-            "checked_at": datetime.now(timezone.utc).isoformat()
+            "checked_at": datetime.now(UTC).isoformat()
         }
 
 
@@ -345,9 +344,9 @@ class RepositoryMetrics:
     """Utility class for collecting repository operation metrics."""
 
     def __init__(self):
-        self.operation_counts: Dict[str, int] = {}
-        self.error_counts: Dict[str, int] = {}
-        self.start_time = datetime.now(timezone.utc)
+        self.operation_counts: dict[str, int] = {}
+        self.error_counts: dict[str, int] = {}
+        self.start_time = datetime.now(UTC)
 
     def record_operation(self, operation_name: str) -> None:
         """Record a successful repository operation."""
@@ -358,9 +357,9 @@ class RepositoryMetrics:
         error_key = f"{operation_name}_error"
         self.error_counts[error_key] = self.error_counts.get(error_key, 0) + 1
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get collected metrics."""
-        uptime = datetime.now(timezone.utc) - self.start_time
+        uptime = datetime.now(UTC) - self.start_time
 
         return {
             "uptime_seconds": uptime.total_seconds(),
@@ -369,7 +368,7 @@ class RepositoryMetrics:
             "total_operations": sum(self.operation_counts.values()),
             "total_errors": sum(self.error_counts.values()),
             "success_rate": self._calculate_success_rate(),
-            "collected_at": datetime.now(timezone.utc).isoformat()
+            "collected_at": datetime.now(UTC).isoformat()
         }
 
     def _calculate_success_rate(self) -> float:
@@ -384,7 +383,7 @@ class RepositoryMetrics:
 
 
 # Global metrics instance
-_repository_metrics: Optional[RepositoryMetrics] = None
+_repository_metrics: RepositoryMetrics | None = None
 
 
 def get_repository_metrics() -> RepositoryMetrics:

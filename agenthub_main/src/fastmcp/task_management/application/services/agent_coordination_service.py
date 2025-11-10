@@ -1,30 +1,43 @@
 """Agent Coordination Service for Multi-Agent Task Management"""
 
-from typing import Dict, List, Optional, Set, Tuple, Any
+import logging
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Optional
 from uuid import uuid4
-import logging
 
-from ...domain.entities.agent import Agent, AgentStatus as EntityAgentStatus
+from ...domain.entities.agent import Agent
 from ...domain.entities.task import Task
-from ...domain.value_objects.agents import (
-    AgentProfile, AgentCapabilities, AgentRole, AgentExpertise, AgentStatus
-)
-from ...domain.value_objects.coordination import (
-    CoordinationType, CoordinationRequest, WorkAssignment, WorkHandoff,
-    HandoffStatus, ConflictResolution, ConflictType, ResolutionStrategy,
-    AgentCommunication
-)
 from ...domain.events.agent_events import (
-    AgentAssigned, AgentUnassigned, WorkHandoffRequested, WorkHandoffAccepted,
-    WorkHandoffRejected, WorkHandoffCompleted, ConflictDetected, ConflictResolved,
-    AgentCollaborationStarted, AgentStatusBroadcast, AgentWorkloadRebalanced
+    AgentAssigned,
+    AgentStatusBroadcast,
+    AgentWorkloadRebalanced,
+    ConflictDetected,
+    ConflictResolved,
+    WorkHandoffAccepted,
+    WorkHandoffRejected,
+    WorkHandoffRequested,
 )
 from ...domain.exceptions import DomainException
 from ...domain.repositories.task_repository import TaskRepository
+from ...domain.value_objects.agents import (
+    AgentCapabilities,
+    AgentExpertise,
+    AgentProfile,
+    AgentRole,
+)
+from ...domain.value_objects.coordination import (
+    AgentCommunication,
+    ConflictResolution,
+    ConflictType,
+    CoordinationRequest,
+    HandoffStatus,
+    ResolutionStrategy,
+    WorkAssignment,
+    WorkHandoff,
+)
+
 # from ...infrastructure.repositories.agent_repository import AgentRepository  # TODO: AgentRepository not implemented yet
-from ....shared.infrastructure.messaging import EventBus, get_event_bus
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +51,9 @@ class AgentCoordinationException(DomainException):
 class CoordinationContext:
     """Context for coordination decisions"""
     task: Task
-    available_agents: List[Agent]
-    current_assignments: Dict[str, List[str]]  # agent_id -> task_ids
-    workload_metrics: Dict[str, float]  # agent_id -> workload percentage
+    available_agents: list[Agent]
+    current_assignments: dict[str, list[str]]  # agent_id -> task_ids
+    workload_metrics: dict[str, float]  # agent_id -> workload percentage
     
     def get_agent_workload(self, agent_id: str) -> float:
         """Get agent workload percentage"""
@@ -57,10 +70,10 @@ class AgentCoordinationService:
     def __init__(
         self,
         task_repository: TaskRepository,
-        agent_repository: Optional[Any] = None,  # AgentRepository not implemented yet
-        event_bus: Optional[Any] = None,  # EventBus not implemented yet
-        coordination_repository: Optional['AgentCoordinationRepository'] = None,
-        user_id: Optional[str] = None
+        agent_repository: Any | None = None,  # AgentRepository not implemented yet
+        event_bus: Any | None = None,  # EventBus not implemented yet
+        coordination_repository: Any = None,  # AgentCoordinationRepository not implemented yet
+        user_id: str | None = None
     ):
         self.task_repository = task_repository
         self.agent_repository = agent_repository
@@ -69,11 +82,11 @@ class AgentCoordinationService:
         self._user_id = user_id  # Store user context
         
         # In-memory storage if no repository provided
-        self.coordination_requests: Dict[str, CoordinationRequest] = {}
-        self.work_assignments: Dict[str, WorkAssignment] = {}
-        self.handoffs: Dict[str, WorkHandoff] = {}
-        self.conflicts: Dict[str, ConflictResolution] = {}
-        self.communications: List[AgentCommunication] = []
+        self.coordination_requests: dict[str, CoordinationRequest] = {}
+        self.work_assignments: dict[str, WorkAssignment] = {}
+        self.handoffs: dict[str, WorkHandoff] = {}
+        self.conflicts: dict[str, ConflictResolution] = {}
+        self.communications: list[AgentCommunication] = []
     
     def _get_user_scoped_repository(self, repository: Any) -> Any:
         """Get a user-scoped version of the repository if it supports user context."""
@@ -104,9 +117,9 @@ class AgentCoordinationService:
         agent_id: str,
         role: str,
         assigned_by: str,
-        responsibilities: Optional[List[str]] = None,
-        estimated_hours: Optional[float] = None,
-        due_date: Optional[datetime] = None
+        responsibilities: list[str] | None = None,
+        estimated_hours: float | None = None,
+        due_date: datetime | None = None
     ) -> WorkAssignment:
         """Assign an agent to a task"""
         # Validate task exists
@@ -166,8 +179,8 @@ class AgentCoordinationService:
         to_agent_id: str,
         task_id: str,
         work_summary: str,
-        completed_items: List[str],
-        remaining_items: List[str],
+        completed_items: list[str],
+        remaining_items: list[str],
         handoff_notes: str = ""
     ) -> WorkHandoff:
         """Request handoff of work from one agent to another"""
@@ -211,7 +224,7 @@ class AgentCoordinationService:
         
         return handoff
     
-    async def accept_handoff(self, handoff_id: str, agent_id: str, notes: Optional[str] = None) -> None:
+    async def accept_handoff(self, handoff_id: str, agent_id: str, notes: str | None = None) -> None:
         """Accept a work handoff"""
         handoff = self.handoffs.get(handoff_id)
         if not handoff:
@@ -269,9 +282,9 @@ class AgentCoordinationService:
         self,
         task_id: str,
         conflict_type: ConflictType,
-        involved_agents: List[str],
+        involved_agents: list[str],
         description: str,
-        resolution_strategy: Optional[ResolutionStrategy] = None
+        resolution_strategy: ResolutionStrategy | None = None
     ) -> ConflictResolution:
         """Detect and optionally resolve a conflict"""
         # Create conflict
@@ -339,9 +352,9 @@ class AgentCoordinationService:
         self,
         agent_id: str,
         status: str,
-        current_task_id: Optional[str] = None,
-        current_activity: Optional[str] = None,
-        blocker_description: Optional[str] = None
+        current_task_id: str | None = None,
+        current_activity: str | None = None,
+        blocker_description: str | None = None
     ) -> None:
         """Broadcast agent status to coordination system"""
         agent = await self.agent_repository.get(agent_id)
@@ -366,7 +379,7 @@ class AgentCoordinationService:
         project_id: str,
         initiated_by: str,
         reason: str = "Automatic workload balancing"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Rebalance workload across agents"""
         # Get all agents in project
         agents = await self.agent_repository.get_by_project(project_id)
@@ -438,7 +451,7 @@ class AgentCoordinationService:
             "workload_after": workload_after
         }
     
-    async def get_agent_workload(self, agent_id: str) -> Dict[str, Any]:
+    async def get_agent_workload(self, agent_id: str) -> dict[str, Any]:
         """Get detailed workload information for an agent"""
         agent = await self.agent_repository.get(agent_id)
         if not agent:
@@ -484,10 +497,10 @@ class AgentCoordinationService:
     async def find_best_agent_for_task(
         self,
         task_id: str,
-        required_role: Optional[AgentRole] = None,
-        required_expertise: Optional[Set[AgentExpertise]] = None,
-        required_skills: Optional[Dict[str, float]] = None
-    ) -> Optional[Agent]:
+        required_role: AgentRole | None = None,
+        required_expertise: set[AgentExpertise] | None = None,
+        required_skills: dict[str, float] | None = None
+    ) -> Agent | None:
         """Find the best available agent for a task"""
         task = await self.task_repository.get(task_id)
         if not task:

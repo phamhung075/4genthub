@@ -6,11 +6,11 @@ that fixes the duplicate event loop creation issue.
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional
 from datetime import datetime
+from typing import Any
 
-from .complete_task import CompleteTaskUseCase
 from ..dtos.task.complete_task_request import CompleteTaskRequest
+from .complete_task import CompleteTaskUseCase
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class OptimizedCompleteTaskUseCase(CompleteTaskUseCase):
     """Optimized task completion use case that reuses event loops"""
     
-    def execute(self, request: CompleteTaskRequest) -> Dict[str, Any]:
+    def execute(self, request: CompleteTaskRequest) -> dict[str, Any]:
         """
         Execute task completion with optimized async handling.
         
@@ -28,7 +28,7 @@ class OptimizedCompleteTaskUseCase(CompleteTaskUseCase):
         # Run the entire operation in a single event loop
         return asyncio.run(self._execute_async(request))
     
-    async def _execute_async(self, request: CompleteTaskRequest) -> Dict[str, Any]:
+    async def _execute_async(self, request: CompleteTaskRequest) -> dict[str, Any]:
         """Async implementation of task completion"""
         try:
             # Validate request

@@ -3,10 +3,10 @@
 Factory for creating git branch repositories with proper dependency injection.
 """
 
-import os
 import logging
-from typing import Dict, Any, Optional, Type
+import os
 from enum import Enum
+from typing import Any
 
 from ...domain.repositories.git_branch_repository import GitBranchRepository
 from .mock_repository_factory import MockGitBranchRepository
@@ -24,14 +24,14 @@ class GitBranchRepositoryType(Enum):
 class GitBranchRepositoryFactory:
     """Factory for creating git branch repositories"""
     
-    _repository_types: Dict[GitBranchRepositoryType, Type[GitBranchRepository]] = {}
-    _instances: Dict[str, GitBranchRepository] = {}
+    _repository_types: dict[GitBranchRepositoryType, type[GitBranchRepository]] = {}
+    _instances: dict[str, GitBranchRepository] = {}
     
     @classmethod
     def create(
         cls,
-        repository_type: Optional[GitBranchRepositoryType] = None,
-        user_id: Optional[str] = None,
+        repository_type: GitBranchRepositoryType | None = None,
+        user_id: str | None = None,
         **kwargs
     ) -> GitBranchRepository:
         """
@@ -96,7 +96,7 @@ class GitBranchRepositoryFactory:
     def register_type(
         cls,
         repository_type: GitBranchRepositoryType,
-        repository_class: Type[GitBranchRepository]
+        repository_class: type[GitBranchRepository]
     ) -> None:
         """Register a new repository type"""
         cls._repository_types[repository_type] = repository_class
@@ -109,7 +109,7 @@ class GitBranchRepositoryFactory:
         logger.info("Git branch repository cache cleared")
     
     @classmethod
-    def get_info(cls) -> Dict[str, Any]:
+    def get_info(cls) -> dict[str, Any]:
         """Get factory information"""
         return {
             "available_types": [rt.value for rt in cls._repository_types.keys()],
@@ -135,12 +135,12 @@ GitBranchRepositoryFactory.register_type(GitBranchRepositoryType.MEMORY, MockGit
 
 
 # Convenience functions
-def get_default_repository(user_id: Optional[str] = None) -> GitBranchRepository:
+def get_default_repository(user_id: str | None = None) -> GitBranchRepository:
     """Get default git branch repository"""
     return GitBranchRepositoryFactory.create(user_id=user_id)
 
 
-def get_sqlite_repository(user_id: Optional[str] = None, **kwargs) -> GitBranchRepository:
+def get_sqlite_repository(user_id: str | None = None, **kwargs) -> GitBranchRepository:
     """Get ORM git branch repository (legacy compatibility method)"""
     return GitBranchRepositoryFactory.create(
         repository_type=GitBranchRepositoryType.ORM,
@@ -149,7 +149,7 @@ def get_sqlite_repository(user_id: Optional[str] = None, **kwargs) -> GitBranchR
     )
 
 
-def get_orm_repository(user_id: Optional[str] = None, **kwargs) -> GitBranchRepository:
+def get_orm_repository(user_id: str | None = None, **kwargs) -> GitBranchRepository:
     """Get ORM git branch repository"""
     return GitBranchRepositoryFactory.create(
         repository_type=GitBranchRepositoryType.ORM,

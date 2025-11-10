@@ -7,25 +7,27 @@ All routes delegate to the TokenAPIController following DDD principles.
 NO DIRECT DATABASE ACCESS - All operations go through the controller layer.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field, ConfigDict
-from datetime import datetime
 import logging
+from datetime import datetime
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
 # Import authentication using unified auth (handles all auth methods properly)
-from fastmcp.auth.interface.unified_auth import get_current_user
-
 from fastmcp.auth.domain.entities.user import User
+
 # Use proper DDD database session dependency
 from fastmcp.auth.interface.fastapi_auth import get_db
+from fastmcp.auth.interface.unified_auth import get_current_user
 
 # Import the TokenAPIController for DDD compliance
-from fastmcp.task_management.interface.api_controllers.token_api_controller import TokenAPIController
+from fastmcp.task_management.interface.api_controllers.token_api_controller import (
+    TokenAPIController,
+)
 
 # Initialize token controller for DDD compliance
 token_controller = TokenAPIController()
@@ -33,24 +35,24 @@ token_controller = TokenAPIController()
 # Pydantic models
 class TokenCreateRequest(BaseModel):
     name: str = Field(..., description="Token name")
-    scopes: List[str] = Field(default=["read"], description="Token scopes")
+    scopes: list[str] = Field(default=["read"], description="Token scopes")
     expires_in_days: int = Field(default=30, description="Token expiration in days", ge=1, le=365)
-    rate_limit: Optional[int] = Field(default=1000, description="Rate limit per hour")
-    metadata: Optional[Dict[str, Any]] = Field(default={}, description="Optional metadata")
+    rate_limit: int | None = Field(default=1000, description="Rate limit per hour")
+    metadata: dict[str, Any] | None = Field(default={}, description="Optional metadata")
 
 class TokenResponse(BaseModel):
     id: str
     name: str
-    scopes: List[str]
-    created_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-    last_used_at: Optional[datetime] = None
-    usage_count: Optional[int] = 0
-    rate_limit: Optional[int] = None
-    usage_stats: Optional[Dict[str, int]] = {}  # Operation-level usage tracking
+    scopes: list[str]
+    created_at: datetime | None = None
+    expires_at: datetime | None = None
+    last_used_at: datetime | None = None
+    usage_count: int | None = 0
+    rate_limit: int | None = None
+    usage_stats: dict[str, int] | None = {}  # Operation-level usage tracking
     is_active: bool = True
-    token: Optional[str] = None  # Only included during creation
-    metadata: Optional[Dict[str, Any]] = {}
+    token: str | None = None  # Only included during creation
+    metadata: dict[str, Any] | None = {}
 
     model_config = ConfigDict(
         from_attributes=True
@@ -59,7 +61,7 @@ class TokenResponse(BaseModel):
     )
 
 class TokenListResponse(BaseModel):
-    data: List[TokenResponse]
+    data: list[TokenResponse]
     total: int
 
 # Create router

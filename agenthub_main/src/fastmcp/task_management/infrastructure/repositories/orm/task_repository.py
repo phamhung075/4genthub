@@ -6,13 +6,19 @@ supporting both SQLite and PostgreSQL databases.
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Optional, Union
+import uuid
+from collections.abc import Iterable
+from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy import and_, desc, or_, text, func
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy import and_, desc, func, or_, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import joinedload, selectinload
 
+from ....application.services.context_field_selector import (
+    ContextFieldSelector,
+    FieldSet,
+)
 from ....domain.entities.task import Task as TaskEntity
 from ....domain.exceptions.task_exceptions import (
     TaskCreationError,
@@ -23,15 +29,21 @@ from ....domain.repositories.task_repository import TaskRepository
 from ....domain.value_objects.priority import Priority
 from ....domain.value_objects.task_id import TaskId
 from ....domain.value_objects.task_status import TaskStatus
-from ...database.models import Task, TaskAssignee, TaskDependency, TaskLabel, Label, TaskContext, Subtask
-from ..base_orm_repository import BaseORMRepository
+from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
+from ...database.models import (
+    Label,
+    Subtask,
+    Task,
+    TaskAssignee,
+    TaskContext,
+    TaskDependency,
+    TaskLabel,
+)
+from ...performance.task_performance_optimizer import get_performance_optimizer
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ..clean_timestamp_repository_mixin import CleanTimestampRepository
 from ..event_publishing_mixin import EventPublishingMixin
-from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
-from ....application.services.context_field_selector import ContextFieldSelector, FieldSet
-from ...performance.task_performance_optimizer import get_performance_optimizer
 
 logger = logging.getLogger(__name__)
 
@@ -239,8 +251,8 @@ class ORMTaskRepository(
             progress_count=task.progress_count,
             estimated_effort=task.estimated_effort,
             due_date=task.due_date,
-            created_at=task.created_at.replace(tzinfo=timezone.utc) if task.created_at and task.created_at.tzinfo is None else task.created_at,
-            updated_at=task.updated_at.replace(tzinfo=timezone.utc) if task.updated_at and task.updated_at.tzinfo is None else task.updated_at,
+            created_at=task.created_at.replace(tzinfo=UTC) if task.created_at and task.created_at.tzinfo is None else task.created_at,
+            updated_at=task.updated_at.replace(tzinfo=UTC) if task.updated_at and task.updated_at.tzinfo is None else task.updated_at,
             user_id=getattr(task, 'user_id', None),
             context_id=task.context_id,
             subtasks=subtask_ids,
@@ -364,7 +376,7 @@ class ORMTaskRepository(
                                 assignee_id=assignee_id,
                                 role=kwargs.get('assignee_role', 'contributor'),
                                 user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
-                                assigned_at=datetime.now(timezone.utc)  # Set assignment timestamp
+                                assigned_at=datetime.now(UTC)  # Set assignment timestamp
                             )
                             session.add(assignee)
                         session.commit()
@@ -401,8 +413,8 @@ class ORMTaskRepository(
                                     color="#0066cc",
                                     description="",
                                     user_id=self.user_id,  # DDD: user_id required, no fallbacks
-                                    created_at=datetime.now(timezone.utc),
-                                    updated_at=datetime.now(timezone.utc)
+                                    created_at=datetime.now(UTC),
+                                    updated_at=datetime.now(UTC)
                                 )
                                 session.add(label)
                                 session.flush()  # Ensure label is saved before creating relationship
@@ -412,7 +424,7 @@ class ORMTaskRepository(
                                 task_id=task_id,
                                 label_id=label.id,
                                 user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
-                                applied_at=datetime.now(timezone.utc)
+                                applied_at=datetime.now(UTC)
                             )
                             session.add(task_label)
                         session.commit()
@@ -568,7 +580,7 @@ class ORMTaskRepository(
                             assignee_id=assignee_id,
                             role='contributor',
                             user_id=self.user_id,
-                            assigned_at=datetime.now(timezone.utc)
+                            assigned_at=datetime.now(UTC)
                         )
                         session.add(assignee)
 
@@ -594,8 +606,8 @@ class ORMTaskRepository(
                                 color="#0066cc",
                                 description="",
                                 user_id=self.user_id,
-                                created_at=datetime.now(timezone.utc),
-                                updated_at=datetime.now(timezone.utc)
+                                created_at=datetime.now(UTC),
+                                updated_at=datetime.now(UTC)
                             )
                             session.add(label)
                             session.flush()  # Ensure label is saved before creating relationship
@@ -605,7 +617,7 @@ class ORMTaskRepository(
                             task_id=task_id,
                             label_id=label.id,
                             user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
-                            applied_at=datetime.now(timezone.utc)
+                            applied_at=datetime.now(UTC)
                         )
                         session.add(task_label)
 
@@ -1048,7 +1060,7 @@ class ORMTaskRepository(
                 filters.append(Task.git_branch_id == effective_git_branch_id)
                 logger.debug(f"[ORMTaskRepository] Applied git_branch_id filter: {effective_git_branch_id}")
             else:
-                logger.debug(f"[ORMTaskRepository] NO git_branch_id filter - returning ALL tasks")
+                logger.debug("[ORMTaskRepository] NO git_branch_id filter - returning ALL tasks")
             if status:
                 filters.append(Task.status == status)
             if priority:
@@ -1260,7 +1272,7 @@ class ORMTaskRepository(
             ).filter(
                 and_(
                     Task.git_branch_id == self.git_branch_id if self.git_branch_id else True,
-                    Task.due_date < now,
+                    Task.due_date < datetime.now(UTC),
                     Task.status != 'completed'
                 )
             ).all()
@@ -1326,7 +1338,7 @@ class ORMTaskRepository(
                             depends_on_task_id=str(dependency.value if hasattr(dependency, 'value') else dependency),
                             dependency_type="blocks",
                             user_id=effective_user_id,
-                            created_at=datetime.now(timezone.utc)
+                            created_at=datetime.now(UTC)
                         )
                         session.add(new_dependency)
 
@@ -1373,7 +1385,7 @@ class ORMTaskRepository(
                                         assignee_id=assignee,
                                         role="agent",
                                         user_id=effective_user_id,
-                                        assigned_at=datetime.now(timezone.utc)
+                                        assigned_at=datetime.now(UTC)
                                     )
                                     session.add(new_assignee)
                                     session.flush()  # Flush immediately to catch constraint violations
@@ -1401,8 +1413,8 @@ class ORMTaskRepository(
                                 color="#0066cc",
                                 description="",
                                 user_id=effective_user_id,
-                                created_at=datetime.now(timezone.utc),
-                                updated_at=datetime.now(timezone.utc)
+                                created_at=datetime.now(UTC),
+                                updated_at=datetime.now(UTC)
                             )
                             session.add(label)
                             session.flush()
@@ -1415,7 +1427,7 @@ class ORMTaskRepository(
                             task_id=str(task.id),
                             label_id=label.id,
                             user_id=effective_user_id,
-                            applied_at=datetime.now(timezone.utc)
+                            applied_at=datetime.now(UTC)
                         )
                         session.add(task_label)
 
@@ -1442,12 +1454,12 @@ class ORMTaskRepository(
 
                     # Ensure timestamps have timezone info when copying back
                     if existing.updated_at and not existing.updated_at.tzinfo:
-                        task.updated_at = existing.updated_at.replace(tzinfo=timezone.utc)
+                        task.updated_at = existing.updated_at.replace(tzinfo=UTC)
                     else:
                         task.updated_at = existing.updated_at
 
                     if existing.created_at and not existing.created_at.tzinfo:
-                        task.created_at = existing.created_at.replace(tzinfo=timezone.utc)
+                        task.created_at = existing.created_at.replace(tzinfo=UTC)
                     else:
                         task.created_at = existing.created_at
 
@@ -1456,7 +1468,9 @@ class ORMTaskRepository(
 
                 else:
                     from ....domain.constants import validate_user_id
-                    from ....domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+                    from ....domain.exceptions.authentication_exceptions import (
+                        UserAuthenticationRequiredError,
+                    )
 
                     # Try to get user_id from multiple sources
                     user_id_to_use = None
@@ -1496,7 +1510,7 @@ class ORMTaskRepository(
                             depends_on_task_id=str(dependency.value if hasattr(dependency, 'value') else dependency),
                             dependency_type="blocks",
                             user_id=task_user_id,
-                            created_at=datetime.now(timezone.utc)
+                            created_at=datetime.now(UTC)
                         )
                         session.add(new_dependency)
 
@@ -1510,7 +1524,7 @@ class ORMTaskRepository(
                                 assignee_id=assignee,
                                 role="agent",
                                 user_id=task_user_id,
-                                assigned_at=datetime.now(timezone.utc)
+                                assigned_at=datetime.now(UTC)
                             )
                             session.add(new_assignee)
 
@@ -1525,8 +1539,8 @@ class ORMTaskRepository(
                                 color="#0066cc",
                                 description="",
                                 user_id=self.user_id,
-                                created_at=datetime.now(timezone.utc),
-                                updated_at=datetime.now(timezone.utc)
+                                created_at=datetime.now(UTC),
+                                updated_at=datetime.now(UTC)
                             )
                             session.add(label)
                             session.flush()
@@ -1535,7 +1549,7 @@ class ORMTaskRepository(
                             task_id=str(task.id),
                             label_id=label.id,
                             user_id=self.user_id,
-                            applied_at=datetime.now(timezone.utc)
+                            applied_at=datetime.now(UTC)
                         )
                         session.add(task_label)
 
@@ -1543,12 +1557,12 @@ class ORMTaskRepository(
                     session.refresh(new_task)
                     # Ensure timestamps have timezone info when copying back
                     if new_task.created_at and not new_task.created_at.tzinfo:
-                        task.created_at = new_task.created_at.replace(tzinfo=timezone.utc)
+                        task.created_at = new_task.created_at.replace(tzinfo=UTC)
                     else:
                         task.created_at = new_task.created_at
 
                     if new_task.updated_at and not new_task.updated_at.tzinfo:
-                        task.updated_at = new_task.updated_at.replace(tzinfo=timezone.utc)
+                        task.updated_at = new_task.updated_at.replace(tzinfo=UTC)
                     else:
                         task.updated_at = new_task.updated_at
 
@@ -1561,8 +1575,8 @@ class ORMTaskRepository(
             logger.error("Failed to save task: %s", exc)
             raise
 
-    def _perform_bulk_save(self, entities: Iterable[TaskEntity]) -> List[TaskEntity]:
-        saved_entities: List[TaskEntity] = []
+    def _perform_bulk_save(self, entities: Iterable[TaskEntity]) -> list[TaskEntity]:
+        saved_entities: list[TaskEntity] = []
         for entity in entities:
             saved_entities.append(self._perform_save(entity))
         return saved_entities
@@ -1608,6 +1622,7 @@ class ORMTaskRepository(
         """Get next available task ID"""
         # Generate a new UUID and return as TaskId object
         import uuid
+
         from ....domain.value_objects.task_id import TaskId
         return TaskId(str(uuid.uuid4()))
     
@@ -1633,7 +1648,7 @@ class ORMTaskRepository(
             
             # Apply user filter for data isolation (CRITICAL)
             query = self.apply_user_filter(query)
-            logger.debug(f"[REPOSITORY] Applied user filter")
+            logger.debug("[REPOSITORY] Applied user filter")
             
             # Apply git branch filter if set (from constructor or filters)
             # Fix: Use proper None checking instead of falsy OR operator
@@ -1645,7 +1660,7 @@ class ORMTaskRepository(
                 logger.debug(f"[REPOSITORY] Applying git_branch_id filter: {git_branch_filter}")
                 query = query.filter(Task.git_branch_id == git_branch_filter)
             else:
-                logger.debug(f"[REPOSITORY] NO git_branch_id filter applied - will return tasks from ALL branches")
+                logger.debug("[REPOSITORY] NO git_branch_id filter applied - will return tasks from ALL branches")
             
             # Apply filters
             if 'status' in filters:
@@ -1731,7 +1746,7 @@ class ORMTaskRepository(
             ).first()
             return branch is not None
     
-    def find_by_git_branch_id(self, git_branch_id: str) -> List[Task]:
+    def find_by_git_branch_id(self, git_branch_id: str) -> list[Task]:
         """Find tasks by git branch ID - returns Task entities"""
         try:
             with self.get_db_session() as session:
@@ -1815,8 +1830,8 @@ class ORMTaskRepository(
     def get_task_selective_fields(
         self, 
         task_id: str, 
-        fields: Optional[Union[List[str], FieldSet]] = None
-    ) -> Dict[str, Any]:
+        fields: list[str] | FieldSet | None = None
+    ) -> dict[str, Any]:
         """
         Get task with only specified fields for performance optimization
         
@@ -1899,13 +1914,13 @@ class ORMTaskRepository(
     
     def list_tasks_selective_fields(
         self,
-        fields: Optional[Union[List[str], FieldSet]] = None,
-        status: Optional[str] = None,
-        priority: Optional[str] = None,
-        assignee_id: Optional[str] = None,
+        fields: list[str] | FieldSet | None = None,
+        status: str | None = None,
+        priority: str | None = None,
+        assignee_id: str | None = None,
         limit: int = 100,
         offset: int = 0
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         List tasks with only specified fields for performance optimization
         
@@ -2002,7 +2017,7 @@ class ORMTaskRepository(
             logger.error(f"Failed to list tasks with selective fields: {e}")
             return []
     
-    def get_field_selector_metrics(self) -> Dict[str, int]:
+    def get_field_selector_metrics(self) -> dict[str, int]:
         """
         Get performance metrics from the field selector
         
@@ -2014,7 +2029,7 @@ class ORMTaskRepository(
     def estimate_field_optimization_savings(
         self, 
         field_set: FieldSet
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Estimate performance savings for using selective fields
         
@@ -2026,7 +2041,7 @@ class ORMTaskRepository(
         """
         return self._field_selector.estimate_savings("task", field_set)
 
-    def get_completed_subtask_counts(self, task_ids: List[str]) -> Dict[str, int]:
+    def get_completed_subtask_counts(self, task_ids: list[str]) -> dict[str, int]:
         """
         Get completed subtask counts for multiple tasks in ONE query (batch loading).
 

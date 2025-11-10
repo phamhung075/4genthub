@@ -1,15 +1,10 @@
 """Update Subtask Use Case"""
 
 import logging
-from typing import Union
-from ...application.dtos.subtask import (
-    UpdateSubtaskRequest,
-    SubtaskResponse
-)
 
-from ...domain import TaskRepository, TaskId, TaskNotFoundError
+from ...application.dtos.subtask import SubtaskResponse, UpdateSubtaskRequest
+from ...domain import TaskId, TaskNotFoundError, TaskRepository
 from ...domain.repositories.subtask_repository import SubtaskRepository
-from ...domain.entities.subtask import Subtask
 from ...domain.value_objects.priority import Priority
 from ...domain.value_objects.task_status import TaskStatus
 
@@ -106,7 +101,7 @@ class UpdateSubtaskUseCase:
             progress=task.get_subtask_progress()
         )
 
-    def _convert_to_task_id(self, task_id: Union[str, int]) -> TaskId:
+    def _convert_to_task_id(self, task_id: str | int) -> TaskId:
         if isinstance(task_id, int):
             return TaskId.from_int(task_id)
         else:
@@ -161,7 +156,7 @@ class UpdateSubtaskUseCase:
                 
             except RuntimeError:
                 # No event loop, we can create one
-                logger.debug(f"[UpdateSubtaskUseCase] No async context, creating new event loop for parent task context sync")
+                logger.debug("[UpdateSubtaskUseCase] No async context, creating new event loop for parent task context sync")
                 
                 async def sync_context():
                     if not project_id:
@@ -184,4 +179,4 @@ class UpdateSubtaskUseCase:
         except Exception as e:
             # Don't fail the subtask update operation if context sync fails
             logger.warning(f"[UpdateSubtaskUseCase] Failed to sync parent task context for task {parent_task.id} after subtask update: {e}")
-            logger.debug(f"[UpdateSubtaskUseCase] Parent task context sync error details", exc_info=True) 
+            logger.debug("[UpdateSubtaskUseCase] Parent task context sync error details", exc_info=True) 

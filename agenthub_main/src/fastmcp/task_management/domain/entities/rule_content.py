@@ -4,10 +4,10 @@ These entities represent the core domain concepts for rule management
 following DDD principles.
 """
 
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class RuleFormat(Enum):
@@ -53,7 +53,7 @@ class RuleMetadata:
     size: int
     modified: float
     checksum: str
-    dependencies: List[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
     
     @property
     def modified_datetime(self) -> datetime:
@@ -66,10 +66,10 @@ class RuleContent:
     """Complete rule content with metadata and parsed data"""
     metadata: RuleMetadata
     raw_content: str
-    parsed_content: Dict[str, Any]
-    sections: Dict[str, str]
-    references: List[str]
-    variables: Dict[str, Any]
+    parsed_content: dict[str, Any]
+    sections: dict[str, str]
+    references: list[str]
+    variables: dict[str, Any]
     
     def __post_init__(self):
         """Post-initialization validation"""
@@ -85,18 +85,18 @@ class RuleInheritance:
     parent_path: str
     child_path: str
     inheritance_type: InheritanceType
-    inherited_sections: List[str] = field(default_factory=list)
-    conflicts: List[str] = field(default_factory=list)
+    inherited_sections: list[str] = field(default_factory=list)
+    conflicts: list[str] = field(default_factory=list)
 
 
 @dataclass
 class CompositionResult:
     """Result of rule composition operation"""
     success: bool
-    composed_content: Dict[str, Any]
-    applied_rules: List[str]
-    conflicts: List[str] = field(default_factory=list)
-    errors: List[str] = field(default_factory=list)
+    composed_content: dict[str, Any]
+    applied_rules: list[str]
+    conflicts: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -106,5 +106,5 @@ class RuleConflict:
     rule2_path: str
     conflict_section: str
     conflict_type: str
-    resolution: Optional[ConflictResolution] = None
-    resolved_value: Optional[Any] = None
+    resolution: ConflictResolution | None = None
+    resolved_value: Any | None = None

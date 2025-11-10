@@ -46,12 +46,13 @@ from fastmcp.settings import Settings
 # Initialize settings instance to avoid circular imports
 _settings = Settings()
 try:
-    from . import context, dependencies
     from ..prompts import Prompt, PromptManager
     from ..prompts.prompt import FunctionPrompt
     from ..resources import Resource, ResourceManager
     from ..resources.template import ResourceTemplate
+    from . import context, dependencies
     from .auth.auth import OAuthProvider
+
     # Bearer auth provider removed - using DualAuthMiddleware instead
     from .auth.mcp_auth_config import get_default_auth_provider
     from .http_server import (
@@ -68,6 +69,7 @@ except ImportError:
     from fastmcp.resources import Resource, ResourceManager
     from fastmcp.resources.template import ResourceTemplate
     from fastmcp.server.auth.auth import OAuthProvider
+
     # Bearer auth provider removed - using DualAuthMiddleware instead
     from fastmcp.server.auth.mcp_auth_config import get_default_auth_provider
     from fastmcp.server.http_server import (
@@ -78,7 +80,6 @@ except ImportError:
 
 # Handle remaining relative imports
 try:
-    from .middleware import Middleware, MiddlewareContext
     from ..tools import ToolManager
     from ..tools.tool import FunctionTool, Tool
     from ..utilities.cache import TimedCache
@@ -86,6 +87,7 @@ try:
     from ..utilities.logging import get_logger
     from ..utilities.mcp_config import MCPConfig
     from ..utilities.types import MCPContent
+    from .middleware import Middleware, MiddlewareContext
 except ImportError:
     # Fallback to absolute imports when running as script
     from fastmcp.server.middleware import Middleware, MiddlewareContext
@@ -241,7 +243,9 @@ class FastMCP(Generic[LifespanResultT]):
                     }
                 
                 # Vision System removed - using standard controllers only
-                from ..task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+                from ..task_management.interface.ddd_compliant_mcp_tools import (
+                    DDDCompliantMCPTools,
+                )
                 self._consolidated_tools = DDDCompliantMCPTools(
                     projects_file_path=projects_file_path,
                     config_overrides=config_overrides,
@@ -412,7 +416,9 @@ class FastMCP(Generic[LifespanResultT]):
                     }
                 }
             
-            from ..task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+            from ..task_management.interface.ddd_compliant_mcp_tools import (
+                DDDCompliantMCPTools,
+            )
             self._consolidated_tools = DDDCompliantMCPTools(
                 projects_file_path=projects_file_path,
                 config_overrides=config_overrides
@@ -1554,8 +1560,9 @@ class FastMCP(Generic[LifespanResultT]):
 
         if transport == "streamable-http":
             # Import and create EventStore for session persistence
-            from .session_store import MemoryEventStore
             import asyncio
+
+            from .session_store import MemoryEventStore
             
             # Get or create the global event store
             try:
@@ -1567,9 +1574,10 @@ class FastMCP(Generic[LifespanResultT]):
                     event_store = MemoryEventStore()
                 except RuntimeError:
                     # No running event loop, we can safely initialize Redis
-                    from .session_store import get_global_event_store
                     # Use threading approach to avoid asyncio.run() issues
                     import threading
+
+                    from .session_store import get_global_event_store
                     result = None
                     exception = None
                     

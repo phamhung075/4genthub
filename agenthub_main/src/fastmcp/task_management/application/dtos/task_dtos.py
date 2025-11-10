@@ -1,24 +1,25 @@
 """Task Data Transfer Objects for Vision System Integration"""
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
 from datetime import datetime
+from typing import Any
+
 
 @dataclass
 class CreateTaskDTO:
     """DTO for creating a new task"""
     title: str
     description: str
-    git_branch_id: Optional[str] = None
-    status: Optional[str] = None
-    priority: Optional[str] = None
-    assignees: Optional[List[str]] = None
-    labels: Optional[List[str]] = None
-    due_date: Optional[str] = None
-    estimated_effort: Optional[str] = None
-    details: Optional[str] = None
+    git_branch_id: str | None = None
+    status: str | None = None
+    priority: str | None = None
+    assignees: list[str] | None = None
+    labels: list[str] | None = None
+    due_date: str | None = None
+    estimated_effort: str | None = None
+    details: str | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API usage"""
         return {
             "title": self.title,
@@ -37,18 +38,18 @@ class CreateTaskDTO:
 class UpdateTaskDTO:
     """DTO for updating an existing task"""
     task_id: str
-    title: Optional[str] = None
-    description: Optional[str] = None
-    status: Optional[str] = None
-    priority: Optional[str] = None
-    assignees: Optional[List[str]] = None
-    labels: Optional[List[str]] = None
-    due_date: Optional[str] = None
-    estimated_effort: Optional[str] = None
-    details: Optional[str] = None
-    context_id: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    status: str | None = None
+    priority: str | None = None
+    assignees: list[str] | None = None
+    labels: list[str] | None = None
+    due_date: str | None = None
+    estimated_effort: str | None = None
+    details: str | None = None
+    context_id: str | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API usage"""
         result = {"task_id": self.task_id}
         
@@ -79,12 +80,12 @@ class UpdateTaskDTO:
 class TaskResponseDTO:
     """DTO for task response"""
     success: bool
-    task_id: Optional[str] = None
-    message: Optional[str] = None
-    task_data: Optional[Dict[str, Any]] = None
-    errors: Optional[List[str]] = None
+    task_id: str | None = None
+    message: str | None = None
+    task_data: dict[str, Any] | None = None
+    errors: list[str] | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API usage"""
         result = {"success": self.success}
         
@@ -104,9 +105,9 @@ class CompleteTaskDTO:
     """DTO for completing a task"""
     task_id: str
     completion_summary: str
-    context_updated_at: Optional[datetime] = None
+    context_updated_at: datetime | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API usage"""
         result = {
             "task_id": self.task_id,

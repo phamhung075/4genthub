@@ -6,16 +6,16 @@ This module provides authentication specifically for hook-to-MCP communication,
 independent from the main API and MCP authentication systems.
 """
 
-import os
 import json
 import logging
-from typing import Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
+import os
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
-from jose import jwt, JWTError, ExpiredSignatureError
-from fastapi import HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import ExpiredSignatureError, JWTError, jwt
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class HookAuthValidator:
         self.secret = HOOK_JWT_SECRET
         self.logger = logger
         
-    def validate_hook_token(self, token: str) -> Dict[str, Any]:
+    def validate_hook_token(self, token: str) -> dict[str, Any]:
         """
         Validate a hook JWT token
         
@@ -68,7 +68,7 @@ class HookAuthValidator:
                     # Check expiration
                     if "exp" in payload:
                         exp_timestamp = payload["exp"]
-                        if datetime.now(timezone.utc).timestamp() > exp_timestamp:
+                        if datetime.now(UTC).timestamp() > exp_timestamp:
                             raise HTTPException(status_code=401, detail="Token expired")
                     
                     self.logger.info(f"Hook token validated successfully: {payload.get('sub', 'unknown')}")
@@ -104,8 +104,8 @@ hook_auth_validator = HookAuthValidator()
 
 
 async def get_hook_authenticated_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> Dict[str, Any]:
+    credentials: HTTPAuthorizationCredentials | None = Depends(security)
+) -> dict[str, Any]:
     """
     FastAPI dependency for hook authentication
     
@@ -150,7 +150,7 @@ def is_hook_request(request_headers: dict) -> bool:
     return any(indicator in user_agent for indicator in hook_indicators)
 
 
-def get_token_from_mcp_json() -> Optional[str]:
+def get_token_from_mcp_json() -> str | None:
     """
     Extract the Bearer token from .mcp.json file if available
     
@@ -163,7 +163,7 @@ def get_token_from_mcp_json() -> Optional[str]:
         mcp_json_path = project_root / ".mcp.json"
         
         if mcp_json_path.exists():
-            with open(mcp_json_path, 'r') as f:
+            with open(mcp_json_path) as f:
                 mcp_config = json.load(f)
                 
             # Extract token from agenthub_http configuration
@@ -192,7 +192,7 @@ def create_hook_token(user_id: str = "hook-user", expires_in_days: int = 30) -> 
     Returns:
         JWT token string
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expire = now + timedelta(days=expires_in_days)
     
     payload = {

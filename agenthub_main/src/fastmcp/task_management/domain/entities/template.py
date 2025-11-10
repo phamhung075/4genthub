@@ -2,10 +2,16 @@
 
 import fnmatch
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional, List
+from datetime import datetime
+from typing import Any
+
+from ..value_objects import (
+    TemplateCategory,
+    TemplatePriority,
+    TemplateStatus,
+    TemplateType,
+)
 from ..value_objects.template_id import TemplateId
-from ..value_objects import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
 from .base.base_timestamp_entity import BaseTimestampEntity
 
 
@@ -13,18 +19,18 @@ from .base.base_timestamp_entity import BaseTimestampEntity
 class Template(BaseTimestampEntity):
     """Template domain entity representing a template in the system"""
 
-    id: Optional[TemplateId] = None
+    id: TemplateId | None = None
     name: str = ""
     description: str = ""
     content: str = ""
-    template_type: Optional[TemplateType] = None
-    category: Optional[TemplateCategory] = None
-    status: Optional[TemplateStatus] = None
-    priority: Optional[TemplatePriority] = None
-    compatible_agents: List[str] = field(default_factory=list)
-    file_patterns: List[str] = field(default_factory=list)
-    variables: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    template_type: TemplateType | None = None
+    category: TemplateCategory | None = None
+    status: TemplateStatus | None = None
+    priority: TemplatePriority | None = None
+    compatible_agents: list[str] = field(default_factory=list)
+    file_patterns: list[str] = field(default_factory=list)
+    variables: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     version: int = 1
     is_active: bool = True
 
@@ -53,7 +59,7 @@ class Template(BaseTimestampEntity):
         self.version += 1
         self.touch("content_updated")
     
-    def update_metadata(self, metadata: Dict[str, Any]) -> None:
+    def update_metadata(self, metadata: dict[str, Any]) -> None:
         """Update template metadata"""
         self.metadata.update(metadata)
         self.touch("metadata_updated")
@@ -116,7 +122,7 @@ class Template(BaseTimestampEntity):
         """Check if template is compatible with given agent"""
         return "*" in self.compatible_agents or agent_name in self.compatible_agents
     
-    def matches_file_patterns(self, file_patterns: List[str]) -> bool:
+    def matches_file_patterns(self, file_patterns: list[str]) -> bool:
         """Check if template matches any of the given file patterns"""
         if not self.file_patterns:
             return True  # No restrictions
@@ -131,7 +137,7 @@ class Template(BaseTimestampEntity):
         """Check if patterns match using fnmatch for wildcard support"""
         return fnmatch.fnmatch(file_pattern, template_pattern)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert template to dictionary representation"""
         return {
             "id": self.id.value,
@@ -153,7 +159,7 @@ class Template(BaseTimestampEntity):
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Template':
+    def from_dict(cls, data: dict[str, Any]) -> 'Template':
         """Create template from dictionary representation"""
         # Create the template instance
         template = cls(
@@ -191,13 +197,13 @@ class TemplateResult:
     """Result of template rendering operation"""
     content: str
     template_id: TemplateId
-    variables_used: Dict[str, Any]
+    variables_used: dict[str, Any]
     generated_at: datetime
     generation_time_ms: int
     cache_hit: bool
-    output_path: Optional[str] = None
+    output_path: str | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert result to dictionary representation"""
         return {
             "content": self.content,
@@ -214,13 +220,13 @@ class TemplateResult:
 class TemplateRenderRequest:
     """Request for template rendering"""
     template_id: TemplateId
-    variables: Dict[str, Any]
-    task_context: Optional[Dict[str, Any]] = None
-    output_path: Optional[str] = None
+    variables: dict[str, Any]
+    task_context: dict[str, Any] | None = None
+    output_path: str | None = None
     cache_strategy: str = "default"
     force_regenerate: bool = False
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert request to dictionary representation"""
         return {
             "template_id": self.template_id.value,
@@ -236,16 +242,16 @@ class TemplateRenderRequest:
 class TemplateUsage:
     """Template usage tracking entity"""
     template_id: TemplateId
-    task_id: Optional[str]
-    project_id: Optional[str]
-    agent_name: Optional[str]
-    variables_used: Dict[str, Any]
-    output_path: Optional[str]
+    task_id: str | None
+    project_id: str | None
+    agent_name: str | None
+    variables_used: dict[str, Any]
+    output_path: str | None
     generation_time_ms: int
     cache_hit: bool
     used_at: datetime
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert usage to dictionary representation"""
         return {
             "template_id": self.template_id.value,

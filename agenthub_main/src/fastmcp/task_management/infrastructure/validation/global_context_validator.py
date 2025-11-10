@@ -5,17 +5,17 @@ This module provides comprehensive validation for the nested global context stru
 including schema validation, data consistency checks, and migration validation.
 """
 
-from typing import Dict, Any, List, Optional, Tuple
 import logging
 from datetime import datetime
-import jsonschema
-from jsonschema import validate, ValidationError
+from typing import Any
 
-from ...domain.entities.global_context_schema import (
-    NestedCategorySchema, 
-    GlobalContextNestedData
-)
+from jsonschema import ValidationError, validate
+
 from ...domain.entities.context import GlobalContext
+from ...domain.entities.global_context_schema import (
+    GlobalContextNestedData,
+    NestedCategorySchema,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ MIGRATION_FIELD_MAPPING = {
 class GlobalContextValidationError(Exception):
     """Exception raised when global context validation fails."""
     
-    def __init__(self, message: str, errors: List[str] = None, field: str = None):
+    def __init__(self, message: str, errors: list[str] = None, field: str = None):
         self.message = message
         self.errors = errors or []
         self.field = field
@@ -52,7 +52,7 @@ class GlobalContextValidator:
         self._nested_schema = self._create_nested_json_schema()
         self._flat_schema = self._create_flat_json_schema()
     
-    def _create_nested_json_schema(self) -> Dict[str, Any]:
+    def _create_nested_json_schema(self) -> dict[str, Any]:
         """Create JSON schema for nested global context structure."""
         return {
             "$schema": "http://json-schema.org/draft-07/schema#",
@@ -164,7 +164,7 @@ class GlobalContextValidator:
             "additionalProperties": False
         }
     
-    def _create_flat_json_schema(self) -> Dict[str, Any]:
+    def _create_flat_json_schema(self) -> dict[str, Any]:
         """Create JSON schema for flat global context structure."""
         return {
             "$schema": "http://json-schema.org/draft-07/schema#",
@@ -193,7 +193,7 @@ class GlobalContextValidator:
             "additionalProperties": True
         }
     
-    def validate_nested_structure(self, nested_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def validate_nested_structure(self, nested_data: dict[str, Any]) -> tuple[bool, list[str]]:
         """
         Validate nested global context structure.
         
@@ -220,7 +220,7 @@ class GlobalContextValidator:
         
         return len(errors) == 0, errors
     
-    def validate_flat_structure(self, flat_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    def validate_flat_structure(self, flat_data: dict[str, Any]) -> tuple[bool, list[str]]:
         """
         Validate flat global context structure.
         
@@ -245,7 +245,7 @@ class GlobalContextValidator:
         
         return len(errors) == 0, errors
     
-    def _validate_nested_semantics(self, nested_data: Dict[str, Any]) -> List[str]:
+    def _validate_nested_semantics(self, nested_data: dict[str, Any]) -> list[str]:
         """Validate semantic correctness of nested structure."""
         errors = []
         
@@ -285,7 +285,7 @@ class GlobalContextValidator:
         
         return errors
     
-    def _validate_flat_semantics(self, flat_data: Dict[str, Any]) -> List[str]:
+    def _validate_flat_semantics(self, flat_data: dict[str, Any]) -> list[str]:
         """Validate semantic correctness of flat structure."""
         errors = []
         
@@ -312,7 +312,7 @@ class GlobalContextValidator:
         
         return errors
     
-    def validate_global_context_entity(self, context: GlobalContext) -> Tuple[bool, List[str]]:
+    def validate_global_context_entity(self, context: GlobalContext) -> tuple[bool, list[str]]:
         """
         Validate a GlobalContext entity comprehensively.
         
@@ -352,7 +352,7 @@ class GlobalContextValidator:
         
         return len(errors) == 0, errors
     
-    def _validate_structure_consistency(self, context: GlobalContext) -> List[str]:
+    def _validate_structure_consistency(self, context: GlobalContext) -> list[str]:
         """Validate consistency between flat and nested structures."""
         errors = []
         
@@ -361,7 +361,9 @@ class GlobalContextValidator:
         
         try:
             # Get flat representation from nested structure
-            from ...infrastructure.migration.global_context_migration import GlobalContextMigrator
+            from ...infrastructure.migration.global_context_migration import (
+                GlobalContextMigrator,
+            )
             migrator = GlobalContextMigrator()
             flat_from_nested = migrator.migrate_to_flat(context._nested_data)
             
@@ -385,8 +387,8 @@ class GlobalContextValidator:
         
         return errors
     
-    def validate_migration_data(self, original_flat: Dict[str, Any], 
-                               migrated_nested: GlobalContextNestedData) -> List[str]:
+    def validate_migration_data(self, original_flat: dict[str, Any], 
+                               migrated_nested: GlobalContextNestedData) -> list[str]:
         """
         Validate that migration preserved data integrity.
         
@@ -407,7 +409,9 @@ class GlobalContextValidator:
         
         # Validate reverse migration
         try:
-            from ...infrastructure.migration.global_context_migration import GlobalContextMigrator
+            from ...infrastructure.migration.global_context_migration import (
+                GlobalContextMigrator,
+            )
             migrator = GlobalContextMigrator()
             reverse_flat = migrator.migrate_to_flat(migrated_nested)
             
@@ -444,7 +448,7 @@ class GlobalContextValidator:
         
         return False
     
-    def create_validation_report(self, context: GlobalContext) -> Dict[str, Any]:
+    def create_validation_report(self, context: GlobalContext) -> dict[str, Any]:
         """
         Create a comprehensive validation report for a GlobalContext.
         
@@ -484,7 +488,7 @@ class GlobalContextValidator:
         return report
 
 
-def validate_global_context(context: GlobalContext, raise_on_error: bool = False) -> Tuple[bool, List[str]]:
+def validate_global_context(context: GlobalContext, raise_on_error: bool = False) -> tuple[bool, list[str]]:
     """
     Convenience function to validate a global context.
     

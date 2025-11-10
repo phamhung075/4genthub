@@ -12,11 +12,11 @@ using uuid5 with a namespace, ensuring the ORM model remains the source of truth
 accepting flexible input formats like 'test-user-123'.
 """
 
-from sqlalchemy import String, TypeDecorator
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql.sqltypes import String as SQLString
 import uuid
 from typing import Any
+
+from sqlalchemy import String, TypeDecorator
+from sqlalchemy.dialects.postgresql import UUID
 
 # Namespace UUID for deterministic user ID conversion
 # This ensures the same string input always generates the same UUID

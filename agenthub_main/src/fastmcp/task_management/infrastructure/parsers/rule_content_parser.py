@@ -4,16 +4,20 @@ This parser handles various rule file formats and extracts structured content
 following infrastructure layer responsibilities in DDD architecture.
 """
 
-from typing import Dict, Any, List, Tuple
-from pathlib import Path
-import re
-import json
-import yaml
 import hashlib
+import json
 import logging
+import re
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 from ...domain.entities.rule_content import (
-    RuleContent, RuleMetadata, RuleFormat, RuleType
+    RuleContent,
+    RuleFormat,
+    RuleMetadata,
+    RuleType,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,7 +42,7 @@ class RuleContentParser:
             format_type = self._detect_format(file_path)
             
             # Read content
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 raw_content = f.read()
             
             # Generate metadata
@@ -97,7 +101,7 @@ class RuleContentParser:
             dependencies=dependencies
         )
     
-    def _extract_dependencies(self, content: str) -> List[str]:
+    def _extract_dependencies(self, content: str) -> list[str]:
         """Extract rule dependencies from content"""
         dependencies = []
         
@@ -146,11 +150,11 @@ class RuleContentParser:
         # Otherwise, treat as GENERAL
         return RuleType.GENERAL
     
-    def _parse_mdc(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_mdc(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse MDC (Markdown with directives) content"""
         return self._parse_markdown(content)  # MDC uses markdown structure
     
-    def _parse_markdown(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_markdown(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse markdown content and extract structure"""
         sections = {}
         references = []
@@ -196,7 +200,7 @@ class RuleContentParser:
         
         return parsed_content, sections, references, variables
     
-    def _parse_json(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_json(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse JSON content"""
         try:
             parsed = json.loads(content)
@@ -231,7 +235,7 @@ class RuleContentParser:
             logger.error(f"Failed to parse JSON: {e}")
             return {}, {}, [], {}
     
-    def _parse_yaml(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_yaml(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse YAML content"""
         try:
             parsed = yaml.safe_load(content)
@@ -266,7 +270,7 @@ class RuleContentParser:
             logger.error(f"Failed to parse YAML: {e}")
             return {}, {}, [], {}
     
-    def _parse_text(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_text(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse plain text content"""
         sections = {'content': content}
         references = []

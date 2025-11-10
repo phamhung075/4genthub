@@ -11,10 +11,10 @@ Used by both HTTP middleware and WebSocket handlers to ensure consistent
 authentication behavior across all connection types.
 """
 
-import os
 import logging
-from typing import Optional, Dict, Any
+import os
 from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -23,20 +23,20 @@ logger = logging.getLogger(__name__)
 class AuthResult:
     """Unified authentication result."""
     valid: bool
-    user_id: Optional[str] = None
-    email: Optional[str] = None
-    auth_method: Optional[str] = None
-    error: Optional[str] = None
+    user_id: str | None = None
+    email: str | None = None
+    auth_method: str | None = None
+    error: str | None = None
     # Additional fields for debugging and context
-    token_id: Optional[str] = None
-    roles: Optional[list] = None
-    scopes: Optional[list] = None
-    user_data: Optional[Dict[str, Any]] = None
+    token_id: str | None = None
+    roles: list | None = None
+    scopes: list | None = None
+    user_data: dict[str, Any] | None = None
 
 
 async def validate_token_universal(
     token: str,
-    client_info: Optional[Dict[str, Any]] = None
+    client_info: dict[str, Any] | None = None
 ) -> AuthResult:
     """
     Validate any token type: Keycloak, API token, or MCP token.
@@ -185,8 +185,9 @@ async def _validate_api_token(token: str) -> AuthResult:
 async def _validate_local_jwt(token: str) -> AuthResult:
     """Validate a local JWT token using available secrets."""
     try:
-        from .domain.services.jwt_service import JWTService
         import jwt as pyjwt
+
+        from .domain.services.jwt_service import JWTService
 
         # Get both potential secrets
         jwt_secret = os.getenv("JWT_SECRET_KEY", "default-secret-key-change-in-production")
@@ -257,7 +258,7 @@ async def _validate_local_jwt(token: str) -> AuthResult:
         return AuthResult(valid=False, error=f"Local JWT validation error: {str(e)}")
 
 
-async def _validate_mcp_token(token: str, client_info: Dict[str, Any]) -> AuthResult:
+async def _validate_mcp_token(token: str, client_info: dict[str, Any]) -> AuthResult:
     """Validate an MCP-generated token."""
     try:
         from .token_validator import TokenValidator

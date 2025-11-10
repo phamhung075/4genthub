@@ -6,30 +6,30 @@ at startup to detect mismatches early and prevent runtime errors.
 """
 
 import logging
-from typing import Dict, List, Optional, Any, Set
-from sqlalchemy import inspect, MetaData, Table
+from typing import Any
+
+from sqlalchemy import MetaData, inspect
+from sqlalchemy.exc import NoInspectionAvailable
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import class_mapper
-from sqlalchemy.exc import NoInspectionAvailable
-import asyncio
 
 from fastmcp.task_management.infrastructure.database.models import (
-    Project,
-    ProjectGitBranch,
-    Task,
-    TaskDependency,
-    Subtask,
-    TaskAssignee,
     Agent,
+    BranchContext,
+    ContextDelegation,
+    ContextInheritanceCache,
+    GlobalContext,
     Label,
+    Project,
+    ProjectContext,
+    ProjectGitBranch,
+    Subtask,
+    Task,
+    TaskAssignee,
+    TaskContext,
+    TaskDependency,
     TaskLabel,
     Template,
-    GlobalContext,
-    ProjectContext,
-    BranchContext,
-    TaskContext,
-    ContextDelegation,
-    ContextInheritanceCache
 )
 
 logger = logging.getLogger(__name__)
@@ -64,9 +64,9 @@ class SchemaValidator:
             ContextDelegation,
             ContextInheritanceCache
         ]
-        self.validation_results: List[Dict[str, Any]] = []
+        self.validation_results: list[dict[str, Any]] = []
         
-    async def validate_all(self) -> Dict[str, Any]:
+    async def validate_all(self) -> dict[str, Any]:
         """
         Validate all ORM models against the database schema.
         
@@ -164,7 +164,7 @@ class SchemaValidator:
         
         return summary
     
-    async def _validate_model(self, model_class: Any, metadata: MetaData, conn: Any) -> Dict[str, Any]:
+    async def _validate_model(self, model_class: Any, metadata: MetaData, conn: Any) -> dict[str, Any]:
         """
         Validate a single ORM model against its database table.
         
@@ -274,7 +274,7 @@ class SchemaValidator:
         
         return {'issues': issues, 'warnings': warnings}
     
-    def _validate_column_type(self, model_col: Any, db_col: Any) -> Optional[str]:
+    def _validate_column_type(self, model_col: Any, db_col: Any) -> str | None:
         """
         Compare column types between model and database.
         
@@ -364,7 +364,7 @@ class SchemaValidator:
         
         return normalized
     
-    def _validate_model_sync(self, model_class: Any, metadata: MetaData, conn: Any) -> Dict[str, Any]:
+    def _validate_model_sync(self, model_class: Any, metadata: MetaData, conn: Any) -> dict[str, Any]:
         """
         Validate a single ORM model against its database table (synchronous version).
         

@@ -5,9 +5,10 @@ Contains all information needed to generate an intelligent task breakdown.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
+
 
 class ComplexityLevel(Enum):
     """Task complexity classification"""
@@ -32,10 +33,10 @@ class RequirementItem:
     id: str
     description: str
     priority: str = "medium"  # low, medium, high, critical
-    acceptance_criteria: List[str] = field(default_factory=list)
-    constraints: List[str] = field(default_factory=list)
-    related_files: List[str] = field(default_factory=list)
-    estimated_complexity: Optional[ComplexityLevel] = None
+    acceptance_criteria: list[str] = field(default_factory=list)
+    constraints: list[str] = field(default_factory=list)
+    related_files: list[str] = field(default_factory=list)
+    estimated_complexity: ComplexityLevel | None = None
 
 @dataclass
 class PlanningRequest:
@@ -48,32 +49,32 @@ class PlanningRequest:
     id: str
     title: str
     description: str
-    requirements: List[RequirementItem] = field(default_factory=list)
+    requirements: list[RequirementItem] = field(default_factory=list)
     context: PlanningContext = PlanningContext.NEW_FEATURE
     
     # Context information
-    project_id: Optional[str] = None
-    git_branch_id: Optional[str] = None
-    user_id: Optional[str] = None
+    project_id: str | None = None
+    git_branch_id: str | None = None
+    user_id: str | None = None
     
     # Constraints and preferences
-    deadline: Optional[datetime] = None
-    available_agents: List[str] = field(default_factory=list)
-    preferred_approach: Optional[str] = None
+    deadline: datetime | None = None
+    available_agents: list[str] = field(default_factory=list)
+    preferred_approach: str | None = None
     risk_tolerance: str = "medium"  # low, medium, high
     
     # Reference information  
-    related_tasks: List[str] = field(default_factory=list)
-    documentation_refs: List[str] = field(default_factory=list)
-    code_references: Dict[str, List[str]] = field(default_factory=dict)  # file -> line ranges
+    related_tasks: list[str] = field(default_factory=list)
+    documentation_refs: list[str] = field(default_factory=list)
+    code_references: dict[str, list[str]] = field(default_factory=dict)  # file -> line ranges
     
     # Metadata
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    created_by: Optional[str] = None
-    tags: List[str] = field(default_factory=list)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_by: str | None = None
+    tags: list[str] = field(default_factory=list)
     
     def add_requirement(self, description: str, priority: str = "medium", 
-                       acceptance_criteria: Optional[List[str]] = None) -> RequirementItem:
+                       acceptance_criteria: list[str] | None = None) -> RequirementItem:
         """Add a new requirement to the planning request"""
         req_id = f"{self.id}_req_{len(self.requirements) + 1}"
         requirement = RequirementItem(
@@ -85,7 +86,7 @@ class PlanningRequest:
         self.requirements.append(requirement)
         return requirement
     
-    def add_code_reference(self, file_path: str, line_ranges: List[str]):
+    def add_code_reference(self, file_path: str, line_ranges: list[str]):
         """Add code reference with specific line ranges"""
         if file_path not in self.code_references:
             self.code_references[file_path] = []
@@ -131,7 +132,7 @@ class PlanningRequest:
         else:
             return ComplexityLevel.TRIVIAL
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             'id': self.id,
@@ -165,7 +166,7 @@ class PlanningRequest:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'PlanningRequest':
+    def from_dict(cls, data: dict[str, Any]) -> 'PlanningRequest':
         """Create from dictionary"""
         requirements = [
             RequirementItem(
@@ -195,7 +196,7 @@ class PlanningRequest:
             related_tasks=data.get('related_tasks', []),
             documentation_refs=data.get('documentation_refs', []),
             code_references=data.get('code_references', {}),
-            created_at=datetime.fromisoformat(data.get('created_at', datetime.now(timezone.utc).isoformat())),
+            created_at=datetime.fromisoformat(data.get('created_at', datetime.now(UTC).isoformat())),
             created_by=data.get('created_by'),
             tags=data.get('tags', [])
         )

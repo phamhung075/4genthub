@@ -5,16 +5,13 @@ Provides comprehensive token validation, rate limiting, and security monitoring
 for the MCP server MVP implementation.
 """
 
-import asyncio
 import logging
 import time
 from collections import defaultdict, deque
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional, Tuple
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from .supabase_client import SupabaseTokenClient, TokenInfo
-
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +46,7 @@ class TokenValidator:
     - Token caching for performance
     """
     
-    def __init__(self, rate_limit_config: Optional[RateLimitConfig] = None):
+    def __init__(self, rate_limit_config: RateLimitConfig | None = None):
         """
         Initialize token validator.
         
@@ -60,18 +57,18 @@ class TokenValidator:
         self.rate_config = rate_limit_config or RateLimitConfig()
         
         # Rate limiting storage: token_hash -> deque of request timestamps
-        self._rate_limits: Dict[str, deque] = defaultdict(lambda: deque(maxlen=self.rate_config.requests_per_hour))
+        self._rate_limits: dict[str, deque] = defaultdict(lambda: deque(maxlen=self.rate_config.requests_per_hour))
         
         # Token cache: token_hash -> (TokenInfo, cache_time)
-        self._token_cache: Dict[str, Tuple[TokenInfo, float]] = {}
+        self._token_cache: dict[str, tuple[TokenInfo, float]] = {}
         self._cache_ttl = 300  # 5 minutes cache TTL
         
         # Security monitoring
-        self._failed_attempts: Dict[str, deque] = defaultdict(lambda: deque(maxlen=10))
+        self._failed_attempts: dict[str, deque] = defaultdict(lambda: deque(maxlen=10))
         
         logger.info(f"Token validator initialized with rate limit: {self.rate_config.requests_per_minute}/min")
     
-    async def validate_token(self, token: str, client_info: Optional[Dict] = None) -> TokenInfo:
+    async def validate_token(self, token: str, client_info: dict | None = None) -> TokenInfo:
         """
         Validate a token and check rate limits.
         
@@ -133,7 +130,7 @@ class TokenValidator:
             await self._log_failed_attempt(token_hash, "validation_error", client_info)
             raise TokenValidationError("Token validation failed")
     
-    async def _get_token_info(self, token: str) -> Optional[TokenInfo]:
+    async def _get_token_info(self, token: str) -> TokenInfo | None:
         """
         Get token information with caching.
         
@@ -212,7 +209,7 @@ class TokenValidator:
         # Record this request
         requests.append(current_time)
     
-    async def _log_failed_attempt(self, token_hash: str, reason: str, client_info: Optional[Dict] = None) -> None:
+    async def _log_failed_attempt(self, token_hash: str, reason: str, client_info: dict | None = None) -> None:
         """
         Log failed validation attempts for security monitoring.
         
@@ -240,7 +237,7 @@ class TokenValidator:
                 "reason": reason,
                 "failure_count": len(failures),
                 "client_info": client_info or {},
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             }
         )
         
@@ -271,12 +268,12 @@ class TokenValidator:
             await self.supabase_client.log_security_event(
                 "token_revoked",
                 token_hash,
-                {"revoked_at": datetime.now(timezone.utc).isoformat()}
+                {"revoked_at": datetime.now(UTC).isoformat()}
             )
         
         return success
     
-    def get_rate_limit_status(self, token: str) -> Dict[str, int]:
+    def get_rate_limit_status(self, token: str) -> dict[str, int]:
         """
         Get current rate limit status for a token.
         
@@ -311,7 +308,7 @@ class TokenValidator:
         self._token_cache.clear()
         logger.info("Token cache cleared")
     
-    def get_cache_stats(self) -> Dict[str, int]:
+    def get_cache_stats(self) -> dict[str, int]:
         """Get cache statistics."""
         return {
             "cached_tokens": len(self._token_cache),
@@ -319,7 +316,7 @@ class TokenValidator:
             "failed_attempt_records": len(self._failed_attempts)
         }
     
-    async def _validate_mcp_token(self, token: str) -> Optional[TokenInfo]:
+    async def _validate_mcp_token(self, token: str) -> TokenInfo | None:
         """
         Validate an MCP token using the MCP token service.
         

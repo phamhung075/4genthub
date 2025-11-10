@@ -1,11 +1,13 @@
 """Response DTO for task operations"""
 
-from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
-from datetime import datetime
-from .dependency_info import DependencyRelationships
-from ...exceptions import RepositoryProviderError
 import logging
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+from ...exceptions import RepositoryProviderError
+from .dependency_info import DependencyRelationships
+
 
 @dataclass
 class TaskResponse:
@@ -17,20 +19,20 @@ class TaskResponse:
     priority: str
     details: str  # Backward compatibility - formatted progress_history text
     estimated_effort: str
-    assignees: List[str]
-    labels: List[str]
-    dependencies: List[str]
-    subtasks: List[Dict[str, Any]]
-    due_date: Optional[str]
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
-    git_branch_id: Optional[str] = None  # Links to git_branch which contains project and user info
-    project_id: Optional[str] = None  # Project ID fetched via repository join (maintains normalization)
-    context_id: Optional[str] = None
-    context_data: Optional[Dict[str, Any]] = None
-    dependency_relationships: Optional[DependencyRelationships] = None  # Enhanced dependency information
+    assignees: list[str]
+    labels: list[str]
+    dependencies: list[str]
+    subtasks: list[dict[str, Any]]
+    due_date: str | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    git_branch_id: str | None = None  # Links to git_branch which contains project and user info
+    project_id: str | None = None  # Project ID fetched via repository join (maintains normalization)
+    context_id: str | None = None
+    context_data: dict[str, Any] | None = None
+    dependency_relationships: DependencyRelationships | None = None  # Enhanced dependency information
     progress_percentage: int = 0  # Task completion progress (0-100)
-    progress_history: Optional[Dict[str, Any]] = None  # Full progress history structure
+    progress_history: dict[str, Any] | None = None  # Full progress history structure
     progress_count: int = 0  # Number of progress entries
     # subtask_count is now a derived @property - see below
     completed_subtasks: int = 0  # Number of completed subtasks
@@ -44,20 +46,20 @@ class TaskResponse:
             priority: str,
             details: str,
             estimated_effort: str,
-            assignees: List[str],
-            labels: List[str],
-            dependencies: List[str],
-            subtasks: List[Dict[str, Any]],
-            due_date: Optional[str],
-            created_at: Optional[datetime],
-            updated_at: Optional[datetime],
-            git_branch_id: Optional[str] = None,  # Following clean relationship chain
-            project_id: Optional[str] = None,  # Project ID from repository join
-            context_id: Optional[str] = None,
-            context_data: Optional[Dict[str, Any]] = None,
-            dependency_relationships: Optional[DependencyRelationships] = None,
+            assignees: list[str],
+            labels: list[str],
+            dependencies: list[str],
+            subtasks: list[dict[str, Any]],
+            due_date: str | None,
+            created_at: datetime | None,
+            updated_at: datetime | None,
+            git_branch_id: str | None = None,  # Following clean relationship chain
+            project_id: str | None = None,  # Project ID from repository join
+            context_id: str | None = None,
+            context_data: dict[str, Any] | None = None,
+            dependency_relationships: DependencyRelationships | None = None,
             progress_percentage: int = 0,
-            progress_history: Optional[Dict[str, Any]] = None,
+            progress_history: dict[str, Any] | None = None,
             progress_count: int = 0,
             completed_subtasks: int = 0
         ):
@@ -101,10 +103,10 @@ class TaskResponse:
         return len(self.subtasks) if self.subtasks else 0
 
     @classmethod
-    def from_domain(cls, task, git_branch_repository=None, context_data: Optional[Dict[str, Any]] = None,
-                   dependency_relationships: Optional[DependencyRelationships] = None,
-                   project_id: Optional[str] = None,
-                   completed_subtasks: Optional[int] = None) -> 'TaskResponse':
+    def from_domain(cls, task, git_branch_repository=None, context_data: dict[str, Any] | None = None,
+                   dependency_relationships: DependencyRelationships | None = None,
+                   project_id: str | None = None,
+                   completed_subtasks: int | None = None) -> 'TaskResponse':
         """Create response DTO from domain entity with optional context data.
 
         Args:
@@ -201,7 +203,7 @@ class TaskResponse:
             completed_subtasks=actual_completed  # Fix 2: Accurate completed subtask count from batch query
         )
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert TaskResponse to dictionary representation with JSON-safe datetime serialization"""
         # OPTIMIZATION: Serialize context_data with embedded=True to remove duplicates
         context_data_serialized = self.context_data

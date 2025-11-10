@@ -82,10 +82,7 @@ class FacadeProvider:
             # Get facade through the application layer service
             facade_service = FacadeService.get_instance()
             cls._subtask_facade = facade_service.get_subtask_facade(
-                user_id=user_id,
-                subtask_repository_factory=subtask_repo_factory,
-                task_repository_factory=task_repo_factory,
-                context_service=context_facade,
+                user_id=user_id
             )
 
         return cls._subtask_facade
@@ -110,11 +107,8 @@ class FacadeProvider:
 
             # Get facade through the application layer service
             facade_service = FacadeService.get_instance()
-            cls._project_facade = ProjectApplicationFacade(
-                project_repository_factory=project_repo_factory,
-                branch_repository_factory=branch_repo_factory,
-                task_repository_factory=task_repo_factory,
-                context_service=context_facade,
+            cls._project_facade = facade_service.get_project_facade(
+                user_id=user_id
             )
 
         return cls._project_facade

@@ -1,7 +1,7 @@
 """Subtask Repository Interface"""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 from ..entities.subtask import Subtask
 from ..value_objects.task_id import TaskId
@@ -16,32 +16,32 @@ class SubtaskRepository(ABC):
         pass
     
     @abstractmethod
-    def find_by_id(self, id: str) -> Optional[Subtask]:
+    def find_by_id(self, id: str) -> Subtask | None:
         """Find a subtask by its id."""
         pass
     
     @abstractmethod
-    def find_by_parent_task_id(self, parent_task_id: TaskId) -> List[Subtask]:
+    def find_by_parent_task_id(self, parent_task_id: TaskId) -> list[Subtask]:
         """Find all subtasks for a parent task"""
         pass
     
     @abstractmethod
-    def find_by_assignee(self, assignee: str) -> List[Subtask]:
+    def find_by_assignee(self, assignee: str) -> list[Subtask]:
         """Find subtasks by assignee"""
         pass
     
     @abstractmethod
-    def find_by_status(self, status: str) -> List[Subtask]:
+    def find_by_status(self, status: str) -> list[Subtask]:
         """Find subtasks by status"""
         pass
     
     @abstractmethod
-    def find_completed(self, parent_task_id: TaskId) -> List[Subtask]:
+    def find_completed(self, parent_task_id: TaskId) -> list[Subtask]:
         """Find completed subtasks for a parent task"""
         pass
     
     @abstractmethod
-    def find_pending(self, parent_task_id: TaskId) -> List[Subtask]:
+    def find_pending(self, parent_task_id: TaskId) -> list[Subtask]:
         """Find pending subtasks for a parent task"""
         pass
     
@@ -76,7 +76,7 @@ class SubtaskRepository(ABC):
         pass
     
     @abstractmethod
-    def get_subtask_progress(self, parent_task_id: TaskId) -> Dict[str, Any]:
+    def get_subtask_progress(self, parent_task_id: TaskId) -> dict[str, Any]:
         """Get subtask progress statistics for a parent task"""
         pass
     

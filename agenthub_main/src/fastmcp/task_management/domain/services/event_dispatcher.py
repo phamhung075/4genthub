@@ -1,8 +1,8 @@
 """Domain Event Dispatcher - Central hub for domain events"""
 
 import logging
-from typing import Dict, List, Callable, Any
-from dataclasses import dataclass
+from collections.abc import Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +15,8 @@ class EventDispatcher:
 
     def __init__(self):
         """Initialize the event dispatcher with empty handlers."""
-        self._handlers: Dict[str, List[Callable]] = {}
-        self._async_handlers: Dict[str, List[Callable]] = {}
+        self._handlers: dict[str, list[Callable]] = {}
+        self._async_handlers: dict[str, list[Callable]] = {}
 
     def register_handler(self, event_type: str, handler: Callable) -> None:
         """

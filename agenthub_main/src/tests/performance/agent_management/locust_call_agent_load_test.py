@@ -33,8 +33,45 @@ Usage:
 import random
 import time
 import json
-from locust import HttpUser, task, between, events
-from locust.runners import MasterRunner
+
+# Try to import locust, skip gracefully if not available
+try:
+    from locust import HttpUser, task, between, events, LoadTestShape
+    from locust.runners import MasterRunner
+    LOCUST_AVAILABLE = True
+except ImportError:
+    # Locust not installed - this file can't be run as a load test
+    # Set flag for pytest to skip collection
+    import pytest
+    pytestmark = pytest.mark.skip(reason="locust not installed (optional dependency for load testing)")
+    LOCUST_AVAILABLE = False
+
+    # Define dummy classes and objects with nested attributes so the file doesn't crash during import
+    class DummyListener:
+        def add_listener(self, func):
+            return func
+
+    class DummyEvents:
+        request = DummyListener()
+        test_start = DummyListener()
+        test_stop = DummyListener()
+
+    class HttpUser:
+        wait_time = None
+    class MasterRunner: pass
+    class LoadTestShape: pass
+
+    # task can be used as @task or @task(weight)
+    def task(weight_or_func=1):
+        def decorator(func):
+            return func
+        if callable(weight_or_func):
+            return weight_or_func
+        return decorator
+
+    def between(*args): return lambda: 1
+
+    events = DummyEvents()
 
 # ============================================================================
 # CONFIGURATION
@@ -254,7 +291,7 @@ class AgentManagementUser(HttpUser):
 # CUSTOM LOAD SHAPES
 # ============================================================================
 
-from locust import LoadTestShape
+# LoadTestShape is imported at the top of the file
 
 class StepLoadShape(LoadTestShape):
     """

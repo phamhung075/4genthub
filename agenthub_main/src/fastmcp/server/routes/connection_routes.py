@@ -6,15 +6,27 @@ Health checks are typically unauthenticated to allow system monitoring.
 """
 
 import logging
-from typing import Optional
+
 from fastapi import APIRouter, HTTPException, status
 
-from ...connection_management.application.facades.connection_application_facade import ConnectionApplicationFacade
-from ...connection_management.infrastructure.repositories.in_memory_server_repository import InMemoryServerRepository
-from ...connection_management.infrastructure.repositories.in_memory_connection_repository import InMemoryConnectionRepository
-from ...connection_management.infrastructure.services.mcp_server_health_service import MCPServerHealthService
-from ...connection_management.infrastructure.services.mcp_connection_diagnostics_service import MCPConnectionDiagnosticsService
-from ...connection_management.infrastructure.services.mcp_status_broadcasting_service import MCPStatusBroadcastingService
+from ...connection_management.application.facades.connection_application_facade import (
+    ConnectionApplicationFacade,
+)
+from ...connection_management.infrastructure.repositories.in_memory_connection_repository import (
+    InMemoryConnectionRepository,
+)
+from ...connection_management.infrastructure.repositories.in_memory_server_repository import (
+    InMemoryServerRepository,
+)
+from ...connection_management.infrastructure.services.mcp_connection_diagnostics_service import (
+    MCPConnectionDiagnosticsService,
+)
+from ...connection_management.infrastructure.services.mcp_server_health_service import (
+    MCPServerHealthService,
+)
+from ...connection_management.infrastructure.services.mcp_status_broadcasting_service import (
+    MCPStatusBroadcastingService,
+)
 
 logger = logging.getLogger(__name__)
 

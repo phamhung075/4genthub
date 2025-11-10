@@ -1,16 +1,12 @@
 """Do Next Use Case - Find the next task or subtask to work on"""
 
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
 import logging
-import asyncio
+from dataclasses import dataclass
+from typing import Any
 
 from ...domain import TaskRepository
-from ...domain.interfaces.utility_service import IAgentDocGenerator
-from ...application.services.unified_context_service import UnifiedContextService
-from ...domain.value_objects.task_status import TaskStatus
 from ...domain.value_objects.priority import Priority
-from ...application.dtos.context import GetContextRequest
+from ...domain.value_objects.task_status import TaskStatus
 from ...infrastructure.services.agent_doc_generator import generate_docs_for_assignees
 
 logger = logging.getLogger(__name__)
@@ -19,9 +15,9 @@ logger = logging.getLogger(__name__)
 class NextTaskResponse:
     """Response containing the next item to work on"""
     has_next: bool
-    next_item: Optional[Dict[str, Any]] = None
-    context: Optional[Dict[str, Any]] = None
-    context_info: Optional[Dict[str, Any]] = None
+    next_item: dict[str, Any] | None = None
+    context: dict[str, Any] | None = None
+    context_info: dict[str, Any] | None = None
     message: str = ""
     
     def __getitem__(self, key):
@@ -52,7 +48,7 @@ class NextTaskResponse:
 class NextTaskUseCase:
     """Use case for finding the next task or subtask to work on"""
     
-    def __init__(self, task_repository: TaskRepository, context_service: Optional[Any] = None, context_factory: Optional[Any] = None):
+    def __init__(self, task_repository: TaskRepository, context_service: Any | None = None, context_factory: Any | None = None):
         self._task_repository = task_repository
         self._context_service = context_service
         self._context_factory = context_factory
@@ -63,12 +59,14 @@ class NextTaskUseCase:
             return self._context_factory
         
         # Import here to avoid circular import
-        from fastmcp.task_management.application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+        from fastmcp.task_management.application.factories.unified_context_facade_factory import (
+            UnifiedContextFacadeFactory,
+        )
         return UnifiedContextFacadeFactory()
     
-    async def execute(self, assignee: Optional[str] = None, project_id: Optional[str] = None, 
-                labels: Optional[List[str]] = None, git_branch_id: Optional[str] = None, 
-                user_id: Optional[str] = None, include_context: bool = False) -> NextTaskResponse:
+    async def execute(self, assignee: str | None = None, project_id: str | None = None, 
+                labels: list[str] | None = None, git_branch_id: str | None = None, 
+                user_id: str | None = None, include_context: bool = False) -> NextTaskResponse:
         """Find the next task or subtask to work on with optional filtering
         
         Args:
@@ -279,8 +277,8 @@ class NextTaskUseCase:
             message="No actionable tasks found."
         )
     
-    def _apply_filters(self, tasks: List, assignee: Optional[str], project_id: Optional[str], 
-                      labels: Optional[List[str]]) -> List:
+    def _apply_filters(self, tasks: list, assignee: str | None, project_id: str | None, 
+                      labels: list[str] | None) -> list:
         """Apply filters to task list with null safety"""
         # Null safety: ensure we have a valid tasks list
         if not tasks:
@@ -306,7 +304,7 @@ class NextTaskUseCase:
         
         return filtered_tasks
     
-    def _sort_tasks_by_priority(self, tasks: List) -> List:
+    def _sort_tasks_by_priority(self, tasks: list) -> list:
         """Sort tasks by priority (critical > urgent > high > medium > low) then by status (todo > in_progress)"""
         # Null safety: ensure we have a valid tasks list
         if not tasks:
@@ -342,7 +340,7 @@ class NextTaskUseCase:
         
         return sorted(tasks, key=safe_sort_key)
     
-    def _can_task_be_started(self, task, all_tasks: List) -> bool:
+    def _can_task_be_started(self, task, all_tasks: list) -> bool:
         """Check if a task can be started (all dependencies satisfied)"""
         if not task.dependencies:
             return True
@@ -355,7 +353,7 @@ class NextTaskUseCase:
         
         return True
     
-    def _find_next_subtask(self, task) -> Optional[Dict[str, Any]]:
+    def _find_next_subtask(self, task) -> dict[str, Any] | None:
         """Find the first incomplete subtask in a task"""
         if not task.subtasks:
             return None
@@ -394,7 +392,7 @@ class NextTaskUseCase:
             logger.debug(f"Error checking context info generation for task: {e}")
             return False
     
-    def _task_to_dict(self, task, include_context: bool = False, user_id: Optional[str] = None, project_id: str = None, git_branch_id: str = None) -> Dict[str, Any]:
+    def _task_to_dict(self, task, include_context: bool = False, user_id: str | None = None, project_id: str = None, git_branch_id: str = None) -> dict[str, Any]:
         """Convert task entity to dictionary with optional context data following clean relationship chain"""
         # Use entity's to_dict method for clean conversion
         task_dict = task.to_dict()
@@ -446,7 +444,7 @@ class NextTaskUseCase:
 
         return task_dict
     
-    def _get_task_context(self, task, all_tasks: List) -> Dict[str, Any]:
+    def _get_task_context(self, task, all_tasks: list) -> dict[str, Any]:
         """Get context information for a task"""
         # Count dependencies
         dependency_count = len(task.dependencies) if task.dependencies else 0
@@ -480,7 +478,7 @@ class NextTaskUseCase:
         
         return context
     
-    def _get_completion_context(self, all_tasks: List) -> Dict[str, Any]:
+    def _get_completion_context(self, all_tasks: list) -> dict[str, Any]:
         """Get context when all tasks are completed"""
         total_tasks = len(all_tasks)
         
@@ -496,7 +494,7 @@ class NextTaskUseCase:
             "completion_rate": 100.0
         }
     
-    def _get_blocking_info(self, blocked_tasks: List, all_tasks: List) -> Dict[str, Any]:
+    def _get_blocking_info(self, blocked_tasks: list, all_tasks: list) -> dict[str, Any]:
         """Get information about blocked tasks and their dependencies"""
         blocking_info = {
             "blocked_tasks": [],
@@ -534,7 +532,7 @@ class NextTaskUseCase:
         
         return blocking_info 
     
-    def _validate_task_context_alignment(self, tasks: List) -> List[Dict[str, Any]]:
+    def _validate_task_context_alignment(self, tasks: list) -> list[dict[str, Any]]:
         """
         Validate that task status matches context status for all tasks following clean relationship chain.
         Returns list of mismatches that need to be fixed.

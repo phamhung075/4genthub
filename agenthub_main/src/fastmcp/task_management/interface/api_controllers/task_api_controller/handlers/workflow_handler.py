@@ -1,7 +1,7 @@
 """Task Workflow Operations Handler"""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 # DTO imports for response standardization
 from fastmcp.types import TaskResponse, task_to_dto
@@ -65,7 +65,7 @@ class TaskWorkflowHandler:
                     success=True,
                     task=task_to_dto(task) if isinstance(task, dict) else task,
                     message="Task completed successfully",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 # Handle validation or other errors from facade
@@ -78,7 +78,7 @@ class TaskWorkflowHandler:
                     task=None,
                     error=error_msg,
                     message=error_msg,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -88,5 +88,5 @@ class TaskWorkflowHandler:
                 task=None,
                 error=str(e),
                 message="Failed to complete task",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )

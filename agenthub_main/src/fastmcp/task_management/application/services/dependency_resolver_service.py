@@ -1,14 +1,16 @@
 """Service for resolving task dependency chains and relationships"""
 
 import logging
-from typing import List, Dict, Optional, Set, Any
 from collections import defaultdict, deque
-from datetime import datetime
 
+from fastmcp.task_management.application.dtos.task.dependency_info import (
+    DependencyChain,
+    DependencyInfo,
+    DependencyRelationships,
+)
+from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
-from fastmcp.task_management.application.dtos.task.dependency_info import DependencyInfo, DependencyChain, DependencyRelationships
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,7 @@ logger = logging.getLogger(__name__)
 class DependencyResolverService:
     """Service to resolve and analyze task dependency relationships"""
     
-    def __init__(self, task_repository: TaskRepository, user_id: Optional[str] = None):
+    def __init__(self, task_repository: TaskRepository, user_id: str | None = None):
         self.task_repository = task_repository
         self._user_id = user_id  # Store user context
     
@@ -120,7 +122,7 @@ class DependencyResolverService:
                 blocking_reasons=[]
             )
     
-    def _build_dependency_graph(self, root_task_id: str) -> Dict[str, List[str]]:
+    def _build_dependency_graph(self, root_task_id: str) -> dict[str, list[str]]:
         """Build a complete dependency graph starting from root task"""
         graph = defaultdict(list)
         visited = set()
@@ -146,7 +148,7 @@ class DependencyResolverService:
         traverse(root_task_id)
         return dict(graph)
     
-    def _resolve_direct_dependencies(self, dependency_ids: List[str]) -> List[DependencyInfo]:
+    def _resolve_direct_dependencies(self, dependency_ids: list[str]) -> list[DependencyInfo]:
         """Resolve direct dependencies to DependencyInfo objects"""
         dependencies = []
         
@@ -172,7 +174,7 @@ class DependencyResolverService:
         
         return dependencies
     
-    def _resolve_blocking_tasks(self, task_id: str) -> List[DependencyInfo]:
+    def _resolve_blocking_tasks(self, task_id: str) -> list[DependencyInfo]:
         """Find tasks that are blocked by this task"""
         blocking_tasks = []
         
@@ -200,12 +202,12 @@ class DependencyResolverService:
         
         return blocking_tasks
     
-    def _build_upstream_chains(self, task_id: str, dependency_graph: Dict[str, List[str]]) -> List[DependencyChain]:
+    def _build_upstream_chains(self, task_id: str, dependency_graph: dict[str, list[str]]) -> list[DependencyChain]:
         """Build upstream dependency chains"""
         chains = []
         
         # Use topological sort to build chains
-        def build_chain(start_task: str, visited: Set[str]) -> Optional[DependencyChain]:
+        def build_chain(start_task: str, visited: set[str]) -> DependencyChain | None:
             if start_task in visited:
                 return None
             
@@ -276,7 +278,7 @@ class DependencyResolverService:
         
         return chains
     
-    def _build_downstream_chains(self, task_id: str, dependency_graph: Dict[str, List[str]]) -> List[DependencyChain]:
+    def _build_downstream_chains(self, task_id: str, dependency_graph: dict[str, list[str]]) -> list[DependencyChain]:
         """Build downstream dependency chains (tasks that depend on this task)"""
         chains = []
         
@@ -327,11 +329,11 @@ class DependencyResolverService:
         
         return chains
     
-    def _can_task_start(self, dependencies: List[DependencyInfo]) -> bool:
+    def _can_task_start(self, dependencies: list[DependencyInfo]) -> bool:
         """Check if task can start based on dependencies"""
         return all(dep.status == 'done' for dep in dependencies)
     
-    def _is_task_blocked(self, dependencies: List[DependencyInfo]) -> bool:
+    def _is_task_blocked(self, dependencies: list[DependencyInfo]) -> bool:
         """Check if task is blocked by dependencies"""
         return any(dep.status == 'blocked' for dep in dependencies)
     
@@ -347,7 +349,7 @@ class DependencyResolverService:
                 pass
         return False
     
-    def _generate_dependency_summary(self, depends_on: List[DependencyInfo], blocks: List[DependencyInfo]) -> str:
+    def _generate_dependency_summary(self, depends_on: list[DependencyInfo], blocks: list[DependencyInfo]) -> str:
         """Generate human-readable dependency summary"""
         if not depends_on and not blocks:
             return "No dependencies"
@@ -364,7 +366,7 @@ class DependencyResolverService:
         
         return " | ".join(summary_parts)
     
-    def _generate_next_actions(self, depends_on: List[DependencyInfo], blocks: List[DependencyInfo], can_start: bool) -> List[str]:
+    def _generate_next_actions(self, depends_on: list[DependencyInfo], blocks: list[DependencyInfo], can_start: bool) -> list[str]:
         """Generate suggested next actions based on dependencies"""
         actions = []
         
@@ -385,7 +387,7 @@ class DependencyResolverService:
         
         return actions
     
-    def _generate_blocking_reasons(self, depends_on: List[DependencyInfo]) -> List[str]:
+    def _generate_blocking_reasons(self, depends_on: list[DependencyInfo]) -> list[str]:
         """Generate reasons why task is blocked"""
         reasons = []
         

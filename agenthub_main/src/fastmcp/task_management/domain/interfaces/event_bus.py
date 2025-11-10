@@ -1,7 +1,7 @@
 """Event Bus Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Type
+
 from .event_store import IEvent
 
 
@@ -15,7 +15,7 @@ class IEventHandler(ABC):
     
     @property
     @abstractmethod
-    def event_types(self) -> List[str]:
+    def event_types(self) -> list[str]:
         """Get the event types this handler can process"""
         pass
 
@@ -29,7 +29,7 @@ class IEventBus(ABC):
         pass
     
     @abstractmethod
-    async def publish_many(self, events: List[IEvent]) -> None:
+    async def publish_many(self, events: list[IEvent]) -> None:
         """Publish multiple events to the bus"""
         pass
     
@@ -49,7 +49,7 @@ class IEventBus(ABC):
         pass
     
     @abstractmethod
-    def get_handlers(self, event_type: str) -> List[IEventHandler]:
+    def get_handlers(self, event_type: str) -> list[IEventHandler]:
         """Get all handlers for an event type"""
         pass
     
@@ -73,16 +73,16 @@ class IEventDispatcher(ABC):
     """Domain interface for event dispatching"""
     
     @abstractmethod
-    async def dispatch(self, event: IEvent, handlers: List[IEventHandler]) -> None:
+    async def dispatch(self, event: IEvent, handlers: list[IEventHandler]) -> None:
         """Dispatch an event to specific handlers"""
         pass
     
     @abstractmethod
-    async def dispatch_in_order(self, event: IEvent, handlers: List[IEventHandler]) -> None:
+    async def dispatch_in_order(self, event: IEvent, handlers: list[IEventHandler]) -> None:
         """Dispatch an event to handlers in sequential order"""
         pass
     
     @abstractmethod
-    async def dispatch_parallel(self, event: IEvent, handlers: List[IEventHandler]) -> None:
+    async def dispatch_parallel(self, event: IEvent, handlers: list[IEventHandler]) -> None:
         """Dispatch an event to handlers in parallel"""
         pass

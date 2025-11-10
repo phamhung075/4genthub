@@ -3,7 +3,8 @@
 DDD use case for creating rules with proper validation and business logic.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any
+
 from ...domain.entities.rule_entity import RuleContent, RuleMetadata
 from ...domain.repositories.rule_repository import RuleRepository
 from ...domain.value_objects import RuleFormat, RuleType
@@ -21,8 +22,8 @@ class CreateRuleUseCase:
         content: str,
         rule_type: RuleType,
         rule_format: RuleFormat,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        metadata: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Create a new rule with validation"""
         try:
             # Check if rule already exists

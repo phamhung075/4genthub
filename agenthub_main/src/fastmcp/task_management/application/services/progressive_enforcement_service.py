@@ -6,16 +6,14 @@ New agents get more warnings before strict enforcement kicks in.
 Part of Phase 2: Core Enforcement Implementation
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Optional, List
 import logging
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 from .parameter_enforcement_service import (
     EnforcementLevel,
     EnforcementResult,
     ParameterEnforcementService,
-    AgentCompliance
 )
 
 logger = logging.getLogger(__name__)
@@ -32,8 +30,8 @@ class AgentProfile:
     warnings_received: int = 0
     consecutive_compliant: int = 0
     consecutive_failures: int = 0
-    last_escalation: Optional[datetime] = None
-    compliance_history: List[bool] = field(default_factory=list)
+    last_escalation: datetime | None = None
+    compliance_history: list[bool] = field(default_factory=list)
     manually_set_level: bool = False  # Track if level was manually set
     
     def should_escalate(self) -> bool:
@@ -101,7 +99,7 @@ class AgentProfile:
             self.enforcement_level = EnforcementLevel.STRICT
             logger.info(f"Agent {self.agent_id} escalated to STRICT level")
         
-        self.last_escalation = datetime.now(timezone.utc)
+        self.last_escalation = datetime.now(UTC)
         self.consecutive_failures = 0  # Reset counter after escalation
         self.manually_set_level = False  # Clear manual flag after automatic escalation
     
@@ -130,7 +128,7 @@ class ProgressiveEnforcementService:
     
     def __init__(
         self,
-        enforcement_service: Optional[ParameterEnforcementService] = None,
+        enforcement_service: ParameterEnforcementService | None = None,
         default_level: EnforcementLevel = DEFAULT_STARTING_LEVEL
     ):
         """Initialize progressive enforcement service
@@ -141,13 +139,13 @@ class ProgressiveEnforcementService:
         """
         self.enforcement_service = enforcement_service or ParameterEnforcementService(default_level)
         self.default_level = default_level
-        self.agent_profiles: Dict[str, AgentProfile] = {}
+        self.agent_profiles: dict[str, AgentProfile] = {}
         logger.info(f"ProgressiveEnforcementService initialized with default level: {default_level.value}")
     
     def enforce_with_progression(
         self,
         action: str,
-        provided_params: Dict[str, any],
+        provided_params: dict[str, any],
         agent_id: str
     ) -> EnforcementResult:
         """Enforce parameters with progressive enforcement based on agent behavior
@@ -224,7 +222,7 @@ class ProgressiveEnforcementService:
         if agent_id not in self.agent_profiles:
             self.agent_profiles[agent_id] = AgentProfile(
                 agent_id=agent_id,
-                first_seen=datetime.now(timezone.utc),
+                first_seen=datetime.now(UTC),
                 enforcement_level=self.default_level,
                 learning_phase_operations=self.LEARNING_PHASE_OPERATIONS
             )
@@ -232,11 +230,11 @@ class ProgressiveEnforcementService:
         
         return self.agent_profiles[agent_id]
     
-    def get_agent_profile(self, agent_id: str) -> Optional[AgentProfile]:
+    def get_agent_profile(self, agent_id: str) -> AgentProfile | None:
         """Get agent's enforcement profile"""
         return self.agent_profiles.get(agent_id)
     
-    def get_all_profiles(self) -> Dict[str, AgentProfile]:
+    def get_all_profiles(self) -> dict[str, AgentProfile]:
         """Get all agent profiles"""
         return self.agent_profiles.copy()
     
@@ -246,7 +244,7 @@ class ProgressiveEnforcementService:
             old_profile = self.agent_profiles[agent_id]
             self.agent_profiles[agent_id] = AgentProfile(
                 agent_id=agent_id,
-                first_seen=datetime.now(timezone.utc),
+                first_seen=datetime.now(UTC),
                 enforcement_level=self.default_level,
                 learning_phase_operations=self.LEARNING_PHASE_OPERATIONS
             )
@@ -264,7 +262,7 @@ class ProgressiveEnforcementService:
         profile.manually_set_level = True  # Mark as manually set
         logger.info(f"Manually changed agent {agent_id} from {old_level.value} to {level.value}")
     
-    def get_enforcement_stats(self) -> Dict[str, any]:
+    def get_enforcement_stats(self) -> dict[str, any]:
         """Get overall enforcement statistics"""
         stats = {
             "total_agents": len(self.agent_profiles),

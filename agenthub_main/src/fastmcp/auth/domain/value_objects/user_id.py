@@ -1,8 +1,7 @@
 """User ID Value Object"""
 
-from dataclasses import dataclass
-from typing import Optional
 import uuid
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

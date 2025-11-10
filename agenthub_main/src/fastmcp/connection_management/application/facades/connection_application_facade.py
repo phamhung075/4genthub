@@ -1,27 +1,32 @@
 """Connection Management Application Facade"""
 
 import logging
-from typing import Dict, Any
+from typing import Any
 
+from ...domain.repositories.connection_repository import ConnectionRepository
+from ...domain.repositories.server_repository import ServerRepository
+from ...domain.services.connection_diagnostics_service import (
+    ConnectionDiagnosticsService,
+)
+from ...domain.services.server_health_service import ServerHealthService
+from ...domain.services.status_broadcasting_service import StatusBroadcastingService
+from ..dtos.connection_dtos import (
+    ConnectionHealthRequest,
+    ConnectionHealthResponse,
+    HealthCheckRequest,
+    HealthCheckResponse,
+    RegisterUpdatesRequest,
+    RegisterUpdatesResponse,
+    ServerCapabilitiesRequest,
+    ServerCapabilitiesResponse,
+    ServerStatusRequest,
+    ServerStatusResponse,
+)
+from ..use_cases.check_connection_health import CheckConnectionHealthUseCase
 from ..use_cases.check_server_health import CheckServerHealthUseCase
 from ..use_cases.get_server_capabilities import GetServerCapabilitiesUseCase
-from ..use_cases.check_connection_health import CheckConnectionHealthUseCase
 from ..use_cases.get_server_status import GetServerStatusUseCase
 from ..use_cases.register_status_updates import RegisterStatusUpdatesUseCase
-
-from ..dtos.connection_dtos import (
-    HealthCheckRequest, HealthCheckResponse,
-    ServerCapabilitiesRequest, ServerCapabilitiesResponse,
-    ConnectionHealthRequest, ConnectionHealthResponse,
-    ServerStatusRequest, ServerStatusResponse,
-    RegisterUpdatesRequest, RegisterUpdatesResponse
-)
-
-from ...domain.repositories.server_repository import ServerRepository
-from ...domain.repositories.connection_repository import ConnectionRepository
-from ...domain.services.server_health_service import ServerHealthService
-from ...domain.services.connection_diagnostics_service import ConnectionDiagnosticsService
-from ...domain.services.status_broadcasting_service import StatusBroadcastingService
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +137,7 @@ class ConnectionApplicationFacade:
                 error=str(e)
             )
     
-    def register_for_status_updates(self, session_id: str, client_info: Dict[str, Any] = None, user_id: str = None) -> RegisterUpdatesResponse:
+    def register_for_status_updates(self, session_id: str, client_info: dict[str, Any] = None, user_id: str = None) -> RegisterUpdatesResponse:
         """Register client for real-time status updates"""
         try:
             request = RegisterUpdatesRequest(session_id=session_id, client_info=client_info)

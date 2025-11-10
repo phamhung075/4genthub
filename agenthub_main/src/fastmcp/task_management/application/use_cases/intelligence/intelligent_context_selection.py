@@ -6,16 +6,18 @@ MCP controllers to access intelligent context selection capabilities.
 """
 
 import logging
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 from ....domain.services.intelligence.intelligent_context_selector import (
-    IntelligentContextSelector, SelectionResult, UserPreferences
+    IntelligentContextSelector,
+    SelectionResult,
+    UserPreferences,
 )
 from ....infrastructure.repositories.context_repository import ContextRepository
-from ....infrastructure.repositories.task_repository import TaskRepository
 from ....infrastructure.repositories.project_repository import ProjectRepository
+from ....infrastructure.repositories.task_repository import TaskRepository
 
 logger = logging.getLogger(__name__)
 
@@ -25,25 +27,25 @@ class IntelligentSelectionRequest:
     """Request for intelligent context selection."""
     query: str
     max_tokens: int = 2000
-    user_id: Optional[str] = None
-    current_task_id: Optional[str] = None
-    project_id: Optional[str] = None
-    git_branch_id: Optional[str] = None
-    user_preferences: Optional[Dict[str, Any]] = None
+    user_id: str | None = None
+    current_task_id: str | None = None
+    project_id: str | None = None
+    git_branch_id: str | None = None
+    user_preferences: dict[str, Any] | None = None
     aggressive_expansion: bool = False
-    session_id: Optional[str] = None
+    session_id: str | None = None
 
 
 @dataclass 
 class IntelligentSelectionResponse:
     """Response from intelligent context selection."""
-    selected_contexts: List[Dict[str, Any]]
+    selected_contexts: list[dict[str, Any]]
     total_tokens_used: int
     selection_time_ms: float
-    performance_metrics: Dict[str, Any]
-    recommendations: List[str]
+    performance_metrics: dict[str, Any]
+    recommendations: list[str]
     success: bool = True
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 class IntelligentContextSelectionUseCase:
@@ -62,7 +64,7 @@ class IntelligentContextSelectionUseCase:
         context_repository: ContextRepository,
         task_repository: TaskRepository,
         project_repository: ProjectRepository,
-        intelligent_selector: Optional[IntelligentContextSelector] = None
+        intelligent_selector: IntelligentContextSelector | None = None
     ):
         """
         Initialize the use case.
@@ -177,15 +179,15 @@ class IntelligentContextSelectionUseCase:
     
     async def _ensure_contexts_loaded(
         self, 
-        project_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None
+        project_id: str | None = None,
+        git_branch_id: str | None = None
     ) -> None:
         """Ensure contexts are loaded into the intelligent selector."""
         # Check if we need to refresh contexts
         should_refresh = (
             not self._contexts_loaded or
             (self._last_context_refresh and 
-             (datetime.now(timezone.utc) - self._last_context_refresh).total_seconds() > 300)  # 5 minutes
+             (datetime.now(UTC) - self._last_context_refresh).total_seconds() > 300)  # 5 minutes
         )
         
         if not should_refresh:
@@ -255,12 +257,12 @@ class IntelligentContextSelectionUseCase:
         self.intelligent_selector.load_available_contexts(available_contexts)
         
         self._contexts_loaded = True
-        self._last_context_refresh = datetime.now(timezone.utc)
+        self._last_context_refresh = datetime.now(UTC)
         
         logger.info(f"Loaded {len(available_contexts)} contexts for intelligent selection")
     
     
-    async def _get_current_task(self, task_id: str) -> Optional[Dict[str, Any]]:
+    async def _get_current_task(self, task_id: str) -> dict[str, Any] | None:
         """Get current task context."""
         try:
             task = await self.task_repository.get_task_by_id(task_id)
@@ -280,7 +282,7 @@ class IntelligentContextSelectionUseCase:
         return None
     
     
-    async def _get_project_context(self, project_id: str) -> Optional[Dict[str, Any]]:
+    async def _get_project_context(self, project_id: str) -> dict[str, Any] | None:
         """Get project context."""
         try:
             project = await self.project_repository.get_project_by_id(project_id)
@@ -302,7 +304,7 @@ class IntelligentContextSelectionUseCase:
         self, 
         selection_result: SelectionResult, 
         request: IntelligentSelectionRequest
-    ) -> List[str]:
+    ) -> list[str]:
         """Generate recommendations based on selection results."""
         recommendations = []
         
@@ -364,12 +366,12 @@ class IntelligentContextSelectionUseCase:
             logger.warning(f"Could not record selection for learning: {e}")
     
     
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics from the intelligent selector."""
         return self.intelligent_selector.get_performance_stats()
     
     
-    def optimize_performance(self) -> Dict[str, Any]:
+    def optimize_performance(self) -> dict[str, Any]:
         """Optimize performance based on collected metrics."""
         return self.intelligent_selector.optimize_performance()
     

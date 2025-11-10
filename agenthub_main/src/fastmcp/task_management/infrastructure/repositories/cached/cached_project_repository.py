@@ -5,14 +5,15 @@ It automatically invalidates cache on all mutation operations.
 """
 
 import json
-import os
 import logging
-from typing import Optional, List, Any, Dict
+import os
+from typing import Any
+
 import redis
 from redis.exceptions import RedisError
 
-from ....domain.repositories.project_repository import ProjectRepository
 from ....domain.entities.project import Project
+from ....domain.repositories.project_repository import ProjectRepository
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class CachedProjectRepository:
         self.ttl = int(os.getenv('CACHE_TTL', '300'))  # 5 minutes default
         self.enabled = self.redis_client is not None
     
-    def _init_redis(self) -> Optional[redis.Redis]:
+    def _init_redis(self) -> redis.Redis | None:
         """Initialize Redis connection with fallback"""
         try:
             client = redis.Redis(
@@ -81,7 +82,7 @@ class CachedProjectRepository:
             except RedisError as e:
                 logger.warning(f"[Cache] Failed to invalidate pattern {pattern}: {e}")
     
-    def _get_cached(self, key: str) -> Optional[Any]:
+    def _get_cached(self, key: str) -> Any | None:
         """Get value from cache"""
         if not self.enabled:
             return None
@@ -111,7 +112,7 @@ class CachedProjectRepository:
     
     # === Delegated Methods with Caching ===
     
-    def get_by_id(self, project_id: str) -> Optional[Project]:
+    def get_by_id(self, project_id: str) -> Project | None:
         """Get project by ID with caching"""
         cache_key = f"id:{project_id}"
         
@@ -129,7 +130,7 @@ class CachedProjectRepository:
         
         return result
     
-    def get_all(self) -> List[Project]:
+    def get_all(self) -> list[Project]:
         """Get all projects with caching"""
         cache_key = "list:all"
         
@@ -155,7 +156,7 @@ class CachedProjectRepository:
         if self.enabled:
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated project caches after create")
+            logger.info("[Cache] Invalidated project caches after create")
         
         return result
     
@@ -168,7 +169,7 @@ class CachedProjectRepository:
             self._invalidate_key(f"id:{project.id}")
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated project caches after update")
+            logger.info("[Cache] Invalidated project caches after update")
         
         return result
     
@@ -182,7 +183,7 @@ class CachedProjectRepository:
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
             self._invalidate_pattern(f"project:{project_id}:*")
-            logger.info(f"[Cache] Invalidated project caches after delete")
+            logger.info("[Cache] Invalidated project caches after delete")
         
         return result
     

@@ -5,7 +5,6 @@ git branch ID, or task ID by checking through the proper application layer.
 """
 
 import logging
-from typing import Tuple, Optional
 
 from ...infrastructure.repositories.repository_factory import RepositoryFactory
 
@@ -21,7 +20,7 @@ class ContextDetectionService:
         self.git_branch_repository = RepositoryFactory.get_git_branch_repository()
         self.task_repository = RepositoryFactory.get_task_repository()
     
-    def detect_id_type(self, context_id: str) -> Tuple[str, Optional[str]]:
+    def detect_id_type(self, context_id: str) -> tuple[str, str | None]:
         """
         Detect whether the given ID is a project, git branch, or task ID.
         

@@ -1,14 +1,15 @@
 """Register Agent Use Case"""
 
 import logging
+
 from ...application.dtos.agent import (
+    AgentResponse,
     RegisterAgentRequest,
     RegisterAgentResponse,
-    AgentResponse
 )
-from ...domain.repositories.agent_repository import AgentRepository
-from ...domain.exceptions import ProjectNotFoundError
 from ...domain.entities.agent import Agent
+from ...domain.exceptions import ProjectNotFoundError
+from ...domain.repositories.agent_repository import AgentRepository
 
 logger = logging.getLogger(__name__)
 

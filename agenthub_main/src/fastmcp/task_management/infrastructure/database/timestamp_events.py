@@ -18,13 +18,12 @@ NO LEGACY SUPPORT:
 """
 
 import logging
-from datetime import datetime, timezone, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import event
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Mapper
-from sqlalchemy.orm.state import InstanceState
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +76,7 @@ def _before_insert_handler(mapper: Mapper, connection: Any, target: Any) -> None
     if not _is_timestamp_entity(target):
         return
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     entity_class = target.__class__.__name__
 
     # Set created_at if not already set
@@ -111,7 +110,7 @@ def _before_update_handler(mapper: Mapper, connection: Any, target: Any) -> None
     if not _is_timestamp_entity(target):
         return
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     entity_class = target.__class__.__name__
 
     # Always update updated_at for existing entities
@@ -182,10 +181,10 @@ def _ensure_created_at_utc(target: Any) -> None:
     """
     if hasattr(target, 'created_at') and target.created_at:
         if target.created_at.tzinfo is None:
-            # Assume naive datetime is timezone.utc
-            target.created_at = target.created_at.replace(tzinfo=timezone.utc)
+            # Assume naive datetime is UTC
+            target.created_at = target.created_at.replace(tzinfo=UTC)
             logger.debug(f"Added UTC timezone to created_at for {target.__class__.__name__}")
-        elif target.created_at.tzinfo != timezone.utc:
+        elif target.created_at.tzinfo != UTC:
             # Convert to UTC
             target.created_at = target.created_at.astimezone(UTC)
             logger.debug(f"Converted created_at to UTC for {target.__class__.__name__}")
@@ -199,10 +198,10 @@ def _ensure_updated_at_utc(target: Any) -> None:
     """
     if hasattr(target, 'updated_at') and target.updated_at:
         if target.updated_at.tzinfo is None:
-            # Assume naive datetime is timezone.utc
-            target.updated_at = target.updated_at.replace(tzinfo=timezone.utc)
+            # Assume naive datetime is UTC
+            target.updated_at = target.updated_at.replace(tzinfo=UTC)
             logger.debug(f"Added UTC timezone to updated_at for {target.__class__.__name__}")
-        elif target.updated_at.tzinfo != timezone.utc:
+        elif target.updated_at.tzinfo != UTC:
             # Convert to UTC
             target.updated_at = target.updated_at.astimezone(UTC)
             logger.debug(f"Converted updated_at to UTC for {target.__class__.__name__}")

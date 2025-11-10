@@ -1,7 +1,7 @@
 """Connection Management Application DTOs"""
 
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -19,12 +19,12 @@ class HealthCheckResponse:
     version: str
     uptime_seconds: float
     restart_count: int
-    authentication: Dict[str, Any]
-    task_management: Dict[str, Any]
-    environment: Dict[str, Any]
-    connections: Dict[str, Any]
+    authentication: dict[str, Any]
+    task_management: dict[str, Any]
+    environment: dict[str, Any]
+    connections: dict[str, Any]
     timestamp: float
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -38,18 +38,18 @@ class ServerCapabilitiesResponse:
     """Response DTO for server capabilities operation"""
     success: bool
     core_features: list
-    available_actions: Dict[str, list]
+    available_actions: dict[str, list]
     authentication_enabled: bool
     mvp_mode: bool
     version: str
     total_actions: int
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
 class ConnectionHealthRequest:
     """Request DTO for connection health check operation"""
-    connection_id: Optional[str] = None
+    connection_id: str | None = None
     include_details: bool = True
 
 
@@ -58,10 +58,10 @@ class ConnectionHealthResponse:
     """Response DTO for connection health check operation"""
     success: bool
     status: str
-    connection_info: Dict[str, Any]
-    diagnostics: Dict[str, Any]
+    connection_info: dict[str, Any]
+    diagnostics: dict[str, Any]
     recommendations: list
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -74,18 +74,18 @@ class ServerStatusRequest:
 class ServerStatusResponse:
     """Response DTO for server status operation"""
     success: bool
-    server_info: Dict[str, Any]
-    connection_stats: Dict[str, Any]
-    health_status: Dict[str, Any]
-    capabilities_summary: Dict[str, Any]
-    error: Optional[str] = None
+    server_info: dict[str, Any]
+    connection_stats: dict[str, Any]
+    health_status: dict[str, Any]
+    capabilities_summary: dict[str, Any]
+    error: str | None = None
 
 
 @dataclass
 class RegisterUpdatesRequest:
     """Request DTO for register status updates operation"""
     session_id: str
-    client_info: Optional[Dict[str, Any]] = None
+    client_info: dict[str, Any] | None = None
 
 
 @dataclass
@@ -94,5 +94,5 @@ class RegisterUpdatesResponse:
     success: bool
     session_id: str
     registered: bool
-    update_info: Dict[str, Any]
-    error: Optional[str] = None 
+    update_info: dict[str, Any]
+    error: str | None = None 

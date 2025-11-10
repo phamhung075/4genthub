@@ -1,7 +1,7 @@
 """Centralized error handler for user-friendly error messages and recovery instructions."""
 
-import sqlite3
 import inspect
+import sqlite3
 from enum import Enum
 from typing import Any
 
@@ -138,7 +138,7 @@ class UserFriendlyErrorHandler:
                 ],
                 "technical_details": {
                     "issue": "Timestamps must be timezone-aware UTC datetime objects",
-                    "fix": "Use datetime.now(timezone.utc) instead of datetime.now()",
+                    "fix": "Use datetime.now(UTC) instead of datetime.now()",
                     "location": "Label repository or service layer",
                 },
                 "workaround": "Create task without labels parameter, add labels later after fix",
@@ -355,7 +355,7 @@ class UserFriendlyErrorHandler:
                     ],
                     "technical_details": {
                         "issue": "Label timestamps must be UTC-aware",
-                        "expected": "datetime.now(timezone.utc)",
+                        "expected": "datetime.now(UTC)",
                         "actual": "datetime.now() (naive datetime)",
                         "fix_location": "Label repository or service layer needs to add UTC",
                     },
@@ -506,7 +506,6 @@ def handle_operation_error(operation: str):
     """
 
     def decorator(func):
-        import asyncio
         import functools
 
         async def async_wrapper(*args, **kwargs):

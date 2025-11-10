@@ -1,13 +1,9 @@
 """Add Dependency Use Case"""
 
-from typing import Union, Optional
 import logging
-from ...application.dtos.dependency import (
-    AddDependencyRequest,
-    DependencyResponse
-)
 
-from ...domain import TaskRepository, TaskId, TaskNotFoundError
+from ...application.dtos.dependency import AddDependencyRequest, DependencyResponse
+from ...domain import TaskId, TaskNotFoundError, TaskRepository
 from ...domain.entities.task import Task
 
 logger = logging.getLogger(__name__)
@@ -16,13 +12,13 @@ class AddDependencyUseCase:
     def __init__(self, task_repository: TaskRepository):
         self._task_repository = task_repository
 
-    def _convert_to_task_id(self, task_id: Union[str, int]) -> TaskId:
+    def _convert_to_task_id(self, task_id: str | int) -> TaskId:
         if isinstance(task_id, int):
             return TaskId.from_int(task_id)
         else:
             return TaskId.from_string(str(task_id))
 
-    def _find_dependency_task(self, dependency_id: TaskId) -> Optional[Task]:
+    def _find_dependency_task(self, dependency_id: TaskId) -> Task | None:
         """
         Enhanced dependency lookup that searches across all task states.
         

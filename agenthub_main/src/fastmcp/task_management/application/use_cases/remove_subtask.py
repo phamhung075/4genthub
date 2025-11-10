@@ -1,15 +1,17 @@
 """Remove Subtask Use Case"""
 
-from typing import Union, Any, Dict
-from ...domain import TaskRepository, TaskId, TaskNotFoundError
+from typing import Any
+
+from ...domain import TaskId, TaskRepository
 from ...domain.repositories.subtask_repository import SubtaskRepository
+
 
 class RemoveSubtaskUseCase:
     def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository = None):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
 
-    def execute(self, task_id: Union[str, int], id: Union[str, int], user_id: str = None) -> Dict[str, Any]:
+    def execute(self, task_id: str | int, id: str | int, user_id: str = None) -> dict[str, Any]:
         subtask = self._subtask_repository.find_by_id(id)
         if not subtask:
             raise ValueError(f"Subtask {id} not found in task {task_id}")
@@ -46,8 +48,8 @@ class RemoveSubtaskUseCase:
             # Dispatch domain event for subtask deletion
             # This will trigger branch statistics update
             try:
-                from ...domain.services.event_dispatcher import dispatch_domain_event
                 from ...domain.events.task_lifecycle_events import TaskDeletedEvent
+                from ...domain.services.event_dispatcher import dispatch_domain_event
 
                 if branch_id:
                     event = TaskDeletedEvent.create(
@@ -78,7 +80,7 @@ class RemoveSubtaskUseCase:
                 }
         
         # Use dataclass for clean response structure
-        from dataclasses import dataclass, asdict
+        from dataclasses import asdict, dataclass
 
         @dataclass
         class RemoveSubtaskResponse:
@@ -93,7 +95,7 @@ class RemoveSubtaskUseCase:
         )
         return asdict(response)
 
-    def _convert_to_task_id(self, task_id: Union[str, int]) -> TaskId:
+    def _convert_to_task_id(self, task_id: str | int) -> TaskId:
         if isinstance(task_id, int):
             return TaskId.from_int(task_id)
         else:

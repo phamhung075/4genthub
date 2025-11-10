@@ -1,7 +1,7 @@
 """Abstract Base Class for Entity IDs"""
 
-import uuid
 import logging
+import uuid
 from abc import ABC
 from dataclasses import dataclass
 from functools import lru_cache
@@ -57,7 +57,7 @@ class EntityId(ABC):
             uuid_obj = uuid.UUID(value_str)
             # Store in canonical format (lowercase with hyphens)
             object.__setattr__(self, 'value', str(uuid_obj))
-        except ValueError as e:
+        except ValueError:
             # If UUID parsing fails but validation passed, store as-is
             # (This handles special cases like TaskId hierarchical format)
             object.__setattr__(self, 'value', value_str.lower())

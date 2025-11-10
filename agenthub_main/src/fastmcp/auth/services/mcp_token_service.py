@@ -5,19 +5,17 @@ Provides MCP token generation, validation, and management functionality.
 This is a minimal implementation to satisfy import requirements.
 """
 
-import asyncio
+import hashlib
 import logging
 import secrets
-import hashlib
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
-from sqlalchemy import select, update
-from sqlalchemy.exc import IntegrityError
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
-from ..models.api_token import ApiToken
+from sqlalchemy import update
+
 from ...task_management.infrastructure.database.session_manager import get_session
-
+from ..models.api_token import ApiToken
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +25,10 @@ class MCPToken:
     """MCP Token data structure."""
     token: str
     user_id: str
-    email: Optional[str] = None
-    created_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-    metadata: Optional[Dict[str, Any]] = None
+    email: str | None = None
+    created_at: datetime | None = None
+    expires_at: datetime | None = None
+    metadata: dict[str, Any] | None = None
     is_active: bool = True
 
 
@@ -45,15 +43,15 @@ class MCPTokenService:
     
     def __init__(self):
         """Initialize the MCP token service."""
-        self._tokens: Dict[str, MCPToken] = {}
+        self._tokens: dict[str, MCPToken] = {}
         logger.info("MCP Token Service initialized (database storage)")
     
     async def generate_mcp_token_from_user_id(
         self,
         user_id: str,
-        email: Optional[str] = None,
+        email: str | None = None,
         expires_in_hours: int = 24,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None
     ) -> MCPToken:
         """
         Generate an MCP token for a user.
@@ -72,7 +70,7 @@ class MCPTokenService:
         token = f"mcp_{token_bytes.hex()}"
         
         # Set expiration
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         expires_at = created_at + timedelta(hours=expires_in_hours)
         
         # Create token object
@@ -92,7 +90,7 @@ class MCPTokenService:
         logger.info(f"Generated MCP token for user {user_id}, expires at {expires_at}")
         return mcp_token
     
-    async def validate_mcp_token(self, token: str) -> Optional[MCPToken]:
+    async def validate_mcp_token(self, token: str) -> MCPToken | None:
         """
         Validate an MCP token.
         
@@ -116,7 +114,7 @@ class MCPTokenService:
             return None
         
         # Check expiration
-        if mcp_token.expires_at and datetime.now(timezone.utc) > mcp_token.expires_at:
+        if mcp_token.expires_at and datetime.now(UTC) > mcp_token.expires_at:
             logger.debug(f"MCP token expired: {token[:10]}...")
             # Remove expired token
             del self._tokens[token]
@@ -147,7 +145,7 @@ class MCPTokenService:
                     .where(ApiToken.token_hash == token_hash)
                     .values(
                         usage_count=ApiToken.usage_count + 1,
-                        last_used_at=datetime.now(timezone.utc)
+                        last_used_at=datetime.now(UTC)
                     )
                 )
                 result = db_session.execute(stmt)
@@ -196,7 +194,7 @@ class MCPTokenService:
         Returns:
             Number of tokens cleaned up
         """
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         tokens_to_remove = []
         
         for token, mcp_token in self._tokens.items():
@@ -212,14 +210,14 @@ class MCPTokenService:
         
         return len(tokens_to_remove)
     
-    def get_token_stats(self) -> Dict[str, Any]:
+    def get_token_stats(self) -> dict[str, Any]:
         """
         Get token statistics.
         
         Returns:
             Dictionary with token statistics
         """
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         active_tokens = 0
         expired_tokens = 0
         
@@ -240,7 +238,7 @@ class MCPTokenService:
             "storage_type": "in-memory"
         }
     
-    async def get_user_tokens(self, user_id: str) -> List[MCPToken]:
+    async def get_user_tokens(self, user_id: str) -> list[MCPToken]:
         """
         Get all tokens for a specific user.
         
@@ -251,7 +249,7 @@ class MCPTokenService:
             List of MCPToken objects
         """
         user_tokens = []
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         
         for mcp_token in self._tokens.values():
             if mcp_token.user_id == user_id:

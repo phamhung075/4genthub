@@ -10,15 +10,12 @@ NO backward compatibility - clean v2.0 implementation only.
 import asyncio
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Set, Any, TYPE_CHECKING
-
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 
 from ..task_management.domain.services.cascade_calculator import CascadeCalculator
+from .models import AIBatchMessage, WSMessage
 from .protocol import create_ai_batch
-from .models import WSMessage, AIBatchMessage, CascadeData
-from .types import EntityType, ActionType
 
 if TYPE_CHECKING:
     from .connection_manager import ConnectionManager
@@ -56,15 +53,15 @@ class BatchProcessor:
 
         # Processing state
         self.is_running = False
-        self.batch_task: Optional[asyncio.Task] = None
-        self.current_batch: List[WSMessage] = []
+        self.batch_task: asyncio.Task | None = None
+        self.current_batch: list[WSMessage] = []
         self.batch_lock = asyncio.Lock()
 
         # Statistics
         self.batches_processed = 0
         self.messages_processed = 0
         self.average_batch_size = 0.0
-        self.last_batch_time: Optional[datetime] = None
+        self.last_batch_time: datetime | None = None
 
         logger.info(f"BatchProcessor initialized with {self.batch_interval}s interval")
 
@@ -128,7 +125,7 @@ class BatchProcessor:
             if not self.current_batch:
                 return
 
-            batch_start = datetime.now(timezone.utc)
+            batch_start = datetime.now(UTC)
             batch_size = len(self.current_batch)
 
             logger.debug(f"Processing batch of {batch_size} AI messages")
@@ -154,7 +151,7 @@ class BatchProcessor:
             except Exception as e:
                 logger.error(f"Error processing batch: {e}")
 
-    async def _collect_batch_messages(self) -> List[WSMessage]:
+    async def _collect_batch_messages(self) -> list[WSMessage]:
         """
         Collect messages from the AI batch queue.
 
@@ -162,12 +159,12 @@ class BatchProcessor:
             List of messages to process in this batch
         """
         messages = []
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         # Collect messages until batch size or timeout
         while (
             len(messages) < self.max_batch_size and
-            (datetime.now(timezone.utc) - start_time).total_seconds() < self.max_batch_timeout
+            (datetime.now(UTC) - start_time).total_seconds() < self.max_batch_timeout
         ):
             try:
                 # Non-blocking queue get with timeout
@@ -176,13 +173,13 @@ class BatchProcessor:
                     timeout=0.1
                 )
                 messages.append(message)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # No more messages in queue
                 break
 
         return messages
 
-    async def _merge_batch(self, messages: List[WSMessage]) -> AIBatchMessage:
+    async def _merge_batch(self, messages: list[WSMessage]) -> AIBatchMessage:
         """
         Merge multiple AI messages into a single batch message.
 
@@ -228,7 +225,7 @@ class BatchProcessor:
 
         return batch_message
 
-    def _deduplicate_updates(self, messages: List[WSMessage]) -> Dict[str, Dict[str, Any]]:
+    def _deduplicate_updates(self, messages: list[WSMessage]) -> dict[str, dict[str, Any]]:
         """
         Deduplicate entity updates, keeping the latest update for each entity.
 
@@ -297,7 +294,7 @@ class BatchProcessor:
             self.batches_processed
         )
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get batch processor statistics.
 
@@ -335,9 +332,9 @@ class BatchProcessor:
 
     def configure_batch_params(
         self,
-        interval: Optional[float] = None,
-        max_size: Optional[int] = None,
-        max_timeout: Optional[float] = None
+        interval: float | None = None,
+        max_size: int | None = None,
+        max_timeout: float | None = None
     ) -> None:
         """
         Update batch processing parameters (for testing/tuning).

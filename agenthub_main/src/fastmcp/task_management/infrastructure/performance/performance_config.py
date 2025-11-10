@@ -4,7 +4,7 @@ This module provides configuration settings for performance optimizations.
 """
 
 import os
-from typing import Dict, Any
+from typing import Any
 
 
 class PerformanceConfig:
@@ -37,7 +37,7 @@ class PerformanceConfig:
     SLOW_QUERY_THRESHOLD_MS = int(os.getenv('SLOW_QUERY_THRESHOLD_MS', '1000'))
     
     @classmethod
-    def get_config(cls) -> Dict[str, Any]:
+    def get_config(cls) -> dict[str, Any]:
         """Get all configuration settings as dictionary
         
         Returns:

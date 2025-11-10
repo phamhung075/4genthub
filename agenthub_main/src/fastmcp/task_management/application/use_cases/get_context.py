@@ -1,9 +1,6 @@
 """Get Context Use Case"""
 
-from ...application.dtos.context import (
-    GetContextRequest,
-    ContextResponse
-)
+from ...application.dtos.context import ContextResponse, GetContextRequest
 from ...domain.repositories.context_repository import ContextRepository
 
 

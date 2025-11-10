@@ -5,22 +5,22 @@ The system supports both SQLite and PostgreSQL/Supabase with optimized
 pooling for superior performance, concurrent access, and production reliability.
 """
 
+import logging
+import os
+import queue
 import sqlite3
 import threading
-import queue
-import logging
 import time
-import os
-from typing import Optional, Dict, Any, Union
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Any
 
 # PostgreSQL/Supabase support
 try:
     from sqlalchemy import create_engine, pool
-    from sqlalchemy.orm import sessionmaker, Session
-    from sqlalchemy.pool import QueuePool, NullPool
+    from sqlalchemy.orm import Session, sessionmaker
+    from sqlalchemy.pool import NullPool, QueuePool
     HAS_SQLALCHEMY = True
 except ImportError:
     HAS_SQLALCHEMY = False
@@ -248,7 +248,7 @@ class SQLiteConnectionPool:
         
         logger.info(f"Closed {closed_count} pooled connections")
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get pool statistics"""
         with self._stats_lock:
             stats = self._stats.copy()
@@ -277,7 +277,7 @@ class SQLiteConnectionPool:
 
 
 # Singleton instance
-_pool_instance: Optional[SQLiteConnectionPool] = None
+_pool_instance: SQLiteConnectionPool | None = None
 _pool_lock = threading.Lock()
 
 
@@ -385,7 +385,7 @@ class SupabaseConnectionPool:
         finally:
             session.close()
     
-    def get_pool_status(self) -> Dict[str, Any]:
+    def get_pool_status(self) -> dict[str, Any]:
         """Get current pool statistics"""
         pool_impl = self.engine.pool
         return {
@@ -404,11 +404,11 @@ class SupabaseConnectionPool:
 
 
 # Singleton Supabase pool
-_supabase_pool: Optional[SupabaseConnectionPool] = None
+_supabase_pool: SupabaseConnectionPool | None = None
 _supabase_lock = threading.Lock()
 
 
-def get_supabase_pool(database_url: Optional[str] = None) -> Optional[SupabaseConnectionPool]:
+def get_supabase_pool(database_url: str | None = None) -> SupabaseConnectionPool | None:
     """Get or create the Supabase connection pool"""
     global _supabase_pool
     

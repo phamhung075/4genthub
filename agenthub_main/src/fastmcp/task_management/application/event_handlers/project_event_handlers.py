@@ -6,22 +6,21 @@ tracks statistics, and triggers project-level workflows.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone, timedelta
 from collections import defaultdict
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
-from ...domain.events.project_lifecycle_events import (
-    ProjectCreatedEvent,
-    ProjectUpdatedEvent,
-    ProjectDeletedEvent,
-    ProjectStatisticsUpdatedEvent,
-    ProjectHealthChanged,
-    ProjectArchived,
-)
 from ...domain.events.base import BaseDomainEvent
+from ...domain.events.project_lifecycle_events import (
+    ProjectArchived,
+    ProjectCreatedEvent,
+    ProjectDeletedEvent,
+    ProjectHealthChanged,
+    ProjectStatisticsUpdatedEvent,
+    ProjectUpdatedEvent,
+)
 from ...infrastructure.event_store import EventStore
-
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +36,9 @@ class ProjectEventHandlers:
     def __init__(
         self,
         event_store: EventStore,
-        project_repository: Optional[Any] = None,
-        notification_service: Optional[Any] = None,
-        analytics_service: Optional[Any] = None
+        project_repository: Any | None = None,
+        notification_service: Any | None = None,
+        analytics_service: Any | None = None
     ):
         self.event_store = event_store
         self.project_repository = project_repository
@@ -47,7 +46,7 @@ class ProjectEventHandlers:
         self.analytics_service = analytics_service
 
         # Project statistics tracking
-        self.project_stats: Dict[str, Dict[str, Any]] = defaultdict(
+        self.project_stats: dict[str, dict[str, Any]] = defaultdict(
             lambda: {
                 "created_at": None,
                 "total_tasks": 0,
@@ -61,10 +60,10 @@ class ProjectEventHandlers:
         )
 
         # Health tracking
-        self.health_history: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        self.health_history: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
         # Archive tracking
-        self.archived_projects: Dict[str, Dict[str, Any]] = {}
+        self.archived_projects: dict[str, dict[str, Any]] = {}
 
     async def handle_project_created(self, event: ProjectCreatedEvent) -> None:
         """
@@ -215,7 +214,9 @@ class ProjectEventHandlers:
 
         # Send WebSocket notification to update frontend cache
         try:
-            from ...application.services.websocket_notification_service import WebSocketNotificationService
+            from ...application.services.websocket_notification_service import (
+                WebSocketNotificationService,
+            )
 
             await WebSocketNotificationService.broadcast_project_event(
                 event_type="updated",
@@ -393,7 +394,7 @@ class ProjectEventHandlers:
         if not current_health or current_health["status"] != health_status:
             health_event = ProjectHealthChanged(
                 aggregate_id=project_id,
-                occurred_at=datetime.now(timezone.utc),
+                occurred_at=datetime.now(UTC),
                 user_id="system_health_check",
                 project_id=project_id,
                 previous_health_status=current_health["status"] if current_health else "unknown",
@@ -444,7 +445,7 @@ class ProjectEventHandlers:
                 suggestions=suggestions
             )
 
-    async def get_project_statistics(self, project_id: Optional[UUID] = None) -> Dict[str, Any]:
+    async def get_project_statistics(self, project_id: UUID | None = None) -> dict[str, Any]:
         """
         Get project statistics for a specific project or all projects.
 
@@ -491,7 +492,7 @@ class ProjectEventHandlers:
             "by_project": {k: dict(v) for k, v in active_projects.items()}
         }
 
-    async def get_archived_projects(self) -> Dict[str, Any]:
+    async def get_archived_projects(self) -> dict[str, Any]:
         """Get all archived projects."""
         return {
             "total_archived": len(self.archived_projects),

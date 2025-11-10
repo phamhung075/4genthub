@@ -4,7 +4,6 @@ This module defines exceptions specific to the Vision System integration,
 particularly for context enforcement and validation rules.
 """
 
-from typing import Optional
 
 
 class VisionSystemError(Exception):
@@ -15,7 +14,7 @@ class VisionSystemError(Exception):
 class ContextEnforcementError(VisionSystemError):
     """Raised when context enforcement rules are violated."""
     
-    def __init__(self, message: str, task_id: Optional[str] = None):
+    def __init__(self, message: str, task_id: str | None = None):
         self.task_id = task_id
         super().__init__(message)
 
@@ -34,7 +33,7 @@ class MissingCompletionSummaryError(ContextEnforcementError):
 class InvalidContextUpdateError(ContextEnforcementError):
     """Raised when context update validation fails."""
     
-    def __init__(self, message: str, task_id: Optional[str] = None, field: Optional[str] = None):
+    def __init__(self, message: str, task_id: str | None = None, field: str | None = None):
         self.field = field
         super().__init__(message, task_id)
 
@@ -56,6 +55,6 @@ class VisionDataIntegrityError(VisionSystemError):
 class ProgressTrackingError(VisionSystemError):
     """Raised when progress tracking operations fail."""
     
-    def __init__(self, message: str, task_id: Optional[str] = None):
+    def __init__(self, message: str, task_id: str | None = None):
         self.task_id = task_id
         super().__init__(message)

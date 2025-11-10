@@ -2,9 +2,8 @@
 """Database migration runner - automatically applies migrations on server startup"""
 
 import logging
-import psycopg2
 import os
-from typing import Optional
+
 from sqlalchemy import create_engine, text
 
 logger = logging.getLogger(__name__)
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 class DatabaseMigrator:
     """Handles database migrations for the application"""
 
-    def __init__(self, database_url: Optional[str] = None):
+    def __init__(self, database_url: str | None = None):
         """Initialize the migrator with database connection"""
         if database_url:
             self.database_url = database_url
@@ -189,14 +188,14 @@ class DatabaseMigrator:
 # Singleton instance
 _migrator = None
 
-def get_migrator(database_url: Optional[str] = None) -> DatabaseMigrator:
+def get_migrator(database_url: str | None = None) -> DatabaseMigrator:
     """Get or create the singleton migrator instance"""
     global _migrator
     if _migrator is None:
         _migrator = DatabaseMigrator(database_url)
     return _migrator
 
-def run_startup_migrations(database_url: Optional[str] = None) -> bool:
+def run_startup_migrations(database_url: str | None = None) -> bool:
     """Run migrations on application startup"""
     migrator = get_migrator(database_url)
     success = migrator.ensure_database_ready()
@@ -205,7 +204,9 @@ def run_startup_migrations(database_url: Optional[str] = None) -> bool:
     if success:
         try:
             logger.info("Running automatic database migrations...")
-            from fastmcp.task_management.infrastructure.database.auto_migration import run_auto_migrations
+            from fastmcp.task_management.infrastructure.database.auto_migration import (
+                run_auto_migrations,
+            )
             if run_auto_migrations():
                 logger.info("✅ Automatic migrations completed successfully")
             else:

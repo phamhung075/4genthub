@@ -6,9 +6,6 @@ and frequently accessed context data.
 """
 
 import json
-import hashlib
-from typing import Optional, Dict, Any, List
-from datetime import timedelta
 import logging
 import os
 
@@ -29,7 +26,7 @@ class InMemoryCache:
         self.cache = {}
         self.ttl_map = {}
         
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         import time
         if key in self.cache:
             if key in self.ttl_map and time.time() > self.ttl_map[key]:
@@ -159,8 +156,8 @@ class ContextCache:
         if not self.enable_compression or len(data) < 1024:
             return data
         
-        import zlib
         import base64
+        import zlib
         compressed = zlib.compress(data.encode())
         if len(compressed) < len(data) * 0.9:  # Only use if >10% savings
             return f"COMPRESSED:{base64.b64encode(compressed).decode()}"
@@ -169,8 +166,8 @@ class ContextCache:
     def _decompress(self, data: str) -> str:
         """Decompress data if it was compressed"""
         if data and data.startswith("COMPRESSED:"):
-            import zlib
             import base64
+            import zlib
             compressed_data = data[11:]  # Remove "COMPRESSED:" prefix
             return zlib.decompress(base64.b64decode(compressed_data)).decode()
         return data
@@ -180,7 +177,7 @@ class ContextCache:
     def get_inheritance_chain(self, 
                              level: str, 
                              context_id: str, 
-                             user_id: str) -> Optional[Dict]:
+                             user_id: str) -> dict | None:
         """Get cached inheritance chain"""
         key = self._make_key("inheritance", level=level, context_id=context_id, user_id=user_id)
         data = self.redis.get(key)
@@ -193,7 +190,7 @@ class ContextCache:
                             level: str, 
                             context_id: str, 
                             user_id: str, 
-                            data: Dict):
+                            data: dict):
         """Cache inheritance chain with TTL"""
         key = self._make_key("inheritance", level=level, context_id=context_id, user_id=user_id)
         json_data = json.dumps(data)
@@ -217,7 +214,7 @@ class ContextCache:
     def get_context(self, 
                    level: str, 
                    context_id: str, 
-                   user_id: str) -> Optional[Dict]:
+                   user_id: str) -> dict | None:
         """Get cached context data"""
         key = self._make_key("context", level=level, context_id=context_id, user_id=user_id)
         data = self.redis.get(key)
@@ -230,7 +227,7 @@ class ContextCache:
                    level: str, 
                    context_id: str, 
                    user_id: str, 
-                   data: Dict,
+                   data: dict,
                    ttl: int = None):
         """Cache context data"""
         key = self._make_key("context", level=level, context_id=context_id, user_id=user_id)
@@ -253,8 +250,8 @@ class ContextCache:
     # Batch Operations
     
     def get_multiple_contexts(self, 
-                            contexts: List[Dict[str, str]], 
-                            user_id: str) -> List[Optional[Dict]]:
+                            contexts: list[dict[str, str]], 
+                            user_id: str) -> list[dict | None]:
         """Get multiple contexts in a single operation"""
         pipeline = self.redis.pipeline()
         
@@ -278,7 +275,7 @@ class ContextCache:
         return decoded_results
     
     def set_multiple_contexts(self, 
-                            contexts: List[Dict], 
+                            contexts: list[dict], 
                             user_id: str,
                             ttl: int = None):
         """Set multiple contexts in a single operation"""
@@ -297,7 +294,7 @@ class ContextCache:
     
     # Cache Statistics
     
-    def get_cache_stats(self) -> Dict:
+    def get_cache_stats(self) -> dict:
         """Get cache statistics"""
         if self.use_redis:
             try:

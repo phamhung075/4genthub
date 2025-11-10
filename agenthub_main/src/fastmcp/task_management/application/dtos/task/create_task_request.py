@@ -1,11 +1,16 @@
 """Request DTO for creating a task with hierarchical storage support"""
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
-from ....domain.value_objects import CommonLabel, LabelValidator, EstimatedEffort, AgentRole
+from ....domain.value_objects import (
+    AgentRole,
+    CommonLabel,
+    EstimatedEffort,
+    LabelValidator,
+)
 
-def resolve_legacy_role(assignee: str) -> Optional[str]:
+
+def resolve_legacy_role(assignee: str) -> str | None:
     """Resolve legacy role names to current ones"""
     # Map agent names to standardized role names
     legacy_mapping = {
@@ -24,16 +29,16 @@ class CreateTaskRequest:
     git_branch_id: str  # uuid - Unique git branch identifier - contains all necessary context
     
     # Optional fields with defaults
-    description: Optional[str] = None
-    status: Optional[str] = None
-    priority: Optional[str] = None
+    description: str | None = None
+    status: str | None = None
+    priority: str | None = None
     details: str = ""
     estimated_effort: str = ""
-    assignees: List[str] = field(default_factory=list)
-    labels: List[str] = None
-    due_date: Optional[str] = None
-    dependencies: List[str] = field(default_factory=list)  # List of task IDs this task depends on
-    user_id: Optional[str] = None  # User identifier for task ownership
+    assignees: list[str] = field(default_factory=list)
+    labels: list[str] = None
+    due_date: str | None = None
+    dependencies: list[str] = field(default_factory=list)  # List of task IDs this task depends on
+    user_id: str | None = None  # User identifier for task ownership
     
     def __post_init__(self):
         if self.labels is None:
@@ -75,7 +80,7 @@ class CreateTaskRequest:
             try:
                 # Just validate the effort without storing the object
                 EstimatedEffort(self.estimated_effort)
-            except (ValueError, AttributeError) as e:
+            except (ValueError, AttributeError):
                 # If validation fails, keep the original value
                 # The effort will be validated at the domain layer
                 pass

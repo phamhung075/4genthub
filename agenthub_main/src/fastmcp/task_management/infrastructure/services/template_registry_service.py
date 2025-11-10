@@ -10,9 +10,10 @@ FOR TEMPLATE MANAGEMENT:
 - Supports both local PostgreSQL and Supabase
 """
 
+import json
 import logging
-from typing import Dict, Any, Optional, List
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class TemplateRegistryService:
     All template operations use PostgreSQL database.
     """
     
-    def __init__(self, db_path: Optional[Path] = None):
+    def __init__(self, db_path: Path | None = None):
         logger.info("Template Registry Service initializing")
         logger.info("Using PostgreSQL for template storage")
         
@@ -45,7 +46,7 @@ class TemplateRegistryService:
             "Use PostgreSQL connection pool instead."
         )
     
-    async def get_template(self, template_id: str) -> Optional[Dict[str, Any]]:
+    async def get_template(self, template_id: str) -> dict[str, Any] | None:
         """Get template by ID"""
         try:
             with self._get_connection() as conn:
@@ -68,10 +69,10 @@ class TemplateRegistryService:
     
     async def list_templates(
         self,
-        template_type: Optional[str] = None,
-        agent_compatible: Optional[str] = None,
+        template_type: str | None = None,
+        agent_compatible: str | None = None,
         limit: int = 50
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """List available templates with filtering"""
         try:
             with self._get_connection() as conn:
@@ -106,10 +107,10 @@ class TemplateRegistryService:
     
     async def suggest_templates(
         self,
-        task_context: Dict[str, Any],
-        agent_type: Optional[str] = None,
-        file_patterns: Optional[List[str]] = None
-    ) -> List[Dict[str, Any]]:
+        task_context: dict[str, Any],
+        agent_type: str | None = None,
+        file_patterns: list[str] | None = None
+    ) -> list[dict[str, Any]]:
         """AI-powered template suggestions based on context"""
         suggestions = []
         
@@ -142,10 +143,10 @@ class TemplateRegistryService:
     
     async def _calculate_template_score(
         self,
-        template: Dict[str, Any],
-        task_context: Dict[str, Any],
-        agent_type: Optional[str],
-        file_patterns: Optional[List[str]]
+        template: dict[str, Any],
+        task_context: dict[str, Any],
+        agent_type: str | None,
+        file_patterns: list[str] | None
     ) -> float:
         """Calculate suggestion score for template"""
         score = 0.0
@@ -236,7 +237,7 @@ class TemplateRegistryService:
     async def _calculate_pattern_score(
         self,
         template_id: str,
-        file_patterns: List[str]
+        file_patterns: list[str]
     ) -> float:
         """Calculate pattern matching score"""
         try:
@@ -300,8 +301,8 @@ class TemplateRegistryService:
     
     async def _get_suggestion_reason(
         self,
-        template: Dict[str, Any],
-        task_context: Dict[str, Any],
+        template: dict[str, Any],
+        task_context: dict[str, Any],
         score: float
     ) -> str:
         """Generate human-readable suggestion reason"""
@@ -330,11 +331,11 @@ class TemplateRegistryService:
     async def track_usage(
         self,
         template_id: str,
-        task_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        agent_name: Optional[str] = None,
-        variables_used: Optional[Dict[str, Any]] = None,
-        output_path: Optional[str] = None,
+        task_id: str | None = None,
+        project_id: str | None = None,
+        agent_name: str | None = None,
+        variables_used: dict[str, Any] | None = None,
+        output_path: str | None = None,
         generation_time_ms: int = 0,
         cache_hit: bool = False
     ):
@@ -362,20 +363,20 @@ class TemplateRegistryService:
     
     async def get_template_analytics(
         self,
-        template_id: Optional[str] = None,
+        template_id: str | None = None,
         days: int = 30
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get template usage analytics"""
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 
                 # Base query
-                base_query = """
+                base_query = f"""
                     FROM template_usage tu
                     JOIN templates t ON tu.template_id = t.id
-                    WHERE tu.used_at > datetime('now', '-{} days')
-                """.format(days)
+                    WHERE tu.used_at > datetime('now', '-{days} days')
+                """
                 
                 if template_id:
                     base_query += f" AND tu.template_id = '{template_id}'"
@@ -444,8 +445,8 @@ class TemplateRegistryService:
         content: str,
         template_type: str,
         agent_compatibility: str = "all",
-        file_patterns: Optional[List[str]] = None,
-        variables: Optional[List[str]] = None,
+        file_patterns: list[str] | None = None,
+        variables: list[str] | None = None,
         priority: str = "medium"
     ) -> bool:
         """Register a new template"""
@@ -477,7 +478,7 @@ class TemplateRegistryService:
     async def update_template(
         self,
         template_id: str,
-        updates: Dict[str, Any]
+        updates: dict[str, Any]
     ) -> bool:
         """Update existing template"""
         try:

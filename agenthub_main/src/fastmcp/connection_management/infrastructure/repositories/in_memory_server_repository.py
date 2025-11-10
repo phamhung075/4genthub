@@ -1,19 +1,18 @@
 """In-Memory Server Repository Implementation"""
 
-from typing import Optional, Dict, Any
-from datetime import datetime
+from typing import Any
 
-from ...domain.repositories.server_repository import ServerRepository
 from ...domain.entities.server import Server
+from ...domain.repositories.server_repository import ServerRepository
 
 
 class InMemoryServerRepository(ServerRepository):
     """In-memory implementation of ServerRepository for connection management"""
     
     def __init__(self):
-        self._server: Optional[Server] = None
+        self._server: Server | None = None
     
-    def get_current_server(self) -> Optional[Server]:
+    def get_current_server(self) -> Server | None:
         """Get the current server instance"""
         return self._server
     
@@ -21,8 +20,8 @@ class InMemoryServerRepository(ServerRepository):
         """Save server state"""
         self._server = server
     
-    def create_server(self, name: str, version: str, environment: Dict[str, Any], 
-                      authentication: Dict[str, Any], task_management: Dict[str, Any]) -> Server:
+    def create_server(self, name: str, version: str, environment: dict[str, Any], 
+                      authentication: dict[str, Any], task_management: dict[str, Any]) -> Server:
         """Create a new server instance"""
         server = Server.create(
             name=name,

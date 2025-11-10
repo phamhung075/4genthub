@@ -5,22 +5,23 @@ This module provides SMTP-based email sending functionality for authentication
 features including user registration, password reset, and email verification.
 """
 
-import os
-import logging
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-from pathlib import Path
-import secrets
 import hashlib
-from datetime import datetime, timezone, timedelta
+import logging
+import os
+import secrets
+import smtplib
 import ssl
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from pathlib import Path
+from typing import Any
+
 from dotenv import load_dotenv
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 # Load environment variables
 load_dotenv()
@@ -50,22 +51,22 @@ class EmailConfig:
 class EmailMessage:
     """Email message data"""
     to_email: str
-    to_name: Optional[str] = None
+    to_name: str | None = None
     subject: str = ""
     html_body: str = ""
     text_body: str = ""
-    template: Optional[str] = None
-    template_data: Optional[Dict[str, Any]] = None
-    attachments: Optional[List[Dict[str, Any]]] = None
+    template: str | None = None
+    template_data: dict[str, Any] | None = None
+    attachments: list[dict[str, Any]] | None = None
 
 
 @dataclass
 class EmailResult:
     """Result of email sending operation"""
     success: bool
-    message_id: Optional[str] = None
-    error_message: Optional[str] = None
-    recipient: Optional[str] = None
+    message_id: str | None = None
+    error_message: str | None = None
+    recipient: str | None = None
 
 
 class TokenManager:
@@ -77,10 +78,10 @@ class TokenManager:
         return secrets.token_urlsafe(length)
     
     @staticmethod
-    def generate_verification_token(email: str, token_type: str = "verification") -> Dict[str, Any]:
+    def generate_verification_token(email: str, token_type: str = "verification") -> dict[str, Any]:
         """Generate email verification token with metadata"""
         token = TokenManager.generate_token()
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)  # 24 hour expiry
+        expires_at = datetime.now(UTC) + timedelta(hours=24)  # 24 hour expiry
         
         # Create a hash for validation
         token_hash = hashlib.sha256(f"{email}:{token}:{token_type}".encode()).hexdigest()
@@ -91,7 +92,7 @@ class TokenManager:
             "type": token_type,
             "expires_at": expires_at,
             "hash": token_hash,
-            "created_at": datetime.now(timezone.utc)
+            "created_at": datetime.now(UTC)
         }
     
     @staticmethod
@@ -104,7 +105,7 @@ class TokenManager:
 class EmailTemplateEngine:
     """Handles email template rendering with Jinja2"""
     
-    def __init__(self, templates_dir: Optional[str] = None):
+    def __init__(self, templates_dir: str | None = None):
         if templates_dir is None:
             templates_dir = os.path.join(
                 os.path.dirname(__file__), 
@@ -309,7 +310,7 @@ class EmailTemplateEngine:
 class SMTPEmailService:
     """SMTP-based email service for authentication workflows"""
     
-    def __init__(self, config: Optional[EmailConfig] = None):
+    def __init__(self, config: EmailConfig | None = None):
         """Initialize email service with configuration"""
         if config is None:
             config = self._load_config_from_env()
@@ -476,7 +477,7 @@ class SMTPEmailService:
                 recipient=recipient
             )
     
-    def _add_attachment(self, msg: MIMEMultipart, attachment: Dict[str, Any]):
+    def _add_attachment(self, msg: MIMEMultipart, attachment: dict[str, Any]):
         """Add attachment to MIME message"""
         try:
             with open(attachment["path"], "rb") as f:
@@ -498,8 +499,8 @@ class SMTPEmailService:
     async def send_verification_email(
         self,
         email: str,
-        user_name: Optional[str] = None,
-        verification_url: Optional[str] = None
+        user_name: str | None = None,
+        verification_url: str | None = None
     ) -> EmailResult:
         """Send email verification email"""
         # Generate verification token
@@ -528,8 +529,8 @@ class SMTPEmailService:
     async def send_password_reset_email(
         self,
         email: str,
-        user_name: Optional[str] = None,
-        reset_url: Optional[str] = None
+        user_name: str | None = None,
+        reset_url: str | None = None
     ) -> EmailResult:
         """Send password reset email"""
         # Generate password reset token
@@ -558,9 +559,9 @@ class SMTPEmailService:
     async def send_password_changed_email(
         self,
         email: str,
-        user_name: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_name: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None
     ) -> EmailResult:
         """Send password changed confirmation email"""
         message = EmailMessage(
@@ -583,8 +584,8 @@ class SMTPEmailService:
     async def send_welcome_email(
         self,
         email: str,
-        user_name: Optional[str] = None,
-        dashboard_url: Optional[str] = None
+        user_name: str | None = None,
+        dashboard_url: str | None = None
     ) -> EmailResult:
         """Send welcome email after successful verification"""
         if not dashboard_url:
@@ -662,7 +663,7 @@ class SMTPEmailService:
 
 
 # Global email service instance
-_email_service: Optional[SMTPEmailService] = None
+_email_service: SMTPEmailService | None = None
 
 
 def get_email_service() -> SMTPEmailService:
@@ -674,25 +675,25 @@ def get_email_service() -> SMTPEmailService:
 
 
 # Convenience functions for common operations
-async def send_verification_email(email: str, user_name: Optional[str] = None) -> EmailResult:
+async def send_verification_email(email: str, user_name: str | None = None) -> EmailResult:
     """Send verification email using global service"""
     service = get_email_service()
     return await service.send_verification_email(email, user_name)
 
 
-async def send_password_reset_email(email: str, user_name: Optional[str] = None) -> EmailResult:
+async def send_password_reset_email(email: str, user_name: str | None = None) -> EmailResult:
     """Send password reset email using global service"""
     service = get_email_service()
     return await service.send_password_reset_email(email, user_name)
 
 
-async def send_password_changed_email(email: str, user_name: Optional[str] = None) -> EmailResult:
+async def send_password_changed_email(email: str, user_name: str | None = None) -> EmailResult:
     """Send password changed email using global service"""
     service = get_email_service()
     return await service.send_password_changed_email(email, user_name)
 
 
-async def send_welcome_email(email: str, user_name: Optional[str] = None) -> EmailResult:
+async def send_welcome_email(email: str, user_name: str | None = None) -> EmailResult:
     """Send welcome email using global service"""
     service = get_email_service()
     return await service.send_welcome_email(email, user_name)

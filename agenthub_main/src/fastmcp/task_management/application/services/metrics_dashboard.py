@@ -4,14 +4,14 @@ This module provides a comprehensive metrics dashboard for monitoring
 and visualizing the performance of the MCP optimization system.
 """
 
-import logging
 import json
+import logging
 import time
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timedelta
+from collections import deque
 from dataclasses import dataclass, field
-from collections import defaultdict, deque
+from datetime import datetime, timedelta
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class DashboardWidget:
     title: str
     metric_type: MetricType
     visualization: str = "line_chart"
-    position: Dict[str, int] = field(default_factory=dict)
+    position: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
@@ -71,9 +71,9 @@ class MetricPoint:
     """Single metric data point"""
     timestamp: datetime
     value: float
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -89,9 +89,9 @@ class Metric:
     metric_type: MetricType
     description: str
     unit: str
-    data_points: List[MetricPoint] = field(default_factory=list)
+    data_points: list[MetricPoint] = field(default_factory=list)
     
-    def add_point(self, value: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def add_point(self, value: float, tags: dict[str, str] | None = None) -> None:
         """Add a data point"""
         self.data_points.append(MetricPoint(
             timestamp=datetime.now(),
@@ -99,13 +99,13 @@ class Metric:
             tags=tags or {}
         ))
     
-    def get_latest(self) -> Optional[float]:
+    def get_latest(self) -> float | None:
         """Get latest value"""
         if self.data_points:
             return self.data_points[-1].value
         return None
     
-    def get_average(self, duration_minutes: int = 60) -> Optional[float]:
+    def get_average(self, duration_minutes: int = 60) -> float | None:
         """Get average over duration"""
         cutoff = datetime.now() - timedelta(minutes=duration_minutes)
         recent_points = [
@@ -129,11 +129,11 @@ class MetricsDashboard:
             retention_hours: How long to retain metric data
         """
         self.retention_hours = retention_hours
-        self.metrics: Dict[str, Metric] = {}
-        self.alerts: List[Dict[str, Any]] = []
-        self.widgets: List[DashboardWidget] = []
+        self.metrics: dict[str, Metric] = {}
+        self.alerts: list[dict[str, Any]] = []
+        self.widgets: list[DashboardWidget] = []
         self.refresh_interval = 60  # Default 60 seconds
-        self.metrics_store: List[Dict[str, Any]] = []
+        self.metrics_store: list[dict[str, Any]] = []
 
         # Initialize standard metrics
         self._initialize_standard_metrics()
@@ -250,9 +250,9 @@ class MetricsDashboard:
         self,
         name: str = None,
         value: float = None,
-        tags: Optional[Dict[str, str]] = None,
-        metric_type: Optional[MetricType] = None,
-        timestamp: Optional[datetime] = None
+        tags: dict[str, str] | None = None,
+        metric_type: MetricType | None = None,
+        timestamp: datetime | None = None
     ) -> None:
         """Record a metric value"""
         # Handle both old interface (name-based) and new interface (type-based)
@@ -299,7 +299,7 @@ class MetricsDashboard:
         self,
         name: str,
         increment: float = 1.0,
-        tags: Optional[Dict[str, str]] = None
+        tags: dict[str, str] | None = None
     ) -> None:
         """Increment a counter metric"""
         if name in self.metrics and self.metrics[name].metric_type == MetricType.COUNTER:
@@ -310,7 +310,7 @@ class MetricsDashboard:
         self,
         name: str,
         value: float,
-        tags: Optional[Dict[str, str]] = None
+        tags: dict[str, str] | None = None
     ) -> None:
         """Set a gauge metric value"""
         if name in self.metrics and self.metrics[name].metric_type == MetricType.GAUGE:
@@ -320,7 +320,7 @@ class MetricsDashboard:
         self,
         name: str,
         duration_ms: float,
-        tags: Optional[Dict[str, str]] = None
+        tags: dict[str, str] | None = None
     ) -> None:
         """Record a timer metric"""
         if name in self.metrics and self.metrics[name].metric_type == MetricType.TIMER:
@@ -330,7 +330,7 @@ class MetricsDashboard:
         self,
         name: str,
         value: float,
-        tags: Optional[Dict[str, str]] = None
+        tags: dict[str, str] | None = None
     ) -> None:
         """Record a histogram metric"""
         if name in self.metrics and self.metrics[name].metric_type == MetricType.HISTOGRAM:
@@ -340,7 +340,7 @@ class MetricsDashboard:
         self,
         name: str,
         duration_minutes: int = 60
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Get metric summary"""
         if name not in self.metrics:
             return None
@@ -404,7 +404,7 @@ class MetricsDashboard:
         
         return summary
     
-    def get_dashboard_data(self, duration_minutes: int = 60) -> Dict[str, Any]:
+    def get_dashboard_data(self, duration_minutes: int = 60) -> dict[str, Any]:
         """Get complete dashboard data"""
         dashboard = {
             "timestamp": datetime.now().isoformat(),
@@ -423,7 +423,7 @@ class MetricsDashboard:
         
         return dashboard
     
-    def _get_performance_summary(self, duration_minutes: int) -> Dict[str, Any]:
+    def _get_performance_summary(self, duration_minutes: int) -> dict[str, Any]:
         """Get performance summary"""
         summary = {
             "optimization_performance": {},
@@ -458,7 +458,7 @@ class MetricsDashboard:
         
         return summary
     
-    def _get_health_status(self) -> Dict[str, Any]:
+    def _get_health_status(self) -> dict[str, Any]:
         """Get overall system health status"""
         health = {
             "status": "healthy",
@@ -584,7 +584,7 @@ class MetricsDashboard:
         else:
             raise ValueError(f"Unsupported format: {format_type}")
     
-    def _export_prometheus_format(self, data: Dict[str, Any]) -> str:
+    def _export_prometheus_format(self, data: dict[str, Any]) -> str:
         """Export in Prometheus format"""
         lines = []
         
@@ -626,7 +626,7 @@ class MetricsDashboard:
         """Add a widget to the dashboard"""
         self.widgets.append(widget)
 
-    def get_metrics(self, metric_type: MetricType, time_range: Optional[TimeRange] = None) -> List[Dict[str, Any]]:
+    def get_metrics(self, metric_type: MetricType, time_range: TimeRange | None = None) -> list[dict[str, Any]]:
         """Get metrics of a specific type, optionally filtered by time range"""
         result = []
         # Map old test types to new types
@@ -683,7 +683,7 @@ class MetricsDashboard:
             return len(metrics)
         return 0
 
-    def calculate_trend(self, metric_type: MetricType, time_range: TimeRange) -> Dict[str, Any]:
+    def calculate_trend(self, metric_type: MetricType, time_range: TimeRange) -> dict[str, Any]:
         """Calculate trend for metrics"""
         metrics = self.get_metrics(metric_type, time_range)
         if len(metrics) < 2:
@@ -711,7 +711,7 @@ class MetricsDashboard:
         """Set a metric alert"""
         self.alerts.append(alert)
 
-    def check_alerts(self) -> List[MetricAlert]:
+    def check_alerts(self) -> list[MetricAlert]:
         """Check for triggered alerts"""
         triggered = []
         for alert in self.alerts:
@@ -728,7 +728,7 @@ class MetricsDashboard:
                             break
         return triggered
 
-    def create_snapshot(self) -> Dict[str, Any]:
+    def create_snapshot(self) -> dict[str, Any]:
         """Create a dashboard snapshot"""
         return {
             "timestamp": datetime.now().isoformat(),
@@ -736,7 +736,7 @@ class MetricsDashboard:
             "metrics_summary": {"total_metrics": len(self.metrics_store)}
         }
 
-    def export_metrics(self, format: str, metric_types: List[MetricType]) -> str:
+    def export_metrics(self, format: str, metric_types: list[MetricType]) -> str:
         """Export metrics in the specified format"""
         # Map old test types to new types
         type_mapping = {
@@ -876,7 +876,7 @@ class MetricsDashboard:
             return self._custom_metrics[name]["calculation"](metrics)
         return 0
 
-    def detect_anomalies(self, metric_type: MetricType, method: str, threshold: float) -> List[Dict[str, Any]]:
+    def detect_anomalies(self, metric_type: MetricType, method: str, threshold: float) -> list[dict[str, Any]]:
         """Detect anomalies in metrics"""
         values = [m for m in self.metrics_store if m.get("type") == metric_type.value]
         if len(values) < 20:
@@ -895,7 +895,7 @@ class MetricsDashboard:
 
         return anomalies
 
-    def generate_share_link(self, expires_in: timedelta, read_only: bool) -> Dict[str, Any]:
+    def generate_share_link(self, expires_in: timedelta, read_only: bool) -> dict[str, Any]:
         """Generate a shareable link for the dashboard"""
         import uuid
         return {
@@ -904,7 +904,7 @@ class MetricsDashboard:
             "read_only": read_only
         }
 
-    def forecast_metric(self, metric_type: MetricType, periods: int, method: str) -> List[Dict[str, Any]]:
+    def forecast_metric(self, metric_type: MetricType, periods: int, method: str) -> list[dict[str, Any]]:
         """Forecast future metric values"""
         # Map old test types to new types
         type_mapping = {

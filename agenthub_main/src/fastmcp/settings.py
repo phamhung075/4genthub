@@ -1,9 +1,8 @@
 from __future__ import annotations as _annotations
 
 import inspect
-import os
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import Field, model_validator
 from pydantic.fields import FieldInfo
@@ -13,7 +12,6 @@ from pydantic_settings import (
     PydanticBaseSettingsSource,
     SettingsConfigDict,
 )
-from typing_extensions import Self
 
 from fastmcp.utilities.logging import get_logger
 
@@ -68,7 +66,7 @@ class Settings(BaseSettings):
 
     # Log which file is being used (only if .env.dev exists)
     if _env_dev_path.exists():
-        logger.info(f"Loading configuration from .env.dev (development mode)")
+        logger.info("Loading configuration from .env.dev (development mode)")
 
     model_config = ExtendedSettingsConfigDict(
         env_prefixes=["FASTMCP_", "FASTMCP_SERVER_"],

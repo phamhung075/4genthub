@@ -2,12 +2,11 @@
 
 import asyncio
 import hashlib
-import time
-from datetime import datetime
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional, List
 import json
 import logging
+import time
+from datetime import UTC, datetime
+from typing import Any
 
 try:
     import pybars
@@ -16,9 +15,12 @@ except ImportError:
     pybars = None
     Redis = None
 
-from ...domain.entities.template import Template, TemplateResult, TemplateRenderRequest
+from ...domain.entities.template import TemplateRenderRequest, TemplateResult
+from ...domain.exceptions.template_exceptions import (
+    TemplateCompilationError,
+    TemplateRenderError,
+)
 from ...domain.value_objects.template_id import TemplateId
-from ...domain.exceptions.template_exceptions import TemplateRenderError, TemplateCompilationError
 from .template_registry_service import TemplateRegistryService
 
 logger = logging.getLogger(__name__)
@@ -30,7 +32,7 @@ class TemplateEngineService:
     def __init__(
         self,
         registry_service: TemplateRegistryService,
-        redis_client: Optional[Redis] = None
+        redis_client: Redis | None = None
     ):
         if pybars is None:
             raise ImportError("pybars package required for template engine")
@@ -103,7 +105,7 @@ class TemplateEngineService:
                 content=rendered_content,
                 template_id=request.template_id,
                 variables_used=resolved_context,
-                generated_at=datetime.now(timezone.utc),
+                generated_at=datetime.now(UTC),
                 generation_time_ms=generation_time_ms,
                 cache_hit=False,
                 output_path=request.output_path
@@ -119,7 +121,7 @@ class TemplateEngineService:
             logger.error(f"Template rendering failed for {request.template_id.value}: {e}")
             raise
     
-    async def _check_cache(self, request: TemplateRenderRequest) -> Optional[TemplateResult]:
+    async def _check_cache(self, request: TemplateRenderRequest) -> TemplateResult | None:
         """Check if template result exists in cache"""
         cache_key = self._generate_cache_key(request.template_id.value, request.variables)
         
@@ -186,9 +188,9 @@ class TemplateEngineService:
     async def _resolve_variables(
         self,
         template_id: str,
-        variables: Dict[str, Any],
-        task_context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        variables: dict[str, Any],
+        task_context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Resolve variables with hierarchy"""
         resolved_context = {}
         
@@ -201,24 +203,24 @@ class TemplateEngineService:
         
         # Add system variables
         resolved_context.update({
-            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'template_id': template_id,
-            'render_time': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            'render_time': datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
         })
         
         return resolved_context
     
-    def _generate_cache_key(self, template_id: str, variables: Dict[str, Any]) -> str:
+    def _generate_cache_key(self, template_id: str, variables: dict[str, Any]) -> str:
         """Generate cache key for template result"""
         variables_hash = self._hash_variables(variables)
         return f"template:{template_id}:{variables_hash}"
     
-    def _hash_variables(self, variables: Dict[str, Any]) -> str:
+    def _hash_variables(self, variables: dict[str, Any]) -> str:
         """Generate hash for variables"""
         variables_str = json.dumps(variables, sort_keys=True)
         return hashlib.md5(variables_str.encode()).hexdigest()
     
-    async def get_performance_metrics(self) -> Dict[str, Any]:
+    async def get_performance_metrics(self) -> dict[str, Any]:
         """Get performance metrics"""
         return {
             'render_count': self.render_count,
@@ -229,7 +231,7 @@ class TemplateEngineService:
             'compiled_templates_count': len(self._compiled_templates)
         }
     
-    async def clear_cache(self, template_id: Optional[str] = None):
+    async def clear_cache(self, template_id: str | None = None):
         """Clear template cache"""
         if template_id:
             # Clear specific template cache
@@ -260,10 +262,10 @@ class TemplateEngineService:
     
     async def suggest_templates(
         self,
-        task_context: Dict[str, Any],
-        agent_type: Optional[str] = None,
-        file_patterns: Optional[List[str]] = None
-    ) -> List[Dict[str, Any]]:
+        task_context: dict[str, Any],
+        agent_type: str | None = None,
+        file_patterns: list[str] | None = None
+    ) -> list[dict[str, Any]]:
         """Suggest templates based on context"""
         try:
             return await self.registry_service.suggest_templates(

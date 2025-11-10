@@ -10,12 +10,11 @@ Purpose: Solve MCP tools status icon update issues after Docker container restar
 """
 
 import asyncio
-import json
 import logging
 import time
-from typing import Dict, Any, Set, Optional, List
+from dataclasses import asdict, dataclass
 from datetime import datetime
-from dataclasses import dataclass, asdict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +31,7 @@ class StatusUpdate:
     recommended_action: str  # "continue", "reconnect", "restart_client"
     tools_available: bool
     auth_enabled: bool
-    additional_info: Dict[str, Any] = None
+    additional_info: dict[str, Any] = None
 
 
 class ConnectionStatusBroadcaster:
@@ -40,11 +39,11 @@ class ConnectionStatusBroadcaster:
     
     def __init__(self, connection_manager=None):
         self.connection_manager = connection_manager
-        self.connected_clients: Set[str] = set()
-        self.last_status: Optional[StatusUpdate] = None
+        self.connected_clients: set[str] = set()
+        self.last_status: StatusUpdate | None = None
         self.broadcast_interval = 30  # seconds
         self.immediate_broadcast_events = {"server_restart", "connection_lost"}
-        self._broadcast_task: Optional[asyncio.Task] = None
+        self._broadcast_task: asyncio.Task | None = None
         self._running = False
         
     async def start_broadcasting(self):
@@ -224,7 +223,7 @@ class ConnectionStatusBroadcaster:
                 logger.error(f"Error in broadcast loop: {e}")
                 await asyncio.sleep(5)  # Brief pause before retrying
                 
-    def get_last_status(self) -> Optional[Dict[str, Any]]:
+    def get_last_status(self) -> dict[str, Any] | None:
         """Get the last broadcasted status for HTTP endpoints"""
         if self.last_status:
             return asdict(self.last_status)
@@ -236,7 +235,7 @@ class ConnectionStatusBroadcaster:
 
 
 # Global status broadcaster instance
-_status_broadcaster: Optional[ConnectionStatusBroadcaster] = None
+_status_broadcaster: ConnectionStatusBroadcaster | None = None
 
 
 async def get_status_broadcaster(connection_manager=None) -> ConnectionStatusBroadcaster:

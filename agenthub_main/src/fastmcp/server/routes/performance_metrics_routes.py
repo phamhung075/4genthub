@@ -1,19 +1,27 @@
 #!/usr/bin/env python
 """Performance Metrics API Routes - Aggregates system performance data"""
 
-import os
-import time
 import logging
-from typing import Dict, Any, List, Optional
+import os
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from ...auth.interface.fastapi_auth import get_authenticated_user
+from ...connection_management.infrastructure.services.mcp_server_health_service import (
+    MCPServerHealthService,
+)
+from ...task_management.infrastructure.cache.cache_manager import get_cache
+from ...task_management.infrastructure.database.connection_pool import (
+    get_connection_pool,
+    get_supabase_pool,
+)
 
 # Import existing performance infrastructure
-from ...task_management.infrastructure.performance.task_performance_optimizer import get_performance_optimizer
-from ...task_management.infrastructure.cache.cache_manager import get_cache
-from ...task_management.infrastructure.database.connection_pool import get_connection_pool, get_supabase_pool
-from ...connection_management.infrastructure.services.mcp_server_health_service import MCPServerHealthService
-from ...auth.interface.fastapi_auth import get_authenticated_user
+from ...task_management.infrastructure.performance.task_performance_optimizer import (
+    get_performance_optimizer,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/performance", tags=["Performance Metrics"])
@@ -25,9 +33,9 @@ performance_optimizer = get_performance_optimizer()
 
 @router.get("/metrics/overview")
 async def get_performance_overview(
-    user: Dict[str, Any] = Depends(get_authenticated_user),
+    user: dict[str, Any] = Depends(get_authenticated_user),
     include_details: bool = Query(False, description="Include detailed breakdown")
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get comprehensive performance metrics overview.
     
@@ -175,10 +183,10 @@ async def get_performance_overview(
 
 @router.get("/metrics/timeseries")
 async def get_performance_timeseries(
-    user: Dict[str, Any] = Depends(get_authenticated_user),
+    user: dict[str, Any] = Depends(get_authenticated_user),
     hours: int = Query(24, ge=1, le=168, description="Hours of history (1-168)"),
     interval: str = Query("1h", regex="^(5m|15m|1h|6h|24h)$", description="Data interval")
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get performance metrics over time.
     Note: This is a placeholder implementation. In production, you'd store
@@ -220,8 +228,8 @@ async def get_performance_timeseries(
 
 @router.get("/metrics/alerts")
 async def get_performance_alerts(
-    user: Dict[str, Any] = Depends(get_authenticated_user)
-) -> Dict[str, Any]:
+    user: dict[str, Any] = Depends(get_authenticated_user)
+) -> dict[str, Any]:
     """
     Get current performance alerts and thresholds.
     """
@@ -270,7 +278,7 @@ async def get_performance_alerts(
     }
 
 
-def _generate_performance_recommendations(overview: Dict[str, Any]) -> List[str]:
+def _generate_performance_recommendations(overview: dict[str, Any]) -> list[str]:
     """Generate performance recommendations based on current metrics."""
     
     recommendations = []
@@ -304,9 +312,9 @@ def _generate_performance_recommendations(overview: Dict[str, Any]) -> List[str]
 
 @router.post("/metrics/clear-cache")
 async def clear_performance_cache(
-    user: Dict[str, Any] = Depends(get_authenticated_user),
-    cache_name: Optional[str] = Query(None, description="Specific cache to clear (default: all)")
-) -> Dict[str, Any]:
+    user: dict[str, Any] = Depends(get_authenticated_user),
+    cache_name: str | None = Query(None, description="Specific cache to clear (default: all)")
+) -> dict[str, Any]:
     """
     Clear performance cache for testing/maintenance.
     """

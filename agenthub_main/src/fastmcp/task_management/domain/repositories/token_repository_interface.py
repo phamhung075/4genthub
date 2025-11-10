@@ -6,8 +6,8 @@ This interface defines the contract that infrastructure implementations must fol
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any
 
 
 class ITokenRepository(ABC):
@@ -19,7 +19,7 @@ class ITokenRepository(ABC):
     """
     
     @abstractmethod
-    async def create_token(self, token_data: Dict[str, Any]) -> Optional[Any]:
+    async def create_token(self, token_data: dict[str, Any]) -> Any | None:
         """
         Create a new token in the database.
         
@@ -32,7 +32,7 @@ class ITokenRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_token(self, token_id: str, user_id: str) -> Optional[Any]:
+    async def get_token(self, token_id: str, user_id: str) -> Any | None:
         """
         Get a specific token for a user.
         
@@ -46,7 +46,7 @@ class ITokenRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_token_by_id(self, token_id: str) -> Optional[Any]:
+    async def get_token_by_id(self, token_id: str) -> Any | None:
         """
         Get a token by ID regardless of user.
         
@@ -59,7 +59,7 @@ class ITokenRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_user_tokens(self, user_id: str, skip: int = 0, limit: int = 100) -> List[Any]:
+    async def get_user_tokens(self, user_id: str, skip: int = 0, limit: int = 100) -> list[Any]:
         """
         Get all tokens for a user with pagination.
         

@@ -17,17 +17,26 @@ if TYPE_CHECKING:
     from fastmcp.server.server import FastMCP
 
 # Interface layer imports (same layer, acceptable)
-from .controllers.connection_mcp_controller import ConnectionMCPController
-
 # Application layer imports (proper DDD dependency direction)
-from ..application.facades.connection_application_facade import ConnectionApplicationFacade
+from ..application.facades.connection_application_facade import (
+    ConnectionApplicationFacade,
+)
+from ..infrastructure.repositories.in_memory_connection_repository import (
+    InMemoryConnectionRepository,
+)
 
 # Infrastructure layer imports (proper DDD dependency direction)
-from ..infrastructure.repositories.in_memory_server_repository import InMemoryServerRepository
-from ..infrastructure.repositories.in_memory_connection_repository import InMemoryConnectionRepository
+from ..infrastructure.repositories.in_memory_server_repository import (
+    InMemoryServerRepository,
+)
+from ..infrastructure.services.mcp_connection_diagnostics_service import (
+    MCPConnectionDiagnosticsService,
+)
 from ..infrastructure.services.mcp_server_health_service import MCPServerHealthService
-from ..infrastructure.services.mcp_connection_diagnostics_service import MCPConnectionDiagnosticsService
-from ..infrastructure.services.mcp_status_broadcasting_service import MCPStatusBroadcastingService
+from ..infrastructure.services.mcp_status_broadcasting_service import (
+    MCPStatusBroadcastingService,
+)
+from .controllers.connection_mcp_controller import ConnectionMCPController
 
 logger = logging.getLogger(__name__)
 

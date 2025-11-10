@@ -7,16 +7,16 @@ when tasks and subtasks change state.
 Part of Fix for Issue #3: Automatic Context Updates for Task State Changes
 """
 
-import logging
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone
 import asyncio
+import logging
+from datetime import UTC, datetime
+from typing import Any
 
-from .task_context_sync_service import TaskContextSyncService
-from ...domain.repositories.task_repository import TaskRepository
-from ...domain.repositories.subtask_repository import SubtaskRepository
-from ...domain.entities.task import Task
 from ...domain.entities.subtask import Subtask
+from ...domain.entities.task import Task
+from ...domain.repositories.subtask_repository import SubtaskRepository
+from ...domain.repositories.task_repository import TaskRepository
+from .task_context_sync_service import TaskContextSyncService
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +33,8 @@ class AutomatedContextSyncService:
 
     def __init__(self, 
                  task_repository: TaskRepository,
-                 subtask_repository: Optional[SubtaskRepository] = None,
-                 user_id: Optional[str] = None):
+                 subtask_repository: SubtaskRepository | None = None,
+                 user_id: str | None = None):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
         self._user_id = user_id  # Store user context
@@ -89,7 +89,7 @@ class AutomatedContextSyncService:
             
             # Perform context synchronization
             if not project_id:
-                raise ValueError(f"project_id is required for automated context sync")
+                raise ValueError("project_id is required for automated context sync")
             result = await self._context_sync_service.sync_context_and_get_task(
                 task_id=task_id_str,
                 user_id=f"system_{operation_type}",
@@ -136,7 +136,7 @@ class AutomatedContextSyncService:
 
     async def sync_parent_context_after_subtask_update(self,
                                                       parent_task: Task,
-                                                      subtask: Optional[Subtask] = None,
+                                                      subtask: Subtask | None = None,
                                                       operation_type: str = "subtask_update") -> bool:
         """Synchronize parent task context after subtask changes.
         
@@ -171,7 +171,7 @@ class AutomatedContextSyncService:
 
     def sync_parent_context_after_subtask_update_sync(self,
                                                      parent_task: Task,
-                                                     subtask: Optional[Subtask] = None,
+                                                     subtask: Subtask | None = None,
                                                      operation_type: str = "subtask_update") -> bool:
         """Synchronous wrapper for parent context sync after subtask update."""
         try:
@@ -195,7 +195,7 @@ class AutomatedContextSyncService:
     # Progress calculation and aggregation
     # ------------------------------------------------------------------
 
-    async def _calculate_subtask_progress(self, parent_task: Task) -> Optional[Dict[str, Any]]:
+    async def _calculate_subtask_progress(self, parent_task: Task) -> dict[str, Any] | None:
         """Calculate subtask progress summary for parent task.
         
         Args:
@@ -227,7 +227,7 @@ class AutomatedContextSyncService:
                 "incomplete_subtasks": total - completed,
                 "progress_percentage": progress_percentage,
                 "can_complete_parent": completed == total,
-                "last_updated": datetime.now(timezone.utc).isoformat()
+                "last_updated": datetime.now(UTC).isoformat()
             }
             
         except Exception as e:
@@ -238,7 +238,7 @@ class AutomatedContextSyncService:
     # Batch synchronization operations
     # ------------------------------------------------------------------
 
-    async def sync_multiple_tasks(self, task_ids: List[str]) -> Dict[str, bool]:
+    async def sync_multiple_tasks(self, task_ids: list[str]) -> dict[str, bool]:
         """Synchronize context for multiple tasks in batch.
         
         Args:
@@ -276,7 +276,7 @@ class AutomatedContextSyncService:
     # System health and monitoring
     # ------------------------------------------------------------------
 
-    def get_sync_statistics(self) -> Dict[str, Any]:
+    def get_sync_statistics(self) -> dict[str, Any]:
         """Get statistics about context synchronization operations.
         
         Returns:
@@ -286,7 +286,7 @@ class AutomatedContextSyncService:
             "service_status": "active",
             "sync_service_available": bool(self._context_sync_service),
             "subtask_repository_available": bool(self._subtask_repository),
-            "last_health_check": datetime.now(timezone.utc).isoformat(),
+            "last_health_check": datetime.now(UTC).isoformat(),
             "features": {
                 "task_context_sync": True,
                 "subtask_parent_sync": bool(self._subtask_repository),
@@ -295,7 +295,7 @@ class AutomatedContextSyncService:
             }
         }
 
-    def validate_sync_configuration(self) -> Dict[str, Any]:
+    def validate_sync_configuration(self) -> dict[str, Any]:
         """Validate that the sync service is properly configured.
         
         Returns:
@@ -326,5 +326,5 @@ class AutomatedContextSyncService:
                 "Test context sync service connectivity"
             ] if issues else [],
             "async_support": async_available,
-            "validation_timestamp": datetime.now(timezone.utc).isoformat()
+            "validation_timestamp": datetime.now(UTC).isoformat()
         }

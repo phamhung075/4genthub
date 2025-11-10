@@ -2,7 +2,6 @@
 
 import uuid
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -10,9 +9,9 @@ class RegisterAgentRequest:
     """Request DTO for registering an agent"""
     
     project_id: str
-    agent_id: Optional[str] = None  # Now optional, will auto-generate if not provided
+    agent_id: str | None = None  # Now optional, will auto-generate if not provided
     name: str = None
-    call_agent: Optional[str] = None
+    call_agent: str | None = None
     
     def __post_init__(self):
         """Validate the request after initialization"""
@@ -29,7 +28,7 @@ class RegisterAgentRequest:
         # Validate project_id is a valid UUID
         self._validate_uuid(self.project_id, "Project ID")
     
-    def _validate_and_normalize_agent_id(self, agent_id: Optional[str]) -> str:
+    def _validate_and_normalize_agent_id(self, agent_id: str | None) -> str:
         """
         Validate and normalize agent ID to ensure it's a valid UUID.
         If agent_id is empty or not provided, generate a new UUID.

@@ -2,35 +2,44 @@
 WebSocket routes for real-time data synchronization
 """
 
-import logging
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Response
-from typing import Optional, Dict, Any, Set, List, DefaultDict, TypedDict, NotRequired
-import json
+from __future__ import annotations
+
 import asyncio
-from datetime import datetime, timezone, timedelta
+import json
+import logging
+import os
+import random
 from collections import defaultdict
 from dataclasses import dataclass, field
-import random
-import os
+from datetime import UTC, datetime, timedelta
+from typing import Any, NotRequired, TypedDict
+
+from fastapi import APIRouter, HTTPException, Response, WebSocket, WebSocketDisconnect
+from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
 
 # Additional exception types for better error handling
-from starlette.websockets import WebSocketState
-from websockets.exceptions import ConnectionClosed, ConnectionClosedOK, ConnectionClosedError
+from websockets.exceptions import (
+    ConnectionClosed,
+    ConnectionClosedError,
+)
+
+from fastmcp.auth.domain.entities.user import User
 
 # Import authentication utilities for JWT validation
-from fastmcp.auth.keycloak_dependencies import validate_keycloak_token, validate_local_token
-from fastmcp.auth.domain.entities.user import User
+from fastmcp.auth.keycloak_dependencies import (
+    validate_keycloak_token,
+    validate_local_token,
+)
 
 # Import Prometheus metrics for monitoring
 from fastmcp.server.metrics import (
+    clear_queue_metrics,
+    record_delivery_time,
+    record_retry_attempt,
+    track_broadcast_duration,
     update_connection_count,
     update_queue_size,
-    clear_queue_metrics,
-    record_retry_attempt,
-    record_delivery_time,
-    track_broadcast_duration,
 )
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, REGISTRY
 
 # ============================================================================
 # TYPE DEFINITIONS - Structured type hints for better type safety
@@ -45,8 +54,8 @@ class SubscriptionDict(TypedDict, total=False):
 
 class MessagePayloadDataDict(TypedDict, total=False):
     """Payload data structure in broadcast messages"""
-    primary: NotRequired[Optional[Dict[str, Any]]]
-    cascade: NotRequired[Dict[str, Any]]
+    primary: NotRequired[dict[str, Any] | None]
+    cascade: NotRequired[dict[str, Any]]
 
 class MessagePayloadDict(TypedDict):
     """Payload structure in broadcast messages"""
@@ -82,10 +91,10 @@ router = APIRouter(
 )
 
 # Track if retry queue processor is running
-_retry_queue_task: Optional[asyncio.Task] = None
+_retry_queue_task: asyncio.Task | None = None
 
 # Track if notification cleanup task is running
-_cleanup_task: Optional[asyncio.Task] = None
+_cleanup_task: asyncio.Task | None = None
 
 # Concurrency protection locks for shared state
 _message_queue_lock = asyncio.Lock()  # Protects user_message_queues access
@@ -113,7 +122,7 @@ NOTIFICATION_RETENTION_HOURS = 24     # How long to keep notifications before cl
 # This replaces the previous three separate dictionaries (active_connections,
 # connection_subscriptions, connection_users) which could get out of sync.
 # Key: WebSocket object, Value: Complete connection state
-connections: Dict[WebSocket, WebSocketConnection] = {}
+connections: dict[WebSocket, WebSocketConnection] = {}
 
 # Message queue for retry mechanism - prevents notification loss
 @dataclass
@@ -131,15 +140,15 @@ class QueuedMessage:
         next_retry_time: When the next retry should be attempted
     """
     message_id: str
-    message: Dict[str, Any]
+    message: dict[str, Any]
     user_id: str
     timestamp: datetime
     retry_count: int = 0
     max_retries: int = 3
-    next_retry_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    next_retry_time: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 # Per-user message queues with failed messages awaiting retry
-user_message_queues: DefaultDict[str, List[QueuedMessage]] = defaultdict(list)
+user_message_queues: defaultdict[str, list[QueuedMessage]] = defaultdict(list)
 
 
 @dataclass
@@ -162,13 +171,13 @@ class WebSocketConnection:
     websocket: WebSocket
     user: User
     client_id: str
-    subscription: Dict[str, Any]
+    subscription: dict[str, Any]
     connected_at: datetime
     last_activity: datetime
 
     def update_activity(self):
         """Update the last activity timestamp to current time."""
-        self.last_activity = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(UTC)
 
 
 async def process_message_retry_queue() -> None:
@@ -190,7 +199,7 @@ async def process_message_retry_queue() -> None:
         try:
             await asyncio.sleep(RETRY_QUEUE_CHECK_INTERVAL)
 
-            current_time = datetime.now(timezone.utc)
+            current_time = datetime.now(UTC)
 
             # Acquire lock to safely access user_message_queues
             async with _message_queue_lock:
@@ -382,7 +391,7 @@ async def stop_notification_cleanup_task() -> None:
     _cleanup_task = None
 
 
-async def validate_websocket_token(token: str) -> Optional[User]:
+async def validate_websocket_token(token: str) -> User | None:
     """
     Validate JWT token for WebSocket connections.
 
@@ -418,7 +427,7 @@ async def validate_websocket_token(token: str) -> Optional[User]:
                 logger.error(f"   Token issuer: {issuer}")
                 logger.error(f"   Keycloak URL: {keycloak_url}")
                 logger.error(f"   Auth provider: {auth_provider}")
-                logger.error(f"   Troubleshooting: Verify KEYCLOAK_URL, KEYCLOAK_REALM, and token validity")
+                logger.error("   Troubleshooting: Verify KEYCLOAK_URL, KEYCLOAK_REALM, and token validity")
 
                 # Return None - connection will be rejected with proper authentication failure
                 return None
@@ -483,7 +492,7 @@ async def realtime_updates(websocket: WebSocket) -> None:
 
         # Store the connection with complete state in single atomic operation
         # This prevents synchronization issues that occurred with three separate dictionaries
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         connection = WebSocketConnection(
             websocket=websocket,
             user=authenticated_user,
@@ -518,7 +527,7 @@ async def realtime_updates(websocket: WebSocket) -> None:
             "id": f"welcome-{connection_id}",
             "version": "2.0",
             "type": "sync",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "sequence": 0,
             "payload": {
                 "entity": "connection",
@@ -605,7 +614,7 @@ async def realtime_updates(websocket: WebSocket) -> None:
                         "id": f"pong-{random.randint(100000, 999999)}",
                         "version": "2.0",
                         "type": "heartbeat",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                         "sequence": random.randint(1000, 9999),
                         "payload": {
                             "entity": "system",
@@ -638,7 +647,7 @@ async def realtime_updates(websocket: WebSocket) -> None:
                         "id": f"subscribed-{random.randint(100000, 999999)}",
                         "version": "2.0",
                         "type": "sync",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                         "sequence": random.randint(1000, 9999),
                         "payload": {
                             "entity": "subscription",
@@ -662,7 +671,7 @@ async def realtime_updates(websocket: WebSocket) -> None:
                         "id": f"error-{random.randint(100000, 999999)}",
                         "version": "2.0",
                         "type": "error",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                         "sequence": random.randint(1000, 9999),
                         "payload": {
                             "entity": "system",
@@ -689,7 +698,7 @@ async def realtime_updates(websocket: WebSocket) -> None:
                     "id": f"error-{random.randint(100000, 999999)}",
                     "version": "2.0",
                     "type": "error",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "sequence": random.randint(1000, 9999),
                     "payload": {
                         "entity": "system",
@@ -713,7 +722,7 @@ async def realtime_updates(websocket: WebSocket) -> None:
                     "id": f"error-{random.randint(100000, 999999)}",
                     "version": "2.0",
                     "type": "error",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "sequence": random.randint(1000, 9999),
                     "payload": {
                         "entity": "system",
@@ -829,7 +838,7 @@ async def task_polling(websocket: WebSocket) -> None:
         # Wait for subscription message from client
         try:
             data = await asyncio.wait_for(websocket.receive_json(), timeout=10)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(f"⏰ TASK POLLING: Timeout waiting for subscription from {client_id}")
             await websocket.close(code=4000, reason="Timeout: expected subscribe message within 10s")
             return
@@ -864,7 +873,7 @@ async def task_polling(websocket: WebSocket) -> None:
         logger.info(f"📡 TASK POLLING: Subscribed to {scope} {entity_id} for user {authenticated_user.id}")
 
         # Store connection in global connections dict for broadcast_data_change to find
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         connection = WebSocketConnection(
             websocket=websocket,
             user=authenticated_user,
@@ -903,12 +912,12 @@ async def task_polling(websocket: WebSocket) -> None:
                 if message.get("type") in ["ping", "heartbeat"]:
                     await websocket.send_json({
                         "type": "pong",
-                        "timestamp": datetime.now(timezone.utc).isoformat()
+                        "timestamp": datetime.now(UTC).isoformat()
                     })
                     connection.update_activity()
                     logger.debug(f"💓 TASK POLLING: Heartbeat from {client_id}")
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.info(f"⏰ TASK POLLING: Timeout for {client_id} - closing connection")
                 break
             except WebSocketDisconnect:
@@ -968,7 +977,7 @@ async def log_authorization_failure(
     # Structured logging for security audit trail
     audit_entry = {
         "event": "authorization_failure",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "user_id": user_id,
         "entity_type": entity_type,
         "entity_id": entity_id,
@@ -992,7 +1001,7 @@ async def log_authorization_failure(
 # MISSED NOTIFICATION PERSISTENCE - Database Helper Functions
 # ==============================================================================
 
-def store_missed_notification(user_id: str, message: Dict[str, Any]) -> Optional[str]:
+def store_missed_notification(user_id: str, message: dict[str, Any]) -> str | None:
     """
     Store a missed notification in the database for later replay.
 
@@ -1004,9 +1013,14 @@ def store_missed_notification(user_id: str, message: Dict[str, Any]) -> Optional
         Notification ID if stored successfully, None if error
     """
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import get_session
-        from fastmcp.task_management.infrastructure.database.models import MissedNotification
         import uuid
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_session,
+        )
+        from fastmcp.task_management.infrastructure.database.models import (
+            MissedNotification,
+        )
 
         notification_id = str(uuid.uuid4())
 
@@ -1015,7 +1029,7 @@ def store_missed_notification(user_id: str, message: Dict[str, Any]) -> Optional
                 id=notification_id,
                 user_id=user_id,
                 message=message,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
                 delivered=False,
                 delivery_attempts=0
             )
@@ -1030,7 +1044,7 @@ def store_missed_notification(user_id: str, message: Dict[str, Any]) -> Optional
         return None
 
 
-def fetch_missed_notifications(user_id: str, delivered: bool = False, limit: int = 100) -> List[Dict[str, Any]]:
+def fetch_missed_notifications(user_id: str, delivered: bool = False, limit: int = 100) -> list[dict[str, Any]]:
     """
     Fetch missed notifications for a user from the database.
 
@@ -1043,8 +1057,12 @@ def fetch_missed_notifications(user_id: str, delivered: bool = False, limit: int
         List of notification dicts with id, message, created_at, etc.
     """
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import get_session
-        from fastmcp.task_management.infrastructure.database.models import MissedNotification
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_session,
+        )
+        from fastmcp.task_management.infrastructure.database.models import (
+            MissedNotification,
+        )
 
         with get_session() as session:
             notifications = session.query(MissedNotification).filter(
@@ -1081,8 +1099,12 @@ def mark_notification_delivered(notification_id: str) -> bool:
         True if marked successfully, False if error
     """
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import get_session
-        from fastmcp.task_management.infrastructure.database.models import MissedNotification
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_session,
+        )
+        from fastmcp.task_management.infrastructure.database.models import (
+            MissedNotification,
+        )
 
         with get_session() as session:
             notification = session.query(MissedNotification).filter(
@@ -1091,7 +1113,7 @@ def mark_notification_delivered(notification_id: str) -> bool:
 
             if notification:
                 notification.delivered = True
-                notification.last_attempt_at = datetime.now(timezone.utc)
+                notification.last_attempt_at = datetime.now(UTC)
                 session.commit()
                 return True
             else:
@@ -1114,8 +1136,12 @@ def increment_delivery_attempts(notification_id: str) -> bool:
         True if updated successfully, False if error
     """
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import get_session
-        from fastmcp.task_management.infrastructure.database.models import MissedNotification
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_session,
+        )
+        from fastmcp.task_management.infrastructure.database.models import (
+            MissedNotification,
+        )
 
         with get_session() as session:
             notification = session.query(MissedNotification).filter(
@@ -1124,7 +1150,7 @@ def increment_delivery_attempts(notification_id: str) -> bool:
 
             if notification:
                 notification.delivery_attempts += 1
-                notification.last_attempt_at = datetime.now(timezone.utc)
+                notification.last_attempt_at = datetime.now(UTC)
                 session.commit()
                 return True
             else:
@@ -1151,13 +1177,17 @@ def cleanup_expired_notifications(older_than_hours: int = 24) -> int:
         Number of notifications cleaned up
     """
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import get_session
-        from fastmcp.task_management.infrastructure.database.models import MissedNotification
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_session,
+        )
+        from fastmcp.task_management.infrastructure.database.models import (
+            MissedNotification,
+        )
 
         with get_session() as session:
             # Calculate cutoff times
-            undelivered_cutoff = datetime.now(timezone.utc) - timedelta(hours=older_than_hours)
-            delivered_cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+            undelivered_cutoff = datetime.now(UTC) - timedelta(hours=older_than_hours)
+            delivered_cutoff = datetime.now(UTC) - timedelta(days=7)
 
             # Delete undelivered notifications older than cutoff
             undelivered_deleted = session.query(MissedNotification).filter(
@@ -1187,7 +1217,7 @@ async def is_user_authorized_for_message(
     entity_type: str,
     entity_id: str,
     triggering_user_id: str,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 ) -> bool:
     """
     Check if a WebSocket connection's user is authorized to receive a specific message.
@@ -1222,7 +1252,7 @@ async def is_user_authorized_for_message(
                 "id": f"auth-error-{random.randint(100000, 999999)}",
                 "version": "2.0",
                 "type": "error",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "sequence": random.randint(1000, 9999),
                 "payload": {
                     "entity": "system",
@@ -1266,8 +1296,14 @@ async def is_user_authorized_for_message(
 
     # Rule 3: Check entity-specific authorization based on user ownership/access
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import get_session
-        from fastmcp.task_management.infrastructure.database.models import Task, ProjectGitBranch, Subtask, Project
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_session,
+        )
+        from fastmcp.task_management.infrastructure.database.models import (
+            Project,
+            ProjectGitBranch,
+            Task,
+        )
 
         with get_session() as session:
             # Check authorization based on entity type
@@ -1332,7 +1368,7 @@ async def is_user_authorized_for_message(
                 "id": f"auth-error-{random.randint(100000, 999999)}",
                 "version": "2.0",
                 "type": "error",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "sequence": random.randint(1000, 9999),
                 "payload": {
                     "entity": "system",
@@ -1382,7 +1418,7 @@ async def is_user_authorized_for_message(
             "id": f"auth-error-{random.randint(100000, 999999)}",
             "version": "2.0",
             "type": "error",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "sequence": random.randint(1000, 9999),
             "payload": {
                 "entity": "system",
@@ -1413,7 +1449,7 @@ async def _check_resource_ownership(
     connection_user_id: str,
     entity_type: str,
     entity_id: str,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 ) -> bool:
     """
     Check if a user owns the resource being modified in a system message.
@@ -1431,8 +1467,15 @@ async def _check_resource_ownership(
         True if the connection user owns the resource, False otherwise
     """
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import get_session
-        from fastmcp.task_management.infrastructure.database.models import Task, ProjectGitBranch, Subtask, Project
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_session,
+        )
+        from fastmcp.task_management.infrastructure.database.models import (
+            Project,
+            ProjectGitBranch,
+            Subtask,
+            Task,
+        )
 
         with get_session() as session:
             if entity_type == "task":
@@ -1512,7 +1555,7 @@ async def _check_resource_ownership(
         # Log for security audit trail
         audit_entry = {
             "event": "resource_ownership_check_failure",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "user_id": connection_user_id,
             "entity_type": entity_type,
             "entity_id": entity_id,
@@ -1544,8 +1587,8 @@ async def broadcast_data_change(
     entity_type: str,
     entity_id: str,
     user_id: str,
-    data: Optional[Dict[str, Any]] = None,
-    metadata: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None
 ) -> None:
     """
     Broadcast data change to all connected clients.
@@ -1574,7 +1617,7 @@ async def broadcast_data_change(
 
     # Special detailed logging for DELETE operations
     if event_type.lower() in ['delete', 'deleted']:
-        logger.warning(f"🗑️ DELETE BROADCAST DETAILED LOG:")
+        logger.warning("🗑️ DELETE BROADCAST DETAILED LOG:")
         logger.warning(f"   Event Type: {event_type}")
         logger.warning(f"   Entity Type: {entity_type}")
         logger.warning(f"   Entity ID: {entity_id}")
@@ -1594,7 +1637,7 @@ async def broadcast_data_change(
         "id": f"broadcast-{entity_type}-{random.randint(100000, 999999)}",
         "version": "2.0",
         "type": "update",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "sequence": random.randint(1000, 9999),
         "payload": {
             "entity": entity_type,
@@ -1615,7 +1658,7 @@ async def broadcast_data_change(
 
     # DEBUG: Log metadata structure for completion events
     if event_type == "completed" and entity_type == "subtask":
-        logger.info(f"🔍 DEBUG WEBSOCKET: Subtask completion message being sent")
+        logger.info("🔍 DEBUG WEBSOCKET: Subtask completion message being sent")
         logger.info(f"🔍 DEBUG WEBSOCKET: metadata keys = {list(metadata.keys()) if metadata else 'None'}")
         logger.info(f"🔍 DEBUG WEBSOCKET: message['metadata'] keys = {list(message['metadata'].keys())}")
         if metadata and 'progress_history' in metadata:
@@ -1624,7 +1667,7 @@ async def broadcast_data_change(
         if 'progress_history' in message['metadata']:
             logger.info(f"🔍 DEBUG WEBSOCKET: message['metadata']['progress_history'] length = {len(message['metadata']['progress_history'])}")
         else:
-            logger.warning(f"⚠️ DEBUG WEBSOCKET: progress_history NOT IN message['metadata']!")
+            logger.warning("⚠️ DEBUG WEBSOCKET: progress_history NOT IN message['metadata']!")
 
     # Move cascade data from metadata to payload.data for frontend compatibility
     if metadata and "cascade" in metadata:
@@ -1648,9 +1691,9 @@ async def broadcast_data_change(
 
         # Special detailed client logging for DELETE operations
         if event_type.lower() in ['delete', 'deleted']:
-            logger.warning(f"🗑️ DELETE CLIENT AUTHORIZATION LOG:")
+            logger.warning("🗑️ DELETE CLIENT AUTHORIZATION LOG:")
             logger.warning(f"   Total connections: {total_connections}")
-            logger.warning(f"   Client details:")
+            logger.warning("   Client details:")
             for connection in connections_snapshot:
                 logger.warning(f"     Client {connection.client_id}: User {connection.user.id}, Scope: {connection.subscription.get('scope', 'Unknown')}")
     
@@ -1671,7 +1714,7 @@ async def broadcast_data_change(
                     message_id=message_id,
                     message=message.copy(),
                     user_id=connection_user.id,
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                     retry_count=0
                 )
                 # Acquire lock to safely append to message queue
@@ -1708,7 +1751,7 @@ async def broadcast_data_change(
                     error_type = "WebSocket state error" if isinstance(e, RuntimeError) else "Unexpected error"
                     logger.warning(f"❌ {error_type} sending to client {client_id}: {e}")
                     if not isinstance(e, RuntimeError):
-                        logger.error(f"Full traceback:", exc_info=True)
+                        logger.error("Full traceback:", exc_info=True)
     
                     # FAILED: Update queue entry with retry info (exponential backoff)
                     # Acquire lock to safely modify message queue
@@ -1718,7 +1761,7 @@ async def broadcast_data_change(
                                 msg.retry_count += 1
                                 # Exponential backoff: 5s, 10s, 20s
                                 delay_seconds = RETRY_BASE_DELAY_SECONDS * (RETRY_BACKOFF_MULTIPLIER ** (msg.retry_count - 1))
-                                msg.next_retry_time = datetime.now(timezone.utc) + timedelta(seconds=delay_seconds)
+                                msg.next_retry_time = datetime.now(UTC) + timedelta(seconds=delay_seconds)
                                 logger.info(f"📬 Queued message {message_id} for retry #{msg.retry_count} in {delay_seconds}s")
                             break
     
@@ -1739,7 +1782,7 @@ async def broadcast_data_change(
                         "id": f"auth-blocked-{random.randint(100000, 999999)}",
                         "version": "2.0",
                         "type": "error",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                         "sequence": random.randint(1000, 9999),
                         "payload": {
                             "entity": "system",
@@ -1838,3 +1881,22 @@ async def metrics() -> Response:
         content=generate_latest(REGISTRY),
         media_type=CONTENT_TYPE_LATEST
     )
+
+# ==============================================================================
+# BACKWARD COMPATIBILITY EXPORTS
+# ==============================================================================
+# These exports maintain backward compatibility with tests that used the old
+# three-dictionary architecture (active_connections, connection_users,
+# connection_subscriptions) before the refactoring to a single connections dict.
+#
+# The new architecture uses a single WebSocketConnection dataclass that contains
+# all connection state in one atomic unit, preventing synchronization issues.
+
+# Export the new connections dict with legacy names for backward compatibility
+active_connections = connections
+connection_users = connections
+connection_subscriptions = connections  # Also export for tests that use subscription data
+
+# Note: The old architecture used three separate dictionaries which could get
+# out of sync. The new architecture uses a single WebSocketConnection dataclass
+# where subscription data is accessed via connection.subscription for each connection.

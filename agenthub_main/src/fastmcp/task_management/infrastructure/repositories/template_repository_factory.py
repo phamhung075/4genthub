@@ -1,8 +1,7 @@
 """Template Repository Factory for Database Type Selection"""
 
-from typing import Optional
-from pathlib import Path
 import os
+from pathlib import Path
 
 from ...domain.repositories.template_repository import TemplateRepositoryInterface
 from .orm.template_repository import ORMTemplateRepository
@@ -53,7 +52,7 @@ def _find_project_root() -> Path:
 class TemplateRepositoryFactory:
     """Factory for creating template repositories based on database type"""
     
-    def __init__(self, project_root: Optional[Path] = None):
+    def __init__(self, project_root: Path | None = None):
         """
         Initialize template repository factory
         
@@ -62,7 +61,7 @@ class TemplateRepositoryFactory:
         """
         self.project_root = project_root or _find_project_root()
     
-    def create_repository(self, db_path: Optional[str] = None) -> TemplateRepositoryInterface:
+    def create_repository(self, db_path: str | None = None) -> TemplateRepositoryInterface:
         """
         Create a template repository based on environment configuration
         
@@ -104,7 +103,7 @@ class TemplateRepositoryFactory:
         
         return base_repo
     
-    def create_sqlite_repository(self, db_path: Optional[str] = None) -> TemplateRepositoryInterface:
+    def create_sqlite_repository(self, db_path: str | None = None) -> TemplateRepositoryInterface:
         """
         Create a template repository (delegates to create_repository for consistency)
         

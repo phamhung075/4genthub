@@ -1,7 +1,7 @@
 """Task CRUD Operations Handler"""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 # No direct factory imports - handlers receive facades from controller
 # DTO imports for response standardization
@@ -68,7 +68,7 @@ class TaskCrudHandler:
                     success=True,
                     task=task_to_dto(task) if isinstance(task, dict) else task,
                     message="Task created successfully",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 # Handle validation or other errors from facade
@@ -79,7 +79,7 @@ class TaskCrudHandler:
                     task=None,
                     error=error_msg,
                     message=error_msg,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -89,7 +89,7 @@ class TaskCrudHandler:
                 task=None,
                 error=str(e),
                 message="Failed to create task",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def get_task(self, task_id: str, user_id: str, session) -> TaskResponse:
@@ -124,7 +124,7 @@ class TaskCrudHandler:
                     task=None,
                     error=error_msg,
                     message=error_msg,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Extract the actual task data from the result
@@ -135,7 +135,7 @@ class TaskCrudHandler:
                     task=None,
                     error="Task not found",
                     message="Task not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             logger.info(f"Retrieved task {task_id} for user {user_id}")
@@ -143,7 +143,7 @@ class TaskCrudHandler:
             return TaskResponse(
                 success=True,
                 task=task_to_dto(task, include_subtasks=False),
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -153,7 +153,7 @@ class TaskCrudHandler:
                 task=None,
                 error=str(e),
                 message="Failed to get task",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def update_task(
@@ -195,7 +195,7 @@ class TaskCrudHandler:
                     success=True,
                     task=task_to_dto(task) if isinstance(task, dict) else task,
                     message="Task updated successfully",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 # Handle validation or other errors from facade
@@ -208,7 +208,7 @@ class TaskCrudHandler:
                     task=None,
                     error=error_msg,
                     message=error_msg,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -218,7 +218,7 @@ class TaskCrudHandler:
                 task=None,
                 error=str(e),
                 message="Failed to update task",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def delete_task(self, task_id: str, user_id: str, session) -> DeleteResponse:
@@ -253,7 +253,7 @@ class TaskCrudHandler:
                     deleted=True,
                     id=task_id,
                     message="Task deleted successfully",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 # Handle validation or other errors from facade
@@ -266,7 +266,7 @@ class TaskCrudHandler:
                     deleted=False,
                     error=error_msg,
                     message=error_msg,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -276,7 +276,7 @@ class TaskCrudHandler:
                 deleted=False,
                 error=str(e),
                 message="Failed to delete task",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def list_tasks(
@@ -316,7 +316,7 @@ class TaskCrudHandler:
                     success=True,
                     tasks=[task_to_dto(t, include_subtasks=False) for t in tasks],
                     total=len(tasks),
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 # Handle validation or other errors from facade
@@ -327,7 +327,7 @@ class TaskCrudHandler:
                     tasks=[],
                     error=error_msg,
                     message=error_msg,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -337,5 +337,5 @@ class TaskCrudHandler:
                 tasks=[],
                 error=str(e),
                 message="Failed to list tasks",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )

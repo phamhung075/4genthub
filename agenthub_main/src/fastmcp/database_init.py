@@ -3,17 +3,17 @@
 
 import logging
 import os
-from typing import Optional
-from sqlalchemy import create_engine, text
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
+from sqlalchemy import create_engine, text
 
 logger = logging.getLogger(__name__)
 
 class DatabaseInitializer:
     """Handles initial database setup with default projects and branches"""
 
-    def __init__(self, database_url: Optional[str] = None):
+    def __init__(self, database_url: str | None = None):
         """Initialize with database connection"""
         if database_url:
             self.database_url = database_url
@@ -31,7 +31,7 @@ class DatabaseInitializer:
                 # SQLite or other database types
                 self.database_url = os.getenv('DATABASE_URL', 'sqlite:///agenthub_dev.db')
 
-    def create_default_project(self, user_id: str) -> Optional[str]:
+    def create_default_project(self, user_id: str) -> str | None:
         """Create a default project for a user if they don't have any"""
         try:
             engine = create_engine(self.database_url)
@@ -55,7 +55,7 @@ class DatabaseInitializer:
 
                     # Create default project
                     project_id = str(uuid.uuid4())
-                    now = datetime.now(timezone.utc)
+                    now = datetime.now(UTC)
 
                     logger.info(f"Creating default project for user {user_id}")
                     conn.execute(text("""

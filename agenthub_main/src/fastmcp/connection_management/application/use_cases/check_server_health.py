@@ -1,14 +1,13 @@
 """Check Server Health Use Case"""
 
-import time
 import logging
-from typing import Optional
+import time
 
-from ..dtos.connection_dtos import HealthCheckRequest, HealthCheckResponse
+from ....config.version import VERSION, VERSION_INFO
+from ...domain.exceptions.connection_exceptions import ServerHealthCheckFailedError
 from ...domain.repositories.server_repository import ServerRepository
 from ...domain.services.server_health_service import ServerHealthService
-from ...domain.exceptions.connection_exceptions import ServerHealthCheckFailedError
-from ....config.version import VERSION, VERSION_INFO
+from ..dtos.connection_dtos import HealthCheckRequest, HealthCheckResponse
 
 logger = logging.getLogger(__name__)
 

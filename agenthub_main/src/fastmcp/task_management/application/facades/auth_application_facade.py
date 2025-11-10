@@ -8,12 +8,12 @@ ensuring proper separation of concerns and no direct database access from contro
 
 import logging
 import os
-from typing import Optional
+
 from sqlalchemy.orm import Session
 
+from fastmcp.auth.application.services.auth_service import AuthService
 from fastmcp.auth.domain.entities.user import User
 from fastmcp.auth.domain.services.jwt_service import JWTService
-from fastmcp.auth.application.services.auth_service import AuthService
 from fastmcp.auth.infrastructure.repositories.user_repository import UserRepository
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class AuthApplicationFacade:
             jwt_service=self.jwt_service
         )
     
-    def verify_jwt_token(self, token: str) -> Optional[User]:
+    def verify_jwt_token(self, token: str) -> User | None:
         """
         Verify a JWT token and return the associated user.
         
@@ -84,7 +84,7 @@ class AuthApplicationFacade:
             logger.debug(f"JWT verification failed: {e}")
             return None
     
-    async def dual_authenticate(self, token: str) -> Optional[User]:
+    async def dual_authenticate(self, token: str) -> User | None:
         """
         Perform dual authentication supporting both Supabase and local JWT.
         
@@ -103,7 +103,9 @@ class AuthApplicationFacade:
         # First try Supabase authentication if enabled
         if os.getenv("SUPABASE_ENABLED", "false").lower() == "true":
             try:
-                from fastmcp.auth.infrastructure.supabase_client import get_supabase_client
+                from fastmcp.auth.infrastructure.supabase_client import (
+                    get_supabase_client,
+                )
                 
                 supabase = get_supabase_client()
                 if supabase:
@@ -121,7 +123,7 @@ class AuthApplicationFacade:
         # Fall back to local JWT authentication
         return self.verify_jwt_token(token)
     
-    def extract_token_from_headers(self, headers: dict) -> Optional[str]:
+    def extract_token_from_headers(self, headers: dict) -> str | None:
         """
         Extract authentication token from request headers.
         
@@ -143,7 +145,7 @@ class AuthApplicationFacade:
         
         return None
     
-    def extract_token_from_cookies(self, cookies: dict) -> Optional[str]:
+    def extract_token_from_cookies(self, cookies: dict) -> str | None:
         """
         Extract authentication token from cookies.
         

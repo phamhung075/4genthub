@@ -1,7 +1,7 @@
+import logging
 import os
 from pathlib import Path
-import logging
-from typing import Optional
+
 # Removed problematic tool_path import, ensure_project_structure
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ class PathResolver:
                     json.dump(default_projects, f, indent=2)
                 logger.info(f"Created fallback projects file at: {self.projects_file}")
         
-    def get_tasks_json_path(self, project_id: str = None, git_branch_name: str = "main", user_id: Optional[str] = None) -> Path:
+    def get_tasks_json_path(self, project_id: str = None, git_branch_name: str = "main", user_id: str | None = None) -> Path:
         """
         Get the hierarchical tasks.json path for user/project/tree
         
@@ -135,8 +135,9 @@ class PathResolver:
         """Get rules directory using dual-mode configuration with settings fallback"""
         try:
             # First, try using the dual-mode configuration
-            from ....dual_mode_config import get_rules_directory, is_http_mode
             import json
+
+            from ....dual_mode_config import get_rules_directory, is_http_mode
             
             rules_dir = get_rules_directory()
             if rules_dir.exists():
@@ -147,7 +148,7 @@ class PathResolver:
                 # Try 00_RULES/core/settings.json
                 settings_path = self.project_root / "00_RULES" / "core" / "settings.json"
                 if settings_path.exists():
-                    with open(settings_path, 'r', encoding='utf-8') as f:
+                    with open(settings_path, encoding='utf-8') as f:
                         settings = json.load(f)
                         rules_path = settings.get("runtime_constants", {}).get("DOCUMENT_RULES_PATH", "00_RULES")
                         if os.path.isabs(rules_path):
@@ -157,7 +158,7 @@ class PathResolver:
                 # Try .cursor/settings.json
                 cursor_settings_path = self.project_root / ".cursor" / "settings.json"
                 if cursor_settings_path.exists():
-                    with open(cursor_settings_path, 'r', encoding='utf-8') as f:
+                    with open(cursor_settings_path, encoding='utf-8') as f:
                         settings = json.load(f)
                         rules_path = settings.get("runtime_constants", {}).get("DOCUMENT_RULES_PATH", "00_RULES")
                         if os.path.isabs(rules_path):

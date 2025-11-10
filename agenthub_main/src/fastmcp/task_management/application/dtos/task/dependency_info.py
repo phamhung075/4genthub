@@ -1,8 +1,8 @@
 """DTOs for enhanced task dependency information"""
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -15,9 +15,9 @@ class DependencyInfo:
     completion_percentage: float = 0.0
     is_blocking: bool = False
     is_blocked: bool = False
-    estimated_effort: Optional[str] = None
-    assignees: List[str] = None
-    updated_at: Optional[datetime] = None
+    estimated_effort: str | None = None
+    assignees: list[str] = None
+    updated_at: datetime | None = None
     
     def __post_init__(self):
         if self.assignees is None:
@@ -28,12 +28,12 @@ class DependencyInfo:
 class DependencyChain:
     """Represents a chain of task dependencies"""
     chain_id: str
-    tasks: List[DependencyInfo]
+    tasks: list[DependencyInfo]
     total_tasks: int
     completed_tasks: int
     blocked_tasks: int
     chain_status: str  # 'not_started', 'in_progress', 'blocked', 'completed'
-    estimated_completion: Optional[str] = None
+    estimated_completion: str | None = None
     
     @property
     def completion_percentage(self) -> float:
@@ -48,7 +48,7 @@ class DependencyChain:
         return self.blocked_tasks > 0
     
     @property
-    def next_task(self) -> Optional[DependencyInfo]:
+    def next_task(self) -> DependencyInfo | None:
         """Get the next task that can be worked on"""
         for task in self.tasks:
             if task.status == 'todo' and not task.is_blocked:
@@ -62,12 +62,12 @@ class DependencyRelationships:
     task_id: str
     
     # Direct dependencies
-    depends_on: List[DependencyInfo]
-    blocks: List[DependencyInfo]
+    depends_on: list[DependencyInfo]
+    blocks: list[DependencyInfo]
     
     # Dependency chains
-    upstream_chains: List[DependencyChain]
-    downstream_chains: List[DependencyChain]
+    upstream_chains: list[DependencyChain]
+    downstream_chains: list[DependencyChain]
     
     # Summary information
     total_dependencies: int
@@ -81,8 +81,8 @@ class DependencyRelationships:
     
     # Workflow information
     dependency_summary: str
-    next_actions: List[str]
-    blocking_reasons: List[str]
+    next_actions: list[str]
+    blocking_reasons: list[str]
     
     def __post_init__(self):
         if self.depends_on is None:
@@ -105,7 +105,7 @@ class DependencyRelationships:
             return 100.0
         return (self.completed_dependencies / self.total_dependencies) * 100
     
-    def get_blocking_chain_info(self) -> Dict[str, Any]:
+    def get_blocking_chain_info(self) -> dict[str, Any]:
         """Get information about what's blocking this task"""
         blocking_info = {
             'is_blocked': self.is_blocked,
@@ -147,7 +147,7 @@ class DependencyRelationships:
         
         return blocking_info
     
-    def get_workflow_guidance(self) -> Dict[str, Any]:
+    def get_workflow_guidance(self) -> dict[str, Any]:
         """Get workflow guidance based on dependency status"""
         guidance = {
             'can_start_immediately': self.can_start,

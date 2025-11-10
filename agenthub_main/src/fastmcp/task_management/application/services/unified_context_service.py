@@ -3,21 +3,30 @@ Unified Context Service for all context management operations.
 Handles inheritance, delegation, caching, and business rules.
 """
 
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone, date
 import logging
-from uuid import UUID
-import json
+from datetime import UTC, date, datetime
 from decimal import Decimal
+from typing import Any
+from uuid import UUID
+
 from sqlalchemy.exc import IntegrityError
 
-from fastmcp.task_management.domain.entities.context import GlobalContext, ProjectContext, BranchContext, TaskContextUnified as TaskContext
+from fastmcp.task_management.domain.entities.context import (
+    BranchContext,
+    GlobalContext,
+    ProjectContext,
+)
+from fastmcp.task_management.domain.entities.context import (
+    TaskContextUnified as TaskContext,
+)
 from fastmcp.task_management.domain.value_objects.context_enums import ContextLevel
+
 from .context_cache_service import ContextCacheService
-from .context_inheritance_service import ContextInheritanceService
 from .context_delegation_service import ContextDelegationService
-from .context_validation_service import ContextValidationService
 from .context_hierarchy_validator import ContextHierarchyValidator
+from .context_inheritance_service import ContextInheritanceService
+from .context_validation_service import ContextValidationService
+
 # GLOBAL_SINGLETON_UUID removed - each user has their own global context
 
 logger = logging.getLogger(__name__)
@@ -35,11 +44,11 @@ class UnifiedContextService:
         project_context_repository: Any,
         branch_context_repository: Any,
         task_context_repository: Any,
-        cache_service: Optional[ContextCacheService] = None,
-        inheritance_service: Optional[ContextInheritanceService] = None,
-        delegation_service: Optional[ContextDelegationService] = None,
-        validation_service: Optional[ContextValidationService] = None,
-        user_id: Optional[str] = None
+        cache_service: ContextCacheService | None = None,
+        inheritance_service: ContextInheritanceService | None = None,
+        delegation_service: ContextDelegationService | None = None,
+        validation_service: ContextValidationService | None = None,
+        user_id: str | None = None
     ):
         """Initialize unified context service with required repositories and services."""
         self._user_id = user_id  # Store user context
@@ -125,7 +134,7 @@ class UnifiedContextService:
         else:
             return data
     
-    def _normalize_global_context_id(self, context_id: str, user_id: Optional[str] = None) -> str:
+    def _normalize_global_context_id(self, context_id: str, user_id: str | None = None) -> str:
         """
         Normalize global context ID, converting 'global' to user-specific UUID or auto-generating if None/empty.
         
@@ -143,7 +152,9 @@ class UnifiedContextService:
             if not effective_user_id:
                 # Try to get from current context
                 try:
-                    from ....auth.middleware.request_context_middleware import get_current_user_id
+                    from ....auth.middleware.request_context_middleware import (
+                        get_current_user_id,
+                    )
                     effective_user_id = get_current_user_id()
                 except Exception:
                     pass
@@ -169,11 +180,11 @@ class UnifiedContextService:
         self, 
         level: str, 
         context_id: str, 
-        data: Dict[str, Any],
-        user_id: Optional[str] = None,
-        project_id: Optional[str] = None,
+        data: dict[str, Any],
+        user_id: str | None = None,
+        project_id: str | None = None,
         auto_create_parents: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create context at specified level with validation and auto-parent creation."""
         try:
             # Handle None data by converting to empty dict
@@ -431,8 +442,8 @@ class UnifiedContextService:
         context_id: str, 
         include_inherited: bool = False,
         force_refresh: bool = False,
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """Get context with optional inheritance resolution."""
         try:
             # Validate context_id is not None or empty
@@ -510,10 +521,10 @@ class UnifiedContextService:
         self, 
         level: str, 
         context_id: str, 
-        data: Dict[str, Any],
+        data: dict[str, Any],
         propagate_changes: bool = True,
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """Update context with inheritance propagation."""
         try:
             # Validate level first to know if it's global
@@ -635,8 +646,8 @@ class UnifiedContextService:
         self, 
         level: str, 
         context_id: str,
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """Delete context with cleanup."""
         try:
             # Validate level first to know if it's global
@@ -711,8 +722,8 @@ class UnifiedContextService:
         level: str, 
         context_id: str, 
         force_refresh: bool = False,
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """Resolve full inheritance chain with caching."""
         try:
             # Validate level first to know if it's global
@@ -749,9 +760,9 @@ class UnifiedContextService:
         level: str, 
         context_id: str, 
         delegate_to: str, 
-        data: Dict[str, Any],
-        delegation_reason: Optional[str] = None
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        delegation_reason: str | None = None
+    ) -> dict[str, Any]:
         """Delegate context data to higher level."""
         try:
             # Normalize context_id for backward compatibility
@@ -782,8 +793,8 @@ class UnifiedContextService:
     def list_contexts(
         self, 
         level: str, 
-        filters: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        filters: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """List contexts at specified level with optional filtering."""
         try:
             logger.info(f"list_contexts called with level={level}, filters={filters}")
@@ -830,10 +841,10 @@ class UnifiedContextService:
         level: str,
         context_id: str,
         content: str,
-        category: Optional[str] = None,
-        importance: Optional[str] = "medium",
-        agent: Optional[str] = None
-    ) -> Dict[str, Any]:
+        category: str | None = None,
+        importance: str | None = "medium",
+        agent: str | None = None
+    ) -> dict[str, Any]:
         """Add an insight to context."""
         try:
             # Normalize context_id for backward compatibility
@@ -852,7 +863,7 @@ class UnifiedContextService:
                 "category": category or "general",
                 "importance": importance,
                 "agent": agent if agent else "unified_context_service",
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             }
             insights.append(insight)
             
@@ -875,8 +886,8 @@ class UnifiedContextService:
         level: str,
         context_id: str,
         content: str,
-        agent: Optional[str] = None
-    ) -> Dict[str, Any]:
+        agent: str | None = None
+    ) -> dict[str, Any]:
         """Add progress update to context."""
         try:
             # Normalize context_id for backward compatibility
@@ -893,7 +904,7 @@ class UnifiedContextService:
             progress = {
                 "content": content,
                 "agent": agent if agent else "unified_context_service",
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             }
             progress_updates.append(progress)
             
@@ -917,9 +928,9 @@ class UnifiedContextService:
         self,
         level: ContextLevel,
         context_id: str,
-        data: Dict[str, Any],
-        user_id: Optional[str] = None,
-        project_id: Optional[str] = None
+        data: dict[str, Any],
+        user_id: str | None = None,
+        project_id: str | None = None
     ):
         """Create appropriate context entity based on level."""
         # Serialize data to ensure JSON compatibility
@@ -1090,7 +1101,7 @@ class UnifiedContextService:
         else:
             raise ValueError(f"Unknown context level: {level}")
     
-    def _entity_to_dict(self, entity) -> Dict[str, Any]:
+    def _entity_to_dict(self, entity) -> dict[str, Any]:
         """Convert context entity to dictionary."""
         # Always use dict() method if available, as it properly serializes all fields
         if hasattr(entity, 'dict') and callable(getattr(entity, 'dict')):
@@ -1102,9 +1113,9 @@ class UnifiedContextService:
     
     def _merge_context_data(
         self,
-        existing_data: Dict[str, Any],
-        new_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        existing_data: dict[str, Any],
+        new_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Merge new data with existing context data."""
         # CRITICAL FIX: Handle None values to prevent NoneType iteration errors
         if existing_data is None:
@@ -1166,7 +1177,7 @@ class UnifiedContextService:
         
         return merged
     
-    def _update_context_entity(self, existing_entity, new_data: Dict[str, Any]):
+    def _update_context_entity(self, existing_entity, new_data: dict[str, Any]):
         """Update context entity with new data."""
         # Create a new entity with updated data based on entity type
         entity_type = type(existing_entity)
@@ -1267,11 +1278,11 @@ class UnifiedContextService:
             # If new_data contains global_settings, use it; otherwise treat new_data as the global_settings
             if "global_settings" in new_data:
                 global_settings = new_data["global_settings"]
-                logger.info(f"DEBUG: _update_context_entity GlobalContext - using global_settings from new_data")
+                logger.info("DEBUG: _update_context_entity GlobalContext - using global_settings from new_data")
             else:
                 # The entire new_data is the global settings update
                 global_settings = new_data
-                logger.info(f"DEBUG: _update_context_entity GlobalContext - using entire new_data as global_settings")
+                logger.info("DEBUG: _update_context_entity GlobalContext - using entire new_data as global_settings")
             
             logger.info(f"DEBUG: _update_context_entity GlobalContext - global_settings: {global_settings}")
             
@@ -1313,11 +1324,11 @@ class UnifiedContextService:
         self,
         level: str,
         context_id: str,
-        data: Optional[Dict[str, Any]] = None,
-        user_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        data: dict[str, Any] | None = None,
+        user_id: str | None = None,
+        project_id: str | None = None,
+        git_branch_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Auto-create context if it doesn't exist, with fallback data.
         
@@ -1378,7 +1389,7 @@ class UnifiedContextService:
                 "error": f"Auto-creation failed: {str(e)}"
             }
     
-    def _resolve_inheritance_sync(self, level: ContextLevel, context_entity: Any, context_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _resolve_inheritance_sync(self, level: ContextLevel, context_entity: Any, context_data: dict[str, Any]) -> dict[str, Any]:
         """
         Synchronously resolve context inheritance chain.
         
@@ -1506,7 +1517,7 @@ class UnifiedContextService:
                 # Add inheritance metadata
                 merged_data["_inheritance"] = {
                     "chain": [item["level"] for item in inheritance_chain],
-                    "resolved_at": datetime.now(timezone.utc).isoformat(),
+                    "resolved_at": datetime.now(UTC).isoformat(),
                     "inheritance_depth": len(inheritance_chain)
                 }
                 
@@ -1520,7 +1531,7 @@ class UnifiedContextService:
             # Return original data on error
             return context_data
     
-    def _merge_inheritance_chain(self, inheritance_chain: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _merge_inheritance_chain(self, inheritance_chain: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Merge inheritance chain using the inheritance service logic.
         
@@ -1561,10 +1572,10 @@ class UnifiedContextService:
         self,
         level: str,
         context_id: str,
-        data: Optional[Dict[str, Any]] = None,
-        project_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        data: dict[str, Any] | None = None,
+        project_id: str | None = None,
+        git_branch_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Build default context data for auto-creation based on level.
         
@@ -1572,7 +1583,7 @@ class UnifiedContextService:
         ensuring they have the minimum required data for each level.
         """
         base_data = data or {}
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
         
         # Common metadata for all levels
         default_metadata = {
@@ -1637,10 +1648,10 @@ class UnifiedContextService:
         self,
         target_level: ContextLevel,
         context_id: str,
-        data: Dict[str, Any],
-        user_id: Optional[str] = None,
-        project_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        user_id: str | None = None,
+        project_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Ensure all required parent contexts exist for the target context.
         
@@ -1812,7 +1823,7 @@ class UnifiedContextService:
                 "error": f"Exception during parent context creation: {str(e)}"
             }
     
-    def _create_hierarchy_atomically(self, contexts_to_create: List[tuple]) -> bool:
+    def _create_hierarchy_atomically(self, contexts_to_create: list[tuple]) -> bool:
         """
         Create multiple contexts atomically in a single transaction.
         
@@ -1861,7 +1872,7 @@ class UnifiedContextService:
         self, 
         level: ContextLevel, 
         context_id: str, 
-        data: Dict[str, Any]
+        data: dict[str, Any]
     ) -> bool:
         """
         Create a context atomically without triggering validation cycles.
@@ -1930,7 +1941,7 @@ class UnifiedContextService:
                 # Check if it's a concatenated global context (starts with global singleton UUID)
                 # Check if it's a composite ID (UUID_UUID format)
                 if context_id and '_' in context_id and len(context_id.split('_')) == 2:
-                    logger.info(f"Atomic flow: Found concatenated global context ID, converting to UUID")
+                    logger.info("Atomic flow: Found concatenated global context ID, converting to UUID")
                     import uuid
                     # Extract user_id from the concatenated ID
                     parts = context_id.split("_", 1)
@@ -1991,7 +2002,7 @@ class UnifiedContextService:
                     logger.error(f"Failed to rollback session: {rollback_error}")
             return False
     
-    def _resolve_project_id_from_branch(self, branch_id: str) -> Optional[str]:
+    def _resolve_project_id_from_branch(self, branch_id: str) -> str | None:
         """
         Resolve project_id from git branch entity.
         
@@ -2034,7 +2045,7 @@ class UnifiedContextService:
         self, 
         context_level: ContextLevel, 
         context_id: str, 
-        data: Dict[str, Any]
+        data: dict[str, Any]
     ) -> bool:
         """
         Determine if a context should be allowed to be created even if parent validation fails.
@@ -2110,7 +2121,7 @@ class UnifiedContextService:
         except Exception as e:
             logger.warning(f"Failed to invalidate child caches: {e}")
     
-    def _ensure_global_context_exists(self, user_id: Optional[str] = None) -> Dict[str, Any]:
+    def _ensure_global_context_exists(self, user_id: str | None = None) -> dict[str, Any]:
         """Ensure global context exists, create if missing."""
         try:
             # Always generate user-specific UUID for global context
@@ -2171,8 +2182,8 @@ class UnifiedContextService:
     def _ensure_project_context_exists(
         self, 
         project_id: str, 
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """Ensure project context exists, create if missing."""
         try:
             # Check if project context exists
@@ -2221,8 +2232,8 @@ class UnifiedContextService:
         self, 
         branch_id: str, 
         project_id: str,
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Ensure branch context exists, create if missing.
         
@@ -2311,10 +2322,10 @@ class UnifiedContextService:
     
     def bootstrap_context_hierarchy(
         self, 
-        user_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        branch_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None,
+        project_id: str | None = None,
+        branch_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Bootstrap the entire context hierarchy from scratch.
         
@@ -2399,7 +2410,7 @@ class UnifiedContextService:
                 "error": f"Bootstrap exception: {str(e)}"
             }
     
-    def _generate_bootstrap_usage_guidance(self, created_contexts: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_bootstrap_usage_guidance(self, created_contexts: dict[str, Any]) -> dict[str, Any]:
         """Generate usage guidance based on what contexts were created."""
         guidance = {
             "next_steps": [],
@@ -2438,11 +2449,11 @@ class UnifiedContextService:
         self,
         level: str,
         context_id: str,
-        data: Optional[Dict[str, Any]] = None,
-        user_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        data: dict[str, Any] | None = None,
+        user_id: str | None = None,
+        project_id: str | None = None,
+        git_branch_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Auto-create a context if it doesn't already exist.
         

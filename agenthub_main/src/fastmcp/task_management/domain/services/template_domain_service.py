@@ -1,14 +1,12 @@
 """Template Domain Service - Core Business Logic"""
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime
-from datetime import datetime, timezone
 import logging
+from datetime import UTC, datetime
+from typing import Any
 
-from ..entities.template import Template, TemplateResult, TemplateRenderRequest, TemplateUsage
+from ..entities.template import Template, TemplateRenderRequest, TemplateUsage
+from ..value_objects import TemplatePriority, TemplateStatus
 from ..value_objects.template_id import TemplateId
-from ..value_objects import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
-from ..exceptions.template_exceptions import TemplateNotFoundError, TemplateValidationError, TemplateRenderError
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +14,7 @@ logger = logging.getLogger(__name__)
 class TemplateDomainService:
     """Domain service for template business logic and rules"""
     
-    def validate_template(self, template: Template) -> List[str]:
+    def validate_template(self, template: Template) -> list[str]:
         """Validate template according to business rules"""
         errors = []
         
@@ -46,7 +44,7 @@ class TemplateDomainService:
         if template.variables:
             for var in template.variables:
                 if not var.strip():
-                    errors.append(f"Variable name cannot be empty")
+                    errors.append("Variable name cannot be empty")
                 if not var.replace('_', '').replace('-', '').isalnum():
                     errors.append(f"Variable '{var}' contains invalid characters")
         
@@ -62,7 +60,7 @@ class TemplateDomainService:
         
         return errors
     
-    def can_render_template(self, template: Template, agent_name: str, file_patterns: Optional[List[str]] = None) -> bool:
+    def can_render_template(self, template: Template, agent_name: str, file_patterns: list[str] | None = None) -> bool:
         """Check if template can be rendered by given agent and context"""
         # Check if template is active
         if not template.is_active or template.status != TemplateStatus.ACTIVE:
@@ -81,10 +79,10 @@ class TemplateDomainService:
     def calculate_template_score(
         self, 
         template: Template, 
-        task_context: Dict[str, Any], 
+        task_context: dict[str, Any], 
         agent_name: str,
-        file_patterns: Optional[List[str]] = None,
-        usage_stats: Optional[Dict[str, Any]] = None
+        file_patterns: list[str] | None = None,
+        usage_stats: dict[str, Any] | None = None
     ) -> float:
         """Calculate suggestion score for template based on context"""
         score = 0.0
@@ -160,7 +158,7 @@ class TemplateDomainService:
     def get_suggestion_reason(
         self, 
         template: Template, 
-        task_context: Dict[str, Any], 
+        task_context: dict[str, Any], 
         score: float
     ) -> str:
         """Generate human-readable reason for template suggestion"""
@@ -199,7 +197,7 @@ class TemplateDomainService:
         
         return "; ".join(reasons)
     
-    def validate_render_request(self, request: TemplateRenderRequest) -> List[str]:
+    def validate_render_request(self, request: TemplateRenderRequest) -> list[str]:
         """Validate template render request"""
         errors = []
         
@@ -216,10 +214,10 @@ class TemplateDomainService:
     
     def merge_template_variables(
         self, 
-        template_variables: List[str], 
-        request_variables: Dict[str, Any],
-        task_context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        template_variables: list[str], 
+        request_variables: dict[str, Any],
+        task_context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Merge variables from different sources with precedence rules"""
         merged_variables = {}
         
@@ -242,11 +240,11 @@ class TemplateDomainService:
     def create_template_usage(
         self,
         template_id: TemplateId,
-        task_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        agent_name: Optional[str] = None,
-        variables_used: Optional[Dict[str, Any]] = None,
-        output_path: Optional[str] = None,
+        task_id: str | None = None,
+        project_id: str | None = None,
+        agent_name: str | None = None,
+        variables_used: dict[str, Any] | None = None,
+        output_path: str | None = None,
         generation_time_ms: int = 0,
         cache_hit: bool = False
     ) -> TemplateUsage:
@@ -260,7 +258,7 @@ class TemplateDomainService:
             output_path=output_path,
             generation_time_ms=generation_time_ms,
             cache_hit=cache_hit,
-            used_at=datetime.now(timezone.utc)
+            used_at=datetime.now(UTC)
         )
     
     def should_cache_result(self, template: Template, request: TemplateRenderRequest) -> bool:

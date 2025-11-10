@@ -2,18 +2,17 @@
 Project Context Repository for unified context system.
 """
 
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
+import logging
+from contextlib import contextmanager
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime, timezone
-from contextlib import contextmanager
-import logging
 
 from ...domain.entities.context import ProjectContext
 from ...infrastructure.database.models import ProjectContext as ProjectContextModel
-from .base_orm_repository import BaseORMRepository
 from ..cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
+from .base_orm_repository import BaseORMRepository
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 class ProjectContextRepository(CacheInvalidationMixin, BaseORMRepository):
     """Repository for project context operations."""
     
-    def __init__(self, session_factory, user_id: Optional[str] = None):
+    def __init__(self, session_factory, user_id: str | None = None):
         super().__init__(ProjectContextModel)
         self.session_factory = session_factory
         self.model_class = ProjectContextModel
@@ -95,7 +94,7 @@ class ProjectContextRepository(CacheInvalidationMixin, BaseORMRepository):
             
             return self._to_entity(db_model)
     
-    def get(self, context_id: str) -> Optional[ProjectContext]:
+    def get(self, context_id: str) -> ProjectContext | None:
         """Get project context by ID."""
         with self.get_db_session() as session:
             query = session.query(ProjectContextModel).filter(ProjectContextModel.id == context_id)
@@ -167,7 +166,7 @@ class ProjectContextRepository(CacheInvalidationMixin, BaseORMRepository):
             
             return True
     
-    def list(self, filters: Optional[Dict[str, Any]] = None) -> List[ProjectContext]:
+    def list(self, filters: dict[str, Any] | None = None) -> list[ProjectContext]:
         """List project contexts."""
         with self.get_db_session() as session:
             stmt = select(ProjectContextModel)

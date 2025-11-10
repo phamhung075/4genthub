@@ -5,13 +5,13 @@ Combines traditional task creation with AI planning and insights.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
+from typing import Any
 
-from ..services.ai_integration_service import AITaskIntegrationService
+from ...domain.repositories.task_repository import TaskRepository
 from ..dtos.task.create_task_request import CreateTaskRequest
 from ..facades.task_application_facade import TaskApplicationFacade
-from ...domain.repositories.task_repository import TaskRepository
+from ..services.ai_integration_service import AITaskIntegrationService
 
 logger = logging.getLogger(__name__)
 
@@ -20,21 +20,21 @@ class AITaskCreationRequest:
     """Request for AI-enhanced task creation"""
     # Standard task creation fields
     title: str
-    description: Optional[str]
+    description: str | None
     git_branch_id: str
-    priority: Optional[str] = 'medium'
-    assignees: Optional[list] = None
-    estimated_effort: Optional[str] = None
-    labels: Optional[list] = None
-    dependencies: Optional[list] = None
-    user_id: Optional[str] = None
+    priority: str | None = 'medium'
+    assignees: list | None = None
+    estimated_effort: str | None = None
+    labels: list | None = None
+    dependencies: list | None = None
+    user_id: str | None = None
     
     # AI enhancement options
     enable_ai_breakdown: bool = False
     enable_smart_assignment: bool = False
     enable_auto_subtasks: bool = False
     planning_context: str = 'new_feature'
-    ai_requirements: Optional[str] = None  # Additional requirements for AI planning
+    ai_requirements: str | None = None  # Additional requirements for AI planning
 
 class AITaskCreationUseCase:
     """
@@ -52,7 +52,7 @@ class AITaskCreationUseCase:
         self.task_facade = task_facade
         self.ai_integration_service = AITaskIntegrationService(task_facade)
     
-    async def execute(self, request: AITaskCreationRequest) -> Dict[str, Any]:
+    async def execute(self, request: AITaskCreationRequest) -> dict[str, Any]:
         """
         Execute AI-enhanced task creation.
         
@@ -129,7 +129,7 @@ class AITaskCreationUseCase:
     async def create_full_ai_plan(self, requirements: str, title: str,
                                  description: str, git_branch_id: str,
                                  context: str = 'new_feature',
-                                 user_id: Optional[str] = None) -> Dict[str, Any]:
+                                 user_id: str | None = None) -> dict[str, Any]:
         """
         Create a full AI-generated task plan.
         
@@ -161,7 +161,7 @@ class AITaskCreationUseCase:
                 'error': f'AI plan creation failed: {str(e)}'
             }
     
-    async def enhance_existing_task(self, task_id: str, enhancement_options: Dict[str, Any]) -> Dict[str, Any]:
+    async def enhance_existing_task(self, task_id: str, enhancement_options: dict[str, Any]) -> dict[str, Any]:
         """
         Enhance an existing task with AI capabilities.
         
@@ -209,7 +209,7 @@ class AITaskCreationUseCase:
                 'error': f'Task enhancement failed: {str(e)}'
             }
     
-    async def _analyze_task_complexity(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _analyze_task_complexity(self, task_data: dict[str, Any]) -> dict[str, Any]:
         """Analyze task complexity using AI"""
         title = task_data.get('title', '')
         description = task_data.get('description', '')
@@ -221,7 +221,7 @@ class AITaskCreationUseCase:
         
         return ai_insights.get('complexity_analysis', {})
     
-    async def _suggest_task_optimizations(self, task_data: Dict[str, Any]) -> List[str]:
+    async def _suggest_task_optimizations(self, task_data: dict[str, Any]) -> list[str]:
         """Suggest optimizations for the task"""
         title = task_data.get('title', '')
         description = task_data.get('description', '')
@@ -233,7 +233,7 @@ class AITaskCreationUseCase:
         
         return ai_insights.get('optimization_suggestions', [])
     
-    async def _identify_task_risks(self, task_data: Dict[str, Any]) -> List[str]:
+    async def _identify_task_risks(self, task_data: dict[str, Any]) -> list[str]:
         """Identify potential risks for the task"""
         title = task_data.get('title', '')
         description = task_data.get('description', '')

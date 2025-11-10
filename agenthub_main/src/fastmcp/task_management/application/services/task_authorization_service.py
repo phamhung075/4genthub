@@ -7,7 +7,7 @@ Integrates with the existing PermissionChecker system.
 """
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from ....auth.domain.permissions import (
     PermissionAction,
@@ -40,7 +40,7 @@ class TaskAuthorizationService:
         "remove_dependency": PermissionAction.UPDATE,  # Removing dependency is update
     }
 
-    def __init__(self, response_formatter: Optional[Any] = None):
+    def __init__(self, response_formatter: Any | None = None):
         """
         Initialize the authorization service.
 
@@ -53,9 +53,9 @@ class TaskAuthorizationService:
         self,
         action: str,
         user_id: str,
-        token_payload: Dict[str, Any],
-        task_id: Optional[str] = None,
-    ) -> Tuple[bool, Optional[Dict[str, Any]]]:
+        token_payload: dict[str, Any],
+        task_id: str | None = None,
+    ) -> tuple[bool, dict[str, Any] | None]:
         """
         Check if user has required permissions for task operations.
 
@@ -127,7 +127,7 @@ class TaskAuthorizationService:
             # In production, you might want to fail-closed (deny access on errors)
             return True, None
 
-    def get_permission_for_action(self, action: str) -> Optional[PermissionAction]:
+    def get_permission_for_action(self, action: str) -> PermissionAction | None:
         """
         Get the required permission for a given action.
 
@@ -152,7 +152,7 @@ class TaskAuthorizationService:
         return action in self.ACTION_PERMISSION_MAP
 
     @staticmethod
-    def extract_token_from_context() -> Optional[Dict[str, Any]]:
+    def extract_token_from_context() -> dict[str, Any] | None:
         """
         Extract token payload from current request context.
 
@@ -201,8 +201,8 @@ class TaskAuthorizationService:
         self,
         action: str,
         user_id: str,
-        task_id: Optional[str] = None,
-    ) -> Tuple[bool, Optional[Dict[str, Any]]]:
+        task_id: str | None = None,
+    ) -> tuple[bool, dict[str, Any] | None]:
         """
         Check task permission using token from current request context.
 

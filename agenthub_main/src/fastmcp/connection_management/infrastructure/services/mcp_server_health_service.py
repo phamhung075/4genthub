@@ -1,11 +1,11 @@
 """MCP Server Health Service Implementation"""
 
-import os
 import logging
-from typing import Dict, Any
+import os
+from typing import Any
 
-from ...domain.services.server_health_service import ServerHealthService
 from ...domain.entities.server import Server
+from ...domain.services.server_health_service import ServerHealthService
 from ...domain.value_objects.server_status import ServerStatus
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class MCPServerHealthService(ServerHealthService):
         # Delegate to the server entity for the actual health check logic
         return server.check_health()
     
-    def get_environment_info(self) -> Dict[str, Any]:
+    def get_environment_info(self) -> dict[str, Any]:
         """Get server environment information (sanitized for security)"""
         # Only expose non-sensitive configuration flags
         # Do NOT expose paths, URLs, or internal configuration details
@@ -36,14 +36,14 @@ class MCPServerHealthService(ServerHealthService):
             }
         }
     
-    def get_authentication_status(self) -> Dict[str, Any]:
+    def get_authentication_status(self) -> dict[str, Any]:
         """Get authentication configuration and status"""
         return {
             "enabled": os.environ.get("AUTH_ENABLED", "true").lower() == "true",
             "mvp_mode": os.environ.get("PRODUCTION", "false").lower() == "true"
         }
     
-    def get_task_management_info(self) -> Dict[str, Any]:
+    def get_task_management_info(self) -> dict[str, Any]:
         """Get task management system information"""
         return {
             "task_management_enabled": True,
@@ -52,12 +52,10 @@ class MCPServerHealthService(ServerHealthService):
             "enabled_tools": []
         }
     
-    def validate_server_configuration(self) -> Dict[str, Any]:
+    def validate_server_configuration(self) -> dict[str, Any]:
         """Validate server configuration and dependencies (sanitized)"""
         try:
             # Try to import and use the existing connection manager
-            from ....server.connection_manager import get_connection_manager
-            from ....server.connection_status_broadcaster import get_status_broadcaster
             
             # Get connection manager info
             connection_stats = {}
@@ -69,8 +67,8 @@ class MCPServerHealthService(ServerHealthService):
                     "connections": {"active_connections": 0},
                     "server_info": {"restart_count": 0, "uptime_seconds": 0}
                 }
-            except Exception as e:
-                logger.warning(f"Could not get connection manager stats")
+            except Exception:
+                logger.warning("Could not get connection manager stats")
                 # Don't expose error details to users
                 connection_stats = {"connections": {"active_connections": 0}}
             
@@ -79,8 +77,8 @@ class MCPServerHealthService(ServerHealthService):
             try:
                 # This would be async in real implementation
                 status_broadcasting_active = True
-            except Exception as e:
-                logger.warning(f"Could not get status broadcaster info")
+            except Exception:
+                logger.warning("Could not get status broadcaster info")
                 status_broadcasting_active = False
             
             return {

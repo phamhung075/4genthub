@@ -3,16 +3,14 @@ Keycloak Integration for MCP Authentication
 Clean implementation with no backward compatibility
 """
 
-import os
 import logging
-import json
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
-from urllib.parse import urljoin
+import os
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 import httpx
 import jwt
 from jwt import PyJWKClient
-from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +22,10 @@ class KeycloakAuthProvider:
 
     def __init__(
         self,
-        keycloak_url: Optional[str] = None,
-        realm: Optional[str] = None,
-        client_id: Optional[str] = None,
-        client_secret: Optional[str] = None,
+        keycloak_url: str | None = None,
+        realm: str | None = None,
+        client_id: str | None = None,
+        client_secret: str | None = None,
         verify_audience: bool = True,
         ssl_verify: bool = True,
         token_cache_ttl: int = 300,
@@ -88,12 +86,12 @@ class KeycloakAuthProvider:
             )
         return self._jwks_client
 
-    async def get_oidc_configuration(self) -> Dict[str, Any]:
+    async def get_oidc_configuration(self) -> dict[str, Any]:
         """
         Get OpenID Connect configuration from Keycloak.
         Cached for performance.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Check cache
         if self._oidc_config and self._last_config_fetch:
@@ -118,7 +116,7 @@ class KeycloakAuthProvider:
                 return self._oidc_config
             raise
 
-    async def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
+    async def validate_token(self, token: str) -> dict[str, Any] | None:
         """
         Validate a Keycloak JWT token.
 
@@ -162,7 +160,7 @@ class KeycloakAuthProvider:
                 return None
 
             # Check if token is active
-            now = datetime.now(timezone.utc).timestamp()
+            now = datetime.now(UTC).timestamp()
             if payload.get("exp", 0) < now:
                 logger.warning("Token expired")
                 return None
@@ -180,7 +178,7 @@ class KeycloakAuthProvider:
             logger.error(f"Token validation error: {e}")
             return None
 
-    async def get_user_info(self, access_token: str) -> Optional[Dict[str, Any]]:
+    async def get_user_info(self, access_token: str) -> dict[str, Any] | None:
         """
         Get user information from Keycloak userinfo endpoint.
 
@@ -205,12 +203,12 @@ class KeycloakAuthProvider:
 
     async def exchange_token(
         self,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        refresh_token: Optional[str] = None,
-        authorization_code: Optional[str] = None,
-        redirect_uri: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
+        username: str | None = None,
+        password: str | None = None,
+        refresh_token: str | None = None,
+        authorization_code: str | None = None,
+        redirect_uri: str | None = None
+    ) -> dict[str, Any] | None:
         """
         Exchange credentials for tokens using Keycloak token endpoint.
 
@@ -319,7 +317,7 @@ class KeycloakMCPAuth:
     Maps Keycloak tokens to MCP authentication context.
     """
 
-    def __init__(self, keycloak_provider: Optional[KeycloakAuthProvider] = None):
+    def __init__(self, keycloak_provider: KeycloakAuthProvider | None = None):
         """
         Initialize MCP Keycloak authentication.
 
@@ -330,8 +328,8 @@ class KeycloakMCPAuth:
 
     async def authenticate_mcp_request(
         self,
-        authorization_header: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
+        authorization_header: str | None = None
+    ) -> dict[str, Any] | None:
         """
         Authenticate an MCP request using Keycloak token.
 
@@ -391,8 +389,8 @@ class KeycloakMCPAuth:
         self,
         keycloak_token: str,
         name: str = "MCP Token",
-        scopes: Optional[List[str]] = None
-    ) -> Optional[Dict[str, Any]]:
+        scopes: list[str] | None = None
+    ) -> dict[str, Any] | None:
         """
         Create an MCP-specific token from a Keycloak token.
         This allows MCP clients to use simplified tokens.
@@ -412,9 +410,9 @@ class KeycloakMCPAuth:
             return None
 
         # Generate MCP token
-        import secrets
         import hashlib
-        from datetime import datetime, timezone, timedelta
+        import secrets
+        from datetime import datetime
 
         mcp_token = f"mcp_{secrets.token_urlsafe(32)}"
         token_hash = hashlib.sha256(mcp_token.encode()).hexdigest()
@@ -427,8 +425,8 @@ class KeycloakMCPAuth:
             "user_id": payload.get("sub"),
             "username": payload.get("preferred_username"),
             "scopes": scopes or ["mcp:read", "mcp:execute"],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "expires_at": (datetime.now(UTC) + timedelta(days=30)).isoformat(),
             "keycloak_session": payload.get("sid"),
             "active": True
         }

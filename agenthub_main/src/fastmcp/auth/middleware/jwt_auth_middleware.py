@@ -6,11 +6,12 @@ and creating user-scoped repositories and services.
 """
 
 import logging
-from typing import Optional, Tuple, Any
 from functools import wraps
-from sqlalchemy.orm import Session
+from typing import Any
+
 import jwt
 from jwt import InvalidTokenError
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class JWTAuthMiddleware:
         if secret_key == "default-secret-key-change-in-production":
             logger.warning("⚠️ JWTAuthMiddleware using default fallback secret key!")
     
-    def extract_user_from_token(self, token: str) -> Optional[str]:
+    def extract_user_from_token(self, token: str) -> str | None:
         """
         Extract user_id from JWT token.
         
@@ -80,7 +81,7 @@ class JWTAuthMiddleware:
                     logger.error(f"Failed without audience check: {e}")
                     raise
             
-            logger.debug(f"✅ JWTAuthMiddleware successfully decoded token")
+            logger.debug("✅ JWTAuthMiddleware successfully decoded token")
             
             # Extract user_id from payload
             user_id = payload.get("sub") or payload.get("user_id")

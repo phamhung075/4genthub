@@ -11,20 +11,19 @@ Key Features:
 - Caching for performance optimization
 """
 
-import logging
-from typing import List, Dict, Any, Tuple, Optional, Union
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-import pickle
 import hashlib
+import logging
+import pickle
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 # Optional ML dependencies with fallbacks
 try:
     import numpy as np
     HAS_NUMPY = True
 except ImportError:
-    import array
     np = None
     HAS_NUMPY = False
 
@@ -55,7 +54,7 @@ class MockSentenceTransformer:
         """Return a standard embedding dimension for testing."""
         return 384
         
-    def encode(self, texts: List[str], **kwargs) -> 'np.ndarray':
+    def encode(self, texts: list[str], **kwargs) -> 'np.ndarray':
         """Return mock embeddings for testing."""
         if HAS_NUMPY:
             return np.random.random((len(texts), 384))
@@ -71,9 +70,9 @@ class ContextItem:
     id: str
     content: str  # Combined text for embedding
     context_type: str  # 'task', 'branch', 'project', 'global'
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    embedding: Optional[Any] = None  # np.ndarray when numpy available, list otherwise
-    last_updated: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    metadata: dict[str, Any] = field(default_factory=dict)
+    embedding: Any | None = None  # np.ndarray when numpy available, list otherwise
+    last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass 
@@ -100,7 +99,7 @@ class SemanticMatcher:
         model_name: str = "all-MiniLM-L6-v2",  # Lightweight but effective
         similarity_threshold: float = 0.5,
         cache_embeddings: bool = True,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         faiss_index_type: str = "flat"  # or "ivf" for large datasets
     ):
         """
@@ -135,9 +134,9 @@ class SemanticMatcher:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize FAISS index
-        self.faiss_index: Optional[Any] = None  # faiss.Index when available
-        self.context_items: List[ContextItem] = []
-        self.item_id_to_index: Dict[str, int] = {}
+        self.faiss_index: Any | None = None  # faiss.Index when available
+        self.context_items: list[ContextItem] = []
+        self.item_id_to_index: dict[str, int] = {}
         
         logger.info(f"SemanticMatcher initialized with {self.embedding_dim}D embeddings")
 
@@ -147,7 +146,7 @@ class SemanticMatcher:
         return hashlib.md5(content.encode()).hexdigest()
     
     
-    def _load_cached_embedding(self, content: str) -> Optional[Any]:
+    def _load_cached_embedding(self, content: str) -> Any | None:
         """Load cached embedding if available."""
         if not self.cache_embeddings:
             return None
@@ -204,7 +203,7 @@ class SemanticMatcher:
         return embedding
     
     
-    def generate_embeddings_batch(self, contents: List[str]) -> List[Any]:
+    def generate_embeddings_batch(self, contents: list[str]) -> list[Any]:
         """
         Generate embeddings for multiple texts efficiently.
         
@@ -242,7 +241,7 @@ class SemanticMatcher:
         return embeddings
     
     
-    def _build_faiss_index(self) -> Optional[Any]:
+    def _build_faiss_index(self) -> Any | None:
         """Build FAISS index from current context items."""
         if not HAS_FAISS:
             logger.warning("FAISS not available, using fallback similarity search")
@@ -289,7 +288,7 @@ class SemanticMatcher:
         return index
     
     
-    def add_context_items(self, items: List[ContextItem]) -> None:
+    def add_context_items(self, items: list[ContextItem]) -> None:
         """
         Add context items to the matcher.
         
@@ -325,8 +324,8 @@ class SemanticMatcher:
         self, 
         query: str, 
         top_k: int = 10,
-        min_similarity: Optional[float] = None
-    ) -> List[SimilarityResult]:
+        min_similarity: float | None = None
+    ) -> list[SimilarityResult]:
         """
         Find contexts similar to the query.
         
@@ -426,7 +425,7 @@ class SemanticMatcher:
         item = self.context_items[idx]
         item.content = new_content
         item.embedding = self.generate_embedding(new_content)
-        item.last_updated = datetime.now(timezone.utc)
+        item.last_updated = datetime.now(UTC)
         
         # Rebuild index (could be optimized for single updates)
         self.faiss_index = self._build_faiss_index()
@@ -466,7 +465,7 @@ class SemanticMatcher:
         return True
     
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about the semantic matcher."""
         return {
             "total_context_items": len(self.context_items),

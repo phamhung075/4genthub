@@ -1,9 +1,6 @@
 """Update Context Use Case"""
 
-from ...application.dtos.context import (
-    UpdateContextRequest,
-    UpdateContextResponse
-)
+from ...application.dtos.context import UpdateContextRequest, UpdateContextResponse
 from ...domain.repositories.context_repository import ContextRepository
 
 

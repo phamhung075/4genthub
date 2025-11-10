@@ -1,17 +1,17 @@
 """Request DTO for adding a subtask to a task"""
 
 from dataclasses import dataclass, field
-from typing import Union, List, Optional
+
 
 @dataclass
 class AddSubtaskRequest:
-    task_id: Union[str, int]
+    task_id: str | int
     title: str
     description: str = ""
-    assignees: List[str] = field(default_factory=list)
-    priority: Optional[str] = None
-    status: Optional[str] = None
-    progress_percentage: Optional[int] = None
+    assignees: list[str] = field(default_factory=list)
+    priority: str | None = None
+    status: str | None = None
+    progress_percentage: int | None = None
     
     def __post_init__(self):
         """Validate request data"""

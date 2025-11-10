@@ -1,23 +1,24 @@
 """Request DTO for updating a task with hierarchical storage support"""
 
 from dataclasses import dataclass
-from typing import Any, Optional, List
+from typing import Any
+
 
 @dataclass
 class UpdateTaskRequest:
     """Request DTO for updating a task with hierarchical storage support"""
     task_id: Any
-    title: Optional[str] = None
-    description: Optional[str] = None
-    status: Optional[str] = None
-    priority: Optional[str] = None
-    details: Optional[str] = None
-    estimated_effort: Optional[str] = None
-    assignees: Optional[List[str]] = None
-    labels: Optional[List[str]] = None
-    due_date: Optional[str] = None
-    context_id: Optional[str] = None
-    completion_summary: Optional[str] = None
-    testing_notes: Optional[str] = None
-    completed_at: Optional[str] = None 
-    progress_percentage: Optional[int] = None
+    title: str | None = None
+    description: str | None = None
+    status: str | None = None
+    priority: str | None = None
+    details: str | None = None
+    estimated_effort: str | None = None
+    assignees: list[str] | None = None
+    labels: list[str] | None = None
+    due_date: str | None = None
+    context_id: str | None = None
+    completion_summary: str | None = None
+    testing_notes: str | None = None
+    completed_at: str | None = None 
+    progress_percentage: int | None = None

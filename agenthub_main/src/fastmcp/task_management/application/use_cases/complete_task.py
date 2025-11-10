@@ -1,20 +1,19 @@
 """Complete Task Use Case"""
 
-from typing import Union, Dict, Any, Optional, List
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
-from ...domain.repositories.task_repository import TaskRepository
-from ...domain.repositories.subtask_repository import SubtaskRepository
-from ...domain.value_objects.task_id import TaskId
+from ...domain.events import TaskUpdated
 from ...domain.exceptions import TaskNotFoundError
 from ...domain.exceptions.task_exceptions import TaskCompletionError
 from ...domain.exceptions.vision_exceptions import MissingCompletionSummaryError
+from ...domain.repositories.subtask_repository import SubtaskRepository
+from ...domain.repositories.task_repository import TaskRepository
 from ...domain.services.task_completion_service import TaskCompletionService
-from ...domain.events import TaskUpdated
-from ...interface.utils.error_handler import UserFriendlyErrorHandler
-from ...domain.interfaces.repository_factory import IContextRepository
+from ...domain.value_objects.task_id import TaskId
 from ...infrastructure.repositories.task_context_repository import TaskContextRepository
+
 # from ..services.context_validation_service import ContextValidationService  # TODO: Fix circular import
 
 # Module-level logger - not used due to scoping issues, using logging.getLogger(__name__) directly instead
@@ -22,8 +21,8 @@ from ...infrastructure.repositories.task_context_repository import TaskContextRe
 class CompleteTaskUseCase:
     """Use case for completing a task (marking all subtasks as completed and task status as done)"""
     
-    def __init__(self, task_repository: TaskRepository, subtask_repository: Optional[SubtaskRepository] = None, 
-                 task_context_repository: Optional[TaskContextRepository] = None):
+    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository | None = None, 
+                 task_context_repository: TaskContextRepository | None = None):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
         self._task_context_repository = task_context_repository
@@ -33,10 +32,10 @@ class CompleteTaskUseCase:
         # self._validation_service = ContextValidationService()  # TODO: Fix circular import
         self._validation_service = None
     
-    def execute(self, task_id: Union[str, int], 
-                completion_summary: Optional[str] = None,
-                testing_notes: Optional[str] = None,
-                next_recommendations: Optional[str] = None) -> Dict[str, Any]:
+    def execute(self, task_id: str | int, 
+                completion_summary: str | None = None,
+                testing_notes: str | None = None,
+                next_recommendations: str | None = None) -> dict[str, Any]:
         """
         Execute the complete task use case.
         
@@ -73,7 +72,9 @@ class CompleteTaskUseCase:
             # Update context with completion information if summary provided
             if completion_summary:
                 try:
-                    from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+                    from ...application.factories.unified_context_facade_factory import (
+                        UnifiedContextFacadeFactory,
+                    )
                     
                     # Use the unified context facade to update context
                     git_branch_id = getattr(task, 'git_branch_id', None)
@@ -89,7 +90,7 @@ class CompleteTaskUseCase:
                         else:
                             next_steps_list = [next_recommendations]
                     
-                    completion_time = datetime.now(timezone.utc)
+                    completion_time = datetime.now(UTC)
                     context_update = {
                         "progress": {
                             "current_session_summary": completion_summary,
@@ -154,7 +155,9 @@ class CompleteTaskUseCase:
             if not context_exists:
                 logging.getLogger(__name__).info(f"Checking unified context system for task {task_id}")
                 try:
-                    from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+                    from ...application.factories.unified_context_facade_factory import (
+                        UnifiedContextFacadeFactory,
+                    )
                     git_branch_id = getattr(task, 'git_branch_id', None)
                     logging.getLogger(__name__).info(f"Creating unified facade with git_branch_id: {git_branch_id}")
                     unified_facade = UnifiedContextFacadeFactory().create_facade(git_branch_id=git_branch_id)
@@ -184,7 +187,9 @@ class CompleteTaskUseCase:
             if not context_exists:
                 logging.getLogger(__name__).info(f"Auto-creating context for task {task_id} during completion")
                 try:
-                    from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+                    from ...application.factories.unified_context_facade_factory import (
+                        UnifiedContextFacadeFactory,
+                    )
                     
                     # Extract git_branch_id from task for facade creation
                     git_branch_id = getattr(task, 'git_branch_id', None)
@@ -331,7 +336,10 @@ class CompleteTaskUseCase:
                 try:
                     # Get context for the task using hierarchical context facade
                     import asyncio
-                    from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+
+                    from ...application.factories.unified_context_facade_factory import (
+                        UnifiedContextFacadeFactory,
+                    )
                     
                     # Use the unified context facade to get context
                     # Extract git_branch_id from task for facade creation
@@ -347,7 +355,7 @@ class CompleteTaskUseCase:
                         if "updated_at" in context:
                             # Parse the timestamp - it's in format "2025-07-13 01:14:22"
                             # Make it timezone-aware (UTC) to match task.updated_at
-                            context_updated_at = datetime.strptime(context["updated_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                            context_updated_at = datetime.strptime(context["updated_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
                             logging.getLogger(__name__).info(f"Context updated at: {context_updated_at}, Task updated at: {task.updated_at}")
                             logging.getLogger(__name__).info(f"Validation check: context_updated_at <= task.updated_at? {context_updated_at <= task.updated_at}")
                         else:
@@ -401,7 +409,9 @@ class CompleteTaskUseCase:
             # Update context with completion information using hierarchical context
             if completion_summary:
                 try:
-                    from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+                    from ...application.factories.unified_context_facade_factory import (
+                        UnifiedContextFacadeFactory,
+                    )
                     
                     # Use the unified context facade to update context
                     # Extract git_branch_id from task for facade creation
@@ -447,8 +457,11 @@ class CompleteTaskUseCase:
 
                     # 🔄 SYNC: Synchronize task status and metadata after completion
                     try:
-                        from ..services.task_context_sync_service import TaskContextSyncService
                         import asyncio
+
+                        from ..services.task_context_sync_service import (
+                            TaskContextSyncService,
+                        )
 
                         task_id_str = str(task_id)
                         sync_service = TaskContextSyncService(self._task_repository)
@@ -656,7 +669,7 @@ class CompleteTaskUseCase:
         except Exception as e:
             logging.getLogger(__name__).error(f"Error updating dependent task {dependent_task.id}: {e}")
     
-    def _check_all_dependencies_complete(self, task, all_tasks: List) -> bool:
+    def _check_all_dependencies_complete(self, task, all_tasks: list) -> bool:
         """
         Check if all dependencies of a task are completed.
         

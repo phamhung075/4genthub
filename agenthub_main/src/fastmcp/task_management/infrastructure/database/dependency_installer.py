@@ -4,10 +4,10 @@ Dependency Installer
 Automatically installs missing dependencies required for PostgreSQL testing.
 """
 
-import subprocess
-import sys
 import logging
 import os
+import subprocess
+import sys
 
 logger = logging.getLogger(__name__)
 

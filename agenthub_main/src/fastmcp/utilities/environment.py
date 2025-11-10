@@ -3,7 +3,7 @@
 import os
 import platform
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 EnvironmentType = Literal["docker", "local"]
 
@@ -33,7 +33,7 @@ def detect_environment() -> EnvironmentType:
 def _has_docker_cgroups() -> bool:
     """Check if running inside Docker by examining cgroups."""
     try:
-        with open("/proc/1/cgroup", "r") as f:
+        with open("/proc/1/cgroup") as f:
             content = f.read()
             return "docker" in content or "containerd" in content
     except (FileNotFoundError, PermissionError, OSError):
@@ -51,7 +51,7 @@ def _is_container_hostname() -> bool:
         return False
 
 
-def get_log_directory(environment: Optional[EnvironmentType] = None) -> Path:
+def get_log_directory(environment: EnvironmentType | None = None) -> Path:
     """
     Get the appropriate log directory based on the environment.
 
@@ -89,7 +89,7 @@ def get_log_directory(environment: Optional[EnvironmentType] = None) -> Path:
         return current / "logs"
 
 
-def ensure_log_directory_exists(log_dir: Optional[Path] = None) -> Path:
+def ensure_log_directory_exists(log_dir: Path | None = None) -> Path:
     """
     Ensure the log directory exists and is writable.
 
@@ -119,7 +119,7 @@ def ensure_log_directory_exists(log_dir: Optional[Path] = None) -> Path:
     return log_dir
 
 
-def get_log_file_path(filename: str = "agenthub.log", log_dir: Optional[Path] = None) -> Path:
+def get_log_file_path(filename: str = "agenthub.log", log_dir: Path | None = None) -> Path:
     """
     Get the full path for a log file.
 

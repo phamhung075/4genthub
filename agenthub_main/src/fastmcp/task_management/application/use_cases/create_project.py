@@ -1,9 +1,9 @@
 """Create Project Use Case"""
 
-from typing import Dict, Any
+from typing import Any
+
 from ...domain.entities.project import Project
 from ...domain.repositories.project_repository import ProjectRepository
-
 
 # NOTE: We previously changed this signature and broke consumers that still
 # rely on the (project_id, name, description) order.  Restore backward
@@ -21,7 +21,7 @@ class CreateProjectUseCase:
         project_id: str | None,
         name: str | None = None,
         description: str = "",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute the create-project use case.
 
         This method now supports **two** calling conventions:
@@ -73,10 +73,13 @@ class CreateProjectUseCase:
             try:
                 
                 # Use unified context facade for project context creation
-                from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+                from ...application.factories.unified_context_facade_factory import (
+                    UnifiedContextFacadeFactory,
+                )
                 from ...domain.constants import validate_user_id
-                from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-                from ....config.auth_config import AuthConfig
+                from ...domain.exceptions.authentication_exceptions import (
+                    UserAuthenticationRequiredError,
+                )
                 
                 # Get user_id from repository context or handle authentication
                 # Note: The repository should already be user-scoped by the service layer
@@ -95,7 +98,9 @@ class CreateProjectUseCase:
                         else:
                             # Try to get user ID directly from the context manager
                             try:
-                                from ....auth.middleware.request_context_middleware import get_current_user_id
+                                from ....auth.middleware.request_context_middleware import (
+                                    get_current_user_id,
+                                )
                                 user_id = get_current_user_id()
                             except Exception:
                                 pass
@@ -164,7 +169,9 @@ class CreateProjectUseCase:
 
         # Broadcast WebSocket notification for real-time frontend updates
         try:
-            from ..services.websocket_notification_service import WebSocketNotificationService
+            from ..services.websocket_notification_service import (
+                WebSocketNotificationService,
+            )
 
             # Get user_id for WebSocket broadcast
             user_id = None

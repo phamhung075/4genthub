@@ -6,23 +6,21 @@ updates metrics, and triggers follow-up actions.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone
 from collections import defaultdict
+from typing import Any
 from uuid import UUID
 
+from ...domain.events.base import BaseDomainEvent
 from ...domain.events.task_lifecycle_events import (
-    TaskCreatedEvent,
-    TaskUpdatedEvent,
-    TaskDeletedEvent,
-    TaskStatusChangedEvent,
     TaskCompletedEvent,
-    TaskRetrievedEvent,
+    TaskCreatedEvent,
+    TaskDeletedEvent,
     TaskMovedToBranchEvent,
+    TaskRetrievedEvent,
+    TaskStatusChangedEvent,
+    TaskUpdatedEvent,
 )
-from ...domain.events.base import DomainEvent, BaseDomainEvent
 from ...infrastructure.event_store import EventStore
-
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +36,15 @@ class TaskEventHandlers:
     def __init__(
         self,
         event_store: EventStore,
-        task_repository: Optional[Any] = None,
-        notification_service: Optional[Any] = None
+        task_repository: Any | None = None,
+        notification_service: Any | None = None
     ):
         self.event_store = event_store
         self.task_repository = task_repository
         self.notification_service = notification_service
 
         # Statistics tracking
-        self.task_stats: Dict[str, Dict[str, int]] = defaultdict(
+        self.task_stats: dict[str, dict[str, int]] = defaultdict(
             lambda: {
                 "created": 0,
                 "updated": 0,
@@ -58,10 +56,10 @@ class TaskEventHandlers:
         )
 
         # Status transition tracking
-        self.status_transitions: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        self.status_transitions: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
         # Completion time tracking
-        self.completion_times: List[float] = []
+        self.completion_times: list[float] = []
 
     async def handle_task_created(self, event: TaskCreatedEvent) -> None:
         """
@@ -304,7 +302,7 @@ class TaskEventHandlers:
                 message="All dependencies completed, task is ready to start"
             )
 
-    async def get_task_statistics(self, project_id: Optional[UUID] = None) -> Dict[str, Any]:
+    async def get_task_statistics(self, project_id: UUID | None = None) -> dict[str, Any]:
         """
         Get task statistics for a project or all projects.
 

@@ -7,7 +7,7 @@ to address API response inconsistencies and operation success confirmation issue
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -90,7 +90,7 @@ class StandardResponseFormatter:
         """
         # Generate operation ID for tracking
         operation_id = str(uuid.uuid4())
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         response = {
             # Core response structure

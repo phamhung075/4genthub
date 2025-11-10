@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Set
 
 
 class TaskStatusEnum(Enum):
@@ -127,7 +126,7 @@ class TaskStatus:
 
         return new_status in transitions.get(self.value, set())
     
-    def get_valid_transitions(self) -> Set[str]:
+    def get_valid_transitions(self) -> set[str]:
         """
         Get all valid status transitions from the current status.
         

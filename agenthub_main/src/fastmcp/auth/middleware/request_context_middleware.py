@@ -8,7 +8,8 @@ throughout the request lifecycle.
 
 import logging
 from contextvars import ContextVar
-from typing import Optional, Dict, Any
+from typing import Any
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -16,12 +17,12 @@ from starlette.responses import Response
 logger = logging.getLogger(__name__)
 
 # Context variables for thread-safe authentication context storage
-_current_user_id: ContextVar[Optional[str]] = ContextVar('current_user_id', default=None)
-_current_user_email: ContextVar[Optional[str]] = ContextVar('current_user_email', default=None)
-_current_auth_method: ContextVar[Optional[str]] = ContextVar('current_auth_method', default=None)
-_current_auth_info: ContextVar[Optional[Dict[str, Any]]] = ContextVar('current_auth_info', default=None)
+_current_user_id: ContextVar[str | None] = ContextVar('current_user_id', default=None)
+_current_user_email: ContextVar[str | None] = ContextVar('current_user_email', default=None)
+_current_auth_method: ContextVar[str | None] = ContextVar('current_auth_method', default=None)
+_current_auth_info: ContextVar[dict[str, Any] | None] = ContextVar('current_auth_info', default=None)
 _request_authenticated: ContextVar[bool] = ContextVar('request_authenticated', default=False)
-_current_token_id: ContextVar[Optional[str]] = ContextVar('current_token_id', default=None)
+_current_token_id: ContextVar[str | None] = ContextVar('current_token_id', default=None)
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
@@ -152,7 +153,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
 
 # Helper functions to access context variables from other modules
-def get_current_user_id() -> Optional[str]:
+def get_current_user_id() -> str | None:
     """
     Get the current user ID from context variables.
     
@@ -168,7 +169,7 @@ def get_current_user_id() -> Optional[str]:
         return None
 
 
-def get_current_user_email() -> Optional[str]:
+def get_current_user_email() -> str | None:
     """
     Get the current user email from context variables.
     
@@ -184,7 +185,7 @@ def get_current_user_email() -> Optional[str]:
         return None
 
 
-def get_current_auth_method() -> Optional[str]:
+def get_current_auth_method() -> str | None:
     """
     Get the current authentication method from context variables.
     
@@ -200,7 +201,7 @@ def get_current_auth_method() -> Optional[str]:
         return None
 
 
-def get_current_auth_info() -> Optional[Dict[str, Any]]:
+def get_current_auth_info() -> dict[str, Any] | None:
     """
     Get the complete authentication info from context variables.
     
@@ -232,7 +233,7 @@ def is_request_authenticated() -> bool:
         return False
 
 
-def get_current_token_id() -> Optional[str]:
+def get_current_token_id() -> str | None:
     """
     Get the current API token ID from context variables.
 
@@ -248,7 +249,7 @@ def get_current_token_id() -> Optional[str]:
         return None
 
 
-def get_authentication_context() -> Dict[str, Any]:
+def get_authentication_context() -> dict[str, Any]:
     """
     Get all authentication context as a single dictionary.
     

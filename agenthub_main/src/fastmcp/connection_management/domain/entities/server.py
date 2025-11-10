@@ -1,13 +1,12 @@
 """Server Domain Entity"""
 
-import time
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any
 
-from ..value_objects.server_status import ServerStatus
-from ..value_objects.server_capabilities import ServerCapabilities
 from ..events.connection_events import ServerHealthChecked
+from ..value_objects.server_capabilities import ServerCapabilities
+from ..value_objects.server_status import ServerStatus
 
 
 @dataclass
@@ -18,16 +17,16 @@ class Server:
     version: str
     started_at: datetime
     restart_count: int = 0
-    environment: Dict[str, Any] = field(default_factory=dict)
-    authentication: Dict[str, Any] = field(default_factory=dict)
-    task_management: Dict[str, Any] = field(default_factory=dict)
+    environment: dict[str, Any] = field(default_factory=dict)
+    authentication: dict[str, Any] = field(default_factory=dict)
+    task_management: dict[str, Any] = field(default_factory=dict)
     
     # Domain events
-    _events: List[Any] = field(default_factory=list, init=False)
+    _events: list[Any] = field(default_factory=list, init=False)
     
     @classmethod
-    def create(cls, name: str, version: str, environment: Dict[str, Any], 
-               authentication: Dict[str, Any], task_management: Dict[str, Any]) -> 'Server':
+    def create(cls, name: str, version: str, environment: dict[str, Any], 
+               authentication: dict[str, Any], task_management: dict[str, Any]) -> 'Server':
         """Factory method to create a new server instance"""
         server = cls(
             name=name,
@@ -130,7 +129,7 @@ class Server:
         self.restart_count += 1
         self.started_at = datetime.now()
     
-    def get_events(self) -> List[Any]:
+    def get_events(self) -> list[Any]:
         """Get domain events"""
         return self._events.copy()
     

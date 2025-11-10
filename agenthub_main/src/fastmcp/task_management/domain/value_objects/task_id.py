@@ -1,7 +1,6 @@
 """Task ID Value Object"""
 
 import re
-import uuid
 from dataclasses import dataclass
 
 from .base_entity_id import EntityId
@@ -110,7 +109,6 @@ class TaskId(EntityId):
         Returns:
             New subtask TaskId with hierarchical format: parent-id.NNN
         """
-        from typing import List
         
         # Extract parent ID as string
         parent_id_str = str(parent_task_id)

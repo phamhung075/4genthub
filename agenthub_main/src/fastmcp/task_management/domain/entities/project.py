@@ -1,20 +1,18 @@
 """Project Domain Entity"""
 
-from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING
-from datetime import datetime, timezone
 from dataclasses import dataclass, field
-import uuid
+from typing import TYPE_CHECKING, Any
 
-from .base.base_timestamp_entity import BaseTimestampEntity
-
-from ..value_objects.task_id import TaskId
-from ..value_objects.project_id import ProjectId
 from ..value_objects.git_branch_id import GitBranchId
-from .git_branch import GitBranch
+from ..value_objects.project_id import ProjectId
 from .agent import Agent
+from .base.base_timestamp_entity import BaseTimestampEntity
+from .git_branch import GitBranch
 
 if TYPE_CHECKING:
     from ..repositories.git_branch_repository import GitBranchRepository
+    from .task import Task
+    from .work_session import WorkSession
 
 
 @dataclass
@@ -55,18 +53,18 @@ class Project(BaseTimestampEntity):
         return hash(self.id.value if hasattr(self.id, 'value') else self.id)
 
     # Multi-tree structure
-    git_branchs: Dict[str, GitBranch] = field(default_factory=dict)
+    git_branchs: dict[str, GitBranch] = field(default_factory=dict)
     
     # Agent management
-    registered_agents: Dict[str, Agent] = field(default_factory=dict)
-    agent_assignments: Dict[str, str] = field(default_factory=dict)  # git_branch_id -> agent_id
+    registered_agents: dict[str, Agent] = field(default_factory=dict)
+    agent_assignments: dict[str, str] = field(default_factory=dict)  # git_branch_id -> agent_id
     
     # Cross-tree dependencies
-    cross_tree_dependencies: Dict[str, Set[str]] = field(default_factory=dict)  # task_id -> dependent_task_ids
+    cross_tree_dependencies: dict[str, set[str]] = field(default_factory=dict)  # task_id -> dependent_task_ids
     
     # Work coordination
-    active_work_sessions: Dict[str, 'WorkSession'] = field(default_factory=dict)
-    resource_locks: Dict[str, str] = field(default_factory=dict)  # resource -> agent_id
+    active_work_sessions: dict[str, 'WorkSession'] = field(default_factory=dict)
+    resource_locks: dict[str, str] = field(default_factory=dict)  # resource -> agent_id
 
     def _validate_entity(self) -> None:
         """Ensure project invariants hold."""
@@ -128,7 +126,7 @@ class Project(BaseTimestampEntity):
         self.git_branchs[git_branch_id_str] = git_branch
         self.touch("git_branch_added")
     
-    def get_git_branch(self, branch_name: str) -> Optional[GitBranch]:
+    def get_git_branch(self, branch_name: str) -> GitBranch | None:
         """Get a git branch by name"""
         for git_branch in self.git_branchs.values():
             if git_branch.name == branch_name:
@@ -190,7 +188,7 @@ class Project(BaseTimestampEntity):
         self.cross_tree_dependencies[dependent_task_id].add(prerequisite_task_id)
         self.touch("cross_tree_dependency_added")
     
-    def get_available_work_for_agent(self, agent_id: str) -> List['Task']:
+    def get_available_work_for_agent(self, agent_id: str) -> list['Task']:
         """Get available tasks for a specific agent based on their assignments and dependencies"""
         if agent_id not in self.registered_agents:
             raise ValueError(f"Agent {agent_id} not registered")
@@ -213,7 +211,7 @@ class Project(BaseTimestampEntity):
 
         return available_tasks
     
-    def start_work_session(self, agent_id: str, task_id: str, max_duration_hours: Optional[float] = None) -> 'WorkSession':
+    def start_work_session(self, agent_id: str, task_id: str, max_duration_hours: float | None = None) -> 'WorkSession':
         """Start a work session for an agent on a specific task"""
         from .work_session import WorkSession
         
@@ -241,7 +239,7 @@ class Project(BaseTimestampEntity):
         self.touch("work_session_started")
         return session
     
-    def _find_git_branch(self, task_id: str) -> Optional[GitBranch]:
+    def _find_git_branch(self, task_id: str) -> GitBranch | None:
         """Find which git branch contains a specific task"""
         # Normalize task_id to canonical format for consistent comparison
         normalized_task_id = self._normalize_task_id(task_id)
@@ -285,7 +283,7 @@ class Project(BaseTimestampEntity):
         
         return True
     
-    def get_orchestration_status(self) -> Dict:
+    def get_orchestration_status(self) -> dict:
         """Get comprehensive status for orchestration dashboard"""
         return {
             "project_id": str(self.id) if self.id else "",
@@ -319,7 +317,7 @@ class Project(BaseTimestampEntity):
             }
         }
     
-    def coordinate_cross_tree_dependencies(self) -> Dict:
+    def coordinate_cross_tree_dependencies(self) -> dict:
         """Coordinate and validate cross-tree dependencies"""
         coordination_result = {
             "total_dependencies": sum(len(deps) for deps in self.cross_tree_dependencies.values()),
@@ -431,7 +429,7 @@ class Project(BaseTimestampEntity):
 
         return True
 
-    def calculate_project_health(self) -> Dict[str, Any]:
+    def calculate_project_health(self) -> dict[str, Any]:
         """
         Calculate overall project health metrics.
 
@@ -530,7 +528,7 @@ class Project(BaseTimestampEntity):
             }
         }
 
-    def check_deadline_risk(self) -> Dict[str, str]:
+    def check_deadline_risk(self) -> dict[str, str]:
         """
         Assess if project is at risk of missing deadlines.
 

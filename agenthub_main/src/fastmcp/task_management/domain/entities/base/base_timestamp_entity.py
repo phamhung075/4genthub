@@ -16,8 +16,8 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timezone
-from typing import Any, Dict, List
+from datetime import UTC, datetime
+from typing import Any
 
 from ...events.base import DomainEvent, create_event_metadata
 
@@ -30,14 +30,14 @@ class TimestampUpdatedEvent(DomainEvent):
 
     entity_id: str = ""
     old_timestamp: datetime | None = None
-    new_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    metadata: Dict[str, Any] = field(default_factory=create_event_metadata)
+    new_timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    metadata: dict[str, Any] = field(default_factory=create_event_metadata)
 
     @property
     def event_type(self) -> str:
         return "timestamp_updated"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_type": self.event_type,
             "entity_id": self.entity_id,
@@ -52,14 +52,14 @@ class TimestampCreatedEvent(DomainEvent):
     """Domain event fired when entity is first created."""
 
     entity_id: str = ""
-    created_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    metadata: Dict[str, Any] = field(default_factory=create_event_metadata)
+    created_timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    metadata: dict[str, Any] = field(default_factory=create_event_metadata)
 
     @property
     def event_type(self) -> str:
         return "timestamp_created"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_type": self.event_type,
             "entity_id": self.entity_id,
@@ -100,7 +100,7 @@ class BaseTimestampEntity(ABC):
     updated_at: datetime | None = None
 
     # Domain events collection
-    _domain_events: List[DomainEvent] = field(default_factory=list, init=False, repr=False)
+    _domain_events: list[DomainEvent] = field(default_factory=list, init=False, repr=False)
 
     def __post_init__(self) -> None:
         """Initialise timestamps and validate entity state."""
@@ -130,7 +130,7 @@ class BaseTimestampEntity(ABC):
 
     def _ensure_clean_timestamps(self) -> None:
         """Ensure timestamps exist, are UTC, and consistent."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         is_new_entity = self.created_at is None and self.updated_at is None
 
@@ -163,8 +163,8 @@ class BaseTimestampEntity(ABC):
     def _coerce_to_utc(value: datetime) -> datetime:
         """Return a timezone-aware UTC datetime."""
         if value.tzinfo is None:
-            return value.replace(tzinfo=timezone.utc)
-        if value.tzinfo != timezone.utc:
+            return value.replace(tzinfo=UTC)
+        if value.tzinfo != UTC:
             return value.astimezone(UTC)
         return value
 
@@ -178,7 +178,7 @@ class BaseTimestampEntity(ABC):
             reason: Business reason for the update (for logging and events)
         """
         old_timestamp = self.updated_at
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
         logger.debug(f"Entity {self._get_entity_id()} touched: {reason}")
 
@@ -193,7 +193,7 @@ class BaseTimestampEntity(ABC):
         # Validate entity state after update
         self._validate_entity()
 
-    def is_newer_than(self, other: 'BaseTimestampEntity') -> bool:
+    def is_newer_than(self, other: BaseTimestampEntity) -> bool:
         """Check if this entity is newer than another entity.
 
         Compares updated_at timestamps with proper null handling.
@@ -218,7 +218,7 @@ class BaseTimestampEntity(ABC):
         """
         if not self.created_at:
             return None
-        return (datetime.now(timezone.utc) - self.created_at).total_seconds()
+        return (datetime.now(UTC) - self.created_at).total_seconds()
 
     def get_staleness_seconds(self) -> float | None:
         """Get staleness in seconds since last update.
@@ -228,7 +228,7 @@ class BaseTimestampEntity(ABC):
         """
         if not self.updated_at:
             return None
-        return (datetime.now(timezone.utc) - self.updated_at).total_seconds()
+        return (datetime.now(UTC) - self.updated_at).total_seconds()
 
     def _add_domain_event(self, event: DomainEvent) -> None:
         """Add a domain event to the entity's event collection.
@@ -241,7 +241,7 @@ class BaseTimestampEntity(ABC):
         self._domain_events.append(event)
         logger.debug(f"Added domain event: {event}")
 
-    def get_domain_events(self) -> List[DomainEvent]:
+    def get_domain_events(self) -> list[DomainEvent]:
         """Get all domain events for this entity.
 
         Returns:
@@ -260,7 +260,7 @@ class BaseTimestampEntity(ABC):
             self._domain_events.clear()
         logger.debug(f"Cleared domain events for entity {self._get_entity_id()}")
 
-    def to_timestamp_dict(self) -> Dict[str, Any]:
+    def to_timestamp_dict(self) -> dict[str, Any]:
         """Export timestamp information as dictionary.
 
         Useful for serialization, logging, and debugging.

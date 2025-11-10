@@ -4,7 +4,7 @@ This service provides pagination logic as a domain service,
 following DDD principles where interfaces should only contain abstract methods.
 """
 
-from typing import List, TypeVar, Generic
+from typing import Generic, TypeVar
 
 # Import pagination types from value_objects (moved from base_repository in Phase 5.1)
 from ..value_objects.pagination import PaginationRequest, PaginationResult
@@ -27,7 +27,7 @@ class PaginationService(Generic[T]):
     @classmethod
     def create_pagination_result(
         cls,
-        items: List[T],
+        items: list[T],
         total_count: int,
         pagination: PaginationRequest
     ) -> PaginationResult[T]:

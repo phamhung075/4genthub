@@ -1,11 +1,8 @@
 """Add Context Insight Use Case"""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from ...application.dtos.context import (
-    AddInsightRequest,
-    AddInsightResponse
-)
+from ...application.dtos.context import AddInsightRequest, AddInsightResponse
 from ...domain.entities.context import ContextInsight
 from ...domain.repositories.context_repository import ContextRepository
 
@@ -27,7 +24,7 @@ class AddContextInsightUseCase:
             
             # Create insight
             insight = ContextInsight(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 agent=request.agent,
                 category=request.category,
                 content=request.content,

@@ -7,27 +7,23 @@ for managing project branches/task trees.
 
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy import and_, or_, func, case, text
+from sqlalchemy import and_, case, func, or_, text
+from sqlalchemy.exc import SQLAlchemyError
 
-from ....domain.repositories.git_branch_repository import GitBranchRepository
 from ....domain.entities.git_branch import GitBranch
-from ....domain.value_objects.git_branch_id import GitBranchId
-from ....domain.value_objects.task_status import TaskStatus
-from ....domain.value_objects.priority import Priority
 from ....domain.exceptions.base_exceptions import (
     DatabaseException,
-    ResourceNotFoundException,
-    ValidationException
 )
-from ..base_orm_repository import BaseORMRepository
-from ..base_timestamp_repository import BaseTimestampRepository
-from ...database.models import ProjectGitBranch, Project, Task
+from ....domain.repositories.git_branch_repository import GitBranchRepository
+from ....domain.value_objects.git_branch_id import GitBranchId
+from ....domain.value_objects.priority import Priority
+from ....domain.value_objects.task_status import TaskStatus
+from ...database.models import Project, ProjectGitBranch, Task
 from ...performance.task_performance_optimizer import get_performance_optimizer
+from ..base_timestamp_repository import BaseTimestampRepository
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +36,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
     SQLAlchemy ORM models and the ProjectGitBranch model.
     """
     
-    def __init__(self, user_id: Optional[str] = None, performance_mode: bool = False):
+    def __init__(self, user_id: str | None = None, performance_mode: bool = False):
         """
         Initialize ORM Git Branch Repository.
 
@@ -122,7 +118,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
         
         return git_branch
     
-    def _entity_to_model_dict(self, git_branch: GitBranch) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, git_branch: GitBranch) -> dict[str, Any]:
         """
         Convert GitBranch domain entity to model data dictionary.
 
@@ -191,7 +187,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 table="project_git_branchs"
             )
     
-    async def find_by_id(self, branch_id: str, project_id: Optional[str] = None) -> Optional[GitBranch]:
+    async def find_by_id(self, branch_id: str, project_id: str | None = None) -> GitBranch | None:
         """Find a git branch by its ID, optionally filtered by project"""
         try:
             with self.get_db_session() as session:
@@ -233,7 +229,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 table="project_git_branchs"
             )
     
-    async def find_by_name(self, project_id: str, branch_name: str) -> Optional[GitBranch]:
+    async def find_by_name(self, project_id: str, branch_name: str) -> GitBranch | None:
         """Find a git branch by its project and branch name"""
         try:
             with self.get_db_session() as session:
@@ -256,7 +252,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 table="project_git_branchs"
             )
     
-    async def find_all_by_project(self, project_id: str) -> List[GitBranch]:
+    async def find_all_by_project(self, project_id: str) -> list[GitBranch]:
         """Find all git branches for a project"""
         try:
             with self.get_db_session() as session:
@@ -289,7 +285,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 table="project_git_branchs"
             )
     
-    async def find_all(self) -> List[GitBranch]:
+    async def find_all(self) -> list[GitBranch]:
         """Find all git branches"""
         try:
             with self.get_db_session() as session:
@@ -583,7 +579,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                         logger.warning(f"Field {field} does not exist on ProjectGitBranch model")
 
                 # Update the updated_at timestamp
-                model.updated_at = datetime.now(timezone.utc)
+                model.updated_at = datetime.now(UTC)
 
                 # Commit the changes
                 session.commit()
@@ -598,7 +594,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
             logger.error(f"Unexpected error updating branch {branch_id}: {e}")
             return False
 
-    def get(self, branch_id: str) -> Optional[Any]:
+    def get(self, branch_id: str) -> Any | None:
         """
         Get a branch by ID. This is needed by BranchStatisticsService.
 
@@ -734,7 +730,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 table="project_git_branchs"
             )
     
-    async def find_by_assigned_agent(self, agent_id: str) -> List[GitBranch]:
+    async def find_by_assigned_agent(self, agent_id: str) -> list[GitBranch]:
         """Find git branches assigned to a specific agent"""
         try:
             with self.get_db_session() as session:
@@ -760,7 +756,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 table="project_git_branchs"
             )
     
-    async def find_by_status(self, project_id: str, status: str) -> List[GitBranch]:
+    async def find_by_status(self, project_id: str, status: str) -> list[GitBranch]:
         """Find git branches by status within a project"""
         try:
             with self.get_db_session() as session:
@@ -789,7 +785,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 table="project_git_branchs"
             )
     
-    async def find_available_for_assignment(self, project_id: str) -> List[GitBranch]:
+    async def find_available_for_assignment(self, project_id: str) -> list[GitBranch]:
         """Find git branches that can be assigned to agents"""
         try:
             with self.get_db_session() as session:
@@ -868,7 +864,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 table="project_git_branchs"
             )
     
-    async def get_project_branch_summary(self, project_id: str) -> Dict[str, Any]:
+    async def get_project_branch_summary(self, project_id: str) -> dict[str, Any]:
         """Get summary of all branches in a project"""
         try:
             with self.get_db_session() as session:
@@ -931,7 +927,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
             # BaseTimestampRepository handles timestamps automatically
             
             # Create GitBranch entity
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             git_branch = GitBranch(
                 id=branch_id,
                 name=branch_name,
@@ -955,7 +951,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
     
     # Implementation of abstract methods from GitBranchRepository interface
     
-    async def create_git_branch(self, project_id: str, git_branch_name: str, git_branch_description: str = "") -> Dict[str, Any]:
+    async def create_git_branch(self, project_id: str, git_branch_name: str, git_branch_description: str = "") -> dict[str, Any]:
         """Create a new git branch - implements abstract method"""
         try:
             git_branch = await self.create_branch(project_id, git_branch_name, git_branch_description)
@@ -978,7 +974,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 "error_code": "CREATE_FAILED"
             }
     
-    async def get_git_branch_by_id(self, git_branch_id: str) -> Dict[str, Any]:
+    async def get_git_branch_by_id(self, git_branch_id: str) -> dict[str, Any]:
         """Get git branch by ID - implements abstract method"""
         try:
             # SECURITY FIX: Always apply user filtering for data isolation
@@ -1028,7 +1024,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 "error_code": "GET_FAILED"
             }
     
-    async def get_git_branch_by_name(self, project_id: str, git_branch_name: str) -> Dict[str, Any]:
+    async def get_git_branch_by_name(self, project_id: str, git_branch_name: str) -> dict[str, Any]:
         """Get git branch by name within a project - implements abstract method"""
         try:
             git_branch = await self.find_by_name(project_id, git_branch_name)
@@ -1061,7 +1057,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 "error_code": "GET_FAILED"
             }
     
-    async def list_git_branchs(self, project_id: str) -> Dict[str, Any]:
+    async def list_git_branchs(self, project_id: str) -> dict[str, Any]:
         """List all git branches for a project - implements abstract method"""
         try:
             git_branchs = await self.find_all_by_project(project_id)
@@ -1093,7 +1089,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 "error_code": "LIST_FAILED"
             }
     
-    async def update_git_branch(self, git_branch_id: str, git_branch_name: Optional[str] = None, git_branch_description: Optional[str] = None) -> Dict[str, Any]:
+    async def update_git_branch(self, git_branch_id: str, git_branch_name: str | None = None, git_branch_description: str | None = None) -> dict[str, Any]:
         """Update git branch information - implements abstract method"""
         try:
             # Get the branch first
@@ -1139,7 +1135,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 "error_code": "UPDATE_FAILED"
             }
     
-    async def delete_git_branch(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def delete_git_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Delete a git branch - implements abstract method"""
         try:
             deleted = await self.delete(project_id, git_branch_id)
@@ -1163,7 +1159,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 "error_code": "DELETE_FAILED"
             }
     
-    async def assign_agent_to_branch(self, project_id: str, agent_id: str, git_branch_name: str) -> Dict[str, Any]:
+    async def assign_agent_to_branch(self, project_id: str, agent_id: str, git_branch_name: str) -> dict[str, Any]:
         """Assign an agent to a git branch - implements abstract method"""
         try:
             # Find branch by name first
@@ -1197,7 +1193,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 "error_code": "ASSIGN_FAILED"
             }
     
-    async def unassign_agent_from_branch(self, project_id: str, agent_id: str, git_branch_name: str) -> Dict[str, Any]:
+    async def unassign_agent_from_branch(self, project_id: str, agent_id: str, git_branch_name: str) -> dict[str, Any]:
         """Unassign an agent from a git branch - implements abstract method"""
         try:
             # Find branch by name first
@@ -1231,7 +1227,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 "error_code": "UNASSIGN_FAILED"
             }
     
-    async def get_branch_statistics(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def get_branch_statistics(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Get statistics for a git branch - implements abstract method"""
         try:
             with self.get_db_session() as session:
@@ -1276,7 +1272,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
             logger.error(f"Error in get_branch_statistics: {e}")
             return {"error": str(e)}
     
-    async def archive_branch(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def archive_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Archive a git branch - implements abstract method"""
         try:
             with self.get_db_session() as session:
@@ -1309,7 +1305,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 "error_code": "ARCHIVE_FAILED"
             }
     
-    async def restore_branch(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def restore_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Restore an archived git branch - implements abstract method"""
         try:
             with self.get_db_session() as session:
@@ -1346,7 +1342,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
     # PERFORMANCE-OPTIMIZED METHODS (Merged from optimized_branch_repository.py)
     # ========================================================================================
 
-    def get_branches_with_task_counts(self, project_id: str = None) -> List[Dict[str, Any]]:
+    def get_branches_with_task_counts(self, project_id: str = None) -> list[dict[str, Any]]:
         """
         Get all branches for a project with their task counts in a single query.
 
@@ -1428,7 +1424,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                     END as completion_percentage
                 FROM project_git_branchs gb
                 WHERE gb.project_id = :project_id
-                """ + (f" AND gb.user_id = :user_id" if self.user_id else "") + """
+                """ + (" AND gb.user_id = :user_id" if self.user_id else "") + """
                 ORDER BY gb.updated_at DESC, gb.created_at DESC
             """)
 
@@ -1480,7 +1476,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 logger.error(f"Error fetching branches with task counts: {e}")
                 return []
 
-    def get_branch_summary_stats(self, project_id: str = None) -> Dict[str, Any]:
+    def get_branch_summary_stats(self, project_id: str = None) -> dict[str, Any]:
         """
         Get summary statistics for all branches in a project.
 
@@ -1502,7 +1498,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 FROM project_git_branchs gb
                 LEFT JOIN tasks t ON t.git_branch_id = gb.id
                 WHERE gb.project_id = :project_id
-                """ + (f" AND gb.user_id = :user_id" if self.user_id else ""))
+                """ + (" AND gb.user_id = :user_id" if self.user_id else ""))
 
             try:
                 params = {"project_id": project_id}
@@ -1533,7 +1529,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 logger.error(f"Error fetching branch summary stats: {e}")
                 return {"error": str(e)}
 
-    def get_single_branch_with_counts(self, branch_id: str) -> Optional[Dict[str, Any]]:
+    def get_single_branch_with_counts(self, branch_id: str) -> dict[str, Any] | None:
         """
         Get a single branch with its task counts.
 
@@ -1557,7 +1553,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                     (SELECT COUNT(*) FROM tasks WHERE git_branch_id = gb.id AND status = 'done') as done_count
                 FROM project_git_branchs gb
                 WHERE gb.id = :branch_id
-                """ + (f" AND gb.user_id = :user_id" if self.user_id else ""))
+                """ + (" AND gb.user_id = :user_id" if self.user_id else ""))
 
             try:
                 params = {"branch_id": branch_id}
@@ -1587,7 +1583,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 logger.error(f"Error fetching single branch with counts: {e}")
                 return None
 
-    async def check_name_exists_in_project(self, project_id: str, name: str, exclude_branch_id: Optional[str] = None) -> bool:
+    async def check_name_exists_in_project(self, project_id: str, name: str, exclude_branch_id: str | None = None) -> bool:
         """
         Check if a git branch name already exists within a project.
 
@@ -1628,7 +1624,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 table="project_git_branchs"
             )
 
-    def find_by_ids(self, branch_ids: List[str]) -> Dict[str, GitBranch]:
+    def find_by_ids(self, branch_ids: list[str]) -> dict[str, GitBranch]:
         """
         Batch load multiple git branches by their IDs in a single query.
 

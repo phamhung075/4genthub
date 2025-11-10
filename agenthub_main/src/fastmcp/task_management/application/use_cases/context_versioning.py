@@ -5,14 +5,14 @@ Provides version control for context changes with rollback capabilities,
 enabling audit trails and recovery from unwanted changes.
 """
 
-import json
-import hashlib
-from typing import Dict, Any, List, Optional, Tuple
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-import logging
 import difflib
+import hashlib
+import json
+import logging
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
 from ...domain.value_objects.context_enums import ContextLevel
 from ..services.unified_context_service import UnifiedContextService
@@ -36,20 +36,20 @@ class ContextVersion:
     context_level: ContextLevel
     context_id: str
     version_number: int             # Sequential version number
-    data: Dict[str, Any]            # Context data at this version
+    data: dict[str, Any]            # Context data at this version
     change_type: ChangeType
     change_summary: str
     changed_by: str                 # User who made the change
     created_at: datetime
     
     # Metadata
-    parent_version_id: Optional[str] = None  # Previous version
-    child_version_ids: List[str] = field(default_factory=list)
+    parent_version_id: str | None = None  # Previous version
+    child_version_ids: list[str] = field(default_factory=list)
     
     # Delta storage (optional)
-    delta: Optional[Dict[str, Any]] = None  # Changes from parent
+    delta: dict[str, Any] | None = None  # Changes from parent
     is_milestone: bool = False      # Mark important versions
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     
     def get_hash(self) -> str:
         """Generate hash of version data"""
@@ -62,9 +62,9 @@ class VersionDiff:
     """Difference between two versions"""
     from_version: str
     to_version: str
-    added: Dict[str, Any]
-    modified: Dict[str, Any]
-    removed: List[str]
+    added: dict[str, Any]
+    modified: dict[str, Any]
+    removed: list[str]
     unified_diff: str              # Text diff for review
 
 
@@ -75,20 +75,20 @@ class ContextVersioningService:
     
     def __init__(self, context_service: UnifiedContextService):
         self.context_service = context_service
-        self.versions: Dict[str, ContextVersion] = {}  # version_id -> version
-        self.version_chains: Dict[Tuple[str, str], List[str]] = {}  # (level, context_id) -> [version_ids]
-        self.current_versions: Dict[Tuple[str, str], str] = {}  # (level, context_id) -> current_version_id
+        self.versions: dict[str, ContextVersion] = {}  # version_id -> version
+        self.version_chains: dict[tuple[str, str], list[str]] = {}  # (level, context_id) -> [version_ids]
+        self.current_versions: dict[tuple[str, str], str] = {}  # (level, context_id) -> current_version_id
     
     async def create_version(
         self,
         context_level: ContextLevel,
         context_id: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         change_type: ChangeType,
         change_summary: str,
         changed_by: str,
         is_milestone: bool = False,
-        tags: Optional[List[str]] = None
+        tags: list[str] | None = None
     ) -> ContextVersion:
         """
         Create a new version of a context.
@@ -139,7 +139,7 @@ class ContextVersioningService:
             change_type=change_type,
             change_summary=change_summary,
             changed_by=changed_by,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             parent_version_id=current_version_id,
             delta=delta,
             is_milestone=is_milestone,
@@ -165,7 +165,7 @@ class ContextVersioningService:
         
         return version
     
-    def _calculate_delta(self, old_data: Dict, new_data: Dict) -> Dict[str, Any]:
+    def _calculate_delta(self, old_data: dict, new_data: dict) -> dict[str, Any]:
         """Calculate delta between two data states"""
         
         delta = {
@@ -194,7 +194,7 @@ class ContextVersioningService:
     async def get_version(
         self,
         version_id: str
-    ) -> Optional[ContextVersion]:
+    ) -> ContextVersion | None:
         """Get a specific version"""
         return self.versions.get(version_id)
     
@@ -204,7 +204,7 @@ class ContextVersioningService:
         context_id: str,
         limit: int = 50,
         offset: int = 0
-    ) -> List[ContextVersion]:
+    ) -> list[ContextVersion]:
         """
         Get version history for a context.
         
@@ -236,7 +236,7 @@ class ContextVersioningService:
         self,
         from_version_id: str,
         to_version_id: str
-    ) -> Optional[VersionDiff]:
+    ) -> VersionDiff | None:
         """
         Get difference between two versions.
         
@@ -352,7 +352,7 @@ class ContextVersioningService:
         self,
         context_level: ContextLevel,
         context_id: str,
-        version_ids: List[str],
+        version_ids: list[str],
         merge_strategy: str,
         user_id: str
     ) -> ContextVersion:
@@ -409,7 +409,7 @@ class ContextVersioningService:
     async def tag_version(
         self,
         version_id: str,
-        tags: List[str]
+        tags: list[str]
     ):
         """Add tags to a version"""
         
@@ -422,7 +422,7 @@ class ContextVersioningService:
         self,
         context_level: ContextLevel,
         context_id: str
-    ) -> List[ContextVersion]:
+    ) -> list[ContextVersion]:
         """Get all milestone versions for a context"""
         
         key = (context_level.value, context_id)
@@ -498,7 +498,7 @@ class ContextVersioningService:
         export_data = {
             'context_level': context_level.value,
             'context_id': context_id,
-            'export_date': datetime.now(timezone.utc).isoformat(),
+            'export_date': datetime.now(UTC).isoformat(),
             'versions': [
                 {
                     'version_id': v.version_id,
@@ -517,7 +517,7 @@ class ContextVersioningService:
         
         return json.dumps(export_data, indent=2)
     
-    def get_storage_stats(self) -> Dict[str, Any]:
+    def get_storage_stats(self) -> dict[str, Any]:
         """Get storage statistics"""
         
         total_versions = len(self.versions)

@@ -4,8 +4,10 @@ This module runs necessary migrations on startup to keep database schema in sync
 """
 
 import logging
-from sqlalchemy import text, inspect
-from sqlalchemy.exc import SQLAlchemyError, OperationalError
+
+from sqlalchemy import inspect, text
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
+
 from .database_config import get_session
 
 logger = logging.getLogger(__name__)
@@ -90,7 +92,7 @@ class AutoMigration:
                                 ))
                                 session.commit()
                                 logger.info(f"✅ Added progress_state column to {table_name} table")
-                            except SQLAlchemyError as pg_err:
+                            except SQLAlchemyError:
                                 # Try SQLite syntax if PostgreSQL fails
                                 session.rollback()
                                 try:

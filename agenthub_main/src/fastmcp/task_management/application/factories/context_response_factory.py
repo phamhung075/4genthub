@@ -1,7 +1,7 @@
 """Context Response Factory - Standardizes context data format across all task actions"""
 
-from typing import Dict, Any, Optional
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +9,7 @@ class ContextResponseFactory:
     """Factory to create standardized context response format"""
     
     @staticmethod
-    def create_unified_context(context_data: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def create_unified_context(context_data: dict[str, Any] | None) -> dict[str, Any] | None:
         """
         Create a unified context format from various context data sources.
         
@@ -75,7 +75,7 @@ class ContextResponseFactory:
             return None
     
     @staticmethod
-    def _convert_task_data_to_template(context_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_task_data_to_template(context_data: dict[str, Any]) -> dict[str, Any]:
         """
         Convert task_data structure from unified context to template_context format.
         
@@ -120,7 +120,7 @@ class ContextResponseFactory:
         return template_context
     
     @staticmethod
-    def _ensure_complete_structure(context: Dict[str, Any]) -> Dict[str, Any]:
+    def _ensure_complete_structure(context: dict[str, Any]) -> dict[str, Any]:
         """Ensure the context has all required sections with default values"""
         
         # Default structure template
@@ -187,7 +187,7 @@ class ContextResponseFactory:
         return context
     
     @staticmethod
-    def apply_to_task_response(task_data: Dict[str, Any]) -> Dict[str, Any]:
+    def apply_to_task_response(task_data: dict[str, Any]) -> dict[str, Any]:
         """
         Apply unified context format to a task response.
         
@@ -232,7 +232,7 @@ class ContextResponseFactory:
         return task_data
     
     @staticmethod
-    def apply_to_next_response(next_response: Dict[str, Any]) -> Dict[str, Any]:
+    def apply_to_next_response(next_response: dict[str, Any]) -> dict[str, Any]:
         """
         Apply unified context format to a next task response.
         Simplifies the complex nested structure to a single context_data field.

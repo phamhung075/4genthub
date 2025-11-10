@@ -5,7 +5,7 @@ Application layer factory for creating token facades with proper dependency inje
 Follows DDD principles by properly injecting infrastructure dependencies.
 """
 
-from typing import Optional
+
 from sqlalchemy.orm import Session
 
 from ..facades.token_application_facade import TokenApplicationFacade
@@ -55,7 +55,7 @@ class TokenFacadeFactory:
         # Mark as initialized for singleton pattern
         TokenFacadeFactory._initialized = True
     
-    def create_token_facade(self, session: Optional[Session] = None) -> TokenApplicationFacade:
+    def create_token_facade(self, session: Session | None = None) -> TokenApplicationFacade:
         """
         Create a token application facade with proper dependency injection.
         

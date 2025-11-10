@@ -6,7 +6,6 @@ This file contains all enums related to progress state management following DDD 
 """
 
 from enum import Enum
-from typing import List
 
 
 class ProgressState(Enum):
@@ -16,7 +15,7 @@ class ProgressState(Enum):
     COMPLETE = "COMPLETE"
 
     @classmethod
-    def get_all_states(cls) -> List[str]:
+    def get_all_states(cls) -> list[str]:
         """Get list of all progress states"""
         return [state.value for state in cls]
 

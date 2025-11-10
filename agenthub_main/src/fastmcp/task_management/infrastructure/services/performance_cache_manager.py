@@ -17,20 +17,19 @@ Task: Phase 5: Performance Optimization & Caching
 import asyncio
 import hashlib
 import json
+import logging
 import pickle
 import threading
 import time
-import weakref
 from abc import ABC, abstractmethod
 from collections import OrderedDict, defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, Callable
-import logging
+from typing import Any
+
 import psutil
-import os
-from datetime import datetime, timedelta
 
 # Try to import psutil for system metrics, fallback if not available
 try:
@@ -80,12 +79,12 @@ class CacheConfiguration:
     disk_enabled: bool = True
     disk_max_size: int = 10000
     disk_max_size_gb: int = 5
-    disk_cache_dir: Optional[Path] = None
+    disk_cache_dir: Path | None = None
     
     # Distributed cache settings
     distributed_enabled: bool = False
     distributed_backend: str = "redis"
-    distributed_config: Dict[str, Any] = field(default_factory=dict)
+    distributed_config: dict[str, Any] = field(default_factory=dict)
     
     # TTL settings
     default_ttl: float = 3600.0  # 1 hour
@@ -114,7 +113,7 @@ class CacheEntry:
     ttl: float
     size_bytes: int
     content_hash: str
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     priority: int = 1
     source_level: CacheLevel = CacheLevel.MEMORY
     compression_ratio: float = 1.0
@@ -153,7 +152,7 @@ class PerformanceMetrics:
     
     # Eviction statistics
     total_evictions: int = 0
-    evictions_by_policy: Dict[str, int] = field(default_factory=dict)
+    evictions_by_policy: dict[str, int] = field(default_factory=dict)
     
     # Throughput statistics
     operations_per_second: float = 0.0
@@ -186,7 +185,7 @@ class CacheStorage(ABC):
     """Abstract base class for cache storage backends"""
     
     @abstractmethod
-    async def get(self, key: str) -> Optional[CacheEntry]:
+    async def get(self, key: str) -> CacheEntry | None:
         """Get entry from storage"""
         pass
     
@@ -211,7 +210,7 @@ class CacheStorage(ABC):
         pass
     
     @abstractmethod
-    async def keys(self) -> List[str]:
+    async def keys(self) -> list[str]:
         """Get all keys in storage"""
         pass
 
@@ -222,12 +221,12 @@ class MemoryStorage(CacheStorage):
     def __init__(self, config: CacheConfiguration):
         self.config = config
         self.cache: OrderedDict[str, CacheEntry] = OrderedDict()
-        self.access_times: Dict[str, float] = {}
-        self.access_counts: Dict[str, int] = defaultdict(int)
+        self.access_times: dict[str, float] = {}
+        self.access_counts: dict[str, int] = defaultdict(int)
         self.size_tracker = 0
         self.lock = threading.RLock()
     
-    async def get(self, key: str) -> Optional[CacheEntry]:
+    async def get(self, key: str) -> CacheEntry | None:
         """Get entry from memory cache"""
         with self.lock:
             if key not in self.cache:
@@ -296,7 +295,7 @@ class MemoryStorage(CacheStorage):
         """Get number of entries in memory cache"""
         return len(self.cache)
     
-    async def keys(self) -> List[str]:
+    async def keys(self) -> list[str]:
         """Get all keys in memory cache"""
         return list(self.cache.keys())
     
@@ -345,7 +344,7 @@ class DiskStorage(CacheStorage):
         self.cache_dir = config.disk_cache_dir or Path.cwd() / ".cache" / "rules"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.index_file = self.cache_dir / "index.json"
-        self.index: Dict[str, Dict[str, Any]] = {}
+        self.index: dict[str, dict[str, Any]] = {}
         self.lock = threading.RLock()
         self._load_index()
     
@@ -353,7 +352,7 @@ class DiskStorage(CacheStorage):
         """Load cache index from disk"""
         try:
             if self.index_file.exists():
-                with open(self.index_file, 'r') as f:
+                with open(self.index_file) as f:
                     self.index = json.load(f)
         except Exception as e:
             logger.warning(f"Failed to load cache index: {e}")
@@ -372,7 +371,7 @@ class DiskStorage(CacheStorage):
         key_hash = hashlib.sha256(key.encode()).hexdigest()
         return self.cache_dir / f"{key_hash}.cache"
     
-    async def get(self, key: str) -> Optional[CacheEntry]:
+    async def get(self, key: str) -> CacheEntry | None:
         """Get entry from disk cache"""
         with self.lock:
             if key not in self.index:
@@ -475,7 +474,7 @@ class DiskStorage(CacheStorage):
         """Get number of entries in disk cache"""
         return len(self.index)
     
-    async def keys(self) -> List[str]:
+    async def keys(self) -> list[str]:
         """Get all keys in disk cache"""
         return list(self.index.keys())
     
@@ -508,7 +507,7 @@ class DiskStorage(CacheStorage):
 class EnhancedRuleCacheManager:
     """Enhanced multi-level cache manager with performance optimization"""
     
-    def __init__(self, config: Optional[CacheConfiguration] = None):
+    def __init__(self, config: CacheConfiguration | None = None):
         self.config = config or CacheConfiguration()
         self.metrics = PerformanceMetrics()
         
@@ -530,7 +529,7 @@ class EnhancedRuleCacheManager:
         
         logger.info(f"Enhanced cache manager initialized with config: {self.config}")
     
-    async def get(self, key: str, lazy_load_callback: Optional[Callable] = None) -> Optional[Any]:
+    async def get(self, key: str, lazy_load_callback: Callable | None = None) -> Any | None:
         """Get content from cache with multi-level fallback"""
         start_time = time.time()
         
@@ -576,8 +575,8 @@ class EnhancedRuleCacheManager:
             self._record_miss(time.time() - start_time)
             return None
     
-    async def put(self, key: str, content: Any, ttl: Optional[float] = None, 
-                  tags: Optional[List[str]] = None, priority: int = 1) -> bool:
+    async def put(self, key: str, content: Any, ttl: float | None = None, 
+                  tags: list[str] | None = None, priority: int = 1) -> bool:
         """Store content in cache with intelligent placement"""
         start_time = time.time()
         
@@ -640,7 +639,7 @@ class EnhancedRuleCacheManager:
             logger.error(f"Cache invalidation failed for key {key}: {e}")
             return False
     
-    async def invalidate_by_tags(self, tags: List[str]) -> int:
+    async def invalidate_by_tags(self, tags: list[str]) -> int:
         """Invalidate all cache entries with specified tags"""
         invalidated_count = 0
         
@@ -681,7 +680,7 @@ class EnhancedRuleCacheManager:
             logger.error(f"Cache clear failed: {e}")
             return False
     
-    def get_performance_metrics(self) -> Dict[str, Any]:
+    def get_performance_metrics(self) -> dict[str, Any]:
         """Get comprehensive performance metrics"""
         memory_info = psutil.virtual_memory()
         
@@ -716,7 +715,7 @@ class EnhancedRuleCacheManager:
             }
         }
     
-    async def optimize_cache(self) -> Dict[str, Any]:
+    async def optimize_cache(self) -> dict[str, Any]:
         """Perform cache optimization operations"""
         optimization_results = {
             "expired_entries_removed": 0,
@@ -748,7 +747,7 @@ class EnhancedRuleCacheManager:
             logger.error(f"Cache optimization failed: {e}")
             return optimization_results
     
-    async def _lazy_load(self, key: str, callback: Callable) -> Optional[Any]:
+    async def _lazy_load(self, key: str, callback: Callable) -> Any | None:
         """Lazy load content using provided callback"""
         try:
             content = await callback(key)
@@ -782,7 +781,7 @@ class EnhancedRuleCacheManager:
         
         return removed_count
     
-    def _record_hit(self, response_time: float, cache_level: Optional[CacheLevel]):
+    def _record_hit(self, response_time: float, cache_level: CacheLevel | None):
         """Record cache hit metrics"""
         self.metrics.total_requests += 1
         self.metrics.cache_hits += 1

@@ -1,26 +1,30 @@
 """
 Git Branch Application Facade (for Task Trees)
 """
-from typing import Dict, Any, Optional
+from datetime import UTC
+from typing import Any
 
+from ...domain.repositories.project_repository import ProjectRepository
 from ..services.git_branch_service import GitBranchService
 from ..services.websocket_notification_service import WebSocketNotificationService
-from ...domain.repositories.project_repository import ProjectRepository
+
 
 class GitBranchApplicationFacade:
-    def __init__(self, git_branch_service: Optional[GitBranchService] = None, project_repo: Optional[ProjectRepository] = None, project_id: Optional[str] = None, user_id: Optional[str] = None):
+    def __init__(self, git_branch_service: GitBranchService | None = None, project_repo: ProjectRepository | None = None, project_id: str | None = None, user_id: str | None = None):
         self._git_branch_service = git_branch_service or GitBranchService(project_repo)
         self._project_id = project_id
         self._user_id = user_id
 
-    async def create_tree(self, project_id: str, tree_name: str, description: str = "") -> Dict[str, Any]:
+    async def create_tree(self, project_id: str, tree_name: str, description: str = "") -> dict[str, Any]:
         """Facade method to create a new task tree (branch)."""
         # Validate branch name using domain service
         if not self._user_id:
             return {"success": False, "error": "User authentication required"}
 
         try:
-            from ...domain.services.git_branch_name_validator import GitBranchNameValidator
+            from ...domain.services.git_branch_name_validator import (
+                GitBranchNameValidator,
+            )
             from ..services.repository_provider_service import RepositoryProviderService
 
             # Get user-scoped repository for validation
@@ -38,7 +42,7 @@ class GitBranchApplicationFacade:
         # If validation passes, proceed with creation
         return await self._git_branch_service.create_git_branch(project_id, tree_name, description)
 
-    def create_git_branch(self, project_id: str, git_branch_name: str, git_branch_description: str = "") -> Dict[str, Any]:
+    def create_git_branch(self, project_id: str, git_branch_name: str, git_branch_description: str = "") -> dict[str, Any]:
         """Create a new git branch (task tree) - synchronous version for MCP controller."""
         try:
             # Use actual GitBranchService to create the git branch
@@ -51,7 +55,6 @@ class GitBranchApplicationFacade:
             try:
                 loop = asyncio.get_running_loop()
                 # If we're in a running loop, use asyncio.create_task() instead
-                import concurrent.futures
                 import threading
                 
                 # Use a thread pool to run the async function
@@ -137,10 +140,9 @@ class GitBranchApplicationFacade:
                 "error_code": "CREATION_FAILED"
             }
 
-    def update_git_branch(self, git_branch_id: str, git_branch_name: Optional[str] = None, git_branch_description: Optional[str] = None, project_id: Optional[str] = None) -> Dict[str, Any]:
+    def update_git_branch(self, git_branch_id: str, git_branch_name: str | None = None, git_branch_description: str | None = None, project_id: str | None = None) -> dict[str, Any]:
         """Update a git branch - synchronous version for MCP controller."""
         try:
-            import asyncio
             import logging
             logger = logging.getLogger(__name__)
 
@@ -188,10 +190,9 @@ class GitBranchApplicationFacade:
                 "error_code": "UPDATE_FAILED"
             }
 
-    def get_git_branch(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    def get_git_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Get a git branch by ID with project context - DDD-compliant method for controller interface."""
         try:
-            import asyncio
             import logging
             logger = logging.getLogger(__name__)
             logger.info(f"Getting git branch: project_id={project_id}, git_branch_id={git_branch_id}")
@@ -215,7 +216,7 @@ class GitBranchApplicationFacade:
                 "error_code": "GET_FAILED"
             }
 
-    def get_git_branch_by_id(self, git_branch_id: str) -> Dict[str, Any]:
+    def get_git_branch_by_id(self, git_branch_id: str) -> dict[str, Any]:
         """Get a git branch by ID - synchronous version for MCP controller."""
         try:
             import asyncio
@@ -225,13 +226,11 @@ class GitBranchApplicationFacade:
             
             # We need to find the project that contains this git branch
             # For now, we'll query the project repository directly
-            from ...domain.interfaces.repository_factory import IProjectRepositoryFactory
             
             # Check if we're already in an event loop
             try:
                 loop = asyncio.get_running_loop()
                 # If we're in a running loop, use a thread to run the async function
-                import concurrent.futures
                 import threading
                 
                 result = None
@@ -271,7 +270,7 @@ class GitBranchApplicationFacade:
                 "error_code": "GET_FAILED"
             }
     
-    async def _find_git_branch_by_id(self, git_branch_id: str) -> Dict[str, Any]:
+    async def _find_git_branch_by_id(self, git_branch_id: str) -> dict[str, Any]:
         """Helper method to find a git branch by ID across all projects."""
         
         # CONSISTENCY FIX: Use the same RepositoryProviderService that the API controller uses
@@ -331,7 +330,7 @@ class GitBranchApplicationFacade:
             logger.error(f"Failed to get branch entity: {e}")
             return None
 
-    def delete_git_branch(self, git_branch_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
+    def delete_git_branch(self, git_branch_id: str, project_id: str | None = None) -> dict[str, Any]:
         """Delete a git branch - synchronous version for MCP controller.
 
         Service layer handles all validation including:
@@ -352,7 +351,6 @@ class GitBranchApplicationFacade:
             try:
                 loop = asyncio.get_running_loop()
                 # If we're in a running loop, use a thread to run the async function
-                import concurrent.futures
                 import threading
                 
                 result = None
@@ -405,7 +403,7 @@ class GitBranchApplicationFacade:
                 "error_code": "DELETE_FAILED"
             }
 
-    def list_git_branchs(self, project_id: str) -> Dict[str, Any]:
+    def list_git_branchs(self, project_id: str) -> dict[str, Any]:
         """List git branches for a project - synchronous version for MCP controller."""
         try:
             import asyncio
@@ -417,7 +415,6 @@ class GitBranchApplicationFacade:
             try:
                 loop = asyncio.get_running_loop()
                 # If we're in a running loop, use a thread to run the async function
-                import concurrent.futures
                 import threading
                 
                 result = None
@@ -502,15 +499,15 @@ class GitBranchApplicationFacade:
                 "error_code": "LIST_FAILED"
             }
 
-    async def get_tree(self, project_id: str, tree_name: str) -> Dict[str, Any]:
+    async def get_tree(self, project_id: str, tree_name: str) -> dict[str, Any]:
         """Facade method to get a task tree."""
         return await self._git_branch_service.get_git_branch(project_id, tree_name)
 
-    async def list_trees(self, project_id: str) -> Dict[str, Any]:
+    async def list_trees(self, project_id: str) -> dict[str, Any]:
         """Facade method to list all task trees in a project."""
         return await self._git_branch_service.list_git_branchs(project_id)
     
-    def assign_agent(self, git_branch_id: str, agent_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
+    def assign_agent(self, git_branch_id: str, agent_id: str, project_id: str | None = None) -> dict[str, Any]:
         """Assign an agent to a git branch - synchronous version for MCP controller."""
         try:
             import logging
@@ -553,7 +550,7 @@ class GitBranchApplicationFacade:
                 "error_code": "ASSIGNMENT_FAILED"
             }
     
-    def unassign_agent(self, git_branch_id: str, agent_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
+    def unassign_agent(self, git_branch_id: str, agent_id: str, project_id: str | None = None) -> dict[str, Any]:
         """Unassign an agent from a git branch - synchronous version for MCP controller."""
         try:
             import logging
@@ -596,11 +593,11 @@ class GitBranchApplicationFacade:
                 "error_code": "UNASSIGNMENT_FAILED"
             }
     
-    def get_statistics(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    def get_statistics(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Get statistics for a git branch - DDD-compliant implementation."""
         try:
             import logging
-            from datetime import datetime, timezone
+            from datetime import datetime
             logger = logging.getLogger(__name__)
             logger.info(f"Getting statistics for git branch {git_branch_id} in project {project_id}")
             
@@ -711,7 +708,7 @@ class GitBranchApplicationFacade:
                     "assigned_agents": assigned_agents,
                     "git_branch_id": git_branch_id,
                     "project_id": project_id,
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "timestamp": datetime.now(UTC).isoformat()
                 },
                 "message": f"Statistics retrieved for git branch {git_branch_id}"
             }
@@ -728,7 +725,7 @@ class GitBranchApplicationFacade:
                 "error_code": "STATISTICS_FAILED"
             }
 
-    def get_branches_with_task_counts(self, project_id: str) -> Dict[str, Any]:
+    def get_branches_with_task_counts(self, project_id: str) -> dict[str, Any]:
         """
         Get all branches for a project with their task counts.
         
@@ -754,8 +751,6 @@ class GitBranchApplicationFacade:
             # Get task repository to query task counts
             # IMPORTANT: For collaborative task visibility, we query ALL tasks
             # in a branch regardless of owner. Project-level security is still enforced.
-            from ...infrastructure.database.database_config import get_session
-            from ...infrastructure.database.models import Task
             
             # Enhance each branch with task counts
             enhanced_branches = []
@@ -764,7 +759,9 @@ class GitBranchApplicationFacade:
                 
                 # Get ALL tasks for this branch using repository (follows DDD pattern)
                 # This allows collaborative visibility while maintaining project-level security
-                from ...infrastructure.repositories.task_repository_factory import TaskRepositoryFactory
+                from ...infrastructure.repositories.task_repository_factory import (
+                    TaskRepositoryFactory,
+                )
                 
                 task_repo_factory = TaskRepositoryFactory()
                 task_repo = task_repo_factory.create_repository(project_id=project_id, git_branch_name=branch.get("name", "main"), user_id=self._user_id)
@@ -841,7 +838,7 @@ class GitBranchApplicationFacade:
                 "branches": []
             }
     
-    def get_project_branch_summary(self, project_id: str) -> Dict[str, Any]:
+    def get_project_branch_summary(self, project_id: str) -> dict[str, Any]:
         """
         Get aggregated summary statistics for all branches in a project.
         
@@ -921,7 +918,7 @@ class GitBranchApplicationFacade:
                 "error": f"Failed to get project branch summary: {str(e)}"
             }
     
-    def get_branch_summary(self, branch_id: str) -> Dict[str, Any]:
+    def get_branch_summary(self, branch_id: str) -> dict[str, Any]:
         """
         Get a single branch with its task count information.
         

@@ -7,11 +7,11 @@ delegates to the appropriate authentication provider (Keycloak or local JWT).
 It ensures consistent user identity across all authentication methods.
 """
 
-import os
 import logging
-from typing import Optional
+import os
+
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from fastmcp.auth.domain.entities.user import User
 
@@ -101,8 +101,8 @@ async def get_current_active_user(
 
 
 async def get_optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> Optional[User]:
+    credentials: HTTPAuthorizationCredentials | None = Depends(security)
+) -> User | None:
     """
     Get optional user - returns user if authenticated, None otherwise.
 

@@ -7,6 +7,7 @@ supporting both local PostgreSQL and cloud Supabase deployments.
 
 # Load environment variables BEFORE any configuration
 from pathlib import Path
+
 try:
     from dotenv import load_dotenv
     project_root = Path(__file__).parent.parent.parent.parent.parent.parent.parent
@@ -24,15 +25,13 @@ try:
 except ImportError:
     pass
 
-import os
 import logging
-import sys
-from datetime import datetime, date
-from typing import Optional, Dict, Any
+import os
 from threading import local
-from sqlalchemy import create_engine, Engine, event, pool, text
-from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase, scoped_session
-from sqlalchemy.pool import NullPool, QueuePool
+from typing import Any
+
+from sqlalchemy import Engine, create_engine, event, text
+from sqlalchemy.orm import DeclarativeBase, Session, scoped_session, sessionmaker
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +40,12 @@ _thread_local = local()
 
 # Import exception for better error handling
 from ...domain.exceptions.base_exceptions import DatabaseException
+
 # Import retry logic for connection resilience
-from .connection_retry import with_connection_retry, create_resilient_engine, DEFAULT_RETRY_CONFIG
+from .connection_retry import (
+    DEFAULT_RETRY_CONFIG,
+    with_connection_retry,
+)
 
 
 class Base(DeclarativeBase):
@@ -156,8 +159,8 @@ class DatabaseConfig:
                 )
 
             logger.info(f"Database type: {self.database_type}")
-            self.engine: Optional[Engine] = None
-            self.SessionLocal: Optional[sessionmaker] = None
+            self.engine: Engine | None = None
+            self.SessionLocal: sessionmaker | None = None
 
             if self.database_type == "supabase":
                 logger.info("🎯 SUPABASE DATABASE SELECTED - Excellent choice for cloud-native applications!")
@@ -172,7 +175,7 @@ class DatabaseConfig:
         finally:
             self._initializing = False
     
-    def _get_secure_database_url(self) -> Optional[str]:
+    def _get_secure_database_url(self) -> str | None:
         """
         Get database URL from individual environment variables.
 
@@ -268,7 +271,7 @@ class DatabaseConfig:
         pool_recycle = int(os.getenv("DATABASE_POOL_RECYCLE", "1800"))  # Use env var
         pool_pre_ping = os.getenv("DATABASE_POOL_PRE_PING", "true").lower() in ["true", "1", "yes"]
         
-        logger.info(f"📊 Database Pool Configuration:")
+        logger.info("📊 Database Pool Configuration:")
         logger.info(f"  - Pool Size: {pool_size}")
         logger.info(f"  - Max Overflow: {max_overflow}")
         logger.info(f"  - Pool Timeout: {pool_timeout}s")
@@ -405,7 +408,7 @@ class DatabaseConfig:
         # Test the session with a simple query to ensure it's working
         try:
             session.execute(text("SELECT 1"))
-        except Exception as e:
+        except Exception:
             # Close session on error to prevent stale connections
             self.SessionLocal.remove()  # Remove thread-local session
             raise
@@ -419,12 +422,6 @@ class DatabaseConfig:
 
         # CRITICAL: Explicitly import ALL models to ensure Base.metadata has complete registration
         # This is especially important for context tables which can be missed in batch test runs
-        from .models import (
-            APIToken, Project, ProjectGitBranch, Task, Subtask, TaskAssignee, TaskDependency,
-            Agent, Label, TaskLabel, Template,
-            BranchContext, TaskContext, ProjectContext, GlobalContext,
-            ContextDelegation, ContextInheritanceCache
-        )  # noqa: F401
 
         logger.info("Creating database tables...")
         Base.metadata.create_all(bind=self.engine)
@@ -443,7 +440,6 @@ class DatabaseConfig:
             logger.warning(f"⚠️ Context tables missing after create_all(): {missing_tables}")
             logger.info("Forcing context table creation...")
             # Import models explicitly to ensure metadata has them
-            from .models import BranchContext, TaskContext, ProjectContext, GlobalContext
             # Recreate metadata from models
             Base.metadata.create_all(bind=self.engine, checkfirst=True)
 
@@ -490,7 +486,7 @@ class DatabaseConfig:
             self.engine.dispose()
             logger.info("Database connections closed")
     
-    def get_database_info(self) -> Dict[str, Any]:
+    def get_database_info(self) -> dict[str, Any]:
         """Get information about the current database configuration"""
         pool_info = {}
         if self.engine and hasattr(self.engine.pool, 'size'):
@@ -517,7 +513,7 @@ class DatabaseConfig:
 
 
 # Global instance
-_db_config: Optional[DatabaseConfig] = None
+_db_config: DatabaseConfig | None = None
 
 
 def get_db_config() -> DatabaseConfig:

@@ -4,16 +4,16 @@ This module provides a flexible caching layer to reduce database queries
 and improve response times for frequently accessed data.
 """
 
-import time
-import json
 import hashlib
+import json
 import logging
 import threading
-from typing import Any, Dict, Optional, Callable, Union, List
-from datetime import datetime, timedelta
-from functools import wraps
-from dataclasses import dataclass
+import time
 from collections import OrderedDict
+from collections.abc import Callable
+from dataclasses import dataclass
+from functools import wraps
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class CacheManager:
             'sets': 0
         }
     
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """
         Get a value from cache.
         
@@ -104,7 +104,7 @@ class CacheManager:
             
             return entry.value
     
-    def set(self, key: str, value: Any, ttl: Optional[int] = None):
+    def set(self, key: str, value: Any, ttl: int | None = None):
         """
         Set a value in cache.
         
@@ -156,7 +156,7 @@ class CacheManager:
         with self._lock:
             self._cache.clear()
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics"""
         with self._lock:
             total_requests = self._stats['hits'] + self._stats['misses']
@@ -186,7 +186,7 @@ class CacheManager:
 
 
 # Global cache instances
-_cache_instances: Dict[str, CacheManager] = {}
+_cache_instances: dict[str, CacheManager] = {}
 _cache_lock = threading.Lock()
 
 
@@ -212,8 +212,8 @@ def get_cache(name: str = 'default', **kwargs) -> CacheManager:
 def cached(
     ttl: int = 300,
     cache_name: str = 'default',
-    key_func: Optional[Callable] = None,
-    condition: Optional[Callable] = None
+    key_func: Callable | None = None,
+    condition: Callable | None = None
 ):
     """
     Decorator for caching function results.
@@ -301,12 +301,12 @@ class CachedRepository:
                 return super().find_by_id(task_id)
     """
     
-    def __init__(self, *args, cache_name: Optional[str] = None, **kwargs):
+    def __init__(self, *args, cache_name: str | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self._cache_name = cache_name or f"{self.__class__.__name__}_cache"
         self._cache = get_cache(self._cache_name)
     
-    def invalidate_cache(self, pattern: Optional[str] = None):
+    def invalidate_cache(self, pattern: str | None = None):
         """
         Invalidate cache entries.
         
@@ -325,12 +325,12 @@ class CachedRepository:
                 for key in keys_to_delete:
                     self._cache.delete(key)
     
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get repository cache statistics"""
         return self._cache.get_stats()
 
 
-def cached_method(ttl: int = 300, key_prefix: Optional[str] = None):
+def cached_method(ttl: int = 300, key_prefix: str | None = None):
     """
     Decorator for caching repository methods.
     

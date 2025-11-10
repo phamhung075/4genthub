@@ -4,30 +4,26 @@ Handles subtask-related application boundary concerns, orchestrating subtask use
 """
 
 import logging
-from typing import Dict, Any, List, Optional
-from dataclasses import asdict
+from typing import Any
 
-from ..dtos.task import TaskResponse
-from ..use_cases.get_task import GetTaskUseCase
-from ...domain.repositories.task_repository import TaskRepository
-from ...domain.exceptions import TaskNotFoundError
-from ...domain.value_objects.task_id import TaskId
 from ...domain.repositories.subtask_repository import SubtaskRepository
-from ..use_cases.add_subtask import AddSubtaskUseCase, AddSubtaskRequest
-from ..use_cases.update_subtask import UpdateSubtaskUseCase, UpdateSubtaskRequest
-from ..use_cases.remove_subtask import RemoveSubtaskUseCase
+from ...domain.repositories.task_repository import TaskRepository
+from ...domain.value_objects.task_id import TaskId
+from ...domain.websocket_protocol import SubtaskDeletePayload, create_delete_message
+from ...infrastructure.database.database_config import get_session
+from ...infrastructure.database.models import Subtask as SubtaskModel
+from ...infrastructure.repositories.subtask_repository_factory import (
+    SubtaskRepositoryFactory,
+)
+from ...infrastructure.repositories.task_repository_factory import TaskRepositoryFactory
+from ..services.minimal_response_serializer import MinimalResponseSerializer
+from ..services.websocket_notification_service import WebSocketNotificationService
+from ..use_cases.add_subtask import AddSubtaskRequest, AddSubtaskUseCase
+from ..use_cases.complete_subtask import CompleteSubtaskUseCase
 from ..use_cases.get_subtask import GetSubtaskUseCase
 from ..use_cases.get_subtasks import GetSubtasksUseCase
-from ..use_cases.complete_subtask import CompleteSubtaskUseCase
-from ...domain.interfaces.repository_factory import ITaskRepositoryFactory
-from ...infrastructure.repositories.task_repository_factory import TaskRepositoryFactory
-from ...infrastructure.repositories.subtask_repository_factory import SubtaskRepositoryFactory
-from ..services.websocket_notification_service import WebSocketNotificationService
-from ..services.minimal_response_serializer import MinimalResponseSerializer
-from ...infrastructure.database.models import Subtask as SubtaskModel
-from ...infrastructure.database.database_config import get_session
-from ...domain.websocket_protocol import SubtaskDeletePayload, create_delete_message
-from ...domain.value_objects.subtask_id import SubtaskId
+from ..use_cases.remove_subtask import RemoveSubtaskUseCase
+from ..use_cases.update_subtask import UpdateSubtaskRequest, UpdateSubtaskUseCase
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +69,7 @@ class SubtaskApplicationFacade:
             self._get_subtasks_use_case = None
             self._complete_subtask_use_case = None
     
-    def _derive_context_from_task(self, task_id: str, subtask_id: str = None) -> Dict[str, str]:
+    def _derive_context_from_task(self, task_id: str, subtask_id: str = None) -> dict[str, str]:
         """Derive context parameters from the parent task by looking it up in database"""
         # First, ensure we have a user_id for authentication filtering
         lookup_user_id = None
@@ -82,7 +78,9 @@ class SubtaskApplicationFacade:
         else:
             # Get authenticated user ID for proper multi-tenant filtering
             try:
-                from ...interface.mcp_controllers.auth_helper.auth_helper import get_authenticated_user_id
+                from ...interface.mcp_controllers.auth_helper.auth_helper import (
+                    get_authenticated_user_id,
+                )
                 lookup_user_id = get_authenticated_user_id(None, "Task lookup for subtask context")
                 logger.info(f"🔍 Using authenticated user_id for task lookup: {lookup_user_id}")
             except Exception as e:
@@ -140,12 +138,12 @@ class SubtaskApplicationFacade:
             from ...domain.exceptions import TaskNotFoundError
             raise TaskNotFoundError(f"Task {task_id} not found") from e
     
-    def _derive_context_from_git_branch_id(self, git_branch_id: str) -> Dict[str, str]:
+    def _derive_context_from_git_branch_id(self, git_branch_id: str) -> dict[str, str]:
         """Derive context parameters from git_branch_id by looking up the project_git_branchs table"""
         try:
             # Use proper database connection (PostgreSQL/Supabase)
             from ...infrastructure.database.database_config import get_session
-            from ...infrastructure.database.models import ProjectGitBranch, Project
+            from ...infrastructure.database.models import Project, ProjectGitBranch
             
             with get_session() as session:
                 # Look up the git branch to get project_id and git_branch_name
@@ -163,7 +161,9 @@ class SubtaskApplicationFacade:
                         # If user_id is still None (e.g., in MVP mode), get authenticated user
                         if not user_id:
                             try:
-                                from ...interface.mcp_controllers.auth_helper.auth_helper import get_authenticated_user_id
+                                from ...interface.mcp_controllers.auth_helper.auth_helper import (
+                                    get_authenticated_user_id,
+                                )
                                 user_id = get_authenticated_user_id(None, "Subtask context derivation from git_branch")
                                 logger.info(f"✅ Using authenticated user for context: {user_id}")
                             except Exception as e:
@@ -184,13 +184,12 @@ class SubtaskApplicationFacade:
         # Fallback to defaults
         logger.warning(f"Could not derive context from git_branch_id {git_branch_id}, using defaults")
         # Validate user authentication
-        from ...domain.constants import validate_user_id
-        from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-        from ....config.auth_config import AuthConfig
         
         # Use auth_helper to get authenticated user ID (same as controllers)
         try:
-            from ...interface.mcp_controllers.auth_helper.auth_helper import get_authenticated_user_id
+            from ...interface.mcp_controllers.auth_helper.auth_helper import (
+                get_authenticated_user_id,
+            )
             user_id = get_authenticated_user_id(None, "Subtask context derivation")
         except Exception as e:
             logger.error(f"Authentication failed for subtask context derivation: {e}")
@@ -215,14 +214,14 @@ class SubtaskApplicationFacade:
         self,
         action: str,
         task_id: str,
-        subtask_data: Dict[str, Any] | None = None,
+        subtask_data: dict[str, Any] | None = None,
         subtask_id: str | None = None,  # Add subtask_id as separate parameter
         suppress_broadcast: bool = False,  # Option A fix: suppress "updated" during completion
         # Legacy compatibility parameters (will be ignored following clean relationship chain)
         project_id: str | None = None,
         git_branch_name: str | None = None,
         user_id: str | None = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Handle subtask operations.
 
         The historical signature placed *subtask_data* as the **third** positional
@@ -277,7 +276,7 @@ class SubtaskApplicationFacade:
         else:
             raise ValueError(f"Unsupported subtask action: {action}")
     
-    def _handle_create_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository) -> Dict[str, Any]:
+    def _handle_create_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository) -> dict[str, Any]:
         """Handle subtask creation"""
         if not subtask_data or "title" not in subtask_data:
             raise ValueError("subtask_data with title is required")
@@ -389,7 +388,7 @@ class SubtaskApplicationFacade:
                         task_data=parent_task_dict,
                         metadata={"source": "system", "event_type": "subtask_count_update"}
                     )
-                    logger.info(f"✅ Broadcasted parent task update after subtask creation")
+                    logger.info("✅ Broadcasted parent task update after subtask creation")
             except Exception as parent_error:
                 logger.warning(f"Failed to broadcast parent task update: {parent_error}")
 
@@ -398,8 +397,9 @@ class SubtaskApplicationFacade:
 
         # 🔄 SYNC: Update parent task's subtask counts in context_data
         try:
-            from ..services.task_context_sync_service import TaskContextSyncService
             import asyncio
+
+            from ..services.task_context_sync_service import TaskContextSyncService
 
             sync_service = TaskContextSyncService(task_repository)
             try:
@@ -420,7 +420,7 @@ class SubtaskApplicationFacade:
 
         return result
     
-    def _handle_update_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None, suppress_broadcast: bool = False) -> Dict[str, Any]:
+    def _handle_update_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None, suppress_broadcast: bool = False) -> dict[str, Any]:
         """Handle subtask update
 
         Args:
@@ -497,8 +497,9 @@ class SubtaskApplicationFacade:
 
         # 🔄 SYNC: Update parent task's subtask counts in context_data
         try:
-            from ..services.task_context_sync_service import TaskContextSyncService
             import asyncio
+
+            from ..services.task_context_sync_service import TaskContextSyncService
 
             sync_service = TaskContextSyncService(task_repository)
             try:
@@ -519,7 +520,7 @@ class SubtaskApplicationFacade:
 
         return result
     
-    def _handle_delete_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> Dict[str, Any]:
+    def _handle_delete_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> dict[str, Any]:
         """Handle subtask deletion"""
         # Use subtask_id parameter if provided, otherwise extract from subtask_data (backward compatibility)
         actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
@@ -605,7 +606,7 @@ class SubtaskApplicationFacade:
                             task_data=parent_task_dict,
                             metadata={"source": "system", "event_type": "subtask_count_update"}
                         )
-                        logger.info(f"✅ Broadcasted parent task update after subtask deletion")
+                        logger.info("✅ Broadcasted parent task update after subtask deletion")
                 except Exception as parent_error:
                     logger.warning(f"Failed to broadcast parent task update: {parent_error}")
 
@@ -614,8 +615,9 @@ class SubtaskApplicationFacade:
 
             # 🔄 SYNC: Update parent task's subtask counts in context_data after deletion
             try:
-                from ..services.task_context_sync_service import TaskContextSyncService
                 import asyncio
+
+                from ..services.task_context_sync_service import TaskContextSyncService
 
                 sync_service = TaskContextSyncService(task_repository)
                 try:
@@ -636,7 +638,7 @@ class SubtaskApplicationFacade:
 
         return response
     
-    def _handle_list_subtasks(self, task_id: str, task_repository: TaskRepository, subtask_repository: SubtaskRepository) -> Dict[str, Any]:
+    def _handle_list_subtasks(self, task_id: str, task_repository: TaskRepository, subtask_repository: SubtaskRepository) -> dict[str, Any]:
         """Handle listing subtasks for a task"""
         # Create use case with context-specific repositories
         get_subtasks_use_case = self._get_subtasks_use_case or GetSubtasksUseCase(task_repository, subtask_repository)
@@ -650,7 +652,7 @@ class SubtaskApplicationFacade:
             "progress": result["progress"]
         }
     
-    def _handle_get_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> Dict[str, Any]:
+    def _handle_get_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> dict[str, Any]:
         """Handle getting a specific subtask"""
         # Use subtask_id parameter if provided, otherwise extract from subtask_data (backward compatibility)
         actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
@@ -669,7 +671,7 @@ class SubtaskApplicationFacade:
             "progress": result["progress"]
         }
     
-    def _handle_complete_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> Dict[str, Any]:
+    def _handle_complete_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> dict[str, Any]:
         """Handle completing a subtask"""
         # Use subtask_id parameter if provided, otherwise extract from subtask_data (backward compatibility)
         actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
@@ -698,8 +700,9 @@ class SubtaskApplicationFacade:
         # 🔄 SYNC: Update parent task's subtask counts in context_data after completion
         # DO THIS BEFORE broadcasting to ensure all DB operations complete first
         try:
-            from ..services.task_context_sync_service import TaskContextSyncService
             import asyncio
+
+            from ..services.task_context_sync_service import TaskContextSyncService
 
             sync_service = TaskContextSyncService(task_repository)
             try:
@@ -794,7 +797,7 @@ class SubtaskApplicationFacade:
                         "progress_percentage": 100,
                     }
 
-                logger.info(f"🎯 COMPLETION_BROADCAST: About to call WebSocketNotificationService with event_type='completed'")
+                logger.info("🎯 COMPLETION_BROADCAST: About to call WebSocketNotificationService with event_type='completed'")
 
                 # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
                 from ...domain.websocket_protocol import SubtaskCompletePayload
@@ -824,14 +827,15 @@ class SubtaskApplicationFacade:
                     user_id=user_id,
                     subtask_data=validated_subtask_data
                 )
-                logger.info(f"🎯 COMPLETION_BROADCAST: Successfully called WebSocketNotificationService.sync_broadcast_subtask_event with event_type='completed'")
+                logger.info("🎯 COMPLETION_BROADCAST: Successfully called WebSocketNotificationService.sync_broadcast_subtask_event with event_type='completed'")
             except Exception as e:
                 logger.error(f"🚨 COMPLETION_BROADCAST FAILED: {e}", exc_info=True)
 
             # 🔄 SYNC: Update parent task's subtask counts in context_data after completion
             try:
-                from ..services.task_context_sync_service import TaskContextSyncService
                 import asyncio
+
+                from ..services.task_context_sync_service import TaskContextSyncService
 
                 sync_service = TaskContextSyncService(task_repository)
                 try:
@@ -873,7 +877,7 @@ class SubtaskApplicationFacade:
         priority: str = "medium",
         user_id: str = None,
         **kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Convenience method for creating a subtask with dual signature support.
 
         Supports two calling patterns:
@@ -948,7 +952,7 @@ class SubtaskApplicationFacade:
         )
 
     def complete_subtask(self, task_id: str = None, subtask_id: str = None, completion_summary: str = None,
-                         testing_notes: str = None, **kwargs) -> Dict[str, Any]:
+                         testing_notes: str = None, **kwargs) -> dict[str, Any]:
         """Convenience method for completing a subtask.
 
         Supports two calling styles:
@@ -979,7 +983,7 @@ class SubtaskApplicationFacade:
             subtask_data=subtask_data
         )
 
-    def delete_subtask(self, task_id: str = None, subtask_id: str = None, **kwargs) -> Dict[str, Any]:
+    def delete_subtask(self, task_id: str = None, subtask_id: str = None, **kwargs) -> dict[str, Any]:
         """Convenience method for deleting a subtask.
 
         Supports two calling styles:

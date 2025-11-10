@@ -6,10 +6,9 @@ including checking for duplicates within the project's scope.
 """
 
 import logging
-from typing import Optional
 
-from ..repositories.git_branch_repository import GitBranchRepository
 from ..exceptions.base_exceptions import ValidationException
+from ..repositories.git_branch_repository import GitBranchRepository
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ class GitBranchNameValidator:
         """
         self._git_branch_repository = git_branch_repository
 
-    async def validate_unique_name(self, name: str, project_id: str, exclude_branch_id: Optional[str] = None) -> None:
+    async def validate_unique_name(self, name: str, project_id: str, exclude_branch_id: str | None = None) -> None:
         """
         Validate that a git branch name is unique within the project's scope.
 
@@ -129,7 +128,7 @@ class GitBranchNameValidator:
 
         logger.debug(f"Branch name format '{name}' validated successfully")
 
-    async def validate_branch_name(self, name: str, project_id: str, exclude_branch_id: Optional[str] = None) -> None:
+    async def validate_branch_name(self, name: str, project_id: str, exclude_branch_id: str | None = None) -> None:
         """
         Comprehensive git branch name validation including format and uniqueness.
 

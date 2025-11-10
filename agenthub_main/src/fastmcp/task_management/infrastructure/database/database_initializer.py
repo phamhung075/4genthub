@@ -6,13 +6,10 @@ ensuring that all required schemas are created consistently.
 Uses SQLAlchemy ORM with support for PostgreSQL (recommended) and SQLite (legacy).
 """
 
-import os
 import logging
+import os
 import threading
-from pathlib import Path
-from typing import Optional
 
-from .database_config import get_db_config
 from .init_database import init_database as sqlalchemy_init_database
 
 logger = logging.getLogger(__name__)
@@ -59,7 +56,7 @@ def _find_project_root() -> str:
     return data_path
 
 
-def initialize_database(db_path: Optional[str] = None):
+def initialize_database(db_path: str | None = None):
     """
     Initialize the database with all required schemas.
     

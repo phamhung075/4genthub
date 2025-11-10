@@ -4,13 +4,12 @@ Handles agent assignment inheritance logic between tasks and subtasks.
 """
 
 import logging
-from typing import List, Optional
-from ...domain.entities.task import Task
+
 from ...domain.entities.subtask import Subtask
-from ...domain.repositories.task_repository import TaskRepository
+from ...domain.entities.task import Task
 from ...domain.repositories.subtask_repository import SubtaskRepository
+from ...domain.repositories.task_repository import TaskRepository
 from ...domain.value_objects.task_id import TaskId
-from ...domain.value_objects import AgentRole
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ class AgentInheritanceService:
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
     
-    def apply_agent_inheritance(self, subtask: Subtask, parent_task: Optional[Task] = None) -> Subtask:
+    def apply_agent_inheritance(self, subtask: Subtask, parent_task: Task | None = None) -> Subtask:
         """Apply agent inheritance logic to a subtask.
         
         If the subtask has no assignees, it inherits assignees from its parent task.
@@ -58,7 +57,7 @@ class AgentInheritanceService:
         
         return subtask
     
-    def apply_inheritance_to_all_subtasks(self, task_id: TaskId) -> List[Subtask]:
+    def apply_inheritance_to_all_subtasks(self, task_id: TaskId) -> list[Subtask]:
         """Apply agent inheritance to all subtasks of a task.
         
         This is useful when a task's assignees are updated and all subtasks
@@ -96,7 +95,7 @@ class AgentInheritanceService:
         logger.info(f"Applied inheritance to {len(updated_subtasks)} subtasks for task {task_id}")
         return updated_subtasks
     
-    def validate_agent_assignments(self, assignees: List[str]) -> List[str]:
+    def validate_agent_assignments(self, assignees: list[str]) -> list[str]:
         """Validate agent assignments using domain validation.
         
         Args:

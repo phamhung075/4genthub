@@ -5,14 +5,16 @@ This module provides v2 API endpoints for context management with proper user is
 using JWT authentication and user-scoped context facades.
 """
 
-import logging
 import json
-from typing import Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+import logging
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ...auth.interface.fastapi_auth import get_db
+
 # Use Supabase authentication for V2 routes
 try:
     from ...auth.interface.fastapi_auth import get_current_user
@@ -20,7 +22,9 @@ except ImportError:
     # Fallback to local JWT if Supabase auth not available
     from ...auth.interface.fastapi_auth import get_current_user
 from ...auth.domain.entities.user import User
-from ...task_management.interface.api_controllers.context_api_controller import ContextAPIController
+from ...task_management.interface.api_controllers.context_api_controller import (
+    ContextAPIController,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,36 +38,36 @@ class ContextCreateRequest(BaseModel):
     """Request model for creating contexts"""
     level: str
     context_id: str
-    data: Optional[Dict[str, Any]] = None
-    project_id: Optional[str] = None
-    git_branch_id: Optional[str] = None
+    data: dict[str, Any] | None = None
+    project_id: str | None = None
+    git_branch_id: str | None = None
 
 
 class ContextUpdateRequest(BaseModel):
     """Request model for updating contexts"""
-    data: Dict[str, Any]
+    data: dict[str, Any]
     propagate_changes: bool = True
 
 
 class ContextDelegateRequest(BaseModel):
     """Request model for delegating contexts"""
     delegate_to: str
-    delegate_data: Dict[str, Any]
-    delegation_reason: Optional[str] = None
+    delegate_data: dict[str, Any]
+    delegation_reason: str | None = None
 
 
 class ContextInsightRequest(BaseModel):
     """Request model for adding insights"""
     content: str
-    category: Optional[str] = None
-    importance: Optional[str] = None
-    agent: Optional[str] = None
+    category: str | None = None
+    importance: str | None = None
+    agent: str | None = None
 
 
 class ContextProgressRequest(BaseModel):
     """Request model for adding progress"""
     content: str
-    agent: Optional[str] = None
+    agent: str | None = None
 
 
 # Context helper functions removed - now using ContextAPIController
@@ -492,7 +496,7 @@ async def add_progress(
 @router.get("/{level}/list", response_model=dict)
 async def list_contexts(
     level: str,
-    filters: Optional[str] = None,  # JSON string of filters
+    filters: str | None = None,  # JSON string of filters
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

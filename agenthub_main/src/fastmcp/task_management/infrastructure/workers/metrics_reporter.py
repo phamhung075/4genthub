@@ -10,16 +10,19 @@ import asyncio
 import json
 import logging
 import smtplib
-from datetime import datetime, timezone, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
-from jinja2 import Template
-import os
+from datetime import UTC, datetime, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from pathlib import Path
+from typing import Any
 
-from ..monitoring.optimization_metrics import OptimizationMetricsCollector, get_global_optimization_collector
+from jinja2 import Template
+
+from ..monitoring.optimization_metrics import (
+    OptimizationMetricsCollector,
+    get_global_optimization_collector,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +35,7 @@ class ReportConfig:
     email_smtp_port: int = 587
     email_username: str = ""
     email_password: str = ""
-    email_recipients: List[str] = None
+    email_recipients: list[str] = None
     
     file_output_enabled: bool = True
     output_directory: Path = Path("/tmp/mcp_reports")
@@ -41,7 +44,7 @@ class ReportConfig:
     weekly_report_day: str = "monday"  # day of week
     monthly_report_day: int = 1  # day of month
     
-    alert_thresholds: Dict[str, float] = None
+    alert_thresholds: dict[str, float] = None
     
     def __post_init__(self):
         if self.email_recipients is None:
@@ -307,11 +310,11 @@ class MetricsReporter:
         
         logger.info("Metrics reporter stopped")
     
-    async def generate_daily_report(self, report_date: Optional[datetime] = None) -> Dict[str, Any]:
+    async def generate_daily_report(self, report_date: datetime | None = None) -> dict[str, Any]:
         """Generate daily optimization report."""
         
         if report_date is None:
-            report_date = datetime.now(timezone.utc).date()
+            report_date = datetime.now(UTC).date()
         
         # Get metrics for the past 24 hours
         summary = self.metrics_collector.get_optimization_summary(24)
@@ -321,7 +324,7 @@ class MetricsReporter:
             "report_date": report_date.strftime("%Y-%m-%d"),
             "time_period": "Past 24 Hours",
             "summary": summary,
-            "generation_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            "generation_time": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
         }
         
         # Generate HTML report
@@ -353,11 +356,11 @@ class MetricsReporter:
             "email_sent": self.config.email_enabled
         }
     
-    async def generate_weekly_report(self, week_start: Optional[datetime] = None) -> Dict[str, Any]:
+    async def generate_weekly_report(self, week_start: datetime | None = None) -> dict[str, Any]:
         """Generate weekly trend analysis report."""
         
         if week_start is None:
-            today = datetime.now(timezone.utc).date()
+            today = datetime.now(UTC).date()
             days_since_monday = today.weekday()
             week_start = today - timedelta(days=days_since_monday)
         
@@ -387,7 +390,7 @@ class MetricsReporter:
             "compression_trend_class": "trend-up" if trends.get("compression_ratio", {}).get("trend") == "up" else "trend-down",
             "health_trend": "↗️ Improving" if trends.get("system_health", {}).get("trend") == "up" else "↘️ Declining",
             "health_trend_class": "trend-up" if trends.get("system_health", {}).get("trend") == "up" else "trend-down",
-            "generation_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            "generation_time": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
         }
         
         # Generate HTML report
@@ -421,11 +424,11 @@ class MetricsReporter:
             "email_sent": self.config.email_enabled
         }
     
-    async def generate_monthly_roi_report(self, month_start: Optional[datetime] = None) -> Dict[str, Any]:
+    async def generate_monthly_roi_report(self, month_start: datetime | None = None) -> dict[str, Any]:
         """Generate monthly ROI and cost-benefit analysis report."""
         
         if month_start is None:
-            today = datetime.now(timezone.utc).date()
+            today = datetime.now(UTC).date()
             month_start = today.replace(day=1)
         
         # Get monthly data (30 days)
@@ -441,7 +444,7 @@ class MetricsReporter:
             "roi_analysis": roi_analysis,
             "cost_savings": roi_analysis.get("estimated_cost_savings", 0),
             "efficiency_gains": roi_analysis.get("efficiency_improvement", 0),
-            "generation_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            "generation_time": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
         }
         
         # Save JSON report for monthly ROI
@@ -456,7 +459,7 @@ class MetricsReporter:
         
         return report_data
     
-    def _safe_get_health_score(self, summary: Dict) -> float:
+    def _safe_get_health_score(self, summary: dict) -> float:
         """Safely get health score from summary with null checking."""
         health_data = summary.get("system_health", {})
         if not health_data:
@@ -467,7 +470,7 @@ class MetricsReporter:
             return health_score.get("avg_value", 0.0)
         return 0.0
     
-    def _calculate_weekly_trends(self, current: Dict, previous: Dict) -> Dict[str, Dict]:
+    def _calculate_weekly_trends(self, current: dict, previous: dict) -> dict[str, dict]:
         """Calculate weekly trends comparing current vs previous week."""
         
         trends = {}
@@ -500,7 +503,7 @@ class MetricsReporter:
         
         return trends
     
-    def _generate_weekly_recommendations(self, trends: Dict, summary: Dict) -> List[str]:
+    def _generate_weekly_recommendations(self, trends: dict, summary: dict) -> list[str]:
         """Generate recommendations based on weekly trends."""
         
         recommendations = []
@@ -530,7 +533,7 @@ class MetricsReporter:
         
         return recommendations
     
-    def _calculate_roi_metrics(self, summary: Dict) -> Dict[str, Any]:
+    def _calculate_roi_metrics(self, summary: dict) -> dict[str, Any]:
         """Calculate ROI and cost-benefit metrics."""
         
         total_optimizations = summary.get("optimization_performance", {}).get("total_optimizations", 0)
@@ -677,7 +680,7 @@ class MetricsReporter:
                 logger.error(f"Error in alert monitor: {e}")
                 await asyncio.sleep(300)  # Wait 5 minutes before retry
     
-    async def _send_critical_alert_email(self, summary: Dict):
+    async def _send_critical_alert_email(self, summary: dict):
         """Send immediate email for critical alerts."""
         
         alert_data = summary.get("alerts", {})
@@ -703,7 +706,7 @@ class MetricsReporter:
         
         Please check the system immediately and review the full dashboard for details.
         
-        Generated at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
+        Generated at: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}
         """
         
         try:
@@ -727,7 +730,7 @@ class MetricsReporter:
     async def _wait_until_time(self, time_str: str):
         """Wait until specific time of day (HH:MM format)."""
         hour, minute = map(int, time_str.split(':'))
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
         
         if target <= now:
@@ -741,7 +744,7 @@ class MetricsReporter:
         days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
         target_day = days.index(day_name.lower())
         
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         current_day = now.weekday()
         
         days_ahead = target_day - current_day
@@ -756,7 +759,7 @@ class MetricsReporter:
     
     async def _wait_until_monthday(self, day: int):
         """Wait until specific day of month."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         # Try this month first
         try:
@@ -779,10 +782,10 @@ class MetricsReporter:
 
 
 # Global metrics reporter instance
-_global_metrics_reporter: Optional[MetricsReporter] = None
+_global_metrics_reporter: MetricsReporter | None = None
 
 
-def get_global_metrics_reporter(config: Optional[ReportConfig] = None) -> MetricsReporter:
+def get_global_metrics_reporter(config: ReportConfig | None = None) -> MetricsReporter:
     """Get or create the global metrics reporter."""
     global _global_metrics_reporter
     if _global_metrics_reporter is None:
@@ -795,7 +798,7 @@ def get_global_metrics_reporter(config: Optional[ReportConfig] = None) -> Metric
     return _global_metrics_reporter
 
 
-async def start_automated_reporting(config: Optional[ReportConfig] = None):
+async def start_automated_reporting(config: ReportConfig | None = None):
     """Start automated metrics reporting."""
     reporter = get_global_metrics_reporter(config)
     await reporter.start_reporting()

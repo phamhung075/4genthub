@@ -3,8 +3,8 @@
 DDD use case for updating rules with proper validation and business logic.
 """
 
-from typing import Dict, Any, Optional
-from ...domain.entities.rule_entity import RuleContent
+from typing import Any
+
 from ...domain.repositories.rule_repository import RuleRepository
 
 
@@ -17,9 +17,9 @@ class UpdateRuleUseCase:
     async def execute(
         self,
         rule_path: str,
-        content: Optional[str] = None,
-        metadata_updates: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        content: str | None = None,
+        metadata_updates: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Update an existing rule"""
         try:
             # Check if rule exists

@@ -6,9 +6,8 @@ simplified and focused on core functionality.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import datetime
-import uuid
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +20,11 @@ class MockTaskContextRepository:
         self._contexts = {}
         logger.info("MockTaskContextRepository initialized")
     
-    def get_context(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_context(self, task_id: str) -> dict[str, Any] | None:
         """Get context for a task"""
         return self._contexts.get(task_id)
     
-    def create_context(self, task_id: str, context_data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_context(self, task_id: str, context_data: dict[str, Any]) -> dict[str, Any]:
         """Create context for a task"""
         context = {
             "task_id": task_id,
@@ -36,7 +35,7 @@ class MockTaskContextRepository:
         self._contexts[task_id] = context
         return context
     
-    def update_context(self, task_id: str, context_data: Dict[str, Any]) -> Dict[str, Any]:
+    def update_context(self, task_id: str, context_data: dict[str, Any]) -> dict[str, Any]:
         """Update context for a task"""
         if task_id not in self._contexts:
             return self.create_context(task_id, context_data)
@@ -57,15 +56,15 @@ class MockTaskContextRepository:
         """Check if context exists for a task"""
         return task_id in self._contexts
     
-    def list_contexts(self) -> List[Dict[str, Any]]:
+    def list_contexts(self) -> list[dict[str, Any]]:
         """List all contexts"""
         return list(self._contexts.values())
     
-    def get_by_id(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_by_id(self, task_id: str) -> dict[str, Any] | None:
         """Get context by task ID (alias for get_context)"""
         return self.get_context(task_id)
     
-    def save(self, task_id: str, context_data: Dict[str, Any]) -> Dict[str, Any]:
+    def save(self, task_id: str, context_data: dict[str, Any]) -> dict[str, Any]:
         """Save context for a task (creates or updates)"""
         if task_id in self._contexts:
             return self.update_context(task_id, context_data)

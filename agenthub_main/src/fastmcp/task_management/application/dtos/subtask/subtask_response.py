@@ -1,17 +1,18 @@
 """Response DTO containing subtask information"""
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 
 @dataclass
 class SubtaskResponse:
     task_id: str
-    subtask: Dict[str, Any]
-    progress: Dict[str, Any]
+    subtask: dict[str, Any]
+    progress: dict[str, Any]
     agent_inheritance_applied: bool = field(default=False)
-    inherited_assignees: List[str] = field(default_factory=list)
+    inherited_assignees: list[str] = field(default_factory=list)
     
-    def to_dict(self, include_parent_id: bool = False) -> Dict[str, Any]:
+    def to_dict(self, include_parent_id: bool = False) -> dict[str, Any]:
         """Convert response to dictionary
 
         Args:

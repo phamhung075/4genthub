@@ -7,12 +7,12 @@ where MCP task IDs are incorrectly stored as application task IDs.
 Based on: ai_docs/troubleshooting-guides/subtask-wrong-task-id-api-calls.md
 """
 
-import re
-import logging
 import html
-from typing import Optional, Tuple, Dict, Any
-from enum import Enum
+import logging
+import re
 from dataclasses import dataclass
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -37,16 +37,16 @@ class ValidationResult:
     is_valid: bool
     id_type: IDType
     original_value: str
-    normalized_value: Optional[str] = None
-    error_message: Optional[str] = None
-    warnings: Optional[list] = None
-    metadata: Optional[Dict[str, Any]] = None
+    normalized_value: str | None = None
+    error_message: str | None = None
+    warnings: list | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class IDValidationError(Exception):
     """Exception raised when ID validation fails critically."""
 
-    def __init__(self, message: str, id_value: str, expected_type: Optional[IDType] = None):
+    def __init__(self, message: str, id_value: str, expected_type: IDType | None = None):
         self.id_value = id_value
         self.expected_type = expected_type
         super().__init__(message)
@@ -241,7 +241,7 @@ class IDValidator:
                 error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             )
 
-    def detect_id_type(self, value: str, context_hint: Optional[str] = None) -> ValidationResult:
+    def detect_id_type(self, value: str, context_hint: str | None = None) -> ValidationResult:
         """
         Detect the type of ID based on format and context hints.
 
@@ -291,10 +291,10 @@ class IDValidator:
         )
 
     def validate_parameter_mapping(self,
-                                 task_id: Optional[str] = None,
-                                 git_branch_id: Optional[str] = None,
-                                 project_id: Optional[str] = None,
-                                 user_id: Optional[str] = None) -> ValidationResult:
+                                 task_id: str | None = None,
+                                 git_branch_id: str | None = None,
+                                 project_id: str | None = None,
+                                 user_id: str | None = None) -> ValidationResult:
         """
         Validate that parameters are not confused with each other.
 
@@ -376,7 +376,7 @@ class IDValidator:
             }
         )
 
-    def validate_task_context(self, task_id: str, expected_git_branch_id: Optional[str] = None) -> ValidationResult:
+    def validate_task_context(self, task_id: str, expected_git_branch_id: str | None = None) -> ValidationResult:
         """
         Validate task context to ensure task_id corresponds to correct git_branch_id.
 
@@ -445,7 +445,7 @@ class IDValidator:
 
     def suggest_fix_for_confusion(self,
                                 confused_task_id: str,
-                                context: str = "unknown") -> Dict[str, str]:
+                                context: str = "unknown") -> dict[str, str]:
         """
         Provide suggestions for fixing ID confusion issues.
 
@@ -508,10 +508,10 @@ def validate_uuid(value: str, strict: bool = True) -> bool:
     return result.is_valid
 
 
-def prevent_id_confusion(task_id: Optional[str] = None,
-                        git_branch_id: Optional[str] = None,
-                        project_id: Optional[str] = None,
-                        user_id: Optional[str] = None) -> None:
+def prevent_id_confusion(task_id: str | None = None,
+                        git_branch_id: str | None = None,
+                        project_id: str | None = None,
+                        user_id: str | None = None) -> None:
     """
     Validate parameters to prevent ID confusion (raises exception on failure).
 

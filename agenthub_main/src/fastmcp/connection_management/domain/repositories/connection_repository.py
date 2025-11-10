@@ -1,7 +1,7 @@
 """Connection Repository Interface"""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 from ..entities.connection import Connection
 
@@ -10,12 +10,12 @@ class ConnectionRepository(ABC):
     """Repository interface for Connection aggregate"""
     
     @abstractmethod
-    def find_by_id(self, connection_id: str) -> Optional[Connection]:
+    def find_by_id(self, connection_id: str) -> Connection | None:
         """Find connection by ID"""
         pass
     
     @abstractmethod
-    def find_all_active(self) -> List[Connection]:
+    def find_all_active(self) -> list[Connection]:
         """Find all active connections"""
         pass
     
@@ -25,7 +25,7 @@ class ConnectionRepository(ABC):
         pass
     
     @abstractmethod
-    def create_connection(self, connection_id: str, client_info: Dict[str, Any]) -> Connection:
+    def create_connection(self, connection_id: str, client_info: dict[str, Any]) -> Connection:
         """Create a new connection"""
         pass
     
@@ -40,6 +40,6 @@ class ConnectionRepository(ABC):
         pass
     
     @abstractmethod
-    def get_connection_statistics(self) -> Dict[str, Any]:
+    def get_connection_statistics(self) -> dict[str, Any]:
         """Get connection statistics"""
         pass 

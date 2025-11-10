@@ -15,11 +15,10 @@ Key Features:
 import logging
 import queue
 import threading
-import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Optional, Any, Dict
+from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +39,8 @@ class QueueMetrics:
     total_errors: int = 0
     current_size: int = 0
     max_size_reached: int = 0
-    last_enqueue_time: Optional[datetime] = None
-    last_dequeue_time: Optional[datetime] = None
+    last_enqueue_time: datetime | None = None
+    last_dequeue_time: datetime | None = None
 
 
 class EventQueue:
@@ -79,7 +78,7 @@ class EventQueue:
             f"EventQueue initialized with maxsize={maxsize}, timeout={timeout}s"
         )
 
-    def put(self, event: Any, block: bool = True, timeout: Optional[float] = None) -> bool:
+    def put(self, event: Any, block: bool = True, timeout: float | None = None) -> bool:
         """
         Add an event to the queue.
 
@@ -117,7 +116,7 @@ class EventQueue:
             with self._metrics_lock:
                 self._metrics.total_enqueued += 1
                 self._metrics.current_size = self._queue.qsize()
-                self._metrics.last_enqueue_time = datetime.now(timezone.utc)
+                self._metrics.last_enqueue_time = datetime.now(UTC)
 
                 # Track max size reached
                 if self._metrics.current_size > self._metrics.max_size_reached:
@@ -142,7 +141,7 @@ class EventQueue:
             self._increment_errors()
             return False
 
-    def get(self, block: bool = True, timeout: Optional[float] = None) -> Optional[Any]:
+    def get(self, block: bool = True, timeout: float | None = None) -> Any | None:
         """
         Remove and return an event from the queue.
 
@@ -167,7 +166,7 @@ class EventQueue:
             with self._metrics_lock:
                 self._metrics.total_dequeued += 1
                 self._metrics.current_size = self._queue.qsize()
-                self._metrics.last_dequeue_time = datetime.now(timezone.utc)
+                self._metrics.last_dequeue_time = datetime.now(UTC)
 
             logger.debug(
                 f"Event dequeued successfully. Queue size: {self._queue.qsize()}/{self._maxsize}"
@@ -196,7 +195,7 @@ class EventQueue:
         """
         return self.put(event, block=False)
 
-    def get_nowait(self) -> Optional[Any]:
+    def get_nowait(self) -> Any | None:
         """
         Get an event from queue without blocking (convenience method).
 
@@ -294,7 +293,7 @@ class EventQueue:
         logger.info(f"Queue shutdown: {remaining} events remaining for processing")
         return remaining
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get current queue metrics.
 

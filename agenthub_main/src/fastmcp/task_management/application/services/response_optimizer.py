@@ -12,10 +12,10 @@ Based on MCP Response Optimization Recommendations:
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Union
-from enum import Enum
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -73,10 +73,10 @@ class ResponseOptimizer:
         
     def optimize_response(
         self, 
-        response: Dict[str, Any],
-        profile: Optional[ResponseProfile] = None,
-        request_context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        response: dict[str, Any],
+        profile: ResponseProfile | None = None,
+        request_context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Main optimization method that coordinates all optimization steps.
         
@@ -125,8 +125,8 @@ class ResponseOptimizer:
     
     def auto_select_profile(
         self,
-        response: Dict[str, Any],
-        request_context: Optional[Dict[str, Any]] = None
+        response: dict[str, Any],
+        request_context: dict[str, Any] | None = None
     ) -> ResponseProfile:
         """
         Automatically select the appropriate response profile based on context.
@@ -190,7 +190,7 @@ class ResponseOptimizer:
         # Default to STANDARD profile
         return ResponseProfile.STANDARD
     
-    def remove_duplicates(self, response: Dict[str, Any]) -> Dict[str, Any]:
+    def remove_duplicates(self, response: dict[str, Any]) -> dict[str, Any]:
         """
         Remove duplicate fields that appear at multiple levels.
         
@@ -230,7 +230,7 @@ class ResponseOptimizer:
         
         return response
     
-    def flatten_structure(self, response: Dict[str, Any]) -> Dict[str, Any]:
+    def flatten_structure(self, response: dict[str, Any]) -> dict[str, Any]:
         """
         Flatten deeply nested structures to improve readability and reduce size.
         
@@ -260,7 +260,7 @@ class ResponseOptimizer:
         
         return response
     
-    def remove_nulls(self, data: Union[Dict, List, Any]) -> Union[Dict, List, Any]:
+    def remove_nulls(self, data: dict | list | Any) -> dict | list | Any:
         """
         Recursively remove null, None, empty strings, and empty collections.
 
@@ -317,7 +317,7 @@ class ResponseOptimizer:
         else:
             return data
     
-    def apply_profile(self, response: Dict[str, Any], profile: ResponseProfile) -> Dict[str, Any]:
+    def apply_profile(self, response: dict[str, Any], profile: ResponseProfile) -> dict[str, Any]:
         """
         Apply response profile to filter fields based on verbosity level.
         
@@ -382,12 +382,12 @@ class ResponseOptimizer:
                         "metadata_merged"
                     ],
                     "original_size_estimate": len(str(response)),
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "timestamp": datetime.now(UTC).isoformat()
                 }
             
             return debug_response
     
-    def merge_metadata(self, response: Dict[str, Any]) -> Dict[str, Any]:
+    def merge_metadata(self, response: dict[str, Any]) -> dict[str, Any]:
         """
         Consolidate duplicate metadata into a single location.
         
@@ -422,7 +422,7 @@ class ResponseOptimizer:
         
         return response
     
-    def _flatten_single_arrays(self, data: Union[Dict, List, Any]) -> Union[Dict, List, Any]:
+    def _flatten_single_arrays(self, data: dict | list | Any) -> dict | list | Any:
         """
         Recursively flatten single-item arrays to scalar values.
         
@@ -448,7 +448,7 @@ class ResponseOptimizer:
         else:
             return data
     
-    def _simplify_workflow_guidance(self, guidance: Dict[str, Any]) -> Dict[str, Any]:
+    def _simplify_workflow_guidance(self, guidance: dict[str, Any]) -> dict[str, Any]:
         """
         Simplify verbose workflow guidance into concise hints.
         
@@ -511,7 +511,7 @@ class ResponseOptimizer:
             (current_avg * (count - 1) + reduction) / count
         )
     
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get optimization metrics for monitoring.
         

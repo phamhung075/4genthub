@@ -6,14 +6,17 @@ into MCP controllers following clean architecture principles.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from ....auth.application.services.token_consumption_service import (
+    TokenConsumptionResult,
     TokenConsumptionService,
-    TokenConsumptionResult
 )
-from ....auth.infrastructure.repositories.token_balance_repository import TokenBalanceRepository
+from ....auth.infrastructure.repositories.token_balance_repository import (
+    TokenBalanceRepository,
+)
 from .auth_helper import get_authenticated_user_id
 
 logger = logging.getLogger(__name__)
@@ -38,7 +41,7 @@ class TokenConsumptionHelper:
             session: SQLAlchemy database session
         """
         self.session = session
-        self._token_service: Optional[TokenConsumptionService] = None
+        self._token_service: TokenConsumptionService | None = None
 
     @property
     def token_service(self) -> TokenConsumptionService:
@@ -51,9 +54,9 @@ class TokenConsumptionHelper:
     async def consume_tokens(
         self,
         operation: str,
-        user_id: Optional[str] = None,
-        custom_cost: Optional[int] = None
-    ) -> tuple[bool, Optional[Dict[str, Any]]]:
+        user_id: str | None = None,
+        custom_cost: int | None = None
+    ) -> tuple[bool, dict[str, Any] | None]:
         """
         Consume tokens for an MCP operation
 
@@ -118,9 +121,9 @@ class TokenConsumptionHelper:
     async def get_token_info(
         self,
         operation: str,
-        user_id: Optional[str] = None,
-        custom_cost: Optional[int] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None,
+        custom_cost: int | None = None
+    ) -> dict[str, Any]:
         """
         Get token consumption info for adding to successful responses
 
@@ -176,10 +179,10 @@ class TokenConsumptionHelper:
     async def consume_and_add_info(
         self,
         operation: str,
-        response: Dict[str, Any],
-        user_id: Optional[str] = None,
-        custom_cost: Optional[int] = None
-    ) -> tuple[bool, Dict[str, Any]]:
+        response: dict[str, Any],
+        user_id: str | None = None,
+        custom_cost: int | None = None
+    ) -> tuple[bool, dict[str, Any]]:
         """
         Consume tokens and add token_info to response in one step
 
@@ -215,9 +218,9 @@ class TokenConsumptionHelper:
 async def consume_tokens_for_operation(
     session: Session,
     operation: str,
-    user_id: Optional[str] = None,
-    custom_cost: Optional[int] = None
-) -> tuple[bool, Optional[Dict[str, Any]]]:
+    user_id: str | None = None,
+    custom_cost: int | None = None
+) -> tuple[bool, dict[str, Any] | None]:
     """
     Standalone function for consuming tokens (no class instance needed)
 

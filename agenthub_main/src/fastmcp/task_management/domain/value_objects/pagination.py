@@ -10,7 +10,7 @@ Business Rules:
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, TypeVar, Generic
+from typing import Generic, TypeVar
 
 T = TypeVar('T')
 
@@ -34,7 +34,7 @@ class PaginationRequest:
     """
     page: int = 1
     page_size: int = 20
-    offset: Optional[int] = None
+    offset: int | None = None
 
     def __post_init__(self):
         """Calculate offset if not provided."""
@@ -68,7 +68,7 @@ class PaginationResult(Generic[T]):
         ...     has_previous=True
         ... )
     """
-    items: List[T]
+    items: list[T]
     total_count: int
     page: int
     page_size: int

@@ -3,23 +3,23 @@
 Infrastructure component for validating documents and their metadata.
 """
 
+import hashlib
+import json
 import logging
 import re
-import json
-import hashlib
-from pathlib import Path
-from typing import Dict, Any
 from datetime import datetime
 
 # Removed compliance_enums import - simplified
 from enum import Enum
+from pathlib import Path
+from typing import Any
+
 
 class DocumentType(Enum):
     """Simplified document types"""
     CONFIG = "config"
     TEMPLATE = "template"
     DOCUMENT = "document"
-from ...domain.value_objects.compliance_objects import DocumentInfo
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class DocumentValidator:
             ]
         }
         
-    def validate_document_creation(self, file_path: str, content: str) -> Dict[str, Any]:
+    def validate_document_creation(self, file_path: str, content: str) -> dict[str, Any]:
         """Validate document creation with path correction and metadata validation"""
         try:
             path_obj = Path(file_path)
@@ -91,7 +91,7 @@ class DocumentValidator:
                     return doc_type
         return DocumentType.USER_CREATED
     
-    def _check_path_correction(self, path_obj: Path, doc_type: DocumentType) -> Dict[str, Any]:
+    def _check_path_correction(self, path_obj: Path, doc_type: DocumentType) -> dict[str, Any]:
         """Check if path correction is needed"""
         if doc_type == DocumentType.AI_GENERATED:
             if not str(path_obj).startswith(str(self.ai_docs_path)):
@@ -112,7 +112,7 @@ class DocumentValidator:
             "reason": "No correction needed"
         }
     
-    def _validate_metadata(self, content: str, doc_type: DocumentType) -> Dict[str, Any]:
+    def _validate_metadata(self, content: str, doc_type: DocumentType) -> dict[str, Any]:
         """Validate document metadata"""
         if doc_type != DocumentType.AI_GENERATED:
             return {"valid": True, "reason": "Non-AI document, metadata not required"}
@@ -133,7 +133,7 @@ class DocumentValidator:
             "compliance_percentage": (len(found_fields) / len(required_fields)) * 100
         }
     
-    def _update_index_if_needed(self, file_path: str, content: str, doc_type: DocumentType) -> Dict[str, Any]:
+    def _update_index_if_needed(self, file_path: str, content: str, doc_type: DocumentType) -> dict[str, Any]:
         """Update index.json if needed"""
         if doc_type != DocumentType.AI_GENERATED:
             return {"updated": False, "reason": "Non-AI document, index update not needed"}
@@ -146,7 +146,7 @@ class DocumentValidator:
             
             # Load existing index
             if index_path.exists():
-                with open(index_path, 'r') as f:
+                with open(index_path) as f:
                     index_data = json.load(f)
             else:
                 index_data = {"documents": [], "last_updated": None}
@@ -183,7 +183,7 @@ class DocumentValidator:
             logger.error(f"Index update failed: {e}")
             return {"updated": False, "error": str(e)}
     
-    def _extract_document_info(self, file_path: str, content: str) -> Dict[str, Any]:
+    def _extract_document_info(self, file_path: str, content: str) -> dict[str, Any]:
         """Extract document information for index"""
         # Extract metadata using regex
         doc_id_match = re.search(r'\*\*Document ID\*\*:\s*([^\n]+)', content)
@@ -200,8 +200,8 @@ class DocumentValidator:
             "checksum": hashlib.md5(content.encode()).hexdigest()
         }
     
-    def _calculate_compliance_score(self, correction_result: Dict[str, Any], 
-                                  metadata_validation: Dict[str, Any]) -> float:
+    def _calculate_compliance_score(self, correction_result: dict[str, Any], 
+                                  metadata_validation: dict[str, Any]) -> float:
         """Calculate overall compliance score"""
         score = 100.0
         

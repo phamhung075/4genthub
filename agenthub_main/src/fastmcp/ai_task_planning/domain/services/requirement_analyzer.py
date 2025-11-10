@@ -4,12 +4,12 @@ Analyzes requirements and planning contexts to extract structured information
 that can be used for intelligent task planning.
 """
 
-import re
-from typing import List, Dict, Any, Tuple, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
-from ..entities.planning_request import RequirementItem, ComplexityLevel, PlanningContext
+from ..entities.planning_request import RequirementItem
+
 
 class RequirementPattern(Enum):
     """Common patterns found in requirements"""
@@ -31,13 +31,13 @@ class RequirementPattern(Enum):
 class AnalyzedRequirement:
     """Result of requirement analysis"""
     original_requirement: RequirementItem
-    detected_patterns: List[RequirementPattern]
-    complexity_indicators: Dict[str, Any]
-    suggested_agents: List[str]
+    detected_patterns: list[RequirementPattern]
+    complexity_indicators: dict[str, Any]
+    suggested_agents: list[str]
     estimated_effort_hours: float
-    risk_factors: List[str]
-    dependencies: List[str]  # Inferred dependencies on other requirements
-    technical_considerations: List[str]
+    risk_factors: list[str]
+    dependencies: list[str]  # Inferred dependencies on other requirements
+    technical_considerations: list[str]
     
 class RequirementAnalyzer:
     """
@@ -179,7 +179,7 @@ class RequirementAnalyzer:
             technical_considerations=technical_considerations
         )
     
-    def analyze_requirements_batch(self, requirements: List[RequirementItem]) -> List[AnalyzedRequirement]:
+    def analyze_requirements_batch(self, requirements: list[RequirementItem]) -> list[AnalyzedRequirement]:
         """
         Analyze multiple requirements and detect cross-requirement patterns.
         
@@ -201,7 +201,7 @@ class RequirementAnalyzer:
         
         return analyzed
     
-    def _detect_patterns(self, text: str) -> List[RequirementPattern]:
+    def _detect_patterns(self, text: str) -> list[RequirementPattern]:
         """Detect requirement patterns based on keywords"""
         detected = []
         
@@ -211,7 +211,7 @@ class RequirementAnalyzer:
         
         return detected
     
-    def _analyze_complexity(self, requirement: RequirementItem, patterns: List[RequirementPattern], text: str) -> Dict[str, Any]:
+    def _analyze_complexity(self, requirement: RequirementItem, patterns: list[RequirementPattern], text: str) -> dict[str, Any]:
         """Analyze complexity indicators"""
         indicators = {}
         
@@ -240,7 +240,7 @@ class RequirementAnalyzer:
         
         return indicators
     
-    def _suggest_agents(self, patterns: List[RequirementPattern]) -> List[str]:
+    def _suggest_agents(self, patterns: list[RequirementPattern]) -> list[str]:
         """Suggest agents based on detected patterns"""
         suggested = set()
         
@@ -254,7 +254,7 @@ class RequirementAnalyzer:
         
         return list(suggested)
     
-    def _estimate_effort(self, patterns: List[RequirementPattern], complexity_indicators: Dict[str, Any], criteria_count: int) -> float:
+    def _estimate_effort(self, patterns: list[RequirementPattern], complexity_indicators: dict[str, Any], criteria_count: int) -> float:
         """Estimate effort in hours"""
         base_hours = sum(self.complexity_weights.get(pattern, 1.0) for pattern in patterns)
         
@@ -270,7 +270,7 @@ class RequirementAnalyzer:
         
         return base_hours * complexity_multiplier * criteria_multiplier
     
-    def _identify_risks(self, patterns: List[RequirementPattern], text: str) -> List[str]:
+    def _identify_risks(self, patterns: list[RequirementPattern], text: str) -> list[str]:
         """Identify potential risks based on patterns and text"""
         risks = []
         
@@ -298,7 +298,7 @@ class RequirementAnalyzer:
         
         return risks
     
-    def _infer_dependencies(self, patterns: List[RequirementPattern], text: str) -> List[str]:
+    def _infer_dependencies(self, patterns: list[RequirementPattern], text: str) -> list[str]:
         """Infer dependencies on other requirements"""
         dependencies = []
         
@@ -320,7 +320,7 @@ class RequirementAnalyzer:
         
         return dependencies
     
-    def _detect_cross_dependencies(self, analysis1: AnalyzedRequirement, analysis2: AnalyzedRequirement) -> List[str]:
+    def _detect_cross_dependencies(self, analysis1: AnalyzedRequirement, analysis2: AnalyzedRequirement) -> list[str]:
         """Detect dependencies between two analyzed requirements"""
         cross_deps = []
         
@@ -336,7 +336,7 @@ class RequirementAnalyzer:
         
         return cross_deps
     
-    def _identify_technical_considerations(self, patterns: List[RequirementPattern], text: str) -> List[str]:
+    def _identify_technical_considerations(self, patterns: list[RequirementPattern], text: str) -> list[str]:
         """Identify technical considerations and constraints"""
         considerations = []
         
@@ -369,7 +369,7 @@ class RequirementAnalyzer:
         
         return considerations
     
-    def generate_planning_insights(self, analyzed_requirements: List[AnalyzedRequirement]) -> Dict[str, Any]:
+    def generate_planning_insights(self, analyzed_requirements: list[AnalyzedRequirement]) -> dict[str, Any]:
         """
         Generate high-level insights for the entire planning request.
         

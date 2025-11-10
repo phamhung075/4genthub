@@ -26,17 +26,23 @@ import sys
 hooks_path = Path(__file__).parent.parent.parent.parent.parent.parent / ".claude" / "hooks"
 sys.path.insert(0, str(hooks_path))
 
-from session_start import (
-    log_session_start,
-    get_git_status,
-    get_recent_issues,
-    query_mcp_pending_tasks,
-    query_mcp_next_task,
-    get_git_branch_context,
-    format_mcp_context,
-    load_development_context,
-    main
-)
+# Try to import session_start, skip tests if not available (e.g., in CI where .claude is not tracked)
+try:
+    from session_start import (
+        log_session_start,
+        get_git_status,
+        get_recent_issues,
+        query_mcp_pending_tasks,
+        query_mcp_next_task,
+        get_git_branch_context,
+        format_mcp_context,
+        load_development_context,
+        main
+    )
+    SESSION_START_AVAILABLE = True
+except ImportError:
+    SESSION_START_AVAILABLE = False
+    pytestmark = pytest.mark.skip(reason="session_start module not available (requires .claude/hooks directory)")
 
 
 class TestLogSessionStart:

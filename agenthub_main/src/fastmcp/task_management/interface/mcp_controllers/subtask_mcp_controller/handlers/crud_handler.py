@@ -6,7 +6,7 @@ Handles Create, Read, Update, Delete operations for subtasks with automatic prog
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastmcp.task_management.application.facades.subtask_application_facade import (
@@ -42,7 +42,9 @@ class SubtaskCRUDHandler:
         """
         try:
             # Get token_id from request context
-            from fastmcp.auth.middleware.request_context_middleware import get_current_token_id
+            from fastmcp.auth.middleware.request_context_middleware import (
+                get_current_token_id,
+            )
             token_id = get_current_token_id()
 
             if not token_id:
@@ -56,7 +58,9 @@ class SubtaskCRUDHandler:
 
             try:
                 # Track the operation
-                from .....infrastructure.repositories.token_repository import TokenRepository
+                from .....infrastructure.repositories.token_repository import (
+                    TokenRepository,
+                )
                 repository = TokenRepository(session)
                 await repository.update_token_usage(token_id, operation=operation)
                 logger.info(f"✅ Tracked operation: {operation} for token: {token_id}")
@@ -592,7 +596,7 @@ class SubtaskCRUDHandler:
                 "total_subtasks": total_subtasks,
                 "completed_subtasks": completed_subtasks,
                 "progress_percentage": progress_percentage,
-                "last_updated": datetime.now(timezone.utc).isoformat(),
+                "last_updated": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:

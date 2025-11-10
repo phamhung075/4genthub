@@ -3,9 +3,8 @@
 import logging
 from datetime import datetime
 
-from ..dtos.connection_dtos import RegisterUpdatesRequest, RegisterUpdatesResponse
 from ...domain.services.status_broadcasting_service import StatusBroadcastingService
-from ...domain.value_objects.status_update import StatusUpdate
+from ..dtos.connection_dtos import RegisterUpdatesRequest, RegisterUpdatesResponse
 
 logger = logging.getLogger(__name__)
 

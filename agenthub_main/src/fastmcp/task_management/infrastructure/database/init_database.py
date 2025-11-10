@@ -5,17 +5,15 @@ This module initializes the database schema using SQLAlchemy,
 supporting both SQLite and PostgreSQL databases.
 """
 
-import logging
-import os
 import asyncio
-from pathlib import Path
+import logging
 
-from .database_config import get_db_config, Base
+from .database_config import get_db_config
 from .models import (
-    Project, ProjectGitBranch, Task, Subtask, TaskAssignee,
-    TaskDependency, Agent, Label, TaskLabel, Template,
-    GlobalContext, ProjectContext, BranchContext, TaskContext, ContextDelegation, ContextInheritanceCache,
-    APIToken
+    Project,
+    ProjectGitBranch,
+    Subtask,
+    Task,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,6 +102,7 @@ async def _run_migrations(db_config):
     # Create async engine
     try:
         from sqlalchemy.ext.asyncio import create_async_engine
+
         from .migration_runner import initialize_database as run_migrations
 
         async_engine = create_async_engine(
@@ -138,8 +137,7 @@ def migrate_from_sqlite_to_postgresql(sqlite_path: str):
         sqlite_path: Path to SQLite database file
     """
     import sqlite3
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
+
     
     logger.info(f"Starting migration from SQLite: {sqlite_path}")
     

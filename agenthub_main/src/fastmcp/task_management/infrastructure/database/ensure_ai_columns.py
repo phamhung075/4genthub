@@ -4,11 +4,11 @@ This module ensures that AI-related columns are present in tasks and subtasks ta
 Called during application startup to guarantee database schema consistency.
 """
 
-from sqlalchemy import text, inspect
+import logging
+
+from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
-import logging
-from typing import List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def ensure_ai_columns_exist(engine: Engine) -> bool:
             dialect_name = engine.dialect.name
             
             # Define the AI columns that must exist
-            ai_columns: List[Tuple[str, str, str]] = [
+            ai_columns: list[tuple[str, str, str]] = [
                 ("ai_system_prompt", "TEXT", "''"),
                 ("ai_request_prompt", "TEXT", "''"),
                 ("ai_work_context", "JSON" if dialect_name == 'postgresql' else "TEXT", "'{}'" if dialect_name == 'postgresql' else "'{}'"),

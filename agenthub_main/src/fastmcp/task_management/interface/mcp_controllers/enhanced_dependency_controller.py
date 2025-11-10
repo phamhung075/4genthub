@@ -7,7 +7,7 @@ and intelligent graph optimization.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated, Any
 
 from pydantic import Field
@@ -254,7 +254,7 @@ class EnhancedDependencyController:
                         "performance_metrics": enhanced_relationships.performance_metrics,
                     },
                 },
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             # Add suggestions if requested
@@ -282,7 +282,7 @@ class EnhancedDependencyController:
                 "error": f"AI dependency analysis failed: {str(e)}",
                 "error_code": "AI_ANALYSIS_FAILED",
                 "task_id": task_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     def handle_dependency_suggestions(
@@ -366,7 +366,7 @@ class EnhancedDependencyController:
                     ),
                     "type_breakdown": self._get_type_breakdown(limited_suggestions),
                 },
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             return response
@@ -380,7 +380,7 @@ class EnhancedDependencyController:
                 "error": f"Dependency suggestion generation failed: {str(e)}",
                 "error_code": "SUGGESTION_GENERATION_FAILED",
                 "task_id": task_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     def handle_model_management(
@@ -399,7 +399,7 @@ class EnhancedDependencyController:
                     "success": True,
                     "action": "train",
                     "results": training_results,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             elif action == "retrain":
@@ -410,7 +410,7 @@ class EnhancedDependencyController:
                     "success": True,
                     "action": "retrain",
                     "results": training_results,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             elif action == "status":
@@ -427,7 +427,7 @@ class EnhancedDependencyController:
                         "engine_performance": engine_stats,
                         "current_stats": model_info.get("current_stats"),
                     },
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             elif action == "info":
@@ -438,7 +438,7 @@ class EnhancedDependencyController:
                     "success": True,
                     "action": "info",
                     "model_info": model_info,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             else:
@@ -447,7 +447,7 @@ class EnhancedDependencyController:
                     "error": f"Unknown action: {action}",
                     "error_code": "INVALID_ACTION",
                     "valid_actions": ["train", "retrain", "status", "info"],
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
         except Exception as e:
@@ -457,7 +457,7 @@ class EnhancedDependencyController:
                 "error": f"Model management failed: {str(e)}",
                 "error_code": "MODEL_MANAGEMENT_FAILED",
                 "action": action,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     def handle_batch_optimization(
@@ -476,7 +476,7 @@ class EnhancedDependencyController:
                     "success": False,
                     "error": "Either project_id or git_branch_id must be provided",
                     "error_code": "MISSING_SCOPE",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             # Get tasks in scope
@@ -494,7 +494,7 @@ class EnhancedDependencyController:
                     "success": True,
                     "message": f"No tasks found in {scope}",
                     "scope": scope,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
             # Analyze each task
@@ -585,7 +585,7 @@ class EnhancedDependencyController:
                     "auto_apply": auto_apply,
                     "confidence_threshold": confidence_threshold,
                 },
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
@@ -594,7 +594,7 @@ class EnhancedDependencyController:
                 "success": False,
                 "error": f"Batch optimization failed: {str(e)}",
                 "error_code": "BATCH_OPTIMIZATION_FAILED",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
     def _get_tasks_by_branch(self, git_branch_id: str) -> list:

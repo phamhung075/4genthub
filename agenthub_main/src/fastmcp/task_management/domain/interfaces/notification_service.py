@@ -1,8 +1,8 @@
 """Notification Service Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
 
 class NotificationType(Enum):
@@ -36,7 +36,7 @@ class INotification(ABC):
     
     @property
     @abstractmethod
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         """Get the notification metadata"""
         pass
 
@@ -50,7 +50,7 @@ class INotificationService(ABC):
         pass
     
     @abstractmethod
-    async def send_bulk_notifications(self, notifications: List[INotification]) -> List[bool]:
+    async def send_bulk_notifications(self, notifications: list[INotification]) -> list[bool]:
         """Send multiple notifications"""
         pass
     
@@ -69,6 +69,6 @@ class INotificationService(ABC):
                           notification_type: NotificationType,
                           recipient: str, 
                           message: str, 
-                          metadata: Optional[Dict[str, Any]] = None) -> INotification:
+                          metadata: dict[str, Any] | None = None) -> INotification:
         """Create a notification object"""
         pass

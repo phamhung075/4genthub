@@ -1,44 +1,37 @@
 """Task Application Facade - Orchestrates task-related use cases"""
 
 import logging
-from typing import Dict, Any, Optional, List
-from dataclasses import asdict
+from datetime import UTC
+from typing import Any
 
+from ...domain.exceptions import AutoRuleGenerationError, TaskNotFoundError
+from ...domain.exceptions.authentication_exceptions import (
+    AuthenticationError,
+    InvalidUserIdError,
+    UserAuthenticationRequiredError,
+)
+from ...domain.repositories.git_branch_repository import GitBranchRepository
+from ...domain.repositories.subtask_repository import SubtaskRepository
+from ...domain.repositories.task_repository import TaskRepository
 from ..dtos.task.create_task_request import CreateTaskRequest
 from ..dtos.task.list_tasks_request import ListTasksRequest
 from ..dtos.task.search_tasks_request import SearchTasksRequest
-from ..dtos.task.update_task_request import UpdateTaskRequest
 from ..dtos.task.task_list_item_response import TaskListItemResponse
+from ..dtos.task.update_task_request import UpdateTaskRequest
 from ..factories.context_response_factory import ContextResponseFactory
-# Note: Infrastructure imports removed - these should be injected via constructor
-
-from ..services.task_application_service import TaskApplicationService
-from ..services.websocket_notification_service import WebSocketNotificationService
 from ..services.minimal_response_serializer import MinimalResponseSerializer
 
-from ..use_cases.create_task import CreateTaskUseCase
-from ..use_cases.update_task import UpdateTaskUseCase
-from ..use_cases.get_task import GetTaskUseCase
-from ..use_cases.delete_task import DeleteTaskUseCase
+# Note: Infrastructure imports removed - these should be injected via constructor
+from ..services.websocket_notification_service import WebSocketNotificationService
 from ..use_cases.complete_task import CompleteTaskUseCase
+from ..use_cases.create_task import CreateTaskUseCase
+from ..use_cases.delete_task import DeleteTaskUseCase
+from ..use_cases.get_task import GetTaskUseCase
 from ..use_cases.list_tasks import ListTasksUseCase
-from ..use_cases.search_tasks import SearchTasksUseCase
-from ..use_cases.next_task import NextTaskUseCase
 from ..use_cases.manage_dependencies import ManageDependenciesUseCase
-
-
-from ...domain.repositories.task_repository import TaskRepository
-from ...domain.repositories.subtask_repository import SubtaskRepository
-from ...domain.repositories.git_branch_repository import GitBranchRepository
-from ...domain.exceptions import TaskNotFoundError, AutoRuleGenerationError
-from ...domain.exceptions.authentication_exceptions import (
-    UserAuthenticationRequiredError,
-    InvalidUserIdError,
-    AuthenticationError
-)
-
-from ...domain.value_objects.task_id import TaskId
-from ..services.unified_context_service import UnifiedContextService
+from ..use_cases.next_task import NextTaskUseCase
+from ..use_cases.search_tasks import SearchTasksUseCase
+from ..use_cases.update_task import UpdateTaskUseCase
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +46,9 @@ class TaskApplicationFacade:
     like validation, error handling, and response formatting at the application boundary.
     """
     
-    def __init__(self, task_repository: TaskRepository, subtask_repository: Optional[SubtaskRepository] = None,
-                 context_service: Optional[Any] = None,
-                 git_branch_repository: Optional[GitBranchRepository] = None):
+    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository | None = None,
+                 context_service: Any | None = None,
+                 git_branch_repository: GitBranchRepository | None = None):
         """Initialize facade with required dependencies"""
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
@@ -63,7 +56,9 @@ class TaskApplicationFacade:
         self._git_branch_repository = git_branch_repository
         
         # Initialize hierarchical context service with lazy import to avoid circular dependency
-        from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+        from ...application.factories.unified_context_facade_factory import (
+            UnifiedContextFacadeFactory,
+        )
         factory = UnifiedContextFacadeFactory()
         self._hierarchical_context_service = factory.create_unified_service()
         
@@ -86,16 +81,18 @@ class TaskApplicationFacade:
         # Initialize task context repository for unified context system
         task_context_repository = None
         try:
-            from ...domain.interfaces.repository_factory import IContextRepository
-            from ...domain.interfaces.database_session import IDatabaseSessionFactory
             from ...infrastructure.database.database_config import get_db_config
-            from ...infrastructure.repositories.task_context_repository import TaskContextRepository
+            from ...infrastructure.repositories.task_context_repository import (
+                TaskContextRepository,
+            )
             db_config = get_db_config()
             task_context_repository = TaskContextRepository(db_config.SessionLocal)
         except Exception as e:
             logger.warning(f"Could not initialize task context repository: {e}")
             # Create a mock task context repository
-            from ...infrastructure.repositories.mock_task_context_repository import MockTaskContextRepository
+            from ...infrastructure.repositories.mock_task_context_repository import (
+                MockTaskContextRepository,
+            )
             task_context_repository = MockTaskContextRepository()
         
         # CompleteTaskUseCase now uses unified context system
@@ -124,7 +121,7 @@ class TaskApplicationFacade:
         # Initialize dependency management use case
         self._manage_dependencies_use_case = ManageDependenciesUseCase(task_repository)
     
-    async def _derive_context_from_git_branch_id(self, git_branch_id: str) -> Dict[str, Optional[str]]:
+    async def _derive_context_from_git_branch_id(self, git_branch_id: str) -> dict[str, str | None]:
         """
         Derive project_id and git_branch_name from git_branch_id using git branch repository.
 
@@ -193,8 +190,8 @@ class TaskApplicationFacade:
         self,
         git_branch_id: str,
         user_id: str,
-        project_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        project_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Ensure branch context AND git branch entity exist, creating both automatically if needed.
 
@@ -240,8 +237,10 @@ class TaskApplicationFacade:
                     logger.info(f"Git branch entity missing for git_branch_id={git_branch_id}, auto-creating...")
 
                     from datetime import datetime
-                    from ...domain.entities.git_branch import GitBranch
+
                     from sqlalchemy import text
+
+                    from ...domain.entities.git_branch import GitBranch
 
                     # Determine which project_id to use
                     # Strategy: Try to find any existing project to use as parent
@@ -267,14 +266,14 @@ class TaskApplicationFacade:
                     # (the branch context will still be created below)
                     if not branch_project_id:
                         logger.warning(
-                            f"⚠️ Cannot auto-create git branch entity without valid project_id. "
-                            f"Skipping git branch creation, will only create branch context."
+                            "⚠️ Cannot auto-create git branch entity without valid project_id. "
+                            "Skipping git branch creation, will only create branch context."
                         )
                     else:
                         branch_name = f"branch-{git_branch_id}"
 
                         # Create GitBranch entity with the specific git_branch_id
-                        now = datetime.now(timezone.utc)
+                        now = datetime.now(UTC)
                         git_branch_entity = GitBranch(
                             id=git_branch_id,  # Use the provided git_branch_id
                             name=branch_name,
@@ -327,7 +326,7 @@ class TaskApplicationFacade:
 
             auto_create_data = {
                 "auto_created": True,
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "source": "task_creation_auto_create",
                 "created_by": user_id,
                 "git_branch_id": git_branch_id
@@ -382,7 +381,7 @@ class TaskApplicationFacade:
                 "context_created": False
             }
 
-    def create_task(self, request: CreateTaskRequest) -> Dict[str, Any]:
+    def create_task(self, request: CreateTaskRequest) -> dict[str, Any]:
         """Create a new task"""
         try:
             # Derive project_id and git_branch_name from git_branch_id
@@ -400,13 +399,13 @@ class TaskApplicationFacade:
             derived_git_branch_name = context.get("git_branch_name") or "main"
             # Validate user authentication
             from ...domain.constants import validate_user_id
-            from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-            from ....config.auth_config import AuthConfig
             
             # Try to get user_id from authentication context (same approach as project facade)
             derived_user_id = None
             try:
-                from fastmcp.auth.middleware.request_context_middleware import get_current_user_id
+                from fastmcp.auth.middleware.request_context_middleware import (
+                    get_current_user_id,
+                )
                 context_user_obj = get_current_user_id()
                 logger.info(f"🎯 TaskApplicationFacade: get_current_user_id() returned: {context_user_obj} (type: {type(context_user_obj)})")
                 
@@ -558,7 +557,7 @@ class TaskApplicationFacade:
                     except Exception as e:
                         logger.warning(f"Failed to broadcast task creation: {e}")
                 elif was_already_created:
-                    logger.info(f"Skipped duplicate notification for recently created task with similar data")
+                    logger.info("Skipped duplicate notification for recently created task with similar data")
 
                 # Build and return response
                 result = {
@@ -584,7 +583,7 @@ class TaskApplicationFacade:
             logger.error(f"Unexpected error in create_task: {e}")
             return {"success": False, "action": "create", "error": f"Unexpected error: {str(e)}"}
     
-    def update_task(self, request: UpdateTaskRequest) -> Dict[str, Any]:
+    def update_task(self, request: UpdateTaskRequest) -> dict[str, Any]:
         """Update an existing task"""
         try:
             # Validation will be performed by domain entity during update
@@ -691,17 +690,17 @@ class TaskApplicationFacade:
             logger.error(f"Unexpected error in update_task: {e}")
             return {"success": False, "action": "update", "error": f"Unexpected error: {str(e)}"}
     
-    def get_task(self, task_id: str, include_context: bool = True, include_dependencies: bool = True) -> Dict[str, Any]:
+    def get_task(self, task_id: str, include_context: bool = True, include_dependencies: bool = True) -> dict[str, Any]:
         """Get a task by ID with optional context data (sync-friendly)."""
-        import asyncio
         try:
             # Validate input at application boundary
             if not task_id or not task_id.strip():
                 raise ValueError("Task ID is required")
 
             # Get task from repository to extract its own data
-            from ...domain.value_objects.task_id import TaskId
             import inspect
+
+            from ...domain.value_objects.task_id import TaskId
             domain_task_id = TaskId(task_id)
             
             # Check if find_by_id is async and handle accordingly
@@ -816,7 +815,9 @@ class TaskApplicationFacade:
                 # Load full subtask objects and replace IDs with dicts
                 try:
                     from ...domain.value_objects.task_id import TaskId
-                    from ...infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+                    from ...infrastructure.repositories.orm.subtask_repository import (
+                        ORMSubtaskRepository,
+                    )
 
                     # Get subtask repository (create new instance with same user context)
                     subtask_repo = ORMSubtaskRepository(session=None, user_id=self._task_repository._user_id if hasattr(self._task_repository, '_user_id') else None)
@@ -858,8 +859,9 @@ class TaskApplicationFacade:
             )
             try:
                 # Get task from repository to extract its own data
-                from ...domain.value_objects.task_id import TaskId
                 import inspect
+
+                from ...domain.value_objects.task_id import TaskId
                 domain_task_id = TaskId(task_id)
                 
                 # Check if find_by_id is async and handle accordingly
@@ -891,7 +893,9 @@ class TaskApplicationFacade:
                 # Load full subtask objects and replace IDs with dicts
                 try:
                     from ...domain.value_objects.task_id import TaskId
-                    from ...infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+                    from ...infrastructure.repositories.orm.subtask_repository import (
+                        ORMSubtaskRepository,
+                    )
 
                     # Get subtask repository (create new instance with same user context)
                     subtask_repo = ORMSubtaskRepository(session=None, user_id=self._task_repository._user_id if hasattr(self._task_repository, '_user_id') else None)
@@ -933,7 +937,7 @@ class TaskApplicationFacade:
                 "error": f"Unexpected error: {str(e)}",
             }
     
-    def delete_task(self, task_id: str, user_id: str = None) -> Dict[str, Any]:
+    def delete_task(self, task_id: str, user_id: str = None) -> dict[str, Any]:
         """Delete a task"""
         try:
             # Validate input at application boundary
@@ -1036,8 +1040,8 @@ class TaskApplicationFacade:
                 # - Total: count jumps by 3 instead of 1
                 #
                 # SOLUTION: Only broadcast task deletion event, let frontend handle branch refresh
-                logger.info(f"🔧 FIX: Skipped redundant branch update broadcast to prevent double-counting")
-                logger.info(f"🔧 FIX: Task deletion event will trigger frontend to refresh branch data automatically")
+                logger.info("🔧 FIX: Skipped redundant branch update broadcast to prevent double-counting")
+                logger.info("🔧 FIX: Task deletion event will trigger frontend to refresh branch data automatically")
 
                 # Log cascade statistics if available
                 if "subtasks_deleted" in result:
@@ -1071,8 +1075,8 @@ class TaskApplicationFacade:
             logger.error(f"Unexpected error in delete_task: {e}")
             return {"success": False, "action": "delete", "error": f"Unexpected error: {str(e)}"}
     
-    def complete_task(self, task_id: str, completion_summary: Optional[str] = None,
-                      testing_notes: Optional[str] = None, user_id: str = None) -> Dict[str, Any]:
+    def complete_task(self, task_id: str, completion_summary: str | None = None,
+                      testing_notes: str | None = None, user_id: str = None) -> dict[str, Any]:
         """Complete a task"""
         try:
             # Debug logging
@@ -1126,7 +1130,7 @@ class TaskApplicationFacade:
 
                             logger.info(f"✅ Fetched task data with completion_summary: {task_data.get('completion_summary', '')[:80]}...")
                         else:
-                            logger.warning(f"Could not fetch task from repository for completion broadcast")
+                            logger.warning("Could not fetch task from repository for completion broadcast")
                             # ✅ FIX: Include minimal title for toast notification (fallback will show Task ID if unavailable)
                             task_data = {"task_id": task_id, "status": response.get("status", "done"), "title": response.get("title")}
                     except Exception as fetch_error:
@@ -1195,7 +1199,7 @@ class TaskApplicationFacade:
                 logging.getLogger(__name__).error(f"Unexpected error in complete_task (logger failed): {e}")
             return {"success": False, "action": "complete", "error": f"Unexpected error: {str(e)}"}
     
-    def _add_context_to_task(self, task_dict: Dict[str, Any], task_id: str) -> Dict[str, Any]:
+    def _add_context_to_task(self, task_dict: dict[str, Any], task_id: str) -> dict[str, Any]:
         """Add context data to a task dictionary"""
         try:
             # Get context data for the task using existing get_task logic
@@ -1214,15 +1218,19 @@ class TaskApplicationFacade:
         
         return task_dict
     
-    def list_tasks(self, request: ListTasksRequest, include_dependencies: bool = False, minimal: bool = True, include_context: bool = False) -> Dict[str, Any]:
+    def list_tasks(self, request: ListTasksRequest, include_dependencies: bool = False, minimal: bool = True, include_context: bool = False) -> dict[str, Any]:
         """List tasks with optional filtering - optimized for performance with minimal data by default"""
         try:
             # Check if we should use optimized repository for performance
-            from ...infrastructure.performance.performance_config import PerformanceConfig
+            from ...infrastructure.performance.performance_config import (
+                PerformanceConfig,
+            )
             
             if PerformanceConfig.is_performance_mode() and minimal:
                 # Use enhanced main repository with performance mode enabled
-                from ...infrastructure.repositories.orm.task_repository import ORMTaskRepository
+                from ...infrastructure.repositories.orm.task_repository import (
+                    ORMTaskRepository,
+                )
 
                 # Create repository with performance mode enabled for optimization
                 optimized_repo = ORMTaskRepository(
@@ -1265,8 +1273,8 @@ class TaskApplicationFacade:
                 }
             
             # Fall back to standard implementation
-            logger.debug(f"[FACADE] Using standard list implementation")
-            logger.debug(f"[FACADE] ListTasksRequest details:")
+            logger.debug("[FACADE] Using standard list implementation")
+            logger.debug("[FACADE] ListTasksRequest details:")
             logger.debug(f"  - git_branch_id: {request.git_branch_id if hasattr(request, 'git_branch_id') else 'NOT SET'}")
             logger.debug(f"  - status: {request.status if hasattr(request, 'status') else None}")
             logger.debug(f"  - priority: {request.priority if hasattr(request, 'priority') else None}")
@@ -1351,7 +1359,7 @@ class TaskApplicationFacade:
             logger.error(f"Unexpected error in list_tasks: {e}")
             return {"success": False, "action": "list", "error": f"Unexpected error: {str(e)}"}
     
-    def search_tasks(self, request: SearchTasksRequest, include_context: bool = False) -> Dict[str, Any]:
+    def search_tasks(self, request: SearchTasksRequest, include_context: bool = False) -> dict[str, Any]:
         """Search tasks by query"""
         try:
             # Validate request at application boundary
@@ -1383,9 +1391,9 @@ class TaskApplicationFacade:
             logger.error(f"Unexpected error in search_tasks: {e}")
             return {"success": False, "action": "search", "error": f"Unexpected error: {str(e)}"}
     
-    async def get_next_task(self, include_context: bool = True, user_id: Optional[str] = None, 
+    async def get_next_task(self, include_context: bool = True, user_id: str | None = None, 
                            project_id: str = "", git_branch_id: str = "main", 
-                           assignee: Optional[str] = None, labels: Optional[List[str]] = None) -> Dict[str, Any]:
+                           assignee: str | None = None, labels: list[str] | None = None) -> dict[str, Any]:
         """Get the next task to work on with optional context data"""
         try:
             # Execute use case with all required parameters
@@ -1429,7 +1437,7 @@ class TaskApplicationFacade:
             return {"success": False, "action": "next", "error": f"Unexpected error: {str(e)}"}
     
     
-    def count_tasks(self, filters: Dict[str, Any]) -> Dict[str, Any]:
+    def count_tasks(self, filters: dict[str, Any]) -> dict[str, Any]:
         """
         Count tasks with given filters.
         Used for pagination and performance optimization.
@@ -1456,8 +1464,8 @@ class TaskApplicationFacade:
             logger.error(f"Error counting tasks: {e}")
             return {"success": False, "error": str(e), "count": 0}
     
-    def list_tasks_summary(self, filters: Dict[str, Any], offset: int = 0, 
-                          limit: int = 20, include_counts: bool = True) -> Dict[str, Any]:
+    def list_tasks_summary(self, filters: dict[str, Any], offset: int = 0, 
+                          limit: int = 20, include_counts: bool = True) -> dict[str, Any]:
         """
         Get lightweight task summaries for list views.
         Returns minimal task data for performance optimization.
@@ -1515,7 +1523,7 @@ class TaskApplicationFacade:
             logger.error(f"Error fetching task summaries: {e}")
             return {"success": False, "error": str(e), "tasks": []}
     
-    def list_subtasks_summary(self, parent_task_id: str, include_counts: bool = True) -> Dict[str, Any]:
+    def list_subtasks_summary(self, parent_task_id: str, include_counts: bool = True) -> dict[str, Any]:
         """
         Get lightweight subtask summaries for a parent task.
         Returns minimal subtask data for performance optimization.
@@ -1563,7 +1571,7 @@ class TaskApplicationFacade:
             return {"success": False, "error": str(e), "subtasks": []}
     
     
-    def add_dependency(self, task_id: str, dependency_id: str) -> Dict[str, Any]:
+    def add_dependency(self, task_id: str, dependency_id: str) -> dict[str, Any]:
         """Add a dependency to a task"""
         try:
             # For backward compatibility, allow empty task_id / dependency_id (tests expect success)
@@ -1666,7 +1674,7 @@ class TaskApplicationFacade:
                 "error": f"Failed to add dependency: {str(e)}"
             }
     
-    def remove_dependency(self, task_id: str, dependency_id: str) -> Dict[str, Any]:
+    def remove_dependency(self, task_id: str, dependency_id: str) -> dict[str, Any]:
         """Remove a dependency from a task"""
         try:
             if not task_id or not task_id.strip():
@@ -1752,7 +1760,7 @@ class TaskApplicationFacade:
                 "error": f"Failed to remove dependency: {str(e)}"
             }
     
-    def get_dependencies(self, task_id: str, user_id: str = None) -> Dict[str, Any]:
+    def get_dependencies(self, task_id: str, user_id: str = None) -> dict[str, Any]:
         """Get all dependencies for a task"""
         try:
             if not task_id or not task_id.strip():
@@ -1781,7 +1789,7 @@ class TaskApplicationFacade:
                 "error": f"Failed to get dependencies: {str(e)}"
             }
     
-    def clear_dependencies(self, task_id: str, user_id: str = None) -> Dict[str, Any]:
+    def clear_dependencies(self, task_id: str, user_id: str = None) -> dict[str, Any]:
         """Clear all dependencies from a task"""
         try:
             if not task_id or not task_id.strip():
@@ -1808,7 +1816,7 @@ class TaskApplicationFacade:
                 "error": f"Failed to clear dependencies: {str(e)}"
             }
     
-    def get_blocking_tasks(self, task_id: str, user_id: str = None) -> Dict[str, Any]:
+    def get_blocking_tasks(self, task_id: str, user_id: str = None) -> dict[str, Any]:
         """Get all tasks that are blocked by this task (reverse dependencies)"""
         try:
             if not task_id or not task_id.strip():
@@ -1890,11 +1898,11 @@ class TaskApplicationFacade:
             True if a similar task was recently created, False otherwise
         """
         try:
-            from datetime import datetime, timezone, timedelta
-            from ...domain.value_objects.task_id import TaskId
+            from datetime import datetime, timedelta
+
 
             # Check for tasks created in the last 10 seconds with same title and branch
-            cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=10)
+            cutoff_time = datetime.now(UTC) - timedelta(seconds=10)
 
             # Use list_tasks to find recent tasks with same criteria
             from ..dtos.task.list_tasks_request import ListTasksRequest
@@ -1984,7 +1992,7 @@ class TaskApplicationFacade:
                 current_desc = current_task.description or ""
                 updated_desc = updated_task.description or ""
                 if current_desc != updated_desc:
-                    meaningful_changes.append(f"description changed")
+                    meaningful_changes.append("description changed")
 
             # Status change
             if (request.status is not None and
@@ -2015,7 +2023,7 @@ class TaskApplicationFacade:
                 current_details = current_task.details or ""
                 updated_details = updated_task.details or ""
                 if current_details != updated_details:
-                    meaningful_changes.append(f"details changed")
+                    meaningful_changes.append("details changed")
 
             # Estimated effort change
             if (request.estimated_effort is not None and
@@ -2031,7 +2039,7 @@ class TaskApplicationFacade:
                 current_assignees = set(current_task.assignees or [])
                 updated_assignees = set(updated_task.assignees or [])
                 if current_assignees != updated_assignees:
-                    meaningful_changes.append(f"assignees changed")
+                    meaningful_changes.append("assignees changed")
 
             # Labels change
             if (request.labels is not None and
@@ -2039,7 +2047,7 @@ class TaskApplicationFacade:
                 current_labels = set(current_task.labels or [])
                 updated_labels = set(updated_task.labels or [])
                 if current_labels != updated_labels:
-                    meaningful_changes.append(f"labels changed")
+                    meaningful_changes.append("labels changed")
 
             # Log the changes for debugging
             if meaningful_changes:

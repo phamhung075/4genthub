@@ -2,10 +2,10 @@
 
 import logging
 from dataclasses import dataclass
-from typing import List
+
 from ...application.dtos.agent import AgentResponse
-from ...domain.repositories.agent_repository import AgentRepository
 from ...domain.exceptions import ProjectNotFoundError
+from ...domain.repositories.agent_repository import AgentRepository
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class ListAgentsRequest:
 class ListAgentsResponse:
     """Response DTO for listing agents"""
     success: bool
-    agents: List[AgentResponse] = None
+    agents: list[AgentResponse] = None
     total_agents: int = 0
     error: str = None
 

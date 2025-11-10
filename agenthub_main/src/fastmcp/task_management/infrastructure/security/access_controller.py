@@ -3,13 +3,14 @@
 Infrastructure component for managing security access control and validation.
 """
 
-import logging
-from typing import Dict, Any
-from datetime import datetime
 import json
+import logging
+from datetime import datetime
 
 # Removed compliance_enums import - simplified
 from enum import Enum
+from typing import Any
+
 
 class SecurityLevel(Enum):
     """Simplified security levels"""
@@ -33,7 +34,7 @@ class AccessController:
             ".git/": SecurityLevel.CONFIDENTIAL
         }
         
-    def validate_access(self, context: SecurityContext) -> Dict[str, Any]:
+    def validate_access(self, context: SecurityContext) -> dict[str, Any]:
         """Validate access to resource based on security context"""
         try:
             # Determine required security level
@@ -99,7 +100,7 @@ class AccessController:
         # Log to secure audit log
         logger.info(f"Access audit: {json.dumps(log_entry)}")
     
-    def update_access_rules(self, rules: Dict[str, SecurityLevel]):
+    def update_access_rules(self, rules: dict[str, SecurityLevel]):
         """Update access rules (for configuration management)"""
         self._access_rules.update(rules)
         logger.info("Access rules updated")

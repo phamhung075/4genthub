@@ -7,22 +7,22 @@ supporting both SQLite and PostgreSQL databases.
 
 import logging
 import uuid
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone
-from sqlalchemy import and_, desc
+from datetime import UTC, datetime
+from typing import Any
 
+from ....domain.entities.agent import Agent as AgentEntity
+from ....domain.entities.agent import AgentCapability, AgentStatus
+from ....domain.exceptions.base_exceptions import (
+    DatabaseException,
+    ResourceNotFoundException,
+    ValidationException,
+)
+from ....domain.repositories.agent_repository import AgentRepository
+from ....domain.value_objects.agent_id import AgentId
+from ...database.models import Agent
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ..event_publishing_mixin import EventPublishingMixin
-from ...database.models import Agent
-from ....domain.repositories.agent_repository import AgentRepository
-from ....domain.entities.agent import Agent as AgentEntity, AgentStatus, AgentCapability
-from ....domain.value_objects.agent_id import AgentId
-from ....domain.exceptions.base_exceptions import (
-    ResourceNotFoundException,
-    ValidationException,
-    DatabaseException
-)
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
     when agent entities are persisted.
     """
 
-    def __init__(self, session=None, project_id: Optional[str] = None, user_id: Optional[str] = None):
+    def __init__(self, session=None, project_id: str | None = None, user_id: str | None = None):
         """
         Initialize ORM agent repository with user isolation.
 
@@ -86,11 +86,11 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
         
         if isinstance(assigned_trees_raw, str):
             # Single UUID stored as string
-            logger.debug(f"[NORMALIZE] Detected string type, returning set with single string")
+            logger.debug("[NORMALIZE] Detected string type, returning set with single string")
             return {assigned_trees_raw}
         elif isinstance(assigned_trees_raw, uuid.UUID):
             # Single UUID object (convert to string)
-            logger.debug(f"[NORMALIZE] Detected UUID object, converting to string")
+            logger.debug("[NORMALIZE] Detected UUID object, converting to string")
             return {str(assigned_trees_raw)}
         elif hasattr(assigned_trees_raw, '__iter__') and not isinstance(assigned_trees_raw, str):
             # List or other iterable (but not string or UUID)
@@ -210,7 +210,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                 table="agents"
             )
     
-    def _entity_to_model_dict(self, agent: AgentEntity) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, agent: AgentEntity) -> dict[str, Any]:
         """Convert domain entity to model dictionary"""
         return {
             "id": str(agent.id) if agent.id else "",
@@ -219,7 +219,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
             "capabilities": [cap.value for cap in agent.capabilities],
             "status": agent.status.value,
             "availability_score": 1.0 if agent.is_available() else 0.0,
-            "last_active_at": datetime.now(timezone.utc) if agent.status == AgentStatus.AVAILABLE else None,
+            "last_active_at": datetime.now(UTC) if agent.status == AgentStatus.AVAILABLE else None,
             "created_at": agent.created_at,
             "updated_at": agent.updated_at,
             "model_metadata": {
@@ -342,7 +342,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                     table="agents"
                 )
     
-    def unregister_agent(self, project_id: str, agent_id: str) -> Dict[str, Any]:
+    def unregister_agent(self, project_id: str, agent_id: str) -> dict[str, Any]:
         """Unregister an agent from a project"""
         try:
             # Get agent data before deletion
@@ -389,7 +389,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                 table="agents"
             )
     
-    def assign_agent_to_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
+    def assign_agent_to_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
         """Assign an agent to a task tree, auto-registering the agent if it doesn't exist"""
         logger.debug(f"[AGENT_REPO] assign_agent_to_tree called with project_id={project_id}, agent_id={agent_id}, git_branch_id={git_branch_id}")
         logger.debug(f"[AGENT_REPO] Type of git_branch_id: {type(git_branch_id)}, value: {git_branch_id}")
@@ -497,7 +497,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                     )
             
             # DDD-COMPLIANT: Convert ORM model to domain entity
-            logger.debug(f"[AGENT_REPO] Converting ORM model to domain entity...")
+            logger.debug("[AGENT_REPO] Converting ORM model to domain entity...")
             agent_entity = self._model_to_entity(agent)
 
             # Check if already assigned
@@ -510,11 +510,11 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                 }
 
             # DDD-COMPLIANT: Use domain entity method (calls touch() automatically)
-            logger.debug(f"[AGENT_REPO] Calling domain entity assign_to_tree method...")
+            logger.debug("[AGENT_REPO] Calling domain entity assign_to_tree method...")
             agent_entity.assign_to_tree(git_branch_id)
 
             # DDD-COMPLIANT: Convert entity back to model dict
-            logger.debug(f"[AGENT_REPO] Converting entity back to model dict...")
+            logger.debug("[AGENT_REPO] Converting entity back to model dict...")
             model_dict = self._entity_to_model_dict(agent_entity)
 
             # Update ORM model with new data from entity
@@ -547,7 +547,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                 table="agents"
             )
     
-    def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str = None) -> Dict[str, Any]:
+    def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str = None) -> dict[str, Any]:
         """Unassign an agent from task tree(s)"""
         try:
             # Get agent
@@ -603,7 +603,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                 table="agents"
             )
     
-    def get_agent(self, project_id: str, agent_id: str) -> Dict[str, Any]:
+    def get_agent(self, project_id: str, agent_id: str) -> dict[str, Any]:
         """Get agent details"""
         try:
             agent = self.get_by_id(agent_id)
@@ -646,7 +646,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                 table="agents"
             )
     
-    def list_agents(self, project_id: str) -> Dict[str, Any]:
+    def list_agents(self, project_id: str) -> dict[str, Any]:
         """List all agents in a project"""
         try:
             # Get all agents (project filtering would need to be implemented)
@@ -719,7 +719,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                 table="agents"
             )
     
-    def rebalance_agents(self, project_id: str) -> Dict[str, Any]:
+    def rebalance_agents(self, project_id: str) -> dict[str, Any]:
         """Rebalance agent assignments across task trees"""
         try:
             # Get all agents
@@ -764,7 +764,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                 table="agents"
             )
     
-    def get_available_agents(self) -> List[Dict[str, Any]]:
+    def get_available_agents(self) -> list[dict[str, Any]]:
         """
         Get all available agents for the current user.
 
@@ -809,7 +809,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
                 table="agents"
             )
     
-    def find_by_name(self, name: str) -> Optional[Agent]:
+    def find_by_name(self, name: str) -> Agent | None:
         """
         Find an agent by its name.
         
@@ -842,7 +842,7 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
             logger.error(f"Error finding agent by name '{name}': {e}")
             return None
     
-    def search_agents(self, project_id: str, query: str) -> List[Dict[str, Any]]:
+    def search_agents(self, project_id: str, query: str) -> list[dict[str, Any]]:
         """
         Search agents by name or capabilities within user's scope.
 

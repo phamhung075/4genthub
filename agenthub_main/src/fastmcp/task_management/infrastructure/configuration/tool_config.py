@@ -1,17 +1,17 @@
-from typing import Optional, Dict, Any
-import os
 import json
 import logging
+import os
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 class ToolConfig:
     """Manages MCP tool configuration and enablement settings"""
 
-    def __init__(self, config_overrides: Optional[Dict[str, Any]] = None):
+    def __init__(self, config_overrides: dict[str, Any] | None = None):
         self.config = self._load_config(config_overrides)
 
-    def _load_config(self, config_overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _load_config(self, config_overrides: dict[str, Any] | None = None) -> dict[str, Any]:
         """Load configuration from environment variables (.env.dev) or use defaults"""
         # Load enabled tools from environment variables
         enabled_tools = {
@@ -45,7 +45,7 @@ class ToolConfig:
                 f"Please migrate to environment variables in .env.dev for clean configuration."
             )
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path) as f:
                     json_config = json.load(f)
                     # Merge JSON config into environment-based config (env vars take precedence)
                     for key, value in json_config.items():
@@ -83,7 +83,7 @@ class ToolConfig:
         """Check if a specific tool is enabled"""
         return self.config.get("enabled_tools", {}).get(tool_name, True)
     
-    def get_enabled_tools(self) -> Dict[str, bool]:
+    def get_enabled_tools(self) -> dict[str, bool]:
         """Get all enabled tools configuration"""
         return self.config.get("enabled_tools", {})
 

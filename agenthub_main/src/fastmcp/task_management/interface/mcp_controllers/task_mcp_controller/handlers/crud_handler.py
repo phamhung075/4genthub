@@ -4,8 +4,8 @@ CRUD Handler for Task MCP Controller
 Handles Create, Read, Update, Delete operations for tasks.
 """
 
-import logging
 import asyncio
+import logging
 from typing import Any
 
 from .....application.dtos.task.create_task_request import CreateTaskRequest
@@ -31,7 +31,9 @@ class CRUDHandler:
         """
         try:
             # Get token_id from request context
-            from fastmcp.auth.middleware.request_context_middleware import get_current_token_id
+            from fastmcp.auth.middleware.request_context_middleware import (
+                get_current_token_id,
+            )
             token_id = get_current_token_id()
 
             if not token_id:
@@ -45,7 +47,9 @@ class CRUDHandler:
 
             try:
                 # Track the operation
-                from .....infrastructure.repositories.token_repository import TokenRepository
+                from .....infrastructure.repositories.token_repository import (
+                    TokenRepository,
+                )
                 repository = TokenRepository(session)
                 await repository.update_token_usage(token_id, operation=operation)
                 logger.info(f"✅ Tracked operation: {operation} for token: {token_id}")

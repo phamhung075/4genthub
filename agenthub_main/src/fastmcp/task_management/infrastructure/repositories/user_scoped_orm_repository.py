@@ -7,9 +7,9 @@ filtered by user_id for data isolation.
 """
 
 import logging
-from typing import Optional, List, Dict, Any, TypeVar, Generic
+from typing import Any, Generic, TypeVar
+
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 
 from .base_orm_repository import BaseORMRepository
 from .base_user_scoped_repository import BaseUserScopedRepository
@@ -27,7 +27,7 @@ class UserScopedORMRepository(BaseORMRepository[ModelType], BaseUserScopedReposi
     to a specific user, preventing cross-user data access.
     """
     
-    def __init__(self, model_class, session: Optional[Session] = None, user_id: Optional[str] = None):
+    def __init__(self, model_class, session: Session | None = None, user_id: str | None = None):
         """
         Initialize user-scoped ORM repository.
         
@@ -41,7 +41,7 @@ class UserScopedORMRepository(BaseORMRepository[ModelType], BaseUserScopedReposi
         # Initialize BaseUserScopedRepository
         BaseUserScopedRepository.__init__(self, session or self.get_db_session(), user_id)
     
-    def get_by_id(self, id: Any) -> Optional[ModelType]:
+    def get_by_id(self, id: Any) -> ModelType | None:
         """Get a model by ID with user isolation."""
         with self.get_db_session() as session:
             query = session.query(self.model_class)
@@ -56,7 +56,7 @@ class UserScopedORMRepository(BaseORMRepository[ModelType], BaseUserScopedReposi
             
             return model
     
-    def get_all(self, limit: Optional[int] = None, offset: Optional[int] = None) -> List[ModelType]:
+    def get_all(self, limit: int | None = None, offset: int | None = None) -> list[ModelType]:
         """Get all models with user isolation."""
         with self.get_db_session() as session:
             query = session.query(self.model_class)
@@ -87,7 +87,7 @@ class UserScopedORMRepository(BaseORMRepository[ModelType], BaseUserScopedReposi
         
         return model
     
-    def update(self, id: Any, **kwargs) -> Optional[ModelType]:
+    def update(self, id: Any, **kwargs) -> ModelType | None:
         """Update a model with user isolation."""
         with self.get_db_session() as session:
             query = session.query(self.model_class)
@@ -141,7 +141,7 @@ class UserScopedORMRepository(BaseORMRepository[ModelType], BaseUserScopedReposi
             
             return True
     
-    def find_by(self, **filters) -> List[ModelType]:
+    def find_by(self, **filters) -> list[ModelType]:
         """Find models by filters with user isolation."""
         with self.get_db_session() as session:
             query = session.query(self.model_class)
@@ -160,7 +160,7 @@ class UserScopedORMRepository(BaseORMRepository[ModelType], BaseUserScopedReposi
             
             return models
     
-    def find_one_by(self, **filters) -> Optional[ModelType]:
+    def find_one_by(self, **filters) -> ModelType | None:
         """Find one model by filters with user isolation."""
         with self.get_db_session() as session:
             query = session.query(self.model_class)
@@ -199,7 +199,7 @@ class UserScopedORMRepository(BaseORMRepository[ModelType], BaseUserScopedReposi
         """Check if a model exists with user isolation."""
         return self.count(**filters) > 0
     
-    def bulk_create(self, records: List[Dict[str, Any]]) -> List[ModelType]:
+    def bulk_create(self, records: list[dict[str, Any]]) -> list[ModelType]:
         """Create multiple records with user isolation."""
         # Add user_id to all records
         records = [self.set_user_id(record) for record in records]
@@ -211,7 +211,7 @@ class UserScopedORMRepository(BaseORMRepository[ModelType], BaseUserScopedReposi
         
         return models
     
-    def bulk_update(self, ids: List[Any], updates: Dict[str, Any]) -> int:
+    def bulk_update(self, ids: list[Any], updates: dict[str, Any]) -> int:
         """Update multiple records with user isolation."""
         with self.get_db_session() as session:
             query = session.query(self.model_class)
@@ -233,7 +233,7 @@ class UserScopedORMRepository(BaseORMRepository[ModelType], BaseUserScopedReposi
             
             return count
     
-    def bulk_delete(self, ids: List[Any]) -> int:
+    def bulk_delete(self, ids: list[Any]) -> int:
         """Delete multiple records with user isolation."""
         with self.get_db_session() as session:
             query = session.query(self.model_class)

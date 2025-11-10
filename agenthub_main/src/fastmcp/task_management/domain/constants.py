@@ -8,9 +8,9 @@ ENHANCED: Now includes UUID normalization for flexible user ID handling while ma
 the ORM model as the source of truth.
 """
 
-from typing import Optional
 
-def validate_user_id(user_id: Optional[str], operation: str = "This operation") -> str:
+
+def validate_user_id(user_id: str | None, operation: str = "This operation") -> str:
     """
     Validate and normalize user ID to UUID format.
     
@@ -53,7 +53,7 @@ def validate_user_id(user_id: Optional[str], operation: str = "This operation") 
         logging.warning(f"UUID normalization failed for user_id '{user_id_str}': {e}. Using original value.")
         return user_id_str
 
-def require_authenticated_user(user_id: Optional[str], operation: str = "This operation") -> str:
+def require_authenticated_user(user_id: str | None, operation: str = "This operation") -> str:
     """
     Alias for validate_user_id for clearer intent in code.
     

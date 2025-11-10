@@ -7,19 +7,18 @@ using WebSocket connections for low-latency message passing and status updates.
 import asyncio
 import json
 import logging
-from typing import Dict, List, Set, Optional, Any, Callable
-from datetime import datetime, timezone
-from dataclasses import dataclass, asdict
-from enum import Enum
 import uuid
+from collections.abc import Callable
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
-from fastmcp.task_management.domain.value_objects.coordination import (
-    AgentCommunication, CoordinationMessage
-)
 from fastmcp.task_management.domain.entities.agent_session import AgentSession
+
 from ...application.services.real_time_status_tracker import RealTimeStatusTracker
 
 logger = logging.getLogger(__name__)
@@ -60,11 +59,11 @@ class WebSocketMessage:
     id: str
     type: MessageType
     from_agent: str
-    to_agents: List[str]  # Empty for broadcast
+    to_agents: list[str]  # Empty for broadcast
     timestamp: datetime
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     requires_ack: bool = False
-    correlation_id: Optional[str] = None
+    correlation_id: str | None = None
     
     def to_json(self) -> str:
         """Convert to JSON string for transmission"""
@@ -90,7 +89,7 @@ class AgentConnection:
     websocket: WebSocket
     connected_at: datetime
     last_heartbeat: datetime
-    subscriptions: Set[str] = None  # Channel subscriptions
+    subscriptions: set[str] = None  # Channel subscriptions
     
     def __post_init__(self):
         if self.subscriptions is None:
@@ -108,7 +107,7 @@ class AgentConnection:
     
     def is_alive(self, timeout_seconds: int = 60) -> bool:
         """Check if connection is still alive"""
-        elapsed = (datetime.now(timezone.utc) - self.last_heartbeat).total_seconds()
+        elapsed = (datetime.now(UTC) - self.last_heartbeat).total_seconds()
         return elapsed < timeout_seconds
 
 
@@ -127,7 +126,7 @@ class AgentCommunicationHub:
     
     def __init__(
         self,
-        status_tracker: Optional[RealTimeStatusTracker] = None,
+        status_tracker: RealTimeStatusTracker | None = None,
         heartbeat_interval: int = 30,
         message_timeout: int = 30
     ):
@@ -137,15 +136,15 @@ class AgentCommunicationHub:
         self.message_timeout = message_timeout
         
         # Connection management
-        self.connections: Dict[str, AgentConnection] = {}
-        self.sessions: Dict[str, AgentSession] = {}
+        self.connections: dict[str, AgentConnection] = {}
+        self.sessions: dict[str, AgentSession] = {}
         
         # Message handling
-        self.pending_acks: Dict[str, WebSocketMessage] = {}
-        self.message_handlers: Dict[MessageType, List[Callable]] = {}
+        self.pending_acks: dict[str, WebSocketMessage] = {}
+        self.message_handlers: dict[MessageType, list[Callable]] = {}
         
         # Channels for group communication
-        self.channels: Dict[str, Set[str]] = {
+        self.channels: dict[str, set[str]] = {
             "global": set(),  # All connected agents
             "status": set(),  # Status update subscribers
             "coordination": set()  # Coordination subscribers
@@ -161,8 +160,8 @@ class AgentCommunicationHub:
         }
         
         # Background tasks
-        self._heartbeat_task: Optional[asyncio.Task] = None
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._heartbeat_task: asyncio.Task | None = None
+        self._cleanup_task: asyncio.Task | None = None
         self._is_running = False
     
     async def start(self) -> None:
@@ -209,8 +208,8 @@ class AgentCommunicationHub:
             agent_id=agent_id,
             session_id=session_id,
             websocket=websocket,
-            connected_at=datetime.now(timezone.utc),
-            last_heartbeat=datetime.now(timezone.utc)
+            connected_at=datetime.now(UTC),
+            last_heartbeat=datetime.now(UTC)
         )
         
         self.connections[agent_id] = connection
@@ -225,7 +224,7 @@ class AgentCommunicationHub:
             type=MessageType.CONNECT,
             from_agent="hub",
             to_agents=[agent_id],
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             payload={
                 "status": "connected",
                 "session_id": session_id,
@@ -243,7 +242,7 @@ class AgentCommunicationHub:
             {
                 "event": "agent_connected",
                 "agent_id": agent_id,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             },
             exclude=[agent_id]
         )
@@ -278,7 +277,7 @@ class AgentCommunicationHub:
             {
                 "event": "agent_disconnected",
                 "agent_id": agent_id,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             }
         )
         
@@ -307,7 +306,7 @@ class AgentCommunicationHub:
                     # Process message
                     await self.process_message(agent_id, message_text)
                     
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # Send heartbeat ping
                     if agent_id in self.connections:
                         await self.send_heartbeat(agent_id)
@@ -332,7 +331,7 @@ class AgentCommunicationHub:
             
             # Update heartbeat
             if from_agent in self.connections:
-                self.connections[from_agent].last_heartbeat = datetime.now(timezone.utc)
+                self.connections[from_agent].last_heartbeat = datetime.now(UTC)
             
             # Handle acknowledgments
             if message.type == MessageType.ACK:
@@ -375,9 +374,9 @@ class AgentCommunicationHub:
         self,
         to_agent: str,
         message_type: MessageType,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         requires_ack: bool = False,
-        correlation_id: Optional[str] = None
+        correlation_id: str | None = None
     ) -> bool:
         """Send message to specific agent"""
         if to_agent not in self.connections:
@@ -389,7 +388,7 @@ class AgentCommunicationHub:
             type=message_type,
             from_agent="hub",
             to_agents=[to_agent],
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             payload=payload,
             requires_ack=requires_ack,
             correlation_id=correlation_id
@@ -411,8 +410,8 @@ class AgentCommunicationHub:
     async def broadcast_message(
         self,
         message_type: MessageType,
-        payload: Dict[str, Any],
-        exclude: Optional[List[str]] = None
+        payload: dict[str, Any],
+        exclude: list[str] | None = None
     ) -> int:
         """Broadcast message to all connected agents"""
         if exclude is None:
@@ -423,7 +422,7 @@ class AgentCommunicationHub:
             type=message_type,
             from_agent="hub",
             to_agents=[],  # Empty for broadcast
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             payload=payload,
             requires_ack=False
         )
@@ -441,8 +440,8 @@ class AgentCommunicationHub:
         self,
         channel: str,
         message_type: MessageType,
-        payload: Dict[str, Any],
-        exclude: Optional[List[str]] = None
+        payload: dict[str, Any],
+        exclude: list[str] | None = None
     ) -> int:
         """Broadcast message to channel subscribers"""
         if channel not in self.channels:
@@ -603,7 +602,7 @@ class AgentCommunicationHub:
         await self.send_message(
             agent_id,
             MessageType.HEARTBEAT,
-            {"timestamp": datetime.now(timezone.utc).isoformat()},
+            {"timestamp": datetime.now(UTC).isoformat()},
             requires_ack=True
         )
     
@@ -667,7 +666,7 @@ class AgentCommunicationHub:
                 logger.error(f"Error in cleanup loop: {e}")
                 await asyncio.sleep(30)
     
-    def get_connection_status(self) -> Dict[str, Any]:
+    def get_connection_status(self) -> dict[str, Any]:
         """Get current connection status"""
         return {
             "active_connections": len(self.connections),
@@ -680,7 +679,7 @@ class AgentCommunicationHub:
             "metrics": self.metrics
         }
     
-    def get_agent_info(self, agent_id: str) -> Optional[Dict[str, Any]]:
+    def get_agent_info(self, agent_id: str) -> dict[str, Any] | None:
         """Get information about connected agent"""
         if agent_id not in self.connections:
             return None

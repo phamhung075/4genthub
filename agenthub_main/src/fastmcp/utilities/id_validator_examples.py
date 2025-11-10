@@ -5,8 +5,8 @@ of the agenthub system to prevent MCP ID vs Application ID confusion.
 """
 
 import logging
-from typing import Optional
-from .id_validator import IDValidator, prevent_id_confusion, ValidationResult
+
+from .id_validator import IDValidator, ValidationResult, prevent_id_confusion
 
 logger = logging.getLogger(__name__)
 
@@ -117,8 +117,8 @@ class FacadeServiceExample:
 
     def get_subtask_facade_with_validation(self,
                                          user_id: str,
-                                         git_branch_id: Optional[str] = None,
-                                         project_id: Optional[str] = None):
+                                         git_branch_id: str | None = None,
+                                         project_id: str | None = None):
         """
         Enhanced facade creation with comprehensive ID validation.
 

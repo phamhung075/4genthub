@@ -7,7 +7,7 @@ It serves as the interface layer, delegating business logic to application facad
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 
@@ -16,8 +16,8 @@ from fastmcp.types import (
     BranchDTO,
     BranchesResponse,
     BranchResponse,
-    BulkSummaryResponse,
     BulkSummaryMetadata,
+    BulkSummaryResponse,
     DeleteResponse,
 )
 
@@ -69,7 +69,7 @@ class BranchAPIController:
                     message="Failed to fetch branches",
                     branches=[],
                     total=0,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Convert branch dictionaries to BranchDTO objects
@@ -103,7 +103,7 @@ class BranchAPIController:
                 success=True,
                 branches=branch_dtos,
                 total=len(branch_dtos),
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -116,7 +116,7 @@ class BranchAPIController:
                 message="Failed to get branches with task counts",
                 branches=[],
                 total=0,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def get_branch(self, branch_id: str, user_id: str, session) -> BranchResponse:
@@ -169,7 +169,7 @@ class BranchAPIController:
                     error=f"Branch {branch_id} not found",
                     message="Branch not found",
                     branch=None,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Create git branch facade with proper project_id for DDD compliance
@@ -186,7 +186,7 @@ class BranchAPIController:
                     error=result.get("error", f"Branch {branch_id} not found"),
                     message="Failed to get branch summary",
                     branch=None,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             branch_data = result.get("branch")
@@ -196,7 +196,7 @@ class BranchAPIController:
                     error=f"Branch {branch_id} not found",
                     message="Branch not found",
                     branch=None,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Create BranchDTO manually from branch_data
@@ -221,7 +221,7 @@ class BranchAPIController:
             return BranchResponse(
                 success=True,
                 branch=branch_dto,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -231,7 +231,7 @@ class BranchAPIController:
                 error=str(e),
                 message="Failed to get branch summary",
                 branch=None,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def get_project_branch_stats(
@@ -263,7 +263,7 @@ class BranchAPIController:
                     error=result.get("error", "Failed to fetch branch statistics"),
                     message="Failed to fetch branch statistics",
                     data={"stats": {}},
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             logger.info(f"Retrieved branch statistics for project {project_id}")
@@ -271,7 +271,7 @@ class BranchAPIController:
             return ApiResponse(
                 success=True,
                 data={"stats": result.get("summary", {})},
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -283,7 +283,7 @@ class BranchAPIController:
                 error=str(e),
                 message="Failed to get project branch stats",
                 data={"stats": {}},
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def get_branch_performance_metrics(self, user_id: str, session) -> ApiResponse:
@@ -333,7 +333,7 @@ class BranchAPIController:
             return ApiResponse(
                 success=True,
                 data=metrics_data,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -343,7 +343,7 @@ class BranchAPIController:
                 error=str(e),
                 message="Failed to get branch performance metrics",
                 data={"metrics": {}},
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def create_branch(
@@ -394,7 +394,7 @@ class BranchAPIController:
                     success=True,
                     branch=branch_dto,
                     message="Branch created successfully",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 return BranchResponse(
@@ -402,7 +402,7 @@ class BranchAPIController:
                     error=result.get("error", "Failed to create branch"),
                     message="Failed to create branch",
                     branch=None,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -412,7 +412,7 @@ class BranchAPIController:
                 error=str(e),
                 message="Failed to create branch",
                 branch=None,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def list_branches(
@@ -464,7 +464,7 @@ class BranchAPIController:
                     success=True,
                     branches=branch_dtos,
                     total=len(branch_dtos),
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 return BranchesResponse(
@@ -473,7 +473,7 @@ class BranchAPIController:
                     message="Failed to list branches",
                     branches=[],
                     total=0,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -484,7 +484,7 @@ class BranchAPIController:
                 message="Failed to list branches",
                 branches=[],
                 total=0,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def update_branch(
@@ -527,7 +527,7 @@ class BranchAPIController:
                     error=f"Branch {branch_id} not found",
                     message="Branch not found",
                     branch=None,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Create facade with proper project_id for DDD compliance
@@ -562,7 +562,7 @@ class BranchAPIController:
                     success=True,
                     branch=branch_dto,
                     message="Branch updated successfully",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 return BranchResponse(
@@ -570,7 +570,7 @@ class BranchAPIController:
                     error=result.get("error", "Failed to update branch"),
                     message="Failed to update branch",
                     branch=None,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -580,7 +580,7 @@ class BranchAPIController:
                 error=str(e),
                 message="Failed to update branch",
                 branch=None,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def delete_branch(
@@ -615,7 +615,7 @@ class BranchAPIController:
                     deleted=False,
                     error=f"Branch {branch_id} not found",
                     message="Branch not found",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             project_id = branch.project_id
@@ -633,7 +633,7 @@ class BranchAPIController:
                     deleted=False,
                     error="You don't have permission to delete this branch",
                     message="Permission denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             logger.info(
@@ -657,7 +657,7 @@ class BranchAPIController:
                     deleted=True,
                     id=branch_id,
                     message="Branch deleted successfully",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 return DeleteResponse(
@@ -665,7 +665,7 @@ class BranchAPIController:
                     deleted=False,
                     error=result.get("error", "Failed to delete branch"),
                     message="Failed to delete branch",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -675,7 +675,7 @@ class BranchAPIController:
                 deleted=False,
                 error=str(e),
                 message="Failed to delete branch",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def assign_agent(
@@ -711,7 +711,7 @@ class BranchAPIController:
                     success=False,
                     error=f"Branch {branch_id} not found",
                     message="Branch not found",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Create facade with proper project_id for DDD compliance
@@ -727,14 +727,14 @@ class BranchAPIController:
                     success=True,
                     data=result,
                     message="Agent assigned successfully",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 return ApiResponse(
                     success=False,
                     error=result.get("error", "Failed to assign agent"),
                     message="Failed to assign agent",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -743,7 +743,7 @@ class BranchAPIController:
                 success=False,
                 error=str(e),
                 message="Failed to assign agent",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     async def get_branch_task_counts(
@@ -778,7 +778,7 @@ class BranchAPIController:
                     success=False,
                     error=f"Branch {branch_id} not found",
                     message="Branch not found",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # Create facade with proper project_id for DDD compliance
@@ -794,7 +794,7 @@ class BranchAPIController:
                     success=False,
                     error=result.get("error", "Failed to get branch summary"),
                     message="Failed to get branch summary",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             branch = result.get("branch", {})
@@ -814,7 +814,7 @@ class BranchAPIController:
             return ApiResponse(
                 success=True,
                 data={"task_counts": task_counts, "branch_id": branch_id},
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -824,7 +824,7 @@ class BranchAPIController:
                 error=str(e),
                 message="Failed to get branch task counts",
                 data={"task_counts": {}},
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def get_bulk_summaries(
@@ -911,7 +911,7 @@ class BranchAPIController:
                             fromCache=False,
                         ),
                         message="No projects found for user",
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                     )
 
             if not include_archived:
@@ -1011,7 +1011,7 @@ class BranchAPIController:
                     queryTimeMs=query_time,  # Keep as float for precision
                     fromCache=False,
                 ),
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -1026,5 +1026,5 @@ class BranchAPIController:
                     fromCache=False,
                 ),
                 message=f"Failed to get bulk summaries: {str(e)}",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )

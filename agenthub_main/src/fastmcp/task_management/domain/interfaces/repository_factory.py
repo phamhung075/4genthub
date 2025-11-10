@@ -1,8 +1,7 @@
 """Repository Factory Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import TypeVar, Type, Any
-
+from typing import Any, TypeVar
 
 # Generic type for repositories
 T = TypeVar('T')

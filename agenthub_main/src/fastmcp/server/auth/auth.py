@@ -4,22 +4,23 @@ This module provides minimal OAuth classes for import compatibility.
 Actual authentication uses JWT tokens.
 """
 
-from typing import Optional, List, Any
 from dataclasses import dataclass
+
 from pydantic import BaseModel
+
 
 # MCP OAuth types for compatibility
 class ClientRegistrationOptions(BaseModel):
     """Client registration options for OAuth"""
     enabled: bool = False
-    client_name: Optional[str] = None
-    client_uri: Optional[str] = None
-    redirect_uris: List[str] = []
+    client_name: str | None = None
+    client_uri: str | None = None
+    redirect_uris: list[str] = []
 
 class RevocationOptions(BaseModel):
     """Token revocation options for OAuth"""
     enabled: bool = False
-    revocation_endpoint: Optional[str] = None
+    revocation_endpoint: str | None = None
 
 class OAuthProvider:
     """Minimal OAuth provider stub for compatibility"""
@@ -27,10 +28,10 @@ class OAuthProvider:
     def __init__(
         self,
         issuer_url: str,
-        service_documentation_url: Optional[str] = None,
-        client_registration_options: Optional[ClientRegistrationOptions] = None,
-        revocation_options: Optional[RevocationOptions] = None,
-        required_scopes: Optional[List[str]] = None,
+        service_documentation_url: str | None = None,
+        client_registration_options: ClientRegistrationOptions | None = None,
+        revocation_options: RevocationOptions | None = None,
+        required_scopes: list[str] | None = None,
     ):
         self.issuer_url = issuer_url
         self.service_documentation_url = service_documentation_url
@@ -43,18 +44,18 @@ class OAuthProvider:
 class AuthorizationCode:
     """OAuth authorization code"""
     code: str
-    state: Optional[str] = None
+    state: str | None = None
 
 @dataclass
 class RefreshToken:
     """OAuth refresh token"""
     token: str
-    expires_at: Optional[int] = None
+    expires_at: int | None = None
 
 @dataclass
 class AccessToken:
     """OAuth access token"""
     token: str
     token_type: str = "Bearer"
-    expires_in: Optional[int] = None
-    scope: Optional[str] = None
+    expires_in: int | None = None
+    scope: str | None = None

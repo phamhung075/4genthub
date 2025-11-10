@@ -5,13 +5,14 @@ to domain events across the application with support for async handlers.
 """
 
 import asyncio
-import logging
-from typing import Dict, List, Type, Callable, Any, Optional, Set, Tuple
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-import uuid
 import inspect
+import logging
+import uuid
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +29,10 @@ class EventPriority(Enum):
 class EventMetadata:
     """Metadata for published events"""
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    source: Optional[str] = None
-    user_id: Optional[str] = None
-    correlation_id: Optional[str] = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    source: str | None = None
+    user_id: str | None = None
+    correlation_id: str | None = None
     priority: EventPriority = EventPriority.NORMAL
     retry_count: int = 0
     max_retries: int = 3
@@ -53,8 +54,8 @@ class EventHandler:
     def __init__(
         self,
         handler: Callable,
-        event_type: Type[DomainEvent],
-        filter_func: Optional[Callable] = None,
+        event_type: type[DomainEvent],
+        filter_func: Callable | None = None,
         priority: int = 0,
         is_async: bool = None
     ):
@@ -80,7 +81,7 @@ class EventHandler:
         if self.filter_func and not self.filter_func(event):
             return None
         
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         self.call_count += 1
         
         try:
@@ -90,12 +91,12 @@ class EventHandler:
                 result = self.handler(event)
             
             # Track duration
-            duration = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+            duration = (datetime.now(UTC) - start_time).total_seconds() * 1000
             self.total_duration_ms += duration
             
             return result
             
-        except Exception as e:
+        except Exception:
             self.error_count += 1
             raise
     
@@ -132,17 +133,17 @@ class EventBus:
         self.worker_count = worker_count
         
         # Handler registry
-        self._handlers: Dict[Type[DomainEvent], List[EventHandler]] = {}
-        self._global_handlers: List[EventHandler] = []  # Handlers for all events
+        self._handlers: dict[type[DomainEvent], list[EventHandler]] = {}
+        self._global_handlers: list[EventHandler] = []  # Handlers for all events
         
         # Event queue
         self._event_queue: asyncio.Queue = asyncio.Queue(maxsize=max_queue_size)
         
         # Dead letter queue for failed events
-        self._dead_letter_queue: List[Tuple[DomainEvent, Exception]] = []
+        self._dead_letter_queue: list[tuple[DomainEvent, Exception]] = []
         
         # Worker tasks
-        self._workers: List[asyncio.Task] = []
+        self._workers: list[asyncio.Task] = []
         self._is_running = False
         
         # Metrics
@@ -190,9 +191,9 @@ class EventBus:
     
     def subscribe(
         self,
-        event_type: Type[DomainEvent],
+        event_type: type[DomainEvent],
         handler: Callable,
-        filter_func: Optional[Callable] = None,
+        filter_func: Callable | None = None,
         priority: int = 0
     ) -> str:
         """
@@ -230,7 +231,7 @@ class EventBus:
     def subscribe_all(
         self,
         handler: Callable,
-        filter_func: Optional[Callable] = None,
+        filter_func: Callable | None = None,
         priority: int = 0
     ) -> str:
         """Subscribe to all events"""
@@ -249,7 +250,7 @@ class EventBus:
         
         return subscription_id
     
-    def unsubscribe(self, event_type: Type[DomainEvent], handler: Callable) -> bool:
+    def unsubscribe(self, event_type: type[DomainEvent], handler: Callable) -> bool:
         """Unsubscribe from an event type"""
         if event_type not in self._handlers:
             return False
@@ -272,8 +273,8 @@ class EventBus:
         self,
         event: DomainEvent,
         priority: EventPriority = EventPriority.NORMAL,
-        correlation_id: Optional[str] = None,
-        user_id: Optional[str] = None
+        correlation_id: str | None = None,
+        user_id: str | None = None
     ) -> None:
         """
         Publish an event to the bus.
@@ -310,7 +311,7 @@ class EventBus:
     
     async def publish_batch(
         self,
-        events: List[DomainEvent],
+        events: list[DomainEvent],
         priority: EventPriority = EventPriority.NORMAL
     ) -> None:
         """Publish multiple events"""
@@ -336,7 +337,7 @@ class EventBus:
                 self._event_queue.task_done()
                 self.metrics["queue_size"] = self._event_queue.qsize()
                 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except Exception as e:
                 logger.error(f"Error in event worker {worker_name}: {e}")
@@ -410,8 +411,8 @@ class EventBus:
     
     def get_handlers_for_event(
         self,
-        event_type: Type[DomainEvent]
-    ) -> List[EventHandler]:
+        event_type: type[DomainEvent]
+    ) -> list[EventHandler]:
         """Get all handlers for an event type"""
         handlers = []
         
@@ -422,7 +423,7 @@ class EventBus:
         
         return sorted(handlers, key=lambda h: h.priority, reverse=True)
     
-    def get_dead_letter_queue(self) -> List[Tuple[DomainEvent, Exception]]:
+    def get_dead_letter_queue(self) -> list[tuple[DomainEvent, Exception]]:
         """Get events in dead letter queue"""
         return self._dead_letter_queue.copy()
     
@@ -446,7 +447,7 @@ class EventBus:
         
         return replayed
     
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get event bus metrics"""
         handler_metrics = {}
         
@@ -467,17 +468,17 @@ class EventBus:
             "handler_metrics": handler_metrics
         }
     
-    async def wait_for_empty_queue(self, timeout: Optional[float] = None) -> bool:
+    async def wait_for_empty_queue(self, timeout: float | None = None) -> bool:
         """Wait for event queue to be empty"""
         try:
             await asyncio.wait_for(self._event_queue.join(), timeout)
             return True
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return False
 
 
 # Global event bus instance
-_event_bus: Optional[EventBus] = None
+_event_bus: EventBus | None = None
 
 
 def get_event_bus() -> EventBus:

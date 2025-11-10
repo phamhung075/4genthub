@@ -1,14 +1,13 @@
 """Task Search and Statistics Handler"""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 # DTO imports for response standardization
 from fastmcp.types import (
     CountResponse,
     StatisticsResponse,
     TaskResponse,
-    TasksResponse,
     TaskSummariesResponse,
     task_summary_to_dto,
     task_to_dto,
@@ -55,7 +54,7 @@ class TaskSearchHandler:
                 return StatisticsResponse(
                     success=True,
                     statistics=result.get("statistics", result),
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             elif isinstance(result, dict) and not result.get("success"):
                 # Handle errors from facade
@@ -67,7 +66,7 @@ class TaskSearchHandler:
                     success=False,
                     error=error_msg,
                     message=error_msg,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 # Legacy format - return as-is for backward compatibility
@@ -75,7 +74,7 @@ class TaskSearchHandler:
                 return StatisticsResponse(
                     success=True,
                     statistics=result,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -84,7 +83,7 @@ class TaskSearchHandler:
                 success=False,
                 error=str(e),
                 message="Failed to get task statistics",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def count_tasks(self, filters: dict, user_id: str, session) -> CountResponse:
@@ -122,7 +121,7 @@ class TaskSearchHandler:
                         success=True,
                         count=count,
                         filters=filters,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                     )
                 else:
                     # Handle errors from facade
@@ -134,7 +133,7 @@ class TaskSearchHandler:
                         success=False,
                         error=error_msg,
                         message=error_msg,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                     )
             else:
                 # Legacy format - result is just the count
@@ -145,7 +144,7 @@ class TaskSearchHandler:
                     success=True,
                     count=result,
                     filters=filters,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -154,7 +153,7 @@ class TaskSearchHandler:
                 success=False,
                 error=str(e),
                 message="Failed to count tasks",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def list_tasks_summary(
@@ -208,7 +207,7 @@ class TaskSearchHandler:
                     total=total,
                     page=offset // limit if limit > 0 else 0,
                     limit=limit,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             else:
                 # Handle validation or other errors from facade
@@ -221,7 +220,7 @@ class TaskSearchHandler:
                     tasks=[],
                     error=error_msg,
                     message=error_msg,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
         except Exception as e:
@@ -231,7 +230,7 @@ class TaskSearchHandler:
                 tasks=[],
                 error=str(e),
                 message="Failed to list task summaries",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def get_full_task(self, task_id: str, user_id: str, session) -> TaskResponse:
@@ -261,7 +260,7 @@ class TaskSearchHandler:
                     task=None,
                     error="Task not found",
                     message="Task not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             logger.info(f"Retrieved full task details for task {task_id}")
@@ -269,7 +268,7 @@ class TaskSearchHandler:
             return TaskResponse(
                 success=True,
                 task=task_to_dto(task, include_subtasks=True),
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -279,5 +278,5 @@ class TaskSearchHandler:
                 task=None,
                 error=str(e),
                 message="Failed to get task details",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )

@@ -5,19 +5,27 @@ Factory for creating UnifiedContextFacade instances with proper dependency injec
 """
 
 import logging
-from typing import Optional
 
 from ...application.facades.unified_context_facade import UnifiedContextFacade
-from ...application.services.unified_context_service import UnifiedContextService
-from ...infrastructure.repositories.global_context_repository import GlobalContextRepository
-from ...infrastructure.repositories.project_context_repository import ProjectContextRepository
-from ...infrastructure.repositories.branch_context_repository import BranchContextRepository
-from ...infrastructure.repositories.task_context_repository import TaskContextRepository
 from ...application.services.context_cache_service import ContextCacheService
-from ...application.services.context_inheritance_service import ContextInheritanceService
 from ...application.services.context_delegation_service import ContextDelegationService
+from ...application.services.context_inheritance_service import (
+    ContextInheritanceService,
+)
 from ...application.services.context_validation_service import ContextValidationService
+from ...application.services.unified_context_service import UnifiedContextService
 from ...infrastructure.database.database_config import get_db_config
+from ...infrastructure.repositories.branch_context_repository import (
+    BranchContextRepository,
+)
+from ...infrastructure.repositories.global_context_repository import (
+    GlobalContextRepository,
+)
+from ...infrastructure.repositories.project_context_repository import (
+    ProjectContextRepository,
+)
+from ...infrastructure.repositories.task_context_repository import TaskContextRepository
+
 # GLOBAL_SINGLETON_UUID removed - each user has their own global context
 
 logger = logging.getLogger(__name__)
@@ -134,15 +142,17 @@ class UnifiedContextFacadeFactory:
     
     def _create_mock_service(self):
         """Create a mock unified service for database-less operation"""
-        from ...application.services.mock_unified_context_service import MockUnifiedContextService
+        from ...application.services.mock_unified_context_service import (
+            MockUnifiedContextService,
+        )
         self.unified_service = MockUnifiedContextService()
         logger.warning("Using MockUnifiedContextService - context operations will have limited functionality")
     
     def create_facade(
         self,
-        user_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None
+        user_id: str | None = None,
+        project_id: str | None = None,
+        git_branch_id: str | None = None
     ) -> UnifiedContextFacade:
         """
         Create a UnifiedContextFacade instance.
@@ -205,7 +215,7 @@ class UnifiedContextFacadeFactory:
         """
         return self.unified_service
     
-    def auto_create_global_context(self, user_id: Optional[str] = None) -> bool:
+    def auto_create_global_context(self, user_id: str | None = None) -> bool:
         """
         Auto-create user-scoped global context if it doesn't exist.
         
@@ -222,7 +232,9 @@ class UnifiedContextFacadeFactory:
             # Get user_id from parameter or current context
             if not user_id:
                 try:
-                    from ....auth.middleware.request_context_middleware import get_current_user_id
+                    from ....auth.middleware.request_context_middleware import (
+                        get_current_user_id,
+                    )
                     user_id = get_current_user_id()
                 except Exception:
                     pass

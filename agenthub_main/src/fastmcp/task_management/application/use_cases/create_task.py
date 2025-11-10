@@ -1,20 +1,15 @@
 """Create Task Use Case"""
 
 import logging
-from typing import Optional
 
-from ...application.dtos.task import (
-    CreateTaskRequest,
-    CreateTaskResponse,
-    TaskResponse
-)
+from ...application.dtos.task import CreateTaskRequest, CreateTaskResponse, TaskResponse
 from ...domain.entities.task import Task
+from ...domain.events import TaskCreated
 from ...domain.repositories.task_repository import TaskRepository
-from ...domain.value_objects import TaskStatus, Priority
-from ...domain.value_objects.task_status import TaskStatusEnum
+from ...domain.value_objects import Priority, TaskStatus
 from ...domain.value_objects.priority import PriorityLevel
 from ...domain.value_objects.task_id import TaskId
-from ...domain.events import TaskCreated
+from ...domain.value_objects.task_status import TaskStatusEnum
 
 logger = logging.getLogger(__name__)
 
@@ -105,8 +100,8 @@ class CreateTaskUseCase:
             # Dispatch domain event for task creation
             # Branch statistics will be updated automatically by event handlers
             try:
-                from ...domain.services.event_dispatcher import dispatch_domain_event
                 from ...domain.events.task_lifecycle_events import TaskCreatedEvent
+                from ...domain.services.event_dispatcher import dispatch_domain_event
 
                 event = TaskCreatedEvent.create(
                     task_id=str(task.id.value),
@@ -136,9 +131,13 @@ class CreateTaskUseCase:
             # Auto-create task context for hierarchical context inheritance
             try:
                 # Use unified context facade for task context creation
-                from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+                from ...application.factories.unified_context_facade_factory import (
+                    UnifiedContextFacadeFactory,
+                )
                 from ...domain.constants import validate_user_id
-                from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+                from ...domain.exceptions.authentication_exceptions import (
+                    UserAuthenticationRequiredError,
+                )
 
                 # Get user_id from request or handle authentication
                 user_id = getattr(request, 'user_id', None)
@@ -200,8 +199,11 @@ class CreateTaskUseCase:
 
                     # 🔄 SYNC: Initial metadata synchronization after task creation
                     try:
-                        from ..services.task_context_sync_service import TaskContextSyncService
                         import asyncio
+
+                        from ..services.task_context_sync_service import (
+                            TaskContextSyncService,
+                        )
 
                         sync_service = TaskContextSyncService(self._task_repository, user_id=user_id)
 
@@ -227,7 +229,9 @@ class CreateTaskUseCase:
 
             # Send WebSocket notification for frontend real-time updates (AFTER task_response creation for complete data)
             try:
-                from ..services.websocket_notification_service import WebSocketNotificationService
+                from ..services.websocket_notification_service import (
+                    WebSocketNotificationService,
+                )
                 from ..services.websocket_payload_builder import WebSocketPayloadBuilder
 
                 # Build complete WebSocket payload using WebSocketPayloadBuilder (DRY principle)

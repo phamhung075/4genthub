@@ -1,14 +1,14 @@
 """Subtask Domain Entity"""
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import List, Optional, Dict, Any, Union
+from datetime import datetime
+from typing import Any
 
+from ..events import TaskUpdated
+from ..value_objects import AgentRole, resolve_legacy_role
+from ..value_objects.priority import Priority
 from ..value_objects.task_id import TaskId
 from ..value_objects.task_status import TaskStatus, TaskStatusEnum
-from ..value_objects.priority import Priority
-from ..value_objects import AgentRole, resolve_legacy_role
-from ..events import TaskUpdated
 from .base.base_timestamp_entity import BaseTimestampEntity
 
 
@@ -18,17 +18,17 @@ class Subtask(BaseTimestampEntity):
 
     title: str = ""
     description: str = ""
-    parent_task_id: Optional[TaskId] = None
-    id: Optional[TaskId] = None
-    status: Optional[TaskStatus] = None
-    priority: Optional[Priority] = None
-    assignees: List[str] = field(default_factory=list)
+    parent_task_id: TaskId | None = None
+    id: TaskId | None = None
+    status: TaskStatus | None = None
+    priority: Priority | None = None
+    assignees: list[str] = field(default_factory=list)
     progress_percentage: int = 0  # Progress tracking (0-100)
-    progress_history: Dict[str, Any] = field(default_factory=dict)  # Detailed progress tracking
+    progress_history: dict[str, Any] = field(default_factory=dict)  # Detailed progress tracking
     progress_count: int = 0  # Number of progress entries
 
     # Domain events
-    _events: List[Any] = field(default_factory=list, init=False)
+    _events: list[Any] = field(default_factory=list, init=False)
     
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
@@ -200,7 +200,7 @@ class Subtask(BaseTimestampEntity):
             }
         ))
     
-    def update_assignees(self, assignees: List[str]) -> None:
+    def update_assignees(self, assignees: list[str]) -> None:
         """Update subtask assignees"""
         # Validate assignees using AgentRole enum
         validated_assignees = []
@@ -305,7 +305,7 @@ class Subtask(BaseTimestampEntity):
             }
         ))
     
-    def add_assignee(self, assignee: Union[str, AgentRole]) -> None:
+    def add_assignee(self, assignee: str | AgentRole) -> None:
         """Add an assignee to the subtask"""
         # Handle both string and AgentRole enum inputs
         if isinstance(assignee, AgentRole):
@@ -349,7 +349,7 @@ class Subtask(BaseTimestampEntity):
                 }
             ))
     
-    def remove_assignee(self, assignee: Union[str, AgentRole]) -> None:
+    def remove_assignee(self, assignee: str | AgentRole) -> None:
         """Remove an assignee from the subtask"""
         # Handle both string and AgentRole enum inputs
         if isinstance(assignee, AgentRole):
@@ -373,7 +373,7 @@ class Subtask(BaseTimestampEntity):
                 }
             ))
     
-    def inherit_assignees_from_parent(self, parent_assignees: List[str]) -> None:
+    def inherit_assignees_from_parent(self, parent_assignees: list[str]) -> None:
         """Inherit assignees from parent task if this subtask has no assignees.
         
         This method implements the inheritance logic where subtasks without
@@ -459,20 +459,22 @@ class Subtask(BaseTimestampEntity):
             }
         ))
     
-    def get_events(self) -> List[Any]:
+    def get_events(self) -> list[Any]:
         """Get and clear domain events"""
         events = self._events.copy()
         self._events.clear()
         return events
     
-    def to_dict(self, include_parent_id: bool = False) -> Dict[str, Any]:
+    def to_dict(self, include_parent_id: bool = False) -> dict[str, Any]:
         """Convert subtask to dictionary representation
 
         Args:
             include_parent_id: If True, includes parent_task_id in output.
                               Default False (omit when nested in parent task response)
         """
-        from fastmcp.task_management.application.use_cases.agent_mappings import resolve_agent_name
+        from fastmcp.task_management.application.use_cases.agent_mappings import (
+            resolve_agent_name,
+        )
 
         # Handle assignees - convert to standardized kebab-case format
         assignees_list = []
@@ -509,7 +511,7 @@ class Subtask(BaseTimestampEntity):
     
     @classmethod
     def create(cls, id: TaskId, title: str, description: str, parent_task_id: TaskId,
-               status: Optional[TaskStatus] = None, priority: Optional[Priority] = None,
+               status: TaskStatus | None = None, priority: Priority | None = None,
                **kwargs) -> 'Subtask':
         """Factory method to create a new subtask"""
         if status is None:
@@ -539,7 +541,7 @@ class Subtask(BaseTimestampEntity):
         )
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], parent_task_id: TaskId) -> 'Subtask':
+    def from_dict(cls, data: dict[str, Any], parent_task_id: TaskId) -> 'Subtask':
         """Create a subtask from dictionary data"""
         # Convert timestamps if present
         created_at = None

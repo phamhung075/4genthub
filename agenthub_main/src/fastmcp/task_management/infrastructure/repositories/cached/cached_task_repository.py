@@ -5,14 +5,15 @@ It automatically invalidates cache on all mutation operations.
 """
 
 import json
-import os
 import logging
-from typing import Optional, List, Any, Dict
+import os
+from typing import Any
+
 import redis
 from redis.exceptions import RedisError
 
-from ....domain.repositories.task_repository import TaskRepository
 from ....domain.entities.task import Task
+from ....domain.repositories.task_repository import TaskRepository
 from ....domain.value_objects.task_id import TaskId
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ class CachedTaskRepository:
         self.ttl = int(os.getenv('CACHE_TTL', '300'))  # 5 minutes default
         self.enabled = self.redis_client is not None
     
-    def _init_redis(self) -> Optional[redis.Redis]:
+    def _init_redis(self) -> redis.Redis | None:
         """Initialize Redis connection with fallback"""
         try:
             client = redis.Redis(
@@ -82,7 +83,7 @@ class CachedTaskRepository:
             except RedisError as e:
                 logger.warning(f"[Cache] Failed to invalidate pattern {pattern}: {e}")
     
-    def _get_cached(self, key: str) -> Optional[Any]:
+    def _get_cached(self, key: str) -> Any | None:
         """Get value from cache"""
         if not self.enabled:
             return None
@@ -179,7 +180,7 @@ class CachedTaskRepository:
         
         return result
     
-    async def find_by_id(self, task_id: TaskId) -> Optional[Task]:
+    async def find_by_id(self, task_id: TaskId) -> Task | None:
         """Find task by ID with caching"""
         cache_key = str(task_id)
         
@@ -198,7 +199,7 @@ class CachedTaskRepository:
         
         return result
     
-    async def find_all(self) -> List[Task]:
+    async def find_all(self) -> list[Task]:
         """Find all tasks with caching"""
         cache_key = "list:all"
         
@@ -217,7 +218,7 @@ class CachedTaskRepository:
     
     # === Helper methods for serialization ===
     
-    def _serialize_task(self, task: Task) -> Dict[str, Any]:
+    def _serialize_task(self, task: Task) -> dict[str, Any]:
         """Serialize task to dictionary for caching"""
         # This is a simplified serialization - adjust based on your Task entity
         return {
@@ -231,7 +232,7 @@ class CachedTaskRepository:
             # Add other fields as needed
         }
     
-    def _deserialize_task(self, data: Dict[str, Any]) -> Task:
+    def _deserialize_task(self, data: dict[str, Any]) -> Task:
         """Deserialize dictionary to Task entity"""
         # This is a simplified deserialization - adjust based on your Task entity
         # You might need to use a proper Task factory or constructor

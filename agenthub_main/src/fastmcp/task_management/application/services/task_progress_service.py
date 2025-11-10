@@ -4,9 +4,10 @@ Handles automatic progress calculation and updates for tasks based on subtask co
 """
 
 import logging
-from typing import Optional, Any
-from ...domain.repositories.task_repository import TaskRepository
+from typing import Any
+
 from ...domain.repositories.subtask_repository import SubtaskRepository
+from ...domain.repositories.task_repository import TaskRepository
 from ...domain.value_objects.task_id import TaskId
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class TaskProgressService:
     """Service for managing task progress based on subtask completion."""
     
-    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository, user_id: Optional[str] = None):
+    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository, user_id: str | None = None):
         """Initialize with repositories."""
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
@@ -38,7 +39,7 @@ class TaskProgressService:
         """Create a new service instance scoped to a specific user."""
         return TaskProgressService(self._task_repository, self._subtask_repository, user_id)
     
-    def update_task_progress_from_subtasks(self, task_id: str) -> Optional[float]:
+    def update_task_progress_from_subtasks(self, task_id: str) -> float | None:
         """
         Calculate and update task progress based on subtask completion.
         
@@ -112,7 +113,7 @@ class TaskProgressService:
             logger.error(f"Error updating task progress: {e}")
             return None
     
-    def get_task_progress(self, task_id: str) -> Optional[float]:
+    def get_task_progress(self, task_id: str) -> float | None:
         """
         Get the current progress percentage for a task.
         

@@ -6,9 +6,7 @@ using a modern hierarchical organization.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
-from datetime import datetime
-import json
+from typing import Any
 
 
 @dataclass
@@ -116,7 +114,7 @@ class NestedCategorySchema:
         return False
     
     @classmethod
-    def get_all_paths(cls) -> List[str]:
+    def get_all_paths(cls) -> list[str]:
         """Get all valid category paths."""
         paths = []
         for category, subcategories in cls.NESTED_STRUCTURE.items():
@@ -126,7 +124,7 @@ class NestedCategorySchema:
         return paths
     
     @classmethod
-    def get_field_category(cls, field_name: str) -> Optional[str]:
+    def get_field_category(cls, field_name: str) -> str | None:
         """Find which category a field belongs to based on the schema."""
         for category, subcategories in cls.NESTED_STRUCTURE.items():
             for subcategory, config in subcategories.items():
@@ -140,31 +138,31 @@ class GlobalContextNestedData:
     """Nested data structure for global context."""
     
     # Organized nested categories
-    organization: Dict[str, Dict[str, Any]] = field(default_factory=lambda: {
+    organization: dict[str, dict[str, Any]] = field(default_factory=lambda: {
         "standards": {},
         "compliance": {},
         "policies": {}
     })
     
-    development: Dict[str, Dict[str, Any]] = field(default_factory=lambda: {
+    development: dict[str, dict[str, Any]] = field(default_factory=lambda: {
         "patterns": {},
         "tools": {},
         "workflows": {}
     })
     
-    security: Dict[str, Dict[str, Any]] = field(default_factory=lambda: {
+    security: dict[str, dict[str, Any]] = field(default_factory=lambda: {
         "authentication": {},
         "encryption": {},
         "access_control": {}
     })
     
-    operations: Dict[str, Dict[str, Any]] = field(default_factory=lambda: {
+    operations: dict[str, dict[str, Any]] = field(default_factory=lambda: {
         "resources": {},
         "monitoring": {},
         "deployment": {}
     })
     
-    preferences: Dict[str, Dict[str, Any]] = field(default_factory=lambda: {
+    preferences: dict[str, dict[str, Any]] = field(default_factory=lambda: {
         "user_interface": {},
         "agent_behavior": {},
         "workflow": {}
@@ -172,7 +170,7 @@ class GlobalContextNestedData:
     
     # Metadata for tracking versioning
     _schema_version: str = "2.0"
-    _custom_categories: Dict[str, Any] = field(default_factory=dict)
+    _custom_categories: dict[str, Any] = field(default_factory=dict)
     
     def set_nested_value(self, path: str, value: Any) -> None:
         """Set a value in the nested structure using dot notation."""
@@ -203,7 +201,7 @@ class GlobalContextNestedData:
                 return category_data.get(subcategory, {}).get(field, default)
         return default
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "organization": self.organization,
@@ -216,7 +214,7 @@ class GlobalContextNestedData:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'GlobalContextNestedData':
+    def from_dict(cls, data: dict[str, Any]) -> 'GlobalContextNestedData':
         """Create from dictionary representation."""
         instance = cls()
         instance.organization = data.get("organization", instance.organization)

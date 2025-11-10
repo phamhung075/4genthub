@@ -1,8 +1,7 @@
 """WorkSession Domain Entity"""
 
-from typing import Dict, List, Optional
-from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 
 from .base.base_timestamp_entity import BaseTimestampEntity
@@ -25,23 +24,23 @@ class WorkSession(BaseTimestampEntity):
     agent_id: str = ""
     task_id: str = ""
     git_branch_name: str = ""
-    started_at: Optional[datetime] = None
+    started_at: datetime | None = None
     
     # Session status and timing
     status: SessionStatus = SessionStatus.ACTIVE
-    ended_at: Optional[datetime] = None
-    paused_at: Optional[datetime] = None
+    ended_at: datetime | None = None
+    paused_at: datetime | None = None
     total_paused_duration: timedelta = field(default_factory=lambda: timedelta(0))
     
     # Session metadata
     session_notes: str = ""
-    progress_updates: List[Dict] = field(default_factory=list)
-    resources_locked: List[str] = field(default_factory=list)
+    progress_updates: list[dict] = field(default_factory=list)
+    resources_locked: list[str] = field(default_factory=list)
     
     # Session configuration
-    max_duration: Optional[timedelta] = None  # Auto-timeout after this duration
+    max_duration: timedelta | None = None  # Auto-timeout after this duration
     auto_save_interval: int = 300  # Seconds between auto-saves
-    last_activity: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_activity: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
@@ -68,8 +67,8 @@ class WorkSession(BaseTimestampEntity):
             raise ValueError(f"Cannot pause session in {self.status.value} state")
 
         self.status = SessionStatus.PAUSED
-        self.paused_at = datetime.now(timezone.utc)
-        self.last_activity = datetime.now(timezone.utc)
+        self.paused_at = datetime.now(UTC)
+        self.last_activity = datetime.now(UTC)
         self.touch("session_paused")
 
         if reason:
@@ -82,12 +81,12 @@ class WorkSession(BaseTimestampEntity):
         
         if self.paused_at:
             # Add paused time to total
-            paused_duration = datetime.now(timezone.utc) - self.paused_at
+            paused_duration = datetime.now(UTC) - self.paused_at
             self.total_paused_duration += paused_duration
             self.paused_at = None
         
         self.status = SessionStatus.ACTIVE
-        self.last_activity = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(UTC)
         self.touch("session_resumed")
         self.add_progress_update("session_resumed", "Session resumed")
     
@@ -97,8 +96,8 @@ class WorkSession(BaseTimestampEntity):
             raise ValueError(f"Cannot complete session in {self.status.value} state")
         
         self.status = SessionStatus.COMPLETED
-        self.ended_at = datetime.now(timezone.utc)
-        self.last_activity = datetime.now(timezone.utc)
+        self.ended_at = datetime.now(UTC)
+        self.last_activity = datetime.now(UTC)
         self.touch("session_completed")
 
         if notes:
@@ -110,8 +109,8 @@ class WorkSession(BaseTimestampEntity):
     def cancel_session(self, reason: str = "") -> None:
         """Cancel the work session"""
         self.status = SessionStatus.CANCELLED
-        self.ended_at = datetime.now(timezone.utc)
-        self.last_activity = datetime.now(timezone.utc)
+        self.ended_at = datetime.now(UTC)
+        self.last_activity = datetime.now(UTC)
         self.touch("session_cancelled")
 
         if reason:
@@ -122,22 +121,22 @@ class WorkSession(BaseTimestampEntity):
     def timeout_session(self) -> None:
         """Timeout the work session due to inactivity or max duration"""
         self.status = SessionStatus.TIMEOUT
-        self.ended_at = datetime.now(timezone.utc)
+        self.ended_at = datetime.now(UTC)
         self.touch("session_timeout")
 
         self.add_progress_update("session_timeout", "Session timed out")
     
-    def add_progress_update(self, update_type: str, message: str, metadata: Dict = None) -> None:
+    def add_progress_update(self, update_type: str, message: str, metadata: dict = None) -> None:
         """Add a progress update to the session"""
         update = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "type": update_type,
             "message": message,
             "metadata": metadata or {}
         }
         
         self.progress_updates.append(update)
-        self.last_activity = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(UTC)
         self.touch("progress_updated")
     
     def lock_resource(self, resource_id: str) -> None:
@@ -160,7 +159,7 @@ class WorkSession(BaseTimestampEntity):
     def get_active_duration(self) -> timedelta:
         """Get the total active duration (excluding paused time)"""
         if self.status == SessionStatus.ACTIVE:
-            total_duration = datetime.now(timezone.utc) - self.started_at
+            total_duration = datetime.now(UTC) - self.started_at
         elif self.ended_at:
             total_duration = self.ended_at - self.started_at
         else:
@@ -171,7 +170,7 @@ class WorkSession(BaseTimestampEntity):
     def get_total_duration(self) -> timedelta:
         """Get the total duration including paused time"""
         if self.status == SessionStatus.ACTIVE:
-            return datetime.now(timezone.utc) - self.started_at
+            return datetime.now(UTC) - self.started_at
         elif self.ended_at:
             return self.ended_at - self.started_at
         else:
@@ -188,7 +187,7 @@ class WorkSession(BaseTimestampEntity):
         
         return self.get_total_duration() > self.max_duration
     
-    def get_session_summary(self) -> Dict:
+    def get_session_summary(self) -> dict:
         """Get a comprehensive summary of the work session"""
         return {
             "session_id": self.id,
@@ -221,7 +220,7 @@ class WorkSession(BaseTimestampEntity):
             }
         }
     
-    def get_progress_timeline(self) -> List[Dict]:
+    def get_progress_timeline(self) -> list[dict]:
         """Get a chronological timeline of all progress updates"""
         return sorted(self.progress_updates, key=lambda x: x["timestamp"])
     
@@ -239,7 +238,7 @@ class WorkSession(BaseTimestampEntity):
     
     def update_activity(self) -> None:
         """Update the last activity timestamp"""
-        self.last_activity = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(UTC)
         self.touch("activity_updated")
     
     @classmethod
@@ -248,10 +247,10 @@ class WorkSession(BaseTimestampEntity):
         agent_id: str,
         task_id: str,
         git_branch_name: str,
-        max_duration_hours: Optional[float] = None
+        max_duration_hours: float | None = None
     ) -> 'WorkSession':
         """Factory method to create a new work session"""
-        session_id = f"{agent_id}_{task_id}_{datetime.now(timezone.utc).timestamp()}"
+        session_id = f"{agent_id}_{task_id}_{datetime.now(UTC).timestamp()}"
         
         max_duration = None
         if max_duration_hours:
@@ -262,7 +261,7 @@ class WorkSession(BaseTimestampEntity):
             agent_id=agent_id,
             task_id=task_id,
             git_branch_name=git_branch_name,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             max_duration=max_duration
         )
         

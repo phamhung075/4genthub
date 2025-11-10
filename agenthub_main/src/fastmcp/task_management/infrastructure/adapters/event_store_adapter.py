@@ -1,10 +1,10 @@
 """Event Store Adapter - Infrastructure Layer"""
 
-from typing import Any, List, Optional, Dict
 from datetime import datetime
+from typing import Any
 
 from ...domain.interfaces.event_store import IEvent, IEventStore
-from ..event_store import EventStore, Event
+from ..event_store import Event, EventStore
 
 
 class EventAdapter(IEvent):
@@ -19,7 +19,7 @@ class EventAdapter(IEvent):
         return self._event.event_type
     
     @property
-    def event_data(self) -> Dict[str, Any]:
+    def event_data(self) -> dict[str, Any]:
         """Get the event data"""
         return self._event.event_data
     
@@ -40,7 +40,7 @@ class EventStoreAdapter(IEventStore):
     def __init__(self):
         self._event_store = EventStore()
     
-    def append(self, aggregate_id: str, events: List[IEvent]) -> None:
+    def append(self, aggregate_id: str, events: list[IEvent]) -> None:
         """Append events to the event store"""
         # Convert domain events to infrastructure events
         infra_events = []
@@ -55,17 +55,17 @@ class EventStoreAdapter(IEventStore):
         
         self._event_store.append(aggregate_id, infra_events)
     
-    def get_events(self, aggregate_id: str, from_version: int = 0) -> List[IEvent]:
+    def get_events(self, aggregate_id: str, from_version: int = 0) -> list[IEvent]:
         """Get events for an aggregate"""
         infra_events = self._event_store.get_events(aggregate_id, from_version)
         return [EventAdapter(event) for event in infra_events]
     
-    def get_all_events(self, event_type: Optional[str] = None) -> List[IEvent]:
+    def get_all_events(self, event_type: str | None = None) -> list[IEvent]:
         """Get all events, optionally filtered by type"""
         infra_events = self._event_store.get_all_events(event_type)
         return [EventAdapter(event) for event in infra_events]
     
-    def get_events_by_type(self, event_type: str) -> List[IEvent]:
+    def get_events_by_type(self, event_type: str) -> list[IEvent]:
         """Get events by type"""
         infra_events = self._event_store.get_events_by_type(event_type)
         return [EventAdapter(event) for event in infra_events]

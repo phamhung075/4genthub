@@ -9,36 +9,35 @@ DDD Pattern:
 """
 
 import logging
-from typing import Optional
 
-from ...application.event_handlers.task_event_handlers import TaskEventHandlers
 from ...application.event_handlers.agent_event_handlers import AgentEventHandlers
 from ...application.event_handlers.project_event_handlers import ProjectEventHandlers
-from ...domain.events.task_lifecycle_events import (
-    TaskCreatedEvent,
-    TaskUpdatedEvent,
-    TaskDeletedEvent,
-    TaskStatusChangedEvent,
-    TaskCompletedEvent,
-    TaskMovedToBranchEvent,
-)
+from ...application.event_handlers.task_event_handlers import TaskEventHandlers
 from ...domain.events.agent_events import (
     AgentAssigned,
+    AgentPerformanceEvaluated,
     AgentUnassigned,
-    WorkHandoffRequested,
-    WorkHandoffAccepted,
+    AgentWorkloadChanged,
     ConflictDetected,
     ConflictResolved,
-    AgentWorkloadChanged,
-    AgentPerformanceEvaluated,
+    WorkHandoffAccepted,
+    WorkHandoffRequested,
 )
 from ...domain.events.project_lifecycle_events import (
-    ProjectCreatedEvent,
-    ProjectUpdatedEvent,
-    ProjectDeletedEvent,
     ProjectArchived,
+    ProjectCreatedEvent,
+    ProjectDeletedEvent,
     ProjectHealthChanged,
     ProjectStatisticsUpdatedEvent,
+    ProjectUpdatedEvent,
+)
+from ...domain.events.task_lifecycle_events import (
+    TaskCompletedEvent,
+    TaskCreatedEvent,
+    TaskDeletedEvent,
+    TaskMovedToBranchEvent,
+    TaskStatusChangedEvent,
+    TaskUpdatedEvent,
 )
 
 logger = logging.getLogger(__name__)
@@ -126,7 +125,7 @@ class EventHandlerInitializer:
         event_bus.subscribe(TaskMovedToBranchEvent, handlers.handle_task_moved_to_branch, priority=10)
         cls._event_handlers_registered += 1
 
-        logger.debug(f"Registered 6 task event handlers")
+        logger.debug("Registered 6 task event handlers")
 
     @classmethod
     def _register_agent_handlers(cls, event_bus, handlers: AgentEventHandlers) -> None:
@@ -162,7 +161,7 @@ class EventHandlerInitializer:
         event_bus.subscribe(AgentPerformanceEvaluated, handlers.handle_agent_performance_evaluated, priority=10)
         cls._event_handlers_registered += 1
 
-        logger.debug(f"Registered 8 agent event handlers")
+        logger.debug("Registered 8 agent event handlers")
 
     @classmethod
     def _register_project_handlers(cls, event_bus, handlers: ProjectEventHandlers) -> None:
@@ -188,7 +187,7 @@ class EventHandlerInitializer:
         event_bus.subscribe(ProjectStatisticsUpdatedEvent, handlers.handle_project_statistics_updated, priority=10)
         cls._event_handlers_registered += 1
 
-        logger.debug(f"Registered 6 project event handlers")
+        logger.debug("Registered 6 project event handlers")
 
     @classmethod
     def is_initialized(cls) -> bool:

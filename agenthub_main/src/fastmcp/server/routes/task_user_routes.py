@@ -5,22 +5,29 @@ This module demonstrates how to implement user-based data isolation
 in API routes using JWT authentication and user-scoped repositories.
 """
 
-import logging
 import json
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from ...auth.interface.fastapi_auth import get_db, get_current_user
 from ...auth.domain.entities.user import User
-from ...task_management.interface.api_controllers.task_api_controller import TaskAPIController
-from ...task_management.interface.api_controllers.subtask_api_controller import SubtaskAPIController
-from ...task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from ...task_management.application.dtos.task.update_task_request import UpdateTaskRequest
+from ...auth.interface.fastapi_auth import get_current_user, get_db
+from ...task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
 from ...task_management.application.dtos.task.list_tasks_request import ListTasksRequest
+from ...task_management.application.dtos.task.update_task_request import (
+    UpdateTaskRequest,
+)
+from ...task_management.interface.api_controllers.subtask_api_controller import (
+    SubtaskAPIController,
+)
+from ...task_management.interface.api_controllers.task_api_controller import (
+    TaskAPIController,
+)
 
 # Import debug service
-from ...utilities.debug_service import debug_service, log_api_v2_request, log_api_v2_response, log_auth_event, log_frontend_issue
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +82,9 @@ async def create_task(
 
 @router.get("/", response_model=dict)
 async def list_tasks(
-    task_status: Optional[str] = None,
-    priority: Optional[str] = None,
-    git_branch_id: Optional[str] = None,  # Add git_branch_id parameter for branch filtering
+    task_status: str | None = None,
+    priority: str | None = None,
+    git_branch_id: str | None = None,  # Add git_branch_id parameter for branch filtering
     limit: int = 50,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -98,7 +105,7 @@ async def list_tasks(
     try:
         # Enhanced debug logging for task listing
         logger.debug("=" * 80)
-        logger.debug(f"🔍 TASK LISTING REQUEST")
+        logger.debug("🔍 TASK LISTING REQUEST")
         logger.debug(f"📧 User: {current_user.email} (ID: {current_user.id})")
         logger.debug(f"🎯 Filters: status={task_status}, priority={priority}, git_branch_id={git_branch_id}, limit={limit}")
         logger.debug(f"💾 Database session: {type(db)}")
@@ -165,7 +172,7 @@ async def list_tasks(
         
         # Log stack trace for debugging
         import traceback
-        logger.error(f"❌ Stack trace:")
+        logger.error("❌ Stack trace:")
         for line in traceback.format_exc().splitlines():
             logger.error(f"   {line}")
         
@@ -312,7 +319,7 @@ async def delete_task(
 async def complete_task(
     task_id: str,
     completion_summary: str,
-    testing_notes: Optional[str] = None,
+    testing_notes: str | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

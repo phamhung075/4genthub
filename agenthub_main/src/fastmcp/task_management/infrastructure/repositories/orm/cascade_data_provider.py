@@ -10,20 +10,18 @@ The domain layer depends only on the Protocol abstraction, not this concrete imp
 """
 
 import logging
-from typing import Optional, Set
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from ....domain.services.protocols.cascade_data_provider import (
-    CascadeDataProvider,
-    TaskCascadeData,
-    SubtaskCascadeData,
-    BranchCascadeData,
-    ProjectCascadeData,
-    ContextCascadeData,
-)
 from ....domain.services.cascade_calculator import EntityType
+from ....domain.services.protocols.cascade_data_provider import (
+    BranchCascadeData,
+    ContextCascadeData,
+    ProjectCascadeData,
+    SubtaskCascadeData,
+    TaskCascadeData,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +43,7 @@ class SQLAlchemyCascadeDataProvider:
         """
         self.session = session
 
-    async def get_task_cascade_data(self, task_id: str) -> Optional[TaskCascadeData]:
+    async def get_task_cascade_data(self, task_id: str) -> TaskCascadeData | None:
         """Get cascade-relevant data for a task"""
         query = text("""
             SELECT t.id, t.git_branch_id, b.project_id, t.context_id
@@ -67,7 +65,7 @@ class SQLAlchemyCascadeDataProvider:
             context_id=row[3],
         )
 
-    async def get_task_subtask_ids(self, task_id: str) -> Set[str]:
+    async def get_task_subtask_ids(self, task_id: str) -> set[str]:
         """Get all subtask IDs for a task"""
         query = text("""
             SELECT id FROM subtasks WHERE task_id = :task_id
@@ -76,7 +74,7 @@ class SQLAlchemyCascadeDataProvider:
         result = await self.session.execute(query, {"task_id": task_id})
         return {row[0] for row in result}
 
-    async def get_task_parent_task_ids(self, task_id: str) -> Set[str]:
+    async def get_task_parent_task_ids(self, task_id: str) -> set[str]:
         """Get IDs of tasks that depend on this task"""
         query = text("""
             SELECT DISTINCT td.task_id
@@ -87,7 +85,7 @@ class SQLAlchemyCascadeDataProvider:
         result = await self.session.execute(query, {"task_id": task_id})
         return {row[0] for row in result}
 
-    async def get_subtask_cascade_data(self, subtask_id: str) -> Optional[SubtaskCascadeData]:
+    async def get_subtask_cascade_data(self, subtask_id: str) -> SubtaskCascadeData | None:
         """Get cascade-relevant data for a subtask"""
         query = text("""
             SELECT s.id, s.task_id, t.git_branch_id, b.project_id, t.context_id
@@ -111,7 +109,7 @@ class SQLAlchemyCascadeDataProvider:
             context_id=row[4],
         )
 
-    async def get_branch_cascade_data(self, branch_id: str) -> Optional[BranchCascadeData]:
+    async def get_branch_cascade_data(self, branch_id: str) -> BranchCascadeData | None:
         """Get cascade-relevant data for a branch"""
         query = text("""
             SELECT DISTINCT b.id, b.project_id, t.id as task_id, s.id as subtask_id
@@ -142,7 +140,7 @@ class SQLAlchemyCascadeDataProvider:
             subtask_ids=subtask_ids,
         )
 
-    async def get_project_cascade_data(self, project_id: str) -> Optional[ProjectCascadeData]:
+    async def get_project_cascade_data(self, project_id: str) -> ProjectCascadeData | None:
         """Get cascade-relevant data for a project"""
         query = text("""
             SELECT DISTINCT b.id as branch_id, t.id as task_id, s.id as subtask_id
@@ -170,7 +168,7 @@ class SQLAlchemyCascadeDataProvider:
             subtask_ids=subtask_ids,
         )
 
-    async def get_context_cascade_data(self, context_id: str) -> Optional[ContextCascadeData]:
+    async def get_context_cascade_data(self, context_id: str) -> ContextCascadeData | None:
         """Get cascade-relevant data for a context"""
         query = text("""
             SELECT DISTINCT t.id as task_id, t.git_branch_id, b.project_id, s.id as subtask_id
@@ -200,7 +198,7 @@ class SQLAlchemyCascadeDataProvider:
             subtask_ids=subtask_ids,
         )
 
-    async def get_related_context_ids(self, branch_id: str, project_id: str) -> Set[str]:
+    async def get_related_context_ids(self, branch_id: str, project_id: str) -> set[str]:
         """Get context IDs related to a branch and project"""
         query = text("""
             SELECT DISTINCT context_id
@@ -215,7 +213,7 @@ class SQLAlchemyCascadeDataProvider:
             logger.debug(f"Context query failed (expected for some schemas): {e}")
             return set()
 
-    async def detect_entity_type(self, entity_id: str) -> Optional[EntityType]:
+    async def detect_entity_type(self, entity_id: str) -> EntityType | None:
         """Auto-detect entity type by checking which table contains the ID"""
         # Check tasks table
         task_query = text("SELECT COUNT(*) FROM tasks WHERE id = :entity_id")
