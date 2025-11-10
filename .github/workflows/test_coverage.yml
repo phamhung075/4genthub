@@ -116,18 +116,6 @@ jobs:
         # Create reports directory
         mkdir -p test_reports
 
-    - name: Run database migrations
-      working-directory: agenthub_main
-      run: |
-        export PYTHONPATH="$(pwd)/src"
-        export $(cat .env.test | grep -v '^#' | xargs)
-        uv run python -c "
-        import sys
-        sys.path.append('src')
-        from fastmcp.task_management.infrastructure.database.database_setup import setup_database
-        setup_database()
-        "
-
     - name: Run ${{ matrix.test-type }} tests
       working-directory: agenthub_main
       run: |
