@@ -18,7 +18,7 @@ NO LEGACY SUPPORT:
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timezone
 from typing import Any
 
 from sqlalchemy import event
@@ -182,12 +182,12 @@ def _ensure_created_at_utc(target: Any) -> None:
     """
     if hasattr(target, 'created_at') and target.created_at:
         if target.created_at.tzinfo is None:
-            # Assume naive datetime is UTC
+            # Assume naive datetime is timezone.utc
             target.created_at = target.created_at.replace(tzinfo=timezone.utc)
             logger.debug(f"Added UTC timezone to created_at for {target.__class__.__name__}")
         elif target.created_at.tzinfo != timezone.utc:
             # Convert to UTC
-            target.created_at = target.created_at.astimezone(timezone.utc)
+            target.created_at = target.created_at.astimezone(UTC)
             logger.debug(f"Converted created_at to UTC for {target.__class__.__name__}")
 
 
@@ -199,12 +199,12 @@ def _ensure_updated_at_utc(target: Any) -> None:
     """
     if hasattr(target, 'updated_at') and target.updated_at:
         if target.updated_at.tzinfo is None:
-            # Assume naive datetime is UTC
+            # Assume naive datetime is timezone.utc
             target.updated_at = target.updated_at.replace(tzinfo=timezone.utc)
             logger.debug(f"Added UTC timezone to updated_at for {target.__class__.__name__}")
         elif target.updated_at.tzinfo != timezone.utc:
             # Convert to UTC
-            target.updated_at = target.updated_at.astimezone(timezone.utc)
+            target.updated_at = target.updated_at.astimezone(UTC)
             logger.debug(f"Converted updated_at to UTC for {target.__class__.__name__}")
 
 

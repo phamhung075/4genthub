@@ -12,7 +12,7 @@ Tests the GitBranch entity including:
 """
 
 import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 import uuid
 import time

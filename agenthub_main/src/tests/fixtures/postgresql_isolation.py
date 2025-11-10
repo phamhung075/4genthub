@@ -173,7 +173,7 @@ def ensure_global_context_exists():
     This is autouse so it runs for every test that imports this module.
     """
     from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-    from datetime import datetime
+    from datetime import datetime, timezone
     
     try:
         db_config = get_db_config()

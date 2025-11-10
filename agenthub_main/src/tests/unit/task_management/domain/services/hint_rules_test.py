@@ -1,7 +1,7 @@
 """Unit tests for Hint Rules Domain Service"""
 
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from typing import List, Dict, Any, Optional
 

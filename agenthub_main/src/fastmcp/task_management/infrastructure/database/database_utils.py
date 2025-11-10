@@ -21,7 +21,7 @@ NO LEGACY SUPPORT:
 import logging
 import os
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union, Generator
 from pathlib import Path
 
@@ -264,12 +264,12 @@ class DatabaseUtils:
 
             # Ensure timezone info
             if dt.tzinfo is None:
-                # Assume naive datetime is UTC
+                # Assume naive datetime is timezone.utc
                 dt = dt.replace(tzinfo=timezone.utc)
-                logger.debug("Assumed naive datetime is UTC")
+                logger.debug("Assumed naive datetime is timezone.utc")
             elif dt.tzinfo != timezone.utc:
                 # Convert to UTC
-                dt = dt.astimezone(timezone.utc)
+                dt = dt.astimezone(UTC)
                 logger.debug("Converted timestamp to UTC")
 
             return dt

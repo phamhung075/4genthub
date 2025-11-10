@@ -9,7 +9,7 @@ import os
 import time
 from typing import Optional, List
 import jwt
-from datetime import datetime, timezone
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, String, DateTime, Boolean, Integer, JSON
 
@@ -166,7 +166,7 @@ class JWTBearerAuthProvider(BearerAuthProvider):
                 return False
             
             # Check if token has expired
-            from datetime import datetime
+            from datetime import datetime, timezone
             if token.expires_at < datetime.now(timezone.utc):
                 return False
             

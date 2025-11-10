@@ -368,7 +368,7 @@ class TestTokenCreation:
         payload = jwt.decode(token, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM], audience="mcp-server")
         
         # Check expiry is approximately 7 days from now
-        exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+        exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
         expected_time = datetime.now(timezone.utc) + timedelta(days=7)
         
         # Allow 1 minute difference for test execution time

@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timezone
 from typing import Any, Dict, List
 
 from ...events.base import DomainEvent, create_event_metadata
@@ -165,7 +165,7 @@ class BaseTimestampEntity(ABC):
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
         if value.tzinfo != timezone.utc:
-            return value.astimezone(timezone.utc)
+            return value.astimezone(UTC)
         return value
 
     def touch(self, reason: str = "entity_updated") -> None:

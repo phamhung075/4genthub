@@ -12,7 +12,7 @@ Tests the coordination value objects including:
 """
 
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch
 
 from fastmcp.task_management.domain.value_objects.coordination import (

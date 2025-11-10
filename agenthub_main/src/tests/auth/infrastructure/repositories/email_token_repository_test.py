@@ -4,7 +4,7 @@ Tests for Email Token Repository
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 import json
 import tempfile
 import os
@@ -241,7 +241,7 @@ class TestEmailTokenRepository:
         
         # Verify custom timestamp was used
         retrieved = repository.get_token(sample_token.token)
-        # SQLite stores datetime without timezone, so compare as naive datetimes
+        # SQLite stores datetime without  so compare as naive datetimes
         if retrieved.used_at.tzinfo is None and used_time.tzinfo is not None:
             # Convert timezone-aware datetime to naive for comparison
             expected_used_time = used_time.replace(tzinfo=None)

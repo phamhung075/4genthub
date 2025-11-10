@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional, List
 from enum import Enum
 
@@ -138,7 +138,7 @@ class User(BaseTimestampEntity):
     
     def initiate_password_reset(self, token: str, expires_in_hours: int = 24):
         """Initiate password reset process"""
-        from datetime import timedelta
+        from datetime import timezone, timedelta
         self.password_reset_token = token
         current_time = datetime.now(timezone.utc)
         self.password_reset_expires = current_time + timedelta(hours=expires_in_hours)

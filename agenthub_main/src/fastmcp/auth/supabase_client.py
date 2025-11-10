@@ -9,7 +9,7 @@ import os
 import logging
 import hashlib
 import secrets
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 import httpx
 import ssl
@@ -127,7 +127,7 @@ class SupabaseTokenClient:
                 # Check expiration
                 if token_data.get("expires_at"):
                     expires_at = datetime.fromisoformat(token_data["expires_at"].replace("Z", "+00:00"))
-                    if expires_at < datetime.now(UTC):
+                    if expires_at < datetime.now(timezone.utc):
                         logger.debug("Token has expired")
                         return None
                 
@@ -160,7 +160,7 @@ class SupabaseTokenClient:
                     headers=self._get_headers(),
                     params={"token_hash": f"eq.{token_hash}"},
                     json={
-                        "last_used": datetime.now(UTC).isoformat(),
+                        "last_used": datetime.now(timezone.utc).isoformat(),
                         "usage_count": "usage_count + 1"  # PostgreSQL expression
                     }
                 )
@@ -220,7 +220,7 @@ class SupabaseTokenClient:
                         "event_type": event_type,
                         "token_hash": token_hash,
                         "details": details,
-                        "timestamp": datetime.now(UTC).isoformat()
+                        "timestamp": datetime.now(timezone.utc).isoformat()
                     }
                 )
         except Exception as e:

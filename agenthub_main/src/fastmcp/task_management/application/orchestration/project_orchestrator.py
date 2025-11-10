@@ -381,8 +381,7 @@ class ProjectOrchestrator:
                 task_created = task.created_at
 
                 if task.created_at.tzinfo is not None and now.tzinfo is None:
-                    from datetime import timezone
-                    now = now.replace(tzinfo=timezone.utc)
+                                        now = now.replace(tzinfo=timezone.utc)
                 elif task.created_at.tzinfo is None and now.tzinfo is not None:
                     from datetime import timezone
                     task_created = task.created_at.replace(tzinfo=timezone.utc)

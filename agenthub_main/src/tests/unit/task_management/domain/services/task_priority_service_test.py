@@ -1,7 +1,7 @@
 """Tests for TaskPriorityService domain service"""
 
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, MagicMock, patch
 from decimal import Decimal
 

@@ -5,7 +5,7 @@ This module tests JWT token creation, validation, and refresh token management.
 """
 
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from unittest.mock import patch, MagicMock
 import jwt
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
@@ -53,8 +53,8 @@ class TestJWTService:
         assert "exp" in payload
         
         # Verify expiration is correct
-        exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-        iat_time = datetime.fromtimestamp(payload["iat"], tz=timezone.utc)
+        exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
+        iat_time = datetime.fromtimestamp(payload["iat"], tz=UTC)
         duration = (exp_time - iat_time).total_seconds()
         expected = 15 * 60  # 15 minutes
         assert abs(duration - expected) < 60, f"Expected ~{expected}s, got {duration}s"
@@ -104,8 +104,8 @@ class TestJWTService:
         assert payload["iss"] == jwt_service.issuer
         
         # Verify expiration is 30 days
-        exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-        iat_time = datetime.fromtimestamp(payload["iat"], tz=timezone.utc)
+        exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
+        iat_time = datetime.fromtimestamp(payload["iat"], tz=UTC)
         assert (exp_time - iat_time).days == 30
     
     def test_create_refresh_token_with_family(self, jwt_service):
@@ -151,8 +151,8 @@ class TestJWTService:
         assert payload["iss"] == jwt_service.issuer
         
         # Verify expiration is 24 hours
-        exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-        iat_time = datetime.fromtimestamp(payload["iat"], tz=timezone.utc)
+        exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
+        iat_time = datetime.fromtimestamp(payload["iat"], tz=UTC)
         duration = (exp_time - iat_time).total_seconds()
         expected = 24 * 3600  # 24 hours
         assert abs(duration - expected) < 300, f"Expected ~{expected}s, got {duration}s"
