@@ -5,9 +5,9 @@ Tests the validation logic for HTTP responses and data structures.
 """
 
 import pytest
+
 from fastmcp.middleware.response_validator_middleware import (
     ResponseValidator,
-    ValidationIssue,
 )
 
 

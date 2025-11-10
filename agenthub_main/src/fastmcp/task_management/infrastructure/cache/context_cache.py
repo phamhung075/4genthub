@@ -309,7 +309,7 @@ class ContextCache:
                     'total_connections': info.get('total_connections_received', 0),
                     'rejected_connections': info.get('rejected_connections', 0)
                 }
-            except:
+            except Exception:
                 pass
         
         return {

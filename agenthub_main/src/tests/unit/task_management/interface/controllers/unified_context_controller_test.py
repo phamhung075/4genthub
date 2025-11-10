@@ -5,15 +5,20 @@ This module tests the UnifiedContextMCPController which handles MCP tool
 registration for unified context management operations across the 4-tier hierarchy.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch, call
-import json
-from typing import Dict, Any
+from unittest.mock import MagicMock, Mock, patch
 
-from fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller import UnifiedContextMCPController
-from fastmcp.task_management.application.facades.unified_context_facade import UnifiedContextFacade
+import pytest
+
+from fastmcp.task_management.application.facades.unified_context_facade import (
+    UnifiedContextFacade,
+)
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
+    UserAuthenticationRequiredError,
+)
+from fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller import (
+    UnifiedContextMCPController,
+)
 
 
 class TestUnifiedContextMCPController:

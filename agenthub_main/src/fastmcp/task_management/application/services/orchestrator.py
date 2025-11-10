@@ -1,12 +1,15 @@
 
 
+from __future__ import annotations
+
+
 class OrchestratorService:
     """Basic orchestrator service placeholder."""
     
     def __init__(self, user_id: str | None = None):
         self._user_id = user_id  # Store user context
     
-    def with_user(self, user_id: str) -> 'OrchestratorService':
+    def with_user(self, user_id: str) -> OrchestratorService:
         """Create a new service instance scoped to a specific user."""
         return OrchestratorService(user_id)
     

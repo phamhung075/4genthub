@@ -5,12 +5,16 @@ This module tests the TaskFacadeFactory which creates task application facades
 with proper dependency injection following DDD patterns.
 """
 
-import pytest
-import logging
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.application.factories.task_facade_factory import TaskFacadeFactory
-from fastmcp.task_management.application.services.repository_provider_service import RepositoryProviderService
+import pytest
+
+from fastmcp.task_management.application.factories.task_facade_factory import (
+    TaskFacadeFactory,
+)
+from fastmcp.task_management.application.services.repository_provider_service import (
+    RepositoryProviderService,
+)
 
 
 class TestTaskFacadeFactory:

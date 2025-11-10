@@ -5,6 +5,8 @@ Clean implementation of branch-related domain events.
 NO backward compatibility, NO legacy code.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any

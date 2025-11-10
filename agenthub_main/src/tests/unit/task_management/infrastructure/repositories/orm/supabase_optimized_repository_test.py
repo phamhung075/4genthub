@@ -2,14 +2,17 @@
 Tests for Supabase Optimized Repository
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.infrastructure.repositories.orm.supabase_optimized_repository import SupabaseOptimizedRepository
-from fastmcp.task_management.infrastructure.database.models import Task
+import pytest
+
 from fastmcp.task_management.domain.entities.task import Task as TaskEntity
+from fastmcp.task_management.infrastructure.database.models import Task
+from fastmcp.task_management.infrastructure.repositories.orm.supabase_optimized_repository import (
+    SupabaseOptimizedRepository,
+)
 
 
 class TestSupabaseOptimizedRepository:
@@ -46,8 +49,8 @@ class TestSupabaseOptimizedRepository:
         mock_result.title = "Test Task"
         mock_result.status = "todo"
         mock_result.priority = "high"
-        mock_result.created_at = datetime.now(timezone.utc)
-        mock_result.updated_at = datetime.now(timezone.utc)
+        mock_result.created_at = datetime.now(UTC)
+        mock_result.updated_at = datetime.now(UTC)
         mock_result.subtask_count = 2
         mock_result.assignee_count = 1
         mock_result.dependency_count = 0
@@ -139,7 +142,7 @@ class TestSupabaseOptimizedRepository:
         mock_session.execute.return_value = []
         
         # Act
-        result = repository.list_tasks_minimal(
+        repository.list_tasks_minimal(
             status=123,  # Invalid type
             priority=None,
             limit=-10,  # Invalid value
@@ -158,7 +161,7 @@ class TestSupabaseOptimizedRepository:
         mock_session.execute.return_value = []
         
         # Act
-        result = repository.list_tasks_minimal(limit=5000)
+        repository.list_tasks_minimal(limit=5000)
         
         # Assert
         params = mock_session.execute.call_args[0][1]
@@ -173,8 +176,8 @@ class TestSupabaseOptimizedRepository:
         mock_task.description = "Test description"
         mock_task.status = "todo"
         mock_task.priority = "high"
-        mock_task.created_at = datetime.now(timezone.utc)
-        mock_task.updated_at = datetime.now(timezone.utc)
+        mock_task.created_at = datetime.now(UTC)
+        mock_task.updated_at = datetime.now(UTC)
         mock_task.git_branch_id = "branch-123"
         mock_task.context_id = None
         mock_task.details = None
@@ -247,8 +250,8 @@ class TestSupabaseOptimizedRepository:
         mock_result.description = "Description"
         mock_result.status = "todo"
         mock_result.priority = "high"
-        mock_result.created_at = datetime.now(timezone.utc)
-        mock_result.updated_at = datetime.now(timezone.utc)
+        mock_result.created_at = datetime.now(UTC)
+        mock_result.updated_at = datetime.now(UTC)
         mock_result.subtask_count = 3
         mock_result.assignee_count = 2
         mock_result.dependency_count = 1
@@ -346,13 +349,13 @@ class TestSupabaseOptimizedRepository:
         mock_task.description = "Description"
         mock_task.status = "todo"
         mock_task.priority = "high"
-        mock_task.created_at = datetime.now(timezone.utc)
-        mock_task.updated_at = datetime.now(timezone.utc)
+        mock_task.created_at = datetime.now(UTC)
+        mock_task.updated_at = datetime.now(UTC)
         mock_task.git_branch_id = "branch-123"
         mock_task.context_id = "context-123"
         mock_task.details = "Details"
         mock_task.estimated_effort = "1 day"
-        mock_task.due_date = datetime.now(timezone.utc)
+        mock_task.due_date = datetime.now(UTC)
         
         # Act
         entity = repository._model_to_entity_minimal(mock_task)

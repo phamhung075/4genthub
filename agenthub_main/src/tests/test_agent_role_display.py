@@ -4,7 +4,6 @@ Test script for dynamic agent role display functionality.
 Tests the agent state manager and status line role mapping.
 """
 
-import json
 import sys
 import uuid
 from pathlib import Path
@@ -12,7 +11,12 @@ from pathlib import Path
 # Add hooks to path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root / ".claude" / "hooks"))
-from utils.agent_state_manager import set_current_agent, get_current_agent, get_agent_role_from_session
+from utils.agent_state_manager import (
+    get_agent_role_from_session,
+    get_current_agent,
+    set_current_agent,
+)
+
 
 def test_agent_role_mapping():
     """Test the role mapping functionality."""

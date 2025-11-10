@@ -5,6 +5,8 @@ Since the system now uses Keycloak for authentication and PostgreSQL as the
 source of truth, these mocks are simplified and focused on core functionality.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

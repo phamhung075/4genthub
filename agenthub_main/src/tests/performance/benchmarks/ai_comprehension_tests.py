@@ -9,20 +9,20 @@ optimization doesn't compromise understanding quality.
 """
 
 import asyncio
-import time
 import json
-import statistics
-import re
 import random
-from pathlib import Path
-from dataclasses import dataclass, asdict
-from typing import Dict, List, Optional, Any, Tuple, Union
-from unittest.mock import Mock, patch
-import logging
+import re
+import statistics
+import time
+from dataclasses import asdict, dataclass
+from typing import Any
 
 # Import performance test components
-from .. import PERFORMANCE_CONFIG, setup_performance_logger
-from .performance_suite import PerformanceMetric, BenchmarkResult, PerformanceBenchmark, ResourceMonitor
+from .. import setup_performance_logger
+from .performance_suite import (
+    BenchmarkResult,
+    PerformanceBenchmark,
+)
 from .response_size_tests import ResponseSizeBenchmark
 
 logger = setup_performance_logger()
@@ -38,7 +38,7 @@ class ComprehensionResult:
     extracted_items_count: int
     expected_items_count: int
     parsing_success: bool
-    error_details: List[str] = None
+    error_details: list[str] = None
     timestamp: float = None
     
     def __post_init__(self):
@@ -70,7 +70,7 @@ class AITaskProcessor:
             'workflow_hints': r'step \d+|phase \d+|complete.*?:|next.*?:'
         }
     
-    def process_task_response(self, response_data: Dict[str, Any]) -> ComprehensionResult:
+    def process_task_response(self, response_data: dict[str, Any]) -> ComprehensionResult:
         """Process task response and extract comprehension metrics."""
         start_time = time.perf_counter()
         
@@ -119,7 +119,7 @@ class AITaskProcessor:
                 error_details=[f"Processing failed: {str(e)}"]
             )
     
-    def _estimate_expected_items(self, response_data: Dict[str, Any]) -> int:
+    def _estimate_expected_items(self, response_data: dict[str, Any]) -> int:
         """Estimate expected number of extractable items."""
         expected = 0
         
@@ -147,7 +147,7 @@ class AITaskProcessor:
         
         return max(expected, 1)  # At least 1 expected item
     
-    def _calculate_comprehension_accuracy(self, response_data: Dict[str, Any], extracted_items: Dict[str, int]) -> float:
+    def _calculate_comprehension_accuracy(self, response_data: dict[str, Any], extracted_items: dict[str, int]) -> float:
         """Calculate comprehension accuracy based on successful extractions."""
         weights = {
             'task_extraction': 0.25,
@@ -170,7 +170,7 @@ class AITaskProcessor:
         
         return total_score / total_weight if total_weight > 0 else 0.0
     
-    def _get_expected_count(self, response_data: Dict[str, Any], item_type: str) -> int:
+    def _get_expected_count(self, response_data: dict[str, Any], item_type: str) -> int:
         """Get expected count for specific item type."""
         if item_type == 'task_extraction':
             return self._count_tasks(response_data)
@@ -181,7 +181,7 @@ class AITaskProcessor:
         else:
             return 1
     
-    def _count_tasks(self, response_data: Dict[str, Any]) -> int:
+    def _count_tasks(self, response_data: dict[str, Any]) -> int:
         """Count number of tasks in response."""
         if 'data' not in response_data:
             return 0
@@ -218,7 +218,7 @@ class AIComprehensionBenchmark(PerformanceBenchmark):
         """Cleanup AI comprehension benchmark."""
         await self.response_benchmark.teardown()
     
-    def _simulate_ai_analysis_delay(self, response_data: Dict[str, Any], is_optimized: bool = False) -> float:
+    def _simulate_ai_analysis_delay(self, response_data: dict[str, Any], is_optimized: bool = False) -> float:
         """Simulate additional AI analysis time beyond parsing."""
         base_delay = 0.1  # 100ms base analysis time
         
@@ -328,7 +328,7 @@ class AIComprehensionBenchmark(PerformanceBenchmark):
                     self.create_metric("optimized_parsing_success_rate", optimized_success_rate * 100, "percent", 95.0, "reliability")
                 ])
                 
-                logger.info(f"Overall Results:")
+                logger.info("Overall Results:")
                 logger.info(f"  Speed improvement: {overall_speed_improvement:.1%} (target: 40%)")
                 logger.info(f"  Accuracy retention: {accuracy_retention:.1%}")
                 logger.info(f"  Parsing success: baseline {baseline_success_rate:.1%}, optimized {optimized_success_rate:.1%}")
@@ -364,8 +364,8 @@ class ComprehensionQualityValidator:
     """Validates that optimizations don't compromise AI understanding quality."""
     
     @staticmethod
-    def validate_essential_information_preserved(baseline_response: Dict[str, Any], 
-                                                optimized_response: Dict[str, Any]) -> Dict[str, bool]:
+    def validate_essential_information_preserved(baseline_response: dict[str, Any], 
+                                                optimized_response: dict[str, Any]) -> dict[str, bool]:
         """Check that essential information is preserved in optimized responses."""
         validation_results = {}
         

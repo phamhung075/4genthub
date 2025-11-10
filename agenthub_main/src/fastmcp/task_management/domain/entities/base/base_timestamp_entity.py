@@ -245,7 +245,7 @@ class BaseTimestampEntity(ABC):
         """Get all domain events for this entity.
 
         Returns:
-            List[DomainEvent]: Copy of domain events list
+            list[DomainEvent]: Copy of domain events list
         """
         if not hasattr(self, '_domain_events'):
             return []
@@ -266,7 +266,7 @@ class BaseTimestampEntity(ABC):
         Useful for serialization, logging, and debugging.
 
         Returns:
-            Dict[str, Any]: Dictionary containing timestamp information
+            dict[str, Any]: Dictionary containing timestamp information
         """
         return {
             "entity_id": self._get_entity_id(),

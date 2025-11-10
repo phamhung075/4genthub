@@ -5,6 +5,8 @@ Provides reusable context templates for common project patterns,
 enabling quick setup and standardization across projects.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from dataclasses import dataclass, field

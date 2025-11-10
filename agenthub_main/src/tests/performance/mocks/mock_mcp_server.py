@@ -1,4 +1,3 @@
-from typing import List
 """
 Mock MCP Server for Performance Testing
 
@@ -6,19 +5,17 @@ Provides controlled testing environment for validating session hook performance
 without external dependencies.
 """
 
+from __future__ import annotations
+
 import asyncio
-import json
-import time
-import uuid
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
-from datetime import datetime, timezone, timedelta
-import threading
-import logging
-from pathlib import Path
-from unittest.mock import Mock
-import secrets
 import base64
+import json
+import logging
+import secrets
+import threading
+import time
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +28,7 @@ class MockTask:
     description: str
     status: str = "todo"
     priority: str = "medium"
-    assignees: List[str] = None
+    assignees: list[str] = None
     created_at: str = None
     updated_at: str = None
     estimated_effort: str = "1 hour"
@@ -41,7 +38,7 @@ class MockTask:
         if not self.assignees:
             self.assignees = ["coding-agent"]
         if not self.created_at:
-            self.created_at = datetime.now(timezone.utc).isoformat()
+            self.created_at = datetime.now(UTC).isoformat()
         if not self.updated_at:
             self.updated_at = self.created_at
 
@@ -57,19 +54,19 @@ class MockGitBranch:
     
     def __post_init__(self):
         if not self.created_at:
-            self.created_at = datetime.now(timezone.utc).isoformat()
+            self.created_at = datetime.now(UTC).isoformat()
 
 
 class MockKeycloakServer:
     """Mock Keycloak server for authentication testing."""
     
     def __init__(self):
-        self.tokens: Dict[str, Dict] = {}
+        self.tokens: dict[str, Dict] = {}
         self.client_credentials = {
             "claude-hooks": "test-secret"
         }
         
-    def authenticate_client(self, client_id: str, client_secret: str) -> Optional[Dict]:
+    def authenticate_client(self, client_id: str, client_secret: str) -> Dict | None:
         """Simulate client credentials authentication."""
         if self.client_credentials.get(client_id) == client_secret:
             # Generate mock JWT token
@@ -124,7 +121,7 @@ class MockMCPServer:
         
         self.keycloak = MockKeycloakServer()
         self.request_count = 0
-        self.request_history: List[Dict] = []
+        self.request_history: list[Dict] = []
         self.performance_metrics = {
             "total_requests": 0,
             "avg_response_time": 0.0,
@@ -276,7 +273,7 @@ class MockMCPServer:
         with self.lock:
             return self.performance_metrics.copy()
     
-    def get_request_history(self) -> List[Dict]:
+    def get_request_history(self) -> list[Dict]:
         """Get request history for analysis."""
         with self.lock:
             return self.request_history.copy()
@@ -294,9 +291,9 @@ class MockMCPServer:
             self.request_count = 0
     
     def configure_behavior(self, 
-                          response_delay: Optional[float] = None,
-                          error_rate: Optional[float] = None,
-                          token_failure_rate: Optional[float] = None):
+                          response_delay: float | None = None,
+                          error_rate: float | None = None,
+                          token_failure_rate: float | None = None):
         """Dynamically configure mock server behavior."""
         if response_delay is not None:
             self.response_delay = response_delay
@@ -310,7 +307,7 @@ class MockMCPServerManager:
     """Manager for mock MCP server instances."""
     
     def __init__(self):
-        self.servers: Dict[str, MockMCPServer] = {}
+        self.servers: dict[str, MockMCPServer] = {}
     
     def create_server(self, name: str, **config) -> MockMCPServer:
         """Create a named mock server instance."""
@@ -318,7 +315,7 @@ class MockMCPServerManager:
         self.servers[name] = server
         return server
     
-    def get_server(self, name: str) -> Optional[MockMCPServer]:
+    def get_server(self, name: str) -> MockMCPServer | None:
         """Get existing server by name."""
         return self.servers.get(name)
     

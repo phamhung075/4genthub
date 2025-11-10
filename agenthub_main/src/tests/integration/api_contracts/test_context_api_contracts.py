@@ -12,21 +12,19 @@ Expected Contract:
 - ContextResponse contains: success, message, data?, context?
 - Context hierarchy: Global → Project → Branch → Task
 - ISO 8601 timestamps
-- Flexible data structure (Dict[str, Any])
+- Flexible data structure (dict[str, Any])
 """
 
-import pytest
 from datetime import datetime
 from uuid import uuid4
-from typing import Dict, Any
 
-from fastmcp.task_management.domain.entities.context import TaskContext
+import pytest
+
 from fastmcp.task_management.application.dtos.context import (
     ContextResponse,
-    CreateContextResponse,
-    UpdateContextResponse,
-    ListContextsResponse
+    ListContextsResponse,
 )
+from fastmcp.task_management.domain.entities.context import TaskContext
 
 
 @pytest.fixture

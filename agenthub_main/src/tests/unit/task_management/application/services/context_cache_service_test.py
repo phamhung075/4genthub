@@ -3,14 +3,15 @@
 Tests for high-performance caching functionality in hierarchical context system.
 """
 
-import pytest
-import asyncio
-from unittest.mock import Mock, patch, AsyncMock
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any
 import json
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.application.services.context_cache_service import ContextCacheService
+import pytest
+
+from fastmcp.task_management.application.services.context_cache_service import (
+    ContextCacheService,
+)
 
 
 class TestContextCacheServiceInit:
@@ -81,7 +82,7 @@ class TestSyncWrapperMethods:
         mock_repo.get_cache_entry.return_value = {
             "context_id": "test_123",
             "resolved_context": {"data": "test"},
-            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+            "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat()
         }
         
         service = ContextCacheService(repository=mock_repo)
@@ -172,7 +173,7 @@ class TestCacheRetrieval:
         cache_entry = {
             "context_id": "test_123",
             "resolved_context": {"data": "test_data"},
-            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+            "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
             "invalidated": False
         }
         mock_repo.get_cache_entry.return_value = cache_entry
@@ -221,7 +222,7 @@ class TestCacheRetrieval:
     async def test_get_cached_context_expired(self):
         """Test cache retrieval with expired entry."""
         mock_repo = AsyncMock()
-        expired_time = datetime.now(timezone.utc) - timedelta(hours=1)
+        expired_time = datetime.now(UTC) - timedelta(hours=1)
         cache_entry = {
             "context_id": "test_123",
             "resolved_context": {"data": "test_data"},
@@ -242,7 +243,7 @@ class TestCacheRetrieval:
     async def test_get_cached_context_expires_at_string_parsing(self):
         """Test cache retrieval with string expires_at parsing."""
         mock_repo = AsyncMock()
-        future_time = datetime.now(timezone.utc) + timedelta(hours=1)
+        future_time = datetime.now(UTC) + timedelta(hours=1)
         cache_entry = {
             "context_id": "test_123",
             "resolved_context": {"data": "test_data"},
@@ -263,7 +264,7 @@ class TestCacheRetrieval:
     async def test_get_cached_context_datetime_object_expires_at(self):
         """Test cache retrieval with datetime object expires_at."""
         mock_repo = AsyncMock()
-        future_time = datetime.now(timezone.utc) + timedelta(hours=1)
+        future_time = datetime.now(UTC) + timedelta(hours=1)
         cache_entry = {
             "context_id": "test_123",
             "resolved_context": {"data": "test_data"},

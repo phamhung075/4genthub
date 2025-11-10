@@ -2,20 +2,21 @@
 Tests for Assign Agent Use Case
 """
 
-import pytest
-from unittest.mock import Mock, patch
 import logging
+from unittest.mock import Mock, patch
+
+import pytest
 
 from fastmcp.task_management.application.use_cases.assign_agent import (
-    AssignAgentUseCase,
     AssignAgentRequest,
-    AssignAgentResponse
+    AssignAgentResponse,
+    AssignAgentUseCase,
 )
-from fastmcp.task_management.domain.repositories.agent_repository import AgentRepository
 from fastmcp.task_management.domain.exceptions import (
     AgentNotFoundError,
-    ProjectNotFoundError
+    ProjectNotFoundError,
 )
+from fastmcp.task_management.domain.repositories.agent_repository import AgentRepository
 
 
 class TestAssignAgentUseCase:

@@ -5,6 +5,8 @@ This module processes agent coordination events, workload management,
 handoff workflows, and agent performance tracking.
 """
 
+from __future__ import annotations
+
 import logging
 from collections import defaultdict
 from datetime import UTC, datetime

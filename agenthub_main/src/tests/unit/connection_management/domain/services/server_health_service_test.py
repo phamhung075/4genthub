@@ -1,12 +1,17 @@
 """Unit tests for ServerHealthService Interface following DDD patterns"""
 
-import pytest
-from unittest.mock import Mock, MagicMock
-from typing import Dict, Any
+from typing import Any
+from unittest.mock import Mock
 
-from fastmcp.connection_management.domain.services.server_health_service import ServerHealthService
+import pytest
+
 from fastmcp.connection_management.domain.entities.server import Server
-from fastmcp.connection_management.domain.value_objects.server_status import ServerStatus
+from fastmcp.connection_management.domain.services.server_health_service import (
+    ServerHealthService,
+)
+from fastmcp.connection_management.domain.value_objects.server_status import (
+    ServerStatus,
+)
 
 
 class MockServerHealthService(ServerHealthService):
@@ -31,7 +36,7 @@ class MockServerHealthService(ServerHealthService):
             details={"memory_usage": "50%", "cpu_usage": "30%"}
         )
     
-    def get_environment_info(self) -> Dict[str, Any]:
+    def get_environment_info(self) -> dict[str, Any]:
         """Mock implementation of environment info retrieval"""
         self.get_environment_info_called = True
         return {
@@ -42,7 +47,7 @@ class MockServerHealthService(ServerHealthService):
             "memory_gb": 16
         }
     
-    def get_authentication_status(self) -> Dict[str, Any]:
+    def get_authentication_status(self) -> dict[str, Any]:
         """Mock implementation of authentication status retrieval"""
         self.get_authentication_status_called = True
         return {
@@ -52,7 +57,7 @@ class MockServerHealthService(ServerHealthService):
             "mvp_mode": False
         }
     
-    def get_task_management_info(self) -> Dict[str, Any]:
+    def get_task_management_info(self) -> dict[str, Any]:
         """Mock implementation of task management info retrieval"""
         self.get_task_management_info_called = True
         return {
@@ -62,7 +67,7 @@ class MockServerHealthService(ServerHealthService):
             "database_status": "connected"
         }
     
-    def validate_server_configuration(self) -> Dict[str, Any]:
+    def validate_server_configuration(self) -> dict[str, Any]:
         """Mock implementation of server configuration validation"""
         self.validate_server_configuration_called = True
         return {
@@ -208,16 +213,16 @@ class TestServerHealthService:
                     details={"error": "Server is not responding"}
                 )
             
-            def get_environment_info(self) -> Dict[str, Any]:
+            def get_environment_info(self) -> dict[str, Any]:
                 return {"error": "Cannot retrieve environment info"}
             
-            def get_authentication_status(self) -> Dict[str, Any]:
+            def get_authentication_status(self) -> dict[str, Any]:
                 return {"enabled": False, "error": "Auth service unavailable"}
             
-            def get_task_management_info(self) -> Dict[str, Any]:
+            def get_task_management_info(self) -> dict[str, Any]:
                 return {"database_status": "disconnected", "error": "Database unreachable"}
             
-            def validate_server_configuration(self) -> Dict[str, Any]:
+            def validate_server_configuration(self) -> dict[str, Any]:
                 return {
                     "valid": False,
                     "errors": ["Missing configuration file", "Invalid database URL"],

@@ -36,7 +36,7 @@ class ContextOperationHandler:
             level = kwargs.get("level", "task")
             context_id = kwargs.get("context_id")
             data = kwargs.get("data")
-            project_id = kwargs.get("project_id")
+            kwargs.get("project_id")
             git_branch_id = kwargs.get("git_branch_id")
             force_refresh = kwargs.get("force_refresh", False)
             include_inherited = kwargs.get("include_inherited", False)

@@ -6,6 +6,8 @@ for generating intelligent workflow hints based on task state, progress,
 and context.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta

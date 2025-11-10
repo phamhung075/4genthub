@@ -11,21 +11,21 @@ Tests the coordination value objects including:
 - AgentCommunication value object
 """
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch
 
 from fastmcp.task_management.domain.value_objects.coordination import (
+    AgentCommunication,
+    ConflictResolution,
+    ConflictType,
+    CoordinationRequest,
+    CoordinationStrategy,
     CoordinationType,
     HandoffStatus,
-    ConflictType,
     ResolutionStrategy,
-    CoordinationStrategy,
-    CoordinationRequest,
     WorkAssignment,
     WorkHandoff,
-    ConflictResolution,
-    AgentCommunication
 )
 
 
@@ -85,7 +85,7 @@ class TestCoordinationRequest:
     
     def test_create_coordination_request_minimal(self):
         """Test creating coordination request with minimal data."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         request = CoordinationRequest(
             request_id="req-123",
             coordination_type=CoordinationType.HANDOFF,
@@ -113,7 +113,7 @@ class TestCoordinationRequest:
     
     def test_create_coordination_request_full(self):
         """Test creating coordination request with all fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         deadline = now + timedelta(hours=24)
         
         request = CoordinationRequest(
@@ -149,7 +149,7 @@ class TestCoordinationRequest:
             requesting_agent_id="agent-5",
             target_agent_id="agent-6",
             task_id="task-789",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             reason="Escalation needed"
         )
         
@@ -164,7 +164,7 @@ class TestCoordinationRequest:
             requesting_agent_id="agent-7",
             target_agent_id="agent-8",
             task_id="task-001",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             reason="Need expertise"
         )
         
@@ -178,9 +178,9 @@ class TestCoordinationRequest:
             requesting_agent_id="agent-9",
             target_agent_id="agent-10",
             task_id="task-002",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             reason="Delegate subtask",
-            deadline=datetime.now(timezone.utc) + timedelta(hours=1)
+            deadline=datetime.now(UTC) + timedelta(hours=1)
         )
         
         assert not request.is_expired()
@@ -193,16 +193,16 @@ class TestCoordinationRequest:
             requesting_agent_id="agent-11",
             target_agent_id="agent-12",
             task_id="task-003",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             reason="Parallel work",
-            deadline=datetime.now(timezone.utc) - timedelta(hours=1)
+            deadline=datetime.now(UTC) - timedelta(hours=1)
         )
         
         assert request.is_expired()
     
     def test_to_notification(self):
         """Test converting request to notification format."""
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         deadline = created_at + timedelta(days=1)
         
         request = CoordinationRequest(
@@ -235,7 +235,7 @@ class TestWorkAssignment:
     
     def test_create_work_assignment_minimal(self):
         """Test creating work assignment with minimal data."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         assignment = WorkAssignment(
             assignment_id="assign-123",
             task_id="task-123",
@@ -260,7 +260,7 @@ class TestWorkAssignment:
     
     def test_create_work_assignment_full(self):
         """Test creating work assignment with all fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         due_date = now + timedelta(days=3)
         
         assignment = WorkAssignment(
@@ -295,7 +295,7 @@ class TestWorkAssignment:
             task_id="task-789",
             assigned_agent_id="agent-8",
             assigned_by_agent_id="agent-9",
-            assigned_at=datetime.now(timezone.utc)
+            assigned_at=datetime.now(UTC)
         )
         
         with pytest.raises(AttributeError):
@@ -308,7 +308,7 @@ class TestWorkAssignment:
             task_id="task-001",
             assigned_agent_id="agent-10",
             assigned_by_agent_id="agent-11",
-            assigned_at=datetime.now(timezone.utc)
+            assigned_at=datetime.now(UTC)
         )
         
         assert not assignment.is_overdue()
@@ -320,8 +320,8 @@ class TestWorkAssignment:
             task_id="task-002",
             assigned_agent_id="agent-12",
             assigned_by_agent_id="agent-13",
-            assigned_at=datetime.now(timezone.utc),
-            due_date=datetime.now(timezone.utc) + timedelta(hours=1)
+            assigned_at=datetime.now(UTC),
+            due_date=datetime.now(UTC) + timedelta(hours=1)
         )
         
         assert not assignment.is_overdue()
@@ -333,15 +333,15 @@ class TestWorkAssignment:
             task_id="task-003",
             assigned_agent_id="agent-14",
             assigned_by_agent_id="agent-15",
-            assigned_at=datetime.now(timezone.utc),
-            due_date=datetime.now(timezone.utc) - timedelta(hours=1)
+            assigned_at=datetime.now(UTC),
+            due_date=datetime.now(UTC) - timedelta(hours=1)
         )
         
         assert assignment.is_overdue()
     
     def test_to_task_context(self):
         """Test converting assignment to task context format."""
-        assigned_at = datetime.now(timezone.utc)
+        assigned_at = datetime.now(UTC)
         due_date = assigned_at + timedelta(days=2)
         
         assignment = WorkAssignment(
@@ -374,7 +374,7 @@ class TestWorkHandoff:
     
     def test_create_work_handoff_minimal(self):
         """Test creating work handoff with minimal data."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         handoff = WorkHandoff(
             handoff_id="handoff-123",
             from_agent_id="agent-1",
@@ -402,7 +402,7 @@ class TestWorkHandoff:
     
     def test_create_work_handoff_full(self):
         """Test creating work handoff with all fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         handoff = WorkHandoff(
             handoff_id="handoff-456",
@@ -438,7 +438,7 @@ class TestWorkHandoff:
             from_agent_id="agent-5",
             to_agent_id="agent-6",
             task_id="task-001",
-            initiated_at=datetime.now(timezone.utc)
+            initiated_at=datetime.now(UTC)
         )
         
         assert handoff.status == HandoffStatus.PENDING
@@ -456,7 +456,7 @@ class TestWorkHandoff:
             from_agent_id="agent-7",
             to_agent_id="agent-8",
             task_id="task-002",
-            initiated_at=datetime.now(timezone.utc),
+            initiated_at=datetime.now(UTC),
             status=HandoffStatus.COMPLETED
         )
         
@@ -472,7 +472,7 @@ class TestWorkHandoff:
             from_agent_id="agent-9",
             to_agent_id="agent-10",
             task_id="task-003",
-            initiated_at=datetime.now(timezone.utc)
+            initiated_at=datetime.now(UTC)
         )
         
         assert handoff.status == HandoffStatus.PENDING
@@ -490,7 +490,7 @@ class TestWorkHandoff:
             from_agent_id="agent-11",
             to_agent_id="agent-12",
             task_id="task-004",
-            initiated_at=datetime.now(timezone.utc),
+            initiated_at=datetime.now(UTC),
             status=HandoffStatus.ACCEPTED
         )
         
@@ -506,7 +506,7 @@ class TestWorkHandoff:
             from_agent_id="agent-13",
             to_agent_id="agent-14",
             task_id="task-005",
-            initiated_at=datetime.now(timezone.utc),
+            initiated_at=datetime.now(UTC),
             status=HandoffStatus.IN_PROGRESS
         )
         
@@ -524,7 +524,7 @@ class TestWorkHandoff:
             from_agent_id="agent-15",
             to_agent_id="agent-16",
             task_id="task-006",
-            initiated_at=datetime.now(timezone.utc),
+            initiated_at=datetime.now(UTC),
             status=HandoffStatus.PENDING
         )
         
@@ -535,7 +535,7 @@ class TestWorkHandoff:
     
     def test_to_handoff_package(self):
         """Test creating handoff package."""
-        initiated_at = datetime.now(timezone.utc)
+        initiated_at = datetime.now(UTC)
         accepted_at = initiated_at + timedelta(minutes=15)
         completed_at = accepted_at + timedelta(hours=2)
         
@@ -581,7 +581,7 @@ class TestConflictResolution:
     
     def test_create_conflict_resolution_minimal(self):
         """Test creating conflict resolution with minimal data."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         resolution = ConflictResolution(
             conflict_id="conflict-123",
             conflict_type=ConflictType.CONCURRENT_EDIT,
@@ -607,7 +607,7 @@ class TestConflictResolution:
     
     def test_create_conflict_resolution_full(self):
         """Test creating conflict resolution with all fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         resolution = ConflictResolution(
             conflict_id="conflict-456",
@@ -640,13 +640,13 @@ class TestConflictResolution:
             conflict_type=ConflictType.RESOURCE_CONTENTION,
             involved_agents=["agent-7", "agent-8"],
             task_id="task-001",
-            detected_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(UTC),
             description="Both need same resource"
         )
         
         assert not resolution.is_resolved()
         
-        resolution.resolved_at = datetime.now(timezone.utc)
+        resolution.resolved_at = datetime.now(UTC)
         assert resolution.is_resolved()
     
     def test_resolve_conflict(self):
@@ -656,7 +656,7 @@ class TestConflictResolution:
             conflict_type=ConflictType.APPROACH_DIFFERENCE,
             involved_agents=["agent-9", "agent-10"],
             task_id="task-002",
-            detected_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(UTC),
             description="Different implementation approaches"
         )
         
@@ -685,9 +685,9 @@ class TestConflictResolution:
             conflict_type=ConflictType.DEPENDENCY_CONFLICT,
             involved_agents=["agent-12", "agent-13"],
             task_id="task-003",
-            detected_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(UTC),
             description="Circular dependency",
-            resolved_at=datetime.now(timezone.utc)
+            resolved_at=datetime.now(UTC)
         )
         
         with pytest.raises(ValueError) as exc_info:
@@ -706,7 +706,7 @@ class TestConflictResolution:
             conflict_type=ConflictType.SCHEDULE_CONFLICT,
             involved_agents=["agent-15", "agent-16", "agent-17"],
             task_id="task-004",
-            detected_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(UTC),
             description="Schedule overlap"
         )
         
@@ -729,7 +729,7 @@ class TestConflictResolution:
             conflict_type=ConflictType.PRIORITY_DISAGREEMENT,
             involved_agents=["agent-18", "agent-19", "agent-20", "agent-21"],
             task_id="task-005",
-            detected_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(UTC),
             description="Priority voting"
         )
         
@@ -748,7 +748,7 @@ class TestAgentCommunication:
     
     def test_create_agent_communication_minimal(self):
         """Test creating agent communication with minimal data."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         communication = AgentCommunication(
             message_id="msg-123",
             from_agent_id="agent-1",
@@ -777,7 +777,7 @@ class TestAgentCommunication:
     
     def test_create_agent_communication_full(self):
         """Test creating agent communication with all fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         deadline = now + timedelta(hours=2)
         
         communication = AgentCommunication(
@@ -812,7 +812,7 @@ class TestAgentCommunication:
             from_agent_id="agent-7",
             to_agent_ids=["agent-8"],
             task_id="task-789",
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             message_type="notification",
             subject="Alert",
             content="System issue detected"
@@ -828,7 +828,7 @@ class TestAgentCommunication:
             from_agent_id="agent-9",
             to_agent_ids=["agent-10"],
             task_id="task-001",
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             message_type="response",
             subject="Re: Question",
             content="Here's the answer"
@@ -843,7 +843,7 @@ class TestAgentCommunication:
             from_agent_id="agent-11",
             to_agent_ids=["agent-12", "agent-13", "agent-14"],
             task_id="task-002",
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             message_type="notification",
             subject="Team update",
             content="New requirements"
@@ -858,7 +858,7 @@ class TestAgentCommunication:
             from_agent_id="agent-15",
             to_agent_ids=["agent-16"],
             task_id="task-003",
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             message_type="status_update",
             subject="FYI",
             content="Just an update",
@@ -874,7 +874,7 @@ class TestAgentCommunication:
             from_agent_id="agent-17",
             to_agent_ids=["agent-18"],
             task_id="task-004",
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             message_type="question",
             subject="Urgent question",
             content="Need immediate answer",
@@ -891,7 +891,7 @@ class TestAgentCommunication:
             from_agent_id="agent-19",
             to_agent_ids=["agent-20"],
             task_id="task-005",
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             message_type="question",
             subject="Critical issue",
             content="System down",
@@ -908,13 +908,13 @@ class TestAgentCommunication:
             from_agent_id="agent-21",
             to_agent_ids=["agent-22"],
             task_id="task-006",
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             message_type="question",
             subject="Question",
             content="Please respond",
             priority="normal",
             requires_response=True,
-            response_deadline=datetime.now(timezone.utc) + timedelta(hours=1.5)  # Less than 2 hours
+            response_deadline=datetime.now(UTC) + timedelta(hours=1.5)  # Less than 2 hours
         )
         
         assert communication.needs_urgent_response()
@@ -926,13 +926,13 @@ class TestAgentCommunication:
             from_agent_id="agent-23",
             to_agent_ids=["agent-24"],
             task_id="task-007",
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             message_type="question",
             subject="Question",
             content="When you have time",
             priority="low",
             requires_response=True,
-            response_deadline=datetime.now(timezone.utc) + timedelta(days=1)  # More than 2 hours
+            response_deadline=datetime.now(UTC) + timedelta(days=1)  # More than 2 hours
         )
         
         assert not communication.needs_urgent_response()

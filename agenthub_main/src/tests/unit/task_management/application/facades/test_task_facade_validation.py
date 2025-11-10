@@ -26,9 +26,9 @@ Related Documentation:
 - Bug report: ai_docs/issues/git-branch-validation-bug.md
 - Test report: ai_docs/reports-status/mcp-comprehensive-testing-report-2025-10-30.md
 """
-import unittest
 import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+import unittest
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
 
@@ -49,7 +49,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
 
     def test_validation_method_exists(self):
         """Verify _derive_context_from_git_branch_id method exists"""
-        from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+        from fastmcp.task_management.application.facades.task_application_facade import (
+            TaskApplicationFacade,
+        )
 
         # Method must exist
         self.assertTrue(
@@ -63,7 +65,10 @@ class TestGitBranchIdValidation(unittest.TestCase):
         This was the root cause of the phantom branch bug.
         """
         import inspect
-        from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+
+        from fastmcp.task_management.application.facades.task_application_facade import (
+            TaskApplicationFacade,
+        )
 
         # Get source code of the validation method
         source = inspect.getsource(TaskApplicationFacade._derive_context_from_git_branch_id)
@@ -89,7 +94,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
         """Test 1: Task creation succeeds when git_branch_id exists"""
 
         async def run_test():
-            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.application.facades.task_application_facade import (
+                TaskApplicationFacade,
+            )
 
             # Mock repositories
             mock_task_repo = AsyncMock()
@@ -121,7 +128,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
         """Test 2: Task creation fails with malformed UUID"""
 
         async def run_test():
-            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.application.facades.task_application_facade import (
+                TaskApplicationFacade,
+            )
 
             # Mock repositories
             mock_task_repo = AsyncMock()
@@ -156,7 +165,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
         """
 
         async def run_test():
-            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.application.facades.task_application_facade import (
+                TaskApplicationFacade,
+            )
 
             # Mock repositories
             mock_task_repo = AsyncMock()
@@ -194,7 +205,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
         """Test 4: Task creation fails with None git_branch_id"""
 
         async def run_test():
-            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.application.facades.task_application_facade import (
+                TaskApplicationFacade,
+            )
 
             # Mock repositories
             mock_task_repo = AsyncMock()
@@ -222,7 +235,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
         """Test 5: Task creation fails with empty string git_branch_id"""
 
         async def run_test():
-            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.application.facades.task_application_facade import (
+                TaskApplicationFacade,
+            )
 
             # Mock repositories
             mock_task_repo = AsyncMock()
@@ -249,7 +264,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
         """Test 6: Validation fails gracefully when repository not available"""
 
         async def run_test():
-            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.application.facades.task_application_facade import (
+                TaskApplicationFacade,
+            )
 
             # Mock repositories
             mock_task_repo = AsyncMock()
@@ -276,7 +293,10 @@ class TestGitBranchIdValidation(unittest.TestCase):
         This ensures _ensure_branch_context_exists doesn't bypass validation.
         """
         import inspect
-        from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+
+        from fastmcp.task_management.application.facades.task_application_facade import (
+            TaskApplicationFacade,
+        )
 
         # Get source of create_task method
         source = inspect.getsource(TaskApplicationFacade.create_task)
@@ -297,7 +317,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
         """Test 7: Verify error messages are helpful and actionable"""
 
         async def run_test():
-            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.application.facades.task_application_facade import (
+                TaskApplicationFacade,
+            )
 
             # Mock repositories
             mock_task_repo = AsyncMock()
@@ -334,9 +356,11 @@ class TestGitBranchIdValidation(unittest.TestCase):
         """Test 8: Verify authentication errors are caught and re-raised with helpful context"""
 
         async def run_test():
-            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.application.facades.task_application_facade import (
+                TaskApplicationFacade,
+            )
             from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
-                UserAuthenticationRequiredError
+                UserAuthenticationRequiredError,
             )
 
             # Mock repositories
@@ -377,7 +401,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
         """Test 9: Verify unexpected exceptions include exception type for debugging"""
 
         async def run_test():
-            from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+            from fastmcp.task_management.application.facades.task_application_facade import (
+                TaskApplicationFacade,
+            )
 
             # Mock repositories
             mock_task_repo = AsyncMock()
@@ -419,7 +445,10 @@ class TestValidationImpact(unittest.TestCase):
     def test_no_phantom_branch_creation_in_source(self):
         """Verify source code doesn't create branches without validation"""
         import inspect
-        from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+
+        from fastmcp.task_management.application.facades.task_application_facade import (
+            TaskApplicationFacade,
+        )
 
         # Get source of task creation method
         source = inspect.getsource(TaskApplicationFacade.create_task)
@@ -434,7 +463,10 @@ class TestValidationImpact(unittest.TestCase):
     def test_validation_method_signature(self):
         """Verify validation method has correct signature"""
         import inspect
-        from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+
+        from fastmcp.task_management.application.facades.task_application_facade import (
+            TaskApplicationFacade,
+        )
 
         # Get method signature
         sig = inspect.signature(TaskApplicationFacade._derive_context_from_git_branch_id)

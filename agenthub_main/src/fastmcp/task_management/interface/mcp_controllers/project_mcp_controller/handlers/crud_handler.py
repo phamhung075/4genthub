@@ -4,6 +4,8 @@ Project CRUD Handler
 Handles basic CRUD operations for project management.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

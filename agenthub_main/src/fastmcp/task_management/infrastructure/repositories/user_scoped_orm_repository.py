@@ -6,6 +6,8 @@ with BaseUserScopedRepository to ensure all ORM operations are properly
 filtered by user_id for data isolation.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any, Generic, TypeVar
 

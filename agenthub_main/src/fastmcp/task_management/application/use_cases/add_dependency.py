@@ -1,5 +1,7 @@
 """Add Dependency Use Case"""
 
+from __future__ import annotations
+
 import logging
 
 from ...application.dtos.dependency import AddDependencyRequest, DependencyResponse

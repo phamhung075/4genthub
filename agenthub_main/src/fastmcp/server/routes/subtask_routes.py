@@ -5,6 +5,8 @@ This module provides comprehensive subtask management operations
 following proper DDD architecture with API controllers.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

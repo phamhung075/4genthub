@@ -4,17 +4,21 @@ Create test data for context injection system testing
 """
 
 import sys
-import os
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime
 
 # Add project root to path
 sys.path.insert(0, './agenthub_main/src')
 
 from fastmcp.task_management.infrastructure.database.database_config import get_session
 from fastmcp.task_management.infrastructure.database.models import (
-    Project, ProjectGitBranch, Task, Subtask, ProjectContext, TaskContext
+    Project,
+    ProjectContext,
+    ProjectGitBranch,
+    Subtask,
+    Task,
 )
+
 
 def create_test_data():
     """Create sample data for testing context injection"""
@@ -30,8 +34,8 @@ def create_test_data():
             name="Context Injection Test Project",
             description="Test project for validating context injection system",
             user_id="test-user-001",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         session.add(project)
         print(f"✅ Created project: {project.name}")
@@ -43,8 +47,8 @@ def create_test_data():
             description="Implementing real-time context injection for hooks",
             project_id=project.id,
             user_id="test-user-001",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         session.add(git_branch)
         print(f"✅ Created git branch: {git_branch.name}")
@@ -94,8 +98,8 @@ def create_test_data():
                 git_branch_id=git_branch.id,
                 user_id="test-user-001",
                 estimated_effort="2 hours",
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC)
             )
             session.add(task)
             print(f"✅ Created task: {task.title} ({task.status})")
@@ -117,8 +121,8 @@ def create_test_data():
                         status=st_data["status"],
                         task_id=task.id,
                         user_id="test-user-001",
-                        created_at=datetime.now(timezone.utc),
-                        updated_at=datetime.now(timezone.utc)
+                        created_at=datetime.now(UTC),
+                        updated_at=datetime.now(UTC)
                     )
                     session.add(subtask)
                     print(f"  ✅ Created subtask: {subtask.title}")
@@ -142,8 +146,8 @@ def create_test_data():
                 "status": "active"
             },
             user_id="test-user-001",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         session.add(project_context)
         print(f"✅ Created project context with data: {list(project_context.data.keys())}")
@@ -154,11 +158,11 @@ def create_test_data():
         
         # Show summary
         print("\n📊 Test Data Summary:")
-        print(f"  - 1 Project")
-        print(f"  - 1 Git Branch")
+        print("  - 1 Project")
+        print("  - 1 Git Branch")
         print(f"  - {len(tasks_data)} Tasks (1 completed, 1 in_progress, 3 todo)")
-        print(f"  - 4 Subtasks")
-        print(f"  - 1 Project context with rich data")
+        print("  - 4 Subtasks")
+        print("  - 1 Project context with rich data")
         
         return True
         

@@ -5,6 +5,8 @@ This module provides authentication endpoints that handle login
 with Keycloak or Supabase based on configuration.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
@@ -473,7 +475,7 @@ async def register(request: RegisterRequest):
                     try:
                         error_data = create_response.json()
                         error_msg = error_data.get("error_description", error_data.get("error", "Invalid input"))
-                    except:
+                    except Exception:
                         error_msg = create_response.text
                     
                     logger.error(f"Failed to create user: {create_response.status_code} - {error_msg}")
@@ -644,7 +646,7 @@ async def login(request: LoginRequest):
                     try:
                         error_data = response.json()
                         error_msg = error_data.get("error_description", error_data.get("error", "Bad request"))
-                    except:
+                    except Exception:
                         error_msg = response.text
                     
                     logger.error(f"Keycloak login failed: {response.status_code} - {response.text}")
@@ -822,7 +824,7 @@ async def refresh_token(request: Request):
                                 )
                         else:
                             raise HTTPException(status_code=401, detail=f"Token refresh failed: {error_msg}")
-                    except:
+                    except Exception:
                         logger.error(f"Keycloak refresh token failed with status {response.status_code}: {response.text}")
                         raise HTTPException(status_code=401, detail="Invalid refresh token")
                 else:
@@ -888,7 +890,6 @@ async def cleanup_incomplete_account_internal(email: str) -> dict:
                         
                         # Additional checks for account completeness
                         has_credentials = user.get("credentials", [])  # Check if user has set password
-                        user_created_recently = False  # Could add timestamp check if needed
                         
                         # Log current account state for debugging
                         logger.info(f"Account analysis for {email}: verified={email_verified}, enabled={account_enabled}, required_actions={required_actions}, has_credentials={bool(has_credentials)}")

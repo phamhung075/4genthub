@@ -8,16 +8,17 @@ Tests the MCP controller integration helper including:
 - Error handling and response formatting
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+
+from fastmcp.auth.application.services.token_consumption_service import (
+    TokenBalanceResult,
+    TokenConsumptionResult,
+)
 from fastmcp.task_management.interface.mcp_controllers.token_consumption_helper import (
     TokenConsumptionHelper,
-    consume_tokens_for_operation
-)
-from fastmcp.auth.application.services.token_consumption_service import (
-    TokenConsumptionResult,
-    TokenBalanceResult
+    consume_tokens_for_operation,
 )
 
 

@@ -4,6 +4,8 @@ This module provides notification capabilities for the Vision System,
 supporting multiple notification channels and delivery mechanisms.
 """
 
+from __future__ import annotations
+
 import asyncio
 import inspect
 import json

@@ -3,17 +3,21 @@
 Test direct task creation through the facade
 """
 
-import sys
 import asyncio
-import pytest
+import sys
 from pathlib import Path
+
+import pytest
+
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 @pytest.mark.asyncio
 async def test_direct_task_creation():
     """Test task creation directly through the facade"""
     
-    from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
+    from fastmcp.task_management.application.dtos.task.create_task_request import (
+        CreateTaskRequest,
+    )
     
     # Test the DTO creation first
     print("=== Testing CreateTaskRequest DTO ===")
@@ -27,7 +31,7 @@ async def test_direct_task_creation():
         estimated_effort="2 hours"
     )
     
-    print(f"Request created successfully!")
+    print("Request created successfully!")
     print(f"Title: {request.title}")
     print(f"Assignees: {request.assignees}")
     print(f"Assignees type: {type(request.assignees)}")
@@ -44,7 +48,7 @@ async def test_direct_task_creation():
             description=request.description,
             assignees=request.assignees  # Use the processed assignees from DTO
         )
-        print(f"Task created successfully!")
+        print("Task created successfully!")
         print(f"Task assignees: {task.assignees}")
     except Exception as e:
         print(f"Task creation failed: {e}")

@@ -7,25 +7,21 @@ After the batch loading implementation, these tests should pass.
 TDD Methodology Phase 2: Write Failing Tests
 """
 
-import pytest
 import time
 import uuid
-from datetime import datetime, timezone
-from contextlib import contextmanager
-from typing import List, Tuple
-from unittest.mock import patch
+from datetime import UTC, datetime
+
+import pytest
 
 # SQLAlchemy imports for query counting
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
-from fastmcp.task_management.application.use_cases.list_tasks import ListTasksUseCase
 from fastmcp.task_management.application.dtos.task import ListTasksRequest
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+from fastmcp.task_management.application.use_cases.list_tasks import ListTasksUseCase
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
 
 
 class QueryCounter:
@@ -90,14 +86,17 @@ def query_counter():
     return QueryCounter()
 
 
-def create_test_project_and_branch(session) -> Tuple[str, str]:
+def create_test_project_and_branch(session) -> tuple[str, str]:
     """
     Create test project and git branch for testing.
 
     Returns:
         Tuple of (project_id, git_branch_id)
     """
-    from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch
+    from fastmcp.task_management.infrastructure.database.models import (
+        Project,
+        ProjectGitBranch,
+    )
 
     project_id = str(uuid.uuid4())
     git_branch_id = str(uuid.uuid4())
@@ -110,8 +109,8 @@ def create_test_project_and_branch(session) -> Tuple[str, str]:
         description="Project for N+1 query testing",
         user_id=user_id,
         status="active",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         metadata={}
     )
     session.add(project)
@@ -125,8 +124,8 @@ def create_test_project_and_branch(session) -> Tuple[str, str]:
         user_id=user_id,
         priority="medium",
         status="todo",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         metadata={},
         task_count=0,
         completed_task_count=0
@@ -137,7 +136,7 @@ def create_test_project_and_branch(session) -> Tuple[str, str]:
     return project_id, git_branch_id
 
 
-def create_tasks_bulk(git_branch_id: str, count: int, user_id: str = None) -> Tuple[List[str], str]:
+def create_tasks_bulk(git_branch_id: str, count: int, user_id: str = None) -> tuple[list[str], str]:
     """
     Create multiple tasks in bulk for testing using repository.
 
@@ -149,11 +148,13 @@ def create_tasks_bulk(git_branch_id: str, count: int, user_id: str = None) -> Tu
     Returns:
         Tuple of (list of created task IDs, user_id used)
     """
-    from fastmcp.task_management.application.services.repository_provider_service import RepositoryProviderService
+    from fastmcp.task_management.application.services.repository_provider_service import (
+        RepositoryProviderService,
+    )
     from fastmcp.task_management.domain.entities.task import Task as TaskEntity
+    from fastmcp.task_management.domain.value_objects.priority import Priority
     from fastmcp.task_management.domain.value_objects.task_id import TaskId
     from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-    from fastmcp.task_management.domain.value_objects.priority import Priority
 
     if user_id is None:
         user_id = str(uuid.uuid4())
@@ -214,7 +215,9 @@ class TestTaskListNPlusOneQuery:
             task_ids, user_id = create_tasks_bulk(git_branch_id, task_count)
 
             # Get repository
-            from fastmcp.task_management.application.services.repository_provider_service import RepositoryProviderService
+            from fastmcp.task_management.application.services.repository_provider_service import (
+                RepositoryProviderService,
+            )
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -230,11 +233,11 @@ class TestTaskListNPlusOneQuery:
             # EXPECTED TO FAIL: Currently will be 101 queries (1 + 100)
             query_breakdown = counter.get_query_breakdown()
 
-            print(f"\n=== N+1 Query Test Results ===")
+            print("\n=== N+1 Query Test Results ===")
             print(f"Total queries executed: {counter.count}")
             print(f"Query breakdown: {query_breakdown}")
             print(f"Tasks returned: {len(response.tasks)}")
-            print(f"Expected queries: 3 (1 for tasks + 1 for batch branches + 1 for connection health)")
+            print("Expected queries: 3 (1 for tasks + 1 for batch branches + 1 for connection health)")
             print(f"Actual queries: {counter.count}")
             print(f"N+1 problem detected: {counter.count > 3}")
 
@@ -267,7 +270,9 @@ class TestTaskListNPlusOneQuery:
             task_ids, user_id = create_tasks_bulk(git_branch_id, task_count)
 
             # Get repository
-            from fastmcp.task_management.application.services.repository_provider_service import RepositoryProviderService
+            from fastmcp.task_management.application.services.repository_provider_service import (
+                RepositoryProviderService,
+            )
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -282,11 +287,11 @@ class TestTaskListNPlusOneQuery:
 
             # Assert: Should complete in under 1 second
             # EXPECTED TO FAIL: Currently takes ~20 seconds
-            print(f"\n=== Performance Benchmark Results ===")
+            print("\n=== Performance Benchmark Results ===")
             print(f"Task count: {task_count}")
             print(f"Execution time: {duration:.3f} seconds")
             print(f"Tasks per second: {task_count/duration:.1f}")
-            print(f"Performance target: < 1.0 second")
+            print("Performance target: < 1.0 second")
             print(f"Performance issue: {duration > 1.0}")
 
             assert len(response.tasks) == task_count, f"Should return all {task_count} tasks"
@@ -318,7 +323,9 @@ class TestTaskListNPlusOneQuery:
             task_ids, user_id = create_tasks_bulk(git_branch_id, task_count)
 
             # Get repository
-            from fastmcp.task_management.application.services.repository_provider_service import RepositoryProviderService
+            from fastmcp.task_management.application.services.repository_provider_service import (
+                RepositoryProviderService,
+            )
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -330,7 +337,7 @@ class TestTaskListNPlusOneQuery:
             response = use_case.execute(request)
 
             # Assert: All tasks should have correct project_id
-            print(f"\n=== Correctness Test Results ===")
+            print("\n=== Correctness Test Results ===")
             print(f"Expected project_id: {project_id}")
             print(f"Tasks returned: {len(response.tasks)}")
 
@@ -380,7 +387,9 @@ class TestTaskListNPlusOneQuery:
                 task_ids, user_id = create_tasks_bulk(git_branch_id, task_count)
 
                 # Get repository
-                from fastmcp.task_management.application.services.repository_provider_service import RepositoryProviderService
+                from fastmcp.task_management.application.services.repository_provider_service import (
+                    RepositoryProviderService,
+                )
                 provider = RepositoryProviderService.get_instance()
                 task_repo = provider.get_task_repository()
 
@@ -390,7 +399,7 @@ class TestTaskListNPlusOneQuery:
 
                 # Act: Count queries
                 with query_counter as counter:
-                    response = use_case.execute(request)
+                    use_case.execute(request)
 
                 results.append({
                     'task_count': task_count,
@@ -402,7 +411,7 @@ class TestTaskListNPlusOneQuery:
                 session.rollback()
 
         # Assert: Query count should be constant (2), not linear with tasks
-        print(f"\n=== Scalability Test Results ===")
+        print("\n=== Scalability Test Results ===")
         print(f"{'Tasks':<10} {'Queries':<10} {'Ratio':<10} {'Expected':<10}")
         print("-" * 50)
 
@@ -413,7 +422,7 @@ class TestTaskListNPlusOneQuery:
         # CRITICAL ASSERTION - Query count should be constant
         query_counts = [r['query_count'] for r in results]
         max_queries = max(query_counts)
-        min_queries = min(query_counts)
+        min(query_counts)
 
         # With batch loading, query count variance should be minimal (±1 for transaction overhead)
         assert max_queries <= 3, (
@@ -448,7 +457,9 @@ class TestTaskListNPlusOneQuery:
             task_ids, user_id = create_tasks_bulk(git_branch_id, task_count)
 
             # Get repository
-            from fastmcp.task_management.application.services.repository_provider_service import RepositoryProviderService
+            from fastmcp.task_management.application.services.repository_provider_service import (
+                RepositoryProviderService,
+            )
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -470,17 +481,17 @@ class TestTaskListNPlusOneQuery:
             expected_improvement_ratio = current_queries / expected_queries
             expected_time_improvement = current_duration * (expected_queries / current_queries)
 
-            print(f"\n=== Performance Comparison ===")
+            print("\n=== Performance Comparison ===")
             print(f"Task count: {task_count}")
-            print(f"\nCurrent Implementation (N+1):")
+            print("\nCurrent Implementation (N+1):")
             print(f"  Queries: {current_queries}")
             print(f"  Duration: {current_duration:.3f}s")
             print(f"  Queries per task: {current_queries/task_count:.2f}")
-            print(f"\nExpected with Batch Loading:")
+            print("\nExpected with Batch Loading:")
             print(f"  Queries: {expected_queries}")
             print(f"  Duration: ~{expected_time_improvement:.3f}s (estimated)")
             print(f"  Queries per task: {expected_queries/task_count:.2f}")
-            print(f"\nExpected Improvement:")
+            print("\nExpected Improvement:")
             print(f"  Query reduction: {expected_improvement_ratio:.1f}x fewer queries")
             print(f"  Speed improvement: {current_duration/expected_time_improvement:.1f}x faster")
 
@@ -513,14 +524,16 @@ class TestTaskListPerformanceRegression:
             project_id, git_branch_id = create_test_project_and_branch(session)
             task_ids, user_id = create_tasks_bulk(git_branch_id, 10)
 
-            from fastmcp.task_management.application.services.repository_provider_service import RepositoryProviderService
+            from fastmcp.task_management.application.services.repository_provider_service import (
+                RepositoryProviderService,
+            )
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
             use_case = ListTasksUseCase(task_repo)
             request = ListTasksRequest(git_branch_id=git_branch_id)
 
-            with query_counter as counter:
+            with query_counter:
                 start_time = time.time()
                 response = use_case.execute(request)
                 duration = time.time() - start_time
@@ -537,7 +550,9 @@ class TestTaskListPerformanceRegression:
             project_id, git_branch_id = create_test_project_and_branch(session)
             task_ids, user_id = create_tasks_bulk(git_branch_id, 5)
 
-            from fastmcp.task_management.application.services.repository_provider_service import RepositoryProviderService
+            from fastmcp.task_management.application.services.repository_provider_service import (
+                RepositoryProviderService,
+            )
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 

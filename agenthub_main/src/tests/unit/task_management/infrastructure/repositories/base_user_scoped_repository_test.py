@@ -2,16 +2,16 @@
 Tests for Base User-Scoped Repository
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
-import logging
 from sqlalchemy.orm import Session
 
 from fastmcp.task_management.infrastructure.repositories.base_user_scoped_repository import (
     BaseUserScopedRepository,
-    UserScopedError,
+    CrossUserAccessError,
     InsufficientPermissionsError,
-    CrossUserAccessError
+    UserScopedError,
 )
 
 
@@ -48,7 +48,7 @@ class TestBaseUserScopedRepository:
     
     def test_initialization_system_mode(self, mock_session):
         """Test repository initialization in system mode"""
-        with patch('fastmcp.task_management.infrastructure.repositories.base_user_scoped_repository.logger') as mock_logger:
+        with patch('fastmcp.task_management.infrastructure.repositories.base_user_scoped_repository.logger'):
             repo = BaseUserScopedRepository(mock_session, user_id=None)
             
             assert repo.session == mock_session

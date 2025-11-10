@@ -5,15 +5,17 @@ This test ensures that the manage_task tool properly accepts and uses the user_i
 for authentication, resolving the authentication error without requiring middleware context.
 """
 
-import pytest
-import asyncio
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
-from typing import Dict, Any
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import TaskMCPController
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+import pytest
+
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import (
+    TaskMCPController,
+)
 
 
 class TestTaskUserIdParameter:
@@ -55,7 +57,7 @@ class TestTaskUserIdParameter:
                         }
                         
                         # Call manage_task with user_id (using valid UUID for git_branch_id)
-                        result = await controller.manage_task(
+                        await controller.manage_task(
                             action="create",
                             git_branch_id="550e8400-e29b-41d4-a716-446655440000",
                             title="Test Task",

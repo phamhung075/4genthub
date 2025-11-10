@@ -5,6 +5,8 @@ This module provides utilities to configure MCP server with JWT Bearer authentic
 making it easy to integrate with the token management system.
 """
 
+from __future__ import annotations
+
 import os
 from typing import TYPE_CHECKING
 

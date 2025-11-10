@@ -11,15 +11,14 @@ Tests cover:
 - WebSocket broadcast with typed payload
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-import logging
-from unittest.mock import Mock, patch, MagicMock, call
-from typing import Dict, Any
 
 from fastmcp.task_management.domain.websocket_protocol import (
     SubtaskDeletePayload,
+    WSMessage,
     create_delete_message,
-    WSMessage
 )
 
 
@@ -144,7 +143,9 @@ class TestSubtaskFacadeDeleteIntegration:
         mock_ws_service
     ):
         """Test that _handle_delete_subtask uses SubtaskDeletePayload with title field"""
-        from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
+        from fastmcp.task_management.application.facades.subtask_application_facade import (
+            SubtaskApplicationFacade,
+        )
 
         # Setup mocks
         mock_use_case = Mock()
@@ -192,7 +193,9 @@ class TestSubtaskFacadeDeleteIntegration:
         mock_ws_service
     ):
         """Test that warning is logged when subtask title cannot be retrieved"""
-        from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
+        from fastmcp.task_management.application.facades.subtask_application_facade import (
+            SubtaskApplicationFacade,
+        )
 
         # Setup mocks
         mock_use_case = Mock()
@@ -224,7 +227,7 @@ class TestSubtaskFacadeDeleteIntegration:
 
         # Verify warning was logged about missing title
         # (This will be implemented in the code)
-        warning_calls = [call for call in mock_logger.warning.call_args_list
+        [call for call in mock_logger.warning.call_args_list
                         if 'title' in str(call).lower() or 'fallback' in str(call).lower()]
         # Note: Assertion will pass after implementation adds logging
 
@@ -236,7 +239,9 @@ class TestSubtaskFacadeDeleteIntegration:
         mock_ws_service
     ):
         """Test that fallback title is used when subtask title is unavailable"""
-        from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
+        from fastmcp.task_management.application.facades.subtask_application_facade import (
+            SubtaskApplicationFacade,
+        )
 
         # Setup mocks
         mock_use_case = Mock()

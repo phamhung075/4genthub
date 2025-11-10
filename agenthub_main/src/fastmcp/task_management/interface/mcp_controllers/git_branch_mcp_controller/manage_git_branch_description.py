@@ -6,6 +6,8 @@ following the established pattern of other tool descriptions in the system.
 """
 
 # Main description for the manage_git_branch tool
+from __future__ import annotations
+
 MANAGE_GIT_BRANCH_DESCRIPTION = """
 GIT BRANCH MANAGEMENT - Branch operations: CRUD | agent assignment | lifecycle | statistics
 

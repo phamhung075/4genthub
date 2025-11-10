@@ -23,31 +23,36 @@ import pytest
 #Try to import dependencies - if they fail, skip all tests in this module
 try:
     from uuid import uuid4
+
+    from fastmcp.task_management.application.use_cases.agent_management import (
+        CreateUserAgentInstanceUseCase,
+        ImportSharedAgentUseCase,
+        ListSharedAgentsUseCase,
+        ShareUserAgentUseCase,
+        UpdateUserAgentConfigurationUseCase,
+    )
+    from fastmcp.task_management.domain.entities.agent_template import AgentTemplate
+    from fastmcp.task_management.domain.entities.user_agent_instance import (
+        UserAgentInstance,
+    )
+    from fastmcp.task_management.infrastructure.repositories.orm_agent_template_repository import (
+        ORMAgentTemplateRepository,
+    )
+    from fastmcp.task_management.infrastructure.repositories.orm_user_agent_instance_repository import (
+        ORMUserAgentInstanceRepository,
+    )
     from sqlalchemy import text
     from sqlalchemy.orm import Session
 
     from fastmcp.auth.domain.value_objects.user_id import UserId
     from fastmcp.task_management.domain.value_objects import (
-        ProjectId,
-        GitBranchId,
-        TaskId,
         AgentId,
-        TemplateId as AgentTemplateId  # TemplateId renamed from AgentTemplateId
+        GitBranchId,
+        ProjectId,
+        TaskId,
     )
-    from fastmcp.task_management.domain.entities.agent_template import AgentTemplate
-    from fastmcp.task_management.domain.entities.user_agent_instance import UserAgentInstance
-    from fastmcp.task_management.application.use_cases.agent_management import (
-        CreateUserAgentInstanceUseCase,
-        UpdateUserAgentConfigurationUseCase,
-        ShareUserAgentUseCase,
-        ImportSharedAgentUseCase,
-        ListSharedAgentsUseCase,
-    )
-    from fastmcp.task_management.infrastructure.repositories.orm_agent_template_repository import (
-        ORMAgentTemplateRepository
-    )
-    from fastmcp.task_management.infrastructure.repositories.orm_user_agent_instance_repository import (
-        ORMUserAgentInstanceRepository
+    from fastmcp.task_management.domain.value_objects import (
+        TemplateId as AgentTemplateId,  # TemplateId renamed from AgentTemplateId
     )
     IMPORTS_AVAILABLE = True
 except (ImportError, ModuleNotFoundError) as e:
@@ -162,7 +167,7 @@ class TestSQLInjection:
             # Should raise validation error, NOT SQL error
             with pytest.raises((ValueError, AttributeError)):
                 # Order validation should happen before SQL execution
-                result = repository.list_shared_agents(
+                repository.list_shared_agents(
                     name_filter=None,
                     tag_filter=None,
                     order_by=order,

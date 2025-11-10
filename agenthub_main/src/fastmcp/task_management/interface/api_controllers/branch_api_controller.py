@@ -5,6 +5,8 @@ This controller handles frontend branch management operations following proper D
 It serves as the interface layer, delegating business logic to application facades.
 """
 
+from __future__ import annotations
+
 import logging
 import time
 from datetime import UTC, datetime

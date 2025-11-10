@@ -1,5 +1,7 @@
 """Enhanced logging configuration for unified log management."""
 
+from __future__ import annotations
+
 import datetime
 import logging
 import sys

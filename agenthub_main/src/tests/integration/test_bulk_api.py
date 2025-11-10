@@ -12,10 +12,11 @@ NOTE: These tests are currently disabled because they require:
 They should be rewritten as true integration tests or moved to e2e tests.
 """
 
+import time
+from unittest.mock import MagicMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
-import time
 
 # Skip all tests in this module
 pytestmark = pytest.mark.skip(reason="Tests require database and auth setup not available in test environment")
@@ -80,7 +81,7 @@ class TestBulkSummariesEndpoint:
             json={"include_archived": False},
             headers=auth_headers
         )
-        response_time = (time.time() - start_time) * 1000  # Convert to ms
+        (time.time() - start_time) * 1000  # Convert to ms
 
         # Assertions
         assert response.status_code == 200

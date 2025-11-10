@@ -5,23 +5,26 @@ This module provides extensive testing for the ProjectMCPController with proper 
 of all dependencies, including facades, authentication, permissions, and factories.
 """
 
-import pytest
-import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Dict, Any, Optional, List
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-# Import the controller under test
-from fastmcp.task_management.interface.mcp_controllers.project_mcp_controller.project_mcp_controller import (
-    ProjectMCPController
+import pytest
+
+from fastmcp.task_management.application.facades.project_application_facade import (
+    ProjectApplicationFacade,
 )
 
 # Import dependencies that need to be mocked
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.application.facades.project_application_facade import ProjectApplicationFacade
-from fastmcp.task_management.utils.response_formatter import StandardResponseFormatter, ResponseStatus, ErrorCodes
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
+    UserAuthenticationRequiredError,
+)
+
+# Import the controller under test
+from fastmcp.task_management.interface.mcp_controllers.project_mcp_controller.project_mcp_controller import (
+    ProjectMCPController,
+)
 
 
 class TestProjectMCPController:
@@ -68,8 +71,8 @@ class TestProjectMCPController:
             "name": "Test Project",
             "description": "A test project for unit testing",
             "status": "active",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "git_branches": [],
             "tasks_count": 0
         }

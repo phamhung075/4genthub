@@ -20,6 +20,8 @@ Usage:
     await websocket_manager.broadcast(event="task.created", data=payload)
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 

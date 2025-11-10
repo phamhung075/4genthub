@@ -17,6 +17,8 @@ NO LEGACY SUPPORT:
 - Clean implementation only
 """
 
+from __future__ import annotations
+
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
@@ -289,7 +291,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             timestamp_field: Field to filter on ("created_at" or "updated_at")
 
         Returns:
-            List[TimestampEntityType]: Entities in range
+            list[TimestampEntityType]: Entities in range
 
         Raises:
             ValidationException: If parameters are invalid
@@ -314,7 +316,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             max_staleness_hours: Maximum hours since last update
 
         Returns:
-            List[TimestampEntityType]: Stale entities
+            list[TimestampEntityType]: Stale entities
 
         Raises:
             ValidationException: If parameters are invalid
@@ -335,7 +337,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
         """Get timestamp statistics for all entities.
 
         Returns:
-            Dict[str, Any]: Statistics including counts, ranges, etc.
+            dict[str, Any]: Statistics including counts, ranges, etc.
 
         Raises:
             DatabaseException: If database operation fails
@@ -360,7 +362,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             dry_run: If True, only return what would be deleted
 
         Returns:
-            Dict[str, Any]: Cleanup results
+            dict[str, Any]: Cleanup results
 
         Raises:
             ValidationException: If parameters are invalid

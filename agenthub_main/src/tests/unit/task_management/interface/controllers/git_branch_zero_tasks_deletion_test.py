@@ -10,19 +10,27 @@ Bug Description: The delete button on the sidebar cannot delete git branches tha
 Expected Behavior: Branches with 0 tasks should be deletable.
 """
 
-import pytest
 import uuid
-from unittest.mock import Mock, patch, AsyncMock
-from datetime import datetime, timezone
-from typing import Dict, Any
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller import GitBranchMCPController
-from fastmcp.task_management.application.facades.git_branch_application_facade import GitBranchApplicationFacade
-from fastmcp.task_management.application.services.git_branch_service import GitBranchService
-from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+import pytest
+
+from fastmcp.task_management.application.facades.git_branch_application_facade import (
+    GitBranchApplicationFacade,
+)
+from fastmcp.task_management.application.services.git_branch_service import (
+    GitBranchService,
+)
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
+    ORMGitBranchRepository,
+)
+from fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller import (
+    GitBranchMCPController,
+)
 
 
 class TestGitBranchZeroTasksDeletion:
@@ -50,8 +58,8 @@ class TestGitBranchZeroTasksDeletion:
             name=self.empty_branch_name,
             description="Branch with no tasks",
             project_id=self.project_id,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         # Branch with tasks for comparison
@@ -62,8 +70,8 @@ class TestGitBranchZeroTasksDeletion:
             name=self.branch_with_tasks_name,
             description="Branch with tasks",
             project_id=self.project_id,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         # Simulate having tasks (we'll mock the count)
 
@@ -313,8 +321,8 @@ class TestGitBranchZeroTasksDeletion:
                 name=f"feature/empty-branch-{i}",
                 description=f"Empty branch {i}",
                 project_id=self.project_id,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC)
             )
             empty_branches.append(branch)
             
@@ -386,11 +394,11 @@ class TestGitBranchDeletionBusinessRules:
             # Create empty branch for each scenario
             branch = GitBranch(
                 id=str(uuid.uuid4()),
-                name=f"feature/scenario-branch",
+                name="feature/scenario-branch",
                 description=scenario,
                 project_id=str(uuid.uuid4()),
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC)
             )
             
             # Verify it's empty and should be deletable
@@ -418,8 +426,8 @@ class TestGitBranchDeletionBusinessRules:
                 name=f"feature/branch-with-{count}-tasks",
                 description=f"Branch with {count} tasks",
                 project_id=str(uuid.uuid4()),
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC)
             )
             
             # Simulate task count (we're not testing task creation here)

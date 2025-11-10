@@ -19,25 +19,20 @@ Test Categories:
 6. Security Scenarios: Token validation, provider isolation, credential handling
 """
 
-import pytest
 import os
-import asyncio
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional
-from unittest.mock import AsyncMock, MagicMock, patch, Mock
-import jwt as pyjwt
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 # Import the auth factory components under test
 from fastmcp.auth.application.auth_factory import (
     AuthFactory,
     AuthProvider,
-    AuthResult,
-    AuthServiceInterface,
-    SupabaseAuthAdapter,
     KeycloakAuthAdapter,
-    LocalAuthAdapter
+    LocalAuthAdapter,
+    SupabaseAuthAdapter,
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -110,7 +105,7 @@ def mock_db_config():
 @pytest.fixture
 def valid_jwt_payload():
     """Generate valid JWT payload for testing."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exp = now + timedelta(hours=1)
 
     return {
@@ -556,7 +551,7 @@ class TestSupabaseAuthAdapter:
             mock_result.user = Mock(
                 id='supabase-user-123',
                 email='test@example.com',
-                confirmed_at=datetime.now(timezone.utc)
+                confirmed_at=datetime.now(UTC)
             )
             mock_result.session = Mock(access_token='sb-access', refresh_token='sb-refresh')
             mock_result.requires_email_verification = False
@@ -614,9 +609,9 @@ class TestSupabaseAuthAdapter:
             mock_result.user = Mock(
                 id='sb-user-123',
                 email='test@example.com',
-                confirmed_at=datetime.now(timezone.utc),
+                confirmed_at=datetime.now(UTC),
                 user_metadata={'username': 'testuser', 'full_name': 'Test User'},
-                created_at=datetime.now(timezone.utc)
+                created_at=datetime.now(UTC)
             )
 
             mock_instance.verify_token = AsyncMock(return_value=mock_result)

@@ -1,8 +1,8 @@
 """Unit tests for infrastructure factories __init__.py module."""
-import pytest
+
 from fastmcp.task_management.infrastructure.factories import (
+    ProjectServiceFactory,
     RuleServiceFactory,
-    ProjectServiceFactory
 )
 
 
@@ -46,8 +46,12 @@ class TestFactoriesInit:
     def test_import_from_package(self):
         """Test importing from the package namespace"""
         # This tests that the imports work correctly from the package level
-        from fastmcp.task_management.infrastructure.factories import RuleServiceFactory as RSF
-        from fastmcp.task_management.infrastructure.factories import ProjectServiceFactory as PSF
+        from fastmcp.task_management.infrastructure.factories import (
+            ProjectServiceFactory as PSF,
+        )
+        from fastmcp.task_management.infrastructure.factories import (
+            RuleServiceFactory as RSF,
+        )
         
         assert RSF == RuleServiceFactory
         assert PSF == ProjectServiceFactory

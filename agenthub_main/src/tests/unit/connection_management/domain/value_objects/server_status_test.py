@@ -1,7 +1,10 @@
 """Unit tests for ServerStatus value object"""
 
 import pytest
-from fastmcp.connection_management.domain.value_objects.server_status import ServerStatus
+
+from fastmcp.connection_management.domain.value_objects.server_status import (
+    ServerStatus,
+)
 
 
 class TestServerStatus:

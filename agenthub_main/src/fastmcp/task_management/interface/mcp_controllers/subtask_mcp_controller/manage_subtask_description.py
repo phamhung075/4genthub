@@ -6,6 +6,9 @@ Separated from the controller logic for better maintainability and organization.
 """
 
 
+from __future__ import annotations
+
+
 def get_subtask_description() -> str:
     """Get the subtask management tool description"""
     return MANAGE_SUBTASK_DESCRIPTION

@@ -2,14 +2,14 @@
 Test JWTAuthBackend properties for token_router compatibility
 """
 import os
+
 import pytest
-from unittest.mock import Mock, patch
 
 # Set test JWT secret before imports
 os.environ['JWT_SECRET_KEY'] = 'test-secret-key-for-testing'
 
-from fastmcp.auth.mcp_integration.jwt_auth_backend import JWTAuthBackend
 from fastmcp.auth.domain.services.jwt_service import JWTService
+from fastmcp.auth.mcp_integration.jwt_auth_backend import JWTAuthBackend
 
 
 class TestJWTAuthBackendProperties:
@@ -54,8 +54,9 @@ class TestJWTAuthBackendProperties:
     
     def test_token_router_compatibility(self):
         """Test that properties work as expected by token_router"""
+        from datetime import UTC, datetime, timedelta
+
         import jwt
-        from datetime import datetime, timezone, timedelta
         
         backend = JWTAuthBackend()
         
@@ -64,8 +65,8 @@ class TestJWTAuthBackendProperties:
             "token_id": "tok_test123",
             "user_id": "user_123",
             "scopes": ["read", "write"],
-            "exp": datetime.now(timezone.utc) + timedelta(days=30),
-            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(UTC) + timedelta(days=30),
+            "iat": datetime.now(UTC),
             "type": "api_token"
         }
         

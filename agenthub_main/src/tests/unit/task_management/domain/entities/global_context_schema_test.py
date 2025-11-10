@@ -6,7 +6,10 @@ for user-scoped global context across the application.
 """
 
 import pytest
-from fastmcp.task_management.domain.entities.global_context_schema import GlobalContextNestedData
+
+from fastmcp.task_management.domain.entities.global_context_schema import (
+    GlobalContextNestedData,
+)
 
 
 class TestGlobalContextNestedData:

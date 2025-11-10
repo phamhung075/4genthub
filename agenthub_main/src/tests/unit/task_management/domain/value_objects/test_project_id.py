@@ -1,7 +1,9 @@
 """Tests for ProjectId value object"""
 
-import pytest
 import uuid
+
+import pytest
+
 from fastmcp.task_management.domain.value_objects.project_id import ProjectId
 
 
@@ -107,7 +109,7 @@ class TestProjectIdEquality:
         project_id = ProjectId.generate_new()
         assert project_id != project_id.value
         assert project_id != 12345
-        assert project_id != None
+        assert project_id is not None
 
     def test_equal_project_ids_have_same_hash(self):
         """Should have same hash when values are equal"""

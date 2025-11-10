@@ -1,18 +1,20 @@
 """Unit tests for Register Status Updates Use Case"""
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
-from fastmcp.connection_management.application.use_cases.register_status_updates import (
-    RegisterStatusUpdatesUseCase
-)
 from fastmcp.connection_management.application.dtos.connection_dtos import (
     RegisterUpdatesRequest,
-    RegisterUpdatesResponse
+    RegisterUpdatesResponse,
 )
-from fastmcp.connection_management.domain.value_objects.status_update import StatusUpdate
+from fastmcp.connection_management.application.use_cases.register_status_updates import (
+    RegisterStatusUpdatesUseCase,
+)
+from fastmcp.connection_management.domain.value_objects.status_update import (
+    StatusUpdate,
+)
 
 
 class TestRegisterStatusUpdatesUseCase(unittest.TestCase):
@@ -164,7 +166,7 @@ class TestRegisterStatusUpdatesUseCase(unittest.TestCase):
         )
         
         # Act
-        response = self.use_case.execute(request)
+        self.use_case.execute(request)
         
         # Assert
         mock_logger.error.assert_called_once()
@@ -267,7 +269,7 @@ class TestRegisterStatusUpdatesUseCase(unittest.TestCase):
         mock_datetime.now.return_value = mock_now
         
         # Act
-        response = self.use_case.execute(request)
+        self.use_case.execute(request)
         
         # Assert
         mock_datetime.now.assert_called()

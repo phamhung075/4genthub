@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Database migration runner - automatically applies migrations on server startup"""
 
+from __future__ import annotations
+
 import logging
 import os
 

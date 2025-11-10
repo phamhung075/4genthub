@@ -4,11 +4,11 @@ PostgreSQL Test Isolation Fixtures
 Provides fixtures that ensure proper test isolation when using PostgreSQL.
 Handles cleanup, transaction management, and data isolation between tests.
 """
-import pytest
-from contextlib import contextmanager
-from sqlalchemy import text
-from typing import Generator, Any
 import logging
+from contextlib import contextmanager
+
+import pytest
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,9 @@ def isolated_postgresql_test():
     - Rolls back all changes after test
     - Handles constraint violations gracefully
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
     
     db_config = get_db_config()
     
@@ -50,7 +52,7 @@ def isolated_postgresql_test():
             # Ensure we're in a clean state
             try:
                 session.rollback()
-            except:
+            except Exception:
                 pass
 
 
@@ -139,7 +141,9 @@ def postgresql_transaction():
     
     This is the most isolated approach - nothing persists after test.
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
     
     db_config = get_db_config()
     engine = db_config.engine
@@ -172,8 +176,11 @@ def ensure_global_context_exists():
     
     This is autouse so it runs for every test that imports this module.
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-    from datetime import datetime, timezone
+    from datetime import UTC, datetime
+
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
     
     try:
         db_config = get_db_config()
@@ -192,8 +199,8 @@ def ensure_global_context_exists():
                     :created_at, :updated_at
                 ) ON CONFLICT (id) DO NOTHING
             """), {
-                'created_at': datetime.now(timezone.utc),
-                'updated_at': datetime.now(timezone.utc)
+                'created_at': datetime.now(UTC),
+                'updated_at': datetime.now(UTC)
             })
             session.commit()
     except Exception as e:
@@ -207,7 +214,9 @@ def truncate_all_tables(exclude_defaults=True):
     Args:
         exclude_defaults: If True, preserves default test data
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
     
     db_config = get_db_config()
     

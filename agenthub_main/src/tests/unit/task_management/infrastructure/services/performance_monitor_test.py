@@ -7,23 +7,22 @@ Tests the performance monitoring service that tracks cache system metrics,
 captures snapshots, handles alerts, and exports performance data.
 """
 
-import pytest
 import asyncio
-import time
 import json
-from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
-from collections import deque
-from pathlib import Path
-import tempfile
 import os
-from datetime import datetime
+import tempfile
+import time
+from pathlib import Path
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from fastmcp.task_management.infrastructure.services.performance_monitor import (
+    BenchmarkConfig,
+    BenchmarkResult,
+    CacheBenchmark,
     PerformanceMonitor,
     PerformanceSnapshot,
-    CacheBenchmark,
-    BenchmarkConfig,
-    BenchmarkResult
 )
 
 

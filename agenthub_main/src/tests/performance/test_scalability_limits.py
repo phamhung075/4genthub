@@ -15,26 +15,24 @@ Test Objectives:
 Expected Outcome: All tests should PASS after N+1 query fix implementation.
 """
 
-import pytest
+import gc
 import time
 import uuid
-import gc
-import psutil
-from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Tuple
+from datetime import UTC, datetime
+
+import psutil
+import pytest
 
 # SQLAlchemy imports for query counting
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
-from fastmcp.task_management.application.use_cases.list_tasks import ListTasksUseCase
 from fastmcp.task_management.application.dtos.task import ListTasksRequest
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+from fastmcp.task_management.application.use_cases.list_tasks import ListTasksUseCase
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
 
 
 class QueryCounter:
@@ -99,14 +97,17 @@ def query_counter():
     return QueryCounter()
 
 
-def create_test_project_and_branch(session) -> Tuple[str, str]:
+def create_test_project_and_branch(session) -> tuple[str, str]:
     """
     Create test project and git branch for testing.
 
     Returns:
         Tuple of (project_id, git_branch_id)
     """
-    from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch
+    from fastmcp.task_management.infrastructure.database.models import (
+        Project,
+        ProjectGitBranch,
+    )
 
     project_id = str(uuid.uuid4())
     git_branch_id = str(uuid.uuid4())
@@ -142,7 +143,7 @@ def create_test_project_and_branch(session) -> Tuple[str, str]:
     return project_id, git_branch_id
 
 
-def create_bulk_tasks(session, git_branch_id: str, project_id: str, count: int) -> List[str]:
+def create_bulk_tasks(session, git_branch_id: str, project_id: str, count: int) -> list[str]:
     """
     Create multiple test tasks efficiently in bulk.
 
@@ -171,7 +172,7 @@ def create_bulk_tasks(session, git_branch_id: str, project_id: str, count: int) 
             task_id = str(uuid.uuid4())
             task_ids.append(task_id)
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             task = TaskModel(
                 id=task_id,
                 title=f"Scalability Test Task {task_num}",
@@ -213,11 +214,15 @@ def test_500_tasks_load_performance(query_counter):
     with db_config.get_session() as session:
         # Arrange: Create test environment
         project_id, git_branch_id = create_test_project_and_branch(session)
-        task_ids = create_bulk_tasks(session, git_branch_id, project_id, 500)
+        create_bulk_tasks(session, git_branch_id, project_id, 500)
 
         # Create use case
-        from fastmcp.task_management.infrastructure.repositories.task_repository import TaskRepository
-        from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import ProjectGitBranchRepository
+        from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import (
+            ProjectGitBranchRepository,
+        )
+        from fastmcp.task_management.infrastructure.repositories.task_repository import (
+            TaskRepository,
+        )
 
         task_repo = TaskRepository(session)
         branch_repo = ProjectGitBranchRepository(session)
@@ -276,10 +281,14 @@ def test_1000_tasks_load_performance(query_counter):
     with db_config.get_session() as session:
         # Arrange
         project_id, git_branch_id = create_test_project_and_branch(session)
-        task_ids = create_bulk_tasks(session, git_branch_id, project_id, 1000)
+        create_bulk_tasks(session, git_branch_id, project_id, 1000)
 
-        from fastmcp.task_management.infrastructure.repositories.task_repository import TaskRepository
-        from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import ProjectGitBranchRepository
+        from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import (
+            ProjectGitBranchRepository,
+        )
+        from fastmcp.task_management.infrastructure.repositories.task_repository import (
+            TaskRepository,
+        )
 
         task_repo = TaskRepository(session)
         branch_repo = ProjectGitBranchRepository(session)
@@ -335,10 +344,14 @@ def test_2000_tasks_future_proofing(query_counter):
     with db_config.get_session() as session:
         # Arrange
         project_id, git_branch_id = create_test_project_and_branch(session)
-        task_ids = create_bulk_tasks(session, git_branch_id, project_id, 2000)
+        create_bulk_tasks(session, git_branch_id, project_id, 2000)
 
-        from fastmcp.task_management.infrastructure.repositories.task_repository import TaskRepository
-        from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import ProjectGitBranchRepository
+        from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import (
+            ProjectGitBranchRepository,
+        )
+        from fastmcp.task_management.infrastructure.repositories.task_repository import (
+            TaskRepository,
+        )
 
         task_repo = TaskRepository(session)
         branch_repo = ProjectGitBranchRepository(session)
@@ -398,8 +411,12 @@ def test_5000_tasks_scalability_ceiling(query_counter):
         task_ids = create_bulk_tasks(session, git_branch_id, project_id, 5000)
         print(f"✅ Created {len(task_ids)} tasks")
 
-        from fastmcp.task_management.infrastructure.repositories.task_repository import TaskRepository
-        from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import ProjectGitBranchRepository
+        from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import (
+            ProjectGitBranchRepository,
+        )
+        from fastmcp.task_management.infrastructure.repositories.task_repository import (
+            TaskRepository,
+        )
 
         task_repo = TaskRepository(session)
         branch_repo = ProjectGitBranchRepository(session)
@@ -431,7 +448,7 @@ def test_5000_tasks_scalability_ceiling(query_counter):
         )
 
         print(f"\n✅ Test 4 PASSED: 5000 tasks in {duration:.3f}s with {query_count} queries")
-        print(f"   Scalability ceiling validated - system can handle enterprise-scale workloads")
+        print("   Scalability ceiling validated - system can handle enterprise-scale workloads")
 
 
 # =============================================
@@ -453,11 +470,15 @@ def test_connection_pool_stability_concurrent_load():
     """
     db_config = get_db_config()
 
-    def query_tasks(git_branch_id: str) -> Tuple[float, int]:
+    def query_tasks(git_branch_id: str) -> tuple[float, int]:
         """Execute task query and return (duration, task_count)"""
         with db_config.get_session() as session:
-            from fastmcp.task_management.infrastructure.repositories.task_repository import TaskRepository
-            from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import ProjectGitBranchRepository
+            from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import (
+                ProjectGitBranchRepository,
+            )
+            from fastmcp.task_management.infrastructure.repositories.task_repository import (
+                TaskRepository,
+            )
 
             task_repo = TaskRepository(session)
             branch_repo = ProjectGitBranchRepository(session)
@@ -510,7 +531,7 @@ def test_connection_pool_stability_concurrent_load():
         assert task_count == 200, f"Branch {branch_id} returned {task_count} tasks, expected 200"
         assert duration < 10.0, f"Branch {branch_id} took {duration:.2f}s (max: 10s)"
 
-    print(f"\n✅ Test 5 PASSED: Connection pool stable under 5 concurrent requests")
+    print("\n✅ Test 5 PASSED: Connection pool stable under 5 concurrent requests")
 
 
 # =============================================
@@ -535,7 +556,7 @@ def test_memory_consumption_stability():
     # Arrange
     with db_config.get_session() as session:
         project_id, git_branch_id = create_test_project_and_branch(session)
-        task_ids = create_bulk_tasks(session, git_branch_id, project_id, 1000)
+        create_bulk_tasks(session, git_branch_id, project_id, 1000)
 
     # Force garbage collection before measurement
     gc.collect()
@@ -545,8 +566,12 @@ def test_memory_consumption_stability():
     # Act: Execute 10 requests
     for i in range(10):
         with db_config.get_session() as session:
-            from fastmcp.task_management.infrastructure.repositories.task_repository import TaskRepository
-            from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import ProjectGitBranchRepository
+            from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import (
+                ProjectGitBranchRepository,
+            )
+            from fastmcp.task_management.infrastructure.repositories.task_repository import (
+                TaskRepository,
+            )
 
             task_repo = TaskRepository(session)
             branch_repo = ProjectGitBranchRepository(session)
@@ -597,8 +622,12 @@ def test_generate_performance_summary(query_counter):
             project_id, git_branch_id = create_test_project_and_branch(session)
             create_bulk_tasks(session, git_branch_id, project_id, scale)
 
-            from fastmcp.task_management.infrastructure.repositories.task_repository import TaskRepository
-            from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import ProjectGitBranchRepository
+            from fastmcp.task_management.infrastructure.repositories.project_git_branch_repository import (
+                ProjectGitBranchRepository,
+            )
+            from fastmcp.task_management.infrastructure.repositories.task_repository import (
+                TaskRepository,
+            )
 
             task_repo = TaskRepository(session)
             branch_repo = ProjectGitBranchRepository(session)

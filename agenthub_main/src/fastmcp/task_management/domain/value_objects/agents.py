@@ -1,5 +1,7 @@
 """Agent Value Objects for Multi-Agent Coordination"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum

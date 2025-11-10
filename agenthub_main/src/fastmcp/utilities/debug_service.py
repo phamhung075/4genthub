@@ -5,6 +5,8 @@ This service provides environment-based debugging controls that can be easily
 enabled/disabled via .env configuration for troubleshooting production issues.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os

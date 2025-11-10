@@ -3,6 +3,8 @@
 Handles automatic progress calculation and updates for tasks based on subtask completion.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -35,7 +37,7 @@ class TaskProgressService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'TaskProgressService':
+    def with_user(self, user_id: str) -> TaskProgressService:
         """Create a new service instance scoped to a specific user."""
         return TaskProgressService(self._task_repository, self._subtask_repository, user_id)
     

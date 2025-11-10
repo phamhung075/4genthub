@@ -6,6 +6,8 @@ particularly useful for cloud databases like Supabase that may have transient
 connection issues.
 """
 
+from __future__ import annotations
+
 import logging
 import time
 from collections.abc import Callable

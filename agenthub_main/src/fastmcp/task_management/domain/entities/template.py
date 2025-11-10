@@ -1,5 +1,7 @@
 """Template Domain Entity"""
 
+from __future__ import annotations
+
 import fnmatch
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -159,7 +161,7 @@ class Template(BaseTimestampEntity):
         }
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'Template':
+    def from_dict(cls, data: dict[str, Any]) -> Template:
         """Create template from dictionary representation"""
         # Create the template instance
         template = cls(

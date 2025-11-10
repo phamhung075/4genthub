@@ -5,6 +5,8 @@ Handles communication with Supabase for token verification, user authentication,
 and security logging.
 """
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import os

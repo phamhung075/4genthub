@@ -6,19 +6,24 @@ This test verifies that the SQLAlchemy relationship cascade and database
 foreign key cascade configurations properly delete task contexts when tasks are deleted.
 """
 
-import uuid
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, text
+import os
 
 # Import the ORM models
 import sys
-import os
+import uuid
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+
 sys.path.append(os.path.dirname(__file__) + '/..')
 
-from fastmcp.task_management.infrastructure.database.models import (
-    Task, TaskContext, Project, ProjectGitBranch
-)
 from fastmcp.task_management.infrastructure.database.database_config import Base
+from fastmcp.task_management.infrastructure.database.models import (
+    Project,
+    ProjectGitBranch,
+    Task,
+    TaskContext,
+)
 
 
 def test_sqlalchemy_cascade_deletion():
@@ -202,8 +207,9 @@ def test_repository_manual_deletion_still_works():
     print("\n🧪 Testing repository manual deletion still works...")
 
     # Import repository
-    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-    from fastmcp.task_management.infrastructure.database.database_config import get_session
+    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+        ORMTaskRepository,
+    )
 
     # Create in-memory SQLite database
     engine = create_engine("sqlite:///:memory:", echo=False)

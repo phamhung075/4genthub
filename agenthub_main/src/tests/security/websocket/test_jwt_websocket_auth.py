@@ -4,16 +4,17 @@ Simple WebSocket JWT Authentication Test
 Tests the critical security fix for JWT validation in WebSocket connections.
 """
 
-import pytest
-import asyncio
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
-import jwt
-from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from fastmcp.auth.domain.entities.user import User
 
 # Import the modules to test
-from fastmcp.server.routes.websocket_routes import validate_websocket_token, is_user_authorized_for_message
-from fastmcp.auth.domain.entities.user import User
+from fastmcp.server.routes.websocket_routes import (
+    is_user_authorized_for_message,
+    validate_websocket_token,
+)
 
 
 class TestWebSocketJWTAuth:
@@ -32,7 +33,7 @@ class TestWebSocketJWTAuth:
         )
 
         # Mock the validation functions and jwt decode
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_keycloak:
+        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token'):
             with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_local:
                 with patch('fastmcp.server.routes.websocket_routes.os.getenv') as mock_getenv:
                     with patch('jwt.decode') as mock_jwt_decode:
@@ -64,7 +65,7 @@ class TestWebSocketJWTAuth:
         """Test that invalid tokens are rejected"""
 
         # Mock the validation functions to return HTTPException
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_keycloak:
+        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token'):
             with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_local:
                 with patch('fastmcp.server.routes.websocket_routes.os.getenv') as mock_getenv:
                     with patch('jwt.decode') as mock_jwt_decode:
@@ -115,7 +116,7 @@ class TestWebSocketJWTAuth:
         )
 
         # Mock the connection_users dict
-        with patch('fastmcp.server.routes.websocket_routes.connection_users', {mock_websocket: mock_user}) as mock_conn_users:
+        with patch('fastmcp.server.routes.websocket_routes.connection_users', {mock_websocket: mock_user}):
 
             # Test authorization for user's own data
             is_authorized = await is_user_authorized_for_message(
@@ -142,7 +143,7 @@ class TestWebSocketJWTAuth:
         )
 
         # Mock the connection_users dict and database session
-        with patch('fastmcp.server.routes.websocket_routes.connection_users', {mock_websocket: mock_user}) as mock_conn_users:
+        with patch('fastmcp.server.routes.websocket_routes.connection_users', {mock_websocket: mock_user}):
             with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
 
                 # Mock database session to return None (no access to task)
@@ -168,7 +169,7 @@ class TestWebSocketJWTAuth:
         mock_websocket = AsyncMock()
 
         # Mock empty connection_users dict
-        with patch('fastmcp.server.routes.websocket_routes.connection_users', {}) as mock_conn_users:
+        with patch('fastmcp.server.routes.websocket_routes.connection_users', {}):
 
             is_authorized = await is_user_authorized_for_message(
                 websocket=mock_websocket,

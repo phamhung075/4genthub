@@ -18,14 +18,17 @@ Test Date: 2025-10-31
 Bug Report: ai_docs/testing-qa/mcp-tools-comprehensive-test-report-2025-10-31.md
 """
 
-import pytest
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.domain.entities.agent import Agent as AgentEntity, AgentStatus
+import pytest
+
+from fastmcp.task_management.domain.entities.agent import Agent as AgentEntity
 from fastmcp.task_management.domain.value_objects.agent_id import AgentId
-from fastmcp.task_management.infrastructure.repositories.orm.agent_repository import ORMAgentRepository
+from fastmcp.task_management.infrastructure.repositories.orm.agent_repository import (
+    ORMAgentRepository,
+)
 
 
 class TestAgentRepositoryTimestampRegression:
@@ -110,8 +113,8 @@ class TestAgentRepositoryTimestampRegression:
         assert updated_at.tzinfo is not None, "updated_at should be timezone-aware"
 
         # Verify UTC timezone
-        assert created_at.tzinfo == timezone.utc or created_at.tzinfo.utcoffset(None).total_seconds() == 0
-        assert updated_at.tzinfo == timezone.utc or updated_at.tzinfo.utcoffset(None).total_seconds() == 0
+        assert created_at.tzinfo == UTC or created_at.tzinfo.utcoffset(None).total_seconds() == 0
+        assert updated_at.tzinfo == UTC or updated_at.tzinfo.utcoffset(None).total_seconds() == 0
 
     def test_entity_timestamps_initialized_by_base_class(self):
         """
@@ -132,7 +135,7 @@ class TestAgentRepositoryTimestampRegression:
         assert agent.updated_at is not None, "BaseTimestampEntity should initialize updated_at"
 
         # Verify timestamps are recent (within last second)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         time_diff_created = (now - agent.created_at).total_seconds()
         time_diff_updated = (now - agent.updated_at).total_seconds()
 
@@ -140,8 +143,8 @@ class TestAgentRepositoryTimestampRegression:
         assert time_diff_updated < 1.0, "updated_at should be very recent"
 
         # Verify timestamps are UTC
-        assert agent.created_at.tzinfo == timezone.utc
-        assert agent.updated_at.tzinfo == timezone.utc
+        assert agent.created_at.tzinfo == UTC
+        assert agent.updated_at.tzinfo == UTC
 
     def test_model_to_entity_includes_timestamps(self, agent_repository):
         """
@@ -149,10 +152,12 @@ class TestAgentRepositoryTimestampRegression:
 
         This test confirms the bidirectional mapping is complete.
         """
-        from fastmcp.task_management.infrastructure.database.models import Agent as AgentModel
+        from fastmcp.task_management.infrastructure.database.models import (
+            Agent as AgentModel,
+        )
 
         # Create mock agent model with timestamps
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         agent_model = AgentModel(
             id=str(uuid.uuid4()),
             name="model-test-agent",
@@ -208,7 +213,9 @@ class TestAgentRepositoryTimestampRegression:
         # Mock the create method to simulate database INSERT
         with patch.object(agent_repository, 'create') as mock_create:
             # Create a mock Agent model that would be returned from database
-            from fastmcp.task_management.infrastructure.database.models import Agent as AgentModel
+            from fastmcp.task_management.infrastructure.database.models import (
+                Agent as AgentModel,
+            )
 
             mock_agent_model = AgentModel(
                 id=str(sample_agent_entity.id),
@@ -227,7 +234,7 @@ class TestAgentRepositoryTimestampRegression:
                 # Mock find_by_name check
                 with patch.object(agent_repository, 'find_by_name', return_value=None):
                     # Attempt registration
-                    registered_agent = agent_repository.register_agent(sample_agent_entity)
+                    agent_repository.register_agent(sample_agent_entity)
 
                     # Verify create was called with proper timestamp data
                     mock_create.assert_called_once()

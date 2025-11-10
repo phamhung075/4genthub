@@ -1,5 +1,7 @@
 """Definition of an agent role with specific rules and context"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 

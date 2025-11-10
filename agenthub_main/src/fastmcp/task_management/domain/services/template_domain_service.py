@@ -1,5 +1,7 @@
 """Template Domain Service - Core Business Logic"""
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import Any

@@ -5,6 +5,8 @@ This service orchestrates token consumption operations including consuming token
 adding tokens, getting balance, and managing quotas.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from typing import Any

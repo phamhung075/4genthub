@@ -11,6 +11,8 @@ Used by both HTTP middleware and WebSocket handlers to ensure consistent
 authentication behavior across all connection types.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 from dataclasses import dataclass
@@ -225,7 +227,7 @@ async def _validate_local_jwt(token: str) -> AuthResult:
                                 auth_method='local_jwt',
                                 roles=payload.get('roles', [])
                             )
-                    except:
+                    except Exception:
                         pass
 
                 # Try standard validation
@@ -244,7 +246,7 @@ async def _validate_local_jwt(token: str) -> AuthResult:
                                 scopes=payload.get('scopes', []),
                                 roles=payload.get('roles', [])
                             )
-                    except:
+                    except Exception:
                         continue
 
             except Exception as e:

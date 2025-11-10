@@ -7,11 +7,13 @@ Tests covering lines 657-703 in mcp_entry_point.py:
 - Parameter validation errors
 """
 
-import pytest
 import logging
 import os
-from unittest.mock import Mock, patch, MagicMock, call
-from fastmcp.server.mcp_entry_point import main, create_agenthub_server
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
+from fastmcp.server.mcp_entry_point import main
 
 
 class TestMCPEntryPointErrorPaths:

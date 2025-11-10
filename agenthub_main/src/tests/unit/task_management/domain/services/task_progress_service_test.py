@@ -1,21 +1,19 @@
 """Unit tests for TaskProgressService - Domain Service for Task Progress Calculations"""
 
-import pytest
 from unittest.mock import Mock
-from decimal import Decimal
-from typing import List, Dict, Any
 
-from fastmcp.task_management.domain.services.task_progress_service import (
-    TaskProgressService,
-    SubtaskRepositoryProtocol
-)
-from fastmcp.task_management.domain.entities.task import Task
+import pytest
+
 from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.services.task_progress_service import (
+    SubtaskRepositoryProtocol,
+    TaskProgressService,
+)
 
 
 def create_mock_with_spec(spec_class):
     """Safely create a Mock with spec, handling already-mocked classes."""
-    from unittest.mock import MagicMock
 
     # Check if the class is actually a Mock or has been patched
     if (hasattr(spec_class, '_mock_name') or
@@ -26,7 +24,6 @@ def create_mock_with_spec(spec_class):
     else:
         # It's a real class, safe to use as spec
         return Mock(spec=spec_class)
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
@@ -149,7 +146,9 @@ class TestTaskProgressService:
         ):
             """Test progress calculation for blocked task."""
             # Arrange
-            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+            from fastmcp.task_management.domain.value_objects.task_status import (
+                TaskStatus,
+            )
             blocked_task = Task(
                 id=TaskId.generate(),
                 title="Blocked Task",
@@ -172,7 +171,9 @@ class TestTaskProgressService:
         ):
             """Test progress calculation for completed task."""
             # Arrange
-            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+            from fastmcp.task_management.domain.value_objects.task_status import (
+                TaskStatus,
+            )
 
             done_task = Task(
                 id=TaskId.generate(),
@@ -196,7 +197,9 @@ class TestTaskProgressService:
         ):
             """Test progress calculation for task with dependencies (covers line 282)."""
             # Arrange
-            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+            from fastmcp.task_management.domain.value_objects.task_status import (
+                TaskStatus,
+            )
 
             task_with_deps = Task(
                 id=TaskId.generate(),
@@ -234,7 +237,9 @@ class TestTaskProgressService:
 
         def create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
             """Helper method to create a subtask."""
-            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+            from fastmcp.task_management.domain.value_objects.task_status import (
+                TaskStatus,
+            )
 
             subtask = Subtask(
                 id=TaskId.generate(),
@@ -342,7 +347,9 @@ class TestTaskProgressService:
 
         def create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
             """Helper method to create a subtask."""
-            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+            from fastmcp.task_management.domain.value_objects.task_status import (
+                TaskStatus,
+            )
 
             subtask = Subtask(
                 id=TaskId.generate(),
@@ -465,7 +472,9 @@ class TestTaskProgressService:
 
         def create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
             """Helper method to create a subtask."""
-            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+            from fastmcp.task_management.domain.value_objects.task_status import (
+                TaskStatus,
+            )
 
             subtask = Subtask(
                 id=TaskId.generate(),
@@ -483,7 +492,9 @@ class TestTaskProgressService:
         def test_todo_task_score(self, progress_service: TaskProgressService):
             """Test progress score for todo task."""
             # Arrange
-            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+            from fastmcp.task_management.domain.value_objects.task_status import (
+                TaskStatus,
+            )
             task = Task(
                 id=TaskId.generate(),
                 title="Todo Task",
@@ -591,7 +602,9 @@ class TestTaskProgressService:
         ):
             """Test exception handling in score calculation."""
             # Arrange
-            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+            from fastmcp.task_management.domain.value_objects.task_status import (
+                TaskStatus,
+            )
 
             task = Task(
                 id=TaskId.generate(),
@@ -612,7 +625,9 @@ class TestTaskProgressService:
 
         def create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
             """Helper method to create a subtask."""
-            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+            from fastmcp.task_management.domain.value_objects.task_status import (
+                TaskStatus,
+            )
 
             subtask = Subtask(
                 id=TaskId.generate(),

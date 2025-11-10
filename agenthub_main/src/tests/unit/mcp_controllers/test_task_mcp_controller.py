@@ -5,29 +5,29 @@ This module provides extensive testing for the TaskMCPController with proper moc
 of all dependencies, including facades, authentication, permissions, and factories.
 """
 
-import pytest
-import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Dict, Any, Optional, List
 import uuid
-from datetime import datetime, timezone
+from unittest.mock import MagicMock, Mock, patch
 
-# Import the controller under test
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import (
-    TaskMCPController
+import pytest
+
+# Import DTOs for request/response validation
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
 )
 
 # Import dependencies that need to be mocked
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.interface.mcp_controllers.workflow_hint_enhancer import WorkflowHintEnhancer
-from fastmcp.task_management.interface.utils.response_formatter import StandardResponseFormatter, ResponseStatus, ErrorCodes
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
+    UserAuthenticationRequiredError,
+)
 
-# Import DTOs for request/response validation
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.list_tasks_request import ListTasksRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
+# Import the controller under test
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import (
+    TaskMCPController,
+)
+from fastmcp.task_management.interface.mcp_controllers.workflow_hint_enhancer import (
+    WorkflowHintEnhancer,
+)
 
 
 class TestTaskMCPController:

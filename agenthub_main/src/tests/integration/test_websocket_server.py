@@ -12,25 +12,18 @@ Tests for the complete WebSocket server implementation including:
 NO backward compatibility - v2.0 only tests.
 """
 
-import asyncio
 import json
-import pytest
-import pytest_asyncio
-import uuid
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+import pytest_asyncio
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
-import websockets
-from websockets.exceptions import ConnectionClosedError
 
-from fastmcp.websocket.server import WebSocketServer
-from fastmcp.websocket.connection_manager import ConnectionManager
 from fastmcp.websocket.batch_processor import BatchProcessor
-from fastmcp.websocket.protocol import create_user_update, create_error
+from fastmcp.websocket.connection_manager import ConnectionManager
 from fastmcp.websocket.models import WSMessage
-from fastmcp.websocket.fastapi_integration import setup_websocket_integration
+from fastmcp.websocket.protocol import create_error, create_user_update
+from fastmcp.websocket.server import WebSocketServer
 
 
 @pytest.fixture

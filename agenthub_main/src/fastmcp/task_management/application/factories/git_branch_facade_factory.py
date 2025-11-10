@@ -3,6 +3,8 @@
 Factory for creating git branch application facades with proper dependency injection following DDD patterns.
 """
 
+from __future__ import annotations
+
 import logging
 
 from ...application.facades.git_branch_application_facade import (

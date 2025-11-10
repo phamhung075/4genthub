@@ -8,30 +8,29 @@ Comprehensive test coverage for hook authentication including:
 - Error handling and edge cases
 """
 
-import pytest
-import os
 import json
+import os
 import tempfile
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, MagicMock
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
-from jose import jwt, JWTError
+import pytest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
+from jose import jwt
 
 # Set environment variable before importing to avoid errors
 os.environ.setdefault("HOOK_JWT_SECRET", "test-secret-key-for-hook-auth")
 
 from fastmcp.auth.hook_auth import (
-    HookAuthValidator,
-    hook_auth_validator,
-    get_hook_authenticated_user,
-    is_hook_request,
-    get_token_from_mcp_json,
-    create_hook_token,
     HOOK_JWT_ALGORITHM,
-    HOOK_JWT_SECRET
+    HOOK_JWT_SECRET,
+    HookAuthValidator,
+    create_hook_token,
+    get_hook_authenticated_user,
+    get_token_from_mcp_json,
+    is_hook_request,
 )
 
 
@@ -50,7 +49,7 @@ class TestHookAuthValidator:
             "sub": "test-user",
             "type": "api_token",
             "iss": "agenthub",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
         token = jwt.encode(payload, HOOK_JWT_SECRET, algorithm=HOOK_JWT_ALGORITHM)
         
@@ -69,7 +68,7 @@ class TestHookAuthValidator:
             "sub": "test-user",
             "type": "api_token",
             "iss": "agenthub",
-            "exp": (datetime.now(timezone.utc) - timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) - timedelta(hours=1)).timestamp()
         }
         token = jwt.encode(payload, HOOK_JWT_SECRET, algorithm=HOOK_JWT_ALGORITHM)
         
@@ -163,7 +162,7 @@ class TestHookAuthDependencies:
             "sub": "hook-user-123",
             "type": "api_token",
             "iss": "agenthub",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
         token = jwt.encode(payload, HOOK_JWT_SECRET, algorithm=HOOK_JWT_ALGORITHM)
         
@@ -369,7 +368,7 @@ class TestTokenCreation:
         
         # Check expiry is approximately 7 days from now
         exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
-        expected_time = datetime.now(timezone.utc) + timedelta(days=7)
+        expected_time = datetime.now(UTC) + timedelta(days=7)
         
         # Allow 1 minute difference for test execution time
         time_diff = abs((exp_time - expected_time).total_seconds())

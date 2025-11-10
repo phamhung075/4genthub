@@ -1,5 +1,7 @@
 """Monitoring Service Interface - Domain Layer"""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from enum import Enum

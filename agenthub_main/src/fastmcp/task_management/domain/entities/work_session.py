@@ -1,5 +1,7 @@
 """WorkSession Domain Entity"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
@@ -248,7 +250,7 @@ class WorkSession(BaseTimestampEntity):
         task_id: str,
         git_branch_name: str,
         max_duration_hours: float | None = None
-    ) -> 'WorkSession':
+    ) -> WorkSession:
         """Factory method to create a new work session"""
         session_id = f"{agent_id}_{task_id}_{datetime.now(UTC).timestamp()}"
         

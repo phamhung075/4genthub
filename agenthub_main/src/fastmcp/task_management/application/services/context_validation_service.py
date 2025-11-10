@@ -4,6 +4,8 @@ This service provides validation logic for context updates,
 ensuring Vision System requirements are met.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -39,7 +41,7 @@ class ContextValidationService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'ContextValidationService':
+    def with_user(self, user_id: str) -> ContextValidationService:
         """Create a new service instance scoped to a specific user."""
         return ContextValidationService(user_id, self._id_validator)
     
@@ -238,7 +240,7 @@ class ContextValidationService:
             data: The context data to validate
             
         Returns:
-            Dictionary with validation result: {"valid": bool, "errors": List[str]}
+            Dictionary with validation result: {"valid": bool, "errors": list[str]}
         """
         errors = []
         

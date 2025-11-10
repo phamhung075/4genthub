@@ -9,20 +9,20 @@ Tests the vision system value objects including:
 - VisionDashboard value object
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
-from unittest.mock import patch
+
+import pytest
 
 from fastmcp.task_management.domain.value_objects.vision_objects import (
-    VisionHierarchyLevel,
     ContributionType,
     MetricType,
+    VisionAlignment,
+    VisionDashboard,
+    VisionHierarchyLevel,
+    VisionInsight,
     VisionMetric,
     VisionObjective,
-    VisionAlignment,
-    VisionInsight,
-    VisionDashboard
 )
 
 
@@ -77,7 +77,7 @@ class TestVisionMetric:
     
     def test_create_vision_metric_full(self):
         """Test creating vision metric with all fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         metric = VisionMetric(
             name="User Satisfaction",
@@ -188,7 +188,7 @@ class TestVisionMetric:
     
     def test_to_dict(self):
         """Test converting metric to dictionary."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         metric = VisionMetric(
             name="Performance",
@@ -238,7 +238,7 @@ class TestVisionObjective:
         """Test creating vision objective with all fields."""
         objective_id = uuid4()
         parent_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         due_date = now + timedelta(days=30)
         
         metrics = [
@@ -337,7 +337,7 @@ class TestVisionObjective:
     
     def test_days_remaining_future_date(self):
         """Test days remaining with future due date."""
-        future_date = datetime.now(timezone.utc) + timedelta(days=10)
+        future_date = datetime.now(UTC) + timedelta(days=10)
         objective = VisionObjective(due_date=future_date)
         
         # Should be around 10, but account for test execution time
@@ -345,7 +345,7 @@ class TestVisionObjective:
     
     def test_days_remaining_past_date(self):
         """Test days remaining with past due date."""
-        past_date = datetime.now(timezone.utc) - timedelta(days=5)
+        past_date = datetime.now(UTC) - timedelta(days=5)
         objective = VisionObjective(due_date=past_date)
         
         assert objective.days_remaining == 0
@@ -354,7 +354,7 @@ class TestVisionObjective:
         """Test converting objective to dictionary."""
         objective_id = uuid4()
         parent_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         due_date = now + timedelta(days=30)
         
         metrics = [
@@ -425,7 +425,7 @@ class TestVisionAlignment:
         """Test creating vision alignment with all fields."""
         task_id = uuid4()
         objective_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         alignment = VisionAlignment(
             task_id=task_id,
@@ -503,7 +503,7 @@ class TestVisionAlignment:
         """Test converting alignment to dictionary."""
         task_id = uuid4()
         objective_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         alignment = VisionAlignment(
             task_id=task_id,
@@ -554,7 +554,7 @@ class TestVisionInsight:
         insight_id = uuid4()
         objective_id = uuid4()
         task_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires_at = now + timedelta(days=7)
         
         insight = VisionInsight(
@@ -598,14 +598,14 @@ class TestVisionInsight:
     
     def test_is_expired_future_expiry(self):
         """Test is_expired with future expiry date."""
-        future_date = datetime.now(timezone.utc) + timedelta(days=1)
+        future_date = datetime.now(UTC) + timedelta(days=1)
         insight = VisionInsight(expires_at=future_date)
         
         assert not insight.is_expired
     
     def test_is_expired_past_expiry(self):
         """Test is_expired with past expiry date."""
-        past_date = datetime.now(timezone.utc) - timedelta(days=1)
+        past_date = datetime.now(UTC) - timedelta(days=1)
         insight = VisionInsight(expires_at=past_date)
         
         assert insight.is_expired
@@ -636,7 +636,7 @@ class TestVisionInsight:
     
     def test_urgency_score_expires_tomorrow(self):
         """Test urgency score when expiring within 1 day."""
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=12)
+        expires_at = datetime.now(UTC) + timedelta(hours=12)
         insight = VisionInsight(impact="medium", expires_at=expires_at)
         
         # medium (0.5) * 1.5 = 0.75
@@ -644,7 +644,7 @@ class TestVisionInsight:
     
     def test_urgency_score_expires_this_week(self):
         """Test urgency score when expiring within 7 days."""
-        expires_at = datetime.now(timezone.utc) + timedelta(days=5)
+        expires_at = datetime.now(UTC) + timedelta(days=5)
         insight = VisionInsight(impact="medium", expires_at=expires_at)
         
         # medium (0.5) * 1.2 = 0.6
@@ -652,7 +652,7 @@ class TestVisionInsight:
     
     def test_urgency_score_expires_later(self):
         """Test urgency score when expiring later."""
-        expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+        expires_at = datetime.now(UTC) + timedelta(days=30)
         insight = VisionInsight(impact="medium", expires_at=expires_at)
         
         # No urgency multiplier
@@ -660,7 +660,7 @@ class TestVisionInsight:
     
     def test_urgency_score_capped_at_one(self):
         """Test urgency score is capped at 1.0."""
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        expires_at = datetime.now(UTC) + timedelta(hours=1)
         insight = VisionInsight(impact="critical", expires_at=expires_at)
         
         # critical (1.0) * 1.5 = 1.5, but capped at 1.0
@@ -671,7 +671,7 @@ class TestVisionInsight:
         insight_id = uuid4()
         objective_id = uuid4()
         task_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires_at = now + timedelta(days=3)
         
         insight = VisionInsight(
@@ -727,7 +727,7 @@ class TestVisionDashboard:
     
     def test_create_vision_dashboard_full(self):
         """Test creating vision dashboard with all fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         insight = VisionInsight(title="Test Insight", type="recommendation")
         
         dashboard = VisionDashboard(
@@ -767,7 +767,7 @@ class TestVisionDashboard:
     
     def test_to_dict(self):
         """Test converting dashboard to dictionary."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         insight = VisionInsight(title="Dashboard Insight", impact="high")
         
         dashboard = VisionDashboard(

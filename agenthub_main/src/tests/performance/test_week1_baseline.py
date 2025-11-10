@@ -19,21 +19,25 @@ Success Criteria:
 - No degradation in data integrity
 """
 
-import pytest
-import time
-import asyncio
 import inspect
-from typing import Dict, List, Any
+import statistics
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
-import statistics
+from typing import Any
 
+import pytest
+
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.update_task_request import (
+    UpdateTaskRequest,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
 from fastmcp.task_management.infrastructure.database.database_config import get_session
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.subtask import Subtask
 
 
 @dataclass
@@ -42,7 +46,7 @@ class PerformanceMetrics:
     operation_name: str
     baseline_target_ms: float
     optimized_target_ms: float
-    measurements: List[float] = field(default_factory=list)
+    measurements: list[float] = field(default_factory=list)
     success: bool = False
 
     @property
@@ -93,7 +97,7 @@ class Week1BaselineTester:
             iterations: Number of test iterations for statistical significance
         """
         self.iterations = iterations
-        self.metrics: Dict[str, PerformanceMetrics] = {}
+        self.metrics: dict[str, PerformanceMetrics] = {}
         self.test_data = []
 
     def create_metric(self, operation_name: str, baseline_ms: float, target_ms: float):
@@ -146,7 +150,7 @@ class Week1BaselineTester:
         session.commit()
         self.test_data.clear()
 
-    def generate_report(self) -> Dict[str, Any]:
+    def generate_report(self) -> dict[str, Any]:
         """
         Generate comprehensive performance report.
 
@@ -154,7 +158,7 @@ class Week1BaselineTester:
             Dictionary containing detailed performance analysis
         """
         report = {
-            "test_timestamp": datetime.now(timezone.utc).isoformat(),
+            "test_timestamp": datetime.now(UTC).isoformat(),
             "iterations": self.iterations,
             "operations": {},
             "summary": {
@@ -210,8 +214,12 @@ def db_session():
 def git_branch_id(db_session):
     """Create and provide a git branch ID for testing."""
     import uuid
-    from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch
-    from datetime import datetime, timezone
+    from datetime import UTC, datetime
+
+    from fastmcp.task_management.infrastructure.database.models import (
+        Project,
+        ProjectGitBranch,
+    )
 
     # Create a test project first
     project = Project(
@@ -219,8 +227,8 @@ def git_branch_id(db_session):
         name="Performance Test Project",
         description="Project for performance testing",
         user_id="test-user-perf",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
     db_session.add(project)
 
@@ -231,8 +239,8 @@ def git_branch_id(db_session):
         description="Branch for performance testing",
         project_id=project.id,
         user_id="test-user-perf",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
     db_session.add(branch)
     db_session.commit()
@@ -251,9 +259,15 @@ def git_branch_id(db_session):
 @pytest.fixture(scope="function")
 def task_facade(db_session):
     """Create a task application facade for testing."""
-    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-    from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
-    from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
+        ORMGitBranchRepository,
+    )
+    from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+        ORMSubtaskRepository,
+    )
+    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+        ORMTaskRepository,
+    )
 
     task_repo = ORMTaskRepository(performance_mode=True)
     subtask_repo = ORMSubtaskRepository()
@@ -362,7 +376,9 @@ class TestWeek1BaselinePerformance:
         baseline_tester.create_metric("task_listing", baseline_ms=200.0, target_ms=67.0)
 
         # Create multiple test tasks
-        from fastmcp.task_management.application.dtos.task.list_tasks_request import ListTasksRequest
+        from fastmcp.task_management.application.dtos.task.list_tasks_request import (
+            ListTasksRequest,
+        )
 
         for i in range(10):
             request = CreateTaskRequest(
@@ -475,9 +491,15 @@ class TestWeek1BaselinePerformance:
         baseline_tester.test_data.append(parent_task_id)
 
         # Create subtask facade for operations
-        from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
-        from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-        from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+        from fastmcp.task_management.application.facades.subtask_application_facade import (
+            SubtaskApplicationFacade,
+        )
+        from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+            ORMSubtaskRepository,
+        )
+        from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+            ORMTaskRepository,
+        )
 
         task_repo = ORMTaskRepository(git_branch_id=git_branch_id, performance_mode=True)
         subtask_repo = ORMSubtaskRepository()

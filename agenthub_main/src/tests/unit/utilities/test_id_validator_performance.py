@@ -3,20 +3,17 @@ Performance and stress tests for IDValidator domain service.
 Tests performance characteristics and resource usage under various loads.
 """
 
-import pytest
-import time
 import threading
-import gc
-import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
-from unittest.mock import patch
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+import pytest
+
 from fastmcp.utilities.id_validator import (
     IDValidator,
-    IDType,
-    ValidationResult,
-    validate_uuid,
     prevent_id_confusion,
+    validate_uuid,
 )
 
 
@@ -170,8 +167,9 @@ class TestIDValidatorPerformance:
     def test_memory_usage_stability(self):
         """Test memory usage remains stable during extended operations."""
         import gc
-        import psutil
         import os
+
+        import psutil
 
         # Get initial memory usage
         process = psutil.Process(os.getpid())

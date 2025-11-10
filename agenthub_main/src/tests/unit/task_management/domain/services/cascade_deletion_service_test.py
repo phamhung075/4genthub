@@ -5,14 +5,14 @@ Tests cascade deletion functionality for tasks, branches, and projects
 with proper cleanup of related entities and domain event dispatching.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch, call
-from datetime import datetime, timezone
 import uuid
+from unittest.mock import Mock, patch
+
+import pytest
 
 from fastmcp.task_management.domain.services.cascade_deletion_service import (
     CascadeDeletionService,
-    DeleteScope
+    DeleteScope,
 )
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 

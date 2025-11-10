@@ -8,8 +8,9 @@ This module tests the auth services package initialization including:
 - Service factory patterns if applicable
 """
 
+
 import pytest
-from unittest.mock import patch
+
 
 def test_auth_services_module_import():
     """Test that auth services module can be imported"""
@@ -21,8 +22,8 @@ def test_auth_services_module_import():
 
 def test_auth_services_init_file_exists():
     """Test that __init__.py file exists and is accessible"""
+
     import fastmcp.auth.services
-    import inspect
     
     # Check that the module has a file path (not a namespace package)
     assert hasattr(fastmcp.auth.services, '__file__')
@@ -31,7 +32,10 @@ def test_auth_services_init_file_exists():
 def test_mcp_token_service_accessible():
     """Test that MCP token service is accessible from services module"""
     try:
-        from fastmcp.auth.services.mcp_token_service import MCPTokenService, mcp_token_service
+        from fastmcp.auth.services.mcp_token_service import (
+            MCPTokenService,
+            mcp_token_service,
+        )
         
         # Should be able to import both class and instance
         assert MCPTokenService is not None
@@ -43,10 +47,10 @@ def test_mcp_token_service_accessible():
 
 def test_services_module_structure():
     """Test expected structure of services module"""
-    import fastmcp.auth.services
-    
     # Get module directory contents
     import os
+
+    import fastmcp.auth.services
     module_dir = os.path.dirname(fastmcp.auth.services.__file__)
     
     # Should contain expected files
@@ -58,9 +62,10 @@ def test_services_module_structure():
 
 def test_services_module_no_syntax_errors():
     """Test that all modules in services package have no syntax errors"""
-    import fastmcp.auth.services
     import os
     import py_compile
+
+    import fastmcp.auth.services
     
     module_dir = os.path.dirname(fastmcp.auth.services.__file__)
     
@@ -86,12 +91,11 @@ def test_no_circular_imports():
     """Test that there are no circular import issues"""
     try:
         # This should not cause circular import errors
-        from fastmcp.auth.services import mcp_token_service
-        from fastmcp.auth.services.mcp_token_service import MCPTokenService
-        
         # Re-importing should work fine
         import fastmcp.auth.services
         import fastmcp.auth.services.mcp_token_service
+        from fastmcp.auth.services import mcp_token_service
+        from fastmcp.auth.services.mcp_token_service import MCPTokenService
         
     except ImportError as e:
         if "circular import" in str(e).lower():
@@ -127,9 +131,9 @@ def test_service_classes_exportable():
     # Should be able to import key services
     try:
         from fastmcp.auth.services.mcp_token_service import (
-            MCPTokenService, 
-            MCPToken, 
-            mcp_token_service
+            MCPToken,
+            MCPTokenService,
+            mcp_token_service,
         )
         
         # Verify types
@@ -142,7 +146,6 @@ def test_service_classes_exportable():
 
 def test_package_level_imports():
     """Test that important services can be imported at package level if exposed"""
-    import fastmcp.auth.services
     
     # Check if package exposes common services
     # This depends on what's actually in __init__.py
@@ -186,8 +189,9 @@ def test_individual_module_imports(module_name):
 
 def test_services_directory_structure():
     """Test that services directory has expected structure"""
-    import fastmcp.auth.services
     import os
+
+    import fastmcp.auth.services
     
     services_dir = os.path.dirname(fastmcp.auth.services.__file__)
     
@@ -208,8 +212,6 @@ def test_no_import_warnings():
         warnings.simplefilter("always")
         
         # Import all service modules
-        import fastmcp.auth.services
-        import fastmcp.auth.services.mcp_token_service
         
         # Check for any import-related warnings
         import_warnings = [w for w in warning_list 
@@ -222,13 +224,10 @@ def test_no_import_warnings():
 def test_module_reload_safety():
     """Test that modules can be safely reloaded"""
     import importlib
-    import sys
 
     # Should be able to reload without errors
     try:
         # First, import the module properly
-        from fastmcp.auth.services import mcp_token_service as service_module
-
         # Reload the parent services module
         import fastmcp.auth.services
         importlib.reload(fastmcp.auth.services)
@@ -249,8 +248,9 @@ def test_typing_compatibility():
     """Test that modules are compatible with type checking"""
     try:
         # These imports should work for type checkers
-        from fastmcp.auth.services.mcp_token_service import MCPTokenService, MCPToken
         from typing import TYPE_CHECKING
+
+        from fastmcp.auth.services.mcp_token_service import MCPToken, MCPTokenService
         
         if TYPE_CHECKING:
             # Type annotations should be accessible
@@ -276,7 +276,10 @@ def test_package_version_info():
 @pytest.mark.integration
 def test_services_integration_readiness():
     """Test that services are ready for integration"""
-    from fastmcp.auth.services.mcp_token_service import mcp_token_service, MCPTokenService
+    from fastmcp.auth.services.mcp_token_service import (
+        MCPTokenService,
+        mcp_token_service,
+    )
     
     # Service instance should be ready
     assert mcp_token_service is not None

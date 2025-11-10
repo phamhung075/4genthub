@@ -1,8 +1,8 @@
 """Task Builder for Test Data Creation"""
 
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
+from typing import Any
 
 
 class TaskBuilder:
@@ -18,11 +18,11 @@ class TaskBuilder:
         self.details = ""
         self.estimated_effort = "2 hours"
         self.assignees = "coding-agent"
-        self.labels: List[str] = []
+        self.labels: list[str] = []
         self.git_branch_id = str(uuid.uuid4())
         self.progress_percentage = 0
-        self.created_at = datetime.now(timezone.utc)
-        self.updated_at = datetime.now(timezone.utc)
+        self.created_at = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
 
     def with_id(self, task_id: str) -> 'TaskBuilder':
         """Set task ID."""
@@ -70,7 +70,7 @@ class TaskBuilder:
             self.labels.append(label)
         return self
 
-    def with_labels(self, labels: List[str]) -> 'TaskBuilder':
+    def with_labels(self, labels: list[str]) -> 'TaskBuilder':
         """Set multiple labels."""
         self.labels = labels
         return self
@@ -85,7 +85,7 @@ class TaskBuilder:
         self.progress_percentage = percentage
         return self
 
-    def build(self) -> Dict[str, Any]:
+    def build(self) -> dict[str, Any]:
         """Build and return the task data dictionary."""
         return {
             "id": self.task_id,

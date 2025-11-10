@@ -1,5 +1,7 @@
 """Add Subtask Use Case"""
 
+from __future__ import annotations
+
 import logging
 import time
 

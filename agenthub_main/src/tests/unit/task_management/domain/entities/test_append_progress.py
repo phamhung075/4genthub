@@ -1,11 +1,11 @@
 """Tests for append-only progress history functionality"""
 
-import pytest
-from datetime import datetime, timezone
+
+
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestAppendProgress:

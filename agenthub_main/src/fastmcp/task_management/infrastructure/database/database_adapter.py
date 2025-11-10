@@ -4,6 +4,8 @@ Database Adapter for SQLite/PostgreSQL compatibility
 Handles JSON operations across different database engines.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from contextlib import contextmanager

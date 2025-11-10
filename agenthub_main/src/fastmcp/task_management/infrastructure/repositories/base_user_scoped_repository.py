@@ -5,6 +5,8 @@ This module provides a base repository class that automatically handles
 user-based data isolation for all derived repositories.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -39,7 +41,7 @@ class BaseUserScopedRepository:
         if self._is_system_mode:
             logger.info("Repository initialized in system mode during startup - no user filtering applied (expected behavior)")
     
-    def with_user(self, user_id: str) -> 'BaseUserScopedRepository':
+    def with_user(self, user_id: str) -> BaseUserScopedRepository:
         """
         Create a new instance of this repository scoped to a specific user.
         
@@ -165,7 +167,7 @@ class BaseUserScopedRepository:
         for entity in entities:
             self.ensure_user_ownership(entity)
     
-    def create_system_context(self) -> 'BaseUserScopedRepository':
+    def create_system_context(self) -> BaseUserScopedRepository:
         """
         Create a system-level context for administrative operations.
         

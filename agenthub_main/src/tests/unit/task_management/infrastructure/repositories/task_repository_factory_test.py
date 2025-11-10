@@ -8,22 +8,23 @@ Tests the task repository factory including:
 - Error handling and fallbacks
 """
 
-import pytest
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
+import pytest
+
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import (
+    MockTaskRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 from fastmcp.task_management.infrastructure.repositories.task_repository_factory import (
     TaskRepositoryFactory,
-    _find_project_root
-)
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockTaskRepository
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
-    UserAuthenticationRequiredError,
-    DefaultUserProhibitedError
+    _find_project_root,
 )
 
 

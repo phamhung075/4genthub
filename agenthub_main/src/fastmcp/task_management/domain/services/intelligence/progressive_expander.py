@@ -11,6 +11,8 @@ Key Features:
 - Token-aware expansion (respects max_tokens limits)
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from dataclasses import dataclass, field
@@ -405,7 +407,7 @@ class ProgressiveExpander:
         """Check if candidate has dependency relationship with current context."""
         # Task-level dependency checking
         candidate_id = candidate_context.get('id') or candidate_context.get('context_id')
-        current_tasks = current_context.get('task_ids', [])
+        current_context.get('task_ids', [])
         current_dependencies = current_context.get('dependencies', [])
         
         # Direct dependency

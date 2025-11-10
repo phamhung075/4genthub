@@ -119,13 +119,13 @@ class TestMockServices:
 
     def test_import_keycloak_mock(self):
         """Verify KeycloakMock can be imported."""
-        from tests.mocks import MockKeycloakServer, MockKeycloakClient
+        from tests.mocks import MockKeycloakClient, MockKeycloakServer
         assert MockKeycloakServer is not None
         assert MockKeycloakClient is not None
 
     def test_keycloak_authentication(self):
         """Verify Keycloak mock authentication."""
-        from tests.mocks import MockKeycloakServer, MockKeycloakClient
+        from tests.mocks import MockKeycloakClient, MockKeycloakServer
 
         server = MockKeycloakServer()
         server.start()
@@ -252,9 +252,9 @@ class TestDocumentation:
 
 def test_integration_all_components():
     """Integration test using multiple components together."""
+    from tests.mocks import MockKeycloakClient, MockKeycloakServer, MockRedisClient
     from tests.utils.auth_token_builder import AuthTokenBuilder
-    from tests.utils.builders import UserBuilder, TaskBuilder
-    from tests.mocks import MockKeycloakServer, MockKeycloakClient, MockRedisClient
+    from tests.utils.builders import TaskBuilder, UserBuilder
 
     # Create test user
     user = UserBuilder().with_email("integration@test.com").build()

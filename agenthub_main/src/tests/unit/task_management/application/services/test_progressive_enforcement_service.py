@@ -6,18 +6,14 @@ enforcement based on agent behavior.
 Part of Phase 2: Core Enforcement Implementation
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime, timedelta
 
-from fastmcp.task_management.application.services.progressive_enforcement_service import (
-    ProgressiveEnforcementService,
-    AgentProfile,
-    EnforcementLevel
-)
+
 from fastmcp.task_management.application.services.parameter_enforcement_service import (
     ParameterEnforcementService,
-    EnforcementResult
+)
+from fastmcp.task_management.application.services.progressive_enforcement_service import (
+    EnforcementLevel,
+    ProgressiveEnforcementService,
 )
 
 
@@ -34,7 +30,7 @@ class TestProgressiveEnforcementService:
     
     def test_new_agent_starts_with_default_level(self):
         """Test that new agents start with the default enforcement level"""
-        result = self.service.enforce_with_progression(
+        self.service.enforce_with_progression(
             action="update",
             provided_params={},
             agent_id="new_agent"

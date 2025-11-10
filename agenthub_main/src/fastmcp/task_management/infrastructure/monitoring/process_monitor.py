@@ -3,6 +3,8 @@
 Infrastructure component for monitoring and managing system processes with timeout protection.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import signal

@@ -1,5 +1,7 @@
 """Minimal response DTO for task list operations"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -44,7 +46,7 @@ class TaskListItemResponse:
         self.is_blocked = False  # Will be set based on dependency resolution if needed
     
     @classmethod
-    def from_task_response(cls, task) -> 'TaskListItemResponse':
+    def from_task_response(cls, task) -> TaskListItemResponse:
         """Create minimal response from full task response"""
         return cls(
             id=task.id,

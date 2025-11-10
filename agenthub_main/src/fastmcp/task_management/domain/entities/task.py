@@ -1,5 +1,7 @@
 """Task Domain Entity"""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -1479,7 +1481,7 @@ class Task(BaseTimestampEntity):
     @classmethod
     def create(cls, id: TaskId, title: str, description: str, 
                status: TaskStatus | None = None, priority: Priority | None = None,
-               **kwargs) -> 'Task':
+               **kwargs) -> Task:
         """Factory method to create a new task"""
         if status is None:
             status = TaskStatus.todo()

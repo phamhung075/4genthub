@@ -10,7 +10,10 @@ from pathlib import Path
 # Add the project source to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from fastmcp.task_management.application.use_cases.agent_mappings import resolve_agent_name
+from fastmcp.task_management.application.use_cases.agent_mappings import (
+    resolve_agent_name,
+)
+
 
 def test_agent_name_resolution():
     """Test various agent name formats."""

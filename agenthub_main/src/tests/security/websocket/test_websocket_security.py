@@ -23,20 +23,23 @@ TEST COVERAGE:
 - Penetration testing for session hijacking scenarios
 """
 
-import pytest
-import asyncio
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
-from fastapi.testclient import TestClient
-from fastapi import WebSocketDisconnect
-import jwt
-from datetime import datetime, timezone, timedelta
 import logging
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, patch
+
+import jwt
+import pytest
+
+from fastmcp.auth.domain.entities.user import User
+from fastmcp.auth.middleware.jwt_auth_middleware import JWTAuthMiddleware
 
 # Import the modules to test
-from fastmcp.server.routes.websocket_routes import router, broadcast_data_change, active_connections, connection_subscriptions, connection_users
-from fastmcp.auth.middleware.jwt_auth_middleware import JWTAuthMiddleware
-from fastmcp.auth.domain.entities.user import User
+from fastmcp.server.routes.websocket_routes import (
+    active_connections,
+    broadcast_data_change,
+    connection_subscriptions,
+    connection_users,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +64,8 @@ class WebSocketSecurityTester:
             "user_id": user_id,
             "aud": "authenticated",
             "iss": "test-issuer",
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=expires_in_minutes),
-            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(UTC) + timedelta(minutes=expires_in_minutes),
+            "iat": datetime.now(UTC),
             "role": "authenticated"
         }
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
@@ -73,8 +76,8 @@ class WebSocketSecurityTester:
             "sub": user_id,
             "user_id": user_id,
             "aud": "authenticated",
-            "exp": datetime.now(timezone.utc) - timedelta(minutes=30),  # Expired 30 minutes ago
-            "iat": datetime.now(timezone.utc) - timedelta(hours=1),
+            "exp": datetime.now(UTC) - timedelta(minutes=30),  # Expired 30 minutes ago
+            "iat": datetime.now(UTC) - timedelta(hours=1),
             "role": "authenticated"
         }
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
@@ -85,8 +88,8 @@ class WebSocketSecurityTester:
             "sub": "test_user",
             "user_id": "test_user",
             "aud": "authenticated",
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=30),
-            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(UTC) + timedelta(minutes=30),
+            "iat": datetime.now(UTC),
             "role": "authenticated"
         }
         # Sign with wrong secret
@@ -211,8 +214,8 @@ class TestWebSocketAuthorization:
         Validates fix for: Authorization Bypass (CVSS 7.5)
         """
         # Create test scenario with multiple users
-        user1_token = security_tester.create_valid_token("user_1")
-        user2_token = security_tester.create_valid_token("user_2")
+        security_tester.create_valid_token("user_1")
+        security_tester.create_valid_token("user_2")
 
         # Mock active connections
         mock_ws1 = AsyncMock()
@@ -281,8 +284,8 @@ class TestWebSocketAuthorization:
         Validates fix for: Authorization Bypass (CVSS 7.5)
         """
         # Create user with limited permissions
-        limited_user_token = security_tester.create_valid_token("limited_user")
-        admin_user_token = security_tester.create_valid_token("admin_user")
+        security_tester.create_valid_token("limited_user")
+        security_tester.create_valid_token("admin_user")
 
         # Test that sensitive admin data is not sent to limited user
         # (Implementation needed in broadcast_data_change function)
@@ -296,8 +299,8 @@ class TestWebSocketAuthorization:
         Validates fix for: Authorization Bypass (CVSS 7.5)
         """
         # Create users from different tenants
-        tenant1_user = security_tester.create_valid_token("tenant1_user")
-        tenant2_user = security_tester.create_valid_token("tenant2_user")
+        security_tester.create_valid_token("tenant1_user")
+        security_tester.create_valid_token("tenant2_user")
 
         # Test cross-tenant data isolation
         # (Implementation needed in broadcast_data_change function)
@@ -318,10 +321,10 @@ class TestSessionManagement:
         user_id = "test_user_123"
 
         # Start with valid token
-        valid_token = security_tester.create_valid_token(user_id, expires_in_minutes=1)
+        security_tester.create_valid_token(user_id, expires_in_minutes=1)
 
         # Simulate token becoming expired
-        expired_token = security_tester.create_expired_token(user_id)
+        security_tester.create_expired_token(user_id)
 
         # WebSocket should detect token expiry and disconnect
         # (Implementation needed in websocket_routes.py)
@@ -334,7 +337,6 @@ class TestSessionManagement:
 
         Validates fix for: Integration Gap (CVSS 6.1)
         """
-        user_id = "test_user_123"
 
         # Simulate AuthContext logout event
         # WebSocket connection should be automatically terminated
@@ -348,7 +350,6 @@ class TestSessionManagement:
 
         Validates fix for: Session Persistence After Auth Failure (CVSS 7.8)
         """
-        user_id = "test_user_123"
 
         # Test periodic validation of active connections
         # Connections with expired tokens should be terminated
@@ -370,10 +371,10 @@ class TestPenetrationScenarios:
         user_id = "victim_user"
 
         # Step 1: User connects with valid token
-        valid_token = security_tester.create_valid_token(user_id)
+        security_tester.create_valid_token(user_id)
 
         # Step 2: Token expires (simulate time passing)
-        expired_token = security_tester.create_expired_token(user_id)
+        security_tester.create_expired_token(user_id)
 
         # Step 3: Auth refresh fails (simulate network/server error)
 
@@ -396,7 +397,7 @@ class TestPenetrationScenarios:
         user_id = "victim_user"
 
         # Step 1: User connects and authenticates
-        valid_token = security_tester.create_valid_token(user_id)
+        security_tester.create_valid_token(user_id)
 
         # Step 2: User initiates logout
 
@@ -419,7 +420,7 @@ class TestPenetrationScenarios:
         user_id = "victim_user"
 
         # Step 1: Attacker obtains token (through XSS, network sniffing, etc.)
-        stolen_token = security_tester.create_valid_token(user_id)
+        security_tester.create_valid_token(user_id)
 
         # Step 2: Attacker attempts to establish WebSocket connection
 
@@ -440,10 +441,10 @@ class TestPenetrationScenarios:
         Validates fix for: Authorization Bypass (CVSS 7.5)
         """
         # Step 1: Low-privilege user connects
-        low_priv_token = security_tester.create_valid_token("low_priv_user")
+        security_tester.create_valid_token("low_priv_user")
 
         # Step 2: High-privilege operation occurs
-        admin_token = security_tester.create_valid_token("admin_user")
+        security_tester.create_valid_token("admin_user")
 
         # Step 3: Broadcast sent with sensitive admin data
 

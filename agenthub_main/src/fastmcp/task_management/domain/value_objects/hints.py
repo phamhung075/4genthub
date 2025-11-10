@@ -5,6 +5,8 @@ This module defines the domain models for intelligent workflow hints,
 including hint types, priorities, metadata, and collections.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -102,7 +104,7 @@ class WorkflowHint:
         metadata: HintMetadata,
         context_data: dict[str, Any] | None = None,
         expires_at: datetime | None = None
-    ) -> "WorkflowHint":
+    ) -> WorkflowHint:
         """
         Factory method to create a new workflow hint.
         

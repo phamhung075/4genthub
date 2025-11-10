@@ -2,22 +2,24 @@
 Unit tests for RuleCompositionService
 Tests all functionality of the rule composition domain service
 """
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime
-from typing import List, Dict, Any
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.domain.services.rule_composition_service import (
-    RuleCompositionService, 
-    IRuleCompositionService
+import pytest
+
+from fastmcp.task_management.domain.entities.rule_entity import (
+    RuleContent,
 )
-from fastmcp.task_management.domain.entities.rule_entity import RuleContent, RuleInheritance
-from fastmcp.task_management.domain.value_objects.rule_value_objects import CompositionResult
+from fastmcp.task_management.domain.services.rule_composition_service import (
+    IRuleCompositionService,
+    RuleCompositionService,
+)
 from fastmcp.task_management.domain.value_objects.rule_enums import (
-    RuleFormat, 
-    ConflictResolution, 
+    ConflictResolution,
     InheritanceType,
-    RuleType
+    RuleFormat,
+)
+from fastmcp.task_management.domain.value_objects.rule_value_objects import (
+    CompositionResult,
 )
 
 

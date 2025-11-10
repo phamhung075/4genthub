@@ -4,6 +4,8 @@ Progress Handler for Subtask MCP Controller
 Handles progress tracking and parent task context updates for subtask operations.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import Any

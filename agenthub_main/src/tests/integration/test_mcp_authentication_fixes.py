@@ -11,15 +11,13 @@ Issues addressed:
 3. Context Management Authentication Paradox - TO BE TESTED
 """
 
-import pytest
-import uuid
-import asyncio
 import logging
-import sys
 import os
-from typing import Dict, Any
-from unittest.mock import patch, MagicMock, AsyncMock
-from contextvars import ContextVar
+import sys
+import uuid
+from unittest.mock import patch
+
+import pytest
 
 # Add the project path to sys.path
 project_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,7 +25,9 @@ if project_path not in sys.path:
     sys.path.insert(0, project_path)
 
 # Import MCP controllers to test
-from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+    DDDCompliantMCPTools,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,15 +47,21 @@ class TestMCPAuthenticationFixes:
         self.ai_columns_patcher.start()
 
         # Force database re-initialization with proper schema
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
-        from fastmcp.task_management.infrastructure.database.database_initializer import reset_initialization_cache
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
+        from fastmcp.task_management.infrastructure.database.database_initializer import (
+            reset_initialization_cache,
+        )
         
         # Reset database singleton to force re-creation
         DatabaseConfig.reset_instance()
         reset_initialization_cache()
         
         # Ensure database is initialized with all tables/columns
-        from fastmcp.task_management.infrastructure.database.database_initializer import initialize_database
+        from fastmcp.task_management.infrastructure.database.database_initializer import (
+            initialize_database,
+        )
         initialize_database()
 
         # Initialize MCP tools with minimal mocking to allow database operations
@@ -118,7 +124,7 @@ class TestMCPAuthenticationFixes:
             
             # Skip test if we can't create branch due to infrastructure issues
             if 'data' not in branch_result or not isinstance(branch_result['data'], dict):
-                pytest.skip(f"Branch creation returned unexpected structure, likely due to database schema mismatch")
+                pytest.skip("Branch creation returned unexpected structure, likely due to database schema mismatch")
                 
             # Check if branch result has the expected structure
             if 'git_branch' in branch_result['data']:
@@ -197,7 +203,7 @@ class TestMCPAuthenticationFixes:
             
             # Skip test if we can't create branch due to infrastructure issues
             if 'data' not in branch_result or not isinstance(branch_result['data'], dict):
-                pytest.skip(f"Branch creation returned unexpected structure, likely due to database schema mismatch")
+                pytest.skip("Branch creation returned unexpected structure, likely due to database schema mismatch")
                 
             # Extract branch ID from result
             if 'git_branch' in branch_result['data']:
@@ -302,7 +308,7 @@ class TestMCPAuthenticationFixes:
             
             # Skip test if we can't create branch due to infrastructure issues
             if 'data' not in branch_result or not isinstance(branch_result['data'], dict):
-                pytest.skip(f"Branch creation returned unexpected structure, likely due to database schema mismatch")
+                pytest.skip("Branch creation returned unexpected structure, likely due to database schema mismatch")
                 
             # Extract branch ID from result
             if 'git_branch' in branch_result['data']:
@@ -400,7 +406,7 @@ class TestMCPAuthenticationFixes:
             
             # Skip test if we can't create branch due to infrastructure issues
             if 'data' not in branch_result or not isinstance(branch_result['data'], dict):
-                pytest.skip(f"Branch creation returned unexpected structure, likely due to database schema mismatch")
+                pytest.skip("Branch creation returned unexpected structure, likely due to database schema mismatch")
                 
             # Extract branch ID from result
             if 'git_branch' in branch_result['data']:

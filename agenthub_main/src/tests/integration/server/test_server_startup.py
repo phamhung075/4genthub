@@ -15,16 +15,14 @@ Test Categories:
 6. Health check integration
 """
 
-import pytest
+import logging
 import os
 import sys
-import logging
-from unittest.mock import Mock, patch, MagicMock, call
-from pathlib import Path
-from io import StringIO
 from contextlib import contextmanager
-from typing import Dict, Any, List
+from io import StringIO
+from unittest.mock import Mock, patch
 
+import pytest
 
 # Test markers
 pytestmark = [
@@ -76,18 +74,18 @@ class TestServerStartupSuccess:
 
         # Mock database initialization with correct import paths
         with patch('fastmcp.task_management.infrastructure.database.init_database.init_database') as mock_init_db, \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup') as mock_validate_schema, \
+             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
              patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db_config, \
              patch('asyncio.run') as mock_asyncio_run, \
              patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging') as mock_setup_logging, \
+             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
              patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd_tools, \
              patch('fastmcp.config.ToolRegistry') as mock_tool_registry, \
-             patch('fastmcp.config.create_authentication_tools') as mock_create_auth_tools, \
+             patch('fastmcp.config.create_authentication_tools'), \
              patch('fastmcp.auth.AuthMiddleware') as mock_auth_middleware, \
              patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools') as mock_register_conn_tools, \
              patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration') as mock_setup_ws, \
-             capture_logs() as log_capture:
+             capture_logs():
 
             # Configure mocks
             mock_db_config = Mock()
@@ -143,7 +141,7 @@ class TestServerStartupSuccess:
         monkeypatch.setenv('DATABASE_PATH', ':memory:')
 
         with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup') as mock_validate, \
+             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
              patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
              patch('asyncio.run') as mock_async, \
              patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
@@ -251,7 +249,7 @@ class TestGracefulDegradation:
              patch('fastmcp.auth.AuthMiddleware'), \
              patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
              patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'), \
-             capture_logs() as log_capture:
+             capture_logs():
 
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
@@ -316,7 +314,7 @@ class TestGracefulDegradation:
 
             from fastmcp.server.mcp_entry_point import create_agenthub_server
 
-            server = create_agenthub_server()
+            create_agenthub_server()
 
             # AuthMiddleware should NOT be created
             mock_auth_middleware.assert_not_called()
@@ -469,7 +467,7 @@ class TestSecurityMeasures:
 
             from fastmcp.server.mcp_entry_point import create_agenthub_server
 
-            server = create_agenthub_server()
+            create_agenthub_server()
 
             # Verify secret key is NOT in logs
             logs = log_capture.getvalue()
@@ -519,7 +517,7 @@ class TestSecurityMeasures:
 
             from fastmcp.server.mcp_entry_point import create_agenthub_server
 
-            server = create_agenthub_server()
+            create_agenthub_server()
 
             # Should log warning about default credentials
             logs = log_capture.getvalue()
@@ -558,7 +556,7 @@ class TestErrorHandling:
         monkeypatch.setenv('DATABASE_PATH', ':memory:')
 
         with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup') as mock_validate, \
+             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
              patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
              patch('asyncio.run') as mock_async, \
              patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
@@ -687,7 +685,7 @@ class TestMainEntryPoint:
         monkeypatch.setenv('DATABASE_PATH', ':memory:')
 
         with patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer') as mock_stats, \
+             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
              patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
              patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server:
 

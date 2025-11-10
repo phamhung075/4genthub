@@ -6,6 +6,8 @@ ensuring that all required schemas are created consistently.
 Uses SQLAlchemy ORM with support for PostgreSQL (recommended) and SQLite (legacy).
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import threading

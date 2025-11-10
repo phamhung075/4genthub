@@ -4,6 +4,8 @@ This service provides real-time monitoring and tracking of agent status,
 workload, and performance metrics across the system.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from collections.abc import Callable

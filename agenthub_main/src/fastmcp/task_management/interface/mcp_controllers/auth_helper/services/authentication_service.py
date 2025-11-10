@@ -4,6 +4,8 @@ This service handles user authentication by extracting user_id from Keycloak JWT
 Keycloak is the single source of truth for user authentication.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 

@@ -1,14 +1,20 @@
 """Tests for DI Container implementation."""
 
-import pytest
-import tempfile
 import os
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+import tempfile
+from unittest.mock import Mock
+
+import pytest
 
 from fastmcp.task_management.infrastructure.di_container import DIContainer
 from fastmcp.task_management.infrastructure.event_bus import EventBus
-from fastmcp.task_management.infrastructure.event_store import EventStore, reset_event_store
-from fastmcp.task_management.infrastructure.notification_service import NotificationService
+from fastmcp.task_management.infrastructure.event_store import (
+    EventStore,
+    reset_event_store,
+)
+from fastmcp.task_management.infrastructure.notification_service import (
+    NotificationService,
+)
 
 
 class TestDIContainer:

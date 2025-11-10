@@ -1,9 +1,8 @@
 """Context Builder for Test Data Creation"""
 
-from typing import Dict, Any
-from datetime import datetime, timezone
-import uuid
 import json
+import uuid
+from typing import Any
 
 
 class ContextBuilder:
@@ -13,10 +12,10 @@ class ContextBuilder:
         """Initialize with default values."""
         self.context_id = str(uuid.uuid4())
         self.level = "task"
-        self.metadata: Dict[str, Any] = {"version": 1}
-        self.objective: Dict[str, Any] = {}
-        self.progress: Dict[str, Any] = {"completion_percentage": 0}
-        self.custom_data: Dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {"version": 1}
+        self.objective: dict[str, Any] = {}
+        self.progress: dict[str, Any] = {"completion_percentage": 0}
+        self.custom_data: dict[str, Any] = {}
 
     def with_id(self, context_id: str) -> 'ContextBuilder':
         """Set context ID."""
@@ -43,7 +42,7 @@ class ContextBuilder:
         self.custom_data[key] = value
         return self
 
-    def build(self) -> Dict[str, Any]:
+    def build(self) -> dict[str, Any]:
         """Build and return the context data dictionary."""
         data = {
             "metadata": self.metadata,

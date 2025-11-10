@@ -225,7 +225,7 @@ class ParameterTypeCoercer:
             params: Dictionary of parameters to coerce
 
         Returns:
-            Dict[str, Any]: Dictionary with coerced parameters
+            dict[str, Any]: Dictionary with coerced parameters
         """
         instance = cls()
         return instance.coerce_parameters(params)
@@ -238,7 +238,7 @@ class ParameterTypeCoercer:
             params: Dictionary of parameters to coerce
 
         Returns:
-            Dict[str, Any]: Dictionary with coerced parameters
+            dict[str, Any]: Dictionary with coerced parameters
         """
         if not params:
             return params
@@ -280,7 +280,7 @@ class FlexibleSchemaValidator:
             original_schema: The original JSON schema
 
         Returns:
-            Dict[str, Any]: Flexible schema with string alternatives
+            dict[str, Any]: Flexible schema with string alternatives
         """
         # This is a simplified implementation
         # In a full implementation, you would recursively process the schema
@@ -335,7 +335,7 @@ class EnhancedParameterValidator:
             params: Parameters to validate
 
         Returns:
-            Dict[str, Any]: Validation result with coerced parameters
+            dict[str, Any]: Validation result with coerced parameters
         """
         try:
             # Step 1: Coerce parameters
@@ -385,7 +385,7 @@ def coerce_parameter_types(params: dict[str, Any]) -> dict[str, Any]:
         params: Dictionary of parameters to coerce
 
     Returns:
-        Dict[str, Any]: Dictionary with coerced parameters
+        dict[str, Any]: Dictionary with coerced parameters
 
     Example:
         >>> coerce_parameter_types({"limit": "5", "include_context": "true"})
@@ -403,7 +403,7 @@ def validate_parameters(action: str, params: dict[str, Any]) -> dict[str, Any]:
         params: Parameters to validate
 
     Returns:
-        Dict[str, Any]: Validation result
+        dict[str, Any]: Validation result
 
     Example:
         >>> result = validate_parameters("search", {"limit": "5"})
@@ -421,7 +421,7 @@ def create_flexible_schema(original_schema: dict[str, Any]) -> dict[str, Any]:
         original_schema: The original JSON schema
 
     Returns:
-        Dict[str, Any]: Flexible schema
+        dict[str, Any]: Flexible schema
     """
     return _default_validator.schema_validator.create_flexible_schema(original_schema)
 

@@ -1,5 +1,7 @@
 """Label Repository Interface for Dynamic Label Management"""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 

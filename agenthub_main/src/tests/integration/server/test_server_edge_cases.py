@@ -13,13 +13,12 @@ Focus on integration resilience, error handling, and edge conditions.
 Target: 2-3 production-ready tests with comprehensive coverage.
 """
 
-import pytest
 import warnings
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
 from contextlib import asynccontextmanager
-import httpx
-from typing import Any
+from unittest.mock import AsyncMock, Mock, patch
 
+import httpx
+import pytest
 
 pytestmark = pytest.mark.integration
 
@@ -313,7 +312,7 @@ class TestSSEDeprecationWarnings:
                 with warnings.catch_warnings(record=True) as warning_list:
                     warnings.simplefilter("always")
 
-                    result = server.sse_app(path="/custom-sse")
+                    server.sse_app(path="/custom-sse")
 
                     # Verify NO warnings were raised
                     assert len(warning_list) == 0
@@ -407,7 +406,7 @@ class TestOpenAPIIntegration:
             mock_transport.return_value = mock_transport_instance
 
             # Call without httpx_client_kwargs (test defaulting)
-            result = FastMCP.from_fastapi(app=mock_fastapi_app)
+            FastMCP.from_fastapi(app=mock_fastapi_app)
 
             # Verify ASGITransport created with app
             mock_transport.assert_called_once_with(app=mock_fastapi_app)
@@ -717,7 +716,7 @@ class TestConfigurationValidationEdgeCases:
         server = FastMCP(name="test-sync-run")
 
         with patch('fastmcp.server.server.anyio.run') as mock_anyio_run, \
-             patch.object(server, 'run_async', new_callable=AsyncMock) as mock_run_async:
+             patch.object(server, 'run_async', new_callable=AsyncMock):
 
             # Call synchronous run
             server.run(transport="stdio", test_kwarg="value")

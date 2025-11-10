@@ -1,10 +1,12 @@
 """Unit tests for StatusUpdate Value Object following DDD patterns"""
 
-import pytest
-from datetime import datetime, timezone
-from typing import Dict, Any
+from datetime import UTC, datetime
 
-from fastmcp.connection_management.domain.value_objects.status_update import StatusUpdate
+import pytest
+
+from fastmcp.connection_management.domain.value_objects.status_update import (
+    StatusUpdate,
+)
 
 
 class TestStatusUpdate:
@@ -12,7 +14,7 @@ class TestStatusUpdate:
     
     def test_status_update_creation_success(self):
         """Test successful creation of StatusUpdate with valid data"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         status_update = StatusUpdate(
             event_type="server_health_changed",
             timestamp=now,
@@ -27,7 +29,7 @@ class TestStatusUpdate:
     
     def test_status_update_immutability(self):
         """Test that StatusUpdate is immutable (frozen dataclass)"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         status_update = StatusUpdate(
             event_type="connection_established",
             timestamp=now,
@@ -83,7 +85,7 @@ class TestStatusUpdate:
             "client_unregistered"
         ]
         
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for event_type in valid_event_types:
             status_update = StatusUpdate(
                 event_type=event_type,
@@ -95,7 +97,7 @@ class TestStatusUpdate:
     
     def test_to_dict_conversion(self):
         """Test conversion to dictionary representation"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         status_update = StatusUpdate(
             event_type="server_health_changed",
             timestamp=now,
@@ -177,7 +179,7 @@ class TestStatusUpdate:
     
     def test_complex_data_structure(self):
         """Test StatusUpdate with complex nested data structure"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         complex_data = {
             "health_metrics": {
                 "cpu": {"usage": 45.5, "cores": 8},
@@ -208,7 +210,7 @@ class TestStatusUpdate:
     
     def test_empty_data_allowed(self):
         """Test that empty data dictionary is allowed"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         status_update = StatusUpdate(
             event_type="status_broadcast",
             timestamp=now,
@@ -223,7 +225,7 @@ class TestStatusUpdate:
     def test_timestamp_handling(self):
         """Test proper timestamp handling in to_dict"""
         # Test with timezone-aware datetime
-        tz_aware = datetime.now(timezone.utc)
+        tz_aware = datetime.now(UTC)
         update1 = StatusUpdate(
             event_type="status_broadcast",
             timestamp=tz_aware,

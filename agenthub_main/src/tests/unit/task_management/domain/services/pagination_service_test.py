@@ -8,15 +8,15 @@ Tests the pagination logic extracted from BaseRepository to ensure:
 - Offset calculation
 """
 
-import pytest
 from dataclasses import dataclass
-from typing import List
 
-from fastmcp.task_management.domain.services.pagination_service import PaginationService
+import pytest
+
 from fastmcp.task_management.domain.repositories.base_repository import (
     PaginationRequest,
-    PaginationResult
+    PaginationResult,
 )
+from fastmcp.task_management.domain.services.pagination_service import PaginationService
 
 
 # Test entity for generic type testing

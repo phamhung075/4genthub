@@ -2,10 +2,12 @@
 """Test script to verify progress_history fix in TaskResponse DTO"""
 
 import unittest
+from datetime import UTC, datetime
+
+from fastmcp.task_management.application.dtos.task.task_response import TaskResponse
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.application.dtos.task.task_response import TaskResponse
-from datetime import datetime, timezone
+
 
 class TestProgressHistoryFix(unittest.TestCase):
     """Test that progress_history is properly returned in TaskResponse"""
@@ -18,8 +20,8 @@ class TestProgressHistoryFix(unittest.TestCase):
             title="Test Task",
             description="Test task with progress history",
             assignees=["coding-agent"],
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         # Add progress entries
@@ -59,8 +61,8 @@ class TestProgressHistoryFix(unittest.TestCase):
             title="Empty Task",
             description="Task with no progress",
             assignees=["coding-agent"],
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         response = TaskResponse.from_domain(task)

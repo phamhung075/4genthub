@@ -2,21 +2,21 @@
 Tests for FastAPI auth interface compatibility layer
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-import os
-from sqlalchemy.orm import Session
 from fastapi.security import HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+
+from fastmcp.auth.domain.entities.user import User, UserRole
 from fastmcp.auth.interface.fastapi_auth import (
-    get_db,
-    get_current_user,
     get_current_active_user,
+    get_current_user,
+    get_db,
+    get_optional_user,
     require_admin,
     require_roles,
-    get_optional_user
 )
-from fastmcp.auth.domain.entities.user import User, UserRole
-from fastmcp.task_management.infrastructure.database.database_config import get_session
 
 
 class TestFastAPIAuth:

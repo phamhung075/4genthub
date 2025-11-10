@@ -1,6 +1,8 @@
 """UserAgentInstance Domain Entity - User-specific customizable agent instance"""
 
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -254,7 +256,7 @@ class UserAgentInstance(BaseTimestampEntity):
         return self.original_creator_id is not None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "UserAgentInstance":
+    def from_dict(cls, data: dict[str, Any]) -> UserAgentInstance:
         """Create UserAgentInstance from dictionary (e.g., from database).
 
         Args:

@@ -9,6 +9,8 @@ Date: 2025-01-27
 Purpose: Improve MCP client connection reliability and handle Docker rebuild scenarios
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from dataclasses import dataclass

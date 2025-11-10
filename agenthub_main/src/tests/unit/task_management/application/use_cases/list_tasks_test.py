@@ -2,20 +2,21 @@
 Tests for List Tasks Use Case
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from unittest.mock import Mock
 
-from fastmcp.task_management.application.use_cases.list_tasks import ListTasksUseCase
+import pytest
+
 from fastmcp.task_management.application.dtos.task import (
     ListTasksRequest,
-    TaskListResponse
+    TaskListResponse,
 )
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.application.use_cases.list_tasks import ListTasksUseCase
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestListTasksUseCase:
@@ -46,8 +47,8 @@ class TestListTasksUseCase:
             subtasks=[],
             dependencies=[],
             context_id="context-123",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
     
     def test_list_tasks_no_filters(self, use_case, mock_task_repository, sample_task):
@@ -303,8 +304,8 @@ class TestListTasksUseCase:
             git_branch_id="branch-123",
             status=TaskStatus.todo(),
             priority=Priority.high(),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         task2 = Task(
             id=TaskId("22222222-2222-2222-2222-222222222222"),
@@ -313,8 +314,8 @@ class TestListTasksUseCase:
             git_branch_id="branch-123",
             status=TaskStatus.in_progress(),
             priority=Priority.medium(),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         request = ListTasksRequest(git_branch_id="branch-123")

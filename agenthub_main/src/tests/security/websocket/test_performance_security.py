@@ -14,22 +14,23 @@ COVERAGE:
 - Memory usage under security load
 """
 
-import pytest
 import asyncio
-import time
-import psutil
 import gc
+import time
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
-from datetime import datetime, timezone
 
-from fastmcp.server.routes.websocket_routes import (
-    validate_websocket_token,
-    is_user_authorized_for_message,
-    broadcast_data_change,
-    active_connections,
-    connection_users
-)
+import psutil
+import pytest
+
 from fastmcp.auth.domain.entities.user import User
+from fastmcp.server.routes.websocket_routes import (
+    active_connections,
+    broadcast_data_change,
+    connection_users,
+    is_user_authorized_for_message,
+    validate_websocket_token,
+)
 
 
 class PerformanceSecurityTester:
@@ -58,7 +59,7 @@ class PerformanceSecurityTester:
             "duration": end_time - start_time,
             "memory_delta": end_memory - start_memory,
             "success": success,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat()
         }
 
         self.performance_metrics.append(metrics)
@@ -93,7 +94,7 @@ class PerformanceSecurityTester:
             "avg_duration": (end_time - start_time) / count,
             "operations_per_second": count / (end_time - start_time) if end_time > start_time else 0,
             "memory_delta": end_memory - start_memory,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat()
         }
 
         self.performance_metrics.append(metrics)
@@ -309,7 +310,7 @@ class TestAuthorizationPerformance:
             assert metrics["success"] is True
 
             # Only authorized user should receive the message
-            authorized_calls = sum(1 for ws in websockets if ws.send_json.called)
+            sum(1 for ws in websockets if ws.send_json.called)
             # Note: This depends on proper authorization implementation
 
 

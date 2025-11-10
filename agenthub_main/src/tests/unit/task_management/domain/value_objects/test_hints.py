@@ -1,16 +1,16 @@
 """Unit tests for workflow hint value objects."""
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
-from typing import List
+
+import pytest
 
 from fastmcp.task_management.domain.value_objects.hints import (
-    HintType,
-    HintPriority,
+    HintCollection,
     HintMetadata,
+    HintPriority,
+    HintType,
     WorkflowHint,
-    HintCollection
 )
 
 
@@ -126,7 +126,7 @@ class TestWorkflowHint:
         """Test creating WorkflowHint with valid data."""
         task_id = uuid4()
         hint_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         metadata = HintMetadata(source="test", confidence=0.8, reasoning="test")
         context = {"key": "value"}
         expires = now + timedelta(hours=1)
@@ -195,7 +195,7 @@ class TestWorkflowHint:
 
     def test_is_expired_future_expiration(self):
         """Test is_expired when expiration is in the future."""
-        future_time = datetime.now(timezone.utc) + timedelta(hours=1)
+        future_time = datetime.now(UTC) + timedelta(hours=1)
         
         hint = WorkflowHint.create(
             task_id=uuid4(),
@@ -211,7 +211,7 @@ class TestWorkflowHint:
 
     def test_is_expired_past_expiration(self):
         """Test is_expired when expiration is in the past."""
-        past_time = datetime.now(timezone.utc) - timedelta(hours=1)
+        past_time = datetime.now(UTC) - timedelta(hours=1)
         
         hint = WorkflowHint.create(
             task_id=uuid4(),
@@ -229,7 +229,7 @@ class TestWorkflowHint:
         """Test converting hint to dictionary."""
         task_id = uuid4()
         hint_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=2)
         metadata = HintMetadata(
             source="test",
@@ -357,7 +357,7 @@ class TestHintCollection:
             message="Active",
             suggested_action="Do this",
             metadata=metadata,
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
+            expires_at=datetime.now(UTC) + timedelta(hours=1)
         )
         
         # Add expired hint
@@ -368,7 +368,7 @@ class TestHintCollection:
             message="Expired",
             suggested_action="Do that",
             metadata=metadata,
-            expires_at=datetime.now(timezone.utc) - timedelta(hours=1)
+            expires_at=datetime.now(UTC) - timedelta(hours=1)
         )
         
         collection.add_hint(active_hint)
@@ -504,7 +504,7 @@ class TestHintCollection:
             message="Active",
             suggested_action="Do",
             metadata=metadata,
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
+            expires_at=datetime.now(UTC) + timedelta(hours=1)
         )
         
         # Add expired hint with higher priority
@@ -515,7 +515,7 @@ class TestHintCollection:
             message="Expired",
             suggested_action="Don't",
             metadata=metadata,
-            expires_at=datetime.now(timezone.utc) - timedelta(hours=1)
+            expires_at=datetime.now(UTC) - timedelta(hours=1)
         )
         
         collection.add_hint(active)
@@ -533,9 +533,9 @@ class TestHintCollection:
         
         # Add mix of active and expired hints
         for i in range(5):
-            expires = (datetime.now(timezone.utc) + timedelta(hours=1) 
+            expires = (datetime.now(UTC) + timedelta(hours=1) 
                       if i < 3 
-                      else datetime.now(timezone.utc) - timedelta(hours=1))
+                      else datetime.now(UTC) - timedelta(hours=1))
             
             hint = WorkflowHint.create(
                 task_id=task_id,

@@ -1,8 +1,9 @@
 """Unit tests for PasswordService following DDD patterns"""
 
-import pytest
 import string
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
+import pytest
 
 from fastmcp.auth.domain.services.password_service import PasswordService
 

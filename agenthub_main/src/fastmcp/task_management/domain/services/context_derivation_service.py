@@ -5,6 +5,8 @@ from tasks, git branches, and other domain entities. This logic was previously
 scattered across application facades.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

@@ -5,15 +5,19 @@ Comprehensive Label Creation Test - Verify UTC Timestamp Fix
 Tests all label scenarios to verify the fix for timestamp constraint violations.
 """
 
-import sys
 import os
+import sys
+
 sys.path.append(os.path.dirname(__file__) + '/..')
 
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.infrastructure.database.database_config import get_session
-from datetime import datetime, timezone
 import uuid
+from datetime import datetime
+
+from fastmcp.task_management.infrastructure.database.database_config import get_session
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
+
 
 def test_label_creation():
     """Test all label creation scenarios"""
@@ -97,7 +101,7 @@ def test_label_creation():
                     test_results.append(True)
                     print(f"Status: {result}")
                     print(f"  ✓ Created {label_count} labels (expected {expected_count})")
-                    print(f"  ✓ All labels have UTC timestamps")
+                    print("  ✓ All labels have UTC timestamps")
                     print(f"  ✓ Task ID: {task_id}")
 
                     # Show label details

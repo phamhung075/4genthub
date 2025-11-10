@@ -15,31 +15,31 @@ Total lines: 2,224
 Focus areas: Lines 148-308, 309-450, 451-680, 429-463, 464-499, 1800-1950
 """
 
-import pytest
-import asyncio
 import warnings
-from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
-from typing import Any, AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 # Import the module under test
 from fastmcp.server.server import (
     FastMCP,
-    default_lifespan,
     _lifespan_wrapper,
-    DuplicateBehavior
+    default_lifespan,
 )
 
 # Import related components for testing
 try:
-    from fastmcp.tools import Tool, ToolManager
-    from fastmcp.resources import Resource, ResourceManager
+    from mcp.server.lowlevel.server import Server as MCPServer
+
     from fastmcp.prompts import Prompt, PromptManager
+    from fastmcp.resources import Resource, ResourceManager
     from fastmcp.server.auth.auth import OAuthProvider
     from fastmcp.server.middleware import Middleware, MiddlewareContext
     from fastmcp.settings import Settings
+    from fastmcp.tools import Tool, ToolManager
     from fastmcp.utilities.cache import TimedCache
-    from mcp.server.lowlevel.server import Server as MCPServer
 except ImportError as e:
     pytest.skip(f"Required imports not available: {e}", allow_module_level=True)
 
@@ -1440,7 +1440,7 @@ class TestDecoratorImplementations:
     def test_custom_route_decorator_basic(self):
         """Test custom_route() decorator with basic parameters - Lines 532-574"""
         from starlette.requests import Request
-        from starlette.responses import Response, JSONResponse
+        from starlette.responses import JSONResponse, Response
 
         # Arrange
         server = FastMCP(name="test_server")
@@ -1462,7 +1462,7 @@ class TestDecoratorImplementations:
     def test_custom_route_decorator_with_all_params(self):
         """Test custom_route() decorator with all parameters - Lines 532-574"""
         from starlette.requests import Request
-        from starlette.responses import Response, JSONResponse
+        from starlette.responses import JSONResponse, Response
 
         # Arrange
         server = FastMCP(name="test_server")
@@ -1489,7 +1489,7 @@ class TestDecoratorImplementations:
     def test_custom_route_decorator_multiple_methods(self):
         """Test custom_route() with multiple HTTP methods - Lines 532-574"""
         from starlette.requests import Request
-        from starlette.responses import Response, JSONResponse
+        from starlette.responses import JSONResponse, Response
 
         # Arrange
         server = FastMCP(name="test_server")
@@ -1542,8 +1542,8 @@ class TestDecoratorImplementations:
     @pytest.mark.asyncio
     async def test_list_tools_creates_middleware_context(self):
         """Test _list_tools() creates correct MiddlewareContext - Lines 583-613"""
-        from fastmcp.tools import Tool
         from fastmcp.server.middleware import MiddlewareContext
+        from fastmcp.tools import Tool
 
         # Arrange
         server = FastMCP(name="test_server")
@@ -1708,7 +1708,7 @@ class TestRegisterTaskManagementTools:
                 server = FastMCP(name="TaskMgmtServer", enable_task_management=False)
 
                 # First registration
-                first_result = server.register_task_management_tools()
+                server.register_task_management_tools()
                 first_tools_instance = server._consolidated_tools
 
                 # Act - Second registration attempt

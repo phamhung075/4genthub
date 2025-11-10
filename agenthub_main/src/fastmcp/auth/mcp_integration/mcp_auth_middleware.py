@@ -5,6 +5,8 @@ This middleware extracts JWT tokens from HTTP Authorization headers
 and sets the user context for MCP operations when using HTTP transport.
 """
 
+from __future__ import annotations
+
 import logging
 
 from ..middleware.request_context_middleware import current_user_context

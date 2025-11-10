@@ -4,6 +4,8 @@ Synchronous wrapper for the async GitBranchService to maintain
 compatibility with the existing synchronous interface patterns.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import Any

@@ -1,15 +1,13 @@
 """Test suite for types module initialization."""
 
-import pytest
-import importlib
 import sys
 
 from fastmcp.types import (
+    converters,
     # Test that all expected exports are available
     entities,
     responses,
     summaries,
-    converters
 )
 
 
@@ -69,7 +67,6 @@ class TestTypesInit:
     def test_type_compatibility(self):
         """Test that DTOs can be properly instantiated."""
         from fastmcp.types.entities import TaskDTO
-        from fastmcp.types.converters import task_to_dto
 
         # Test that the DTO can be instantiated with basic data
         task_dto = TaskDTO(

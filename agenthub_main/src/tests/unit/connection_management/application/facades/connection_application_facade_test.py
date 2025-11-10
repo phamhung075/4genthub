@@ -6,24 +6,40 @@ for connection management operations, coordinating multiple use cases and handli
 cross-cutting concerns following DDD patterns.
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-import logging
-from typing import Dict, Any
+from unittest.mock import Mock, patch
 
-from fastmcp.connection_management.application.facades.connection_application_facade import ConnectionApplicationFacade
+import pytest
+
 from fastmcp.connection_management.application.dtos.connection_dtos import (
-    HealthCheckRequest, HealthCheckResponse,
-    ServerCapabilitiesRequest, ServerCapabilitiesResponse,
-    ConnectionHealthRequest, ConnectionHealthResponse,
-    ServerStatusRequest, ServerStatusResponse,
-    RegisterUpdatesRequest, RegisterUpdatesResponse
+    ConnectionHealthRequest,
+    ConnectionHealthResponse,
+    HealthCheckRequest,
+    HealthCheckResponse,
+    RegisterUpdatesRequest,
+    RegisterUpdatesResponse,
+    ServerCapabilitiesRequest,
+    ServerCapabilitiesResponse,
+    ServerStatusRequest,
+    ServerStatusResponse,
 )
-from fastmcp.connection_management.domain.repositories.server_repository import ServerRepository
-from fastmcp.connection_management.domain.repositories.connection_repository import ConnectionRepository
-from fastmcp.connection_management.domain.services.server_health_service import ServerHealthService
-from fastmcp.connection_management.domain.services.connection_diagnostics_service import ConnectionDiagnosticsService
-from fastmcp.connection_management.domain.services.status_broadcasting_service import StatusBroadcastingService
+from fastmcp.connection_management.application.facades.connection_application_facade import (
+    ConnectionApplicationFacade,
+)
+from fastmcp.connection_management.domain.repositories.connection_repository import (
+    ConnectionRepository,
+)
+from fastmcp.connection_management.domain.repositories.server_repository import (
+    ServerRepository,
+)
+from fastmcp.connection_management.domain.services.connection_diagnostics_service import (
+    ConnectionDiagnosticsService,
+)
+from fastmcp.connection_management.domain.services.server_health_service import (
+    ServerHealthService,
+)
+from fastmcp.connection_management.domain.services.status_broadcasting_service import (
+    StatusBroadcastingService,
+)
 
 
 class TestConnectionApplicationFacade:
@@ -89,7 +105,7 @@ class TestConnectionApplicationFacade:
     ):
         """Test facade logs initialization"""
         # Create facade after patching logger
-        facade = ConnectionApplicationFacade(
+        ConnectionApplicationFacade(
             server_repository=server_repository,
             connection_repository=connection_repository,
             health_service=health_service,

@@ -6,6 +6,8 @@ for complete authentication workflows including registration, password reset, an
 email verification.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from typing import Any
@@ -159,7 +161,7 @@ class EnhancedAuthService:
         """
         try:
             # First use Supabase's built-in password reset
-            supabase_result = await self.supabase.reset_password_request(email)
+            await self.supabase.reset_password_request(email)
             
             email_sent = False
             email_error = None

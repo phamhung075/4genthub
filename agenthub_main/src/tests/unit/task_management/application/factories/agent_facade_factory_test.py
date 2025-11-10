@@ -5,16 +5,20 @@ This module tests the AgentFacadeFactory which creates agent application facades
 with proper dependency injection following DDD patterns.
 """
 
-import pytest
-import logging
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
+import pytest
+
+from fastmcp.task_management.application.facades.agent_application_facade import (
+    AgentApplicationFacade,
+)
 from fastmcp.task_management.application.factories.agent_facade_factory import (
     AgentFacadeFactory,
-    MockAgentApplicationFacade
+    MockAgentApplicationFacade,
 )
-from fastmcp.task_management.application.facades.agent_application_facade import AgentApplicationFacade
-from fastmcp.task_management.infrastructure.repositories.agent_repository_factory import AgentRepositoryFactory
+from fastmcp.task_management.infrastructure.repositories.agent_repository_factory import (
+    AgentRepositoryFactory,
+)
 
 
 class TestAgentFacadeFactory:

@@ -1,9 +1,10 @@
 """Unit tests for ServerCapabilities Value Object following DDD patterns"""
 
 import pytest
-from typing import List, Dict
 
-from fastmcp.connection_management.domain.value_objects.server_capabilities import ServerCapabilities
+from fastmcp.connection_management.domain.value_objects.server_capabilities import (
+    ServerCapabilities,
+)
 
 
 class TestServerCapabilities:

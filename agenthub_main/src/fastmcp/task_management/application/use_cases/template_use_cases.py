@@ -1,5 +1,7 @@
 """Template Use Cases - Application Layer Business Logic"""
 
+from __future__ import annotations
+
 import logging
 
 from ...domain.entities.template import Template, TemplateRenderRequest

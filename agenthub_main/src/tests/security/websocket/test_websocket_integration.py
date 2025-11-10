@@ -12,27 +12,24 @@ COVERAGE:
 - Attack scenario simulations
 """
 
-import pytest
-import asyncio
-import json
-import jwt
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, AsyncMock, MagicMock
-from fastapi.testclient import TestClient
-from fastapi import WebSocketDisconnect
 import logging
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import jwt
+import pytest
+from fastapi import WebSocketDisconnect
+
+from fastmcp.auth.domain.entities.user import User
 
 # Import test dependencies
 from fastmcp.server.routes.websocket_routes import (
-    router,
-    broadcast_data_change,
     active_connections,
+    broadcast_data_change,
     connection_subscriptions,
     connection_users,
-    validate_websocket_token,
-    is_user_authorized_for_message
+    is_user_authorized_for_message,
 )
-from fastmcp.auth.domain.entities.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +48,8 @@ class WebSocketTestClient:
             "email": email,
             "aud": "authenticated",
             "iss": "test-issuer",
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=expires_in_minutes),
-            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(UTC) + timedelta(minutes=expires_in_minutes),
+            "iat": datetime.now(UTC),
             "role": "authenticated"
         }
         return jwt.encode(payload, self.secret_key, algorithm="HS256")
@@ -410,7 +407,7 @@ class TestWebSocketAttackScenarios:
         """Test attack scenario: user trying to access another user's data"""
         # Setup two users
         user1 = ws_client.create_test_user("user_1", "user1@example.com")
-        user2 = ws_client.create_test_user("user_2", "user2@example.com")
+        ws_client.create_test_user("user_2", "user2@example.com")
 
         # User 1 connection
         ws1 = AsyncMock()

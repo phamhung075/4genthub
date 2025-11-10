@@ -15,14 +15,14 @@ Test Coverage:
 4. Feature flag compatibility (works with both flag states)
 """
 
-import pytest
-from typing import List
 from uuid import uuid4
 
+import pytest
+
 from fastmcp.task_management.domain.repositories.base_repository import (
+    BaseRepository,
     PaginationRequest,
     PaginationResult,
-    BaseRepository
 )
 from fastmcp.task_management.domain.services.pagination_service import PaginationService
 
@@ -51,7 +51,7 @@ class ExampleRepositoryWithPagination(BaseRepository[PaginationEntity]):
 
     def __init__(self):
         """Initialize with in-memory storage for testing"""
-        self._storage: List[PaginationEntity] = []
+        self._storage: list[PaginationEntity] = []
 
     def add(self, entity: PaginationEntity) -> PaginationEntity:
         """Add entity to storage"""
@@ -65,7 +65,7 @@ class ExampleRepositoryWithPagination(BaseRepository[PaginationEntity]):
                 return entity
         return None
 
-    def get_all(self) -> List[PaginationEntity]:
+    def get_all(self) -> list[PaginationEntity]:
         """Get all entities"""
         return self._storage.copy()
 
@@ -82,11 +82,11 @@ class ExampleRepositoryWithPagination(BaseRepository[PaginationEntity]):
         self._storage = [e for e in self._storage if e.id != entity_id]
 
     # Implement abstract methods from BaseRepository
-    def find_all(self) -> List[PaginationEntity]:
+    def find_all(self) -> list[PaginationEntity]:
         """Find all entities"""
         return self.get_all()
 
-    def find_by_criteria(self, **criteria) -> List[PaginationEntity]:
+    def find_by_criteria(self, **criteria) -> list[PaginationEntity]:
         """Find entities by criteria"""
         return self.get_all()
 
@@ -102,13 +102,13 @@ class ExampleRepositoryWithPagination(BaseRepository[PaginationEntity]):
         """Count entities by criteria"""
         return len(self._storage)
 
-    def bulk_save(self, entities: List[PaginationEntity]) -> List[PaginationEntity]:
+    def bulk_save(self, entities: list[PaginationEntity]) -> list[PaginationEntity]:
         """Bulk save entities"""
         for entity in entities:
             self.add(entity)
         return entities
 
-    def bulk_delete(self, entity_ids: List[str]) -> None:
+    def bulk_delete(self, entity_ids: list[str]) -> None:
         """Bulk delete entities"""
         for entity_id in entity_ids:
             self.delete(entity_id)

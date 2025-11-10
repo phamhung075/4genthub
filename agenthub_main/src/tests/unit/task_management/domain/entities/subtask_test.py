@@ -12,18 +12,23 @@ Tests the Subtask entity including:
 - Agent role integration
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
-import uuid
+
+import pytest
 
 from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
-from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
 from fastmcp.task_management.domain.events import TaskUpdated
+from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
+from fastmcp.task_management.domain.value_objects.priority import (
+    Priority,
+    PriorityLevel,
+)
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatus,
+    TaskStatusEnum,
+)
 
 
 class TestSubtaskCreation:
@@ -49,8 +54,8 @@ class TestSubtaskCreation:
         assert subtask.progress_percentage == 0
         assert subtask.created_at is not None
         assert subtask.updated_at is not None
-        assert subtask.created_at.tzinfo == timezone.utc
-        assert subtask.updated_at.tzinfo == timezone.utc
+        assert subtask.created_at.tzinfo == UTC
+        assert subtask.updated_at.tzinfo == UTC
     
     def test_create_subtask_with_factory(self):
         """Test creating subtask with factory method."""
@@ -81,8 +86,8 @@ class TestSubtaskCreation:
         """Test creating subtask with all data."""
         subtask_id = TaskId("subtask-full")
         parent_task_id = TaskId("parent-full")
-        created_at = datetime.now(timezone.utc)
-        updated_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
+        updated_at = datetime.now(UTC)
         
         subtask = Subtask(
             id=subtask_id,
@@ -154,8 +159,8 @@ class TestSubtaskCreation:
         )
         
         # Should be converted to UTC
-        assert subtask.created_at.tzinfo == timezone.utc
-        assert subtask.updated_at.tzinfo == timezone.utc
+        assert subtask.created_at.tzinfo == UTC
+        assert subtask.updated_at.tzinfo == UTC
 
 
 class TestSubtaskEquality:
@@ -676,8 +681,8 @@ class TestSubtaskSerialization:
         """Test converting subtask to dictionary - default (nested) behavior."""
         subtask_id = TaskId("subtask-123")
         parent_task_id = TaskId("parent-456")
-        created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-        updated_at = datetime(2024, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
+        created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        updated_at = datetime(2024, 1, 2, 12, 0, 0, tzinfo=UTC)
 
         subtask = Subtask(
             id=subtask_id,

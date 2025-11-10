@@ -9,16 +9,16 @@ Target coverage areas:
 - Individual handler methods (on_message, on_request, on_notification, etc.)
 """
 
-import pytest
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
+from datetime import UTC, datetime
+from unittest.mock import MagicMock
+
 import mcp.types as mt
+import pytest
 
 from fastmcp.server.middleware import (
     Middleware,
     MiddlewareContext,
     make_middleware_wrapper,
-    CallNext,
 )
 
 
@@ -65,7 +65,7 @@ class TestMiddlewareContext:
         """Test MiddlewareContext with all parameters set."""
         message = {"test": "message"}
         fastmcp_ctx = MagicMock()
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
 
         context = MiddlewareContext(
             message=message,

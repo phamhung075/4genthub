@@ -16,15 +16,18 @@ Predicted Savings:
 This test validates predictions with actual measurements.
 """
 
-import pytest
-import uuid
 import json
-from typing import Dict, Any
+import uuid
 from datetime import datetime
+from typing import Any
 from unittest.mock import patch
 
+import pytest
+
 # Import MCP tools for performance testing
-from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+    DDDCompliantMCPTools,
+)
 
 
 @pytest.fixture
@@ -90,11 +93,11 @@ def project_with_branch(mcp_tools, mock_auth, test_user_id):
             force="true",
             user_id=test_user_id
         )
-    except:
+    except Exception:
         pass
 
 
-def calculate_json_size(data: Dict[str, Any]) -> int:
+def calculate_json_size(data: dict[str, Any]) -> int:
     """Calculate JSON string size in characters"""
     return len(json.dumps(data, separators=(',', ':')))
 
@@ -199,11 +202,11 @@ class TestPhase1TokenSavings:
         assert len(task_data['labels']) == 2
 
         # Print measurements
-        print(f"\n=== TASK GET MEASUREMENTS ===")
+        print("\n=== TASK GET MEASUREMENTS ===")
         print(f"Without context (default): {size_without_context} chars = ~{tokens_without_context} tokens")
         print(f"With context (opt-in): {size_with_context} chars = ~{tokens_with_context} tokens")
         print(f"Context savings: {context_savings} chars = ~{context_token_savings} tokens")
-        print(f"Removed fields verified: priority_emoji, status_emoji")
+        print("Removed fields verified: priority_emoji, status_emoji")
 
         # Store measurements for final report
         return {
@@ -274,7 +277,7 @@ class TestPhase1TokenSavings:
         per_task_chars = list_size // len(tasks)
         per_task_tokens = list_tokens // len(tasks)
 
-        print(f"\n=== TASK LIST MEASUREMENTS ===")
+        print("\n=== TASK LIST MEASUREMENTS ===")
         print(f"Total list size: {list_size} chars = ~{list_tokens} tokens")
         print(f"Number of tasks: {len(tasks)}")
         print(f"Per-task average: {per_task_chars} chars = ~{per_task_tokens} tokens")
@@ -342,7 +345,7 @@ class TestPhase1TokenSavings:
         per_subtask_chars = subtask_list_size // len(subtasks) if subtasks else 0
         per_subtask_tokens = subtask_list_tokens // len(subtasks) if subtasks else 0
 
-        print(f"\n=== SUBTASK LIST MEASUREMENTS ===")
+        print("\n=== SUBTASK LIST MEASUREMENTS ===")
         print(f"Total list size: {subtask_list_size} chars = ~{subtask_list_tokens} tokens")
         print(f"Number of subtasks: {len(subtasks)}")
         print(f"Per-subtask average: {per_subtask_chars} chars = ~{per_subtask_tokens} tokens")
@@ -378,7 +381,7 @@ class TestPhase1TokenSavings:
         )
 
         # Get task response
-        task_response = mcp_tools._task_controller.manage_task(
+        mcp_tools._task_controller.manage_task(
             action="get",
             task_id=result['data']['task']['id'],
             user_id=test_user_id
@@ -389,8 +392,8 @@ class TestPhase1TokenSavings:
         emoji_field_size = len('"priority_emoji":"⚡","status_emoji":"⚪"')
         emoji_tokens_saved = estimate_tokens(emoji_field_size)
 
-        print(f"\n=== EMOJI FIELD REMOVAL IMPACT ===")
-        print(f"Emoji fields removed: priority_emoji, status_emoji")
+        print("\n=== EMOJI FIELD REMOVAL IMPACT ===")
+        print("Emoji fields removed: priority_emoji, status_emoji")
         print(f"Characters saved per response: {emoji_field_size}")
         print(f"Tokens saved per response: ~{emoji_tokens_saved}")
 
@@ -448,7 +451,7 @@ class TestPhase1TokenSavings:
         )
 
         # Get response
-        response = mcp_tools._task_controller.manage_task(
+        mcp_tools._task_controller.manage_task(
             action="get",
             task_id=task_id,
             user_id=test_user_id
@@ -459,8 +462,8 @@ class TestPhase1TokenSavings:
         count_field_size = len('"subtask_count":3,"assignees_count":2,"dependency_count":1')
         count_tokens_saved = estimate_tokens(count_field_size)
 
-        print(f"\n=== COUNT FIELD REMOVAL IMPACT ===")
-        print(f"Count fields removed: subtask_count, assignees_count, dependency_count")
+        print("\n=== COUNT FIELD REMOVAL IMPACT ===")
+        print("Count fields removed: subtask_count, assignees_count, dependency_count")
         print(f"Characters saved per response: {count_field_size}")
         print(f"Tokens saved per response: ~{count_tokens_saved}")
 
@@ -554,12 +557,12 @@ class TestPhase1TokenSavings:
         accuracy = abs(percentage_reduction - predicted_percentage) / predicted_percentage * 100
         within_tolerance = accuracy <= 5.0  # ±5% tolerance
 
-        print(f"\n=== AGGREGATE TOKEN SAVINGS ===")
+        print("\n=== AGGREGATE TOKEN SAVINGS ===")
         print(f"Estimated baseline (before Phase 1): {estimated_baseline_size} chars = ~{estimated_baseline_tokens} tokens")
         print(f"Current response (after Phase 1): {current_size} chars = ~{current_tokens} tokens")
         print(f"Total savings: {total_chars_saved} chars = ~{total_tokens_saved} tokens")
         print(f"Percentage reduction: {percentage_reduction:.1f}%")
-        print(f"\n=== COMPARISON WITH PREDICTIONS ===")
+        print("\n=== COMPARISON WITH PREDICTIONS ===")
         print(f"Predicted baseline: ~{predicted_baseline} tokens")
         print(f"Predicted after Phase 1: ~{predicted_after} tokens")
         print(f"Predicted reduction: ~{predicted_reduction} tokens ({predicted_percentage}%)")
@@ -635,8 +638,8 @@ class TestPhase1PerformanceReport:
             }
         }
 
-        print(f"\n=== PERFORMANCE REPORT COMPILED ===")
-        print(f"Report data saved for documentation generation")
+        print("\n=== PERFORMANCE REPORT COMPILED ===")
+        print("Report data saved for documentation generation")
         print(json.dumps(report_data, indent=2))
 
         return report_data

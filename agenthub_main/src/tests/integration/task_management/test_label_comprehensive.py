@@ -19,16 +19,24 @@ Success Criteria:
 - UTC timestamp validation
 """
 
-import sys
 import os
+import sys
+
 sys.path.append(os.path.dirname(__file__) + '/../..')
 
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.infrastructure.repositories.orm.label_repository import ORMLabelRepository
-from fastmcp.task_management.infrastructure.database.database_adapter import DatabaseAdapter
-from fastmcp.task_management.infrastructure.database.database_config import get_session
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
+
+from fastmcp.task_management.infrastructure.database.database_adapter import (
+    DatabaseAdapter,
+)
+from fastmcp.task_management.infrastructure.database.database_config import get_session
+from fastmcp.task_management.infrastructure.repositories.orm.label_repository import (
+    ORMLabelRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 
 
 class LabelIntegrationTestSuite:
@@ -39,7 +47,10 @@ class LabelIntegrationTestSuite:
         self.user_id = "test_user"
 
         # Create a real git branch in the database for testing
-        from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch
+        from fastmcp.task_management.infrastructure.database.models import (
+            Project,
+            ProjectGitBranch,
+        )
 
         # Ensure test project and branch exist
         try:
@@ -59,15 +70,15 @@ class LabelIntegrationTestSuite:
                         name="test-branch",
                         description="Test branch for label tests",
                         user_id=self.user_id,
-                        created_at=datetime.now(timezone.utc),
-                        updated_at=datetime.now(timezone.utc)
+                        created_at=datetime.now(UTC),
+                        updated_at=datetime.now(UTC)
                     )
                     self.session.add(test_branch)
                     self.session.commit()
             else:
                 # Fallback
                 self.git_branch_id = "ea350cd3-8ebc-4cf2-ac57-19282d8c5f13"  # From logs
-        except:
+        except Exception:
             self.git_branch_id = "ea350cd3-8ebc-4cf2-ac57-19282d8c5f13"  # Fallback from initialization logs
 
         self.task_repo = ORMTaskRepository(session=self.session, user_id=self.user_id)
@@ -119,10 +130,10 @@ class LabelIntegrationTestSuite:
         assert label.name == "test-backend", "Label name mismatch"
         assert label.created_at is not None, "created_at should not be None"
         assert label.updated_at is not None, "updated_at should not be None"
-        assert label.created_at.tzinfo == timezone.utc, "created_at must be UTC"
-        assert label.updated_at.tzinfo == timezone.utc, "updated_at must be UTC"
+        assert label.created_at.tzinfo == UTC, "created_at must be UTC"
+        assert label.updated_at.tzinfo == UTC, "updated_at must be UTC"
         print(f"  ✓ Created label: {label.name}")
-        print(f"  ✓ UTC timestamps verified")
+        print("  ✓ UTC timestamps verified")
 
     def test_create_multiple_labels(self):
         """Test creating multiple labels"""
@@ -135,7 +146,7 @@ class LabelIntegrationTestSuite:
 
         assert len(created_labels) == 3, "Should create 3 labels"
         for label in created_labels:
-            assert label.created_at.tzinfo == timezone.utc, f"{label.name} must have UTC timestamp"
+            assert label.created_at.tzinfo == UTC, f"{label.name} must have UTC timestamp"
         print(f"  ✓ Created {len(created_labels)} labels with UTC timestamps")
 
     def test_create_label_with_complex_name(self):
@@ -147,18 +158,18 @@ class LabelIntegrationTestSuite:
             assert label.name == name, f"Label name should be {name}"
             assert "-" in label.name, "Hyphen should be preserved"
 
-        print(f"  ✓ Complex label names handled correctly")
+        print("  ✓ Complex label names handled correctly")
 
     def test_label_timestamp_precision(self):
         """Test that timestamps are precise and recent"""
-        before_create = datetime.now(timezone.utc)
+        before_create = datetime.now(UTC)
         label = self.label_repo.create_label(name="timestamp-test")
-        after_create = datetime.now(timezone.utc)
+        after_create = datetime.now(UTC)
 
         assert label.created_at >= before_create, "Timestamp should be after test start"
         assert label.created_at <= after_create, "Timestamp should be before test end"
         assert (after_create - label.created_at).total_seconds() < 5, "Timestamp should be very recent"
-        print(f"  ✓ Timestamp precision verified")
+        print("  ✓ Timestamp precision verified")
 
     # ========================================================================
     # Label-Task Association Tests
@@ -168,7 +179,7 @@ class LabelIntegrationTestSuite:
         """Test assigning a label to a task"""
         # Create task
         task_id = str(uuid.uuid4())
-        task = self.task_repo.create_task(
+        self.task_repo.create_task(
             task_id=task_id,
             title="Test Task for Label Assignment",
             description="Task to test label assignment",
@@ -188,12 +199,12 @@ class LabelIntegrationTestSuite:
         task_labels = self.label_repo.get_labels_by_task(task_id)
         assert len(task_labels) == 1, "Task should have 1 label"
         assert task_labels[0].name == "assign-test", "Label name should match"
-        print(f"  ✓ Label assigned to task successfully")
+        print("  ✓ Label assigned to task successfully")
 
     def test_assign_multiple_labels_to_task(self):
         """Test assigning multiple labels to one task"""
         task_id = str(uuid.uuid4())
-        task = self.task_repo.create_task(
+        self.task_repo.create_task(
             task_id=task_id,
             title="Multi-Label Task",
             description="Task with multiple labels",
@@ -215,7 +226,7 @@ class LabelIntegrationTestSuite:
         task_label_names = [l.name for l in task_labels]
         for name in label_names:
             assert name in task_label_names, f"{name} should be in task labels"
-        print(f"  ✓ Multiple labels assigned successfully")
+        print("  ✓ Multiple labels assigned successfully")
 
     def test_same_label_multiple_tasks(self):
         """Test using same label across multiple tasks"""
@@ -240,7 +251,7 @@ class LabelIntegrationTestSuite:
         # Verify label is on all tasks
         tasks_with_label = self.label_repo.get_tasks_by_label(label.id)
         assert len(tasks_with_label) == 3, "Label should be on 3 tasks"
-        print(f"  ✓ Same label shared across multiple tasks")
+        print("  ✓ Same label shared across multiple tasks")
 
     def test_remove_label_from_task(self):
         """Test removing a label from a task"""
@@ -264,7 +275,7 @@ class LabelIntegrationTestSuite:
         assert result is True, "Label removal should return True"
         task_labels = self.label_repo.get_labels_by_task(task_id)
         assert len(task_labels) == 0, "Task should have no labels after removal"
-        print(f"  ✓ Label removed from task successfully")
+        print("  ✓ Label removed from task successfully")
 
     # ========================================================================
     # Label Query Tests
@@ -289,7 +300,7 @@ class LabelIntegrationTestSuite:
         assert found_label is not None, "Label should be found"
         assert found_label.id == created_label.id, "IDs should match"
         assert found_label.name == "name-search-test", "Names should match"
-        print(f"  ✓ Label found by name")
+        print("  ✓ Label found by name")
 
     def test_get_label_by_id(self):
         """Test retrieving a label by ID"""
@@ -299,7 +310,7 @@ class LabelIntegrationTestSuite:
 
         assert found_label is not None, "Label should be found"
         assert found_label.name == "id-search-test", "Names should match"
-        print(f"  ✓ Label found by ID")
+        print("  ✓ Label found by ID")
 
     # ========================================================================
     # Error Handling Tests
@@ -314,7 +325,7 @@ class LabelIntegrationTestSuite:
             assert False, "Should have raised ValidationError"
         except Exception as e:
             assert "already exists" in str(e).lower(), "Error should mention duplicate"
-            print(f"  ✓ Duplicate label correctly rejected")
+            print("  ✓ Duplicate label correctly rejected")
 
     def test_assign_to_nonexistent_task(self):
         """Test assigning label to non-existent task"""
@@ -326,7 +337,7 @@ class LabelIntegrationTestSuite:
             assert False, "Should have raised NotFoundError"
         except Exception as e:
             assert "not found" in str(e).lower() or "Task" in str(e), "Error should mention task not found"
-            print(f"  ✓ Assignment to nonexistent task correctly rejected")
+            print("  ✓ Assignment to nonexistent task correctly rejected")
 
     def test_get_nonexistent_label(self):
         """Test getting a label that doesn't exist"""
@@ -334,7 +345,7 @@ class LabelIntegrationTestSuite:
         label = self.label_repo.get_label(fake_label_id)
 
         assert label is None, "Should return None for nonexistent label"
-        print(f"  ✓ Nonexistent label returns None")
+        print("  ✓ Nonexistent label returns None")
 
     # ========================================================================
     # Test Runner
@@ -420,7 +431,7 @@ class LabelIntegrationTestSuite:
         """Cleanup test resources"""
         try:
             self.session.close()
-        except:
+        except Exception:
             pass
 
 

@@ -6,6 +6,8 @@ using JWT authentication and user-scoped repositories.
 Follows the same pattern as project_routes.py
 """
 
+from __future__ import annotations
+
 import logging
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status

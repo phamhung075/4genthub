@@ -1,5 +1,7 @@
 """Complete Task Use Case"""
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import Any
@@ -469,7 +471,7 @@ class CompleteTaskUseCase:
                         # Sync task status and metadata
                         try:
                             # Check if we're already in an event loop
-                            loop = asyncio.get_running_loop()
+                            asyncio.get_running_loop()
                             # We're in an async context - schedule as background tasks
                             asyncio.create_task(sync_service.sync_task_status(task_id_str, "done"))
                             asyncio.create_task(sync_service.sync_task_metadata(task_id_str, task))

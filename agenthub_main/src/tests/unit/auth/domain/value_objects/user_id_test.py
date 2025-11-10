@@ -1,7 +1,9 @@
 """Unit tests for UserId value object"""
 
-import pytest
 import uuid
+
+import pytest
+
 from fastmcp.auth.domain.value_objects.user_id import UserId
 
 

@@ -4,6 +4,8 @@ Factory for creating rule management services with proper dependency injection f
 """
 
 
+from __future__ import annotations
+
 from ...application.services.rule_application_service import RuleApplicationService
 from ...domain.repositories.rule_repository import RuleRepository
 

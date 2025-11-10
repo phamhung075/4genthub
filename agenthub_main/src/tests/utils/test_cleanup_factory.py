@@ -23,7 +23,6 @@ Usage Example:
 """
 
 import os
-from typing import List, Optional, Dict, Any
 from contextlib import contextmanager
 
 
@@ -36,7 +35,7 @@ class TestCleanupFactory:
 
     @staticmethod
     @contextmanager
-    def environment_cleanup(vars_to_save: List[str]):
+    def environment_cleanup(vars_to_save: list[str]):
         """Cleanup factory for environment variables
 
         Saves specified environment variables before test execution and restores
@@ -66,7 +65,7 @@ class TestCleanupFactory:
             ... # TEST_VAR is restored to original value here
         """
         # Save original values of all specified environment variables
-        original_env: Dict[str, Optional[str]] = {
+        original_env: dict[str, str | None] = {
             var: os.environ.get(var) for var in vars_to_save
         }
 
@@ -115,7 +114,9 @@ class TestCleanupFactory:
         finally:
             # Close database connections and reset singletons
             try:
-                from fastmcp.task_management.infrastructure.database.database_adapter import DatabaseAdapter
+                from fastmcp.task_management.infrastructure.database.database_adapter import (
+                    DatabaseAdapter,
+                )
 
                 db_adapter = DatabaseAdapter.get_instance()
                 if db_adapter._engine:
@@ -162,7 +163,9 @@ class TestCleanupFactory:
             yield
         finally:
             try:
-                from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+                from fastmcp.task_management.infrastructure.database.database_config import (
+                    DatabaseConfig,
+                )
 
                 # Reset the singleton instance
                 DatabaseConfig.reset_instance()
@@ -172,7 +175,7 @@ class TestCleanupFactory:
 
     @staticmethod
     @contextmanager
-    def combined_cleanup(env_vars: List[str], cleanup_database: bool = True, cleanup_db_config: bool = True):
+    def combined_cleanup(env_vars: list[str], cleanup_database: bool = True, cleanup_db_config: bool = True):
         """Combined cleanup factory for environment, database, and config
 
         Convenience method that combines multiple cleanup operations in a single
@@ -305,7 +308,7 @@ class TestCleanupFactory:
             ... # TEST_VAR restored to original value here
         """
         # Save original values
-        original_values: Dict[str, Optional[str]] = {
+        original_values: dict[str, str | None] = {
             key: os.environ.get(key) for key in kwargs.keys()
         }
 
@@ -324,7 +327,7 @@ class TestCleanupFactory:
 
 
 # Convenience functions for common cleanup patterns
-def create_env_cleanup_fixture(env_vars: List[str]):
+def create_env_cleanup_fixture(env_vars: list[str]):
     """Create a pytest fixture function for environment cleanup
 
     Factory function that generates a pytest fixture with environment cleanup.
@@ -349,7 +352,7 @@ def create_env_cleanup_fixture(env_vars: List[str]):
     return fixture_function
 
 
-def create_combined_cleanup_fixture(env_vars: List[str], cleanup_db: bool = True, cleanup_config: bool = True):
+def create_combined_cleanup_fixture(env_vars: list[str], cleanup_db: bool = True, cleanup_config: bool = True):
     """Create a pytest fixture function for combined cleanup
 
     Factory function that generates a pytest fixture with combined cleanup.

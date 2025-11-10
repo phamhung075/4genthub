@@ -1,9 +1,9 @@
 """Tests for EventBus implementation."""
 
 import asyncio
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
-from typing import List, Any
 
 from fastmcp.task_management.infrastructure.event_bus import EventBus, EventSubscription
 
@@ -207,7 +207,7 @@ class TestEventBus:
         event = SampleEvent("test_data")
         
         # Should not raise, but log the error
-        with patch('fastmcp.task_management.infrastructure.event_bus.logger') as mock_logger:
+        with patch('fastmcp.task_management.infrastructure.event_bus.logger'):
             await event_bus.publish(event)
             
             # Other handlers should still be called
@@ -327,7 +327,10 @@ class TestEventBusSingleton:
     @pytest.mark.asyncio
     async def test_reset_event_bus(self):
         """Test resetting the event bus singleton."""
-        from fastmcp.task_management.infrastructure.event_bus import get_event_bus, reset_event_bus
+        from fastmcp.task_management.infrastructure.event_bus import (
+            get_event_bus,
+            reset_event_bus,
+        )
         
         bus1 = get_event_bus()
         handler = create_named_mock("handler")

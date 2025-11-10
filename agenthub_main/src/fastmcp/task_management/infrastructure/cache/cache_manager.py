@@ -4,6 +4,8 @@ This module provides a flexible caching layer to reduce database queries
 and improve response times for frequently accessed data.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import logging

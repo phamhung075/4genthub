@@ -4,6 +4,8 @@ Placeholder implementations for services that need to be properly implemented la
 These provide basic functionality to allow the application to run without infrastructure imports.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path

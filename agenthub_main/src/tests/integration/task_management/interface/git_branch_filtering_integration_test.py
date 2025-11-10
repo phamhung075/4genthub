@@ -13,18 +13,23 @@ passing the git_branch_id parameter to the optimized repository's
 list_tasks_minimal method.
 """
 
-import pytest
 import logging
 import uuid
-from typing import Dict, Any
 
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.list_tasks_request import ListTasksRequest
-from fastmcp.task_management.application.factories.task_facade_factory import TaskFacadeFactory
-from fastmcp.task_management.infrastructure.repositories.task_repository_factory import TaskRepositoryFactory
-from fastmcp.task_management.infrastructure.repositories.subtask_repository_factory import SubtaskRepositoryFactory
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+import pytest
+
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.list_tasks_request import (
+    ListTasksRequest,
+)
+from fastmcp.task_management.application.factories.task_facade_factory import (
+    TaskFacadeFactory,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +41,12 @@ class TestGitBranchFilteringIntegration:
     def setup_method(self):
         """Set up test fixtures with real database."""
         # Ensure database is properly initialized
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from fastmcp.task_management.infrastructure.database.auto_migration import run_auto_migrations
+        from fastmcp.task_management.infrastructure.database.auto_migration import (
+            run_auto_migrations,
+        )
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         # Force database initialization to ensure schema is up to date
         db_config = get_db_config()
@@ -64,8 +73,13 @@ class TestGitBranchFilteringIntegration:
     
     def _create_project_and_branches(self):
         """Create project and git branches in the database."""
-        from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
+        from fastmcp.task_management.infrastructure.database.models import (
+            Project,
+            ProjectGitBranch,
+        )
         
         # Create a database session
         session = get_db_config().get_session()
@@ -173,7 +187,7 @@ class TestGitBranchFilteringIntegration:
         if not self.task_b2.get('success', False):
             raise RuntimeError(f"Failed to create task B2: {self.task_b2.get('error', 'Unknown error')}")
         
-        logger.info(f"Created test data:")
+        logger.info("Created test data:")
         logger.info(f"  Branch A ({self.branch_a_id}): 2 tasks")
         if 'task' in self.task_a1:
             logger.info(f"    Task A1 ID: {self.task_a1['task']['id']}")
@@ -190,7 +204,7 @@ class TestGitBranchFilteringIntegration:
             logger.info(f"    Task B2 keys: {self.task_b2.keys()}")
         
         # Debug: Verify tasks were created with correct git_branch_id
-        logger.info(f"Task creation verification:")
+        logger.info("Task creation verification:")
         if 'task' in self.task_a1:
             logger.info(f"  Task A1 git_branch_id: {self.task_a1['task'].get('git_branch_id', 'MISSING')}")
             logger.info(f"  Task A2 git_branch_id: {self.task_a2['task'].get('git_branch_id', 'MISSING')}")
@@ -216,7 +230,7 @@ class TestGitBranchFilteringIntegration:
         logger.info(f"Branch A returned {len(returned_tasks)} tasks")
         
         # Debug: Show what tasks were actually returned
-        logger.info(f"List result debug:")
+        logger.info("List result debug:")
         logger.info(f"  Result keys: {list(result.keys())}")
         logger.info(f"  Success: {result.get('success')}")
         logger.info(f"  Tasks count: {len(returned_tasks)}")

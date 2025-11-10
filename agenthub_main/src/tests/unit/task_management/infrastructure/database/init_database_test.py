@@ -5,15 +5,12 @@ This module tests the database initialization functionality
 that supports both SQLite and PostgreSQL databases.
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-import sqlite3
-from unittest.mock import Mock, patch, MagicMock, call
-import logging
-from pathlib import Path
 
 from fastmcp.task_management.infrastructure.database.init_database import (
     init_database,
-    migrate_from_sqlite_to_postgresql
 )
 
 

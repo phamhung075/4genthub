@@ -4,6 +4,8 @@ Project Maintenance Handler
 Handles maintenance operations for project management.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

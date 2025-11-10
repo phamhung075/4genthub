@@ -573,7 +573,7 @@ class TaskWorkflowGuidance(WorkflowGuidanceInterface):
                         warnings.append(
                             "💡 Consider updating progress or changing status to 'blocked'"
                         )
-                except:
+                except Exception:
                     pass
 
         # Parameter validation recovery hints

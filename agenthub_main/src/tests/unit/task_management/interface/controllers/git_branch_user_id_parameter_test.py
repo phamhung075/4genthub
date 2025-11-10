@@ -4,13 +4,17 @@ This test verifies that the manage_git_branch tool now accepts user_id as a para
 and properly passes it through to the authentication system.
 """
 
-import pytest
 from unittest.mock import Mock, patch
-from typing import Dict, Any
 
-from fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller import GitBranchMCPController
+import pytest
+
+from fastmcp.task_management.application.facades.git_branch_application_facade import (
+    GitBranchApplicationFacade,
+)
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.application.facades.git_branch_application_facade import GitBranchApplicationFacade
+from fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller import (
+    GitBranchMCPController,
+)
 
 
 class TestGitBranchUserIdParameter:

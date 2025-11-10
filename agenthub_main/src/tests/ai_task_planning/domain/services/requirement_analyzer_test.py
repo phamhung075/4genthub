@@ -1,10 +1,14 @@
 """Test suite for RequirementAnalyzer domain service"""
 
 import pytest
-from fastmcp.ai_task_planning.domain.services.requirement_analyzer import (
-    RequirementAnalyzer, RequirementPattern, AnalyzedRequirement
+
+from fastmcp.ai_task_planning.domain.entities.planning_request import (
+    RequirementItem,
 )
-from fastmcp.ai_task_planning.domain.entities.planning_request import RequirementItem, ComplexityLevel
+from fastmcp.ai_task_planning.domain.services.requirement_analyzer import (
+    RequirementAnalyzer,
+    RequirementPattern,
+)
 
 
 class TestRequirementAnalyzer:

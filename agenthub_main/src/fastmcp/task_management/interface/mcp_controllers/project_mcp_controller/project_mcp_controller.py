@@ -5,6 +5,8 @@ This is the main entry point for the project MCP controller, now refactored into
 architecture using factory pattern to maintain separation of concerns.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -132,7 +134,7 @@ class ProjectMCPController(ContextPropagationMixin):
 
         logger.info("ProjectMCPController initialized with modular architecture")
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """Register MCP tools with the server."""
 
         # Get centralized parameter definitions
@@ -297,7 +299,7 @@ class ProjectMCPController(ContextPropagationMixin):
             project_id: Optional project ID for project-specific operations
 
         Returns:
-            Tuple of (success: bool, error_response: Optional[Dict])
+            Tuple of (success: bool, error_response: Dict | None)
         """
         try:
             # Map action to permission

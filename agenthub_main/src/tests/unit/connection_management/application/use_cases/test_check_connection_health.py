@@ -1,18 +1,20 @@
 """Unit tests for Check Connection Health Use Case"""
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
-from fastmcp.connection_management.application.use_cases.check_connection_health import (
-    CheckConnectionHealthUseCase
-)
 from fastmcp.connection_management.application.dtos.connection_dtos import (
     ConnectionHealthRequest,
-    ConnectionHealthResponse
+    ConnectionHealthResponse,
+)
+from fastmcp.connection_management.application.use_cases.check_connection_health import (
+    CheckConnectionHealthUseCase,
 )
 from fastmcp.connection_management.domain.entities.connection import Connection
-from fastmcp.connection_management.domain.value_objects.connection_health import ConnectionHealth
+from fastmcp.connection_management.domain.value_objects.connection_health import (
+    ConnectionHealth,
+)
 
 
 class TestCheckConnectionHealthUseCase(unittest.TestCase):
@@ -195,7 +197,7 @@ class TestCheckConnectionHealthUseCase(unittest.TestCase):
         self.mock_connection_repository.find_by_id.side_effect = Exception(error_message)
         
         # Act
-        response = self.use_case.execute(request)
+        self.use_case.execute(request)
         
         # Assert
         mock_logger.error.assert_called_once()

@@ -7,18 +7,19 @@ Comprehensive test coverage for Keycloak integration including:
 - Error handling and edge cases
 """
 
-import pytest
 import os
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, Mock, patch
+
 import httpx
+import pytest
 from jose import jwt
 
 from fastmcp.auth.keycloak_integration import (
     KeycloakAuthProvider,
     KeycloakMCPAuth,
+    get_keycloak_mcp_auth,
     get_keycloak_provider,
-    get_keycloak_mcp_auth
 )
 
 
@@ -141,7 +142,7 @@ class TestKeycloakAuthProvider:
         
         # Set cache
         provider._oidc_config = mock_config
-        provider._last_config_fetch = datetime.now(timezone.utc)
+        provider._last_config_fetch = datetime.now(UTC)
         
         config = await provider.get_oidc_configuration()
         
@@ -157,7 +158,7 @@ class TestKeycloakAuthProvider:
         
         # Set expired cache
         provider._oidc_config = old_config
-        provider._last_config_fetch = datetime.now(timezone.utc) - timedelta(hours=2)
+        provider._last_config_fetch = datetime.now(UTC) - timedelta(hours=2)
         
         provider.http_client.get.return_value = Mock(
             json=lambda: new_config,
@@ -176,8 +177,8 @@ class TestKeycloakAuthProvider:
         mock_payload = {
             "sub": "user-123",
             "preferred_username": "testuser",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp(),
-            "iat": datetime.now(timezone.utc).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp(),
+            "iat": datetime.now(UTC).timestamp()
         }
         
         # Mock OIDC config
@@ -243,7 +244,7 @@ class TestKeycloakAuthProvider:
         token = "nosub.jwt.token"
         mock_payload = {
             "username": "testuser",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
             # Missing 'sub' claim
         }
         

@@ -1,5 +1,7 @@
 """AgentCustomizationService - Domain service for customizing agent configurations"""
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

@@ -1,12 +1,18 @@
 """Test module for Git Branch Facade Factory."""
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from typing import Optional
+from unittest.mock import MagicMock, patch
 
-from fastmcp.task_management.application.factories.git_branch_facade_factory import GitBranchFacadeFactory
-from fastmcp.task_management.application.facades.git_branch_application_facade import GitBranchApplicationFacade
-from fastmcp.task_management.infrastructure.repositories.git_branch_repository_factory import GitBranchRepositoryFactory
+import pytest
+
+from fastmcp.task_management.application.facades.git_branch_application_facade import (
+    GitBranchApplicationFacade,
+)
+from fastmcp.task_management.application.factories.git_branch_facade_factory import (
+    GitBranchFacadeFactory,
+)
+from fastmcp.task_management.infrastructure.repositories.git_branch_repository_factory import (
+    GitBranchRepositoryFactory,
+)
 
 
 class TestGitBranchFacadeFactory:
@@ -222,8 +228,8 @@ class TestGitBranchFacadeFactory:
             
             with patch('fastmcp.task_management.application.services.git_branch_service.GitBranchService'):
                 # Create some facades
-                facade1 = factory.create_git_branch_facade(project_id="project1")
-                facade2 = factory.create_git_branch_facade(project_id="project2")
+                factory.create_git_branch_facade(project_id="project1")
+                factory.create_git_branch_facade(project_id="project2")
                 
                 # Verify cache has entries
                 assert len(factory._facades_cache) == 2
@@ -274,7 +280,7 @@ class TestGitBranchFacadeFactory:
             mock_repo_provider.get_project_repository.return_value = mock_project_repo
             mock_repo_provider.get_git_branch_repository.return_value = mock_git_branch_repo
             
-            with patch('fastmcp.task_management.application.services.git_branch_service.GitBranchService') as mock_service_class:
+            with patch('fastmcp.task_management.application.services.git_branch_service.GitBranchService'):
                 # Create facades for same project but different users
                 facade_user1 = factory.create_git_branch_facade(
                     project_id="shared-project",

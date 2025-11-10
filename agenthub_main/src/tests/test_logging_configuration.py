@@ -3,14 +3,11 @@
 Test script to verify logging configuration works in both environments.
 """
 
-import sys
-import time
 import logging
-import pytest
-from pathlib import Path
+import time
 
-from fastmcp.utilities.logging import setup_comprehensive_logging, get_logging_info
-from fastmcp.utilities.environment import get_environment_info, detect_environment
+from fastmcp.utilities.environment import detect_environment, get_environment_info
+from fastmcp.utilities.logging import get_logging_info, setup_comprehensive_logging
 
 
 class TestLoggingConfiguration:
@@ -92,7 +89,7 @@ def manual_test_logging():
 
     # Get environment info
     env_info = get_environment_info()
-    print(f"\n🌍 Environment Information:")
+    print("\n🌍 Environment Information:")
     print(f"   Environment Type: {env_info['environment_type']}")
     print(f"   Log Directory: {env_info['log_directory']}")
     print(f"   Log Directory Exists: {env_info['log_directory_exists']}")
@@ -105,7 +102,7 @@ def manual_test_logging():
     # Get logging info
     try:
         logging_info = get_logging_info()
-        print(f"\n📝 Logging Configuration:")
+        print("\n📝 Logging Configuration:")
         fastmcp_handlers = logging_info['loggers']['FastMCP']['handlers']
         root_handlers = logging_info['loggers']['root']['handlers']
 
@@ -120,8 +117,8 @@ def manual_test_logging():
         print(f"   Error getting logging info: {e}")
 
     # Test logging at different levels
-    print(f"\n🧪 Testing Log Messages:")
-    print(f"   (Check console output and log files for these messages)")
+    print("\n🧪 Testing Log Messages:")
+    print("   (Check console output and log files for these messages)")
 
     # Test FastMCP logger
     fastmcp_logger.debug("🔍 Debug message from FastMCP logger")
@@ -148,7 +145,7 @@ def manual_test_logging():
     from fastmcp.utilities.environment import get_log_directory
     log_dir = get_log_directory()
 
-    print(f"\n📁 Log Files Status:")
+    print("\n📁 Log Files Status:")
     if log_dir.exists():
         log_files = list(log_dir.glob("*.log*"))
         if log_files:
@@ -160,7 +157,7 @@ def manual_test_logging():
                 # Show last few lines of log file
                 if size > 0:
                     try:
-                        with open(log_file, 'r', encoding='utf-8') as f:
+                        with open(log_file, encoding='utf-8') as f:
                             lines = f.readlines()
                             if lines:
                                 print(f"       Last line: {lines[-1].strip()}")
@@ -171,8 +168,8 @@ def manual_test_logging():
     else:
         print(f"   ❌ Log directory does not exist: {log_dir}")
 
-    print(f"\n✅ Logging test completed!")
-    print(f"=" * 60)
+    print("\n✅ Logging test completed!")
+    print("=" * 60)
 
 
 if __name__ == "__main__":

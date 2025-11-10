@@ -5,15 +5,15 @@ This module tests the nested categorization functionality, migration logic,
 and backward compatibility of the global context system.
 """
 
+
 import pytest
-from datetime import datetime, timezone
-from typing import Dict, Any
 
 from fastmcp.task_management.domain.entities.context import GlobalContext
 from fastmcp.task_management.domain.entities.global_context_schema import (
     GlobalContextNestedData,
-    NestedCategorySchema
+    NestedCategorySchema,
 )
+
 # Migration functionality not yet implemented
 # from fastmcp.task_management.infrastructure.migrations.global_context_migration import (
 #     GlobalContextMigrator,
@@ -26,9 +26,9 @@ from fastmcp.task_management.domain.entities.global_context_schema import (
 #     ensure_global_context_compatibility
 # )
 from fastmcp.task_management.infrastructure.validation.global_context_validator import (
+    GlobalContextValidationError,
     GlobalContextValidator,
     validate_global_context,
-    GlobalContextValidationError
 )
 
 
@@ -611,14 +611,6 @@ class TestEnsureCompatibility:
     
     def test_ensure_compatibility_flat_data(self):
         """Test ensuring compatibility with flat data."""
-        flat_data = {
-            "id": "test-id",
-            "organization_name": "Test Org",
-            "global_settings": {
-                "organization_standards": {"test": "value"}
-            },
-            "metadata": {}
-        }
         
         # context = ensure_global_context_compatibility(flat_data)
         pytest.skip("Compatibility functionality not yet implemented")
@@ -629,21 +621,6 @@ class TestEnsureCompatibility:
     
     def test_ensure_compatibility_nested_data(self):
         """Test ensuring compatibility with nested data."""
-        nested_data = {
-            "id": "test-id",
-            "organization_name": "Test Org",
-            "global_settings": {},
-            "metadata": {
-                "nested_structure": {
-                    "organization": {"standards": {"test": "value"}},
-                    "development": {"patterns": {}, "tools": {}, "workflows": {}},
-                    "security": {"authentication": {}, "encryption": {}, "access_control": {}},
-                    "operations": {"resources": {}, "monitoring": {}, "deployment": {}},
-                    "preferences": {"user_interface": {}, "agent_behavior": {}, "workflow": {}},
-                    "_schema_version": "2.0"
-                }
-            }
-        }
         
         # context = ensure_global_context_compatibility(nested_data)
         pytest.skip("Compatibility functionality not yet implemented")

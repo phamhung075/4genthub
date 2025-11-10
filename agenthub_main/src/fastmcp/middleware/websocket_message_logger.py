@@ -16,6 +16,8 @@ Environment Variables:
 - WS_VALIDATION_ENABLED: Enable schema validation (default: True)
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os

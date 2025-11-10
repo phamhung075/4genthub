@@ -1,5 +1,7 @@
 """Branch Statistics Integration Service - Wires domain events to statistics updates"""
 
+from __future__ import annotations
+
 import logging
 
 from ...domain.events.task_lifecycle_events import (

@@ -5,6 +5,8 @@ This service provides the infrastructure layer for ML-based dependency predictio
 including model persistence, training data management, and prediction serving.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from dataclasses import asdict

@@ -5,12 +5,10 @@ Tests the logic for merging and inheriting contexts across the hierarchy:
 Global → Project → Branch → Task with proper override and precedence rules.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
-from copy import deepcopy
+from unittest.mock import Mock
 
 from fastmcp.task_management.application.services.context_inheritance_service import (
-    ContextInheritanceService
+    ContextInheritanceService,
 )
 
 

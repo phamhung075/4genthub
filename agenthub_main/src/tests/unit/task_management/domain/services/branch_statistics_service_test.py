@@ -1,12 +1,11 @@
 """Unit tests for Branch Statistics Service"""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
-from typing import List, Optional
 
 from fastmcp.task_management.domain.services.branch_statistics_service import (
     BranchStatisticsService,
-    BranchStatistics
 )
 
 

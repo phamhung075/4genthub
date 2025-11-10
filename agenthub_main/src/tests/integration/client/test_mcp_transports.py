@@ -17,21 +17,18 @@ Test Categories:
 8. FastMCP Transport - In-memory communication
 """
 
-import pytest
 import asyncio
-import json
 import sys
 import tempfile
-from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock, MagicMock, call
 from contextlib import asynccontextmanager
-from typing import Dict, Any
-from datetime import datetime, timezone, timedelta
-import subprocess
+from datetime import timedelta
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
-import mcp.types
-from pydantic import AnyUrl
 import httpx
+import mcp.types
+import pytest
+from pydantic import AnyUrl
 
 # Mock the missing oauth_callback module before importing
 oauth_callback_mock = MagicMock()
@@ -41,22 +38,21 @@ sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
 # Import transport components
 from fastmcp.client.transports import (
     ClientTransport,
-    SSETransport,
-    StreamableHttpTransport,
-    WSTransport,
-    StdioTransport,
-    PythonStdioTransport,
     FastMCPStdioTransport,
-    NodeStdioTransport,
-    UvxStdioTransport,
-    NpxStdioTransport,
     FastMCPTransport,
     MCPConfigTransport,
+    NodeStdioTransport,
+    NpxStdioTransport,
+    PythonStdioTransport,
+    SSETransport,
+    StdioTransport,
+    StreamableHttpTransport,
+    UvxStdioTransport,
+    WSTransport,
     infer_transport,
 )
 from fastmcp.server.server import FastMCP
 from fastmcp.utilities.mcp_config import MCPConfig
-
 
 # Test markers
 pytestmark = [
@@ -1062,7 +1058,6 @@ class TestTransportConnectionExecution:
         mock_stdio.return_value = stdio_ctx(None)
 
         # Mock ClientSession context manager
-        original_session = mcp.ClientSession
 
         @asynccontextmanager
         async def mock_session_ctx(*args, **kwargs):
@@ -1082,7 +1077,7 @@ class TestTransportConnectionExecution:
 
                 # Verify connect was attempted
                 assert transport._session is not None or transport._connect_task is not None
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Expected - mock may not complete
                 pass
             finally:
@@ -1091,7 +1086,7 @@ class TestTransportConnectionExecution:
                     transport._stop_event.set()
                     try:
                         await asyncio.wait_for(transport._connect_task, timeout=0.1)
-                    except:
+                    except Exception:
                         pass
 
 
@@ -1135,7 +1130,7 @@ class TestTransportConnectionExecution:
                     async with asyncio.timeout(0.1):
                         async with transport.connect_session():
                             pass
-                except:
+                except Exception:
                     pass  # Expected timeout/error with mocks
 
 
@@ -1159,7 +1154,6 @@ class TestTransportConnectionExecution:
 
     async def test_uvx_with_env_vars(self):
         """Test UvxStdioTransport environment variable handling"""
-        import os
 
         transport = UvxStdioTransport(
             tool_name="test-tool",

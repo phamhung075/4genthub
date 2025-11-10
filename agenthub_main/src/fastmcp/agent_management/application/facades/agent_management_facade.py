@@ -6,6 +6,8 @@ coordinating between domain services and repositories to provide a
 high-level API for agent instantiation and retrieval.
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -190,17 +192,17 @@ class AgentManagementFacade:
                 "slug": str,
                 "description": str,
                 "system_prompt": str,
-                "tools": List[str],
-                "capabilities": Dict[str, Any],
-                "rules": Optional[List[str]],
-                "output_format": Optional[str],
+                "tools": list[str],
+                "capabilities": dict[str, Any],
+                "rules": list[str | None],
+                "output_format": str | None,
                 "category": str,
                 "version": str,
                 "is_customized": bool,
                 "is_orphaned": bool,  # True if imported and original creator deleted their agent
                 "instance_id": str,
                 "template_id": str,
-                "metadata": Dict[str, Any]  # includes "orphaned_warning" if applicable
+                "metadata": dict[str, Any]  # includes "orphaned_warning" if applicable
             }
 
         Raises:

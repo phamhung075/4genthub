@@ -1,5 +1,7 @@
 """Task State Transition Service - Domain Service for Task Status Business Rules"""
 
+from __future__ import annotations
+
 import logging
 from enum import Enum
 from typing import Any, Protocol
@@ -80,7 +82,7 @@ class TaskStateTransitionService:
             context: Context of the transition
             
         Returns:
-            Tuple of (can_transition: bool, reason: Optional[str])
+            Tuple of (can_transition: bool, reason: str | None)
         """
         try:
             current_status = str(task.status).lower()
@@ -113,7 +115,7 @@ class TaskStateTransitionService:
             metadata: Additional metadata for the transition
             
         Returns:
-            Tuple of (success: bool, message: Optional[str])
+            Tuple of (success: bool, message: str | None)
         """
         try:
             metadata = metadata or {}

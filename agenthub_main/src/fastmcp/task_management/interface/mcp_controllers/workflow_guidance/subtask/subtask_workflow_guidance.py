@@ -26,8 +26,8 @@ class SubtaskWorkflowGuidance(WorkflowGuidanceInterface):
             return response
 
         # Extract relevant data
-        task_id = context.get("task_id")
-        subtask_id = context.get("subtask_id")
+        context.get("task_id")
+        context.get("subtask_id")
         subtask = response.get("subtask", {})
         subtasks = response.get("subtasks", [])
 

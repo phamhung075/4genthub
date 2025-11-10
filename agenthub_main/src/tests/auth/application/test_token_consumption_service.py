@@ -12,15 +12,12 @@ Tests the application service layer for token consumption including:
 - check_sufficient_balance
 """
 
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
-from datetime import datetime
 
 from fastmcp.auth.application.services.token_consumption_service import (
     TokenConsumptionService,
-    TokenConsumptionResult,
-    TokenBalanceResult,
-    TokenAdditionResult
 )
 
 

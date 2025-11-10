@@ -5,6 +5,8 @@ Comprehensive REST endpoints for managing user agent instances,
 templates, analytics, and configurations.
 """
 
+from __future__ import annotations
+
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status

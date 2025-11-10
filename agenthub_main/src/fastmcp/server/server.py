@@ -1568,7 +1568,7 @@ class FastMCP(Generic[LifespanResultT]):
             try:
                 # Check if we're in an async context
                 try:
-                    loop = asyncio.get_running_loop()
+                    asyncio.get_running_loop()
                     # We're in an async context, use memory fallback to avoid event loop issues
                     logger.info("Using memory-based EventStore (async context detected)")
                     event_store = MemoryEventStore()

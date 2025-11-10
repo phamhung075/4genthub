@@ -3,6 +3,8 @@ Bulk Operation Models
 Handles bulk API operations matching frontend api.types.ts
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -29,7 +31,7 @@ class BulkSummaryMetadata(BaseModel):
 class BulkSummaryResponse(BaseModel):
     """Bulk summary response matching frontend BulkSummaryResponse interface
 
-    Note: summaries and projects use Dict[str, Any] instead of strict DTOs
+    Note: summaries and projects use dict[str, Any] instead of strict DTOs
     to allow flexibility in response construction while still serializing correctly.
     """
     success: bool = True

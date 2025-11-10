@@ -16,6 +16,8 @@ Environment Variables:
 - VALIDATION_SAMPLE_RATE: Percentage of requests to validate (default: 100)
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os

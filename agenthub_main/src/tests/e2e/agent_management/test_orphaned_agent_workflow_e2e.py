@@ -23,24 +23,27 @@ Requirements Coverage:
 - Warning system for orphaned imports
 """
 
-import pytest
-import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
+import pytest
+
+from fastmcp.agent_management.application.facades.agent_management_facade import (
+    AgentManagementFacade,
+)
 from fastmcp.agent_management.domain.entities import AgentTemplate
+from fastmcp.agent_management.domain.services.agent_sharing_service import (
+    AgentSharingService,
+)
 from fastmcp.agent_management.domain.value_objects import (
+    AgentConfiguration,
     AgentTemplateId,
     UserId,
-    AgentConfiguration
 )
 from fastmcp.agent_management.infrastructure.repositories import (
     ORMAgentTemplateRepository,
-    ORMUserAgentInstanceRepository
+    ORMUserAgentInstanceRepository,
 )
-from fastmcp.agent_management.application.facades.agent_management_facade import AgentManagementFacade
-from fastmcp.agent_management.domain.services.agent_sharing_service import AgentSharingService
-
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -66,8 +69,8 @@ def create_test_template(slug: str = "e2e-test-agent") -> AgentTemplate:
         version="1.0.0",
         default_configuration=configuration,
         metadata={"source": "e2e-test"},
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
 
 
@@ -119,7 +122,7 @@ class TestOrphanedAgentE2EWorkflow:
         marketplace_before = instance_repo.find_public_instances(limit=100, offset=0)
         marketplace_ids_before = [inst.id.value for inst in marketplace_before]
         assert instance_a.id.value in marketplace_ids_before, "Original agent should be in marketplace"
-        print(f"  ✓ Agent visible in marketplace")
+        print("  ✓ Agent visible in marketplace")
 
         # STEP 2: User B imports agent
         user_b = UserId.from_string(str(uuid4()))
@@ -147,12 +150,12 @@ class TestOrphanedAgentE2EWorkflow:
         print(f"  ✓ Both agents visible in marketplace (count: {len(marketplace_ids_after_import)})")
 
         # STEP 3: User A deletes their agent
-        print(f"\n🔹 Step 3: User A deletes their agent")
+        print("\n🔹 Step 3: User A deletes their agent")
         facade.delete_instance(user_a, str(instance_a.id.value))
-        print(f"  ✓ User A deleted original agent")
+        print("  ✓ User A deleted original agent")
 
         # STEP 4: Verify marketplace doesn't show orphaned import
-        print(f"\n🔹 Step 4: Verify marketplace filtering")
+        print("\n🔹 Step 4: Verify marketplace filtering")
         marketplace_after_delete = instance_repo.find_public_instances(limit=100, offset=0)
         marketplace_ids_after_delete = [inst.id.value for inst in marketplace_after_delete]
 
@@ -160,18 +163,18 @@ class TestOrphanedAgentE2EWorkflow:
             "Deleted original should not be in marketplace"
         assert imported_instance.id.value not in marketplace_ids_after_delete, \
             "Orphaned import should NOT be in marketplace"
-        print(f"  ✓ Orphaned import hidden from marketplace")
+        print("  ✓ Orphaned import hidden from marketplace")
 
         # STEP 5: User B can still use imported agent
-        print(f"\n🔹 Step 5: User B can still use their import")
+        print("\n🔹 Step 5: User B can still use their import")
 
         # Verify instance still exists
         user_b_instance = instance_repo.find_by_id(imported_instance.id)
         assert user_b_instance is not None, "User B's import should still exist"
-        print(f"  ✓ User B's import still exists and usable")
+        print("  ✓ User B's import still exists and usable")
 
         # STEP 6: User B sees warning when calling agent
-        print(f"\n🔹 Step 6: User B sees orphaned warning")
+        print("\n🔹 Step 6: User B sees orphaned warning")
 
         agent_response = facade.get_agent_for_call(user_b, template.slug)
         assert agent_response["is_orphaned"] is True, \
@@ -244,27 +247,27 @@ class TestOrphanedAgentE2EWorkflow:
         marketplace_ids = [inst.id.value for inst in marketplace]
 
         # Assert - Verify filtering
-        print(f"\n🔹 Verifying marketplace contents")
+        print("\n🔹 Verifying marketplace contents")
 
         # Original public agent should be present
         assert instance_1.id.value in marketplace_ids, \
             "Original public agent should be in marketplace"
-        print(f"  ✓ Original agent visible")
+        print("  ✓ Original agent visible")
 
         # Active import's original should be present
         assert instance_2.id.value in marketplace_ids, \
             "Original of active import should be in marketplace"
-        print(f"  ✓ Active import's original visible")
+        print("  ✓ Active import's original visible")
 
         # Active import should be present
         assert imported_active.id.value in marketplace_ids, \
             "Active import should be in marketplace"
-        print(f"  ✓ Active import visible")
+        print("  ✓ Active import visible")
 
         # Orphaned import should NOT be present
         assert imported_orphan.id.value not in marketplace_ids, \
             "Orphaned import should NOT be in marketplace"
-        print(f"  ✓ Orphaned import hidden")
+        print("  ✓ Orphaned import hidden")
 
         # Cleanup
         instance_repo.delete(imported_orphan.id)

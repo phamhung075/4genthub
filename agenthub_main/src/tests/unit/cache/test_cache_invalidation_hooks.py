@@ -18,21 +18,19 @@ Date: 2025-10-24
 Task: Implement comprehensive cache invalidation hooks tests (Task 2.6)
 """
 
+import asyncio
+from typing import Any
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
 import pytest_asyncio
-import asyncio
-import logging
-from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
-from typing import Dict, Any, List
 
 # Import cache invalidation hooks
 from fastmcp.server.cache.cache_invalidation_hooks import (
     CacheInvalidationHooks,
     cache_invalidation_decorator,
     register_cache_invalidation_hooks,
-    CACHE_INVALIDATION_ENABLED
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -49,7 +47,7 @@ def mock_cache_invalidator():
 
 
 @pytest.fixture
-def sample_task_data() -> Dict[str, Any]:
+def sample_task_data() -> dict[str, Any]:
     """Sample task data for testing"""
     return {
         "task_id": "task-123",
@@ -60,7 +58,7 @@ def sample_task_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_subtask_data() -> Dict[str, Any]:
+def sample_subtask_data() -> dict[str, Any]:
     """Sample subtask data for testing"""
     return {
         "subtask_id": "subtask-789",
@@ -71,7 +69,7 @@ def sample_subtask_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_updates() -> Dict[str, Any]:
+def sample_updates() -> dict[str, Any]:
     """Sample update data for testing"""
     return {
         "status": "completed",
@@ -399,7 +397,7 @@ class TestCacheInvalidationDecorator:
             async def update_subtask(subtask_id: str, parent_task_id: str, updates: dict):
                 return {"success": True, "subtask_id": subtask_id}
 
-            result = await update_subtask(
+            await update_subtask(
                 subtask_id="subtask-456",
                 parent_task_id="task-123",
                 updates={"status": "done"}
@@ -416,7 +414,7 @@ class TestCacheInvalidationDecorator:
             async def update_context(context_id: str, updates: dict):
                 return {"success": True, "context_id": context_id}
 
-            result = await update_context(
+            await update_context(
                 context_id="context-789",
                 updates={"metadata": {"key": "value"}}
             )
@@ -432,7 +430,7 @@ class TestCacheInvalidationDecorator:
             async def bulk_delete(task_ids: list):
                 return {"success": True, "deleted_count": len(task_ids)}
 
-            result = await bulk_delete(task_ids=["task-1", "task-2", "task-3"])
+            await bulk_delete(task_ids=["task-1", "task-2", "task-3"])
 
             # Should trigger bulk invalidation
             mock_hook.assert_called_once()
@@ -479,7 +477,7 @@ class TestCacheInvalidationDecorator:
                 return {"success": True, "task_id": task_id}
 
             # Call with positional arg
-            result = await update_task("task-123")
+            await update_task("task-123")
 
             # Should trigger invalidation with correct ID
             mock_hook.assert_called_once()

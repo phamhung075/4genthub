@@ -7,16 +7,15 @@ Tests the integration of ResponseOptimizer into StandardResponseFormatter includ
 - Backward compatibility
 """
 
-import unittest
 import os
-from unittest.mock import patch, MagicMock
-from typing import Dict, Any
+import unittest
 
+from fastmcp.task_management.application.services.response_optimizer import (
+    ResponseProfile,
+)
 from fastmcp.task_management.interface.utils.response_formatter import (
     StandardResponseFormatter,
-    ResponseStatus
 )
-from fastmcp.task_management.application.services.response_optimizer import ResponseProfile
 
 
 class TestResponseFormatterOptimization(unittest.TestCase):

@@ -162,10 +162,9 @@ class CachedTaskRepository:
     async def delete(self, task_id: TaskId) -> bool:
         """Delete task with cache invalidation"""
         # Get task info before deletion for cache invalidation
-        task = None
         try:
-            task = await self.base_repo.find_by_id(task_id)
-        except:
+            await self.base_repo.find_by_id(task_id)
+        except Exception:
             pass
         
         result = await self.base_repo.delete(task_id)

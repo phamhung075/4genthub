@@ -5,6 +5,8 @@ Orchestrates unified context operations across all levels while maintaining
 proper DDD boundaries and providing a clean interface for the Interface layer.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

@@ -4,6 +4,8 @@ Factory for creating project management services with proper dependency injectio
 """
 
 
+from __future__ import annotations
+
 from ...application.services.project_application_service import (
     ProjectApplicationService,
 )

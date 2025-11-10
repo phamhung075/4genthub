@@ -1,5 +1,7 @@
 """Statistics Initializer - Wires up event handlers on application startup"""
 
+from __future__ import annotations
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,7 +39,7 @@ class StatisticsInitializer:
             branch_repo = provider.get_git_branch_repository()
 
             # Initialize the integration service (this registers event handlers)
-            integration_service = get_branch_statistics_integration_service(
+            get_branch_statistics_integration_service(
                 task_repo,
                 branch_repo
             )

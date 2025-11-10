@@ -1,5 +1,7 @@
 """Get Blocking Tasks Use Case"""
 
+from __future__ import annotations
+
 from typing import Any
 
 from ...domain import TaskId, TaskNotFoundError, TaskRepository

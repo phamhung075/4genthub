@@ -1,5 +1,7 @@
 """Request DTO for updating a task with hierarchical storage support"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
 

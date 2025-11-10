@@ -5,6 +5,8 @@ This service orchestrates authentication operations including registration,
 login, password management, and token handling.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 
@@ -80,7 +82,7 @@ class AuthService:
         """
         try:
             # Validate email
-            email_obj = Email(email)
+            Email(email)
             
             # Check if email already exists
             existing_user = await self.user_repository.get_by_email(email)

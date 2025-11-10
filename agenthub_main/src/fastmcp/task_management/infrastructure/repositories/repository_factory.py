@@ -4,6 +4,8 @@ This factory properly checks environment variables to determine which repository
 It supports SQLite for tests, Supabase for production, and Redis caching when enabled.
 """
 
+from __future__ import annotations
+
 import logging
 
 from .utils import get_repository_config

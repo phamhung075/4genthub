@@ -3,20 +3,20 @@ Test fixtures for MCP tool testing
 Provides reusable test data and mock objects
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
 import uuid
+from datetime import datetime, timedelta
+from unittest.mock import Mock
+
+import pytest
 
 # Fixed timestamp for test consistency
 FIXED_TEST_TIMESTAMP = datetime(2024, 1, 1, 12, 0, 0)
 
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.entities.project import Project
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
 class FixtureGenerator:

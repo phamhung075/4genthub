@@ -3,15 +3,16 @@
 This test verifies the fix for Issue #4: Allow Status and Progress Parameters in Subtask Creation
 """
 
+from unittest.mock import Mock
+
 import pytest
-from unittest.mock import Mock, MagicMock
+
+from fastmcp.task_management.application.dtos.subtask.add_subtask_request import (
+    AddSubtaskRequest,
+)
 from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
-from fastmcp.task_management.application.dtos.subtask.add_subtask_request import AddSubtaskRequest
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 @pytest.fixture

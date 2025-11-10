@@ -5,6 +5,8 @@ Handles the logic for merging and inheriting contexts across the hierarchy:
 Global → Project → Task with proper override and precedence rules.
 """
 
+from __future__ import annotations
+
 import logging
 from copy import deepcopy
 from datetime import UTC
@@ -42,7 +44,7 @@ class ContextInheritanceService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'ContextInheritanceService':
+    def with_user(self, user_id: str) -> ContextInheritanceService:
         """Create a new service instance scoped to a specific user."""
         return ContextInheritanceService(self.repository, user_id)
     

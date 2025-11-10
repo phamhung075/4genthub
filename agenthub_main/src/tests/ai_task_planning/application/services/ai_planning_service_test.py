@@ -1,14 +1,20 @@
 """Test suite for AITaskPlanningService"""
 
+from unittest.mock import Mock
+
 import pytest
-from datetime import datetime, timezone
-from unittest.mock import Mock, AsyncMock
-from fastmcp.ai_task_planning.application.services.ai_planning_service import AITaskPlanningService
+
+from fastmcp.ai_task_planning.application.services.ai_planning_service import (
+    AITaskPlanningService,
+)
 from fastmcp.ai_task_planning.domain.entities.planning_request import (
-    PlanningRequest, RequirementItem, PlanningContext, ComplexityLevel
+    PlanningContext,
+    PlanningRequest,
 )
 from fastmcp.ai_task_planning.domain.entities.task_plan import (
-    TaskPlan, PlannedTask, TaskType, ExecutionPhase
+    ExecutionPhase,
+    TaskPlan,
+    TaskType,
 )
 
 

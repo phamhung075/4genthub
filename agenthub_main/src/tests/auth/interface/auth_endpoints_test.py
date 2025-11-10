@@ -6,13 +6,12 @@ authentication endpoints, including all public functions, edge cases, and
 error conditions.
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-import httpx
-import os
 import json
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Any, Optional
+import os
+from unittest.mock import AsyncMock, Mock, patch
+
+import httpx
+import pytest
 
 # Handle optional imports
 try:
@@ -26,20 +25,14 @@ except ImportError:
     Session = None
 
 from fastmcp.auth.interface.auth_endpoints import (
-    router,
     LoginRequest,
     LoginResponse,
     RegisterRequest,
     RegisterResponse,
-    get_keycloak_admin_token,
     cleanup_incomplete_account_internal,
+    get_keycloak_admin_token,
+    router,
     setup_user_roles,
-    AUTH_PROVIDER,
-    EMAIL_VERIFIED_AUTO,
-    KEYCLOAK_URL,
-    KEYCLOAK_REALM,
-    KEYCLOAK_CLIENT_ID,
-    KEYCLOAK_CLIENT_SECRET,
 )
 
 
@@ -1627,7 +1620,7 @@ class TestEdgeCasesAndErrorHandling:
         # Assert - current implementation returns success even when Keycloak has errors
         # This indicates more resilient error handling in the current implementation
         assert response.status_code == 200
-        assert response.json()["success"] == True
+        assert response.json()["success"]
         assert "Registration successful" in response.json()["message"]
     
     @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')

@@ -5,6 +5,8 @@ using the domain intelligence services. Provides the main interface for
 MCP controllers to access intelligent context selection capabilities.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime

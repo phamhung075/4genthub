@@ -1,6 +1,6 @@
 """Test suite for ai_task_planning.domain.services package initialization"""
 
-import pytest
+
 from fastmcp.ai_task_planning.domain import services
 
 

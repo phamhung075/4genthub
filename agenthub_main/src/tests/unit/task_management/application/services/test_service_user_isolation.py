@@ -5,15 +5,23 @@ These tests verify that all application services properly propagate
 user context and maintain data isolation between users.
 """
 
-import pytest
+from unittest.mock import Mock
 from uuid import uuid4
-from unittest.mock import Mock, MagicMock, patch, AsyncMock
-from typing import Optional
 
-from fastmcp.task_management.application.services.task_application_service import TaskApplicationService
-from fastmcp.task_management.application.services.project_application_service import ProjectApplicationService
-from fastmcp.task_management.application.services.agent_coordination_service import AgentCoordinationService
-from fastmcp.task_management.application.services.subtask_application_service import SubtaskApplicationService
+import pytest
+
+from fastmcp.task_management.application.services.agent_coordination_service import (
+    AgentCoordinationService,
+)
+from fastmcp.task_management.application.services.project_application_service import (
+    ProjectApplicationService,
+)
+from fastmcp.task_management.application.services.subtask_application_service import (
+    SubtaskApplicationService,
+)
+from fastmcp.task_management.application.services.task_application_service import (
+    TaskApplicationService,
+)
 
 
 class TestServiceUserIsolation:
@@ -108,7 +116,7 @@ class TestServiceUserIsolation:
         )
         
         # Access the repository through _get_user_scoped_repository
-        scoped_repo = service._get_user_scoped_repository()
+        service._get_user_scoped_repository()
         
         # Verify with_user was called with correct user_id
         mock_task_repository.with_user.assert_called_with(user1_id)
@@ -215,8 +223,8 @@ class TestServiceUserIsolation:
         )
         
         # Get scoped repositories
-        scoped_task_repo = service._get_user_scoped_repository(mock_task_repository)
-        scoped_agent_repo = service._get_user_scoped_repository(mock_agent_repository)
+        service._get_user_scoped_repository(mock_task_repository)
+        service._get_user_scoped_repository(mock_agent_repository)
         
         # Verify with_user was called with correct user_id
         mock_task_repository.with_user.assert_called_with(user1_id)
@@ -347,7 +355,7 @@ class TestServiceUserIsolation:
     def test_service_propagates_user_context_through_operations(self, mock_task_repository, user1_id):
         """Test that user context is propagated through all service operations."""
         # Create a chain of mocks to track user context propagation
-        mock_use_case = Mock()
+        Mock()
         mock_scoped_repo = Mock()
         mock_scoped_repo.user_id = user1_id
         mock_task_repository.with_user = Mock(return_value=mock_scoped_repo)

@@ -4,30 +4,31 @@ Testing value object immutability, validation, and business logic
 Following DDD patterns and principles
 """
 
-import pytest
-from dataclasses import FrozenInstanceError
-from typing import Dict, Any, List
-from unittest.mock import MagicMock, patch
 import time
+from unittest.mock import MagicMock, patch
 
-from fastmcp.task_management.domain.value_objects.rule_value_objects import (
-    ClientConfig,
-    SyncRequest,
-    SyncResult,
-    RuleConflict,
-    CompositionResult,
-    CacheEntry,
-    RuleHierarchyInfo
+import pytest
+
+from fastmcp.task_management.domain.entities.rule_entity import (
+    RuleContent,
+    RuleInheritance,
 )
 from fastmcp.task_management.domain.value_objects.rule_enums import (
     ClientAuthMethod,
-    SyncOperation,
-    SyncStatus,
     ConflictResolution,
     RuleType,
-    RuleFormat
+    SyncOperation,
+    SyncStatus,
 )
-from fastmcp.task_management.domain.entities.rule_entity import RuleContent, RuleInheritance
+from fastmcp.task_management.domain.value_objects.rule_value_objects import (
+    CacheEntry,
+    ClientConfig,
+    CompositionResult,
+    RuleConflict,
+    RuleHierarchyInfo,
+    SyncRequest,
+    SyncResult,
+)
 
 
 class TestClientConfig:

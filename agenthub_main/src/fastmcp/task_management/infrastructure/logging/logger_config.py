@@ -1,5 +1,7 @@
 """Centralized logging configuration for the task management system."""
 
+from __future__ import annotations
+
 import inspect
 import json
 import logging

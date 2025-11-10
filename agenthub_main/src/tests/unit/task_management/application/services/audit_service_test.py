@@ -3,14 +3,13 @@
 Tests for audit trail management and compliance monitoring functionality.
 """
 
-import pytest
+from datetime import datetime
 from unittest.mock import Mock, patch
-from datetime import datetime, timezone
-from typing import Dict, Any
 
 from fastmcp.task_management.application.services.audit_service import AuditService
-from fastmcp.task_management.domain.value_objects.compliance_enums import ComplianceLevel, ValidationResult
-from fastmcp.task_management.domain.value_objects.compliance_objects import ValidationReport
+from fastmcp.task_management.domain.value_objects.compliance_enums import (
+    ComplianceLevel,
+)
 
 
 class TestAuditService:

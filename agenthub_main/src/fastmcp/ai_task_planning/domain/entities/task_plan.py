@@ -4,6 +4,8 @@ Represents the AI-generated plan that breaks down a planning request
 into executable tasks with dependencies and agent assignments.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -96,13 +98,13 @@ class PlannedTask:
     mcp_task_id: str | None = None  # Reference to created MCP task
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     
-    def add_subtask(self, subtask: 'PlannedTask'):
+    def add_subtask(self, subtask: PlannedTask):
         """Add a subtask to this task"""
         if subtask.id not in self.subtask_ids:
             self.subtask_ids.append(subtask.id)
         subtask.parent_task_id = self.id
     
-    def can_run_in_parallel(self, other_task: 'PlannedTask') -> bool:
+    def can_run_in_parallel(self, other_task: PlannedTask) -> bool:
         """Check if this task can run in parallel with another task"""
         # Same agent can't work on both tasks simultaneously
         if (self.agent_assignment and other_task.agent_assignment and

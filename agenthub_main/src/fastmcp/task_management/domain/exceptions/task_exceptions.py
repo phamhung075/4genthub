@@ -1,5 +1,7 @@
 """Task Domain Exceptions"""
 
+from __future__ import annotations
+
 from typing import Any
 
 from ..value_objects import ErrorSeverity
@@ -36,7 +38,7 @@ class TaskNotFoundError(TaskDomainError):
                 import re
                 match = re.search(r'Task (\w+) not found', message_or_task_id)
                 self.task_id = match.group(1) if match else message_or_task_id
-            except:
+            except Exception:
                 self.task_id = message_or_task_id
         else:
             # Raw task_id passed

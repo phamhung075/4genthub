@@ -4,6 +4,8 @@ This controller handles MCP tool registration for unified context management ope
 following the new standardized MCP parameter pattern for consistent parameter type display.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
@@ -52,7 +54,7 @@ class UnifiedContextMCPController:
 
         logger.info("UnifiedContextMCPController initialized with modular architecture")
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """Register unified context management tools with FastMCP."""
 
         # Get centralized parameter definitions
@@ -311,7 +313,7 @@ class UnifiedContextMCPController:
             context_id: Optional context ID for context-specific operations
 
         Returns:
-            Tuple of (success: bool, error_response: Optional[Dict])
+            Tuple of (success: bool, error_response: Dict | None)
         """
         try:
             # Map action to permission

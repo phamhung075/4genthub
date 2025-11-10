@@ -3,13 +3,15 @@ Comprehensive tests for BaseUserScopedRepository pattern.
 Following TDD principles - these tests define the expected behavior.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch, call
+from typing import Any
+from unittest.mock import Mock
 from uuid import uuid4
-from datetime import datetime
-from typing import Optional, Dict, Any, List
 
-from fastmcp.task_management.infrastructure.repositories.base_user_scoped_repository import BaseUserScopedRepository
+import pytest
+
+from fastmcp.task_management.infrastructure.repositories.base_user_scoped_repository import (
+    BaseUserScopedRepository,
+)
 
 
 class ConcreteUserScopedRepository(BaseUserScopedRepository):
@@ -31,7 +33,7 @@ class ConcreteUserScopedRepository(BaseUserScopedRepository):
         except (ValueError, AttributeError):
             raise ValueError("Invalid user_id: must be a valid UUID string")
     
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create(self, data: dict[str, Any]) -> dict[str, Any]:
         """Create a new entity with automatic user_id insertion."""
         # Remove any user_id from input data to prevent override
         clean_data = {k: v for k, v in data.items() if k != 'user_id'}
@@ -46,19 +48,19 @@ class ConcreteUserScopedRepository(BaseUserScopedRepository):
         self.session.execute_query(query)
         return clean_data
     
-    def get_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def get_by_id(self, entity_id: str) -> dict[str, Any | None]:
         """Get entity by ID with user_id filter."""
         query = f"SELECT * FROM {self.table_name} WHERE id = '{entity_id}' AND user_id = '{self.user_id}'"
         self.session.execute_query(query)
         return self.session.fetch_one()
     
-    def get_all(self) -> List[Dict[str, Any]]:
+    def get_all(self) -> list[dict[str, Any]]:
         """Get all entities for the current user."""
         query = f"SELECT * FROM {self.table_name} WHERE user_id = '{self.user_id}'"
         self.session.execute_query(query)
         return self.session.fetch_all()
     
-    def search(self, search_params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def search(self, search_params: dict[str, Any]) -> list[dict[str, Any]]:
         """Search entities with user_id filter."""
         conditions = [f"{k} = '{v}'" for k, v in search_params.items()]
         conditions.append(f"user_id = '{self.user_id}'")
@@ -67,7 +69,7 @@ class ConcreteUserScopedRepository(BaseUserScopedRepository):
         self.session.execute_query(query)
         return self.session.fetch_all()
     
-    def update(self, entity_id: str, update_data: Dict[str, Any]) -> Dict[str, Any]:
+    def update(self, entity_id: str, update_data: dict[str, Any]) -> dict[str, Any]:
         """Update entity with user_id filter."""
         # Remove user_id from update data to prevent changing it
         clean_data = {k: v for k, v in update_data.items() if k != 'user_id'}
@@ -79,7 +81,7 @@ class ConcreteUserScopedRepository(BaseUserScopedRepository):
         
         return clean_data
     
-    def bulk_update(self, filter_criteria: Dict[str, Any], update_data: Dict[str, Any]) -> int:
+    def bulk_update(self, filter_criteria: dict[str, Any], update_data: dict[str, Any]) -> int:
         """Bulk update entities with user_id filter."""
         # Remove user_id from update data
         clean_data = {k: v for k, v in update_data.items() if k != 'user_id'}
@@ -103,7 +105,7 @@ class ConcreteUserScopedRepository(BaseUserScopedRepository):
         self.session.execute_query(query)
         return True
     
-    def bulk_delete(self, filter_criteria: Dict[str, Any]) -> int:
+    def bulk_delete(self, filter_criteria: dict[str, Any]) -> int:
         """Bulk delete entities with user_id filter."""
         conditions = [f"{k} = '{v}'" for k, v in filter_criteria.items()]
         conditions.append(f"user_id = '{self.user_id}'")
@@ -126,7 +128,7 @@ class ConcreteUserScopedRepository(BaseUserScopedRepository):
         self.session.execute_query(query)
         return self.session.fetch_one() is not None
     
-    def get_batch(self, entity_ids: List[str]) -> List[Dict[str, Any]]:
+    def get_batch(self, entity_ids: list[str]) -> list[dict[str, Any]]:
         """Get multiple entities by IDs with user_id filter."""
         if not entity_ids:
             return []

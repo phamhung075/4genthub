@@ -1,35 +1,38 @@
 """Unit tests for ProjectRepository interface."""
 
+from typing import Any
+
 import pytest
 import pytest_asyncio
-import asyncio
-from typing import Optional, List, Dict, Any
-from datetime import datetime, timezone
 
-from fastmcp.task_management.domain.repositories.project_repository import ProjectRepository
+from fastmcp.task_management.domain.entities.agent import (
+    Agent,
+    AgentCapability,
+)
 from fastmcp.task_management.domain.entities.project import Project
-from fastmcp.task_management.domain.entities.agent import Agent, AgentCapability, AgentStatus
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.repositories.project_repository import (
+    ProjectRepository,
+)
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class MockProjectRepository(ProjectRepository):
     """Mock implementation of ProjectRepository for testing."""
     
     def __init__(self):
-        self.projects: Dict[str, Project] = {}
+        self.projects: dict[str, Project] = {}
         
     async def save(self, project: Project) -> None:
         """Save a project to the repository."""
         self.projects[project.id] = project
     
-    async def find_by_id(self, project_id: str) -> Optional[Project]:
+    async def find_by_id(self, project_id: str) -> Project | None:
         """Find a project by its ID."""
         return self.projects.get(project_id)
     
-    async def find_all(self) -> List[Project]:
+    async def find_all(self) -> list[Project]:
         """Find all projects."""
         return list(self.projects.values())
     
@@ -50,7 +53,7 @@ class MockProjectRepository(ProjectRepository):
             raise ValueError(f"Project with ID {project.id} not found")
         self.projects[project.id] = project
     
-    async def find_by_name(self, name: str) -> Optional[Project]:
+    async def find_by_name(self, name: str) -> Project | None:
         """Find a project by its name."""
         for project in self.projects.values():
             if project.name == name:
@@ -61,7 +64,7 @@ class MockProjectRepository(ProjectRepository):
         """Count total number of projects."""
         return len(self.projects)
     
-    async def find_projects_with_agent(self, agent_id: str) -> List[Project]:
+    async def find_projects_with_agent(self, agent_id: str) -> list[Project]:
         """Find projects that have a specific agent registered."""
         results = []
         for project in self.projects.values():
@@ -69,7 +72,7 @@ class MockProjectRepository(ProjectRepository):
                 results.append(project)
         return results
     
-    async def find_projects_by_status(self, status: str) -> List[Project]:
+    async def find_projects_by_status(self, status: str) -> list[Project]:
         """Find projects by their status."""
         # For simplicity, we'll check if any task tree has the given status
         results = []
@@ -80,7 +83,7 @@ class MockProjectRepository(ProjectRepository):
                     break
         return results
     
-    async def get_project_health_summary(self) -> Dict[str, Any]:
+    async def get_project_health_summary(self) -> dict[str, Any]:
         """Get health summary of all projects."""
         total_projects = len(self.projects)
         total_trees = sum(len(p.git_branchs) for p in self.projects.values())
@@ -98,7 +101,7 @@ class MockProjectRepository(ProjectRepository):
             )
         }
     
-    async def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
         """Unassign an agent from a specific task tree within a project."""
         project = await self.find_by_id(project_id)
         if not project:
@@ -119,8 +122,11 @@ class TestProjectRepositoryInterface:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -129,7 +135,7 @@ class TestProjectRepositoryInterface:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test the ProjectRepository interface contract."""
@@ -162,8 +168,11 @@ class TestProjectRepositorySaveOperation:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -172,7 +181,7 @@ class TestProjectRepositorySaveOperation:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test repository save operations."""
@@ -213,8 +222,11 @@ class TestProjectRepositoryFindOperations:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -223,7 +235,7 @@ class TestProjectRepositoryFindOperations:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test repository find operations."""
@@ -387,8 +399,11 @@ class TestProjectRepositoryUpdateDeleteOperations:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -397,7 +412,7 @@ class TestProjectRepositoryUpdateDeleteOperations:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test repository update and delete operations."""
@@ -462,8 +477,11 @@ class TestProjectRepositoryUtilityOperations:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -472,7 +490,7 @@ class TestProjectRepositoryUtilityOperations:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test repository utility operations."""
@@ -541,7 +559,7 @@ class TestProjectRepositoryUtilityOperations:
         project1.add_cross_tree_dependency(task2.id.value, task1.id.value)
         
         project2 = Project.create(name="Project 2", description="Test")
-        tree3 = project2.create_git_branch("tree3", "Tree 3")
+        project2.create_git_branch("tree3", "Tree 3")
         
         await repo.save(project1)
         await repo.save(project2)
@@ -590,8 +608,11 @@ class TestProjectRepositoryIntegration:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -600,7 +621,7 @@ class TestProjectRepositoryIntegration:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test repository integration scenarios."""

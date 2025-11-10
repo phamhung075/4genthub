@@ -3,16 +3,20 @@ Test service layer with user context propagation.
 Following TDD - services must pass user_id to repositories.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import Mock, patch
 from uuid import uuid4
-from datetime import datetime
-from typing import Optional
 
-from fastmcp.task_management.application.services.task_application_service import TaskApplicationService
-from fastmcp.task_management.application.services.project_application_service import ProjectApplicationService
-from fastmcp.task_management.application.services.unified_context_service import UnifiedContextService
-from fastmcp.task_management.application.services.git_branch_service import GitBranchService
+import pytest
+
+from fastmcp.task_management.application.services.project_application_service import (
+    ProjectApplicationService,
+)
+from fastmcp.task_management.application.services.task_application_service import (
+    TaskApplicationService,
+)
+from fastmcp.task_management.application.services.unified_context_service import (
+    UnifiedContextService,
+)
 
 
 class TestServicesUserContext:
@@ -76,7 +80,7 @@ class TestServicesUserContext:
         # Mock with_user method
         mock_task_repository.with_user = Mock(return_value=mock_task_repository)
         
-        service = TaskApplicationService(
+        TaskApplicationService(
             task_repository=mock_task_repository,
             user_id=user_id
         )
@@ -118,7 +122,7 @@ class TestServicesUserContext:
         # Mock with_user method
         mock_task_repository.with_user = Mock(return_value=mock_task_repository)
         
-        service = TaskApplicationService(
+        TaskApplicationService(
             task_repository=mock_task_repository,
             user_id=user_id
         )
@@ -204,8 +208,8 @@ class TestServicesUserContext:
         )
         
         task_id = str(uuid4())
-        branch_id = str(uuid4())
-        project_id = str(uuid4())
+        str(uuid4())
+        str(uuid4())
         
         # Mock repository responses and with_user method
         for repo in mock_context_repositories.values():
@@ -214,7 +218,7 @@ class TestServicesUserContext:
             repo.with_user = Mock(return_value=repo)  # Mock with_user to return self
         
         # Get inherited context
-        context = service.get_context(
+        service.get_context(
             level="task",
             context_id=task_id,
             include_inherited=True

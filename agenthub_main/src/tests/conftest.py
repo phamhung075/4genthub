@@ -8,15 +8,16 @@ This module provides:
 - Test environment validation
 """
 
-import pytest
-import tempfile
-import shutil
-import time
-import psutil
 import os
-from pathlib import Path
-from typing import Generator, Dict, Any
+import shutil
 import sys
+import time
+from collections.abc import Generator
+from pathlib import Path
+from typing import Any
+
+import psutil
+import pytest
 
 # Add src to sys.path to ensure imports work correctly
 src_path = Path(__file__).parent.parent
@@ -953,7 +954,7 @@ def performance_tracker():
             self.start_time = time.time()
             self.start_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
         
-        def end(self) -> Dict[str, Any]:
+        def end(self) -> dict[str, Any]:
             self.end_time = time.time()
             self.end_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
             
@@ -1041,7 +1042,7 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as e:
             print(f"⚠️  Could not remove temp dir {temp_dir}: {e}")
     
-    print(f"🧹 Final cleanup completed:")
+    print("🧹 Final cleanup completed:")
     print(f"   - {cleanup_count} test data files removed")
     print(f"   - {temp_dirs_cleaned} temporary directories removed")
     print("✅ Test environment is clean")
@@ -1133,8 +1134,11 @@ def test_data_validator():
 
 def _truncate_all_tables():
     """Truncate all tables in the test database for complete isolation."""
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
     from sqlalchemy import text
+
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
 
     try:
         db_config = get_db_config()
@@ -1169,10 +1173,14 @@ def _truncate_all_tables():
 
 def _initialize_test_database_with_basic_data():
     """Initialize test database with basic test data for both SQLite and PostgreSQL."""
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-    from sqlalchemy import text
     import uuid
-    from datetime import datetime, timezone
+    from datetime import UTC, datetime
+
+    from sqlalchemy import text
+
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
 
     try:
         db_config = get_db_config()
@@ -1198,8 +1206,8 @@ def _initialize_test_database_with_basic_data():
                     'description': 'Project for testing',
                     'user_id': default_user_id,
                     'status': 'active',
-                    'created_at': datetime.now(timezone.utc),
-                    'updated_at': datetime.now(timezone.utc),
+                    'created_at': datetime.now(UTC),
+                    'updated_at': datetime.now(UTC),
                     'metadata': '{}'
                 })
 
@@ -1216,8 +1224,8 @@ def _initialize_test_database_with_basic_data():
                     'project_id': default_project_id,
                     'name': 'main',
                     'description': 'Main branch for testing',
-                    'created_at': datetime.now(timezone.utc),
-                    'updated_at': datetime.now(timezone.utc),
+                    'created_at': datetime.now(UTC),
+                    'updated_at': datetime.now(UTC),
                     'priority': 'medium',
                     'status': 'todo',
                     'metadata': '{}',
@@ -1227,7 +1235,7 @@ def _initialize_test_database_with_basic_data():
                 })
 
                 session.commit()
-                print(f"📦 Initialized test database with basic test data:")
+                print("📦 Initialized test database with basic test data:")
                 print(f"   - project_id: {default_project_id}")
                 print(f"   - branch_id: {main_branch_id}")
                 print(f"   - user_id: {default_user_id}")
@@ -1249,9 +1257,13 @@ def user_id():
     This queries the actual database to get a user ID that was created
     by _initialize_test_database_with_basic_data().
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-    from sqlalchemy import text
     import uuid
+
+    from sqlalchemy import text
+
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
 
     try:
         db_config = get_db_config()
@@ -1282,9 +1294,13 @@ def project_id():
     This queries the actual database to get the project ID that was created
     by _initialize_test_database_with_basic_data().
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-    from sqlalchemy import text
     import uuid
+
+    from sqlalchemy import text
+
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
 
     try:
         db_config = get_db_config()
@@ -1315,9 +1331,13 @@ def git_branch_id():
     This queries the actual database to get the branch ID that was created
     by _initialize_test_database_with_basic_data().
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-    from sqlalchemy import text
     import uuid
+
+    from sqlalchemy import text
+
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
 
     try:
         db_config = get_db_config()
@@ -1372,7 +1392,9 @@ def pytest_runtest_teardown(item, nextitem):
 
     # 2. Reset DatabaseConfig singleton if it exists (catches pseudo-unit tests)
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         # Only reset if instance exists (minimal overhead)
         if DatabaseConfig._instance is not None:
             DatabaseConfig.reset_instance()
@@ -1383,7 +1405,9 @@ def pytest_runtest_teardown(item, nextitem):
 
     # 3. Reset DatabaseSourceManager singleton (CRITICAL - this was missing!)
     try:
-        from fastmcp.task_management.infrastructure.database.database_source_manager import DatabaseSourceManager
+        from fastmcp.task_management.infrastructure.database.database_source_manager import (
+            DatabaseSourceManager,
+        )
         # Always clear DatabaseSourceManager to prevent mode detection pollution
         if DatabaseSourceManager._instance is not None:
             DatabaseSourceManager.clear_instance()
@@ -1417,9 +1441,16 @@ def set_mcp_db_path_for_tests(request):
         # Note: finally block will check is_unit_test flag and skip cleanup
         return
 
-    from fastmcp.task_management.infrastructure.database.database_initializer import reset_initialization_cache
-    from fastmcp.task_management.infrastructure.database.database_source_manager import DatabaseSourceManager
-    from fastmcp.task_management.infrastructure.database.database_config import close_db, DatabaseConfig
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        DatabaseConfig,
+        close_db,
+    )
+    from fastmcp.task_management.infrastructure.database.database_initializer import (
+        reset_initialization_cache,
+    )
+    from fastmcp.task_management.infrastructure.database.database_source_manager import (
+        DatabaseSourceManager,
+    )
 
     # Save original environment variables
     original_db_type = os.environ.get("DATABASE_TYPE")
@@ -1450,7 +1481,9 @@ def set_mcp_db_path_for_tests(request):
 
         # 6. Reset AuthenticationService singleton to prevent test pollution
         try:
-            from fastmcp.task_management.interface.mcp_controllers.auth_helper.services import authentication_service
+            from fastmcp.task_management.interface.mcp_controllers.auth_helper.services import (
+                authentication_service,
+            )
             authentication_service._auth_service = None
         except Exception as e:
             print(f"⚠️ Error resetting AuthenticationService: {e}")
@@ -1462,7 +1495,9 @@ def set_mcp_db_path_for_tests(request):
         os.environ["DATABASE_NAME"] = "agenthub_test"
 
         # Initialize the test database with schema and basic test data
-        from fastmcp.task_management.infrastructure.database.database_initializer import initialize_database
+        from fastmcp.task_management.infrastructure.database.database_initializer import (
+            initialize_database,
+        )
         initialize_database(None)
 
         # 10. Add basic test data
@@ -1501,7 +1536,9 @@ def set_mcp_db_path_for_tests(request):
 
             # 4. Reset AuthenticationService singleton for next test
             try:
-                from fastmcp.task_management.interface.mcp_controllers.auth_helper.services import authentication_service
+                from fastmcp.task_management.interface.mcp_controllers.auth_helper.services import (
+                    authentication_service,
+                )
                 authentication_service._auth_service = None
             except Exception as e:
                 print(f"⚠️ Error resetting AuthenticationService in cleanup: {e}")
@@ -1609,8 +1646,12 @@ def shared_test_db():
     
     Use this for tests that only read from database, not modify it.
     """
-    from fastmcp.task_management.infrastructure.database.database_initializer import reset_initialization_cache
-    from fastmcp.task_management.infrastructure.database.database_source_manager import DatabaseSourceManager
+    from fastmcp.task_management.infrastructure.database.database_initializer import (
+        reset_initialization_cache,
+    )
+    from fastmcp.task_management.infrastructure.database.database_source_manager import (
+        DatabaseSourceManager,
+    )
     
     # Clear caches
     reset_initialization_cache()
@@ -1633,14 +1674,16 @@ def shared_test_db():
     print(f"\n🚀 Creating shared test database (session scope): {shared_db_path}")
 
     # Initialize database with basic data
-    from fastmcp.task_management.infrastructure.database.database_initializer import initialize_database
+    from fastmcp.task_management.infrastructure.database.database_initializer import (
+        initialize_database,
+    )
     initialize_database(None)
     _initialize_test_database_with_basic_data()
     
     yield shared_db_path
     
     # Cleanup after session
-    print(f"\n🧹 Cleaning up shared test database")
+    print("\n🧹 Cleaning up shared test database")
     if shared_db_path.exists():
         try:
             shared_db_path.unlink()
@@ -1660,8 +1703,6 @@ def shared_test_db():
 # The following fixtures demonstrate how to use TestCleanupFactory
 # for cleaner, more maintainable test cleanup.
 # See tests/utils/example_polluting_test.py for more patterns.
-
-from tests.utils.test_cleanup_factory import TestCleanupFactory
 
 
 # Example 3: Temporary environment variables (inline usage)

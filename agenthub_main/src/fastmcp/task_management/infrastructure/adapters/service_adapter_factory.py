@@ -5,6 +5,8 @@ ensuring DDD compliance by abstracting infrastructure dependencies.
 """
 
 
+from __future__ import annotations
+
 from ...domain.interfaces.cache_service import ICacheService
 from ...domain.interfaces.database_session import IDatabaseSessionFactory
 from ...domain.interfaces.event_bus import IEventBus

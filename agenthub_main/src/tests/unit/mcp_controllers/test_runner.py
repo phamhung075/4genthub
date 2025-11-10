@@ -34,14 +34,12 @@ Usage:
     python test_runner.py --ci
 """
 
-import sys
-import os
 import argparse
 import subprocess
+import sys
 import time
 from pathlib import Path
-from typing import List, Dict, Any, Optional
-import json
+from typing import Any
 
 # Add the project root to Python path
 project_root = Path(__file__).parent.parent.parent.parent.parent
@@ -77,12 +75,12 @@ class MCPControllerTestRunner:
 
     def run_tests(
         self, 
-        controllers: Optional[List[str]] = None,
+        controllers: list[str | None] = None,
         coverage: bool = False,
         verbose: bool = False,
         html_coverage: bool = False,
         ci_mode: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Run MCP controller tests with specified options.
         
@@ -160,12 +158,12 @@ class MCPControllerTestRunner:
 
     def _build_pytest_command(
         self, 
-        test_files: List[str], 
+        test_files: list[str], 
         coverage: bool, 
         verbose: bool,
         html_coverage: bool,
         ci_mode: bool
-    ) -> List[str]:
+    ) -> list[str]:
         """Build pytest command with appropriate options."""
         cmd = ["python", "-m", "pytest"]
         
@@ -202,7 +200,7 @@ class MCPControllerTestRunner:
         
         return cmd
 
-    def _parse_test_results(self, result: subprocess.CompletedProcess, duration: float) -> Dict[str, Any]:
+    def _parse_test_results(self, result: subprocess.CompletedProcess, duration: float) -> dict[str, Any]:
         """Parse pytest results and extract metrics."""
         success = result.returncode == 0
         
@@ -223,7 +221,7 @@ class MCPControllerTestRunner:
         
         return test_results
 
-    def _extract_test_metrics(self, output_lines: List[str]) -> Dict[str, Any]:
+    def _extract_test_metrics(self, output_lines: list[str]) -> dict[str, Any]:
         """Extract test metrics from pytest output."""
         summary = {
             "total_tests": 0,
@@ -269,7 +267,7 @@ class MCPControllerTestRunner:
                         if "%" in part:
                             summary["coverage"] = part
                             break
-                except:
+                except Exception:
                     pass
         
         summary["total_tests"] = summary["passed"] + summary["failed"] + summary["skipped"]
@@ -278,8 +276,8 @@ class MCPControllerTestRunner:
 
     def _generate_report(
         self, 
-        results: Dict[str, Any], 
-        controllers: List[str],
+        results: dict[str, Any], 
+        controllers: list[str],
         coverage: bool,
         html_coverage: bool
     ):
@@ -326,10 +324,10 @@ class MCPControllerTestRunner:
             print("💡 Run with --verbose for more detailed error information")
         
         # Quick commands
-        print(f"\n🔧 QUICK COMMANDS:")
+        print("\n🔧 QUICK COMMANDS:")
         print(f"   Run specific controller: python test_runner.py --controller {controllers[0] if controllers else 'task'}")
-        print(f"   Run with coverage: python test_runner.py --coverage")
-        print(f"   Verbose output: python test_runner.py --verbose")
+        print("   Run with coverage: python test_runner.py --coverage")
+        print("   Verbose output: python test_runner.py --verbose")
         
         print("=" * 60)
 
@@ -340,8 +338,6 @@ class MCPControllerTestRunner:
         issues = []
         
         # Check Python version
-        if sys.version_info < (3, 8):
-            issues.append("Python 3.8+ is required")
         
         # Check required packages
         required_packages = ["pytest", "pytest-asyncio", "pytest-cov"]

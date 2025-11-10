@@ -5,6 +5,8 @@ This mixin provides automatic JSON string parsing for dictionary parameters
 across all MCP controllers, ensuring consistent behavior and better developer experience.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

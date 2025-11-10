@@ -4,19 +4,19 @@ Unit tests for TokenValidator.
 This module tests the token validation, rate limiting, and security monitoring functionality.
 """
 
-import pytest
 import time
-from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from collections import deque
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.auth.token_validator import (
-    TokenValidator, 
-    TokenValidationError, 
-    RateLimitError,
-    RateLimitConfig
-)
+import pytest
+
 from fastmcp.auth.supabase_client import TokenInfo
+from fastmcp.auth.token_validator import (
+    RateLimitConfig,
+    RateLimitError,
+    TokenValidationError,
+    TokenValidator,
+)
 
 
 class TestTokenValidator:
@@ -43,10 +43,10 @@ class TestTokenValidator:
         return TokenInfo(
             token_hash="hashed_token_123",
             user_id="user_123",
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
             usage_count=5,
-            last_used=datetime.now(timezone.utc)
+            last_used=datetime.now(UTC)
         )
     
     # Initialization Tests
@@ -237,8 +237,8 @@ class TestTokenValidator:
         
         mock_mcp_token = Mock()
         mock_mcp_token.user_id = "user_mcp_123"
-        mock_mcp_token.created_at = datetime.now(timezone.utc)
-        mock_mcp_token.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        mock_mcp_token.created_at = datetime.now(UTC)
+        mock_mcp_token.expires_at = datetime.now(UTC) + timedelta(hours=1)
         
         with patch.object(validator, '_validate_mcp_token', AsyncMock(return_value=mock_mcp_token)):
             result = await validator._validate_mcp_token(token)
@@ -262,7 +262,7 @@ class TestTokenValidator:
         token = "mcp_error_token"
         
         with patch.object(validator, '_validate_mcp_token', AsyncMock(side_effect=Exception("Service error"))):
-            with patch('fastmcp.auth.token_validator.logger') as mock_logger:
+            with patch('fastmcp.auth.token_validator.logger'):
                 try:
                     result = await validator._validate_mcp_token(token)
                 except Exception:
@@ -326,7 +326,7 @@ class TestTokenValidator:
         """Test failed token revocation."""
         token = "test_token"
         
-        with patch.object(validator.supabase_client, 'revoke_token', return_value=False) as mock_revoke:
+        with patch.object(validator.supabase_client, 'revoke_token', return_value=False):
             result = await validator.revoke_token(token)
             
             assert result is False

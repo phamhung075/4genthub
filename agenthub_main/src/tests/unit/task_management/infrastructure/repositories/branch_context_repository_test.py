@@ -9,16 +9,20 @@ Tests the branch context repository including:
 - User isolation and filtering
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timezone
-from contextlib import contextmanager
 import uuid
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.infrastructure.repositories.branch_context_repository import BranchContextRepository
-from fastmcp.task_management.domain.entities.context import BranchContext
-from fastmcp.task_management.infrastructure.database.models import BranchContext as BranchContextModel
+import pytest
 from sqlalchemy.exc import SQLAlchemyError
+
+from fastmcp.task_management.domain.entities.context import BranchContext
+from fastmcp.task_management.infrastructure.database.models import (
+    BranchContext as BranchContextModel,
+)
+from fastmcp.task_management.infrastructure.repositories.branch_context_repository import (
+    BranchContextRepository,
+)
 
 
 class TestBranchContextRepository:
@@ -125,7 +129,7 @@ class TestBranchContextRepository:
         self.mock_session.query.return_value = mock_query
         
         # Mock the created model
-        created_model = BranchContextModel(
+        BranchContextModel(
             id=self.test_context_id,
             branch_id=None,  # Should be None per current implementation
             parent_project_id=self.test_project_id,
@@ -135,8 +139,8 @@ class TestBranchContextRepository:
             active_patterns={},
             local_overrides={},
             delegation_rules={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         with patch.object(self.repository, '_to_entity') as mock_to_entity:
@@ -283,8 +287,8 @@ class TestBranchContextRepository:
             active_patterns={},
             local_overrides={},
             delegation_rules={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             user_id=self.user_id
         )
         
@@ -424,8 +428,8 @@ class TestBranchContextRepository:
     def test_to_entity_basic_conversion(self):
         """Test _to_entity converts database model to domain entity."""
         # Create test database model
-        created_at = datetime.now(timezone.utc)
-        updated_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
+        updated_at = datetime.now(UTC)
         
         db_model = BranchContextModel(
             id=self.test_context_id,
@@ -482,8 +486,8 @@ class TestBranchContextRepository:
             active_patterns={},
             local_overrides={},
             delegation_rules={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         result = self.repository._to_entity(db_model)
@@ -513,8 +517,8 @@ class TestBranchContextRepository:
             active_patterns={},
             local_overrides={'fallback': 'override'},
             delegation_rules={'fallback': 'rule'},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         result = self.repository._to_entity(db_model)
@@ -595,15 +599,15 @@ class TestBranchContextRepository:
         # Mock existing model with timestamp attributes
         existing_model = Mock()
         existing_model.user_id = "existing-user"
-        existing_model.created_at = datetime.now(timezone.utc)
-        existing_model.updated_at = datetime.now(timezone.utc)
+        existing_model.created_at = datetime.now(UTC)
+        existing_model.updated_at = datetime.now(UTC)
         # Add touch method to make it look like a timestamp entity
         existing_model.touch = Mock()
         self.mock_session.get.return_value = existing_model
         
         # Mock the timestamp event handler behavior
         def mock_before_update(mapper, connection, target):
-            target.updated_at = datetime.now(timezone.utc)
+            target.updated_at = datetime.now(UTC)
         
         with patch.object(self.repository, '_to_entity') as mock_to_entity:
             mock_to_entity.return_value = self.test_entity
@@ -700,7 +704,7 @@ class TestBranchContextRepository:
         # Verify user filter was applied to the statement
         mock_stmt.where.assert_called_once()
         # The where should be called with user_id filter
-        where_call = mock_stmt.where.call_args[0][0]
+        mock_stmt.where.call_args[0][0]
         assert result == []
     
     def test_list_system_mode_no_user_filter(self):
@@ -736,7 +740,7 @@ class TestBranchContextRepository:
         with patch.object(self.repository, '_to_entity') as mock_to_entity:
             mock_to_entity.return_value = self.test_entity
             
-            result = self.repository.create(self.test_entity)
+            self.repository.create(self.test_entity)
         
         # Verify user_id was set on created model
         self.mock_session.add.assert_called_once()
@@ -806,7 +810,7 @@ class TestBranchContextRepository:
         with patch.object(self.repository, '_to_entity') as mock_to_entity:
             mock_to_entity.return_value = entity_with_user
             
-            result = self.repository.update(self.test_context_id, entity_with_user)
+            self.repository.update(self.test_context_id, entity_with_user)
         
         # Verify repository user_id took precedence
         assert existing_model.user_id == self.user_id  # Repository user_id wins

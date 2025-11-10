@@ -1,7 +1,9 @@
 """Tests for TemplateId value object"""
 
-import pytest
 import uuid
+
+import pytest
+
 from fastmcp.task_management.domain.value_objects.template_id import TemplateId
 
 
@@ -107,7 +109,7 @@ class TestTemplateIdEquality:
         template_id = TemplateId.generate_new()
         assert template_id != template_id.value
         assert template_id != 12345
-        assert template_id != None
+        assert template_id is not None
 
     def test_equal_template_ids_have_same_hash(self):
         """Should have same hash when values are equal"""

@@ -5,6 +5,8 @@ Complete Pydantic models for WebSocket Protocol v2.0 with full cascade support.
 NO backward compatibility - clean v2.0 implementation only.
 """
 
+from __future__ import annotations
+
 import uuid
 from datetime import UTC, datetime
 from typing import Any

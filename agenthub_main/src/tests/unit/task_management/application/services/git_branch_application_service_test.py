@@ -1,11 +1,13 @@
 """Tests for GitBranchService"""
 
-import pytest
-from unittest.mock import AsyncMock, Mock, create_autospec
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from unittest.mock import AsyncMock, Mock
 
-from fastmcp.task_management.application.services.git_branch_service import GitBranchService
+import pytest
+
+from fastmcp.task_management.application.services.git_branch_service import (
+    GitBranchService,
+)
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
 
 

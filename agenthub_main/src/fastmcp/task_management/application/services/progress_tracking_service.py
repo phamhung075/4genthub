@@ -8,6 +8,8 @@ This service provides comprehensive progress tracking capabilities including:
 - Integration with subtask progress
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import Any
@@ -58,7 +60,7 @@ class ProgressTrackingService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'ProgressTrackingService':
+    def with_user(self, user_id: str) -> ProgressTrackingService:
         """Create a new service instance scoped to a specific user."""
         return ProgressTrackingService(
             self.task_repository,
@@ -529,7 +531,7 @@ class ProgressTrackingService:
                             "progress": subtask_entity.overall_progress,
                             "status": subtask_entity.status.value
                         })
-                except:
+                except Exception:
                     # Fallback to subtask dict data
                     status = subtask.get("status", "todo")
                     progress = 100.0 if status == "done" else 0.0

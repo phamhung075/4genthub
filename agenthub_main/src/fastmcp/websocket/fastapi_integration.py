@@ -7,6 +7,8 @@ Provides startup/shutdown hooks and database session management.
 NO backward compatibility - clean v2.0 implementation only.
 """
 
+from __future__ import annotations
+
 import logging
 
 from fastapi import FastAPI
@@ -139,7 +141,7 @@ def add_websocket_routes_to_existing_app(app: FastAPI) -> None:
         session_factory = db_config.get_async_session
 
         # Create WebSocket server instance without global initialization
-        websocket_server = WebSocketServer(app, session_factory)
+        WebSocketServer(app, session_factory)
 
         logger.info("WebSocket routes added to existing FastAPI app")
 

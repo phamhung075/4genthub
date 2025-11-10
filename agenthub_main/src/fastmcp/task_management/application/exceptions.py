@@ -5,6 +5,8 @@ These exceptions represent application-level errors that can occur during
 business operations and use case execution.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 

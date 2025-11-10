@@ -5,12 +5,15 @@ This module tests the MCP interface layer for calling agents,
 ensuring correct integration with authentication and facade layer.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from unittest.mock import patch
 
-from fastmcp.agent_management.interface.mcp_controllers.call_agent import call_agent_mcp_tool
+import pytest
+
 from fastmcp.agent_management.domain.value_objects import UserId
+from fastmcp.agent_management.interface.mcp_controllers.call_agent import (
+    call_agent_mcp_tool,
+)
 
 
 @pytest.fixture
@@ -111,7 +114,7 @@ class TestCallAgentMCPToolSuccess:
             "is_customized": False,  # Newly created, not customized
             "metadata": {
                 **sample_agent_config["metadata"],
-                "created_at": datetime.now(timezone.utc).isoformat()
+                "created_at": datetime.now(UTC).isoformat()
             }
         }
 

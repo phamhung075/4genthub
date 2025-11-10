@@ -27,18 +27,15 @@ Requirements Coverage:
 - Name collision handling
 """
 
-import pytest
 import asyncio
-import json
-from datetime import datetime, timezone
-from typing import Dict, Any, List
+import logging
 from uuid import uuid4
 
+import pytest
+
 # Import domain layer
-from fastmcp.agent_management.domain.entities.user_agent_instance import UserAgentInstance
 from fastmcp.agent_management.domain.value_objects import UserId
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -362,7 +359,7 @@ class TestAgentSharingE2EWorkflow:
         assert imported_instance.agent_name != original_name
         assert "created by" in imported_instance.agent_name.lower()
 
-        logger.info(f"✅ Name collision resolved!")
+        logger.info("✅ Name collision resolved!")
         logger.info(f"   Original name: {original_name}")
         logger.info(f"   Imported name: {imported_instance.agent_name}")
 

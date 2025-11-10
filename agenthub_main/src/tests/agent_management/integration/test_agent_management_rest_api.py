@@ -10,16 +10,13 @@ Tests all 12 REST endpoints with:
 Test Coverage Target: 85%+ on REST layer
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-import json
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
 
-from fastmcp.server.mcp_entry_point import create_agenthub_server
-from fastmcp.agent_management.domain.value_objects import UserId, AgentTemplateId
 from fastmcp.auth.domain.entities.user import User
-
+from fastmcp.server.mcp_entry_point import create_agenthub_server
 
 # ============================================================================
 # FIXTURES
@@ -38,7 +35,7 @@ def mock_user(sample_user_id):
 @pytest.fixture
 def test_app(db_session, mock_user):
     """Create FastAPI test application with dependency overrides"""
-    from fastmcp.auth.interface.fastapi_auth import get_db, get_current_user
+    from fastmcp.auth.interface.fastapi_auth import get_current_user, get_db
 
     server = create_agenthub_server()
     app = server.http_app()
@@ -93,7 +90,8 @@ class TestAgentTemplatesEndpoints:
         """Test GET /templates - No authentication (401)"""
         # Create client without auth override
         from fastapi.testclient import TestClient
-        from fastmcp.auth.interface.fastapi_auth import get_db, get_current_user
+
+        from fastmcp.auth.interface.fastapi_auth import get_current_user
 
         # Clear auth override to test unauthorized
         test_app.dependency_overrides.pop(get_current_user, None)

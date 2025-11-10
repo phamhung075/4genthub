@@ -345,7 +345,7 @@ class ContextNotificationService:
                             })
                         else:
                             disconnected.append(client_id)
-            except:
+            except Exception:
                 disconnected.append(client_id)
         
         for client_id in disconnected:

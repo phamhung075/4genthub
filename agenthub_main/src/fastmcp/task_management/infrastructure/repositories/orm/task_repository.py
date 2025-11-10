@@ -5,6 +5,8 @@ This module provides task repository implementation using SQLAlchemy ORM,
 supporting both SQLite and PostgreSQL databases.
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from collections.abc import Iterable
@@ -124,7 +126,7 @@ class ORMTaskRepository(
         else:
             self.optimizer = None
     
-    def with_user(self, user_id: str) -> 'ORMTaskRepository':
+    def with_user(self, user_id: str) -> ORMTaskRepository:
         """
         Create a new instance of this repository scoped to a specific user.
         Overrides base implementation to preserve all constructor parameters.

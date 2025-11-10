@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -71,7 +73,7 @@ class TaskContextSyncService:
                 f"Cannot fetch project_id without git_branch_repository: {e}"
             ) from e
 
-    def with_user(self, user_id: str) -> 'TaskContextSyncService':
+    def with_user(self, user_id: str) -> TaskContextSyncService:
         """Create a new service instance scoped to a specific user."""
         return TaskContextSyncService(self._task_repository, self._hierarchical_context_service, user_id)
 

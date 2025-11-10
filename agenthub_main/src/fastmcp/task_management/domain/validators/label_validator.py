@@ -15,6 +15,8 @@ Key Validation Rules:
 NO LEGACY COMPATIBILITY - Clean validation implementation only.
 """
 
+from __future__ import annotations
+
 import re
 from datetime import UTC, datetime
 
@@ -265,7 +267,7 @@ class LabelValidator:
             updated_at: Update timestamp (optional, will be set if None)
 
         Returns:
-            Tuple of (success: bool, error_message: Optional[str])
+            Tuple of (success: bool, error_message: str | None)
             - (True, None) if validation passes
             - (False, error_message) if validation fails
 
@@ -332,7 +334,7 @@ class LabelValidator:
             description: New label description (optional)
 
         Returns:
-            Tuple of (success: bool, error_message: Optional[str])
+            Tuple of (success: bool, error_message: str | None)
 
         Examples:
             >>> validator = LabelValidator()

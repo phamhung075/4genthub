@@ -5,24 +5,23 @@ This module tests the integration between JWT authentication system
 and the MCP server infrastructure.
 """
 
-import pytest
-import os
 import time
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-import jwt
-import jwt as pyjwt
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, Mock
 
+import jwt
+import pytest
 from mcp.server.auth.provider import AccessToken
+
+from fastmcp.auth.domain.entities.user import User, UserRole
+from fastmcp.auth.domain.services.jwt_service import JWTService
+from fastmcp.auth.domain.value_objects import UserId
+from fastmcp.auth.infrastructure.repositories.user_repository import UserRepository
 from fastmcp.auth.mcp_integration.jwt_auth_backend import (
     JWTAuthBackend,
     MCPUserContext,
-    create_jwt_auth_backend
+    create_jwt_auth_backend,
 )
-from fastmcp.auth.domain.services.jwt_service import JWTService
-from fastmcp.auth.infrastructure.repositories.user_repository import UserRepository
-from fastmcp.auth.domain.entities.user import User, UserRole
-from fastmcp.auth.domain.value_objects import UserId
 
 
 class TestMCPUserContext:
@@ -54,7 +53,7 @@ class TestJWTAuthBackend:
         payload = {
             "sub": "12345678-1234-1234-1234-123456789abc",
             "type": "access",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         jwt_service.verify_token.return_value = payload
         
@@ -77,9 +76,9 @@ class TestJWTAuthBackend:
             "sub": "12345678-1234-1234-1234-123456789abc",
             "email": "test@example.com",
             "aud": "authenticated",  # Required for Supabase tokens
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
-            "nbf": int(datetime.now(timezone.utc).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
+            "nbf": int(datetime.now(UTC).timestamp())
         }
         supabase_token = jwt.encode(payload, "supabase-test-secret", algorithm="HS256")
         
@@ -177,7 +176,7 @@ class TestJWTAuthBackend:
             "sub": "12345678-1234-1234-1234-123456789abc",
             "email": "test@example.com",
             "scopes": ["read", "write"],
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         jwt_service.verify_token.return_value = payload
         
@@ -203,7 +202,7 @@ class TestJWTAuthBackend:
         payload = {
             "sub": "12345678-1234-1234-1234-123456789abc",
             "type": "api_token",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         jwt_service.verify_token.side_effect = [None, payload]
         
@@ -221,7 +220,7 @@ class TestJWTAuthBackend:
         """Test using user_id field when sub is not present"""
         payload = {
             "user_id": "12345678-1234-1234-1234-123456789abc",  # Using user_id instead of sub
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         jwt_service.verify_token.return_value = payload
         
@@ -250,7 +249,7 @@ class TestJWTAuthBackend:
         """Test token without user ID returns None"""
         payload = {
             "email": "test@example.com",  # No sub or user_id
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         jwt_service.verify_token.return_value = payload
         
@@ -267,7 +266,7 @@ class TestJWTAuthBackend:
         payload = {
             "sub": "12345678-1234-1234-1234-123456789abc",
             "scopes": "read write admin",  # String instead of array
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         jwt_service.verify_token.return_value = payload
         
@@ -429,7 +428,7 @@ class TestJWTAuthBackend:
             "sub": "12345678-1234-1234-1234-123456789abc",
             "email": "test@example.com",
             "scopes": ["read", "write"],
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         jwt_service.verify_token.return_value = payload
         

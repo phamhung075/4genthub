@@ -4,6 +4,8 @@ Business Validator for Task MCP Controller
 Validates business rules and logic for task operations.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import Any

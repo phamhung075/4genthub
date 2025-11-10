@@ -4,6 +4,8 @@ This entity manages active agent sessions, tracking their state, resource usage,
 and communication channels for real-time coordination.
 """
 
+from __future__ import annotations
+
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime

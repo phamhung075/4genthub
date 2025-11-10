@@ -13,9 +13,9 @@ import asyncio
 import json
 import logging
 import time
-from typing import Dict, List, Optional, Any
-import httpx
 from pathlib import Path
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -451,7 +451,7 @@ class MCPProtocolValidator:
         }
     
     @staticmethod
-    def validate_tool_list(tools: List[Dict]) -> Dict:
+    def validate_tool_list(tools: list[Dict]) -> Dict:
         """Validate tool list structure"""
         errors = []
         

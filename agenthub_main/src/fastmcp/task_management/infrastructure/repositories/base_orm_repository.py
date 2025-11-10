@@ -5,6 +5,8 @@ This module provides a base class for all ORM repositories,
 handling common database operations and session management.
 """
 
+from __future__ import annotations
+
 import logging
 from contextlib import contextmanager
 from typing import Any, Generic, TypeVar

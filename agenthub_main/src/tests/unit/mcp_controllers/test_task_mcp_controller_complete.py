@@ -5,23 +5,30 @@ This test suite provides complete coverage for TaskMCPController with proper moc
 and import paths that work with the current project structure.
 """
 
-import pytest
 import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Dict, Any, Optional, List
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from unittest.mock import MagicMock, Mock, patch
 
-# Import the controller under test using correct path
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import (
-    TaskMCPController
+import pytest
+
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
 )
 
 # Import actual dependencies for proper mocking
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.interface.mcp_controllers.workflow_hint_enhancer import WorkflowHintEnhancer
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
+    UserAuthenticationRequiredError,
+)
+
+# Import the controller under test using correct path
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import (
+    TaskMCPController,
+)
+from fastmcp.task_management.interface.mcp_controllers.workflow_hint_enhancer import (
+    WorkflowHintEnhancer,
+)
 
 
 class TestTaskMCPControllerComplete:
@@ -94,8 +101,8 @@ class TestTaskMCPControllerComplete:
             "labels": ["backend", "api", "testing"],
             "due_date": "2024-12-31T23:59:59Z",
             "dependencies": [],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat()
         }
 
     @pytest.fixture
@@ -176,7 +183,6 @@ class TestTaskMCPControllerComplete:
     @pytest.fixture
     def mock_perms(self):
         """Mock permission system."""
-        auth_module = 'fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller'
         
         # Mock the permission check method directly
         with patch.object(TaskMCPController, '_check_task_permissions') as mock_check_perms:

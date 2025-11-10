@@ -5,6 +5,8 @@ This utility provides automatic JSON string detection and parsing for dictionary
 in MCP controllers. It handles various input formats to provide a better developer experience.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from typing import Any

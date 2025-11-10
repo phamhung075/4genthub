@@ -1,7 +1,10 @@
 """Unit tests for ConnectionHealth value object"""
 
 import pytest
-from fastmcp.connection_management.domain.value_objects.connection_health import ConnectionHealth
+
+from fastmcp.connection_management.domain.value_objects.connection_health import (
+    ConnectionHealth,
+)
 
 
 class TestConnectionHealth:
@@ -205,7 +208,7 @@ class TestConnectionHealth:
         
         # But can modify mutable internal structures (this is a Python limitation)
         # The dataclass frozen=True only prevents reassignment, not mutation
-        original_client_info = health.client_info.copy()
+        health.client_info.copy()
         health.client_info["new_key"] = "new_value"
         assert health.client_info["new_key"] == "new_value"  # Mutation is possible
         

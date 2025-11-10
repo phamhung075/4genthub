@@ -1,5 +1,7 @@
 """Work Distribution Service for Intelligent Task Assignment"""
 
+from __future__ import annotations
+
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -54,7 +56,7 @@ class TaskRequirements:
     deadline: datetime | None = None
     
     @classmethod
-    def from_task(cls, task: Task) -> 'TaskRequirements':
+    def from_task(cls, task: Task) -> TaskRequirements:
         """Create requirements from task metadata"""
         metadata = task.metadata or {}
         
@@ -140,7 +142,7 @@ class WorkDistributionService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'WorkDistributionService':
+    def with_user(self, user_id: str) -> WorkDistributionService:
         """Create a new service instance scoped to a specific user."""
         return WorkDistributionService(
             self.task_repository,

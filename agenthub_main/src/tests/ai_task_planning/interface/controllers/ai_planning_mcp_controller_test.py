@@ -8,13 +8,19 @@ Comprehensive test coverage for AI task planning MCP controller including:
 - Metrics and workload calculations
 """
 
-import pytest
 import json
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from fastmcp.ai_task_planning.interface.controllers.ai_planning_mcp_controller import AITaskPlanningMCPController
-from fastmcp.ai_task_planning.domain.entities.planning_request import PlanningContext, ComplexityLevel
-from fastmcp.ai_task_planning.domain.entities.task_plan import TaskPlan, PlannedTask, TaskType, ExecutionPhase
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock, patch
+
+import pytest
+
+from fastmcp.ai_task_planning.domain.entities.task_plan import (
+    ExecutionPhase,
+    TaskPlan,
+)
+from fastmcp.ai_task_planning.interface.controllers.ai_planning_mcp_controller import (
+    AITaskPlanningMCPController,
+)
 
 
 class TestAITaskPlanningMCPController:
@@ -69,7 +75,7 @@ class TestAITaskPlanningMCPController:
                 mock_task_plan.parallel_execution_groups = []
                 mock_task_plan.critical_path = []
                 mock_task_plan.agent_workload = {"coding-agent": 10.0}
-                mock_task_plan.created_at = datetime.now(timezone.utc)
+                mock_task_plan.created_at = datetime.now(UTC)
                 
                 mock_plan.return_value = mock_task_plan
                 mock_execute.return_value = {
@@ -118,7 +124,7 @@ class TestAITaskPlanningMCPController:
                 mock_task_plan.parallel_execution_groups = [["task1", "task2"]]
                 mock_task_plan.critical_path = ["task1"]
                 mock_task_plan.agent_workload = {"coding-agent": 15.0, "test-agent": 5.0}
-                mock_task_plan.created_at = datetime.now(timezone.utc)
+                mock_task_plan.created_at = datetime.now(UTC)
                 
                 mock_plan.return_value = mock_task_plan
                 mock_execute.return_value = {
@@ -147,7 +153,7 @@ class TestAITaskPlanningMCPController:
                     requirements=requirements_json,
                     git_branch_id="branch_789",
                     context="new_feature",
-                    deadline=(datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                    deadline=(datetime.now(UTC) + timedelta(days=7)).isoformat(),
                     preferred_approach="Microservices",
                     risk_tolerance="low"
                 )
@@ -458,7 +464,7 @@ class TestEdgeCases:
                 mock_task_plan.parallel_execution_groups = []
                 mock_task_plan.critical_path = []
                 mock_task_plan.agent_workload = {}
-                mock_task_plan.created_at = datetime.now(timezone.utc)
+                mock_task_plan.created_at = datetime.now(UTC)
                 
                 mock_plan.return_value = mock_task_plan
                 mock_execute.return_value = {'success': True, 'created_tasks': [], 'failed_tasks': []}
@@ -603,7 +609,7 @@ class TestComplexIntegrationScenarios:
                 mock_task_plan.parallel_execution_groups = [["t1", "t2"], ["t3", "t4"]]
                 mock_task_plan.critical_path = ["t1", "t3", "t5"]
                 mock_task_plan.agent_workload = {f'agent{i}': 50 for i in range(4)}  # Some overloaded
-                mock_task_plan.created_at = datetime.now(timezone.utc)
+                mock_task_plan.created_at = datetime.now(UTC)
                 
                 mock_plan.return_value = mock_task_plan
                 mock_execute.return_value = {
@@ -627,7 +633,7 @@ class TestComplexIntegrationScenarios:
                     git_branch_id="branch_comprehensive",
                     project_id="proj_comp_123",
                     context="bug_fix",
-                    deadline=(datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                    deadline=(datetime.now(UTC) + timedelta(days=30)).isoformat(),
                     preferred_approach="Event-driven architecture",
                     risk_tolerance="low",
                     user_id="user_admin_456"

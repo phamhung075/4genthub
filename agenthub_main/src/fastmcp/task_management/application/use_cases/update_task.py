@@ -1,5 +1,7 @@
 """Update Task Use Case"""
 
+from __future__ import annotations
+
 import logging
 
 from ...application.dtos.task import TaskResponse, UpdateTaskRequest, UpdateTaskResponse
@@ -198,7 +200,7 @@ class UpdateTaskUseCase:
             # 🔄 SYNC: Granular synchronization of task status and metadata
             try:
                 # Check if we're already in an event loop
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # We're in an async context - schedule as background task
                 asyncio.create_task(self._context_sync_service.sync_task_metadata(task_id_str, task))
                 logger.info(f"⏭️ Scheduled metadata sync for updated task {task_id_str} (in async context)")
@@ -214,7 +216,7 @@ class UpdateTaskUseCase:
 
             # Check if we're already in an async context
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # We're in an async context, but this is a sync method
                 # We'll use run_in_executor to avoid blocking
                 logger.debug("[UpdateTaskUseCase] Running in async context, using task creation for context sync")

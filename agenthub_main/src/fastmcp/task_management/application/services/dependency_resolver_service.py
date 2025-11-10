@@ -1,5 +1,7 @@
 """Service for resolving task dependency chains and relationships"""
 
+from __future__ import annotations
+
 import logging
 from collections import defaultdict, deque
 
@@ -33,7 +35,7 @@ class DependencyResolverService:
                     return repo_class(self.task_repository.session, user_id=self._user_id)
         return self.task_repository
     
-    def with_user(self, user_id: str) -> 'DependencyResolverService':
+    def with_user(self, user_id: str) -> DependencyResolverService:
         """Create a new service instance scoped to a specific user."""
         return DependencyResolverService(self.task_repository, user_id)
     

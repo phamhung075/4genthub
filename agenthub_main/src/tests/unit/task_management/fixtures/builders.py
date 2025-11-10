@@ -1,19 +1,23 @@
 """Test data builders for task management domain objects."""
 
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
-import uuid
+from __future__ import annotations
 
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.agent import Agent, AgentStatus, AgentCapability
+import uuid
+from datetime import UTC, datetime
+
+from fastmcp.task_management.domain.entities.agent import (
+    Agent,
+    AgentCapability,
+    AgentStatus,
+)
+from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.entities.project import Project
 from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.work_session import WorkSession
-from fastmcp.task_management.domain.entities.git_branch import GitBranch
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TaskBuilder:
@@ -37,75 +41,75 @@ class TaskBuilder:
         self._dependencies = []
         self._subtasks = []
         self._due_date = None
-        self._created_at = datetime.now(timezone.utc)
-        self._updated_at = datetime.now(timezone.utc)
+        self._created_at = datetime.now(UTC)
+        self._updated_at = datetime.now(UTC)
         self._context_id = None
         self._overall_progress = 0.0
         return self
     
-    def with_id(self, task_id: Optional[TaskId] = None) -> 'TaskBuilder':
+    def with_id(self, task_id: TaskId | None = None) -> TaskBuilder:
         """Set task ID."""
         self._id = task_id or TaskId.generate_new()
         return self
     
-    def with_title(self, title: str) -> 'TaskBuilder':
+    def with_title(self, title: str) -> TaskBuilder:
         """Set task title."""
         self._title = title
         return self
     
-    def with_description(self, description: str) -> 'TaskBuilder':
+    def with_description(self, description: str) -> TaskBuilder:
         """Set task description."""
         self._description = description
         return self
     
-    def with_status(self, status: TaskStatus) -> 'TaskBuilder':
+    def with_status(self, status: TaskStatus) -> TaskBuilder:
         """Set task status."""
         self._status = status
         return self
     
-    def with_priority(self, priority: Priority) -> 'TaskBuilder':
+    def with_priority(self, priority: Priority) -> TaskBuilder:
         """Set task priority."""
         self._priority = priority
         return self
     
-    def with_assignees(self, assignees: List[str]) -> 'TaskBuilder':
+    def with_assignees(self, assignees: list[str]) -> TaskBuilder:
         """Set task assignees."""
         self._assignees = assignees
         return self
     
-    def with_labels(self, labels: List[str]) -> 'TaskBuilder':
+    def with_labels(self, labels: list[str]) -> TaskBuilder:
         """Set task labels."""
         self._labels = labels
         return self
     
-    def with_dependencies(self, dependencies: List[TaskId]) -> 'TaskBuilder':
+    def with_dependencies(self, dependencies: list[TaskId]) -> TaskBuilder:
         """Set task dependencies."""
         self._dependencies = dependencies
         return self
     
-    def with_context_id(self, context_id: str) -> 'TaskBuilder':
+    def with_context_id(self, context_id: str) -> TaskBuilder:
         """Set context ID (required for completion)."""
         self._context_id = context_id
         return self
     
-    def in_progress(self) -> 'TaskBuilder':
+    def in_progress(self) -> TaskBuilder:
         """Set task to in progress status."""
         self._status = TaskStatus.in_progress()
         return self
     
-    def completed(self) -> 'TaskBuilder':
+    def completed(self) -> TaskBuilder:
         """Set task to completed status with context."""
         self._status = TaskStatus.done()
         self._context_id = f"context-{uuid.uuid4()}"
         self._overall_progress = 100
         return self
     
-    def with_estimated_effort(self, effort: str) -> 'TaskBuilder':
+    def with_estimated_effort(self, effort: str) -> TaskBuilder:
         """Set task estimated effort."""
         self._estimated_effort = effort
         return self
     
-    def high_priority(self) -> 'TaskBuilder':
+    def high_priority(self) -> TaskBuilder:
         """Set task to high priority."""
         self._priority = Priority.high()
         return self
@@ -144,8 +148,8 @@ class AgentBuilder:
         self._id = f"agent-{uuid.uuid4()}"
         self._name = "Test Agent"
         self._description = "Test agent description"
-        self._created_at = datetime.now(timezone.utc)
-        self._updated_at = datetime.now(timezone.utc)
+        self._created_at = datetime.now(UTC)
+        self._updated_at = datetime.now(UTC)
         self._capabilities = {AgentCapability.FRONTEND_DEVELOPMENT}
         self._specializations = []
         self._preferred_languages = []
@@ -157,33 +161,33 @@ class AgentBuilder:
         self._assigned_trees = set()
         return self
     
-    def with_name(self, name: str) -> 'AgentBuilder':
+    def with_name(self, name: str) -> AgentBuilder:
         """Set agent name."""
         self._name = name
         return self
     
-    def with_capabilities(self, capabilities: set) -> 'AgentBuilder':
+    def with_capabilities(self, capabilities: set) -> AgentBuilder:
         """Set agent capabilities."""
         self._capabilities = capabilities
         return self
     
-    def with_languages(self, languages: List[str]) -> 'AgentBuilder':
+    def with_languages(self, languages: list[str]) -> AgentBuilder:
         """Set programming languages."""
         self._preferred_languages = languages
         return self
     
-    def with_frameworks(self, frameworks: List[str]) -> 'AgentBuilder':
+    def with_frameworks(self, frameworks: list[str]) -> AgentBuilder:
         """Set frameworks."""
         self._preferred_frameworks = frameworks
         return self
     
-    def busy(self) -> 'AgentBuilder':
+    def busy(self) -> AgentBuilder:
         """Set agent as busy."""
         self._status = AgentStatus.BUSY
         self._current_workload = 1
         return self
     
-    def assigned_to_project(self, project_id: str, branch_name: str = None) -> 'AgentBuilder':
+    def assigned_to_project(self, project_id: str, branch_name: str = None) -> AgentBuilder:
         """Assign agent to a project and optionally a specific branch."""
         if not hasattr(self, '_assigned_projects'):
             self._assigned_projects = set()
@@ -226,25 +230,25 @@ class ProjectBuilder:
         self._id = f"project-{uuid.uuid4()}"
         self._name = "Test Project"
         self._description = "Test project description"
-        self._created_at = datetime.now(timezone.utc)
-        self._updated_at = datetime.now(timezone.utc)
+        self._created_at = datetime.now(UTC)
+        self._updated_at = datetime.now(UTC)
         self._git_branchs = {}
         self._agents = {}
         self._work_sessions = []
         self._cross_tree_dependencies = []
         return self
     
-    def with_name(self, name: str) -> 'ProjectBuilder':
+    def with_name(self, name: str) -> ProjectBuilder:
         """Set project name."""
         self._name = name
         return self
     
-    def with_agent(self, agent: Agent) -> 'ProjectBuilder':
+    def with_agent(self, agent: Agent) -> ProjectBuilder:
         """Add agent to project."""
         self._agents[agent.id] = agent
         return self
     
-    def with_git_branch(self, branch_name: str, tree: Optional[GitBranch] = None) -> 'ProjectBuilder':
+    def with_git_branch(self, branch_name: str, tree: GitBranch | None = None) -> ProjectBuilder:
         """Add git branch with optional task tree."""
         if tree is None:
             tree = GitBranch.create(
@@ -294,21 +298,21 @@ class SubtaskBuilder:
         self._status = TaskStatus.todo()
         self._priority = Priority.medium()
         self._assignees = []
-        self._created_at = datetime.now(timezone.utc)
-        self._updated_at = datetime.now(timezone.utc)
+        self._created_at = datetime.now(UTC)
+        self._updated_at = datetime.now(UTC)
         return self
     
-    def with_parent_task_id(self, parent_id: str) -> 'SubtaskBuilder':
+    def with_parent_task_id(self, parent_id: str) -> SubtaskBuilder:
         """Set parent task ID."""
         self._parent_task_id = parent_id
         return self
     
-    def with_title(self, title: str) -> 'SubtaskBuilder':
+    def with_title(self, title: str) -> SubtaskBuilder:
         """Set subtask title."""
         self._title = title
         return self
     
-    def completed(self) -> 'SubtaskBuilder':
+    def completed(self) -> SubtaskBuilder:
         """Set subtask as completed."""
         self._status = TaskStatus.done()
         return self
@@ -340,20 +344,20 @@ class WorkSessionBuilder:
         self._agent_id = f"agent-{uuid.uuid4()}"
         self._task_id = f"task-{uuid.uuid4()}"
         self._git_branch_name = "main"
-        self._started_at = datetime.now(timezone.utc)
+        self._started_at = datetime.now(UTC)
         return self
     
-    def for_agent(self, agent_id: str) -> 'WorkSessionBuilder':
+    def for_agent(self, agent_id: str) -> WorkSessionBuilder:
         """Set agent ID."""
         self._agent_id = agent_id
         return self
     
-    def for_task(self, task_id: str) -> 'WorkSessionBuilder':
+    def for_task(self, task_id: str) -> WorkSessionBuilder:
         """Set task ID."""
         self._task_id = task_id
         return self
     
-    def on_branch(self, branch_name: str) -> 'WorkSessionBuilder':
+    def on_branch(self, branch_name: str) -> WorkSessionBuilder:
         """Set git branch name."""
         self._git_branch_name = branch_name
         return self

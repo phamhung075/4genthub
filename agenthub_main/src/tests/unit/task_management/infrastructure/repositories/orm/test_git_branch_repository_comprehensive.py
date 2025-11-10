@@ -1,22 +1,24 @@
 """Comprehensive test suite for ORM Git Branch Repository"""
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch, PropertyMock, AsyncMock
-from datetime import datetime, timezone
-import uuid
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy import and_, func
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
-from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+import pytest
+from sqlalchemy.exc import SQLAlchemyError
+
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.exceptions.base_exceptions import (
     DatabaseException,
-    ResourceNotFoundException,
-    ValidationException
 )
-from fastmcp.task_management.infrastructure.database.models import ProjectGitBranch, Project, Task
+from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+from fastmcp.task_management.infrastructure.database.models import (
+    Project,
+    ProjectGitBranch,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
+    ORMGitBranchRepository,
+)
 
 
 class TestORMGitBranchRepository:
@@ -98,8 +100,8 @@ class TestORMGitBranchRepository:
             name="feature/test",
             description="Test branch",
             project_id="550e8400-e29b-41d4-a716-446655440002",  # Valid UUID
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         branch.assigned_agent_id = "550e8400-e29b-41d4-a716-446655440003"  # Valid UUID
         branch.priority = Priority.high()
@@ -114,8 +116,8 @@ class TestORMGitBranchRepository:
         model.name = "feature/test"
         model.description = "Test branch"
         model.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
-        model.created_at = datetime.now(timezone.utc)
-        model.updated_at = datetime.now(timezone.utc)
+        model.created_at = datetime.now(UTC)
+        model.updated_at = datetime.now(UTC)
         model.assigned_agent_id = "550e8400-e29b-41d4-a716-446655440003"  # Valid UUID
         model.priority = "high"
         model.status = "in_progress"
@@ -407,7 +409,6 @@ class TestORMGitBranchRepository:
 
         # Update the mock session to use our specific query for ProjectGitBranch
         # while preserving the Task query mock from the fixture
-        original_side_effect = mock_session.query.side_effect
         def query_side_effect(model):
             if hasattr(model, '__name__') and model.__name__ == 'Task':
                 # Use the original Task mock from repository fixture
@@ -749,7 +750,7 @@ class TestORMGitBranchRepository:
         status_row3.count = 3
         
         # Mock queries
-        mock_query = Mock()
+        Mock()
         mock_session.query.side_effect = [
             Mock(filter=Mock(return_value=Mock(first=Mock(return_value=stats_result)))),
             Mock(filter=Mock(return_value=Mock(
@@ -783,7 +784,7 @@ class TestORMGitBranchRepository:
         mock_uuid.uuid4.return_value = "generated-uuid"
         
         # Mock datetime
-        mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         # Mock save method
@@ -813,8 +814,8 @@ class TestORMGitBranchRepository:
         mock_branch.name = "feature/test"
         mock_branch.description = "Test branch"
         mock_branch.project_id = "project-456"
-        mock_branch.created_at = datetime.now(timezone.utc)
-        mock_branch.updated_at = datetime.now(timezone.utc)
+        mock_branch.created_at = datetime.now(UTC)
+        mock_branch.updated_at = datetime.now(UTC)
         
         repository.create_branch = AsyncMock(return_value=mock_branch)
         
@@ -885,8 +886,8 @@ class TestORMGitBranchRepository:
         branch1.name = "feature/1"
         branch1.description = "Feature 1"
         branch1.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
-        branch1.created_at = datetime.now(timezone.utc)
-        branch1.updated_at = datetime.now(timezone.utc)
+        branch1.created_at = datetime.now(UTC)
+        branch1.updated_at = datetime.now(UTC)
         branch1.assigned_agent_id = None
         branch1.status = TaskStatus.todo()
         branch1.priority = Priority.medium()
@@ -986,8 +987,8 @@ class TestORMGitBranchRepository:
         model.assigned_agent_id = "agent-789"
         model.task_count = 20
         model.completed_task_count = 8
-        model.created_at = datetime.now(timezone.utc)
-        model.updated_at = datetime.now(timezone.utc)
+        model.created_at = datetime.now(UTC)
+        model.updated_at = datetime.now(UTC)
 
         # Mock query for ProjectGitBranch
         mock_query = Mock()

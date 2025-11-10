@@ -4,11 +4,10 @@ Tests for JWT Service - Token generation and validation
 This module tests JWT token creation, validation, and refresh token management.
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, MagicMock
+from datetime import UTC, datetime, timedelta
+
 import jwt
-from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
+import pytest
 
 from fastmcp.auth.domain.services.jwt_service import JWTService
 
@@ -186,8 +185,8 @@ class TestJWTService:
         token_payload = {
             "sub": "user123",
             "type": "api_token",
-            "iat": datetime.now(timezone.utc),
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
+            "iat": datetime.now(UTC),
+            "exp": datetime.now(UTC) + timedelta(minutes=15),
             "iss": jwt_service.issuer,
         }
         token = jwt.encode(token_payload, jwt_service.secret_key, algorithm=jwt_service.ALGORITHM)
@@ -200,7 +199,7 @@ class TestJWTService:
     def test_verify_expired_token(self, jwt_service):
         """Test verification of expired token"""
         # Create token that's already expired
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         token_payload = {
             "sub": "user123",
             "type": "access",
@@ -224,8 +223,8 @@ class TestJWTService:
         token_payload = {
             "sub": "user123",
             "type": "access",
-            "iat": datetime.now(timezone.utc),
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
+            "iat": datetime.now(UTC),
+            "exp": datetime.now(UTC) + timedelta(minutes=15),
             "iss": jwt_service.issuer,
         }
         token = jwt.encode(token_payload, "wrong-secret", algorithm=jwt_service.ALGORITHM)
@@ -239,8 +238,8 @@ class TestJWTService:
         token_payload = {
             "sub": "user123",
             "type": "access",
-            "iat": datetime.now(timezone.utc),
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
+            "iat": datetime.now(UTC),
+            "exp": datetime.now(UTC) + timedelta(minutes=15),
         }
         token = jwt.encode(token_payload, jwt_service.secret_key, algorithm=jwt_service.ALGORITHM)
         
@@ -308,7 +307,7 @@ class TestJWTService:
     def test_get_token_expiry(self, jwt_service):
         """Test getting token expiration time"""
         # Create token with known expiration
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         exp_time = now + timedelta(hours=1)
         
         token_payload = {
@@ -335,7 +334,7 @@ class TestJWTService:
     def test_is_token_expired(self, jwt_service):
         """Test checking if token is expired"""
         # Create expired token
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         token_payload = {
             "sub": "user123",
             "exp": int((now - timedelta(hours=1)).timestamp()),
@@ -428,7 +427,7 @@ class TestJWTService:
     def test_verify_supabase_token_simulation(self, jwt_service):
         """Test verification of Supabase-style token (no 'type' field, 'authenticated' audience)"""
         # Create token similar to Supabase structure (no 'type' field)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         supabase_payload = {
             "sub": "user123",
             "email": "test@example.com", 
@@ -456,7 +455,7 @@ class TestJWTService:
         )
         
         # Create Supabase-style token (no 'type' field, should have 'authenticated' audience)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         supabase_payload = {
             "sub": "user456",
             "email": "supabase@example.com",

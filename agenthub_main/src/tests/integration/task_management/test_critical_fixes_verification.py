@@ -6,12 +6,17 @@ Tests the fixes for:
 2. Context creation NoneType iteration errors
 """
 
-import pytest
 import logging
 from unittest.mock import Mock, patch
 
-from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
-from fastmcp.task_management.application.services.unified_context_service import UnifiedContextService
+import pytest
+
+from fastmcp.task_management.application.facades.subtask_application_facade import (
+    SubtaskApplicationFacade,
+)
+from fastmcp.task_management.application.services.unified_context_service import (
+    UnifiedContextService,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +30,7 @@ class TestCriticalFixesVerification:
         No fallback IDs are used - authentication is mandatory.
         """
         import uuid
+
         from fastmcp.task_management.domain.exceptions import TaskNotFoundError
         
         # Test 1: With authentication, task not found should raise TaskNotFoundError
@@ -37,7 +43,7 @@ class TestCriticalFixesVerification:
             
             # Should raise TaskNotFoundError when task not found
             with pytest.raises(TaskNotFoundError) as exc_info:
-                context = facade._derive_context_from_task("nonexistent-task-id")
+                facade._derive_context_from_task("nonexistent-task-id")
             
             assert "not found" in str(exc_info.value).lower()
             
@@ -50,7 +56,7 @@ class TestCriticalFixesVerification:
             
             # Should raise ValueError for missing authentication
             with pytest.raises(ValueError) as exc_info:
-                context = facade_no_auth._derive_context_from_task("some-task-id")
+                facade_no_auth._derive_context_from_task("some-task-id")
             
             assert "authentication required" in str(exc_info.value).lower()
             

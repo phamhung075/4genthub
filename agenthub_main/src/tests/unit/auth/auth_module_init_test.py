@@ -3,8 +3,7 @@
 Tests for the authentication module initialization and exports.
 """
 
-import pytest
-from unittest.mock import Mock, patch
+
 
 
 class TestAuthModuleInit:
@@ -13,12 +12,20 @@ class TestAuthModuleInit:
     def test_import_all_exported_classes(self):
         """Test that all exported classes can be imported."""
         from fastmcp.auth import (
-            User, UserStatus, UserRole,
-            Email, UserId,
-            PasswordService, JWTService,
-            AuthService, LoginResult, RegistrationResult,
             AuthMiddleware,
-            TokenValidator, TokenValidationError, RateLimitError
+            AuthService,
+            Email,
+            JWTService,
+            LoginResult,
+            PasswordService,
+            RateLimitError,
+            RegistrationResult,
+            TokenValidationError,
+            TokenValidator,
+            User,
+            UserId,
+            UserRole,
+            UserStatus,
         )
         
         # Verify classes exist and are importable
@@ -61,7 +68,7 @@ class TestAuthModuleInit:
 
     def test_domain_entities_import(self):
         """Test domain entities import correctly."""
-        from fastmcp.auth import User, UserStatus, UserRole
+        from fastmcp.auth import User
         
         # Basic sanity check that these are classes
         assert isinstance(User, type) or callable(User)
@@ -77,7 +84,7 @@ class TestAuthModuleInit:
 
     def test_domain_services_import(self):
         """Test domain services import correctly."""
-        from fastmcp.auth import PasswordService, JWTService
+        from fastmcp.auth import JWTService, PasswordService
         
         assert PasswordService is not None
         assert JWTService is not None
@@ -98,7 +105,7 @@ class TestAuthModuleInit:
 
     def test_validators_import(self):
         """Test validators import correctly."""
-        from fastmcp.auth import TokenValidator, TokenValidationError, RateLimitError
+        from fastmcp.auth import RateLimitError, TokenValidationError, TokenValidator
         
         assert TokenValidator is not None
         assert TokenValidationError is not None

@@ -9,17 +9,16 @@ Tests the agent MCP controller including:
 - Workflow guidance integration
 """
 
-import pytest
-import logging
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any
+from unittest.mock import MagicMock, Mock, patch
 
-from fastmcp.task_management.interface.mcp_controllers.agent_mcp_controller.agent_mcp_controller import AgentMCPController
+import pytest
+
+from fastmcp.task_management.application.facades.agent_application_facade import (
+    AgentApplicationFacade,
+)
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.application.facades.agent_application_facade import AgentApplicationFacade
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
-    UserAuthenticationRequiredError,
-    DefaultUserProhibitedError
+from fastmcp.task_management.interface.mcp_controllers.agent_mcp_controller.agent_mcp_controller import (
+    AgentMCPController,
 )
 
 
@@ -130,7 +129,7 @@ class TestAgentMCPController:
                 name="test-agent"
             )
             
-            assert result["success"] == True
+            assert result["success"]
             assert "workflow_guidance" in result
             mock_factory.assert_called_once_with(
                 operation="register",
@@ -158,7 +157,7 @@ class TestAgentMCPController:
                 git_branch_id="branch-456"
             )
             
-            assert result["success"] == True
+            assert result["success"]
             assert "workflow_guidance" in result
             mock_factory.assert_called_once_with(
                 operation="assign",
@@ -184,7 +183,7 @@ class TestAgentMCPController:
                 project_id="test-project"
             )
             
-            assert result["success"] == True
+            assert result["success"]
             assert "workflow_guidance" in result
             mock_factory.assert_called_once_with(
                 operation="rebalance",
@@ -253,7 +252,7 @@ class TestAgentMCPController:
                 with patch('uuid.uuid4') as mock_uuid:
                     mock_uuid.return_value.hex = "auto-generated-id"
                     
-                    result = self.controller.handle_crud_operations(
+                    self.controller.handle_crud_operations(
                         "register", "test-project", None, "test-agent", None
                     )
                     
@@ -521,7 +520,7 @@ class TestAgentMCPController:
         mock_guidance = {"next_steps": ["Test step"]}
         self.controller._workflow_guidance.generate_guidance.return_value = mock_guidance
         
-        result = self.controller._enhance_response_with_workflow_guidance(
+        self.controller._enhance_response_with_workflow_guidance(
             response, "register", "test-project"
         )
         

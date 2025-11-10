@@ -8,20 +8,16 @@ Tests verify:
 - Health monitoring
 """
 
-import time
 import threading
+import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import List
 
 import pytest
 
 from fastmcp.task_management.domain.events.base import BaseDomainEvent
 from fastmcp.task_management.infrastructure.events.event_worker import (
-    EventWorker,
-    EventQueueItem,
-    DeadLetterEvent,
     RETRY_BACKOFF_SCHEDULE,
+    EventWorker,
 )
 
 
@@ -61,7 +57,7 @@ class TestEventWorker:
 
     def test_event_processing_success(self):
         """Test successful event processing."""
-        processed_events: List[SampleEvent] = []
+        processed_events: list[SampleEvent] = []
 
         def test_handler(event: SampleEvent):
             processed_events.append(event)
@@ -197,7 +193,7 @@ class TestEventWorker:
 
     def test_graceful_shutdown_drains_queue(self):
         """Test graceful shutdown processes remaining events."""
-        processed_events: List[SampleEvent] = []
+        processed_events: list[SampleEvent] = []
 
         def test_handler(event: SampleEvent):
             processed_events.append(event)
@@ -287,7 +283,7 @@ class TestEventWorker:
 
     def test_thread_safety(self):
         """Test worker is thread-safe for concurrent event enqueueing."""
-        processed_events: List[SampleEvent] = []
+        processed_events: list[SampleEvent] = []
         lock = threading.Lock()
 
         def thread_safe_handler(event: SampleEvent):

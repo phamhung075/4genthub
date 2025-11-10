@@ -15,7 +15,7 @@ def test_assignees_string_conversion():
         'assignees': 'test-orchestrator-agent'  # This should be converted to ['test-orchestrator-agent']
     }
 
-    print(f"\nTest 1 - Single assignee:")
+    print("\nTest 1 - Single assignee:")
     print(f"Input assignees: {repr(test_kwargs_single['assignees'])}")
     print(f"Type: {type(test_kwargs_single['assignees'])}")
 
@@ -50,7 +50,7 @@ def test_assignees_string_conversion():
         'assignees': 'coding-agent, test-orchestrator-agent, @debugger-agent'
     }
 
-    print(f"\nTest 2 - Multiple assignees:")
+    print("\nTest 2 - Multiple assignees:")
     print(f"Input assignees: {repr(test_kwargs_multi['assignees'])}")
     print(f"Type: {type(test_kwargs_multi['assignees'])}")
 

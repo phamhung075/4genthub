@@ -4,6 +4,8 @@ CRUD Handler for Task MCP Controller
 Handles Create, Read, Update, Delete operations for tasks.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import Any

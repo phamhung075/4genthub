@@ -1,16 +1,10 @@
 """Unit tests for agent assignment and inheritance functionality"""
 
-import pytest
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch
 
-from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestAgentInheritance:

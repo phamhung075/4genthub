@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Test PostgreSQL Database Connection"""
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Load environment variables from .env.dev
@@ -28,7 +28,10 @@ except ImportError:
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+from fastmcp.task_management.infrastructure.database.database_config import (
+    DatabaseConfig,
+)
+
 
 def test_connection():
     """Test the database connection"""
@@ -56,7 +59,7 @@ def test_connection():
         db = DatabaseConfig()
 
         print(f"✅ Database type: {db.database_type}")
-        print(f"✅ Database URL configured: Yes" if db.database_url else "❌ Database URL configured: No")
+        print("✅ Database URL configured: Yes" if db.database_url else "❌ Database URL configured: No")
 
         print("\n🔄 Testing actual connection...")
         session = db.get_session()
@@ -66,7 +69,7 @@ def test_connection():
         result = session.execute(text("SELECT version()"))
         version = result.scalar()
 
-        print(f"✅ Successfully connected to PostgreSQL!")
+        print("✅ Successfully connected to PostgreSQL!")
         print(f"📊 Database version: {version}")
 
         # Check if tables exist
@@ -78,7 +81,7 @@ def test_connection():
         """))
         tables = [row[0] for row in result.fetchall()]
 
-        print(f"\n📋 Existing tables in database:")
+        print("\n📋 Existing tables in database:")
         if tables:
             for table in tables:
                 print(f"  - {table}")
@@ -91,7 +94,7 @@ def test_connection():
         return True
 
     except Exception as e:
-        print(f"\n❌ Database connection test FAILED!")
+        print("\n❌ Database connection test FAILED!")
         print(f"Error: {e}")
 
         import traceback

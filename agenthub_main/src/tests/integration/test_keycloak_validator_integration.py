@@ -16,21 +16,20 @@ Test Categories:
 4. Caching Scenarios: Token cache, JWKS cache, cache expiration
 """
 
-import pytest
-import asyncio
 import os
 import time
 from datetime import datetime, timedelta
-from typing import Dict, Any
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import httpx
+import pytest
 from jose import jwt
 
 # Import the validator under test
 from fastmcp.auth.mcp_keycloak_validator import (
     MCPKeycloakValidator,
     get_mcp_validator,
-    validate_mcp_request
+    validate_mcp_request,
 )
 
 
@@ -572,13 +571,13 @@ class TestCachingScenarios:
         with patch.object(validator, '_get_jwks', return_value=mock_jwks):
             with patch.object(validator, '_decode_token', return_value=valid_jwt_claims) as mock_decode:
                 # First validation
-                result1 = await validator.validate_mcp_token(token)
+                await validator.validate_mcp_token(token)
 
                 # Wait for cache to expire
                 time.sleep(2)
 
                 # Second validation should call decode again
-                result2 = await validator.validate_mcp_token(token)
+                await validator.validate_mcp_token(token)
 
                 # Decode should be called twice (cache expired)
                 assert mock_decode.call_count == 2

@@ -5,6 +5,8 @@ This module provides project repository implementation using SQLAlchemy ORM,
 supporting both SQLite and PostgreSQL databases.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -68,7 +70,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
         # Initialize field selector for selective queries
         self._field_selector = ContextFieldSelector()
     
-    def with_user(self, user_id: str) -> 'ORMProjectRepository':
+    def with_user(self, user_id: str) -> ORMProjectRepository:
         """
         Create a new instance of this repository scoped to a specific user.
         Overrides base implementation to preserve all constructor parameters.

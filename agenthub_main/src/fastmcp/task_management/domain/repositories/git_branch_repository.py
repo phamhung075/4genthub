@@ -4,6 +4,8 @@ Domain layer repository interface for git branch operations.
 Defines the contract for git branch persistence operations.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any
 

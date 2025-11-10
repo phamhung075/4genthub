@@ -2,8 +2,8 @@
 Tests for auth middleware package imports and exports
 """
 
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 class TestMiddlewarePackageImports:
@@ -11,10 +11,7 @@ class TestMiddlewarePackageImports:
 
     def test_imports_jwt_auth_middleware(self):
         """Test that JWT auth middleware components are imported"""
-        from fastmcp.auth.middleware import (
-            JWTAuthMiddleware,
-            UserContextManager
-        )
+        from fastmcp.auth.middleware import JWTAuthMiddleware, UserContextManager
         
         assert JWTAuthMiddleware is not None
         assert UserContextManager is not None
@@ -23,7 +20,7 @@ class TestMiddlewarePackageImports:
         """Test that dual auth middleware components are imported"""
         from fastmcp.auth.middleware import (
             DualAuthMiddleware,
-            create_dual_auth_middleware
+            create_dual_auth_middleware,
         )
         
         assert DualAuthMiddleware is not None
@@ -34,11 +31,11 @@ class TestMiddlewarePackageImports:
         from fastmcp.auth.middleware import (
             RequestContextMiddleware,
             create_request_context_middleware,
-            get_current_user_id,
-            get_current_user_email,
+            get_authentication_context,
             get_current_auth_method,
+            get_current_user_email,
+            get_current_user_id,
             is_request_authenticated,
-            get_authentication_context
         )
         
         assert RequestContextMiddleware is not None

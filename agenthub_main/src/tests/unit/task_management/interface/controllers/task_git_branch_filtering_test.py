@@ -13,18 +13,28 @@ Test cases:
 5. Invalid branch IDs handle appropriately
 """
 
-import pytest
-import logging
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any, List
-import uuid
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import TaskMCPController
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.handlers.search_handler import SearchHandler
-from fastmcp.task_management.application.factories.task_facade_factory import TaskFacadeFactory
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.list_tasks_request import ListTasksRequest
-from fastmcp.task_management.interface.utils.response_formatter import StandardResponseFormatter
+import pytest
+
+from fastmcp.task_management.application.dtos.task.list_tasks_request import (
+    ListTasksRequest,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
+from fastmcp.task_management.application.factories.task_facade_factory import (
+    TaskFacadeFactory,
+)
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.handlers.search_handler import (
+    SearchHandler,
+)
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import (
+    TaskMCPController,
+)
+from fastmcp.task_management.interface.utils.response_formatter import (
+    StandardResponseFormatter,
+)
 
 
 class TestTaskGitBranchFiltering:

@@ -5,6 +5,8 @@ This module provides configuration loading and validation for server tools,
 allowing dynamic enabling/disabling of tools based on YAML configuration.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 from pathlib import Path

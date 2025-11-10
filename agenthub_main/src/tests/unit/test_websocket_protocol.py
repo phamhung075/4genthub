@@ -12,39 +12,40 @@ Tests all aspects of the WebSocket protocol including:
 """
 
 import json
-import pytest
-import uuid
 from datetime import datetime
-from typing import Dict, Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
-from fastmcp.websocket import (
-    WSMessage,
-    WSPayload,
-    WSData,
-    WSMetadata,
-    CascadeData,
-    UserUpdateMessage,
-    AIBatchMessage,
-    HeartbeatMessage,
-    ErrorMessage,
-    SyncMessage,
-    validate_message,
-    create_user_update,
-    create_ai_batch,
-    create_heartbeat,
-    create_error,
-    create_sync,
-    get_message_size,
-    is_message_size_valid,
-    MessageSizeError,
-    ProtocolError,
-    InvalidVersionError,
-)
+import pytest
+
 from fastmcp.task_management.domain.services.cascade_calculator import (
     CascadeCalculator,
     CascadeResult,
-    EntityType as CascadeEntityType
+)
+from fastmcp.task_management.domain.services.cascade_calculator import (
+    EntityType as CascadeEntityType,
+)
+from fastmcp.websocket import (
+    AIBatchMessage,
+    CascadeData,
+    ErrorMessage,
+    HeartbeatMessage,
+    InvalidVersionError,
+    MessageSizeError,
+    ProtocolError,
+    SyncMessage,
+    UserUpdateMessage,
+    WSData,
+    WSMessage,
+    WSMetadata,
+    WSPayload,
+    create_ai_batch,
+    create_error,
+    create_heartbeat,
+    create_sync,
+    create_user_update,
+    get_message_size,
+    is_message_size_valid,
+    validate_message,
 )
 
 

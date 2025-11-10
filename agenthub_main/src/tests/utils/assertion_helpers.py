@@ -5,11 +5,11 @@ Provides specialized assertion functions for validating domain objects,
 business rules, and integration points in the agenthub system.
 """
 
-from typing import Dict, Any, List, Optional, Union
+from typing import Any
 from uuid import UUID
 
 
-def assert_task_structure(task_data: Dict[str, Any], required_fields: Optional[List[str]] = None) -> None:
+def assert_task_structure(task_data: dict[str, Any], required_fields: list[str | None] = None) -> None:
     """
     Assert that task data has the expected structure.
     
@@ -52,7 +52,7 @@ def assert_task_structure(task_data: Dict[str, Any], required_fields: Optional[L
         assert task_data['priority'] in valid_priorities, f"Invalid task priority: {task_data['priority']}"
 
 
-def assert_context_inheritance(context_data: Dict[str, Any], expected_inheritance_chain: List[str]) -> None:
+def assert_context_inheritance(context_data: dict[str, Any], expected_inheritance_chain: list[str]) -> None:
     """
     Assert that context data properly inherits from parent contexts.
     
@@ -84,7 +84,7 @@ def assert_context_inheritance(context_data: Dict[str, Any], expected_inheritanc
         assert isinstance(inherited_data, dict), "Inherited data must be a dictionary"
 
 
-def assert_domain_event_structure(event_data: Dict[str, Any], event_type: str) -> None:
+def assert_domain_event_structure(event_data: dict[str, Any], event_type: str) -> None:
     """
     Assert that domain event data has the expected structure.
     
@@ -120,7 +120,7 @@ def assert_domain_event_structure(event_data: Dict[str, Any], event_type: str) -
     assert len(occurred_at) > 0, "Occurred_at cannot be empty"
 
 
-def assert_mcp_tool_response(response: Dict[str, Any], expected_success: bool = True) -> None:
+def assert_mcp_tool_response(response: dict[str, Any], expected_success: bool = True) -> None:
     """
     Assert that MCP tool response has the expected structure.
     
@@ -154,7 +154,7 @@ def assert_mcp_tool_response(response: Dict[str, Any], expected_success: bool = 
 
 
 def assert_database_foreign_key_constraint(
-    test_data: Dict[str, Any], 
+    test_data: dict[str, Any], 
     foreign_key_field: str,
     referenced_table: str
 ) -> None:
@@ -177,7 +177,7 @@ def assert_database_foreign_key_constraint(
 
 
 def assert_pagination_structure(
-    pagination_result: Dict[str, Any],
+    pagination_result: dict[str, Any],
     expected_page: int,
     expected_page_size: int,
     min_total_count: int = 0
@@ -223,7 +223,7 @@ def assert_pagination_structure(
         f"Items count exceeds page size: {len(pagination_result['items'])} > {expected_page_size}"
 
 
-def assert_test_isolation(test_id: str, file_paths: List[str]) -> None:
+def assert_test_isolation(test_id: str, file_paths: list[str]) -> None:
     """
     Assert that test isolation is properly maintained.
     

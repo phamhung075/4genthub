@@ -5,6 +5,8 @@ This module provides agent repository implementation using SQLAlchemy ORM,
 supporting both SQLite and PostgreSQL databases.
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from datetime import UTC, datetime

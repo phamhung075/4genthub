@@ -5,6 +5,8 @@ This module provides configuration helpers to integrate JWT authentication
 with the MCP server.
 """
 
+from __future__ import annotations
+
 import os
 
 from starlette.middleware import Middleware

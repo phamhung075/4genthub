@@ -248,7 +248,7 @@ class Orchestrator:
     
     def _handle_timeout_sessions(self, project: Project) -> None:
         """Handle sessions that have timed out"""
-        current_time = datetime.now()
+        datetime.now()
         
         for session_id, session in list(project.active_work_sessions.items()):
             if session.is_timeout_due():

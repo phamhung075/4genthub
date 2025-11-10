@@ -1,5 +1,7 @@
 """FastMCP run command implementation."""
 
+from __future__ import annotations
+
 import importlib.util
 import re
 import sys

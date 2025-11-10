@@ -4,6 +4,8 @@ This module provides real-time bidirectional communication between agents
 using WebSocket connections for low-latency message passing and status updates.
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -73,7 +75,7 @@ class WebSocketMessage:
         return json.dumps(data)
     
     @classmethod
-    def from_json(cls, json_str: str) -> 'WebSocketMessage':
+    def from_json(cls, json_str: str) -> WebSocketMessage:
         """Create from JSON string"""
         data = json.loads(json_str)
         data["type"] = MessageType(data["type"])

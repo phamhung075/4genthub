@@ -15,20 +15,18 @@ Test Categories:
 6. Connection State Management - State tracking, reconnection
 """
 
-import pytest
 import asyncio
 import json
-from unittest.mock import Mock, patch, AsyncMock, MagicMock, call
-from contextlib import asynccontextmanager
-from typing import Dict, Any
-from datetime import datetime, timezone, timedelta
-
-import mcp.types
-from pydantic import AnyUrl
 
 # Mock the missing oauth_callback module before importing client
 import sys
-from unittest.mock import MagicMock
+from contextlib import asynccontextmanager
+from datetime import timedelta
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import mcp.types
+import pytest
+from pydantic import AnyUrl
 
 # Create mock for oauth_callback
 oauth_callback_mock = MagicMock()
@@ -38,7 +36,6 @@ sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
 # Import client components
 from fastmcp.client.client import Client
 from fastmcp.exceptions import ToolError
-
 
 # Test markers
 pytestmark = [
@@ -270,7 +267,7 @@ class TestCommandSending:
 
                 # Call tool with parameters
                 params = {"param1": "value1", "param2": 42}
-                result = await client.call_tool("test_tool", params)
+                await client.call_tool("test_tool", params)
 
                 # Verify call was made with correct parameters
                 client._session.call_tool.assert_called_once()
@@ -531,7 +528,7 @@ class TestSecurity:
 
         with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
             # Create client with auth
-            client = Client("http://localhost:8000", auth="test-token")
+            Client("http://localhost:8000", auth="test-token")
 
             # Verify _set_auth was called
             mock_transport._set_auth.assert_called_once_with("test-token")
@@ -915,9 +912,8 @@ class TestHandlerConfiguration:
     async def test_set_roots(self, mock_transport):
         """Test set_roots method with proper Path objects"""
         with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
-            from pathlib import Path
             import tempfile
-            import os
+            from pathlib import Path
 
             # Create a temporary directory to use as root
             with tempfile.TemporaryDirectory() as tmpdir:

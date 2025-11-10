@@ -4,6 +4,8 @@ Application service for project lifecycle and multi-agent coordination.
 Now uses SQLite database instead of JSON files for better data integrity and performance.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -69,7 +71,7 @@ class ProjectManagementService:
                     return repo_class(self._project_repo.session, user_id=self._user_id)
         return self._project_repo
     
-    def with_user(self, user_id: str) -> 'ProjectManagementService':
+    def with_user(self, user_id: str) -> ProjectManagementService:
         """Create a new service instance scoped to a specific user."""
         return ProjectManagementService(self._project_repo, user_id)
     

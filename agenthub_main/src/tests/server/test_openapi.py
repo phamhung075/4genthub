@@ -16,18 +16,16 @@ Target: 50%+ coverage (217+ lines of 434 missing)
 
 import json
 import re
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import httpx
 import pytest
-from mcp.types import ToolAnnotations
 
 from fastmcp.exceptions import ToolError
 from fastmcp.server.openapi import (
     DEFAULT_ROUTE_MAPPINGS,
-    MCPType,
     FastMCPOpenAPI,
+    MCPType,
     OpenAPIResource,
     OpenAPIResourceTemplate,
     OpenAPITool,
@@ -1229,7 +1227,7 @@ class TestOpenAPIResourcePathParams:
             description="User resource",
         )
 
-        result = await resource.read()
+        await resource.read()
         # Should have replaced path parameter
         call_args = mock_client.request.call_args
         assert "123" in call_args[1]["url"]
@@ -1320,7 +1318,7 @@ class TestFastMCPFromOpenAPI:
         from fastmcp.server.server import FastMCP
 
         # Call from_openapi
-        result = FastMCP.from_openapi(
+        FastMCP.from_openapi(
             openapi_spec=basic_openapi_spec,
             client=mock_client,
         )
@@ -1340,7 +1338,7 @@ class TestFastMCPFromOpenAPI:
 
         route_maps = [RouteMap(mcp_type=MCPType.RESOURCE)]
 
-        result = FastMCP.from_openapi(
+        FastMCP.from_openapi(
             openapi_spec=basic_openapi_spec,
             client=mock_client,
             route_maps=route_maps,
@@ -1359,7 +1357,7 @@ class TestFastMCPFromOpenAPI:
         def custom_mapper(route, mcp_type):
             return MCPType.TOOL
 
-        result = FastMCP.from_openapi(
+        FastMCP.from_openapi(
             openapi_spec=basic_openapi_spec,
             client=mock_client,
             route_map_fn=custom_mapper,
@@ -1378,7 +1376,7 @@ class TestFastMCPFromOpenAPI:
         def custom_component_fn(route, component):
             pass
 
-        result = FastMCP.from_openapi(
+        FastMCP.from_openapi(
             openapi_spec=basic_openapi_spec,
             client=mock_client,
             mcp_component_fn=custom_component_fn,
@@ -1396,7 +1394,7 @@ class TestFastMCPFromOpenAPI:
 
         mcp_names = {"getUsers": "list_all_users"}
 
-        result = FastMCP.from_openapi(
+        FastMCP.from_openapi(
             openapi_spec=basic_openapi_spec,
             client=mock_client,
             mcp_names=mcp_names,
@@ -1414,7 +1412,7 @@ class TestFastMCPFromOpenAPI:
 
         tags = {"public", "v1"}
 
-        result = FastMCP.from_openapi(
+        FastMCP.from_openapi(
             openapi_spec=basic_openapi_spec,
             client=mock_client,
             tags=tags,
@@ -1430,7 +1428,7 @@ class TestFastMCPFromOpenAPI:
         """Test FastMCP.from_openapi passes additional settings through."""
         from fastmcp.server.server import FastMCP
 
-        result = FastMCP.from_openapi(
+        FastMCP.from_openapi(
             openapi_spec=basic_openapi_spec,
             client=mock_client,
             name="Custom API",
@@ -1485,7 +1483,7 @@ class TestFastMCPFromFastAPI:
         mock_async_client.return_value = mock_client_instance
 
         # Call from_fastapi
-        result = FastMCP.from_fastapi(app=mock_fastapi_app)
+        FastMCP.from_fastapi(app=mock_fastapi_app)
 
         # Verify ASGI transport was created with app
         mock_asgi_transport.assert_called_once_with(app=mock_fastapi_app)
@@ -1521,7 +1519,7 @@ class TestFastMCPFromFastAPI:
         mock_client_instance = MagicMock()
         mock_async_client.return_value = mock_client_instance
 
-        result = FastMCP.from_fastapi(app=mock_fastapi_app, name="Custom Name")
+        FastMCP.from_fastapi(app=mock_fastapi_app, name="Custom Name")
 
         call_kwargs = mock_fastmcp_openapi.call_args[1]
         assert call_kwargs["name"] == "Custom Name"
@@ -1549,7 +1547,7 @@ class TestFastMCPFromFastAPI:
             "follow_redirects": True,
         }
 
-        result = FastMCP.from_fastapi(
+        FastMCP.from_fastapi(
             app=mock_fastapi_app,
             httpx_client_kwargs=httpx_kwargs,
         )
@@ -1580,7 +1578,7 @@ class TestFastMCPFromFastAPI:
 
         httpx_kwargs = {"base_url": "http://custom-api"}
 
-        result = FastMCP.from_fastapi(
+        FastMCP.from_fastapi(
             app=mock_fastapi_app,
             httpx_client_kwargs=httpx_kwargs,
         )
@@ -1609,7 +1607,7 @@ class TestFastMCPFromFastAPI:
 
         route_maps = [RouteMap(mcp_type=MCPType.RESOURCE)]
 
-        result = FastMCP.from_fastapi(
+        FastMCP.from_fastapi(
             app=mock_fastapi_app,
             route_maps=route_maps,
         )
@@ -1635,7 +1633,7 @@ class TestFastMCPFromFastAPI:
         mock_client_instance = MagicMock()
         mock_async_client.return_value = mock_client_instance
 
-        result = FastMCP.from_fastapi(app=mock_fastapi_app)
+        FastMCP.from_fastapi(app=mock_fastapi_app)
 
         # Verify app.openapi() was called
         mock_fastapi_app.openapi.assert_called_once()

@@ -6,6 +6,8 @@ extracting permission logic from controllers to the application layer.
 Integrates with the existing PermissionChecker system.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -66,7 +68,7 @@ class TaskAuthorizationService:
             task_id: Optional task ID for task-specific operations
 
         Returns:
-            Tuple of (success: bool, error_response: Optional[Dict])
+            Tuple of (success: bool, error_response: Dict | None)
             - If authorized: (True, None)
             - If denied: (False, error_response_dict)
         """
@@ -215,7 +217,7 @@ class TaskAuthorizationService:
             task_id: Optional task ID for task-specific operations
 
         Returns:
-            Tuple of (success: bool, error_response: Optional[Dict])
+            Tuple of (success: bool, error_response: Dict | None)
         """
         token_payload = self.extract_token_from_context()
 

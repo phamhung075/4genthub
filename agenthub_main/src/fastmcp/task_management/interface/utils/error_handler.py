@@ -73,8 +73,8 @@ class UserFriendlyErrorHandler:
             error_msg = str(exception).lower()
             if "context must be updated" in error_msg:
                 # Skip special handling for task completion - let the use case handle it
-                action = context.get("action", "").lower()
-                operation_lower = operation.lower()
+                context.get("action", "").lower()
+                operation.lower()
 
                 # DISABLED: Let CompleteTaskUseCase handle context validation errors internally
                 # if action == "complete" or "complet" in operation_lower:
@@ -236,7 +236,7 @@ class UserFriendlyErrorHandler:
         """Handle context requirement errors with specific recovery steps."""
 
         task_id = context.get("task_id", "your-task-id")
-        project_id = context.get("project_id", "agenthub")
+        context.get("project_id", "agenthub")
 
         return {
             "success": False,

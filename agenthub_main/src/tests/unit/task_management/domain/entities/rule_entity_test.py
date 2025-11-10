@@ -1,17 +1,17 @@
 """Unit tests for Rule Domain Entities - Domain Entities for Rule Management"""
 
+
 import pytest
-from typing import Dict, Any, List
 
 from fastmcp.task_management.domain.entities.rule_entity import (
-    RuleMetadata,
     RuleContent,
-    RuleInheritance
+    RuleInheritance,
+    RuleMetadata,
 )
 from fastmcp.task_management.domain.value_objects.rule_enums import (
+    InheritanceType,
     RuleFormat,
     RuleType,
-    InheritanceType
 )
 
 

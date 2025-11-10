@@ -14,16 +14,15 @@ Date: 2025-10-26
 Purpose: Verify Phase 1 DTO changes work correctly in integrated environment
 """
 
-import pytest
 import uuid
-from datetime import datetime, timezone
 
-from fastmcp.task_management.domain.entities.task import Task
+import pytest
+
 from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-
 
 pytestmark = pytest.mark.integration
 

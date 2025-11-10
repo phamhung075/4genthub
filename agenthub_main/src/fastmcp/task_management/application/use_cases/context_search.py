@@ -5,6 +5,8 @@ Provides powerful search capabilities across the context hierarchy
 with support for full-text search, filtering, and relevance ranking.
 """
 
+from __future__ import annotations
+
 import logging
 import re
 from dataclasses import dataclass

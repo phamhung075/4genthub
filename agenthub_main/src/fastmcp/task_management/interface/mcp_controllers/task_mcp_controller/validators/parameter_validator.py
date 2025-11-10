@@ -4,6 +4,8 @@ Parameter Validator for Task MCP Controller
 Validates input parameters for task operations.
 """
 
+from __future__ import annotations
+
 import logging
 import re
 import uuid

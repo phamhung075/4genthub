@@ -3,16 +3,15 @@
 Tests for context delegation management between hierarchy levels.
 """
 
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-import asyncio
-from unittest.mock import Mock, patch, AsyncMock
-from datetime import datetime, timezone
-from typing import Dict, Any
 
 from fastmcp.task_management.application.services.context_delegation_service import (
     ContextDelegationService,
     DelegationRequest,
-    DelegationResult
+    DelegationResult,
 )
 
 
@@ -215,7 +214,7 @@ class TestSyncDelegateContextMethod:
         
         with patch('asyncio.get_event_loop', side_effect=RuntimeError("No loop")):
             with patch('asyncio.run') as mock_run:
-                with patch.object(service, 'process_delegation') as mock_process:
+                with patch.object(service, 'process_delegation'):
                     mock_run.return_value = {"success": True}
                     
                     service.delegate_context(request)
@@ -1563,7 +1562,7 @@ class TestDelegationApproval:
         service = ContextDelegationService(repository=mock_repo)
 
         implementation_data = {
-            "implemented_at": datetime.now(timezone.utc).isoformat(),
+            "implemented_at": datetime.now(UTC).isoformat(),
             "implementation_details": {"merged_fields": ["field1", "field2"]}
         }
 
@@ -1580,7 +1579,7 @@ class TestDelegationApproval:
         service = ContextDelegationService(repository=mock_repo)
 
         implementation_data = {
-            "implemented_at": datetime.now(timezone.utc).isoformat(),
+            "implemented_at": datetime.now(UTC).isoformat(),
             "implementation_details": {}
         }
 

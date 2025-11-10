@@ -7,22 +7,21 @@ Comprehensive test coverage for MCP authentication dependencies including:
 - Error handling and edge cases
 """
 
-import pytest
 import os
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, Mock
+from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
-from jose import jwt
+import pytest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
+from jose import jwt
 
+from fastmcp.auth.domain.entities.user import User
 from fastmcp.auth.mcp_dependencies import (
+    FRONTEND_JWT_ALGORITHM,
     get_current_mcp_user,
     get_optional_mcp_user,
-    FRONTEND_JWT_SECRET,
-    FRONTEND_JWT_ALGORITHM
 )
-from fastmcp.auth.domain.entities.user import User
 
 
 class TestGetCurrentMCPUser:
@@ -45,8 +44,8 @@ class TestGetCurrentMCPUser:
             "email": "test@example.com",
             "username": "testuser",
             "auth_provider": "keycloak",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp(),
-            "iat": datetime.now(timezone.utc).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp(),
+            "iat": datetime.now(UTC).timestamp()
         }
     
     @pytest.fixture
@@ -112,7 +111,7 @@ class TestGetCurrentMCPUser:
         expired_payload = {
             "sub": "user-123",
             "email": "test@example.com",
-            "exp": (datetime.now(timezone.utc) - timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) - timedelta(hours=1)).timestamp()
         }
         
         expired_token = jwt.encode(
@@ -138,7 +137,7 @@ class TestGetCurrentMCPUser:
         payload_no_id = {
             "email": "test@example.com",
             "username": "testuser",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
             # Missing both 'sub' and 'user_id'
         }
         
@@ -166,7 +165,7 @@ class TestGetCurrentMCPUser:
             "user_id": "legacy-user-456",  # Using user_id instead of sub
             "email": "legacy@example.com",
             "auth_provider": "local",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
         
         token = jwt.encode(
@@ -191,7 +190,7 @@ class TestGetCurrentMCPUser:
         """Test authentication with minimal token payload"""
         minimal_payload = {
             "sub": "minimal-user",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
         
         token = jwt.encode(
@@ -221,7 +220,7 @@ class TestGetCurrentMCPUser:
             payload = {
                 "sub": f"{provider}-user",
                 "auth_provider": provider,
-                "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+                "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
             }
             
             token = jwt.encode(
@@ -248,7 +247,7 @@ class TestGetCurrentMCPUser:
             # Return expired payload without raising ExpiredSignatureError
             mock_decode.return_value = {
                 "sub": "user-123",
-                "exp": (datetime.now(timezone.utc) - timedelta(minutes=5)).timestamp()
+                "exp": (datetime.now(UTC) - timedelta(minutes=5)).timestamp()
             }
             
             credentials = HTTPAuthorizationCredentials(
@@ -322,7 +321,7 @@ class TestGetOptionalMCPUser:
         payload = {
             "sub": "optional-user",
             "email": "optional@example.com",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
         
         token = jwt.encode(
@@ -371,7 +370,7 @@ class TestGetOptionalMCPUser:
         """Test optional auth with expired token"""
         expired_payload = {
             "sub": "expired-user",
-            "exp": (datetime.now(timezone.utc) - timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) - timedelta(hours=1)).timestamp()
         }
         
         expired_token = jwt.encode(
@@ -435,8 +434,8 @@ class TestIntegration:
             "email": "integration@example.com",
             "username": "integrationtest",
             "auth_provider": "keycloak",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp(),
-            "iat": datetime.now(timezone.utc).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp(),
+            "iat": datetime.now(UTC).timestamp()
         }
         
         token = jwt.encode(
@@ -464,9 +463,9 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_authentication_with_different_algorithms(self):
         """Test that only HS256 algorithm is accepted"""
-        payload = {
+        {
             "sub": "algo-user",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
         
         # Try to create token with different algorithm
@@ -496,6 +495,7 @@ class TestConstants:
         with patch.dict(os.environ, {"JWT_SECRET_KEY": test_secret}):
             # Force reload of the module
             import importlib
+
             import fastmcp.auth.mcp_dependencies
             importlib.reload(fastmcp.auth.mcp_dependencies)
             

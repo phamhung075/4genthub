@@ -9,6 +9,8 @@ Business Rules:
 - PaginationResult includes metadata for API responses
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 

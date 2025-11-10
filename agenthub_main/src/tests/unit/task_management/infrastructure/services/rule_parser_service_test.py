@@ -6,20 +6,23 @@ Date: 2025-09-26
 Tests the rule parsing service that handles various file formats and extracts structured content.
 """
 
-import pytest
 import json
-import yaml
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock, mock_open
-import tempfile
 import os
+import tempfile
+from pathlib import Path
+from unittest.mock import Mock, mock_open, patch
 
-from fastmcp.task_management.infrastructure.services.rule_parser_service import (
-    RuleParserService,
-    IRuleParserService
+import pytest
+import yaml
+
+from fastmcp.task_management.domain.entities.rule_entity import (
+    RuleContent,
 )
-from fastmcp.task_management.domain.entities.rule_entity import RuleContent, RuleMetadata
 from fastmcp.task_management.domain.value_objects.rule_enums import RuleFormat, RuleType
+from fastmcp.task_management.infrastructure.services.rule_parser_service import (
+    IRuleParserService,
+    RuleParserService,
+)
 
 
 class TestRuleParserService:
@@ -88,7 +91,7 @@ class TestRuleParserService:
         with pytest.raises(FileNotFoundError, match="Rule file not found"):
             parser.parse_rule_file(non_existent_path)
     
-    @patch("builtins.open", side_effect=IOError("Permission denied"))
+    @patch("builtins.open", side_effect=OSError("Permission denied"))
     @patch("pathlib.Path.exists", return_value=True)
     def test_parse_rule_file_read_error(self, mock_exists, mock_open, parser):
         """Test parsing file with read error raises ValueError"""

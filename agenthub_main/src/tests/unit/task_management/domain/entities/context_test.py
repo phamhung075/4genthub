@@ -13,36 +13,35 @@ Tests the Context entities including:
 - Vision System integration
 """
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch
-import json
-import uuid
 
 from fastmcp.task_management.domain.entities.context import (
-    TaskContext,
+    BranchContext,
+    ContextCustomSection,
+    ContextInsight,
     ContextMetadata,
+    ContextNotes,
     ContextObjective,
-    ContextRequirement,
-    ContextRequirements,
-    ContextTechnical,
-    ContextDependency,
-    ContextDependencies,
     ContextProgress,
     ContextProgressAction,
-    ContextInsight,
-    ContextNotes,
-    ContextSubtask,
-    ContextSubtasks,
-    ContextCustomSection,
+    ContextRequirement,
+    ContextRequirements,
     ContextSchema,
     GlobalContext,
     ProjectContext,
-    BranchContext,
-    TaskContextUnified
+    TaskContext,
+    TaskContextUnified,
 )
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
+from fastmcp.task_management.domain.value_objects.priority import (
+    Priority,
+    PriorityLevel,
+)
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatus,
+    TaskStatusEnum,
+)
 
 
 class TestTaskContextCreation:
@@ -72,8 +71,8 @@ class TestTaskContextCreation:
     
     def test_create_task_context_full_data(self):
         """Test creating task context with full data."""
-        created_at = datetime.now(timezone.utc)
-        updated_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
+        updated_at = datetime.now(UTC)
         
         metadata = ContextMetadata(
             task_id="task-456",
@@ -90,7 +89,7 @@ class TestTaskContextCreation:
             title="Complex Task",
             description="A complex task with full context",
             estimated_effort="3 days",
-            due_date=datetime(2024, 12, 31, tzinfo=timezone.utc)
+            due_date=datetime(2024, 12, 31, tzinfo=UTC)
         )
         
         requirements = ContextRequirements(
@@ -128,7 +127,7 @@ class TestTaskContextCreation:
     def test_task_context_timezone_handling(self):
         """Test timezone handling in task context."""
         # Test with UTC datetime (current implementation expects UTC-aware datetime)
-        utc_dt = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        utc_dt = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         metadata = ContextMetadata(
             task_id="task-123",
             created_at=utc_dt,
@@ -138,8 +137,8 @@ class TestTaskContextCreation:
         
         context = TaskContext(metadata=metadata, objective=objective)
         
-        assert context.metadata.created_at.tzinfo == timezone.utc
-        assert context.metadata.updated_at.tzinfo == timezone.utc
+        assert context.metadata.created_at.tzinfo == UTC
+        assert context.metadata.updated_at.tzinfo == UTC
 
 
 class TestContextMetadata:
@@ -157,8 +156,8 @@ class TestContextMetadata:
         assert metadata.version == 1
         assert metadata.created_at is not None
         assert metadata.updated_at is not None
-        assert metadata.created_at.tzinfo == timezone.utc
-        assert metadata.updated_at.tzinfo == timezone.utc
+        assert metadata.created_at.tzinfo == UTC
+        assert metadata.updated_at.tzinfo == UTC
     
     def test_context_metadata_value_objects(self):
         """Test value object usage in metadata."""
@@ -188,7 +187,7 @@ class TestContextObjective:
     
     def test_context_objective_full_data(self):
         """Test objective with full data."""
-        due_date = datetime(2024, 12, 31, tzinfo=timezone.utc)
+        due_date = datetime(2024, 12, 31, tzinfo=UTC)
         
         objective = ContextObjective(
             title="Complex Task",

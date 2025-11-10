@@ -4,19 +4,17 @@ Unit Tests for Auth Endpoints Interface
 This module tests the Keycloak/Supabase authentication endpoints.
 """
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
+
 try:
     from fastapi.testclient import TestClient
 except ImportError:
     TestClient = None  # Will be handled by fixture skip
 import os
 
-from fastmcp.auth.interface.auth_endpoints import (
-    router,
-    LoginRequest,
-    LoginResponse
-)
+from fastmcp.auth.interface.auth_endpoints import LoginRequest, LoginResponse, router
 
 
 class TestLoginEndpoint:

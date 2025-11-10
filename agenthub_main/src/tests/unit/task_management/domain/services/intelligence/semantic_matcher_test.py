@@ -2,21 +2,20 @@
 Unit tests for the Semantic Matcher
 """
 
-import pytest
-import tempfile
 import shutil
-from datetime import datetime, timezone
-from pathlib import Path
-from unittest.mock import MagicMock, patch, Mock, call
+import tempfile
+from datetime import datetime
+from unittest.mock import patch
+
+import pytest
 
 from fastmcp.task_management.domain.services.intelligence.semantic_matcher import (
-    SemanticMatcher,
-    ContextItem,
-    SimilarityResult,
-    MockSentenceTransformer,
-    HAS_NUMPY,
     HAS_FAISS,
-    HAS_SENTENCE_TRANSFORMERS
+    HAS_NUMPY,
+    ContextItem,
+    MockSentenceTransformer,
+    SemanticMatcher,
+    SimilarityResult,
 )
 
 
@@ -152,7 +151,7 @@ class TestSemanticMatcher:
         contents = ["Content A", "Content B", "Content C"]
         
         # Pre-cache one item
-        cached_embedding = semantic_matcher.generate_embedding(contents[0])
+        semantic_matcher.generate_embedding(contents[0])
         
         # Generate batch - should only encode uncached items
         with patch.object(semantic_matcher.model, 'encode') as mock_encode:
@@ -164,7 +163,7 @@ class TestSemanticMatcher:
                 mock_encode.return_value = [[0.1] * semantic_matcher.embedding_dim, 
                                            [0.2] * semantic_matcher.embedding_dim]
             
-            embeddings = semantic_matcher.generate_embeddings_batch(contents)
+            semantic_matcher.generate_embeddings_batch(contents)
             
             # Should only encode the 2 uncached items
             mock_encode.assert_called_once()
@@ -376,14 +375,14 @@ class TestEdgeCases:
     
     def test_cache_load_failure(self, semantic_matcher):
         """Test handling cache load failures"""
-        with patch('builtins.open', side_effect=IOError("Read error")):
+        with patch('builtins.open', side_effect=OSError("Read error")):
             # Should return None on cache load failure
             embedding = semantic_matcher._load_cached_embedding("test content")
             assert embedding is None
     
     def test_cache_save_failure(self, semantic_matcher):
         """Test handling cache save failures"""
-        with patch('builtins.open', side_effect=IOError("Write error")):
+        with patch('builtins.open', side_effect=OSError("Write error")):
             # Should continue without error
             semantic_matcher._save_cached_embedding("test content", [0.1, 0.2, 0.3])
             # No assertion needed - just shouldn't raise

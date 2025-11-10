@@ -4,18 +4,20 @@ This module tests the Task aggregate root following DDD principles.
 Tests verify business rules, invariants, state transitions, and domain events.
 """
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock
 
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
+from fastmcp.task_management.domain.events import TaskCreated, TaskDeleted, TaskUpdated
+from fastmcp.task_management.domain.exceptions.vision_exceptions import (
+    MissingCompletionSummaryError,
+)
 from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.events import TaskCreated, TaskUpdated, TaskDeleted
-from fastmcp.task_management.domain.exceptions.vision_exceptions import MissingCompletionSummaryError
-
-
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatus,
+)
 
 pytestmark = pytest.mark.unit  # Mark all tests in this file as unit tests
 
@@ -667,12 +669,12 @@ class TestTaskEntity:
         assert task.is_overdue() is False
         
         # Future due date - not overdue
-        future_date = (datetime.now(timezone.utc) + timedelta(days=1)).date().isoformat()
+        future_date = (datetime.now(UTC) + timedelta(days=1)).date().isoformat()
         task.update_due_date(future_date)
         assert task.is_overdue() is False
         
         # Past due date - overdue
-        past_date = (datetime.now(timezone.utc) - timedelta(days=1)).date().isoformat()
+        past_date = (datetime.now(UTC) - timedelta(days=1)).date().isoformat()
         task.update_due_date(past_date)
         assert task.is_overdue() is True
         

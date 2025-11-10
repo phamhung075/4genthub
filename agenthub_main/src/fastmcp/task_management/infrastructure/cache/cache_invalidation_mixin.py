@@ -5,6 +5,8 @@ Provides a reusable mixin that adds cache invalidation capabilities
 to repository classes for consistent cache management.
 """
 
+from __future__ import annotations
+
 import logging
 from enum import Enum
 from typing import Any

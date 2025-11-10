@@ -4,6 +4,8 @@ CRUD Handler for Subtask MCP Controller
 Handles Create, Read, Update, Delete operations for subtasks with automatic progress tracking.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from datetime import UTC, datetime
@@ -160,7 +162,7 @@ class SubtaskCRUDHandler:
             # Update parent context if available
             if result.get("success") and self._context_facade:
                 try:
-                    subtask = result.get("subtask", {})
+                    result.get("subtask", {})
                     # Update parent context with inheritance information
                     progress_content = f"Created subtask: {title}"
                     if result.get("agent_inheritance_applied"):

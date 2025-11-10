@@ -18,13 +18,13 @@ Categories:
     - performance: Performance security tests only
 """
 
-import sys
-import subprocess
 import argparse
 import json
-from pathlib import Path
-from datetime import datetime, timezone
 import logging
+import subprocess
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
 
 # Set up logging
 logging.basicConfig(
@@ -90,14 +90,14 @@ class WebSocketSecurityTestRunner:
         logger.info(f"Command: {' '.join(cmd)}")
 
         # Execute tests
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         result = subprocess.run(
             cmd,
             cwd=self.test_dir,
             capture_output=True,
             text=True
         )
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
 
         execution_time = (end_time - start_time).total_seconds()
 
@@ -116,7 +116,7 @@ class WebSocketSecurityTestRunner:
         json_report_file = self.test_dir / "security_test_results.json"
         if json_report_file.exists():
             try:
-                with open(json_report_file, 'r') as f:
+                with open(json_report_file) as f:
                     json_report = json.load(f)
                 test_results["detailed_results"] = json_report
             except Exception as e:
@@ -354,7 +354,7 @@ class WebSocketSecurityTestRunner:
         logger.info("🔒 Starting WebSocket Security Test Suite")
         logger.info(f"Category: {category}")
 
-        start_time = datetime.now(timezone.utc)
+        datetime.now(UTC)
 
         try:
             # Run tests
@@ -368,7 +368,7 @@ class WebSocketSecurityTestRunner:
 
             # Compile final results
             self.results = {
-                "execution_time": datetime.now(timezone.utc).isoformat(),
+                "execution_time": datetime.now(UTC).isoformat(),
                 "summary": {
                     "category": category,
                     "total_execution_time": test_results["execution_time"],

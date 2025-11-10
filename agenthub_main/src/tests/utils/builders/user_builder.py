@@ -1,8 +1,8 @@
 """User Builder for Test Data Creation"""
 
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
+from typing import Any
 
 
 class UserBuilder:
@@ -18,8 +18,8 @@ class UserBuilder:
         self.permissions = ["mcp:read"]
         self.enabled = True
         self.email_verified = False
-        self.created_at = datetime.now(timezone.utc)
-        self.metadata: Dict[str, Any] = {}
+        self.created_at = datetime.now(UTC)
+        self.metadata: dict[str, Any] = {}
 
     def with_user_id(self, user_id: str) -> 'UserBuilder':
         """Set user ID."""
@@ -48,7 +48,7 @@ class UserBuilder:
             self.roles.append(role)
         return self
 
-    def with_roles(self, roles: List[str]) -> 'UserBuilder':
+    def with_roles(self, roles: list[str]) -> 'UserBuilder':
         """Set multiple roles."""
         self.roles = roles
         return self
@@ -65,7 +65,7 @@ class UserBuilder:
             self.permissions.append(permission)
         return self
 
-    def with_permissions(self, permissions: List[str]) -> 'UserBuilder':
+    def with_permissions(self, permissions: list[str]) -> 'UserBuilder':
         """Set multiple permissions."""
         self.permissions = permissions
         return self
@@ -85,7 +85,7 @@ class UserBuilder:
         self.metadata[key] = value
         return self
 
-    def build(self) -> Dict[str, Any]:
+    def build(self) -> dict[str, Any]:
         """Build and return the user data dictionary."""
         return {
             "id": self.user_id,

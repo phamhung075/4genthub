@@ -17,6 +17,8 @@ Performance Impact:
 - Queue size: 10,000 events (backpressure handling included)
 """
 
+from __future__ import annotations
+
 import logging
 import queue
 import threading

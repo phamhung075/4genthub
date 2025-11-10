@@ -17,22 +17,25 @@ Requirements:
 - Edge cases and error conditions covered
 """
 
-import pytest
-from datetime import datetime
-from typing import List
 import uuid
+from datetime import datetime
 
-from fastmcp.task_management.infrastructure.repositories.orm.label_repository import ORMLabelRepository
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.infrastructure.database.database_adapter import DatabaseAdapter
-from fastmcp.task_management.infrastructure.database.database_config import get_session
-from fastmcp.task_management.domain.entities.label import Label as LabelEntity
+import pytest
+
 from fastmcp.task_management.domain.exceptions.base_exceptions import (
-    RepositoryError,
     NotFoundError,
-    ValidationError
+    ValidationError,
 )
-
+from fastmcp.task_management.infrastructure.database.database_adapter import (
+    DatabaseAdapter,
+)
+from fastmcp.task_management.infrastructure.database.database_config import get_session
+from fastmcp.task_management.infrastructure.repositories.orm.label_repository import (
+    ORMLabelRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 
 # ==============================================================================
 # Test Fixtures
@@ -53,9 +56,14 @@ def db_session():
 @pytest.fixture
 def db_adapter():
     """Provides a database adapter for tests"""
-    from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig, Base
-    from fastmcp.task_management.infrastructure.database.database_initializer import reset_initialization_cache, initialize_database
-    from fastmcp.task_management.infrastructure.database.models import Label  # Import to register model
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        Base,
+        DatabaseConfig,
+    )
+    from fastmcp.task_management.infrastructure.database.database_initializer import (
+        initialize_database,
+        reset_initialization_cache,
+    )
 
     # Reset database singleton to force test database creation
     DatabaseConfig.reset_instance()
@@ -97,8 +105,12 @@ def task_repository(db_session, test_git_branch_id):
 @pytest.fixture
 def test_git_branch_id(db_adapter):
     """Provides a test git branch ID with actual database records"""
-    from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch
-    from datetime import datetime, timezone
+    from datetime import UTC, datetime
+
+    from fastmcp.task_management.infrastructure.database.models import (
+        Project,
+        ProjectGitBranch,
+    )
 
     # Create test project first
     project_id = str(uuid.uuid4())
@@ -111,8 +123,8 @@ def test_git_branch_id(db_adapter):
             name="Test Project",
             description="Test project for integration tests",
             user_id="test_user",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         session.add(test_project)
         session.flush()
@@ -124,8 +136,8 @@ def test_git_branch_id(db_adapter):
             name="test-branch",
             description="Test branch for integration tests",
             user_id="test_user",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             priority="medium",
             status="todo"
         )
@@ -174,8 +186,8 @@ class TestLabelCreation:
         assert label.updated_at is not None
         assert label.created_at.tzinfo is not None
         assert label.updated_at.tzinfo is not None
-        assert label.created_at.tzinfo == timezone.utc
-        assert label.updated_at.tzinfo == timezone.utc
+        assert label.created_at.tzinfo == UTC
+        assert label.updated_at.tzinfo == UTC
 
     def test_create_label_with_default_color(self, label_repository, cleanup_labels):
         """Test creating a label with default color"""
@@ -189,7 +201,7 @@ class TestLabelCreation:
         assert label is not None
         assert label.name == label_name
         assert label.color == "#0066cc"  # Default color
-        assert label.created_at.tzinfo == timezone.utc
+        assert label.created_at.tzinfo == UTC
 
     def test_create_multiple_labels_different_names(self, label_repository, cleanup_labels):
         """Test creating multiple labels with different names"""
@@ -206,8 +218,8 @@ class TestLabelCreation:
         assert len(labels) == 3
         for label in labels:
             assert label.name in label_names
-            assert label.created_at.tzinfo == timezone.utc
-            assert label.updated_at.tzinfo == timezone.utc
+            assert label.created_at.tzinfo == UTC
+            assert label.updated_at.tzinfo == UTC
 
     def test_create_label_with_complex_name(self, label_repository, cleanup_labels):
         """Test creating labels with hyphens and special characters"""
@@ -241,10 +253,10 @@ class TestLabelCreation:
         # Assert - Comprehensive timezone checks
         assert label.created_at.tzinfo is not None, "created_at must have timezone info"
         assert label.updated_at.tzinfo is not None, "updated_at must have timezone info"
-        assert label.created_at.tzinfo == timezone.utc, "created_at must be UTC"
-        assert label.updated_at.tzinfo == timezone.utc, "updated_at must be UTC"
+        assert label.created_at.tzinfo == UTC, "created_at must be UTC"
+        assert label.updated_at.tzinfo == UTC, "updated_at must be UTC"
         # Verify timestamps are recent (within last minute)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         time_diff = (now - label.created_at).total_seconds()
         assert time_diff < 60, "Timestamp should be recent"
 
@@ -275,7 +287,7 @@ class TestLabelAssociation:
         """Test assigning a label to a task"""
         # Arrange - Create task
         task_id = str(uuid.uuid4())
-        task = task_repository.create_task(
+        task_repository.create_task(
             title="Test Task",
             description="Task for label assignment",
             assignee_ids=["test-orchestrator-agent"],
@@ -305,7 +317,7 @@ class TestLabelAssociation:
         """Test assigning multiple labels to a single task"""
         # Arrange - Create task
         task_id = str(uuid.uuid4())
-        task = task_repository.create_task(
+        task_repository.create_task(
             title="Multi-label Task",
             description="Task with multiple labels",
             assignee_ids=["test-orchestrator-agent"],
@@ -565,7 +577,7 @@ class TestLabelErrorHandling:
     def test_update_label_with_existing_name(self, label_repository, cleanup_labels):
         """Test updating a label to a name that already exists"""
         # Arrange - Create two labels
-        label1 = label_repository.create_label(name="label-one")
+        label_repository.create_label(name="label-one")
         label2 = label_repository.create_label(name="label-two")
 
         # Act & Assert - Try to rename label2 to label1's name

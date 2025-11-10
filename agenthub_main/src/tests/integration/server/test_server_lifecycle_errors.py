@@ -14,14 +14,12 @@ Test Categories:
 4. Configuration and environment errors
 """
 
-import pytest
-import os
-import sys
 import logging
-from unittest.mock import Mock, patch, MagicMock, call
-from io import StringIO
 from contextlib import contextmanager
+from io import StringIO
+from unittest.mock import Mock, patch
 
+import pytest
 
 # Test markers
 pytestmark = [
@@ -285,7 +283,7 @@ class TestTransportConfiguration:
 
             from fastmcp.server.mcp_entry_point import main
 
-            with pytest.raises(SystemExit) as exc_info:
+            with pytest.raises(SystemExit):
                 main()
 
             # Verify stdio mode was used (lines 809-812)
@@ -317,7 +315,7 @@ class TestTransportConfiguration:
              patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
              patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
              patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('starlette.middleware.Middleware') as mock_middleware, \
+             patch('starlette.middleware.Middleware'), \
              patch('fastmcp.config.cors_factory.cors_factory.get_allowed_origins') as mock_cors, \
              capture_logs() as log_capture:
 

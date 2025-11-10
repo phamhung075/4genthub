@@ -3,6 +3,8 @@
 DDD application service for rule management operations.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from fastmcp.task_management.application.use_cases.create_rule import CreateRuleUseCase
@@ -47,7 +49,7 @@ class RuleApplicationService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'RuleApplicationService':
+    def with_user(self, user_id: str) -> RuleApplicationService:
         """Create a new service instance scoped to a specific user."""
         return RuleApplicationService(self._rule_repository, user_id)
     

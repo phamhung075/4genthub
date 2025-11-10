@@ -3,6 +3,8 @@ API Response Wrappers
 Standard response formats matching frontend api.types.ts
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel

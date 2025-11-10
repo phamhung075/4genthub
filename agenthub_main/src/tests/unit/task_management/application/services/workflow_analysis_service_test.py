@@ -5,20 +5,19 @@ This module tests the workflow analysis, pattern detection, bottleneck identific
 optimization opportunities, and recommendation functionality.
 """
 
-import pytest
 import uuid
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import List, Dict, Any, Optional
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 from fastmcp.task_management.application.services.workflow_analysis_service import (
+    WorkflowAnalysis,
     WorkflowAnalysisService,
     WorkflowPattern,
-    WorkflowAnalysis
 )
-from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.context import TaskContext
-from fastmcp.task_management.domain.value_objects.progress import ProgressType, ProgressStatus
+from fastmcp.task_management.domain.entities.task import Task
 
 
 class TestWorkflowPattern:
@@ -52,7 +51,7 @@ class TestWorkflowAnalysis:
     def test_workflow_analysis_creation(self):
         """Test creating a WorkflowAnalysis"""
         task_id = uuid.uuid4()
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         pattern = WorkflowPattern(
             pattern_name="test",
             pattern_type="optimization",
@@ -217,7 +216,7 @@ class TestWorkflowAnalysis:
         task.id = self.task_id
         task.status = "in_progress"
         task.priority = "medium"
-        task.created_at = datetime.now(timezone.utc) - timedelta(days=2)
+        task.created_at = datetime.now(UTC) - timedelta(days=2)
         task.labels = ["frontend", "testing"]
         task.subtasks = []
         task.assignees = ["user1"]
@@ -274,7 +273,7 @@ class TestWorkflowAnalysis:
         # Set up cache with recent analysis
         cached_analysis = WorkflowAnalysis(
             task_id=self.task_id,
-            analysis_timestamp=datetime.now(timezone.utc) - timedelta(minutes=30),  # Recent
+            analysis_timestamp=datetime.now(UTC) - timedelta(minutes=30),  # Recent
             patterns=[],
             bottlenecks=[],
             optimization_opportunities=[],
@@ -296,7 +295,7 @@ class TestWorkflowAnalysis:
         # Set up cache with old analysis
         old_analysis = WorkflowAnalysis(
             task_id=self.task_id,
-            analysis_timestamp=datetime.now(timezone.utc) - timedelta(hours=2),  # Expired
+            analysis_timestamp=datetime.now(UTC) - timedelta(hours=2),  # Expired
             patterns=[],
             bottlenecks=[],
             optimization_opportunities=[],
@@ -471,15 +470,15 @@ class TestPatternDetection:
         # Create task that's taking longer than average
         task = Mock()
         task.id = self.task_id
-        task.created_at = datetime.now(timezone.utc) - timedelta(hours=20)  # Current duration: 20h
+        task.created_at = datetime.now(UTC) - timedelta(hours=20)  # Current duration: 20h
         
         # Create related completed tasks with shorter duration
         related_tasks = []
         for i in range(5):
             related_task = Mock()
             related_task.status = "done"
-            related_task.created_at = datetime.now(timezone.utc) - timedelta(days=1)
-            related_task.updated_at = datetime.now(timezone.utc) - timedelta(hours=16)  # 8h duration
+            related_task.created_at = datetime.now(UTC) - timedelta(days=1)
+            related_task.updated_at = datetime.now(UTC) - timedelta(hours=16)  # 8h duration
             related_tasks.append(related_task)
         
         patterns = self.service._detect_completion_patterns(task, related_tasks)
@@ -542,7 +541,7 @@ class TestPatternDetection:
         """Test detection of collaboration patterns with multiple indicators"""
         task = Mock()
         task.id = self.task_id
-        task.created_at = datetime.now(timezone.utc) - timedelta(days=20)  # Long running
+        task.created_at = datetime.now(UTC) - timedelta(days=20)  # Long running
         task.status = "in_progress"
         task.assignees = ["user1", "user2", "user3"]  # Multiple assignees
         
@@ -563,7 +562,7 @@ class TestPatternDetection:
         """Test collaboration pattern detection with single indicator"""
         task = Mock()
         task.id = self.task_id
-        task.created_at = datetime.now(timezone.utc) - timedelta(days=2)  # Not long running
+        task.created_at = datetime.now(UTC) - timedelta(days=2)  # Not long running
         task.assignees = ["user1"]  # Single assignee
         
         context = Mock()
@@ -630,7 +629,7 @@ class TestBottleneckIdentification:
         """Test identification of progress stall bottleneck"""
         task = Mock()
         task.progress_timeline = [
-            {"timestamp": (datetime.now(timezone.utc) - timedelta(days=5)).isoformat()}
+            {"timestamp": (datetime.now(UTC) - timedelta(days=5)).isoformat()}
         ]
         task.dependencies = []  # No dependencies for this test
         task.subtasks = []  # No subtasks for this test
@@ -782,7 +781,7 @@ class TestCompletionTimePrediction:
     async def test_predict_completion_time_with_similar_tasks(self):
         """Test completion time prediction with similar completed tasks"""
         task = Mock()
-        task.created_at = datetime.now(timezone.utc) - timedelta(hours=10)
+        task.created_at = datetime.now(UTC) - timedelta(hours=10)
         task.progress = 0.5
         task.estimated_effort = "2d"
         
@@ -791,8 +790,8 @@ class TestCompletionTimePrediction:
         for i in range(3):
             related_task = Mock()
             related_task.status = "done"
-            related_task.created_at = datetime.now(timezone.utc) - timedelta(days=2)
-            related_task.updated_at = datetime.now(timezone.utc) - timedelta(days=1)  # 24h completion
+            related_task.created_at = datetime.now(UTC) - timedelta(days=2)
+            related_task.updated_at = datetime.now(UTC) - timedelta(days=1)  # 24h completion
             related_task.estimated_effort = "2d"
             related_tasks.append(related_task)
         
@@ -807,7 +806,7 @@ class TestCompletionTimePrediction:
     async def test_predict_completion_time_fallback_to_any_similar(self):
         """Test completion time prediction falling back to any similar tasks"""
         task = Mock()
-        task.created_at = datetime.now(timezone.utc) - timedelta(hours=10)
+        task.created_at = datetime.now(UTC) - timedelta(hours=10)
         task.progress = 0.5
         task.estimated_effort = "2d"
         
@@ -816,8 +815,8 @@ class TestCompletionTimePrediction:
         for i in range(3):
             related_task = Mock()
             related_task.status = "done"
-            related_task.created_at = datetime.now(timezone.utc) - timedelta(days=2)
-            related_task.updated_at = datetime.now(timezone.utc) - timedelta(days=1)
+            related_task.created_at = datetime.now(UTC) - timedelta(days=2)
+            related_task.updated_at = datetime.now(UTC) - timedelta(days=1)
             related_task.estimated_effort = "1d"  # Different effort
             related_tasks.append(related_task)
         
@@ -830,7 +829,7 @@ class TestCompletionTimePrediction:
     async def test_predict_completion_time_no_similar_tasks(self):
         """Test completion time prediction with no similar tasks"""
         task = Mock()
-        task.created_at = datetime.now(timezone.utc) - timedelta(hours=10)
+        task.created_at = datetime.now(UTC) - timedelta(hours=10)
         
         related_tasks = [Mock(status="in_progress")]  # No completed tasks
         
@@ -852,14 +851,14 @@ class TestCompletionTimePrediction:
     async def test_predict_completion_time_overdue(self):
         """Test completion time prediction for overdue task"""
         task = Mock()
-        task.created_at = datetime.now(timezone.utc) - timedelta(days=10)  # Very old
+        task.created_at = datetime.now(UTC) - timedelta(days=10)  # Very old
         task.progress = 0.95  # Almost complete (95%) but stuck
         
         # Short completion time for similar tasks
         related_task = Mock()
         related_task.status = "done"
-        related_task.created_at = datetime.now(timezone.utc) - timedelta(hours=2)
-        related_task.updated_at = datetime.now(timezone.utc) - timedelta(hours=1)  # 1h completion
+        related_task.created_at = datetime.now(UTC) - timedelta(hours=2)
+        related_task.updated_at = datetime.now(UTC) - timedelta(hours=1)  # 1h completion
         
         result = await self.service._predict_completion_time(task, [related_task])
         
@@ -1059,7 +1058,7 @@ class TestWorkflowRecommendations:
         
         analysis = WorkflowAnalysis(
             task_id=self.task_id,
-            analysis_timestamp=datetime.now(timezone.utc),
+            analysis_timestamp=datetime.now(UTC),
             patterns=[pattern],
             bottlenecks=[{
                 "type": "progress_stall",
@@ -1103,7 +1102,7 @@ class TestWorkflowRecommendations:
         # Mock analysis with different priority recommendations
         analysis = WorkflowAnalysis(
             task_id=self.task_id,
-            analysis_timestamp=datetime.now(timezone.utc),
+            analysis_timestamp=datetime.now(UTC),
             patterns=[
                 WorkflowPattern(
                     pattern_name="low_confidence",
@@ -1166,7 +1165,7 @@ class TestWorkflowRecommendations:
         
         analysis = WorkflowAnalysis(
             task_id=self.task_id,
-            analysis_timestamp=datetime.now(timezone.utc),
+            analysis_timestamp=datetime.now(UTC),
             patterns=patterns,
             bottlenecks=[],
             optimization_opportunities=[],
@@ -1205,7 +1204,7 @@ class TestIntegration:
         task.id = self.task_id
         task.status = "in_progress"
         task.priority = "urgent"  # Changed to urgent to trigger risk factor for high priority with low progress
-        task.created_at = datetime.now(timezone.utc) - timedelta(days=15)  # Long running (>14 days for collaboration indicator)
+        task.created_at = datetime.now(UTC) - timedelta(days=15)  # Long running (>14 days for collaboration indicator)
         task.labels = ["frontend", "critical"]
         task.subtasks = []
         task.assignees = ["user1"]
@@ -1217,7 +1216,7 @@ class TestIntegration:
             "testing": 0.1
         }
         task.progress_timeline = [
-            {"timestamp": (datetime.now(timezone.utc) - timedelta(days=3)).isoformat(),
+            {"timestamp": (datetime.now(UTC) - timedelta(days=3)).isoformat(),
              "status": "in_progress"}
         ]
         
@@ -1229,8 +1228,8 @@ class TestIntegration:
         related_task = Mock()
         related_task.id = uuid.uuid4()
         related_task.status = "done"
-        related_task.created_at = datetime.now(timezone.utc) - timedelta(days=5)
-        related_task.updated_at = datetime.now(timezone.utc) - timedelta(days=2)  # 3 days to complete
+        related_task.created_at = datetime.now(UTC) - timedelta(days=5)
+        related_task.updated_at = datetime.now(UTC) - timedelta(days=2)  # 3 days to complete
         related_task.estimated_effort = "2d"
         
         # Configure mocks
@@ -1279,8 +1278,8 @@ class TestIntegration:
         task = Mock(spec=['id', 'status', 'created_at', 'updated_at', 'labels', 'subtasks', 'assignees', 'dependencies', 'progress', 'estimated_effort', 'progress_breakdown', 'progress_timeline', 'priority'])
         task.id = self.task_id
         task.status = "done"
-        task.created_at = datetime.now(timezone.utc) - timedelta(days=5)  # Add created_at for datetime operations
-        task.updated_at = datetime.now(timezone.utc) - timedelta(days=1)  # Add updated_at
+        task.created_at = datetime.now(UTC) - timedelta(days=5)  # Add created_at for datetime operations
+        task.updated_at = datetime.now(UTC) - timedelta(days=1)  # Add updated_at
         task.priority = "medium"  # Add priority
         task.labels = []
         task.subtasks = []

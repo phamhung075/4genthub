@@ -4,6 +4,8 @@ This module provides an in-memory event bus implementation for handling
 domain events in the Vision System architecture.
 """
 
+from __future__ import annotations
+
 import asyncio
 import inspect
 import logging

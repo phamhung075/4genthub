@@ -7,11 +7,10 @@ NOTE: These tests require pytest-playwright to be installed:
     playwright install chromium
 """
 
-import pytest
 import re
 from uuid import UUID
-from typing import List, Dict, Any
-import json
+
+import pytest
 
 # Mark entire module to be skipped if playwright is not available
 pytestmark = pytest.mark.skip(
@@ -20,7 +19,7 @@ pytestmark = pytest.mark.skip(
 
 # Import with proper handling
 try:
-    from playwright.sync_api import Page, expect, Route
+    from playwright.sync_api import Page, Route, expect
     PLAYWRIGHT_AVAILABLE = True
 except ImportError:
     # Playwright not available, create dummy types to avoid syntax errors
@@ -157,7 +156,7 @@ class TestSubtaskDialogFlow:
         """Test that API calls for subtasks use correct task_id (not MCP format)"""
 
         # Track API calls
-        api_calls: List[str] = []
+        api_calls: list[str] = []
 
         def intercept_api_calls(route: Route):
             """Intercept and log API calls"""
@@ -184,7 +183,7 @@ class TestSubtaskDialogFlow:
             if subtask_button.is_visible():
                 subtask_button.click()
                 page.wait_for_timeout(1000)  # Wait for API calls
-        except:
+        except Exception:
             pass  # Continue even if no button found
 
         # Analyze captured API calls

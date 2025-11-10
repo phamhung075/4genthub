@@ -1,16 +1,15 @@
 """Unit tests for PredictiveLoader domain service."""
 
+from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, patch
-import logging
 
 from fastmcp.task_management.domain.services.intelligence.predictive_loader import (
-    PredictiveLoader, 
-    PredictionTrigger,
-    UsagePattern,
     PredictionResult,
-    SessionContext
+    PredictionTrigger,
+    PredictiveLoader,
+    UsagePattern,
 )
 
 
@@ -144,7 +143,7 @@ class TestSessionManagement:
         predictive_loader.start_session("sess-123")
         
         with patch('fastmcp.task_management.domain.services.intelligence.predictive_loader.datetime') as mock_dt:
-            mock_now = datetime(2025, 9, 26, 14, 30, 0, tzinfo=timezone.utc)
+            mock_now = datetime(2025, 9, 26, 14, 30, 0, tzinfo=UTC)
             mock_dt.now.return_value = mock_now
             
             predictive_loader.record_context_access("ctx-100", "task")
@@ -174,7 +173,7 @@ class TestSessionManagement:
         # Add old session
         old_session = {
             'session_id': 'old-sess',
-            'end_time': datetime.now(timezone.utc) - timedelta(days=40),
+            'end_time': datetime.now(UTC) - timedelta(days=40),
             'tool_sequence': [],
             'context_sequence': []
         }
@@ -246,7 +245,7 @@ class TestPredictions:
         predictive_loader.pattern_confidence_threshold = 0.4
         
         with patch('fastmcp.task_management.domain.services.intelligence.predictive_loader.datetime') as mock_dt:
-            mock_now = datetime(2025, 9, 26, 14, 30, 0, tzinfo=timezone.utc)
+            mock_now = datetime(2025, 9, 26, 14, 30, 0, tzinfo=UTC)
             mock_dt.now.return_value = mock_now
             
             # Establish time patterns with higher frequency
@@ -270,12 +269,12 @@ class TestPredictions:
         historical_session1 = {
             'tool_sequence': ['manage_task', 'Read', 'Edit', 'Write'],
             'context_sequence': ['ctx-100', 'ctx-101', 'ctx-102', 'ctx-103'],
-            'end_time': datetime.now(timezone.utc)  # Required for session filtering
+            'end_time': datetime.now(UTC)  # Required for session filtering
         }
         historical_session2 = {
             'tool_sequence': ['manage_task', 'Read', 'Grep'],
             'context_sequence': ['ctx-200', 'ctx-201', 'ctx-202'],
-            'end_time': datetime.now(timezone.utc)  # Required for session filtering
+            'end_time': datetime.now(UTC)  # Required for session filtering
         }
         predictive_loader.session_history.append(historical_session1)
         predictive_loader.session_history.append(historical_session2)
@@ -400,7 +399,7 @@ class TestValidation:
             sequence=["Read", "Edit"],
             confidence=0.8,
             frequency=5,
-            last_seen=datetime.now(timezone.utc),
+            last_seen=datetime.now(UTC),
             success_rate=0.0
         )
         predictive_loader.usage_patterns["test_pattern"] = pattern
@@ -425,7 +424,7 @@ class TestValidation:
             sequence=[],
             confidence=0.7,
             frequency=3,
-            last_seen=datetime.now(timezone.utc),
+            last_seen=datetime.now(UTC),
             success_rate=0.5
         )
         predictive_loader.usage_patterns["test_pattern"] = pattern
@@ -469,7 +468,7 @@ class TestStatistics:
                 sequence=[],
                 confidence=0.5 + i * 0.1,
                 frequency=i + 1,
-                last_seen=datetime.now(timezone.utc),
+                last_seen=datetime.now(UTC),
                 success_rate=0.6 + i * 0.05
             )
             predictive_loader.usage_patterns[f"pattern_{i}"] = pattern

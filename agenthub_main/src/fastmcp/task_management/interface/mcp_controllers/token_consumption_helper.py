@@ -5,6 +5,8 @@ This module provides a reusable helper for integrating token consumption
 into MCP controllers following clean architecture principles.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -66,7 +68,7 @@ class TokenConsumptionHelper:
             custom_cost: Optional custom token cost (overrides default from config)
 
         Returns:
-            Tuple of (success: bool, error_response: Optional[Dict])
+            Tuple of (success: bool, error_response: Dict | None)
             - If success=True, error_response is None - proceed with operation
             - If success=False, error_response contains the error to return to client
         """
@@ -231,7 +233,7 @@ async def consume_tokens_for_operation(
         custom_cost: Optional custom token cost
 
     Returns:
-        Tuple of (success: bool, error_response: Optional[Dict])
+        Tuple of (success: bool, error_response: Dict | None)
     """
     helper = TokenConsumptionHelper(session)
     return await helper.consume_tokens(operation, user_id, custom_cost)

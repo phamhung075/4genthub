@@ -1,10 +1,15 @@
 """Tests for Simplified ConnectionMCPController"""
 
-import pytest
 from unittest.mock import Mock, patch
 
-from fastmcp.connection_management.interface.controllers.connection_mcp_controller import ConnectionMCPController
-from fastmcp.connection_management.application.dtos.connection_dtos import HealthCheckResponse
+import pytest
+
+from fastmcp.connection_management.application.dtos.connection_dtos import (
+    HealthCheckResponse,
+)
+from fastmcp.connection_management.interface.controllers.connection_mcp_controller import (
+    ConnectionMCPController,
+)
 
 
 class TestConnectionMCPController:

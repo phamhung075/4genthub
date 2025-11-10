@@ -689,7 +689,7 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
                                 'email': payload.get('email'),
                                 'roles': payload.get('roles', [])
                             }
-                    except:
+                    except Exception:
                         pass
                 
                 # Try standard validation
@@ -708,7 +708,7 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
                                 'email': payload.get('email'),
                                 'roles': payload.get('roles', [])
                             }
-                    except:
+                    except Exception:
                         continue
                         
             except Exception as e:

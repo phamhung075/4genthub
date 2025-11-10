@@ -5,11 +5,12 @@ Tests the new 4-layer hierarchy system: Global -> Project -> Branch -> Task
 with proper inheritance and validation.
 """
 
-import pytest
-from unittest.mock import Mock, patch
-from typing import Dict, Any
 
-from fastmcp.task_management.application.services.context_inheritance_service import ContextInheritanceService
+import pytest
+
+from fastmcp.task_management.application.services.context_inheritance_service import (
+    ContextInheritanceService,
+)
 
 
 class TestContextInheritanceService4Layer:

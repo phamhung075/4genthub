@@ -7,6 +7,8 @@ All routes delegate to the TokenAPIController following DDD principles.
 NO DIRECT DATABASE ACCESS - All operations go through the controller layer.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 from typing import Any

@@ -10,20 +10,27 @@ This module tests the ProjectServiceFactory functionality including:
 - SQLite service creation
 """
 
-import pytest
 from unittest.mock import Mock, patch
 
+import pytest
+
+from fastmcp.task_management.application.services.project_application_service import (
+    ProjectApplicationService,
+)
+from fastmcp.task_management.application.services.project_management_service import (
+    ProjectManagementService,
+)
 from fastmcp.task_management.infrastructure.factories.project_service_factory import (
     ProjectServiceFactory,
-    create_project_service_factory,
     create_default_project_service,
+    create_project_service_factory,
     create_project_service_for_user,
-    create_sqlite_project_service
+    create_sqlite_project_service,
 )
-from fastmcp.task_management.application.services.project_management_service import ProjectManagementService
-from fastmcp.task_management.application.services.project_application_service import ProjectApplicationService
+from fastmcp.task_management.infrastructure.repositories.project_repository_factory import (
+    RepositoryConfig,
+)
 from fastmcp.task_management.infrastructure.utilities.path_resolver import PathResolver
-from fastmcp.task_management.infrastructure.repositories.project_repository_factory import RepositoryConfig
 
 
 class TestProjectServiceFactory:
@@ -415,7 +422,9 @@ class TestProjectServiceFactoryModuleExports:
     
     def test_module_exports(self):
         """Test that all expected functions and classes are exported"""
-        from fastmcp.task_management.infrastructure.factories.project_service_factory import __all__
+        from fastmcp.task_management.infrastructure.factories.project_service_factory import (
+            __all__,
+        )
         
         expected_exports = [
             "ProjectServiceFactory",
@@ -431,10 +440,10 @@ class TestProjectServiceFactoryModuleExports:
         """Test that all exported functions and classes can be imported"""
         from fastmcp.task_management.infrastructure.factories.project_service_factory import (
             ProjectServiceFactory,
-            create_project_service_factory,
             create_default_project_service,
+            create_project_service_factory,
             create_project_service_for_user,
-            create_sqlite_project_service
+            create_sqlite_project_service,
         )
         
         # All imports should succeed without errors

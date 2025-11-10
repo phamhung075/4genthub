@@ -4,6 +4,8 @@ This module demonstrates how to integrate IDValidator into various parts
 of the agenthub system to prevent MCP ID vs Application ID confusion.
 """
 
+from __future__ import annotations
+
 import logging
 
 from .id_validator import IDValidator, ValidationResult, prevent_id_confusion
@@ -319,7 +321,7 @@ def test_integration_example():
     controller = SubtaskControllerExample(MockFacadeService())
 
     try:
-        facade = controller._get_facade_for_request_FIXED(
+        controller._get_facade_for_request_FIXED(
             task_id='550e8400-e29b-41d4-a716-446655440000',
             user_id='user-550e8400-e29b-41d4-a716-446655440002'
         )

@@ -28,19 +28,13 @@ Expected Message Structure:
 }
 """
 
-import pytest
-import asyncio
-import json
-from datetime import datetime
-from uuid import uuid4
-from typing import Dict, Any, List, Optional
-from unittest.mock import AsyncMock, MagicMock, patch
+from __future__ import annotations
 
-from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
-from fastmcp.task_management.application.use_cases.update_task import UpdateTaskUseCase
-from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
-from fastmcp.task_management.application.dtos.task import CreateTaskRequest, UpdateTaskRequest
-from fastmcp.task_management.application.dtos.subtask import AddSubtaskRequest
+from datetime import datetime
+from typing import Any
+from uuid import uuid4
+
+import pytest
 
 
 # Mock WebSocket broadcast function for testing
@@ -48,17 +42,17 @@ class MockWebSocketBroadcaster:
     """Mock WebSocket broadcaster to capture sent messages."""
 
     def __init__(self):
-        self.messages: List[Dict[str, Any]] = []
+        self.messages: list[dict[str, Any]] = []
 
-    async def broadcast(self, message: Dict[str, Any]):
+    async def broadcast(self, message: dict[str, Any]):
         """Capture broadcast messages for verification."""
         self.messages.append(message)
 
-    def get_messages_by_type(self, message_type: str) -> List[Dict[str, Any]]:
+    def get_messages_by_type(self, message_type: str) -> list[dict[str, Any]]:
         """Get all messages of specific type."""
         return [msg for msg in self.messages if msg.get("type") == message_type]
 
-    def get_latest_message(self, message_type: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def get_latest_message(self, message_type: str | None = None) -> dict[str, Any | None]:
         """Get the most recent message, optionally filtered by type."""
         if message_type:
             filtered = self.get_messages_by_type(message_type)

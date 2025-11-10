@@ -5,31 +5,28 @@ Tests the middleware that captures authentication context and makes it
 available through context variables for auth_helper.py and other components.
 """
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from contextvars import ContextVar
-from typing import Dict, Any, Optional
+from unittest.mock import MagicMock, patch
 
+import pytest
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from fastmcp.auth.middleware.request_context_middleware import (
     RequestContextMiddleware,
-    get_current_user_id,
-    get_current_user_email,
-    get_current_auth_method,
-    get_current_auth_info,
-    is_request_authenticated,
-    get_authentication_context,
-    get_current_user_context,
-    create_request_context_middleware,
+    _current_auth_info,
+    _current_auth_method,
+    _current_user_email,
     # Import context variables for testing
     _current_user_id,
-    _current_user_email,
-    _current_auth_method,
-    _current_auth_info,
-    _request_authenticated
+    _request_authenticated,
+    create_request_context_middleware,
+    get_authentication_context,
+    get_current_auth_info,
+    get_current_auth_method,
+    get_current_user_context,
+    get_current_user_email,
+    get_current_user_id,
+    is_request_authenticated,
 )
 
 

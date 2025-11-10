@@ -6,8 +6,13 @@ that was needed to allow task detail updates without status changes.
 """
 
 import pytest
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.validators.business_validator import BusinessValidator
-from fastmcp.task_management.interface.utils.response_formatter import StandardResponseFormatter
+
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.validators.business_validator import (
+    BusinessValidator,
+)
+from fastmcp.task_management.interface.utils.response_formatter import (
+    StandardResponseFormatter,
+)
 
 
 class TestBusinessValidatorStatusTransitions:
@@ -27,7 +32,7 @@ class TestBusinessValidatorStatusTransitions:
         """Test that in_progress to in_progress transition is allowed."""
         # This is the specific fix - allowing in_progress tasks to be updated
         # while remaining in_progress status
-        assert validator._is_valid_status_transition("in_progress", "in_progress") == True
+        assert validator._is_valid_status_transition("in_progress", "in_progress")
 
     def test_in_progress_valid_transitions_includes_in_progress(self, validator):
         """Test that valid transitions from in_progress includes in_progress."""
@@ -52,29 +57,29 @@ class TestBusinessValidatorStatusTransitions:
             status="in_progress"  # Same status - this should be allowed now
         )
 
-        assert is_valid == True
+        assert is_valid
         assert error is None
 
     def test_other_status_transitions_still_work(self, validator):
         """Test that other valid status transitions still work."""
         # Test pending to in_progress
-        assert validator._is_valid_status_transition("pending", "in_progress") == True
+        assert validator._is_valid_status_transition("pending", "in_progress")
 
         # Test in_progress to completed
-        assert validator._is_valid_status_transition("in_progress", "completed") == True
+        assert validator._is_valid_status_transition("in_progress", "completed")
 
         # Test blocked to in_progress
-        assert validator._is_valid_status_transition("blocked", "in_progress") == True
+        assert validator._is_valid_status_transition("blocked", "in_progress")
 
     def test_invalid_transitions_still_blocked(self, validator):
         """Test that invalid transitions are still properly blocked."""
         # Test some invalid transitions to ensure we didn't break validation
-        assert validator._is_valid_status_transition("completed", "blocked") == False
-        assert validator._is_valid_status_transition("cancelled", "completed") == False
+        assert not validator._is_valid_status_transition("completed", "blocked")
+        assert not validator._is_valid_status_transition("cancelled", "completed")
 
     def test_case_insensitive_status_transitions(self, validator):
         """Test that status transitions are case insensitive."""
         # Test case variations
-        assert validator._is_valid_status_transition("IN_PROGRESS", "in_progress") == True
-        assert validator._is_valid_status_transition("In_Progress", "IN_PROGRESS") == True
-        assert validator._is_valid_status_transition("in_progress", "COMPLETED") == True
+        assert validator._is_valid_status_transition("IN_PROGRESS", "in_progress")
+        assert validator._is_valid_status_transition("In_Progress", "IN_PROGRESS")
+        assert validator._is_valid_status_transition("in_progress", "COMPLETED")

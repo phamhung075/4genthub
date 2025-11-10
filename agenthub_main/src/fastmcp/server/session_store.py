@@ -11,6 +11,8 @@ Date: 2025-01-27
 Purpose: Fix agenthub_http session persistence issues
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -49,7 +51,7 @@ class SessionEvent:
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'SessionEvent':
+    def from_dict(cls, data: dict[str, Any]) -> SessionEvent:
         """Create from dictionary"""
         return cls(**data)
     

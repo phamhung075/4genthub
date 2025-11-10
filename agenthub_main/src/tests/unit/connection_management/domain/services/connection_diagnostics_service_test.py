@@ -1,13 +1,18 @@
 """Unit tests for ConnectionDiagnosticsService Interface following DDD patterns"""
 
-import pytest
-from unittest.mock import Mock, MagicMock
-from typing import Dict, Any, List
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
+from unittest.mock import Mock
 
-from fastmcp.connection_management.domain.services.connection_diagnostics_service import ConnectionDiagnosticsService
+import pytest
+
 from fastmcp.connection_management.domain.entities.connection import Connection
-from fastmcp.connection_management.domain.value_objects.connection_health import ConnectionHealth
+from fastmcp.connection_management.domain.services.connection_diagnostics_service import (
+    ConnectionDiagnosticsService,
+)
+from fastmcp.connection_management.domain.value_objects.connection_health import (
+    ConnectionHealth,
+)
 
 
 class MockConnectionDiagnosticsService(ConnectionDiagnosticsService):
@@ -33,7 +38,7 @@ class MockConnectionDiagnosticsService(ConnectionDiagnosticsService):
             recommendations=[]
         )
     
-    def get_connection_statistics(self) -> Dict[str, Any]:
+    def get_connection_statistics(self) -> dict[str, Any]:
         """Mock implementation of connection statistics retrieval"""
         self.get_connection_statistics_called = True
         return {
@@ -45,7 +50,7 @@ class MockConnectionDiagnosticsService(ConnectionDiagnosticsService):
             "success_rate": 0.95
         }
     
-    def get_reconnection_recommendations(self) -> Dict[str, Any]:
+    def get_reconnection_recommendations(self) -> dict[str, Any]:
         """Mock implementation of reconnection recommendations"""
         self.get_reconnection_recommendations_called = True
         return {
@@ -58,7 +63,7 @@ class MockConnectionDiagnosticsService(ConnectionDiagnosticsService):
             "estimated_improvement": "25% reduction in connection failures"
         }
     
-    def analyze_connection_patterns(self, connections: List[Connection]) -> Dict[str, Any]:
+    def analyze_connection_patterns(self, connections: list[Connection]) -> dict[str, Any]:
         """Mock implementation of connection pattern analysis"""
         self.analyze_connection_patterns_called = True
         return {
@@ -74,7 +79,7 @@ class MockConnectionDiagnosticsService(ConnectionDiagnosticsService):
             "risk_level": "moderate"
         }
     
-    def validate_connection_infrastructure(self) -> Dict[str, Any]:
+    def validate_connection_infrastructure(self) -> dict[str, Any]:
         """Mock implementation of infrastructure validation"""
         self.validate_connection_infrastructure_called = True
         return {
@@ -232,7 +237,7 @@ class TestConnectionDiagnosticsService:
                     recommendations=["Check network", "Restart connection"]
                 )
             
-            def get_connection_statistics(self) -> Dict[str, Any]:
+            def get_connection_statistics(self) -> dict[str, Any]:
                 return {
                     "total_connections": 100,
                     "active_connections": 20,
@@ -242,7 +247,7 @@ class TestConnectionDiagnosticsService:
                     "success_rate": 0.55
                 }
             
-            def get_reconnection_recommendations(self) -> Dict[str, Any]:
+            def get_reconnection_recommendations(self) -> dict[str, Any]:
                 return {
                     "recommendations": [
                         "URGENT: Increase connection pool size immediately",
@@ -253,7 +258,7 @@ class TestConnectionDiagnosticsService:
                     "estimated_improvement": "60% reduction in failures needed"
                 }
             
-            def analyze_connection_patterns(self, connections: List[Connection]) -> Dict[str, Any]:
+            def analyze_connection_patterns(self, connections: list[Connection]) -> dict[str, Any]:
                 return {
                     "patterns": {
                         "failure_rate": "45%",
@@ -267,7 +272,7 @@ class TestConnectionDiagnosticsService:
                     "risk_level": "critical"
                 }
             
-            def validate_connection_infrastructure(self) -> Dict[str, Any]:
+            def validate_connection_infrastructure(self) -> dict[str, Any]:
                 return {
                     "infrastructure_health": "critical",
                     "components": {
@@ -330,10 +335,10 @@ class TestConnectionDiagnosticsService:
                     latency_ms=0,
                     packet_loss=0.0,
                     bandwidth_mbps=0,
-                    last_check=datetime.now(timezone.utc)
+                    last_check=datetime.now(UTC)
                 )
             
-            def get_connection_statistics(self) -> Dict[str, Any]:
+            def get_connection_statistics(self) -> dict[str, Any]:
                 return {
                     "total_connections": 0,
                     "active_connections": 0,
@@ -343,14 +348,14 @@ class TestConnectionDiagnosticsService:
                     "success_rate": 0.0
                 }
             
-            def get_reconnection_recommendations(self) -> Dict[str, Any]:
+            def get_reconnection_recommendations(self) -> dict[str, Any]:
                 return {
                     "recommendations": [],
                     "priority": "none",
                     "estimated_improvement": "N/A"
                 }
             
-            def analyze_connection_patterns(self, connections: List[Connection]) -> Dict[str, Any]:
+            def analyze_connection_patterns(self, connections: list[Connection]) -> dict[str, Any]:
                 if not connections:
                     return {
                         "patterns": {},
@@ -363,7 +368,7 @@ class TestConnectionDiagnosticsService:
                     "risk_level": "low"
                 }
             
-            def validate_connection_infrastructure(self) -> Dict[str, Any]:
+            def validate_connection_infrastructure(self) -> dict[str, Any]:
                 return {
                     "infrastructure_health": "unknown",
                     "components": {},

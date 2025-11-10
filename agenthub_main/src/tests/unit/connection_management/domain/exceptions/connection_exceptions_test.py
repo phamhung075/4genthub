@@ -1,16 +1,15 @@
 """Test suite for Connection Management Domain Exceptions"""
 
-import pytest
 
 from fastmcp.connection_management.domain.exceptions.connection_exceptions import (
     ConnectionError,
-    ServerNotFoundError,
-    ConnectionNotFoundError,
-    InvalidServerStatusError,
-    InvalidConnectionStatusError,
-    ServerHealthCheckFailedError,
     ConnectionHealthCheckFailedError,
-    StatusBroadcastError
+    ConnectionNotFoundError,
+    InvalidConnectionStatusError,
+    InvalidServerStatusError,
+    ServerHealthCheckFailedError,
+    ServerNotFoundError,
+    StatusBroadcastError,
 )
 
 

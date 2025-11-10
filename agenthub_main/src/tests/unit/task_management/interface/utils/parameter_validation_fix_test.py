@@ -5,17 +5,18 @@ Tests the parameter type coercion system including string-to-int conversion,
 flexible boolean parsing, and comprehensive error handling.
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import Mock, patch
 
 from fastmcp.task_management.interface.utils.parameter_validation_fix import (
-    ParameterTypeCoercer,
-    FlexibleSchemaValidator,
     EnhancedParameterValidator,
+    FlexibleSchemaValidator,
+    ParameterTypeCoercer,
     ParameterTypeCoercionError,
     coerce_parameter_types,
+    create_flexible_schema,
     validate_parameters,
-    create_flexible_schema
 )
 
 
@@ -420,7 +421,9 @@ class TestPublicAPI:
 
     def test_module_exports(self):
         """Test that all expected symbols are exported."""
-        from fastmcp.task_management.interface.utils.parameter_validation_fix import __all__
+        from fastmcp.task_management.interface.utils.parameter_validation_fix import (
+            __all__,
+        )
         
         expected_exports = [
             "ParameterTypeCoercer",
@@ -442,7 +445,9 @@ class TestDemoFunction:
     @patch('builtins.print')
     def test_demo_function(self, mock_print):
         """Test the demo function runs without error."""
-        from fastmcp.task_management.interface.utils.parameter_validation_fix import _demo
+        from fastmcp.task_management.interface.utils.parameter_validation_fix import (
+            _demo,
+        )
         
         _demo()
         
@@ -456,7 +461,7 @@ class TestDemoFunction:
         
         # Mock sys.argv to simulate running as main
         with patch.object(sys, 'argv', ['parameter_validation_fix.py']), \
-             patch('builtins.print') as mock_print:
+             patch('builtins.print'):
             
             # Import the module - this should trigger the if __name__ == "__main__" block
             # Note: This test is more for coverage than functional testing

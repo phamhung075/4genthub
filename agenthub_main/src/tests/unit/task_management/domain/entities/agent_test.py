@@ -1,13 +1,14 @@
 """Test suite for Agent Domain Entity"""
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
+
+import pytest
 
 from fastmcp.task_management.domain.entities.agent import (
     Agent,
+    AgentCapability,
     AgentStatus,
-    AgentCapability
 )
 
 
@@ -94,7 +95,7 @@ class TestAgentInitialization:
         agent_id = "agent_456"
         name = "Full Agent"
         description = "Comprehensive test agent"
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         capabilities = {AgentCapability.FRONTEND_DEVELOPMENT, AgentCapability.TESTING}
         specializations = ["React", "Jest"]
         preferred_languages = ["JavaScript", "TypeScript"]
@@ -128,10 +129,10 @@ class TestAgentInitialization:
 
     def test_agent_post_init_sets_timestamps(self):
         """Test that __post_init__ sets default timestamps"""
-        # The BaseTimestampEntity uses datetime.now(timezone.utc) internally
+        # The BaseTimestampEntity uses datetime.now(UTC) internally
         # We should patch it at the base entity level
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+            mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -139,12 +140,12 @@ class TestAgentInitialization:
             
             assert agent.created_at == mock_now
             assert agent.updated_at == mock_now
-            # BaseTimestampEntity calls datetime.now(timezone.utc) once in _ensure_clean_timestamps
+            # BaseTimestampEntity calls datetime.now(UTC) once in _ensure_clean_timestamps
 
     def test_agent_post_init_preserves_existing_timestamps(self):
         """Test that __post_init__ preserves existing timestamps"""
-        created_at = datetime(2023, 12, 1, 10, 0, 0, tzinfo=timezone.utc)
-        updated_at = datetime(2023, 12, 2, 11, 0, 0, tzinfo=timezone.utc)
+        created_at = datetime(2023, 12, 1, 10, 0, 0, tzinfo=UTC)
+        updated_at = datetime(2023, 12, 2, 11, 0, 0, tzinfo=UTC)
         
         agent = Agent(
             id="test",
@@ -170,7 +171,7 @@ class TestAgentCapabilityManagement:
         
         # Patch at the base entity level where touch() is implemented
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -201,7 +202,7 @@ class TestAgentCapabilityManagement:
         
         # Patch at the base entity level where touch() is implemented
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -371,7 +372,7 @@ class TestAgentTaskAssignment:
         task_id = "task_123"
         
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -423,7 +424,7 @@ class TestAgentTaskAssignment:
         initial_success_rate = self.agent.success_rate
         
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -483,7 +484,7 @@ class TestAgentProjectAndTreeAssignment:
         project_id = "project_123"
         
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -508,7 +509,7 @@ class TestAgentProjectAndTreeAssignment:
         git_branch_name = "feature/auth-system"
         
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -539,7 +540,7 @@ class TestAgentStatusManagement:
     def test_pause_work(self):
         """Test pausing agent work"""
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -554,7 +555,7 @@ class TestAgentStatusManagement:
         assert self.agent.status == AgentStatus.PAUSED
         
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -576,7 +577,7 @@ class TestAgentStatusManagement:
     def test_go_offline(self):
         """Test setting agent offline"""
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -591,7 +592,7 @@ class TestAgentStatusManagement:
         assert self.agent.status == AgentStatus.OFFLINE
         
         with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
-            mock_now = datetime.now(timezone.utc)
+            mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
             
@@ -752,7 +753,7 @@ class TestAgentProfile:
         assert workload["current"] == 1
         assert workload["max"] == 3
         assert workload["percentage"] == (1/3) * 100
-        assert workload["available"] == True
+        assert workload["available"]
 
     def test_get_agent_profile_performance_section(self):
         """Test agent profile performance section"""

@@ -1,18 +1,23 @@
 """Tests for DependencyResolverService"""
 
-import pytest
-from unittest.mock import Mock, create_autospec
 from datetime import datetime
-from typing import List, Optional
+from unittest.mock import Mock, create_autospec
 
-from fastmcp.task_management.application.services.dependency_resolver_service import DependencyResolverService
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
+import pytest
+
+from fastmcp.task_management.application.dtos.task.dependency_info import (
+    DependencyInfo,
+    DependencyRelationships,
+)
+from fastmcp.task_management.application.services.dependency_resolver_service import (
+    DependencyResolverService,
+)
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
-from fastmcp.task_management.application.dtos.task.dependency_info import DependencyInfo, DependencyChain, DependencyRelationships
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
 class TestDependencyResolverService:

@@ -1,15 +1,18 @@
 """Tests for TaskPriorityService domain service"""
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, MagicMock, patch
-from decimal import Decimal
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.domain.services.task_priority_service import TaskPriorityService, TaskRepositoryProtocol
+import pytest
+
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.services.task_priority_service import (
+    TaskPriorityService,
+    TaskRepositoryProtocol,
+)
 from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
 class TestTaskPriorityService:
@@ -33,7 +36,7 @@ class TestTaskPriorityService:
         task.title = "Test Task"
         task.priority = Priority.medium()
         task.status = TaskStatus.TODO
-        task.created_at = datetime.now(timezone.utc) - timedelta(days=5)
+        task.created_at = datetime.now(UTC) - timedelta(days=5)
         task.due_date = None
         task.dependencies = []
         return task
@@ -61,7 +64,7 @@ class TestTaskPriorityService:
     
     def test_calculate_priority_score_overdue_task(self, service, basic_task):
         """Test overdue task gets maximum urgency score"""
-        basic_task.due_date = datetime.now(timezone.utc) - timedelta(days=1)
+        basic_task.due_date = datetime.now(UTC) - timedelta(days=1)
         score = service.calculate_priority_score(basic_task)
         
         # Maximum urgency score (100) * 0.25 = 25
@@ -79,7 +82,7 @@ class TestTaskPriorityService:
     
     def test_calculate_priority_score_old_task(self, service, basic_task):
         """Test very old task gets higher age score"""
-        basic_task.created_at = datetime.now(timezone.utc) - timedelta(days=100)
+        basic_task.created_at = datetime.now(UTC) - timedelta(days=100)
         score = service.calculate_priority_score(basic_task)
         
         # Very stale age score (100) * 0.15 = 15
@@ -123,21 +126,21 @@ class TestTaskPriorityService:
         high_priority_task.title = "High Priority Task"
         high_priority_task.priority = Priority.high()
         high_priority_task.status = TaskStatus.TODO
-        high_priority_task.created_at = datetime.now(timezone.utc)
+        high_priority_task.created_at = datetime.now(UTC)
         
         low_priority_task = Mock(spec=Task)
         low_priority_task.id = TaskId("low-123")
         low_priority_task.title = "Low Priority Task"
         low_priority_task.priority = Priority.low()
         low_priority_task.status = TaskStatus.TODO
-        low_priority_task.created_at = datetime.now(timezone.utc)
+        low_priority_task.created_at = datetime.now(UTC)
         
         in_progress_task = Mock(spec=Task)
         in_progress_task.id = TaskId("progress-123")
         in_progress_task.title = "In Progress Task"
         in_progress_task.priority = Priority.medium()
         in_progress_task.status = TaskStatus.IN_PROGRESS
-        in_progress_task.created_at = datetime.now(timezone.utc)
+        in_progress_task.created_at = datetime.now(UTC)
         
         tasks = [low_priority_task, high_priority_task, in_progress_task]
         ordered = service.order_tasks_by_priority(tasks)
@@ -162,7 +165,7 @@ class TestTaskPriorityService:
         bad_task.title = "Bad Task"
         bad_task.priority = Priority.medium()
         bad_task.status = TaskStatus.TODO
-        bad_task.created_at = datetime.now(timezone.utc)
+        bad_task.created_at = datetime.now(UTC)
         
         result = service.order_tasks_by_priority([bad_task])
         
@@ -198,7 +201,7 @@ class TestTaskPriorityService:
         task1.title = "Task 1"
         task1.priority = Priority.low()
         task1.status = TaskStatus.TODO
-        task1.created_at = datetime.now(timezone.utc)
+        task1.created_at = datetime.now(UTC)
         task1.due_date = None
         task1.dependencies = []
         
@@ -207,7 +210,7 @@ class TestTaskPriorityService:
         task2.title = "Task 2"
         task2.priority = Priority.high()
         task2.status = TaskStatus.TODO
-        task2.created_at = datetime.now(timezone.utc)
+        task2.created_at = datetime.now(UTC)
         task2.due_date = None
         task2.dependencies = []
         
@@ -216,7 +219,7 @@ class TestTaskPriorityService:
         task3.title = "Task 3"
         task3.priority = Priority.medium()
         task3.status = TaskStatus.IN_PROGRESS
-        task3.created_at = datetime.now(timezone.utc)
+        task3.created_at = datetime.now(UTC)
         task3.due_date = None
         task3.dependencies = []
         
@@ -241,7 +244,7 @@ class TestTaskPriorityService:
         task1.title = "Review Task"
         task1.priority = Priority.high()
         task1.status = TaskStatus.REVIEW
-        task1.created_at = datetime.now(timezone.utc)
+        task1.created_at = datetime.now(UTC)
         task1.due_date = None
         task1.dependencies = []
         
@@ -250,7 +253,7 @@ class TestTaskPriorityService:
         task2.title = "Todo Task"
         task2.priority = Priority.medium()
         task2.status = TaskStatus.TODO
-        task2.created_at = datetime.now(timezone.utc)
+        task2.created_at = datetime.now(UTC)
         task2.due_date = None
         task2.dependencies = []
         
@@ -320,7 +323,7 @@ class TestTaskPriorityService:
     @patch('fastmcp.task_management.domain.services.task_priority_service.datetime')
     def test_calculate_urgency_score_due_dates(self, mock_datetime, service, basic_task):
         """Test urgency scores for various due dates"""
-        now = datetime.now(timezone.utc).replace(hour=12, minute=0, second=0, microsecond=0)
+        now = datetime.now(UTC).replace(hour=12, minute=0, second=0, microsecond=0)
         # Mock datetime.now to return our controlled 'now' time
         mock_datetime.now.return_value = now
         mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
@@ -372,7 +375,7 @@ class TestTaskPriorityService:
     def test_get_priority_factors(self, service, basic_task):
         """Test getting detailed priority factors"""
         # Set due date to exactly 2 days from now
-        now = datetime.now(timezone.utc).replace(hour=12, minute=0, second=0, microsecond=0)
+        now = datetime.now(UTC).replace(hour=12, minute=0, second=0, microsecond=0)
         basic_task.due_date = now + timedelta(days=2)
         context_factors = {"dependent_task_count": 3}
         
@@ -406,12 +409,12 @@ class TestTaskPriorityService:
         assert "high priority score" in reason
         
         # Test overdue task
-        basic_task.due_date = datetime.now(timezone.utc) - timedelta(days=1)
+        basic_task.due_date = datetime.now(UTC) - timedelta(days=1)
         reason = service._generate_recommendation_reason(recommended)
         assert "overdue" in reason
         
         # Test due soon
-        basic_task.due_date = datetime.now(timezone.utc) + timedelta(hours=12)
+        basic_task.due_date = datetime.now(UTC) + timedelta(hours=12)
         reason = service._generate_recommendation_reason(recommended)
         assert "due soon" in reason
         
@@ -490,9 +493,9 @@ class TestTaskPriorityService:
         """Test that priority scores are clamped to [0, 100]"""
         # Create extreme case that would exceed 100
         basic_task.priority = Priority.critical()  # 100 base
-        basic_task.due_date = datetime.now(timezone.utc) - timedelta(days=7)  # Overdue
+        basic_task.due_date = datetime.now(UTC) - timedelta(days=7)  # Overdue
         basic_task.status = TaskStatus.IN_PROGRESS
-        basic_task.created_at = datetime.now(timezone.utc) - timedelta(days=365)
+        basic_task.created_at = datetime.now(UTC) - timedelta(days=365)
         
         context_factors = {"dependent_task_count": 10}
         
@@ -511,7 +514,7 @@ class TestTaskPriorityService:
         task.id = TaskId("test")
         task.priority = Priority.high()
         task.status = TaskStatus.TODO
-        task.created_at = datetime.now(timezone.utc)
+        task.created_at = datetime.now(UTC)
         
         score = service.calculate_priority_score(task)
         assert score > 0

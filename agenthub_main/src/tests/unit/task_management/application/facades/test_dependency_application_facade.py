@@ -2,15 +2,21 @@
 Tests for DependencyApplicationFacade - Comprehensive dependency facade testing
 """
 
-import pytest
 from unittest.mock import Mock, patch
-from typing import Dict, Any
 
-from fastmcp.task_management.application.facades.dependency_application_facade import DependencyApplicationFacade
-from fastmcp.task_management.application.dtos.dependency.add_dependency_request import AddDependencyRequest
-from fastmcp.task_management.application.services.dependencie_application_service import DependencieApplicationService
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+import pytest
+
+from fastmcp.task_management.application.dtos.dependency.add_dependency_request import (
+    AddDependencyRequest,
+)
+from fastmcp.task_management.application.facades.dependency_application_facade import (
+    DependencyApplicationFacade,
+)
+from fastmcp.task_management.application.services.dependencie_application_service import (
+    DependencieApplicationService,
+)
 from fastmcp.task_management.domain.exceptions import TaskNotFoundError
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
 
 
 class MockDependencyResponse:

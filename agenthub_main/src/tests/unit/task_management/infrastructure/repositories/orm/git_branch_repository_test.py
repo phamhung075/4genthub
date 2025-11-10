@@ -5,19 +5,24 @@ Tests the ORM implementation of GitBranchRepository including
 CRUD operations, domain entity conversions, and specialized git branch operations.
 """
 
-import pytest
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch, AsyncMock
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+import pytest
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.exceptions.base_exceptions import DatabaseException
-from fastmcp.task_management.infrastructure.database.models import ProjectGitBranch, Task
+from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+from fastmcp.task_management.infrastructure.database.models import (
+    ProjectGitBranch,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
+    ORMGitBranchRepository,
+)
 
 
 class TestORMGitBranchRepository:
@@ -44,8 +49,8 @@ class TestORMGitBranchRepository:
         self.mock_model.name = "feature/test"
         self.mock_model.description = "Test branch"
         self.mock_model.project_id = self.project_id
-        self.mock_model.created_at = datetime.now(timezone.utc)
-        self.mock_model.updated_at = datetime.now(timezone.utc)
+        self.mock_model.created_at = datetime.now(UTC)
+        self.mock_model.updated_at = datetime.now(UTC)
         self.mock_model.assigned_agent_id = self.agent_id
         self.mock_model.priority = "medium"
         self.mock_model.status = "todo"
@@ -56,8 +61,8 @@ class TestORMGitBranchRepository:
             name="feature/test",
             description="Test branch",
             project_id=self.project_id,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
     def _patch_model_to_entity(self):

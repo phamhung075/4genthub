@@ -1,5 +1,7 @@
 """Project Domain Entity"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -35,7 +37,7 @@ class Project(BaseTimestampEntity):
         cls,
         name: str,
         description: str = ""
-    ) -> 'Project':
+    ) -> Project:
         """Create a new project with auto-generated UUID"""
         project_id = ProjectId.generate_new()
 
@@ -63,7 +65,7 @@ class Project(BaseTimestampEntity):
     cross_tree_dependencies: dict[str, set[str]] = field(default_factory=dict)  # task_id -> dependent_task_ids
     
     # Work coordination
-    active_work_sessions: dict[str, 'WorkSession'] = field(default_factory=dict)
+    active_work_sessions: dict[str, WorkSession] = field(default_factory=dict)
     resource_locks: dict[str, str] = field(default_factory=dict)  # resource -> agent_id
 
     def _validate_entity(self) -> None:
@@ -73,7 +75,7 @@ class Project(BaseTimestampEntity):
     
     async def create_git_branch_async(
         self,
-        git_branch_repository: 'GitBranchRepository',
+        git_branch_repository: GitBranchRepository,
         branch_name: str,
         description: str = ""
     ) -> GitBranch:
@@ -188,7 +190,7 @@ class Project(BaseTimestampEntity):
         self.cross_tree_dependencies[dependent_task_id].add(prerequisite_task_id)
         self.touch("cross_tree_dependency_added")
     
-    def get_available_work_for_agent(self, agent_id: str) -> list['Task']:
+    def get_available_work_for_agent(self, agent_id: str) -> list[Task]:
         """Get available tasks for a specific agent based on their assignments and dependencies"""
         if agent_id not in self.registered_agents:
             raise ValueError(f"Agent {agent_id} not registered")
@@ -211,7 +213,7 @@ class Project(BaseTimestampEntity):
 
         return available_tasks
     
-    def start_work_session(self, agent_id: str, task_id: str, max_duration_hours: float | None = None) -> 'WorkSession':
+    def start_work_session(self, agent_id: str, task_id: str, max_duration_hours: float | None = None) -> WorkSession:
         """Start a work session for an agent on a specific task"""
         from .work_session import WorkSession
         

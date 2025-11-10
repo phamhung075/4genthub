@@ -4,6 +4,8 @@ Use case for creating tasks with AI enhancement capabilities.
 Combines traditional task creation with AI planning and insights.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from typing import Any

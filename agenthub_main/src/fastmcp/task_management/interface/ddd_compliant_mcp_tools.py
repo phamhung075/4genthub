@@ -10,6 +10,8 @@ This serves as a replacement for the existing consolidated_mcp_tools.py that
 violates DDD principles.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -148,7 +150,7 @@ class DDDCompliantMCPTools:
                     )
 
                 # Get context facade from service
-                context_facade = self._facade_service.get_context_facade(
+                self._facade_service.get_context_facade(
                     user_id=system_user_id
                 )
                 # Global context auto-creation is handled by the facade
@@ -222,7 +224,7 @@ class DDDCompliantMCPTools:
 
         logger.info("DDD-compliant MCP tools initialized successfully.")
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """
         Register MCP tools with the FastMCP server.
 
@@ -271,15 +273,15 @@ class DDDCompliantMCPTools:
 
         logger.info("DDD-compliant MCP tools registered successfully.")
 
-    def _register_task_tools(self, mcp: "FastMCP"):
+    def _register_task_tools(self, mcp: FastMCP):
         """Register task management MCP tools via controller"""
         self._task_controller.register_tools(mcp)
 
-    def _register_subtask_tools(self, mcp: "FastMCP"):
+    def _register_subtask_tools(self, mcp: FastMCP):
         """Register subtask management MCP tools via controller"""
         self._subtask_controller.register_tools(mcp)
 
-    def _register_context_tools(self, mcp: "FastMCP"):
+    def _register_context_tools(self, mcp: FastMCP):
         """Register context management MCP tools via controller"""
         if self._context_controller:
             self._context_controller.register_tools(mcp)
@@ -288,7 +290,7 @@ class DDDCompliantMCPTools:
                 "Context controller not available - skipping context tool registration"
             )
 
-    def _register_project_tools(self, mcp: "FastMCP"):
+    def _register_project_tools(self, mcp: FastMCP):
         """Register project management MCP tools via controller"""
         if self._project_controller:
             self._project_controller.register_tools(mcp)
@@ -297,7 +299,7 @@ class DDDCompliantMCPTools:
                 "Project controller not available - skipping project tool registration"
             )
 
-    def _register_git_branch_tools(self, mcp: "FastMCP"):
+    def _register_git_branch_tools(self, mcp: FastMCP):
         """Register git branch management MCP tools via controller"""
         if self._git_branch_controller:
             self._git_branch_controller.register_tools(mcp)
@@ -306,7 +308,7 @@ class DDDCompliantMCPTools:
                 "Git branch controller not available - skipping git branch tool registration"
             )
 
-    def _register_agent_tools(self, mcp: "FastMCP"):
+    def _register_agent_tools(self, mcp: FastMCP):
         """Register unified agent management and invocation MCP tools via controller"""
         # FIXED: Use correct attribute name
         if hasattr(self, "_agent_controller"):
@@ -314,7 +316,7 @@ class DDDCompliantMCPTools:
         else:
             logger.warning("Agent controller not initialized")
 
-    def _register_cursor_rules_tools(self, mcp: "FastMCP"):
+    def _register_cursor_rules_tools(self, mcp: FastMCP):
         """Register cursor rules management tools"""
         # FIXED: Skip registration when cursor_rules_tools is not available
         if self._cursor_rules_tools:
@@ -322,7 +324,7 @@ class DDDCompliantMCPTools:
         else:
             logger.info("Cursor rules tools disabled - module not available")
 
-    def _register_call_agent_tool(self, mcp: "FastMCP"):
+    def _register_call_agent_tool(self, mcp: FastMCP):
         """Register call agent MCP tool via controller"""
         if self._call_agent_controller:
             self._call_agent_controller.register_tools(mcp)
@@ -332,7 +334,7 @@ class DDDCompliantMCPTools:
                 "Call agent controller not available - skipping call_agent tool registration"
             )
 
-    def _register_vision_enhanced_tools(self, mcp: "FastMCP"):
+    def _register_vision_enhanced_tools(self, mcp: FastMCP):
         """Register Vision System enhanced tools"""
         # DISABLED: Enhanced task tools should be merged into manage_task action
         # per user requirement - these duplicate functionality

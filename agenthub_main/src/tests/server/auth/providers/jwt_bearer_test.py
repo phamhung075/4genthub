@@ -6,11 +6,11 @@ JWT tokens for MCP authentication, including both user tokens and API tokens.
 """
 
 import os
-import jwt
 import time
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from mcp.server.auth.provider import AccessToken
 
 from fastmcp.server.auth.providers.jwt_bearer import JWTBearerAuthProvider
@@ -48,8 +48,8 @@ class TestJWTBearerAuthProvider:
         token.user_id = "test-user-123"
         token.name = "Test API Token"
         token.is_active = True
-        token.expires_at = datetime.now(timezone.utc) + timedelta(days=30)
-        token.last_used_at = datetime.now(timezone.utc)
+        token.expires_at = datetime.now(UTC) + timedelta(days=30)
+        token.last_used_at = datetime.now(UTC)
         token.usage_count = 10
         token.rate_limit = None
         token.scopes = ["read:tasks", "write:tasks"]
@@ -63,8 +63,8 @@ class TestJWTBearerAuthProvider:
             "email": "user@example.com",
             "token_type": "access",
             "roles": ["developer"],
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
             "iss": "agenthub",
             "aud": ["mcp-client"]
         }
@@ -78,8 +78,8 @@ class TestJWTBearerAuthProvider:
             "token_type": "api_token",
             "user_id": "user-123",
             "scopes": ["read:tasks", "write:tasks", "execute:mcp"],
-            "exp": int((datetime.now(timezone.utc) + timedelta(days=30)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(days=30)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
             "iss": "agenthub",
             "aud": ["mcp-api"]
         }
@@ -323,7 +323,7 @@ class TestJWTBearerAuthProvider:
     @pytest.mark.asyncio
     async def test_validate_token_in_database_expired(self, mock_db_session, mock_api_token):
         """Test validation of expired token"""
-        mock_api_token.expires_at = datetime.now(timezone.utc) - timedelta(days=1)
+        mock_api_token.expires_at = datetime.now(UTC) - timedelta(days=1)
         with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
             mock_get_db.return_value = iter([mock_db_session])
             mock_db_session.query.return_value.filter.return_value.first.return_value = mock_api_token

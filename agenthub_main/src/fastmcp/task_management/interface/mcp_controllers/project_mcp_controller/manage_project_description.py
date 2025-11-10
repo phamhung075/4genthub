@@ -5,6 +5,8 @@ This module contains the comprehensive documentation for the manage_project MCP 
 Separated from the controller logic for better maintainability and organization.
 """
 
+from __future__ import annotations
+
 MANAGE_PROJECT_DESCRIPTION = """
 PROJECT MANAGEMENT - Complete lifecycle: CRUD | health monitoring | resource management | multi-project coordination
 

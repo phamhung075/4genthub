@@ -3,6 +3,8 @@
 Handles agent assignment inheritance logic between tasks and subtasks.
 """
 
+from __future__ import annotations
+
 import logging
 
 from ...domain.entities.subtask import Subtask
@@ -67,7 +69,7 @@ class AgentInheritanceService:
             task_id: ID of the parent task
             
         Returns:
-            List[Subtask]: List of subtasks that were updated
+            list[Subtask]: List of subtasks that were updated
         """
         # Get parent task
         parent_task = self._task_repository.find_by_id(task_id)
@@ -102,7 +104,7 @@ class AgentInheritanceService:
             assignees: List of assignee strings
             
         Returns:
-            List[str]: Validated and normalized assignees
+            list[str]: Validated and normalized assignees
             
         Raises:
             ValueError: If any assignees are invalid

@@ -5,19 +5,19 @@ Tests the factory pattern for creating authentication providers
 based on environment configuration.
 """
 
-import pytest
 import os
-from unittest.mock import Mock, patch, AsyncMock
-from typing import Dict, Any, Optional
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from fastmcp.auth.application.auth_factory import (
     AuthFactory,
     AuthProvider,
     AuthResult,
     AuthServiceInterface,
-    SupabaseAuthAdapter,
     KeycloakAuthAdapter,
-    LocalAuthAdapter
+    LocalAuthAdapter,
+    SupabaseAuthAdapter,
 )
 
 
@@ -395,7 +395,7 @@ class TestLocalAuthAdapter:
     @pytest.fixture
     def local_service(self):
         """Create LocalAuthAdapter instance with mocked internal service"""
-        from unittest.mock import Mock, AsyncMock
+        from unittest.mock import AsyncMock, Mock
 
         service = LocalAuthAdapter()
 

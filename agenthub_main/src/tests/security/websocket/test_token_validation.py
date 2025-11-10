@@ -13,16 +13,18 @@ COVERAGE:
 - Token signature validation
 """
 
-import pytest
 import asyncio
-import jwt
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, AsyncMock, MagicMock
 import os
+from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
+
+import jwt
+import pytest
+
+from fastmcp.auth.domain.entities.user import User
 
 # Import the function under test
 from fastmcp.server.routes.websocket_routes import validate_websocket_token
-from fastmcp.auth.domain.entities.user import User
 
 
 class TestWebSocketTokenValidation:
@@ -41,9 +43,9 @@ class TestWebSocketTokenValidation:
             "user_id": self.test_user_id,
             "email": self.test_email,
             "aud": "authenticated" if issuer == "keycloak" else None,
-            "iss": f"http://localhost:8080/realms/agenthub" if issuer == "keycloak" else "local-issuer",
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=expires_in_minutes),
-            "iat": datetime.now(timezone.utc),
+            "iss": "http://localhost:8080/realms/agenthub" if issuer == "keycloak" else "local-issuer",
+            "exp": datetime.now(UTC) + timedelta(minutes=expires_in_minutes),
+            "iat": datetime.now(UTC),
             "role": "authenticated",
             **extra_claims
         }
@@ -161,7 +163,7 @@ class TestWebSocketTokenValidation:
         # Create token with wrong secret
         payload = {
             "sub": self.test_user_id,
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=30)
+            "exp": datetime.now(UTC) + timedelta(minutes=30)
         }
         invalid_token = jwt.encode(payload, "wrong-secret", algorithm="HS256")
 
@@ -232,7 +234,7 @@ class TestWebSocketTokenValidation:
         # Create token without 'sub' claim
         payload = {
             "aud": "authenticated",
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=30),
+            "exp": datetime.now(UTC) + timedelta(minutes=30),
             "role": "authenticated"
             # Missing 'sub' and 'user_id'
         }

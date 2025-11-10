@@ -8,15 +8,16 @@ This module provides a single, unified approach to test database setup:
 - Performance monitoring
 """
 
-import pytest
-import tempfile
-import shutil
-import time
-import psutil
 import os
-from pathlib import Path
-from typing import Generator, Dict, Any
+import shutil
 import sys
+import time
+from collections.abc import Generator
+from pathlib import Path
+from typing import Any
+
+import psutil
+import pytest
 
 # Ensure src directory is on sys.path for fastmcp imports
 src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -76,13 +77,18 @@ def test_database(request):
         yield
         return
     
-    from fastmcp.task_management.infrastructure.database.database_initializer import reset_initialization_cache
-    from fastmcp.task_management.infrastructure.database.database_source_manager import DatabaseSourceManager
     from fastmcp.task_management.infrastructure.database.test_database_config import (
         DatabaseTestConfig,
-        install_missing_dependencies
+        install_missing_dependencies,
     )
+
     from fastmcp.task_management.infrastructure.database.database_config import close_db
+    from fastmcp.task_management.infrastructure.database.database_initializer import (
+        reset_initialization_cache,
+    )
+    from fastmcp.task_management.infrastructure.database.database_source_manager import (
+        DatabaseSourceManager,
+    )
     
     # Install missing dependencies if needed
     try:
@@ -113,11 +119,11 @@ def test_database(request):
         # Display what database is being used
         db_type = os.environ.get('DATABASE_TYPE', 'sqlite')
         if db_type == 'sqlite':
-            print(f"\n📦 Using SQLite test database")
+            print("\n📦 Using SQLite test database")
         elif db_type == 'supabase':
-            print(f"\n🎯 Using Supabase test database")
+            print("\n🎯 Using Supabase test database")
         elif db_type == 'postgresql':
-            print(f"\n🐘 Using PostgreSQL test database")
+            print("\n🐘 Using PostgreSQL test database")
         else:
             print(f"\n⚠️ Unknown database type: {db_type}, defaulting to SQLite")
             os.environ['DATABASE_TYPE'] = 'sqlite'
@@ -125,7 +131,9 @@ def test_database(request):
         print(f"📊 DATABASE_TYPE: {os.environ.get('DATABASE_TYPE', 'sqlite')}")
         
         # Initialize the test database with schema
-        from fastmcp.task_management.infrastructure.database.database_initializer import initialize_database
+        from fastmcp.task_management.infrastructure.database.database_initializer import (
+            initialize_database,
+        )
         initialize_database(None)  # Will use DATABASE_URL or MCP_DB_PATH from environment
         
         # Add basic test data
@@ -151,10 +159,14 @@ def test_database(request):
 
 def _initialize_basic_test_data():
     """Initialize test database with basic test data."""
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-    from sqlalchemy import text
     import uuid
-    from datetime import datetime, timezone
+    from datetime import UTC, datetime
+
+    from sqlalchemy import text
+
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
     
     try:
         db_config = get_db_config()
@@ -178,8 +190,8 @@ def _initialize_basic_test_data():
                         'description': 'Project for testing',
                         'user_id': 'default_id',
                         'status': 'active',
-                        'created_at': datetime.now(timezone.utc),
-                        'updated_at': datetime.now(timezone.utc),
+                        'created_at': datetime.now(UTC),
+                        'updated_at': datetime.now(UTC),
                         'metadata': '{}'
                     })
                 
@@ -199,8 +211,8 @@ def _initialize_basic_test_data():
                     'project_id': 'default_project',
                     'name': 'main',
                     'description': 'Main branch for testing',
-                    'created_at': datetime.now(timezone.utc),
-                    'updated_at': datetime.now(timezone.utc),
+                    'created_at': datetime.now(UTC),
+                    'updated_at': datetime.now(UTC),
                     'priority': 'medium',
                     'status': 'todo',
                     'metadata': '{}',
@@ -209,7 +221,7 @@ def _initialize_basic_test_data():
                 })
                 
                 session.commit()
-                print(f"📦 Initialized test database with basic test data")
+                print("📦 Initialized test database with basic test data")
                 
             except Exception as e:
                 print(f"⚠️ Error initializing test data: {e}")
@@ -264,7 +276,7 @@ def performance_tracker():
             self.start_time = time.time()
             self.start_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
         
-        def end(self) -> Dict[str, Any]:
+        def end(self) -> dict[str, Any]:
             self.end_time = time.time()
             self.end_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
             
@@ -364,7 +376,7 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as e:
             print(f"⚠️  Could not remove temp dir {temp_dir}: {e}")
     
-    print(f"🧹 Final cleanup completed:")
+    print("🧹 Final cleanup completed:")
     print(f"   - {cleanup_count} test data files removed")
     print(f"   - {temp_dirs_cleaned} temporary directories removed")
     print("✅ Test environment is clean")

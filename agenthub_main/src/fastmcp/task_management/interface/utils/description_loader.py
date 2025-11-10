@@ -6,6 +6,8 @@ This module provides utilities to load tool descriptions from separate files,
 enabling clean separation between documentation and controller logic.
 """
 
+from __future__ import annotations
+
 import fnmatch
 import importlib.util
 from pathlib import Path

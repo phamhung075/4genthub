@@ -4,6 +4,8 @@ Git Branch Agent Handler
 Handles agent assignment and management operations for git branches.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

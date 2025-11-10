@@ -5,6 +5,8 @@ This module provides service account authentication for MCP hooks and automated 
 It handles client credentials flow, token caching, and automatic refresh.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import os

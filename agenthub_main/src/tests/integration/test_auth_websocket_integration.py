@@ -9,17 +9,20 @@ This test verifies that WebSocket connections are properly managed when:
 4. Token refresh succeeds - WebSocket should reconnect with new token
 """
 
-import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 
 try:
     from fastapi import WebSocketDisconnect
 except ImportError:
     from starlette.websockets import WebSocketDisconnect
 
-from fastmcp.server.routes.websocket_routes import validate_websocket_token, realtime_updates
 from fastmcp.auth.domain.entities.user import User
+from fastmcp.server.routes.websocket_routes import (
+    realtime_updates,
+    validate_websocket_token,
+)
 
 
 class TestAuthWebSocketIntegration:
@@ -119,13 +122,17 @@ class TestAuthWebSocketIntegration:
             welcome_call = mock_websocket.send_json.call_args[0][0]
             assert welcome_call["type"] == "sync"  # v2.0 format uses "sync" type
             assert welcome_call["payload"]["action"] == "welcome"  # action is in payload
-            assert welcome_call["payload"]["data"]["primary"]["authenticated"] == True
+            assert welcome_call["payload"]["data"]["primary"]["authenticated"]
             assert welcome_call["payload"]["data"]["primary"]["user_id"] == mock_user.id
 
     @pytest.mark.asyncio
     async def test_websocket_cleanup_on_disconnection(self, mock_user, valid_jwt_token):
         """Test that WebSocket connections are properly cleaned up when disconnected."""
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_subscriptions, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_subscriptions,
+            connection_users,
+        )
 
         # Clear any existing connections
         active_connections.clear()
@@ -186,7 +193,10 @@ class TestAuthWebSocketIntegration:
     @pytest.mark.asyncio
     async def test_websocket_authorization_per_user(self, valid_jwt_token):
         """Test that WebSocket messages are filtered by user authorization."""
-        from fastmcp.server.routes.websocket_routes import is_user_authorized_for_message, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            connection_users,
+            is_user_authorized_for_message,
+        )
 
         # Create two different users
         user1 = User(id="user1", email="user1@example.com", username="user1", password_hash="$2b$12$KXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5", roles=["user"])
@@ -204,7 +214,7 @@ class TestAuthWebSocketIntegration:
         is_authorized = await is_user_authorized_for_message(
             mock_websocket1, "task", "task-123", "user1", {}
         )
-        assert is_authorized == True
+        assert is_authorized
 
         # Test that user1 cannot receive messages about user2's actions
         is_authorized = await is_user_authorized_for_message(

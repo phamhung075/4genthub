@@ -1,5 +1,7 @@
 """Register Agent Request DTO"""
 
+from __future__ import annotations
+
 import uuid
 from dataclasses import dataclass
 

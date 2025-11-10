@@ -5,13 +5,13 @@ Provides tools for analyzing test coverage patterns, identifying gaps,
 and generating coverage reports specific to the agenthub architecture.
 """
 
-import os
+from __future__ import annotations
+
 import ast
-import importlib.util
-from pathlib import Path
-from typing import Dict, List, Set, Any, Optional, Tuple
-from dataclasses import dataclass, field
+import os
 from collections import defaultdict
+from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -32,11 +32,11 @@ class CoverageReport:
     total_source_files: int = 0
     total_test_files: int = 0
     coverage_percentage: float = 0.0
-    gaps: List[CoverageGap] = field(default_factory=list)
-    tested_modules: Set[str] = field(default_factory=set)
-    untested_modules: Set[str] = field(default_factory=set)
-    test_patterns: Dict[str, int] = field(default_factory=dict)
-    recommendations: List[str] = field(default_factory=list)
+    gaps: list[CoverageGap] = field(default_factory=list)
+    tested_modules: set[str] = field(default_factory=set)
+    untested_modules: set[str] = field(default_factory=set)
+    test_patterns: dict[str, int] = field(default_factory=dict)
+    recommendations: list[str] = field(default_factory=list)
 
 
 class FunctionExtractor(ast.NodeVisitor):
@@ -158,7 +158,7 @@ class CoverageAnalyzer:
         
         return report
     
-    def _find_source_files(self) -> List[Path]:
+    def _find_source_files(self) -> list[Path]:
         """Find all Python source files (excluding tests)"""
         source_files = []
         
@@ -174,7 +174,7 @@ class CoverageAnalyzer:
         
         return source_files
     
-    def _find_test_files(self) -> List[Path]:
+    def _find_test_files(self) -> list[Path]:
         """Find all test files"""
         test_files = []
         
@@ -190,7 +190,7 @@ class CoverageAnalyzer:
         
         return test_files
     
-    def _analyze_module_coverage(self, source_files: List[Path], test_files: List[Path]) -> Tuple[Set[str], Set[str]]:
+    def _analyze_module_coverage(self, source_files: list[Path], test_files: list[Path]) -> tuple[set[str], set[str]]:
         """Analyze which modules have corresponding tests"""
         # Extract module paths from source files
         source_modules = set()
@@ -221,7 +221,7 @@ class CoverageAnalyzer:
         untested_modules = source_modules - tested_modules
         return tested_modules, untested_modules
     
-    def _identify_coverage_gaps(self, source_files: List[Path], test_files: List[Path]) -> List[CoverageGap]:
+    def _identify_coverage_gaps(self, source_files: list[Path], test_files: list[Path]) -> list[CoverageGap]:
         """Identify specific coverage gaps in the codebase"""
         gaps = []
         
@@ -235,13 +235,13 @@ class CoverageAnalyzer:
         
         return gaps
     
-    def _analyze_source_file_coverage(self, source_file: Path, test_files: List[Path]) -> List[CoverageGap]:
+    def _analyze_source_file_coverage(self, source_file: Path, test_files: list[Path]) -> list[CoverageGap]:
         """Analyze coverage gaps in a specific source file"""
         gaps = []
         
         try:
             # Parse the source file
-            with open(source_file, 'r', encoding='utf-8') as f:
+            with open(source_file, encoding='utf-8') as f:
                 content = f.read()
             
             tree = ast.parse(content)
@@ -306,7 +306,7 @@ class CoverageAnalyzer:
         
         return gaps
     
-    def _find_corresponding_test_file(self, source_rel_path: Path, test_files: List[Path]) -> bool:
+    def _find_corresponding_test_file(self, source_rel_path: Path, test_files: list[Path]) -> bool:
         """Check if there's a corresponding test file for a source file"""
         source_name = source_rel_path.stem
         
@@ -321,13 +321,13 @@ class CoverageAnalyzer:
         
         return False
     
-    def _analyze_test_patterns(self, test_files: List[Path]) -> Dict[str, int]:
+    def _analyze_test_patterns(self, test_files: list[Path]) -> dict[str, int]:
         """Analyze patterns in test files"""
         patterns = defaultdict(int)
         
         for test_file in test_files:
             try:
-                with open(test_file, 'r', encoding='utf-8') as f:
+                with open(test_file, encoding='utf-8') as f:
                     content = f.read()
                 
                 # Count different test patterns
@@ -365,7 +365,7 @@ class CoverageAnalyzer:
         
         return dict(patterns)
     
-    def _generate_recommendations(self, report: CoverageReport) -> List[str]:
+    def _generate_recommendations(self, report: CoverageReport) -> list[str]:
         """Generate recommendations based on coverage analysis"""
         recommendations = []
         
@@ -408,7 +408,7 @@ class CoverageAnalyzer:
         
         return recommendations
     
-    def generate_coverage_report(self, output_file: Optional[Path] = None) -> str:
+    def generate_coverage_report(self, output_file: Path | None = None) -> str:
         """
         Generate a comprehensive coverage report.
         

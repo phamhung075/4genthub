@@ -1,13 +1,18 @@
 """Test suite for Status Broadcasting Service Interface"""
 
-import pytest
-from abc import ABC, abstractmethod
-from typing import Dict, Any
-from unittest.mock import Mock
+from abc import ABC
 from datetime import datetime
+from typing import Any
+from unittest.mock import Mock
 
-from fastmcp.connection_management.domain.services.status_broadcasting_service import StatusBroadcastingService
-from fastmcp.connection_management.domain.value_objects.status_update import StatusUpdate
+import pytest
+
+from fastmcp.connection_management.domain.services.status_broadcasting_service import (
+    StatusBroadcastingService,
+)
+from fastmcp.connection_management.domain.value_objects.status_update import (
+    StatusUpdate,
+)
 
 
 class TestStatusBroadcastingService:
@@ -83,12 +88,12 @@ class MockStatusBroadcastingService(StatusBroadcastingService):
     """Mock implementation of StatusBroadcastingService for testing"""
 
     def __init__(self):
-        self.registered_clients: Dict[str, Dict[str, Any]] = {}
-        self.last_broadcast: Dict[str, Any] = {}
+        self.registered_clients: dict[str, dict[str, Any]] = {}
+        self.last_broadcast: dict[str, Any] = {}
         self.call_log: list = []
-        self.broadcast_failures: Dict[str, str] = {}  # session_id -> failure_reason
+        self.broadcast_failures: dict[str, str] = {}  # session_id -> failure_reason
 
-    def register_client_for_updates(self, session_id: str, client_info: Dict[str, Any]) -> StatusUpdate:
+    def register_client_for_updates(self, session_id: str, client_info: dict[str, Any]) -> StatusUpdate:
         self.call_log.append(f"register_client_for_updates({session_id}, {client_info})")
         self.registered_clients[session_id] = client_info
         
@@ -130,11 +135,11 @@ class MockStatusBroadcastingService(StatusBroadcastingService):
         self.call_log.append("get_registered_clients_count()")
         return len(self.registered_clients)
 
-    def get_last_broadcast_info(self) -> Dict[str, Any]:
+    def get_last_broadcast_info(self) -> dict[str, Any]:
         self.call_log.append("get_last_broadcast_info()")
         return self.last_broadcast.copy()
 
-    def validate_broadcasting_infrastructure(self) -> Dict[str, Any]:
+    def validate_broadcasting_infrastructure(self) -> dict[str, Any]:
         self.call_log.append("validate_broadcasting_infrastructure()")
         return {
             "infrastructure_status": "healthy",
@@ -374,7 +379,7 @@ class TestServiceContractCompliance:
         
         # This should work - all methods implemented
         class CompleteStatusBroadcastingService(StatusBroadcastingService):
-            def register_client_for_updates(self, session_id: str, client_info: Dict[str, Any]) -> StatusUpdate:
+            def register_client_for_updates(self, session_id: str, client_info: dict[str, Any]) -> StatusUpdate:
                 return Mock(spec=StatusUpdate)
             def unregister_client(self, session_id: str) -> bool:
                 return False
@@ -382,9 +387,9 @@ class TestServiceContractCompliance:
                 return True
             def get_registered_clients_count(self) -> int:
                 return 0
-            def get_last_broadcast_info(self) -> Dict[str, Any]:
+            def get_last_broadcast_info(self) -> dict[str, Any]:
                 return {}
-            def validate_broadcasting_infrastructure(self) -> Dict[str, Any]:
+            def validate_broadcasting_infrastructure(self) -> dict[str, Any]:
                 return {"status": "ok"}
         
         service = CompleteStatusBroadcastingService()
@@ -395,7 +400,7 @@ class TestServiceContractCompliance:
         
         # This should fail - missing methods
         class IncompleteStatusBroadcastingService(StatusBroadcastingService):
-            def register_client_for_updates(self, session_id: str, client_info: Dict[str, Any]) -> StatusUpdate:
+            def register_client_for_updates(self, session_id: str, client_info: dict[str, Any]) -> StatusUpdate:
                 return Mock(spec=StatusUpdate)
             # Missing other required methods
         

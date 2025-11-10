@@ -5,6 +5,8 @@ This service provides domain-level logic for parsing and analyzing task content
 to automatically detect potential dependency relationships.
 """
 
+from __future__ import annotations
+
 import logging
 import re
 from dataclasses import dataclass, field

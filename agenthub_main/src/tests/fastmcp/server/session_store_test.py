@@ -12,29 +12,27 @@ This test suite covers:
 Target Coverage: 60%+ (270+ lines of 902 total)
 """
 
-import pytest
-import asyncio
-import time
 import json
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from datetime import datetime, timedelta
-from typing import Dict, Any
+import time
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 # Import the module under test
 from fastmcp.server.session_store import (
-    SessionEvent,
-    RedisEventStore,
+    REDIS_AVAILABLE,
     MemoryEventStore,
+    RedisEventStore,
+    SessionEvent,
+    cleanup_global_event_store,
     create_event_store,
     get_global_event_store,
-    cleanup_global_event_store,
-    REDIS_AVAILABLE
 )
 
 # Import MCP types
 try:
-    from mcp.types import JSONRPCRequest, JSONRPCNotification
     from mcp.server.streamable_http import EventMessage
+    from mcp.types import JSONRPCNotification, JSONRPCRequest
 
     # Use JSONRPCRequest as the default message type for testing
     def create_test_message(method="test", params=None):

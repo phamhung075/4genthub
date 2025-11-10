@@ -1,5 +1,7 @@
 """Subtask Application Service"""
 
+from __future__ import annotations
+
 from typing import Any
 
 from fastmcp.task_management.application.dtos.subtask import (
@@ -73,7 +75,7 @@ class SubtaskApplicationService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
     
-    def with_user(self, user_id: str) -> 'SubtaskApplicationService':
+    def with_user(self, user_id: str) -> SubtaskApplicationService:
         """Create a new service instance scoped to a specific user."""
         return SubtaskApplicationService(self._task_repository, self._subtask_repository, user_id)
 

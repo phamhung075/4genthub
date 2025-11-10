@@ -11,18 +11,17 @@ These tests validate the Docker SSL/log level fixes work correctly
 in real deployment scenarios and prevent regression.
 """
 
-import pytest
+import logging
+import os
 import subprocess
 import tempfile
 import time
-import requests
-import psycopg2
-import os
-import docker
-import logging
 from pathlib import Path
-from unittest.mock import patch, Mock
-from contextlib import contextmanager
+from unittest.mock import patch
+
+import docker
+import pytest
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +54,9 @@ class TestCapRoverPostgreSQLConnection:
 
     def test_caprover_ssl_disabled_connection_string(self):
         """Test that CapRover SSL disabled generates correct connection string"""
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
 
         # Reset singleton
         DatabaseConfig.reset_instance()
@@ -95,7 +96,9 @@ class TestCapRoverPostgreSQLConnection:
             
         # Instead of running actual Docker containers which can be flaky and slow,
         # test the configuration logic directly
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         
         # Test that the configuration handles CapRover environment correctly
         caprover_env = {
@@ -126,7 +129,7 @@ class TestCapRoverPostgreSQLConnection:
             assert url.startswith("postgresql://")
             
             # Verify the Docker Compose configuration would work
-            compose_content = f"""
+            compose_content = """
 services:
   postgres:
     image: postgres:15-alpine
@@ -173,7 +176,9 @@ class TestManagedPostgreSQLConnection:
 
     def test_managed_postgres_ssl_required_connection_string(self):
         """Test that managed PostgreSQL SSL required generates correct connection string"""
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
 
         # Reset singleton
         DatabaseConfig.reset_instance()
@@ -205,7 +210,9 @@ class TestManagedPostgreSQLConnection:
 
     def test_supabase_ssl_always_required(self):
         """Test that Supabase always enforces SSL regardless of DATABASE_SSL_MODE"""
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
 
         # Reset singleton
         DatabaseConfig.reset_instance()
@@ -417,7 +424,9 @@ class TestEndToEndDeploymentScenarios:
         }
 
         # Test database configuration
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         DatabaseConfig.reset_instance()
 
         config = DatabaseConfig.__new__(DatabaseConfig)
@@ -473,7 +482,9 @@ class TestEndToEndDeploymentScenarios:
         }
 
         # Test database configuration
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         DatabaseConfig.reset_instance()
 
         config = DatabaseConfig.__new__(DatabaseConfig)

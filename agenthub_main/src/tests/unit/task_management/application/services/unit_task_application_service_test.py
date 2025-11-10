@@ -9,19 +9,21 @@ This module tests the TaskApplicationService functionality including:
 - User context handling
 """
 
-import pytest
 from datetime import datetime
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
-from fastmcp.task_management.application.services.task_application_service import TaskApplicationService
+import pytest
+
 from fastmcp.task_management.application.dtos.task import (
     CreateTaskRequest,
     CreateTaskResponse,
-    TaskResponse,
-    UpdateTaskRequest,
     ListTasksRequest,
+    SearchTasksRequest,
     TaskListResponse,
-    SearchTasksRequest
+    UpdateTaskRequest,
+)
+from fastmcp.task_management.application.services.task_application_service import (
+    TaskApplicationService,
 )
 from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
 
@@ -466,7 +468,7 @@ class TestTaskApplicationService:
         response = CreateTaskResponse(success=True, task=mock_task)
         mock_use_cases['create'].execute.return_value = response
         
-        result = await service.create_task(request)
+        await service.create_task(request)
         
         # Verify context creation handles non-.value attributes
         mock_hierarchical_context_service.create_context.assert_called_once()

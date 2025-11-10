@@ -1,5 +1,7 @@
 """Request DTO for adding a subtask to a task"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 

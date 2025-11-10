@@ -8,15 +8,15 @@ Tests the project facade factory including:
 - Authentication validation
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-import logging
-from unittest.mock import Mock, patch, MagicMock
-from fastmcp.task_management.application.factories.project_facade_factory import ProjectFacadeFactory
-from fastmcp.task_management.application.facades.project_application_facade import ProjectApplicationFacade
-from fastmcp.task_management.application.services.project_management_service import ProjectManagementService
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
-    UserAuthenticationRequiredError,
-    InvalidUserIdError
+
+from fastmcp.task_management.application.facades.project_application_facade import (
+    ProjectApplicationFacade,
+)
+from fastmcp.task_management.application.factories.project_facade_factory import (
+    ProjectFacadeFactory,
 )
 
 
@@ -166,7 +166,7 @@ class TestProjectFacadeFactory:
         mock_logger.info.assert_called_with("ProjectFacadeFactory initialized")
         
         user_id = "550e8400-e29b-41d4-a716-446655440000"
-        facade = factory.create_project_facade(user_id)
+        factory.create_project_facade(user_id)
         
         # Check that facade creation is logged
         mock_logger.info.assert_any_call(f"Created new project facade for {user_id}")

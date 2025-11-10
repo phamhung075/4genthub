@@ -1,15 +1,15 @@
 """Unit tests for compliance and document value objects."""
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
-from typing import Dict, Any
 
 from fastmcp.task_management.domain.value_objects.compliance_objects import (
-    DocumentType,
-    DocumentInfo,
     ComplianceStatus,
+    DocumentInfo,
+    DocumentType,
+    ValidationReport,
     ValidationResult,
-    ValidationReport
 )
 
 
@@ -18,7 +18,7 @@ class TestDocumentInfo:
 
     def test_create_document_info_valid(self):
         """Test creating document info with valid data."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         metadata = {"author": "test_user", "version": "1.0"}
         
         doc_info = DocumentInfo(
@@ -41,7 +41,7 @@ class TestDocumentInfo:
 
     def test_create_document_info_minimal(self):
         """Test creating document info with minimal required fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         doc_info = DocumentInfo(
             path="/config/settings.json",
@@ -67,7 +67,7 @@ class TestDocumentInfo:
                 type=DocumentType.DOCUMENT,
                 content="Content",
                 metadata={},
-                created_at=datetime.now(timezone.utc)
+                created_at=datetime.now(UTC)
             )
 
     def test_document_info_empty_content_validation(self):
@@ -78,7 +78,7 @@ class TestDocumentInfo:
                 type=DocumentType.DOCUMENT,
                 content="",
                 metadata={},
-                created_at=datetime.now(timezone.utc)
+                created_at=datetime.now(UTC)
             )
 
     def test_document_type_enum_values(self):
@@ -96,7 +96,7 @@ class TestDocumentInfo:
             type=DocumentType.DOCUMENT,
             content="Test",
             metadata={},
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         
         with pytest.raises(AttributeError):
@@ -111,7 +111,7 @@ class TestComplianceStatus:
 
     def test_create_compliance_status(self):
         """Test creating compliance status with valid data."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         issues = ["Missing signature", "Outdated template"]
         metadata = {"reviewed_by": "auditor1", "review_type": "quarterly"}
         
@@ -134,7 +134,7 @@ class TestComplianceStatus:
         """Test compliant status with empty issues list."""
         status = ComplianceStatus(
             is_compliant=True,
-            validation_date=datetime.now(timezone.utc),
+            validation_date=datetime.now(UTC),
             validator="auto_validator",
             issues=[],
             metadata={"status": "approved"}
@@ -148,7 +148,7 @@ class TestComplianceStatus:
         """Test that ComplianceStatus is immutable."""
         status = ComplianceStatus(
             is_compliant=True,
-            validation_date=datetime.now(timezone.utc),
+            validation_date=datetime.now(UTC),
             validator="test",
             issues=[],
             metadata={}
@@ -211,7 +211,7 @@ class TestValidationReport:
 
     def test_create_validation_report(self):
         """Test creating validation report with multiple results."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         results = [
             ValidationResult(
@@ -273,7 +273,7 @@ class TestValidationReport:
             validation_id="val-1",
             entity_id="ent-1",
             entity_type="config",
-            validation_timestamp=datetime.now(timezone.utc),
+            validation_timestamp=datetime.now(UTC),
             results=results,
             overall_status=False,
             summary="Validation failed",
@@ -295,7 +295,7 @@ class TestValidationReport:
             validation_id="val-2",
             entity_id="ent-2",
             entity_type="template",
-            validation_timestamp=datetime.now(timezone.utc),
+            validation_timestamp=datetime.now(UTC),
             results=results,
             overall_status=True,
             summary="Validation passed with warnings",
@@ -312,7 +312,7 @@ class TestValidationReport:
             validation_id="val-3",
             entity_id="ent-3",
             entity_type="audit",
-            validation_timestamp=datetime.now(timezone.utc),
+            validation_timestamp=datetime.now(UTC),
             results=[ValidationResult(False, ["Error"], [], {})],
             overall_status=False,
             summary="Has errors",
@@ -327,7 +327,7 @@ class TestValidationReport:
             validation_id="val-4",
             entity_id="ent-4",
             entity_type="report",
-            validation_timestamp=datetime.now(timezone.utc),
+            validation_timestamp=datetime.now(UTC),
             results=[ValidationResult(True, [], ["Warning"], {})],
             overall_status=True,
             summary="Has warnings",
@@ -342,7 +342,7 @@ class TestValidationReport:
             validation_id="val-5",
             entity_id="ent-5",
             entity_type="document",
-            validation_timestamp=datetime.now(timezone.utc),
+            validation_timestamp=datetime.now(UTC),
             results=[ValidationResult(True, [], [], {})],
             overall_status=True,
             summary="All clear",
@@ -358,7 +358,7 @@ class TestValidationReport:
             validation_id="val-6",
             entity_id="ent-6",
             entity_type="config",
-            validation_timestamp=datetime.now(timezone.utc),
+            validation_timestamp=datetime.now(UTC),
             results=[],
             overall_status=True,
             summary="No validations performed",
@@ -376,7 +376,7 @@ class TestValidationReport:
             validation_id="val-7",
             entity_id="ent-7",
             entity_type="template",
-            validation_timestamp=datetime.now(timezone.utc),
+            validation_timestamp=datetime.now(UTC),
             results=[],
             overall_status=True,
             summary="Test",

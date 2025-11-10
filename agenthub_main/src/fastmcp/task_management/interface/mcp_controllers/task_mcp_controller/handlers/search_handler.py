@@ -4,6 +4,8 @@ Search Handler for Task MCP Controller
 Handles search, list, and next task operations.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

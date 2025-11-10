@@ -5,6 +5,8 @@ This module implements the Template Repository using SQLAlchemy ORM,
 providing template management with full database capabilities.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import Any

@@ -4,6 +4,8 @@ This module provides a consistent response format across all MCP controllers
 to address API response inconsistencies and operation success confirmation issues.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import uuid

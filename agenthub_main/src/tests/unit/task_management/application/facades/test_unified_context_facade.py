@@ -2,13 +2,19 @@
 Tests for UnifiedContextFacade - Comprehensive facade testing
 """
 
-import pytest
 from unittest.mock import Mock, patch
-from typing import Dict, Any
 
-from fastmcp.task_management.application.facades.unified_context_facade import UnifiedContextFacade
-from fastmcp.task_management.application.services.unified_context_service import UnifiedContextService
-from fastmcp.task_management.domain.exceptions.base_exceptions import ValidationException
+import pytest
+
+from fastmcp.task_management.application.facades.unified_context_facade import (
+    UnifiedContextFacade,
+)
+from fastmcp.task_management.application.services.unified_context_service import (
+    UnifiedContextService,
+)
+from fastmcp.task_management.domain.exceptions.base_exceptions import (
+    ValidationException,
+)
 
 
 class TestUnifiedContextFacade:

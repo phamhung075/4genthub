@@ -1,13 +1,10 @@
-from typing import List
 #!/usr/bin/env python3
 """
 Test Coverage Analyzer - Identifies Python source files without corresponding unit tests.
 Follows DDD (Domain-Driven Design) 4-layer architecture patterns.
 """
-import os
 import sys
 from pathlib import Path
-from typing import List, Dict, Set
 
 
 class CoverageAnalyzer:
@@ -17,7 +14,7 @@ class CoverageAnalyzer:
         self.src_root = Path(src_root)
         self.tests_root = Path(tests_root)
         
-    def get_source_files(self, domain: str = None) -> List[Path]:
+    def get_source_files(self, domain: str = None) -> list[Path]:
         """Get all Python source files, optionally filtered by domain."""
         pattern = "**/*.py" if not domain else f"{domain}/**/*.py"
         source_files = []
@@ -31,7 +28,7 @@ class CoverageAnalyzer:
         
         return sorted(source_files)
     
-    def get_test_files(self, domain: str = None) -> List[Path]:
+    def get_test_files(self, domain: str = None) -> list[Path]:
         """Get all test files, optionally filtered by domain."""
         pattern = "**/*_test.py" if not domain else f"{domain}/**/*_test.py"
         test_files = []
@@ -56,7 +53,7 @@ class CoverageAnalyzer:
         
         return test_path
     
-    def find_untested_files(self, domain: str = None) -> Dict[str, List[Path]]:
+    def find_untested_files(self, domain: str = None) -> dict[str, list[Path]]:
         """Find source files without corresponding test files."""
         source_files = self.get_source_files(domain)
         untested = {
@@ -126,7 +123,7 @@ class CoverageAnalyzer:
         
         # Summary
         total_untested = sum(len(files) for files in untested.values())
-        report.append(f"\nSUMMARY:")
+        report.append("\nSUMMARY:")
         report.append(f"Critical files without tests: {len(untested['critical'])}")
         report.append(f"Important files without tests: {len(untested['important'])}")
         report.append(f"Standard files without tests: {len(untested['standard'])}")

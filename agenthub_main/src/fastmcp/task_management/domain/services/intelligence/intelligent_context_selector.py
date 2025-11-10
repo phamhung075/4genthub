@@ -12,6 +12,8 @@ Key Features:
 - Integrates seamlessly with existing DDD architecture
 """
 
+from __future__ import annotations
+
 import logging
 import time
 from dataclasses import dataclass, field

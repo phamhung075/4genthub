@@ -5,6 +5,8 @@ This module provides the integration between our JWT authentication system
 and the MCP server infrastructure.
 """
 
+from __future__ import annotations
+
 import os
 import time
 from dataclasses import dataclass
@@ -408,7 +410,7 @@ class JWTAuthBackend(TokenVerifier):
             import jwt
             payload = jwt.decode(token, options={"verify_signature": False})
             return payload.get("sub")
-        except:
+        except Exception:
             return None
 
 

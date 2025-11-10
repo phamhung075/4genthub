@@ -195,7 +195,7 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
             timestamp_field: Timestamp field to filter on ("created_at" or "updated_at")
 
         Returns:
-            List[TimestampEntityType]: Entities within the timestamp range
+            list[TimestampEntityType]: Entities within the timestamp range
 
         Raises:
             ValidationException: If timestamp field is invalid
@@ -230,7 +230,7 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
             max_staleness_hours: Maximum hours since last update
 
         Returns:
-            List[TimestampEntityType]: Stale entities
+            list[TimestampEntityType]: Stale entities
 
         Raises:
             DatabaseException: If database operation fails
@@ -309,7 +309,7 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
         """Get timestamp statistics for all entities in this repository.
 
         Returns:
-            Dict[str, Any]: Statistics including count, oldest, newest, etc.
+            dict[str, Any]: Statistics including count, oldest, newest, etc.
 
         Raises:
             DatabaseException: If database operation fails

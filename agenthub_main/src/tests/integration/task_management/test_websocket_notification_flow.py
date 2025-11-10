@@ -13,17 +13,21 @@ Following DDD Clean Architecture:
 - Interface Layer (Controllers) → Application Layer (Use Cases) → Infrastructure Layer (WebSocket)
 """
 
-import pytest
+from __future__ import annotations
+
 import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from datetime import datetime, timezone
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
-from fastmcp.task_management.application.dtos.task import CreateTaskRequest, UpdateTaskRequest
-from fastmcp.task_management.application.services.websocket_notification_service import WebSocketNotificationService
-from fastmcp.task_management.domain.value_objects import TaskStatus, Priority
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatusEnum
+import pytest
+
+from fastmcp.task_management.application.dtos.task import (
+    CreateTaskRequest,
+    UpdateTaskRequest,
+)
+from fastmcp.task_management.domain.value_objects import Priority, TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import PriorityLevel
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatusEnum
 
 
 class TestCreateTaskNotificationFlow:
@@ -63,7 +67,9 @@ class TestCreateTaskNotificationFlow:
     @pytest.fixture
     def create_task_use_case(self, mock_task_repository, mock_git_branch_repository):
         """Create CreateTaskUseCase with mocked dependencies"""
-        from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
+        from fastmcp.task_management.application.use_cases.create_task import (
+            CreateTaskUseCase,
+        )
         return CreateTaskUseCase(
             task_repository=mock_task_repository,
             git_branch_repository=mock_git_branch_repository
@@ -72,7 +78,11 @@ class TestCreateTaskNotificationFlow:
     @pytest.fixture(autouse=True)
     def clear_websocket_connections(self):
         """Clear WebSocket connections before each test"""
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users, connection_subscriptions
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_subscriptions,
+            connection_users,
+        )
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -84,7 +94,9 @@ class TestCreateTaskNotificationFlow:
     @pytest.fixture(autouse=True)
     def clear_deduplication_cache(self):
         """Clear deduplication cache before each test"""
-        from fastmcp.task_management.application.services import websocket_notification_service
+        from fastmcp.task_management.application.services import (
+            websocket_notification_service,
+        )
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -103,7 +115,10 @@ class TestCreateTaskNotificationFlow:
         4. WebSocket broadcasts to connected clients
         """
         # Arrange: Setup WebSocket connection
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_users,
+        )
 
         mock_websocket = AsyncMock()
         active_connections["client-1"].add(mock_websocket)
@@ -164,7 +179,10 @@ class TestCreateTaskNotificationFlow:
         - metadata: object with timestamp, git_branch_id, etc.
         """
         # Arrange
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_users,
+        )
 
         mock_websocket = AsyncMock()
         active_connections["client-1"].add(mock_websocket)
@@ -184,7 +202,7 @@ class TestCreateTaskNotificationFlow:
         )
 
         with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
-            response = create_task_use_case.execute(request)
+            create_task_use_case.execute(request)
             await asyncio.sleep(0.1)
 
         # Assert: Validate complete payload structure
@@ -219,7 +237,10 @@ class TestCreateTaskNotificationFlow:
         - task_count, completed_tasks, progress_percentage per branch
         """
         # Arrange
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_users,
+        )
 
         mock_websocket = AsyncMock()
         active_connections["client-1"].add(mock_websocket)
@@ -251,7 +272,7 @@ class TestCreateTaskNotificationFlow:
         )
 
         with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
-            response = create_task_use_case.execute(request)
+            create_task_use_case.execute(request)
             await asyncio.sleep(0.1)
 
         # Assert: Cascade data present
@@ -311,7 +332,9 @@ class TestUpdateTaskNotificationFlow:
     @pytest.fixture
     def update_task_use_case(self, mock_task_repository, mock_git_branch_repository):
         """Create UpdateTaskUseCase with mocked dependencies"""
-        from fastmcp.task_management.application.use_cases.update_task import UpdateTaskUseCase
+        from fastmcp.task_management.application.use_cases.update_task import (
+            UpdateTaskUseCase,
+        )
         return UpdateTaskUseCase(
             task_repository=mock_task_repository,
             git_branch_repository=mock_git_branch_repository
@@ -320,7 +343,11 @@ class TestUpdateTaskNotificationFlow:
     @pytest.fixture(autouse=True)
     def clear_websocket_connections(self):
         """Clear WebSocket connections before each test"""
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users, connection_subscriptions
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_subscriptions,
+            connection_users,
+        )
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -332,7 +359,9 @@ class TestUpdateTaskNotificationFlow:
     @pytest.fixture(autouse=True)
     def clear_deduplication_cache(self):
         """Clear deduplication cache before each test"""
-        from fastmcp.task_management.application.services import websocket_notification_service
+        from fastmcp.task_management.application.services import (
+            websocket_notification_service,
+        )
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -351,7 +380,10 @@ class TestUpdateTaskNotificationFlow:
         4. WebSocket broadcasts update notification
         """
         # Arrange
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_users,
+        )
 
         mock_websocket = AsyncMock()
         active_connections["client-2"].add(mock_websocket)
@@ -388,7 +420,11 @@ class TestDeleteTaskNotificationFlow:
     @pytest.fixture(autouse=True)
     def clear_websocket_connections(self):
         """Clear WebSocket connections before each test"""
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users, connection_subscriptions
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_subscriptions,
+            connection_users,
+        )
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -400,7 +436,9 @@ class TestDeleteTaskNotificationFlow:
     @pytest.fixture(autouse=True)
     def clear_deduplication_cache(self):
         """Clear deduplication cache before each test"""
-        from fastmcp.task_management.application.services import websocket_notification_service
+        from fastmcp.task_management.application.services import (
+            websocket_notification_service,
+        )
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -413,7 +451,10 @@ class TestDeleteTaskNotificationFlow:
         Critical: Deletion must use pre-fetched context since task is deleted from DB.
         """
         # Arrange
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_users,
+        )
 
         mock_websocket = AsyncMock()
         active_connections["client-3"].add(mock_websocket)
@@ -423,7 +464,9 @@ class TestDeleteTaskNotificationFlow:
         connection_users[mock_websocket] = mock_user
 
         # Mock delete task use case
-        from fastmcp.task_management.application.use_cases.delete_task import DeleteTaskUseCase
+        from fastmcp.task_management.application.use_cases.delete_task import (
+            DeleteTaskUseCase,
+        )
 
         mock_task_repo = Mock()
         mock_git_branch_repo = Mock()
@@ -469,7 +512,11 @@ class TestMultiTenantNotificationIsolation:
     @pytest.fixture(autouse=True)
     def clear_websocket_connections(self):
         """Clear WebSocket connections before each test"""
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users, connection_subscriptions
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_subscriptions,
+            connection_users,
+        )
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -481,7 +528,9 @@ class TestMultiTenantNotificationIsolation:
     @pytest.fixture(autouse=True)
     def clear_deduplication_cache(self):
         """Clear deduplication cache before each test"""
-        from fastmcp.task_management.application.services import websocket_notification_service
+        from fastmcp.task_management.application.services import (
+            websocket_notification_service,
+        )
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -497,7 +546,10 @@ class TestMultiTenantNotificationIsolation:
         3. Only User B receives notification, User A does not
         """
         # Arrange
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_users,
+        )
 
         # Setup two users with WebSocket connections
         websocket_user_a = AsyncMock()
@@ -520,7 +572,9 @@ class TestMultiTenantNotificationIsolation:
             return connection_user and connection_user.id == user_id
 
         # Setup create task use case for User B
-        from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
+        from fastmcp.task_management.application.use_cases.create_task import (
+            CreateTaskUseCase,
+        )
 
         mock_task_repo = Mock()
         mock_task_repo.get_next_id = Mock(return_value=Mock(value=str(uuid4())))
@@ -550,7 +604,7 @@ class TestMultiTenantNotificationIsolation:
 
         with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', side_effect=strict_authorization):
             # Act: User B creates task
-            response = create_use_case.execute(request)
+            create_use_case.execute(request)
             await asyncio.sleep(0.1)
 
         # Assert: User B received notification, User A did not
@@ -564,7 +618,10 @@ class TestMultiTenantNotificationIsolation:
         all connections receive the notification.
         """
         # Arrange
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_users,
+        )
 
         # Same user with 3 WebSocket connections (3 browser tabs)
         websocket_1 = AsyncMock()
@@ -583,7 +640,9 @@ class TestMultiTenantNotificationIsolation:
         connection_users[websocket_3] = same_user
 
         # Setup create task use case
-        from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
+        from fastmcp.task_management.application.use_cases.create_task import (
+            CreateTaskUseCase,
+        )
 
         mock_task_repo = Mock()
         mock_task_repo.get_next_id = Mock(return_value=Mock(value=str(uuid4())))
@@ -613,7 +672,7 @@ class TestMultiTenantNotificationIsolation:
 
         with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
             # Act
-            response = create_use_case.execute(request)
+            create_use_case.execute(request)
             await asyncio.sleep(0.1)
 
         # Assert: All 3 connections received notification
@@ -630,7 +689,11 @@ class TestNotificationDeduplicationFlow:
     @pytest.fixture(autouse=True)
     def clear_websocket_connections(self):
         """Clear WebSocket connections before each test"""
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users, connection_subscriptions
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_subscriptions,
+            connection_users,
+        )
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -642,7 +705,9 @@ class TestNotificationDeduplicationFlow:
     @pytest.fixture(autouse=True)
     def clear_deduplication_cache(self):
         """Clear deduplication cache before each test"""
-        from fastmcp.task_management.application.services import websocket_notification_service
+        from fastmcp.task_management.application.services import (
+            websocket_notification_service,
+        )
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -660,7 +725,10 @@ class TestNotificationDeduplicationFlow:
         5. Only 1 notification sent to frontend
         """
         # Arrange
-        from fastmcp.server.routes.websocket_routes import active_connections, connection_users
+        from fastmcp.server.routes.websocket_routes import (
+            active_connections,
+            connection_users,
+        )
 
         mock_websocket = AsyncMock()
         active_connections["client-dedup"].add(mock_websocket)
@@ -670,7 +738,9 @@ class TestNotificationDeduplicationFlow:
         connection_users[mock_websocket] = mock_user
 
         # Setup update task use case
-        from fastmcp.task_management.application.use_cases.update_task import UpdateTaskUseCase
+        from fastmcp.task_management.application.use_cases.update_task import (
+            UpdateTaskUseCase,
+        )
 
         mock_task_repo = Mock()
         mock_git_branch_repo = Mock()

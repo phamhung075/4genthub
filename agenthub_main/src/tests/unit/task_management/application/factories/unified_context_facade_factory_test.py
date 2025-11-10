@@ -5,14 +5,21 @@ Tests the factory pattern implementation for creating UnifiedContextFacade insta
 with proper dependency injection and singleton behavior.
 """
 
-import pytest
 import uuid
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
+import pytest
 from sqlalchemy.orm import sessionmaker
 
-from fastmcp.task_management.application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
-from fastmcp.task_management.application.facades.unified_context_facade import UnifiedContextFacade
-from fastmcp.task_management.application.services.unified_context_service import UnifiedContextService
+from fastmcp.task_management.application.facades.unified_context_facade import (
+    UnifiedContextFacade,
+)
+from fastmcp.task_management.application.factories.unified_context_facade_factory import (
+    UnifiedContextFacadeFactory,
+)
+from fastmcp.task_management.application.services.unified_context_service import (
+    UnifiedContextService,
+)
 
 # Test Constants
 TEST_USER_ID = "test-user-123"
@@ -92,7 +99,9 @@ class TestUnifiedContextFacadeFactory:
         # Assert - Should have fallen back to mock service
         assert factory.unified_service is not None
         # Check that it's using the mock service
-        from fastmcp.task_management.application.services.mock_unified_context_service import MockUnifiedContextService
+        from fastmcp.task_management.application.services.mock_unified_context_service import (
+            MockUnifiedContextService,
+        )
         assert isinstance(factory.unified_service, MockUnifiedContextService)
         assert UnifiedContextFacadeFactory._initialized is True
 

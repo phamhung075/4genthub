@@ -9,21 +9,20 @@ Comprehensive test coverage for event bus including:
 - Performance metrics
 """
 
-import pytest
 import asyncio
-from datetime import datetime, timezone
-from typing import List, Optional
-from unittest.mock import Mock, AsyncMock, patch
-import uuid
+from datetime import UTC, datetime
+from unittest.mock import Mock
+
+import pytest
 
 from fastmcp.shared.infrastructure.messaging.event_bus import (
-    EventBus,
     DomainEvent,
+    EventBus,
+    EventHandler,
     EventMetadata,
     EventPriority,
-    EventHandler,
     get_event_bus,
-    set_event_bus
+    set_event_bus,
 )
 
 
@@ -526,9 +525,9 @@ class SampleEventBusAdvanced:
         for i in range(5):
             await event_bus.publish(SampleEvent(f"event-{i}"))
         
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         await event_bus.wait_for_empty_queue(timeout=5.0)
-        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        duration = (datetime.now(UTC) - start_time).total_seconds()
         
         # With worker_count=2, should process faster than sequential
         assert len(processed_events) == 5
@@ -730,7 +729,7 @@ class SampleEventBusStressTest:
         
         # Publish many events rapidly
         event_count = 500
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         
         publish_tasks = []
         for i in range(event_count):
@@ -740,7 +739,7 @@ class SampleEventBusStressTest:
         await asyncio.gather(*publish_tasks)
         await bus.wait_for_empty_queue(timeout=10.0)
         
-        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        duration = (datetime.now(UTC) - start_time).total_seconds()
         
         assert processed_count == event_count
         assert duration < 5.0  # Should process 500 events in under 5 seconds
@@ -765,7 +764,6 @@ class SampleEventBusStressTest:
         bus.subscribe(SampleEvent, slow_handler)
         
         # Try to publish more events than queue size
-        publish_tasks = []
         failed_publishes = 0
         
         for i in range(15):
@@ -774,7 +772,7 @@ class SampleEventBusStressTest:
                     bus.publish(SampleEvent(f"event-{i}")),
                     timeout=0.01
                 )
-            except (asyncio.QueueFull, asyncio.TimeoutError):
+            except (TimeoutError, asyncio.QueueFull):
                 failed_publishes += 1
         
         # Some publishes should fail due to full queue

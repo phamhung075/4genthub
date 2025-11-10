@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+from __future__ import annotations
+
 Metrics Reporter Worker
 
 Automated reporting system for optimization metrics, generating daily summaries,

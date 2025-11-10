@@ -4,10 +4,11 @@ Tests for extracting user_id from JWT tokens using Keycloak authentication.
 NO hardcoded IDs, NO legacy code - only token-based authentication.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
+from unittest.mock import Mock
+
 import jwt
+import pytest
 
 
 class TestTokenExtraction:
@@ -18,9 +19,9 @@ class TestTokenExtraction:
         """Create a mock Keycloak JWT token with user information"""
         # Keycloak token payload structure
         payload = {
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
-            "auth_time": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
+            "auth_time": int(datetime.now(UTC).timestamp()),
             "jti": "test-jwt-id-123",
             "iss": "http://localhost:8080/realms/agenthub",
             "aud": "agenthub-client",
@@ -98,18 +99,18 @@ class TestTokenExtraction:
     def test_token_extraction_service(self):
         """Test the TokenExtractionService for extracting user_id"""
         from fastmcp.task_management.interface.mcp_controllers.auth_helper.services.token_extraction_service import (
-            TokenExtractionService
+            TokenExtractionService,
         )
         
         # Create service instance
         service = TokenExtractionService()
         
         # Create mock token
-        from datetime import datetime, timezone
+        from datetime import UTC, datetime
         payload = {
             "sub": "test-user-id-789",
             "email": "user@test.com",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         token = jwt.encode(payload, "test-secret", algorithm="HS256")
         
@@ -120,7 +121,7 @@ class TestTokenExtraction:
     def test_token_extraction_with_missing_sub_claim(self):
         """Test handling of token without 'sub' claim"""
         from fastmcp.task_management.interface.mcp_controllers.auth_helper.services.token_extraction_service import (
-            TokenExtractionService
+            TokenExtractionService,
         )
         
         service = TokenExtractionService()
@@ -128,7 +129,7 @@ class TestTokenExtraction:
         # Token without 'sub' claim
         payload = {
             "email": "user@test.com",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         token = jwt.encode(payload, "test-secret", algorithm="HS256")
         
@@ -139,7 +140,7 @@ class TestTokenExtraction:
     def test_token_extraction_with_expired_token(self):
         """Test handling of expired token"""
         from fastmcp.task_management.interface.mcp_controllers.auth_helper.services.token_extraction_service import (
-            TokenExtractionService
+            TokenExtractionService,
         )
         
         service = TokenExtractionService()
@@ -147,7 +148,7 @@ class TestTokenExtraction:
         # Expired token
         payload = {
             "sub": "test-user-id-999",
-            "exp": int((datetime.now(timezone.utc) - timedelta(hours=1)).timestamp())  # Expired
+            "exp": int((datetime.now(UTC) - timedelta(hours=1)).timestamp())  # Expired
         }
         token = jwt.encode(payload, "test-secret", algorithm="HS256")
         
@@ -157,7 +158,9 @@ class TestTokenExtraction:
     
     def test_authentication_service_with_real_token(self):
         """Test AuthenticationService extracting user_id from actual token"""
-        from fastmcp.task_management.interface.mcp_controllers.auth_helper.services.authentication_service import AuthenticationService
+        from fastmcp.task_management.interface.mcp_controllers.auth_helper.services.authentication_service import (
+            AuthenticationService,
+        )
         
         # Create service
         auth_service = AuthenticationService()
@@ -203,7 +206,7 @@ class TestTokenExtraction:
                 "email": user_data["email"],
                 "name": user_data["name"],
                 "realm_access": {"roles": user_data["roles"]},
-                "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+                "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
             }
             
             token = jwt.encode(payload, "test-secret", algorithm="HS256")

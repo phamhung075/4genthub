@@ -9,16 +9,12 @@ All legacy tests for removed symbols (PROHIBITED_DEFAULT_IDS, DefaultUserProhibi
 have been cleaned up.
 """
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from fastmcp.task_management.domain.constants import (
     validate_user_id,
-    require_authenticated_user
-)
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
-    UserAuthenticationRequiredError,
-    InvalidUserIdError
 )
 
 
@@ -122,7 +118,10 @@ class TestDomainConstants:
         This test verifies that special character inputs are properly normalized to UUIDs.
         """
         import uuid
-        from fastmcp.task_management.infrastructure.database.uuid_column_type import USER_ID_NAMESPACE
+
+        from fastmcp.task_management.infrastructure.database.uuid_column_type import (
+            USER_ID_NAMESPACE,
+        )
         
         special_user_ids = [
             "user@example.com",
@@ -150,7 +149,10 @@ class TestDomainConstants:
         This test verifies that Unicode inputs are properly normalized to UUIDs.
         """
         import uuid
-        from fastmcp.task_management.infrastructure.database.uuid_column_type import USER_ID_NAMESPACE
+
+        from fastmcp.task_management.infrastructure.database.uuid_column_type import (
+            USER_ID_NAMESPACE,
+        )
         
         unicode_user_ids = [
             "用户123",  # Chinese
@@ -177,7 +179,10 @@ class TestDomainConstants:
         Long strings are converted to standard 36-character UUID format.
         """
         import uuid
-        from fastmcp.task_management.infrastructure.database.uuid_column_type import USER_ID_NAMESPACE
+
+        from fastmcp.task_management.infrastructure.database.uuid_column_type import (
+            USER_ID_NAMESPACE,
+        )
         
         long_user_id = "a" * 1000
         
@@ -196,7 +201,10 @@ class TestDomainConstants:
         Numeric strings are converted to UUID format.
         """
         import uuid
-        from fastmcp.task_management.infrastructure.database.uuid_column_type import USER_ID_NAMESPACE
+
+        from fastmcp.task_management.infrastructure.database.uuid_column_type import (
+            USER_ID_NAMESPACE,
+        )
         
         numeric_strings = [
             "123456789",
@@ -220,7 +228,10 @@ class TestDomainConstants:
         Booleans are converted to strings and then normalized to UUIDs.
         """
         import uuid
-        from fastmcp.task_management.infrastructure.database.uuid_column_type import USER_ID_NAMESPACE
+
+        from fastmcp.task_management.infrastructure.database.uuid_column_type import (
+            USER_ID_NAMESPACE,
+        )
         
         # True and False should be converted to strings and then to UUIDs
         result_true = validate_user_id(True, "Boolean test")
@@ -252,7 +263,10 @@ class TestDomainConstants:
         Case-sensitive inputs generate unique UUIDs.
         """
         import uuid
-        from fastmcp.task_management.infrastructure.database.uuid_column_type import USER_ID_NAMESPACE
+
+        from fastmcp.task_management.infrastructure.database.uuid_column_type import (
+            USER_ID_NAMESPACE,
+        )
         
         mixed_case_ids = [
             "UserName123",

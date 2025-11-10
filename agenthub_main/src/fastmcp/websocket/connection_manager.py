@@ -8,6 +8,8 @@ Manages WebSocket connections with dual-track message processing:
 NO backward compatibility - clean v2.0 implementation only.
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging

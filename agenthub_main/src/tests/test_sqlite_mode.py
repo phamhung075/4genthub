@@ -13,7 +13,9 @@ os.environ['PYTEST_CURRENT_TEST'] = 'test_sqlite_mode'
 
 def test_sqlite_configuration():
     """Test that SQLite can be used in test mode"""
-    from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        DatabaseConfig,
+    )
 
     try:
         print("\n" + "="*60)
@@ -48,7 +50,7 @@ def test_sqlite_configuration():
         return True
 
     except Exception as e:
-        print(f"\n❌ SQLite test mode configuration FAILED!")
+        print("\n❌ SQLite test mode configuration FAILED!")
         print(f"Error: {e}")
         import traceback
         traceback.print_exc()

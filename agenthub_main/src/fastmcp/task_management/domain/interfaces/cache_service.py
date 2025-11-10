@@ -1,5 +1,7 @@
 """Cache Service Interface - Domain Layer"""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import Any

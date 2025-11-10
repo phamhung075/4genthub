@@ -9,6 +9,8 @@ Date: 2025-01-27
 Purpose: Solve MCP tools status icon update issues after Docker container restarts
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
@@ -175,7 +177,7 @@ class ConnectionStatusBroadcaster:
         self.last_status = status_update
         
         # Create the broadcast message
-        message = {
+        {
             "type": "status_update",
             "data": asdict(status_update)
         }
@@ -200,7 +202,7 @@ class ConnectionStatusBroadcaster:
                 
     async def _send_immediate_status_update(self, session_id: str):
         """Send immediate status update to a specific client"""
-        status_update = await self._create_status_update("connection_health")
+        await self._create_status_update("connection_health")
         
         try:
             # Send to specific client

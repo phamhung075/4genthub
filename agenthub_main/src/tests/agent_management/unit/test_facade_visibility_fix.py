@@ -1,15 +1,24 @@
 """Unit test for AgentManagementFacade visibility update fix"""
 
-import pytest
 from unittest.mock import Mock
 from uuid import uuid4
 
-from fastmcp.agent_management.application.facades.agent_management_facade import AgentManagementFacade
-from fastmcp.agent_management.domain.entities.user_agent_instance import UserAgentInstance
+from fastmcp.agent_management.application.facades.agent_management_facade import (
+    AgentManagementFacade,
+)
+from fastmcp.agent_management.domain.entities.user_agent_instance import (
+    UserAgentInstance,
+)
+from fastmcp.agent_management.domain.value_objects.agent_configuration import (
+    AgentConfiguration,
+)
+from fastmcp.agent_management.domain.value_objects.agent_template_id import (
+    AgentTemplateId,
+)
+from fastmcp.agent_management.domain.value_objects.user_agent_instance_id import (
+    UserAgentInstanceId,
+)
 from fastmcp.agent_management.domain.value_objects.user_id import UserId
-from fastmcp.agent_management.domain.value_objects.user_agent_instance_id import UserAgentInstanceId
-from fastmcp.agent_management.domain.value_objects.agent_template_id import AgentTemplateId
-from fastmcp.agent_management.domain.value_objects.agent_configuration import AgentConfiguration
 
 
 class TestFacadeVisibilityUpdate:

@@ -10,6 +10,8 @@ Usage Example:
     await track_token_operation(token_id="tok_abc123", operation="task_create", session=db_session)
 """
 
+from __future__ import annotations
+
 import logging
 
 from sqlalchemy.orm import Session

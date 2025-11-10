@@ -20,14 +20,15 @@ NOTE: This test file uses simplified MCP tools integration for reliable E2E test
 It focuses on verifying Phase 1 response structures and behavior changes.
 """
 
-import pytest
 import uuid
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 from unittest.mock import patch
 
+import pytest
+
 # Import MCP tools for E2E testing
-from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+    DDDCompliantMCPTools,
+)
 
 
 @pytest.fixture
@@ -108,7 +109,7 @@ def project_with_branch(mcp_tools, mock_auth, test_user_id):
             force="true",
             user_id=test_user_id
         )
-    except:
+    except Exception:
         pass
 
 
