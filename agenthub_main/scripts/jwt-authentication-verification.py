@@ -14,15 +14,16 @@ Usage:
     python scripts/jwt-authentication-verification.py --test-endpoints
 """
 
+import argparse
+import json
+import logging
 import os
 import sys
-import json
-import requests
+from datetime import UTC, datetime, timedelta, timezone
+from typing import Any, Dict
+
 import jwt
-import argparse
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Any, Optional, Tuple
-import logging
+import requests
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -146,7 +147,7 @@ class JWTAuthenticationTester:
             self.results['summary']['passed'] += 1
             return True
     
-    def test_token_generation(self) -> Dict[str, Any]:
+    def test_token_generation(self) -> dict[str, Any]:
         """Test token generation with different secrets"""
         self.log("🔍 Testing JWT Token Generation", "info")
         
@@ -208,8 +209,8 @@ class JWTAuthenticationTester:
                 'user_id': test_user_data['user_id'],
                 'email': test_user_data['email'],
                 'type': 'api_token',
-                'iat': datetime.now(timezone.utc),
-                'exp': datetime.now(timezone.utc) + timedelta(hours=24)
+                'iat': datetime.now(UTC),
+                'exp': datetime.now(UTC) + timedelta(hours=24)
             }
             manual_token = jwt.encode(manual_payload, jwt_secret, algorithm="HS256")
             generation_results['manual_jwt'] = {
@@ -466,7 +467,7 @@ class JWTAuthenticationTester:
             self.results['summary']['failed'] += 1
             return False
     
-    def run_full_test_suite(self, test_endpoints: bool = False) -> Dict[str, Any]:
+    def run_full_test_suite(self, test_endpoints: bool = False) -> dict[str, Any]:
         """Run the complete test suite"""
         self.log("🚀 Starting JWT Authentication Verification", "info")
         self.log("=" * 60, "info")

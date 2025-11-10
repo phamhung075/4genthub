@@ -1,7 +1,7 @@
 """Test template for service with user context."""
-import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from uuid import uuid4
+
 
 class TestServiceUserContext:
     """Test service properly handles user context."""

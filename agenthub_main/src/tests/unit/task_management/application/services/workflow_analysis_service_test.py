@@ -45,9 +45,9 @@ class TestWorkflowPattern:
         assert pattern.metrics == {"metric1": 1.0, "metric2": "value"}
 
 
-class TestWorkflowAnalysis:
+class TestWorkflowAnalysisDataclass:
     """Test suite for WorkflowAnalysis dataclass"""
-    
+
     def test_workflow_analysis_creation(self):
         """Test creating a WorkflowAnalysis"""
         task_id = uuid.uuid4()

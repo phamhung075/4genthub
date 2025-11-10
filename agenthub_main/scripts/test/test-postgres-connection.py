@@ -3,8 +3,8 @@
 
 import os
 import sys
+
 import psycopg2
-from psycopg2 import sql
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -20,7 +20,7 @@ def test_connection():
     db_user = os.getenv("DATABASE_USER", "agenthub_user")
     db_password = os.getenv("DATABASE_PASSWORD", "ChangeThisSecurePassword2025!")
     
-    print(f"Testing PostgreSQL connection...")
+    print("Testing PostgreSQL connection...")
     print(f"  Host: {db_host}:{db_port}")
     print(f"  Database: {db_name}")
     print(f"  User: {db_user}")
@@ -48,7 +48,7 @@ def test_connection():
         # Check extensions
         cur.execute("SELECT extname FROM pg_extension WHERE extname IN ('uuid-ossp', 'pgcrypto')")
         extensions = cur.fetchall()
-        print(f"\nInstalled Extensions:")
+        print("\nInstalled Extensions:")
         for ext in extensions:
             print(f"  - {ext[0]}")
         

@@ -4,12 +4,13 @@ Test Coverage Analysis Script
 Identifies Python source files in agenthub_main/src that don't have corresponding tests.
 """
 
-import os
 import fnmatch
+import os
 from pathlib import Path
-from typing import List, Dict, Set
+from typing import Dict, List
 
-def find_python_files(directory: str, exclude_patterns: List[str] = None) -> List[Path]:
+
+def find_python_files(directory: str, exclude_patterns: list[str] = None) -> list[Path]:
     """Find all Python files in a directory, excluding patterns."""
     if exclude_patterns is None:
         exclude_patterns = ['__pycache__', '*.pyc', '__init__.py']
@@ -112,7 +113,7 @@ def get_layer_from_path(file_path: Path) -> str:
     
     return 'other'
 
-def prioritize_missing_tests(missing_tests: List[Dict]) -> Dict[str, List[Dict]]:
+def prioritize_missing_tests(missing_tests: list[dict]) -> dict[str, list[dict]]:
     """Prioritize missing tests by importance."""
     priorities = {
         'critical': [],
@@ -201,7 +202,7 @@ def generate_report():
                     print(f"      ... and {len(files) - 5} more")
     
     # Generate summary for each domain
-    print(f"\nSUMMARY BY DOMAIN:")
+    print("\nSUMMARY BY DOMAIN:")
     print("-" * 30)
     domain_stats = {}
     for missing in missing_tests:

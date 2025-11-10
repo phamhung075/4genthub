@@ -12,9 +12,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "agenthub_main" / "src"))
 
-from sqlalchemy import create_engine, inspect, MetaData, text
-from sqlalchemy.engine import reflection
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, inspect, text
 
 # Load environment variables
 load_dotenv()
@@ -36,7 +35,7 @@ def get_database_url(use_local=True):
 def inspect_database(database_url):
     """Inspect database schema"""
     print(f"\n{'='*80}")
-    print(f"DATABASE SCHEMA INSPECTION")
+    print("DATABASE SCHEMA INSPECTION")
     print(f"{'='*80}")
     print(f"Database: {database_url.split('@')[1] if '@' in database_url else 'N/A'}\n")
 
@@ -94,7 +93,7 @@ def inspect_database(database_url):
                     print(f"      • {uc['name']:40} ({cols})")
 
         print(f"\n{'='*80}")
-        print(f"INSPECTION COMPLETE")
+        print("INSPECTION COMPLETE")
         print(f"{'='*80}\n")
 
         # Additional queries for useful information
@@ -105,7 +104,7 @@ def inspect_database(database_url):
             print(f"Database Size: {db_size}")
 
             # Get table sizes
-            print(f"\nTable Sizes:")
+            print("\nTable Sizes:")
             result = conn.execute(text("""
                 SELECT
                     schemaname,
@@ -132,15 +131,20 @@ def inspect_database(database_url):
 def compare_with_orm():
     """Compare database schema with ORM models"""
     print(f"\n{'='*80}")
-    print(f"ORM MODEL INSPECTION")
+    print("ORM MODEL INSPECTION")
     print(f"{'='*80}\n")
 
     try:
-        from fastmcp.task_management.domain.entities import (
-            Project, Task, GitBranch, Subtask, Context
-        )
         from fastmcp.agent_management.domain.entities import (
-            UserAgentInstance, SharedAgentInstance
+            SharedAgentInstance,
+            UserAgentInstance,
+        )
+        from fastmcp.task_management.domain.entities import (
+            Context,
+            GitBranch,
+            Project,
+            Subtask,
+            Task,
         )
 
         orm_models = [

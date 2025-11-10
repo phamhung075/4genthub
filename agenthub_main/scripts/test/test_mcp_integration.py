@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Test MCP server integration and find issues."""
 
-import os
 import sys
-import json
-import requests
 from datetime import datetime
+
+import requests
 
 # Add the source directory to path
 sys.path.insert(0, './agenthub_main/src')
@@ -46,7 +45,9 @@ def test_mcp_server():
         print(f"⚠️ Import warning (expected during refactoring): {e}")
         print("   Trying direct import...")
         try:
-            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+                DDDCompliantMCPTools,
+            )
             tools = DDDCompliantMCPTools()
             print("✅ DDDCompliantMCPTools imported directly")
         except ImportError as e2:

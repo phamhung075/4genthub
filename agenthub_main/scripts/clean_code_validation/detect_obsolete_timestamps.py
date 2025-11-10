@@ -18,14 +18,11 @@ Usage:
     python detect_obsolete_timestamps.py --strict
 """
 
-import os
 import re
-import ast
-import sys
-from typing import List, Dict, Any, Tuple
-from pathlib import Path
-from dataclasses import dataclass
 from collections import defaultdict
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -45,7 +42,7 @@ class ObsoleteTimestampDetector:
 
     def __init__(self, project_root: str):
         self.project_root = Path(project_root)
-        self.violations: List[ViolationReport] = []
+        self.violations: list[ViolationReport] = []
 
         # Patterns that indicate manual timestamp handling (VIOLATIONS)
         self.violation_patterns = [
@@ -110,13 +107,13 @@ class ObsoleteTimestampDetector:
             "**/dist/**",
         ]
 
-    def scan_codebase(self) -> List[ViolationReport]:
+    def scan_codebase(self) -> list[ViolationReport]:
         """Scan the entire codebase for timestamp violations.
 
         Returns:
             List[ViolationReport]: All detected violations
         """
-        print(f"🔍 Scanning codebase for obsolete timestamp patterns...")
+        print("🔍 Scanning codebase for obsolete timestamp patterns...")
         print(f"📁 Project root: {self.project_root}")
 
         files_scanned = 0
@@ -150,7 +147,7 @@ class ObsoleteTimestampDetector:
     def _scan_file(self, file_path: Path) -> None:
         """Scan a single file for timestamp violations."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 lines = f.readlines()
 
             for line_num, line in enumerate(lines, 1):
@@ -184,7 +181,7 @@ class ObsoleteTimestampDetector:
     def _get_line_context(self, file_path: Path, line_num: int, context_lines: int = 2) -> str:
         """Get context lines around a violation."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 all_lines = f.readlines()
 
             start = max(0, line_num - context_lines - 1)
@@ -257,7 +254,7 @@ class ObsoleteTimestampDetector:
             report_lines.append(f"   💡 Fix: {violation.suggestion}")
 
             if violation.context and len(violation.context) < 200:
-                report_lines.append(f"   🔍 Context:")
+                report_lines.append("   🔍 Context:")
                 for ctx_line in violation.context.split('\n')[:3]:
                     if ctx_line.strip():
                         report_lines.append(f"      {ctx_line.strip()}")
@@ -296,7 +293,7 @@ class ObsoleteTimestampDetector:
 
         return report_content
 
-    def get_violation_summary(self) -> Dict[str, Any]:
+    def get_violation_summary(self) -> dict[str, Any]:
         """Get a summary of violations for programmatic use.
 
         Returns:

@@ -601,7 +601,6 @@ class ORMTaskRepository(
                         label = session.query(Label).filter(Label.name == label_name).first()
                         if not label:
                             # Create new label with a unique ID
-                            import uuid
                             label = Label(
                                 id=str(uuid.uuid4()),
                                 name=label_name,

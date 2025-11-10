@@ -12,8 +12,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "agenthub_main" / "src"))
 
-from sqlalchemy import create_engine, inspect
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, inspect
 
 load_dotenv()
 
@@ -34,7 +34,7 @@ def verify_critical_tables(database_url):
     inspector = inspect(engine)
 
     print(f"\n{'='*80}")
-    print(f"DETAILED TABLE VERIFICATION")
+    print("DETAILED TABLE VERIFICATION")
     print(f"{'='*80}\n")
 
     # Define critical tables and their expected columns
@@ -112,7 +112,7 @@ def verify_critical_tables(database_url):
 
         # Show important column types
         if table_name == 'tasks':
-            print(f"\n   Key column types:")
+            print("\n   Key column types:")
             for col in ['id', 'git_branch_id', 'completed_subtasks', 'subtask_count']:
                 if col in actual_columns:
                     col_info = actual_columns[col]
@@ -151,7 +151,7 @@ def verify_critical_tables(database_url):
             for fk in actual_fks:
                 if 'task_id' in fk['constrained_columns']:
                     if fk.get('ondelete') == 'CASCADE':
-                        print(f"✅ CASCADE delete enabled on task_id")
+                        print("✅ CASCADE delete enabled on task_id")
                     else:
                         print(f"⚠️  CASCADE delete NOT enabled on task_id (found: {fk.get('ondelete')})")
                         all_ok = False

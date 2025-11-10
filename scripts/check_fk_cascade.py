@@ -8,7 +8,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "agenthub_main" / "src"))
 
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, inspect
 
 
 def get_database_url():

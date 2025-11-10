@@ -21,8 +21,8 @@ Usage:
     python scripts/migrate.py auto "detected changes"
 """
 
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 # Add src to path

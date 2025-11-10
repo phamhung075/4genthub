@@ -9,6 +9,7 @@ Manually updated to match actual agent directories.
 
 import os
 from enum import Enum
+from typing import Optional
 
 import yaml
 
@@ -81,7 +82,7 @@ class AgentRole(Enum):
         return [role.value for role in cls]
     
     @classmethod
-    def get_role_by_slug(cls, slug: str) -> 'AgentRole' | None:
+    def get_role_by_slug(cls, slug: str) -> Optional['AgentRole']:
         """Get role enum by slug"""
         for role in cls:
             if role.value == slug:

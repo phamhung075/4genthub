@@ -4,15 +4,14 @@ Test MCP-Keycloak Authentication Flow
 Tests the complete authentication and token management flow
 """
 
+import asyncio
+import json
+import logging
 import os
 import sys
-import asyncio
-import logging
+
 import httpx
-import json
-from typing import Dict, Any, Optional
 from dotenv import load_dotenv
-from pathlib import Path
 
 # Setup logging
 logging.basicConfig(
@@ -376,7 +375,7 @@ class MCPKeycloakAuthTester:
             logger.info("Please set KEYCLOAK_CLIENT_SECRET for your client")
             return False
         
-        logger.info(f"\nConfiguration:")
+        logger.info("\nConfiguration:")
         logger.info(f"  Keycloak URL: {self.keycloak_url}")
         logger.info(f"  Realm: {self.keycloak_realm}")
         logger.info(f"  Client ID: {self.keycloak_client_id}")

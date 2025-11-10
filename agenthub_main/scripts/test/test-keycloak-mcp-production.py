@@ -4,14 +4,12 @@ Test Keycloak MCP Integration for Production Setup
 Tests the clean configuration without backward compatibility
 """
 
+import asyncio
 import os
 import sys
-import asyncio
-import json
-import httpx
-from pathlib import Path
-from typing import Optional, Dict, Any
 from datetime import datetime
+
+import httpx
 
 # Add src to path
 sys.path.insert(0, 'agenthub_main/src')

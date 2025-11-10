@@ -10,17 +10,17 @@ This script:
 5. Creates initial data
 """
 
+import logging
 import os
 import sys
 import time
-import logging
 from pathlib import Path
 from typing import Optional
+
 import psycopg2
-from psycopg2 import sql
-from sqlalchemy import create_engine, text, inspect
-from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
+from psycopg2 import sql
+from sqlalchemy import create_engine, inspect, text
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -51,7 +51,7 @@ class PostgreSQLInitializer:
         self.database_url = self._build_database_url()
         self.engine = None
         
-    def _build_database_url(self, db_name: Optional[str] = None) -> str:
+    def _build_database_url(self, db_name: str | None = None) -> str:
         """Build PostgreSQL connection URL"""
         db = db_name or self.db_name
         if self.ssl_mode == "disable":
@@ -116,9 +116,9 @@ class PostgreSQLInitializer:
                         sql.Identifier(self.db_name)
                     )
                 )
-                logger.info(f"   ✅ Database created successfully!")
+                logger.info("   ✅ Database created successfully!")
             else:
-                logger.info(f"   ✅ Database already exists")
+                logger.info("   ✅ Database already exists")
             
             cursor.close()
             conn.close()
@@ -134,8 +134,12 @@ class PostgreSQLInitializer:
         
         try:
             # Import DatabaseConfig to trigger initialization
-            from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
-            from fastmcp.task_management.infrastructure.database.database_initializer import DatabaseInitializer
+            from fastmcp.task_management.infrastructure.database.database_config import (
+                DatabaseConfig,
+            )
+            from fastmcp.task_management.infrastructure.database.database_initializer import (
+                DatabaseInitializer,
+            )
             
             # Create database configuration
             db_config = DatabaseConfig()

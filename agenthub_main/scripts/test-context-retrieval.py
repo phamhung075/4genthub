@@ -5,10 +5,9 @@ Test script to verify the authentication fix allows global context retrieval.
 This simulates the exact error scenario from the user report.
 """
 
-import os
-import sys
 import asyncio
 import logging
+import sys
 from pathlib import Path
 
 # Add the src directory to Python path
@@ -24,7 +23,9 @@ async def test_context_resolve_with_auth():
     
     try:
         # Import the unified context controller
-        from fastmcp.task_management.interface.controllers.unified_context_controller import UnifiedContextMCPController
+        from fastmcp.task_management.interface.controllers.unified_context_controller import (
+            UnifiedContextMCPController,
+        )
         
         logger.info("🔍 Testing global context retrieval with authentication...")
         
@@ -81,7 +82,9 @@ async def test_auth_helper_isolation():
     """Test auth helper in isolation to verify the fix."""
     
     try:
-        from fastmcp.task_management.interface.controllers.auth_helper import get_authenticated_user_id
+        from fastmcp.task_management.interface.controllers.auth_helper import (
+            get_authenticated_user_id,
+        )
         
         logger.info("🔍 Testing auth helper authentication flow...")
         

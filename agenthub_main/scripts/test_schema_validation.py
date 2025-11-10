@@ -3,15 +3,17 @@
 Simple test script to verify the schema validation works correctly
 """
 
-import sys
-import os
 import logging
+import os
+import sys
+
 from sqlalchemy import create_engine, text
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from fastmcp.task_management.infrastructure.database.models import Base
+
 
 def test_schema_validation():
     """Test that schema validation detects missing user_id columns"""

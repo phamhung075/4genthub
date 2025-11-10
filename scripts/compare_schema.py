@@ -6,17 +6,17 @@ Compares actual database schema with ORM models and generates migration suggesti
 
 import os
 import sys
-from pathlib import Path
-from typing import Dict, List, Set, Any
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "agenthub_main" / "src"))
 
-from sqlalchemy import create_engine, inspect, MetaData, text
-from sqlalchemy.schema import Table, Column
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.schema import Table
 
 # Load environment variables
 load_dotenv()
@@ -35,9 +35,9 @@ class ColumnDifference:
 class TableDifference:
     """Represents differences in a table"""
     table_name: str
-    differences: List[ColumnDifference]
-    missing_indexes: List[str] = None
-    extra_indexes: List[str] = None
+    differences: list[ColumnDifference]
+    missing_indexes: list[str] = None
+    extra_indexes: list[str] = None
 
 
 def get_database_url():
@@ -57,10 +57,24 @@ def get_orm_tables():
     try:
         # Import from task management models
         from fastmcp.task_management.infrastructure.database.models import (
-            Project, Task, ProjectGitBranch, Subtask, TaskDependency,
-            Label, TaskLabel, TaskAssignee, Template, Agent, MissedNotification,
-            APIToken, GlobalContext, ProjectContext, BranchContext, TaskContext,
-            ContextDelegation, ContextInheritanceCache
+            Agent,
+            APIToken,
+            BranchContext,
+            ContextDelegation,
+            ContextInheritanceCache,
+            GlobalContext,
+            Label,
+            MissedNotification,
+            Project,
+            ProjectContext,
+            ProjectGitBranch,
+            Subtask,
+            Task,
+            TaskAssignee,
+            TaskContext,
+            TaskDependency,
+            TaskLabel,
+            Template,
         )
 
         orm_tables.update({
@@ -89,7 +103,9 @@ def get_orm_tables():
     try:
         # Import from agent management models
         from fastmcp.agent_management.infrastructure.database.models import (
-            UserAgentInstanceORM, AgentTemplateORM, AgentImportHistoryORM
+            AgentImportHistoryORM,
+            AgentTemplateORM,
+            UserAgentInstanceORM,
         )
 
         orm_tables.update({
@@ -113,7 +129,7 @@ def get_orm_tables():
     return orm_tables
 
 
-def compare_columns(db_columns: Dict, orm_table: Table) -> List[ColumnDifference]:
+def compare_columns(db_columns: dict, orm_table: Table) -> list[ColumnDifference]:
     """Compare columns between database and ORM"""
     differences = []
 
@@ -178,7 +194,7 @@ def compare_columns(db_columns: Dict, orm_table: Table) -> List[ColumnDifference
     return differences
 
 
-def generate_migration_sql(differences: List[TableDifference]) -> str:
+def generate_migration_sql(differences: list[TableDifference]) -> str:
     """Generate SQL migration script from differences"""
     sql_statements = []
 
@@ -204,7 +220,7 @@ def generate_migration_sql(differences: List[TableDifference]) -> str:
             elif col_diff.difference_type == 'missing_in_orm':
                 # Column exists in DB but not ORM - suggest dropping
                 sql_statements.append(
-                    f"-- WARNING: Column exists in DB but not in ORM model"
+                    "-- WARNING: Column exists in DB but not in ORM model"
                 )
                 sql_statements.append(
                     f"-- ALTER TABLE {table_diff.table_name} "
@@ -239,7 +255,7 @@ def generate_migration_sql(differences: List[TableDifference]) -> str:
 
 def main():
     print(f"\n{'='*80}")
-    print(f"DATABASE SCHEMA COMPARISON")
+    print("DATABASE SCHEMA COMPARISON")
     print(f"{'='*80}\n")
 
     # Get database connection
@@ -296,7 +312,7 @@ def main():
     # Generate migration script
     if all_differences:
         print(f"\n{'='*80}")
-        print(f"MIGRATION SCRIPT")
+        print("MIGRATION SCRIPT")
         print(f"{'='*80}\n")
 
         migration_sql = generate_migration_sql(all_differences)
@@ -311,7 +327,7 @@ def main():
         print(f"\nFound {len(all_differences)} tables with differences")
         print(f"Total differences: {sum(len(d.differences) for d in all_differences)}")
     else:
-        print(f"\n✅ No differences found! Database schema matches ORM models.")
+        print("\n✅ No differences found! Database schema matches ORM models.")
 
     return 0
 

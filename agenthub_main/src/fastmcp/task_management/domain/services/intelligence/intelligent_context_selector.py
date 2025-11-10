@@ -413,9 +413,9 @@ class IntelligentContextSelector:
         content_parts = []
         
         # Extract from common fields
-        for field in ['title', 'description', 'details', 'name', 'git_branch_name']:
-            if field in context_data and isinstance(context_data[field], str):
-                content_parts.append(context_data[field])
+        for field_name in ['title', 'description', 'details', 'name', 'git_branch_name']:
+            if field_name in context_data and isinstance(context_data[field_name], str):
+                content_parts.append(context_data[field_name])
         
         # Extract from nested structures
         if 'metadata' in context_data and isinstance(context_data['metadata'], dict):

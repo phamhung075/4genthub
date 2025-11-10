@@ -27,8 +27,12 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config, Base
 from sqlalchemy import text
+
+from fastmcp.task_management.infrastructure.database.database_config import (
+    Base,
+    get_db_config,
+)
 
 
 def reset_database():
@@ -103,9 +107,9 @@ def reset_database():
         print("=" * 60)
         print()
         print("📝 Summary:")
-        print(f"   • Tables dropped: All existing tables")
+        print("   • Tables dropped: All existing tables")
         print(f"   • Tables created: {len(tables)} tables")
-        print(f"   • Status: Fresh database ready to use")
+        print("   • Status: Fresh database ready to use")
         print()
 
     except Exception as e:

@@ -12,12 +12,11 @@ Usage:
 If no project_path is provided, it uses the current directory.
 """
 
-import os
-import sys
 import json
-import shutil
+import sys
 from pathlib import Path
 from typing import Optional
+
 
 def setup_project_structure(project_path: Path) -> bool:
     """
@@ -127,7 +126,7 @@ This project uses the agenthub task management system.
         print(f"❌ Error setting up project structure: {e}")
         return False
 
-def create_mcp_config(project_path: Path, agenthub_path: Optional[Path] = None) -> bool:
+def create_mcp_config(project_path: Path, agenthub_path: Path | None = None) -> bool:
     """
     Create MCP configuration file for the project.
     

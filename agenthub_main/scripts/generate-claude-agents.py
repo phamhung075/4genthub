@@ -7,12 +7,8 @@ It creates bridge agents that seamlessly integrate your 60+ specialized agents
 with Claude Code's agent system.
 """
 
-import json
-import os
-import sys
-import requests
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import List
 
 # Configuration
 CLAUDE_AGENTS_DIR = Path.home() / ".claude" / "agents"
@@ -42,7 +38,7 @@ COMMON_MCP_TOOLS = [
     "mcp__agenthub_http__manage_project"
 ]
 
-def get_available_agents() -> List[str]:
+def get_available_agents() -> list[str]:
     """Get list of available agents from agenthub_http system."""
     # This would typically call an API endpoint to get available agents
     # For now, returning the known agents from the documentation
@@ -111,7 +107,7 @@ def generate_agent_description(agent_name: str, category: str) -> str:
     
     return base_descriptions.get(category, f"Specialized agent for {agent_name} tasks.")
 
-def get_relevant_tools(category: str) -> List[str]:
+def get_relevant_tools(category: str) -> list[str]:
     """Get relevant MCP tools for a category."""
     category_tools = {
         "orchestrator": COMMON_MCP_TOOLS,
@@ -253,12 +249,12 @@ def main():
             print(f"Error generating agent {agent}: {e}")
     
     print(f"\\nGenerated {len(agents)} agent files in {OUTPUT_DIR}")
-    print(f"\\nTo install agents to Claude Code:")
+    print("\\nTo install agents to Claude Code:")
     print(f"1. Review generated files in {OUTPUT_DIR}")
     print(f"2. Copy desired agents to {CLAUDE_AGENTS_DIR}")
-    print(f"3. Restart Claude Code to load new agents")
+    print("3. Restart Claude Code to load new agents")
     
-    print(f"\\nExample install commands:")
+    print("\\nExample install commands:")
     print(f"cp {OUTPUT_DIR}/*.md {CLAUDE_AGENTS_DIR}/")
 
 if __name__ == "__main__":

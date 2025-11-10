@@ -9,6 +9,7 @@ configuration from the .env file.
 import asyncio
 import os
 import sys
+
 from dotenv import load_dotenv
 
 # Add the agenthub_main/src directory to Python path
@@ -24,9 +25,16 @@ async def test_email_service():
     
     try:
         # Import after path setup
-        from fastmcp.auth.infrastructure.email_service import SMTPEmailService, get_email_service
-        from fastmcp.auth.infrastructure.repositories.email_token_repository import get_email_token_repository
-        from fastmcp.auth.infrastructure.enhanced_auth_service import get_enhanced_auth_service
+        from fastmcp.auth.infrastructure.email_service import (
+            SMTPEmailService,
+            get_email_service,
+        )
+        from fastmcp.auth.infrastructure.enhanced_auth_service import (
+            get_enhanced_auth_service,
+        )
+        from fastmcp.auth.infrastructure.repositories.email_token_repository import (
+            get_email_token_repository,
+        )
         
         print("✅ Successfully imported email service modules")
         
@@ -57,7 +65,7 @@ async def test_email_service():
         token_repo = get_email_token_repository()
         stats = token_repo.get_token_stats()
         
-        print(f"   Database initialized: ✅")
+        print("   Database initialized: ✅")
         print(f"   Total tokens: {stats.get('total_tokens', 0)}")
         print(f"   Active tokens: {stats.get('active_tokens', 0)}")
         

@@ -4,12 +4,11 @@ Test Production Setup - PostgreSQL + Keycloak
 Verifies that the system is properly configured for production
 """
 
+import asyncio
 import os
 import sys
-import json
-import asyncio
+
 import httpx
-from typing import Dict, Any
 
 # Add source path
 sys.path.insert(0, 'agenthub_main/src')
@@ -71,7 +70,9 @@ def test_postgresql_connection():
     print("=" * 60)
     
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         
         # Initialize database config
         db_config = DatabaseConfig()
@@ -89,7 +90,7 @@ def test_postgresql_connection():
         result = session.execute(text("SELECT current_database(), version()"))
         db_name, version = result.fetchone()
         
-        print(f"✅ Connected to PostgreSQL!")
+        print("✅ Connected to PostgreSQL!")
         print(f"   Database: {db_name}")
         print(f"   Version: {version[:50]}...")
         
@@ -300,7 +301,7 @@ async def test_mcp_with_keycloak():
                 print("✅ MCP accepted Keycloak token")
                 result = response.json()
                 if "result" in result:
-                    print(f"   Authenticated request successful")
+                    print("   Authenticated request successful")
                     return True
             else:
                 print(f"❌ MCP rejected token: {response.status_code}")

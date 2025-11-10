@@ -4,10 +4,11 @@ Analyze coverage HTML report to find Tier 2 files (88-91% coverage).
 Extracts files with their coverage percentages and missing line numbers.
 """
 
-import re
 import json
-from pathlib import Path
+import re
 from html.parser import HTMLParser
+from pathlib import Path
+
 
 class CoverageHTMLParser(HTMLParser):
     """Parse coverage HTML to extract file coverage data."""
@@ -64,7 +65,7 @@ class CoverageHTMLParser(HTMLParser):
 def parse_file_details(html_file_path):
     """Parse individual file HTML to get missing line numbers."""
     try:
-        with open(html_file_path, 'r', encoding='utf-8') as f:
+        with open(html_file_path, encoding='utf-8') as f:
             content = f.read()
 
         # Find all lines marked as 'mis' (missing) or 'par' (partial)
@@ -112,7 +113,7 @@ def main():
         return
 
     parser = CoverageHTMLParser()
-    with open(index_file, 'r', encoding='utf-8') as f:
+    with open(index_file, encoding='utf-8') as f:
         parser.feed(f.read())
 
     # Filter for Tier 2 files (88-91% coverage)
@@ -159,10 +160,10 @@ def main():
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(tier2_files, f, indent=2)
 
-    print(f"\n=== Tier 2 Coverage Analysis (88-91%) ===")
+    print("\n=== Tier 2 Coverage Analysis (88-91%) ===")
     print(f"Total files found: {len(tier2_files)}")
     print(f"Output saved to: {output_file}")
-    print(f"\nTop 10 files by priority:\n")
+    print("\nTop 10 files by priority:\n")
 
     for i, file_data in enumerate(tier2_files[:10], 1):
         print(f"{i}. {file_data['file']}")

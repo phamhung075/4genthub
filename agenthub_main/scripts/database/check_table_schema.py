@@ -13,8 +13,11 @@ os.environ['DATABASE_URL'] = 'postgresql://agenthub_user:agenthub_password@local
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from agenthub_main.src.fastmcp.task_management.infrastructure.database.database_config import get_db_config
+from agenthub_main.src.fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
 from sqlalchemy import text
+
 
 def check_table_schema():
     """Check the actual database table schema"""

@@ -6,8 +6,12 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from sqlalchemy import create_engine, text, inspect
-from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+from sqlalchemy import create_engine, inspect, text
+
+from fastmcp.task_management.infrastructure.database.database_config import (
+    DatabaseConfig,
+)
+
 
 def check_database_state():
     """Check current database state"""

@@ -8,12 +8,13 @@ Usage:
     python3 scripts/analyze_coverage_json.py --file session_store.py
 """
 
-import json
 import argparse
+import json
+
 
 def load_coverage_data(coverage_file="coverage_final.json"):
     try:
-        with open(coverage_file, 'r') as f:
+        with open(coverage_file) as f:
             return json.load(f)
     except FileNotFoundError:
         print(f"❌ Coverage file not found: {coverage_file}")
@@ -68,7 +69,7 @@ def analyze_by_range(data, coverage_range, top_n=50):
     total_statements = sum(f['statements'] for f in top_files)
     total_missing = sum(f['missing'] for f in top_files)
 
-    print(f"\n📈 Summary Statistics:")
+    print("\n📈 Summary Statistics:")
     print(f"   Total Statements: {total_statements:,}")
     print(f"   Total Missing Lines: {total_missing:,}")
     print(f"   Potential Coverage Gain: {(total_missing / data['totals']['num_statements'] * 100):.2f}%")

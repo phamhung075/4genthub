@@ -11,7 +11,6 @@ This script:
 
 import re
 from pathlib import Path
-from typing import Set
 
 
 def process_file(file_path: Path) -> bool:
@@ -150,9 +149,9 @@ def main():
 
     print()
     print(f"{'='*60}")
-    print(f"✨ Modernization Complete!")
+    print("✨ Modernization Complete!")
     print(f"📝 Modified {modified_count} files")
-    print(f"🎯 Changed timezone.utc → UTC (Python 3.11+ modern syntax)")
+    print("🎯 Changed timezone.utc → UTC (Python 3.11+ modern syntax)")
     print(f"{'='*60}")
 
 

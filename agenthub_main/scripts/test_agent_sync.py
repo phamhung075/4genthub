@@ -2,10 +2,9 @@
 """Test the agent sync functionality"""
 
 import sys
-import os
-import json
-import requests
 from pathlib import Path
+
+import requests
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))

@@ -5,25 +5,23 @@ Interactive menu system for Docker CLI operations
 """
 
 import os
-import sys
 import subprocess
-from typing import List, Tuple, Callable
-from enum import Enum
+import sys
+from typing import Tuple
 
 try:
     import questionary
     from rich.console import Console
-    from rich.table import Table
-    from rich.panel import Panel
     from rich.markdown import Markdown
+    from rich.panel import Panel
+    from rich.table import Table
 except ImportError:
     print("Installing required packages...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "questionary", "rich"])
     import questionary
     from rich.console import Console
-    from rich.table import Table
     from rich.panel import Panel
-    from rich.markdown import Markdown
+    from rich.table import Table
 
 console = Console()
 
@@ -57,7 +55,7 @@ def show_header():
     ))
     console.print()
 
-def run_command(cmd: str, interactive: bool = False) -> Tuple[bool, str]:
+def run_command(cmd: str, interactive: bool = False) -> tuple[bool, str]:
     """Execute a docker-cli.sh command"""
     full_cmd = f"./docker-cli.sh {cmd}"
     console.print(f"[dim]Running: {full_cmd}[/dim]")
@@ -76,7 +74,7 @@ def run_command(cmd: str, interactive: bool = False) -> Tuple[bool, str]:
                     console.print(result.stdout)
                 return True, result.stdout
             else:
-                console.print(f"[red]✗ Failed[/red]")
+                console.print("[red]✗ Failed[/red]")
                 if result.stderr:
                     console.print(f"[red]{result.stderr}[/red]")
                 return False, result.stderr

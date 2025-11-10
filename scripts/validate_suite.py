@@ -3,10 +3,10 @@
 Suite Validation Script
 Validates that all parallel fixes are working correctly
 """
-import sys
 import subprocess
-import os
+import sys
 from pathlib import Path
+
 
 def run_command(cmd, cwd=None):
     """Run a command and capture output"""
@@ -88,7 +88,7 @@ def main():
     if returncode == 0:
         print("✅ Auth unit collection successful")
     else:
-        print(f"❌ Auth collection issues present")
+        print("❌ Auth collection issues present")
         if stderr:
             print(f"Details: {stderr[-200:]}")
     
@@ -102,7 +102,7 @@ def main():
     if returncode == 0:
         print("✅ AI Planning collection successful")
     else:
-        print(f"❌ AI Planning collection issues present")
+        print("❌ AI Planning collection issues present")
         if stderr:
             print(f"Details: {stderr[-200:]}")
     

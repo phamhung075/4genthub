@@ -11,7 +11,7 @@ import logging
 import threading
 import time
 from collections.abc import Generator
-from contextlib import AbstractContextManager, contextmanager
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
 

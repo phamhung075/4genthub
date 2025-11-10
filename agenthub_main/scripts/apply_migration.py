@@ -17,15 +17,18 @@ Features:
 """
 
 import sys
+from datetime import UTC, datetime, timezone
 from pathlib import Path
-from datetime import datetime, timezone
 
 # Add src to path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-from sqlalchemy import text, Table, Column, String, DateTime, MetaData
+from sqlalchemy import Column, DateTime, MetaData, String, Table, text
+
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
 
 
 def ensure_migration_table(engine):
@@ -61,7 +64,7 @@ def mark_migration_applied(engine, migration_name):
             "VALUES (:name, :timestamp)"
         ), {
             "name": migration_name,
-            "timestamp": datetime.now(timezone.utc)
+            "timestamp": datetime.now(UTC)
         })
         conn.commit()
 

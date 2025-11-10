@@ -43,7 +43,7 @@ def initialize_database():
 
         # Import the database initializer
         from fastmcp.task_management.infrastructure.database.db_initializer import (
-            initialize_database_on_startup
+            initialize_database_on_startup,
         )
 
         # Initialize the database (creates tables if missing)
@@ -65,8 +65,12 @@ def initialize_database():
         logger.info("=" * 60)
 
         try:
-            from fastmcp.agent_management.application.services import YAMLAgentTemplateLoader
-            from fastmcp.agent_management.infrastructure.repositories import ORMAgentTemplateRepository
+            from fastmcp.agent_management.application.services import (
+                YAMLAgentTemplateLoader,
+            )
+            from fastmcp.agent_management.infrastructure.repositories import (
+                ORMAgentTemplateRepository,
+            )
 
             # Check if templates already exist
             repository = ORMAgentTemplateRepository()

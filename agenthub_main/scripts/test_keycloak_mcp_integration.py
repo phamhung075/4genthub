@@ -8,12 +8,12 @@ This script tests the complete authentication flow:
 3. Use MCP token to access MCP tools
 """
 
+import asyncio
 import os
 import sys
-import asyncio
+from typing import Any, Dict, Optional
+
 import httpx
-import json
-from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
 # Add parent directory to path for imports
@@ -32,9 +32,9 @@ class KeycloakMCPTester:
     """Test Keycloak and MCP integration"""
 
     def __init__(self):
-        self.keycloak_token: Optional[str] = None
-        self.mcp_token: Optional[str] = None
-        self.user_info: Optional[Dict[str, Any]] = None
+        self.keycloak_token: str | None = None
+        self.mcp_token: str | None = None
+        self.user_info: dict[str, Any] | None = None
 
     async def test_keycloak_login(self, username: str, password: str) -> bool:
         """
@@ -221,9 +221,9 @@ class KeycloakMCPTester:
                     else:
                         print(f"      ❌ Failed: {response.status_code}")
                         if response.status_code == 401:
-                            print(f"      🔒 Authentication required")
+                            print("      🔒 Authentication required")
                         elif response.status_code == 403:
-                            print(f"      🚫 Permission denied")
+                            print("      🚫 Permission denied")
                             
         except Exception as e:
             print(f"   ❌ Connection error: {e}")
@@ -258,9 +258,9 @@ class KeycloakMCPTester:
             print("✅ INTEGRATION TEST SUCCESSFUL!")
             print("="*60)
             print("\n📋 Summary:")
-            print(f"   • Keycloak authentication: ✅")
+            print("   • Keycloak authentication: ✅")
             print(f"   • MCP token exchange: {'✅' if self.mcp_token else '⚠️ Using Keycloak token directly'}")
-            print(f"   • MCP tool access: ✅")
+            print("   • MCP tool access: ✅")
             print(f"   • User: {self.user_info.get('email', 'Unknown') if self.user_info else 'Unknown'}")
         else:
             print("\n" + "="*60)

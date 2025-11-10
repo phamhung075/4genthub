@@ -4,12 +4,10 @@ Test Keycloak and PostgreSQL Integration
 Verifies the clean setup is working correctly
 """
 
+import asyncio
 import os
 import sys
-import asyncio
-import json
 from pathlib import Path
-from typing import Optional, Dict, Any
 
 # Add src to path
 sys.path.insert(0, 'agenthub_main/src')
@@ -45,7 +43,10 @@ async def test_postgresql_connection():
     
     try:
         from sqlalchemy import create_engine, text
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         
         # Load configuration
         config = DatabaseConfig()
@@ -174,7 +175,7 @@ async def test_mcp_server_health():
             
             if response.status_code == 200:
                 health = response.json()
-                print_success(f"MCP server is healthy")
+                print_success("MCP server is healthy")
                 print_info(f"Status: {health.get('status')}")
                 print_info(f"Database: {health.get('database', {}).get('status')}")
                 

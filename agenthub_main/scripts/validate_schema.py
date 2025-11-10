@@ -11,19 +11,22 @@ Usage:
 
 import argparse
 import logging
-import sys
-from typing import Dict, List, Set, Any, Optional
-from dataclasses import dataclass
-from sqlalchemy import create_engine, MetaData, inspect, text
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker
 
 # Add src to path for imports
 import os
+import sys
+from dataclasses import dataclass
+from typing import List, Optional
+
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.engine import Engine
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+from fastmcp.task_management.infrastructure.database.database_config import (
+    DatabaseManager,
+)
 from fastmcp.task_management.infrastructure.database.models import Base
-from fastmcp.task_management.infrastructure.database.database_config import DatabaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +37,8 @@ class ColumnMismatch:
     table_name: str
     column_name: str
     issue_type: str  # 'missing_in_db', 'missing_in_model', 'type_mismatch', 'nullable_mismatch'
-    model_info: Optional[str] = None
-    db_info: Optional[str] = None
+    model_info: str | None = None
+    db_info: str | None = None
     severity: str = 'warning'  # 'error', 'warning', 'info'
 
 
@@ -46,9 +49,9 @@ class SchemaValidator:
         self.engine = engine
         self.metadata = Base.metadata
         self.inspector = inspect(engine)
-        self.mismatches: List[ColumnMismatch] = []
+        self.mismatches: list[ColumnMismatch] = []
         
-    def validate_all_tables(self) -> List[ColumnMismatch]:
+    def validate_all_tables(self) -> list[ColumnMismatch]:
         """Validate all tables and return list of mismatches"""
         logger.info("Starting schema validation...")
         self.mismatches.clear()
@@ -178,11 +181,11 @@ class SchemaValidator:
                 severity=severity
             ))
     
-    def get_critical_issues(self) -> List[ColumnMismatch]:
+    def get_critical_issues(self) -> list[ColumnMismatch]:
         """Get only critical issues that need immediate attention"""
         return [m for m in self.mismatches if m.severity == 'error']
     
-    def get_user_id_issues(self) -> List[ColumnMismatch]:
+    def get_user_id_issues(self) -> list[ColumnMismatch]:
         """Get issues specifically related to user_id columns"""
         return [m for m in self.mismatches if 'user_id' in m.column_name.lower()]
     
@@ -269,7 +272,7 @@ def get_database_engine() -> Engine:
         return create_engine(database_url)
 
 
-def run_validation(database_url: Optional[str] = None, fix_issues: bool = False) -> bool:
+def run_validation(database_url: str | None = None, fix_issues: bool = False) -> bool:
     """
     Run schema validation
     
@@ -320,7 +323,7 @@ def run_validation(database_url: Optional[str] = None, fix_issues: bool = False)
         return False
 
 
-def attempt_fixes(engine: Engine, issues: List[ColumnMismatch]) -> bool:
+def attempt_fixes(engine: Engine, issues: list[ColumnMismatch]) -> bool:
     """
     Attempt to fix critical schema issues automatically
     

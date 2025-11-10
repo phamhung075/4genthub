@@ -4,17 +4,16 @@ Verify init_schema_postgresql.sql matches actual database
 """
 
 import os
-import sys
 import re
+import sys
 from pathlib import Path
-from typing import Dict, Set, List
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "agenthub_main" / "src"))
 
-from sqlalchemy import create_engine, inspect, text
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, inspect
 
 load_dotenv()
 
@@ -31,7 +30,7 @@ def get_database_url():
 
 def parse_sql_file(sql_file_path):
     """Parse SQL file and extract table names"""
-    with open(sql_file_path, 'r') as f:
+    with open(sql_file_path) as f:
         content = f.read()
 
     # Extract CREATE TABLE statements
@@ -59,7 +58,7 @@ def verify_table_columns(sql_file_path, database_url):
     """Verify columns in each table match between SQL file and database"""
     issues = []
 
-    with open(sql_file_path, 'r') as f:
+    with open(sql_file_path) as f:
         sql_content = f.read()
 
     engine = create_engine(database_url)
@@ -122,7 +121,7 @@ def verify_table_columns(sql_file_path, database_url):
 
 def main():
     print(f"\n{'='*80}")
-    print(f"VERIFY INIT SCHEMA SQL vs ACTUAL DATABASE")
+    print("VERIFY INIT SCHEMA SQL vs ACTUAL DATABASE")
     print(f"{'='*80}\n")
 
     sql_file_path = project_root / "agenthub_main" / "src" / "fastmcp" / "task_management" / "infrastructure" / "database" / "init_schema_postgresql.sql"
@@ -149,22 +148,22 @@ def main():
     # Check for missing tables
     missing_in_sql = actual_tables - sql_tables
     if missing_in_sql:
-        print(f"❌ Tables in database but NOT in SQL file:")
+        print("❌ Tables in database but NOT in SQL file:")
         for table in sorted(missing_in_sql):
             print(f"   • {table}")
         print()
     else:
-        print(f"✅ All database tables are in SQL file\n")
+        print("✅ All database tables are in SQL file\n")
 
     # Check for extra tables
     extra_in_sql = sql_tables - actual_tables
     if extra_in_sql:
-        print(f"⚠️  Tables in SQL file but NOT in database:")
+        print("⚠️  Tables in SQL file but NOT in database:")
         for table in sorted(extra_in_sql):
             print(f"   • {table}")
         print()
     else:
-        print(f"✅ No extra tables in SQL file\n")
+        print("✅ No extra tables in SQL file\n")
 
     # Step 2: Verify column structure
     print("\nStep 2: Verifying column structure...")
@@ -181,7 +180,7 @@ def main():
 
     # Summary
     print(f"\n{'='*80}")
-    print(f"VERIFICATION SUMMARY")
+    print("VERIFICATION SUMMARY")
     print(f"{'='*80}\n")
 
     total_issues = len(missing_in_sql) + len(extra_in_sql) + len(column_issues)

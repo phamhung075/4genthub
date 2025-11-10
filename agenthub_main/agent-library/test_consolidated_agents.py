@@ -5,17 +5,16 @@ Tests both new consolidated agents and backward compatibility.
 """
 
 import sys
-import os
-import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Tuple
 
 # Add the src directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from fastmcp.task_management.application.use_cases.call_agent import CallAgentUseCase
 
-def test_agent(agent_name: str, test_type: str = "new") -> Tuple[bool, str]:
+
+def test_agent(agent_name: str, test_type: str = "new") -> tuple[bool, str]:
     """Test a single agent."""
     try:
         use_case = CallAgentUseCase()
@@ -170,7 +169,7 @@ def main():
     print("\n" + "=" * 80)
     print("SUMMARY:")
     print(f"  Active Agents: {active_agents} (target: 30)")
-    print(f"  Deprecated Agents Archived: 12")
+    print("  Deprecated Agents Archived: 12")
     print(f"  Test Result: {'✅ ALL TESTS PASSED' if all_passed else '❌ SOME TESTS FAILED'}")
     print("=" * 80)
     

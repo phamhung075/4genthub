@@ -4,9 +4,9 @@ Test script to verify that 'global' as context_id works properly.
 Tests the normalization of 'global' to user-specific UUID.
 """
 
+import logging
 import os
 import sys
-import logging
 
 # Add the source directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'agenthub_main', 'src'))
@@ -19,8 +19,9 @@ def test_global_context_normalization():
     """Test that 'global' as context_id gets properly normalized."""
     try:
         # Import the necessary modules
-        from fastmcp.task_management.application.services.unified_context_service import UnifiedContextService
-        from fastmcp.task_management.application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+        from fastmcp.task_management.application.factories.unified_context_facade_factory import (
+            UnifiedContextFacadeFactory,
+        )
         
         print("\n=== Testing Global Context Normalization ===\n")
         

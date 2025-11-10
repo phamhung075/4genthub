@@ -9,12 +9,12 @@ This script tests:
 4. API access with tokens
 """
 
+import asyncio
 import os
 import sys
-import asyncio
+from typing import Any, Dict, Optional
+
 import httpx
-import json
-from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
 # Add parent directory to path for imports
@@ -85,7 +85,7 @@ async def test_keycloak_connection():
         print_error(f"Connection error: {e}")
         return False
 
-async def test_keycloak_login(username: str, password: str) -> Optional[Dict[str, Any]]:
+async def test_keycloak_login(username: str, password: str) -> dict[str, Any] | None:
     """Test Keycloak login"""
     print_section("Testing Keycloak Login")
     
@@ -152,7 +152,7 @@ async def test_mcp_server_health():
         print_error(f"Cannot connect to MCP Server: {e}")
         return False
 
-async def test_mcp_login(keycloak_tokens: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+async def test_mcp_login(keycloak_tokens: dict[str, Any]) -> dict[str, Any] | None:
     """Test MCP login with Keycloak token"""
     print_section("Testing MCP Token Exchange")
     
@@ -221,7 +221,7 @@ async def test_api_access(mcp_token: str):
         print_error(f"API access error: {e}")
         return False
 
-async def test_token_refresh(refresh_token: str) -> Optional[Dict[str, Any]]:
+async def test_token_refresh(refresh_token: str) -> dict[str, Any] | None:
     """Test token refresh"""
     print_section("Testing Token Refresh")
     

@@ -5,14 +5,15 @@ Sets up PostgreSQL Docker + Keycloak Cloud integration
 Removes all backward compatibility code
 """
 
-import os
-import sys
+import asyncio
 import json
 import logging
-import asyncio
+import os
 import subprocess
+import sys
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict
+
 import httpx
 from dotenv import load_dotenv
 
@@ -60,7 +61,7 @@ class AuthenticationSetup:
             logger.error(f"Prerequisites check failed: {e}")
             return False
             
-    def validate_keycloak_config(self) -> Dict[str, Any]:
+    def validate_keycloak_config(self) -> dict[str, Any]:
         """Validate Keycloak configuration from environment"""
         required_vars = [
             "KEYCLOAK_URL",
@@ -87,7 +88,7 @@ class AuthenticationSetup:
         logger.info("Keycloak configuration validated successfully")
         return config
         
-    async def test_keycloak_connection(self, config: Dict[str, Any]) -> bool:
+    async def test_keycloak_connection(self, config: dict[str, Any]) -> bool:
         """Test connection to Keycloak cloud instance"""
         try:
             keycloak_url = config["KEYCLOAK_URL"]
@@ -212,7 +213,7 @@ class AuthenticationSetup:
                 
         logger.info("Backward compatibility cleanup completed")
         
-    def generate_mcp_config(self, keycloak_config: Dict[str, Any]) -> Dict[str, Any]:
+    def generate_mcp_config(self, keycloak_config: dict[str, Any]) -> dict[str, Any]:
         """Generate MCP server configuration"""
         return {
             "auth": {
@@ -240,7 +241,7 @@ class AuthenticationSetup:
             }
         }
         
-    def save_mcp_config(self, config: Dict[str, Any]) -> None:
+    def save_mcp_config(self, config: dict[str, Any]) -> None:
         """Save MCP configuration file"""
         config_file = self.project_root / "agenthub_main" / "config" / "mcp_config.json"
         config_file.parent.mkdir(parents=True, exist_ok=True)
@@ -291,7 +292,7 @@ class AuthenticationSetup:
         logger.info("✅ Authentication setup completed successfully!")
         logger.info("=" * 60)
         logger.info("Configuration:")
-        logger.info(f"  - PostgreSQL: Running on localhost:5432")
+        logger.info("  - PostgreSQL: Running on localhost:5432")
         logger.info(f"  - Keycloak: {keycloak_config['KEYCLOAK_URL']}")
         logger.info(f"  - Realm: {keycloak_config['KEYCLOAK_REALM']}")
         logger.info(f"  - Client ID: {keycloak_config['KEYCLOAK_CLIENT_ID']}")

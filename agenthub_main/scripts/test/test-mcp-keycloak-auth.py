@@ -4,13 +4,12 @@ Test MCP Server Authentication with Keycloak Tokens
 Verifies that the MCP server can authenticate using Keycloak JWT tokens
 """
 
+import asyncio
 import os
 import sys
-import json
-import asyncio
-import httpx
-from pathlib import Path
 from typing import Dict, Optional
+
+import httpx
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -28,10 +27,10 @@ class MCPKeycloakTester:
         self.mcp_url = "http://localhost:8001"
         self.token_endpoint = f"{self.keycloak_url}/realms/{self.keycloak_realm}/protocol/openid-connect/token"
     
-    async def get_keycloak_token(self, username: str, password: str) -> Optional[Dict]:
+    async def get_keycloak_token(self, username: str, password: str) -> dict | None:
         """Authenticate with Keycloak and get access token"""
         
-        print(f"\n🔐 Authenticating with Keycloak...")
+        print("\n🔐 Authenticating with Keycloak...")
         print(f"   URL: {self.keycloak_url}")
         print(f"   Realm: {self.keycloak_realm}")
         print(f"   Client: {self.keycloak_client_id}")
@@ -69,10 +68,10 @@ class MCPKeycloakTester:
             print(f"❌ Failed to connect to Keycloak: {e}")
             return None
     
-    async def test_mcp_health(self, token: Optional[str] = None) -> bool:
+    async def test_mcp_health(self, token: str | None = None) -> bool:
         """Test MCP server health endpoint"""
         
-        print(f"\n🏥 Testing MCP health endpoint...")
+        print("\n🏥 Testing MCP health endpoint...")
         
         headers = {}
         if token:
@@ -102,7 +101,7 @@ class MCPKeycloakTester:
     async def test_mcp_protected_endpoint(self, token: str) -> bool:
         """Test a protected MCP endpoint with Keycloak token"""
         
-        print(f"\n🔒 Testing protected MCP endpoint...")
+        print("\n🔒 Testing protected MCP endpoint...")
         
         headers = {
             "Authorization": f"Bearer {token}",
@@ -143,10 +142,10 @@ class MCPKeycloakTester:
             print(f"❌ Failed to call MCP endpoint: {e}")
             return False
     
-    async def test_token_refresh(self, refresh_token: str) -> Optional[Dict]:
+    async def test_token_refresh(self, refresh_token: str) -> dict | None:
         """Test token refresh flow"""
         
-        print(f"\n🔄 Testing token refresh...")
+        print("\n🔄 Testing token refresh...")
         
         try:
             async with httpx.AsyncClient() as client:
@@ -180,7 +179,7 @@ class MCPKeycloakTester:
     async def test_mcp_tools(self, token: str) -> bool:
         """Test MCP tool execution with authentication"""
         
-        print(f"\n🛠️  Testing MCP tools...")
+        print("\n🛠️  Testing MCP tools...")
         
         headers = {
             "Authorization": f"Bearer {token}",

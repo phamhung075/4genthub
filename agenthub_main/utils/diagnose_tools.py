@@ -3,10 +3,10 @@
 Comprehensive diagnostic script to understand tool registration issues
 """
 
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from pathlib import Path
 
 # Set up environment variables for testing
@@ -17,8 +17,8 @@ os.environ["AGENTHUB_DISABLE_CURSOR_TOOLS"] = "true"
 src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
 
-from fastmcp.server.server import FastMCP
 from fastmcp.server.mcp_entry_point import create_agenthub_server
+
 
 def diagnose_environment():
     """Check environment variables"""
@@ -32,7 +32,7 @@ def diagnose_tool_config():
     print("=== TOOL CONFIGURATION ===")
     config_path = Path(".cursor/tool_config.json")
     if config_path.exists():
-        with open(config_path, 'r') as f:
+        with open(config_path) as f:
             config = json.load(f)
         print(f"Tool config file exists: {config_path}")
         print(f"Config content: {json.dumps(config, indent=2)}")
@@ -72,7 +72,7 @@ def diagnose_server_creation():
         task_tools = [t for t in tools if t in ['manage_project', 'manage_task', 'manage_subtask', 'manage_agent', 'call_agent']]
         core_tools = [t for t in tools if t in ['health_check', 'get_server_capabilities']]
         
-        print(f"\nTool categories:")
+        print("\nTool categories:")
         print(f"  Auth tools ({len(auth_tools)}): {auth_tools}")
         print(f"  Cursor tools ({len(cursor_tools)}): {cursor_tools}")
         print(f"  Task tools ({len(task_tools)}): {task_tools}")

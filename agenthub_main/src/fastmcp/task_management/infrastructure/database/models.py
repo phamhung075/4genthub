@@ -7,7 +7,7 @@ supporting both SQLite and PostgreSQL databases.
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Optional
 
 from sqlalchemy import (
     JSON,
@@ -162,7 +162,7 @@ class ProjectGitBranch(Base):
     # Relationships
     project: Mapped[Project] = relationship("Project", back_populates="git_branchs")
     tasks: Mapped[list["Task"]] = relationship("Task", back_populates="git_branch", cascade="all, delete-orphan")
-    branch_context: Mapped["BranchContext" | None] = relationship("BranchContext", back_populates="git_branch", uselist=False)
+    branch_context: Mapped[Optional["BranchContext"]] = relationship("BranchContext", back_populates="git_branch", uselist=False)
 
     __table_args__ = (
         UniqueConstraint('id', 'project_id', name='uq_branch_project'),
@@ -232,7 +232,7 @@ class Task(Base):
     assignees: Mapped[list["TaskAssignee"]] = relationship("TaskAssignee", back_populates="task", cascade="all, delete-orphan")
     dependencies: Mapped[list["TaskDependency"]] = relationship("TaskDependency", foreign_keys="TaskDependency.task_id", back_populates="task", cascade="all, delete-orphan")
     labels: Mapped[list["TaskLabel"]] = relationship("TaskLabel", back_populates="task", cascade="all, delete-orphan")
-    task_context: Mapped["TaskContext" | None] = relationship("TaskContext", back_populates="task", uselist=False, cascade="all, delete-orphan")
+    task_context: Mapped[Optional["TaskContext"]] = relationship("TaskContext", back_populates="task", uselist=False, cascade="all, delete-orphan")
     
     # Create indexes for performance
     __table_args__ = (
@@ -605,13 +605,13 @@ class BranchContext(Base):
     version: Mapped[int | None] = mapped_column(Integer, nullable=True, default=1)
     
     # Relationships with explicit primaryjoin
-    project_context: Mapped["ProjectContext" | None] = relationship(
-        "ProjectContext", 
+    project_context: Mapped[Optional["ProjectContext"]] = relationship(
+        "ProjectContext",
         primaryjoin="BranchContext.parent_project_id == ProjectContext.id",
         back_populates="branch_contexts"
     )
-    git_branch: Mapped["ProjectGitBranch" | None] = relationship(
-        "ProjectGitBranch", 
+    git_branch: Mapped[Optional["ProjectGitBranch"]] = relationship(
+        "ProjectGitBranch",
         primaryjoin="BranchContext.branch_id == ProjectGitBranch.id",
         back_populates="branch_context"
     )
@@ -663,17 +663,17 @@ class TaskContext(Base):
     version: Mapped[int | None] = mapped_column(Integer, nullable=True, default=1)
     
     # Relationships with explicit primaryjoin
-    branch_context: Mapped["BranchContext" | None] = relationship(
-        "BranchContext", 
+    branch_context: Mapped[Optional["BranchContext"]] = relationship(
+        "BranchContext",
         primaryjoin="TaskContext.parent_branch_context_id == BranchContext.id",
         back_populates="task_contexts"
     )
-    git_branch: Mapped["ProjectGitBranch" | None] = relationship(
-        "ProjectGitBranch", 
+    git_branch: Mapped[Optional["ProjectGitBranch"]] = relationship(
+        "ProjectGitBranch",
         primaryjoin="TaskContext.parent_branch_id == ProjectGitBranch.id"
     )
-    task: Mapped["Task" | None] = relationship(
-        "Task", 
+    task: Mapped[Optional["Task"]] = relationship(
+        "Task",
         primaryjoin="TaskContext.task_id == Task.id",
         back_populates="task_context"
     )

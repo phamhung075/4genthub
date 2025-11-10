@@ -15,19 +15,22 @@ Examples:
     python init_database.py --database-type postgresql --confirm
 """
 
-import os
-import sys
 import argparse
+import os
 import sqlite3
+import sys
 from pathlib import Path
-from typing import Union
 
 # Add the src directory to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 try:
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-    from fastmcp.task_management.infrastructure.database.db_initializer import DatabaseInitializer
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
+    from fastmcp.task_management.infrastructure.database.db_initializer import (
+        DatabaseInitializer,
+    )
 except ImportError as e:
     print(f"Error importing database modules: {e}")
     print("Make sure you're running this from the agenthub_main directory")
@@ -39,7 +42,7 @@ def read_sql_file(file_path: Path) -> str:
     if not file_path.exists():
         raise FileNotFoundError(f"SQL file not found: {file_path}")
 
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, encoding='utf-8') as f:
         return f.read()
 
 
@@ -211,11 +214,11 @@ def main():
         success = init_postgresql_database(connection_params, postgresql_sql)
 
     if success:
-        print(f"🎉 Database initialization completed successfully!")
+        print("🎉 Database initialization completed successfully!")
         print(f"📝 Schema loaded from: {sqlite_sql if db_type == 'sqlite' else postgresql_sql}")
-        print(f"✨ You can now start the application with a clean database")
+        print("✨ You can now start the application with a clean database")
     else:
-        print(f"❌ Database initialization failed!")
+        print("❌ Database initialization failed!")
         sys.exit(1)
 
 

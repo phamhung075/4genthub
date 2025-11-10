@@ -7,7 +7,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from sqlalchemy import create_engine, text
-from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+
+from fastmcp.task_management.infrastructure.database.database_config import (
+    DatabaseConfig,
+)
+
 
 def check_users():
     """Check users and token balance initialization"""

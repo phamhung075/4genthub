@@ -12,7 +12,7 @@ Handles:
 
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 
 def fix_bare_except(content: str) -> str:
@@ -42,7 +42,7 @@ def fix_unused_variables(content: str, file_path: Path) -> str:
     return content
 
 
-def find_duplicate_dict_keys(content: str, file_path: Path) -> List[Tuple[int, str]]:
+def find_duplicate_dict_keys(content: str, file_path: Path) -> list[tuple[int, str]]:
     """Find duplicate dictionary keys for manual review"""
     issues = []
     lines = content.split('\n')

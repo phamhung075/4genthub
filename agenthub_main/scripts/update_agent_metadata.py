@@ -5,10 +5,9 @@ This script reads each agent's config.yaml and creates a proper metadata.yaml
 with description, examples, model, and color fields.
 """
 
-import os
-import yaml
 from pathlib import Path
-import random
+
+import yaml
 
 # Define available colors
 COLORS = [
@@ -121,7 +120,7 @@ def process_agent(agent_path):
     
     try:
         # Read config.yaml
-        with open(config_path, 'r') as f:
+        with open(config_path) as f:
             config = yaml.safe_load(f)
         
         agent_info = config.get('agent_info', {})
@@ -153,7 +152,7 @@ def process_agent(agent_path):
         # Read existing metadata if it exists
         existing_metadata = {}
         if metadata_path.exists():
-            with open(metadata_path, 'r') as f:
+            with open(metadata_path) as f:
                 content = f.read()
                 if content.strip():
                     # Parse YAML frontmatter
@@ -226,7 +225,7 @@ def main():
             failed_count += 1
     
     print(f"\n{'='*60}")
-    print(f"Processing complete:")
+    print("Processing complete:")
     print(f"  ✅ Successfully updated: {success_count}")
     print(f"  ❌ Failed: {failed_count}")
     print(f"  📁 Total: {len(agent_dirs)}")

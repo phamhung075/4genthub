@@ -2,10 +2,8 @@
 """
 Find ALL DDD violations across the entire codebase
 """
-import os
-import re
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+
 
 class DDDViolationFinder:
     def __init__(self, project_root: str):
@@ -24,7 +22,7 @@ class DDDViolationFinder:
                 if '__pycache__' in str(filepath):
                     continue
                     
-                with open(filepath, 'r') as f:
+                with open(filepath) as f:
                     content = f.read()
                     
                 # Check for infrastructure imports
@@ -61,7 +59,7 @@ class DDDViolationFinder:
                 if '__pycache__' in str(filepath):
                     continue
                     
-                with open(filepath, 'r') as f:
+                with open(filepath) as f:
                     content = f.read()
                     
                 # Check for infrastructure imports (except RepositoryProviderService)
@@ -116,7 +114,7 @@ class DDDViolationFinder:
         interface_files = [v for v in all_violations if v['layer'] == 'Interface']
         app_files = [v for v in all_violations if v['layer'] == 'Application']
         
-        report.append(f"📊 SUMMARY:")
+        report.append("📊 SUMMARY:")
         report.append(f"- Interface Layer: {len(interface_files)} violations")
         report.append(f"- Application Layer: {len(app_files)} violations")
         report.append(f"- Total Violations: {len(all_violations)}")
