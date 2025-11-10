@@ -1,6 +1,5 @@
 """AgentTemplate Domain Entity - Immutable Template for Agent Instances"""
 
-from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
@@ -108,7 +107,7 @@ class AgentTemplate(BaseTimestampEntity):
         cls,
         yaml_path: str,
         template_id: AgentTemplateId | None = None
-    ) -> AgentTemplate:
+    ) -> "AgentTemplate":
         """Create AgentTemplate from YAML file in agent-library.
 
         This is the primary factory method for loading templates from the
@@ -170,7 +169,7 @@ class AgentTemplate(BaseTimestampEntity):
         )
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> AgentTemplate:
+    def from_dict(cls, data: dict[str, Any]) -> "AgentTemplate":
         """Create AgentTemplate from dictionary (e.g., from database).
 
         Args:

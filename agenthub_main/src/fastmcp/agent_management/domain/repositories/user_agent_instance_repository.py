@@ -1,6 +1,5 @@
 """UserAgentInstanceRepository - Repository interface for UserAgentInstance aggregate"""
 
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
