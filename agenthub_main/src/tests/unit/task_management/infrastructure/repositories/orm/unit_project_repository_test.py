@@ -13,7 +13,7 @@ Tests the ProjectRepository ORM implementation including:
 
 import pytest
 from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime, timezone
+from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from fastmcp.task_management.domain.entities.project import Project as ProjectEntity

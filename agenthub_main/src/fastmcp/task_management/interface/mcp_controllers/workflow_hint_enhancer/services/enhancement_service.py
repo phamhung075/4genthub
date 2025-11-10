@@ -37,7 +37,7 @@ class EnhancementService:
 
         # Add timestamp for enhancement
         enhanced_response["workflow_hints"]["enhanced_at"] = datetime.now(
-            timezone.utc
+            UTC
         ).isoformat()
 
         # Add enhancement metadata

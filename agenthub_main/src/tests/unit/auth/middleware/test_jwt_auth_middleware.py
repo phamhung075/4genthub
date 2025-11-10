@@ -7,7 +7,7 @@ Tests JWT token extraction, user context management, and middleware functionalit
 import pytest
 from unittest.mock import Mock, patch
 import jwt
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 
 from fastmcp.auth.middleware.jwt_auth_middleware import (

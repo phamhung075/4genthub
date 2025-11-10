@@ -188,7 +188,7 @@ addopts = [
 [tool.pyright]
 include = ["src", "tests"]
 exclude = ["**/node_modules", "**/__pycache__", ".venv", ".git", "dist"]
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 pythonPlatform = "Darwin"
 typeCheckingMode = "basic"
 reportMissingImports = true

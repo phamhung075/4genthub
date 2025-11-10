@@ -5,7 +5,7 @@ This module tests the MCP token generation, validation, and management functiona
 """
 
 import pytest
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
 from fastmcp.auth.services.mcp_token_service import MCPTokenService, MCPToken, mcp_token_service
 
@@ -25,8 +25,8 @@ class TestMCPTokenService:
             token="mcp_test_token_123",
             user_id="user_123",
             email="test@example.com",
-            created_at=datetime.now(UTC),
-            expires_at=datetime.now(UTC) + timedelta(hours=24),
+            created_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
             metadata={"key": "value"},
             is_active=True
         )
@@ -162,8 +162,8 @@ class TestMCPTokenService:
         expired_token = MCPToken(
             token="mcp_expired_token",
             user_id="user_exp",
-            created_at=datetime.now(UTC) - timedelta(hours=25),
-            expires_at=datetime.now(UTC) - timedelta(hours=1),
+            created_at=datetime.now(timezone.utc) - timedelta(hours=25),
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
             is_active=True
         )
         service._tokens[expired_token.token] = expired_token
@@ -240,8 +240,8 @@ class TestMCPTokenService:
         expired_token = MCPToken(
             token="mcp_expired",
             user_id="user_exp",
-            created_at=datetime.now(UTC) - timedelta(hours=25),
-            expires_at=datetime.now(UTC) - timedelta(hours=1),
+            created_at=datetime.now(timezone.utc) - timedelta(hours=25),
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
             is_active=True
         )
         service._tokens[expired_token.token] = expired_token
@@ -292,7 +292,7 @@ class TestMCPTokenService:
         active_token = MCPToken(
             token="mcp_active",
             user_id="user_1",
-            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
             is_active=True
         )
         service._tokens[active_token.token] = active_token
@@ -301,7 +301,7 @@ class TestMCPTokenService:
         expired_token = MCPToken(
             token="mcp_expired",
             user_id="user_2",
-            expires_at=datetime.now(UTC) - timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
             is_active=True
         )
         service._tokens[expired_token.token] = expired_token
@@ -310,7 +310,7 @@ class TestMCPTokenService:
         inactive_token = MCPToken(
             token="mcp_inactive",
             user_id="user_3",
-            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
             is_active=False
         )
         service._tokens[inactive_token.token] = inactive_token
@@ -361,8 +361,8 @@ class TestMCPTokenService:
         expired_token = MCPToken(
             token="mcp_expired",
             user_id="user_exp",
-            created_at=datetime.now(UTC) - timedelta(hours=25),
-            expires_at=datetime.now(UTC) - timedelta(hours=1),
+            created_at=datetime.now(timezone.utc) - timedelta(hours=25),
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
             is_active=True
         )
         service._tokens[expired_token.token] = expired_token

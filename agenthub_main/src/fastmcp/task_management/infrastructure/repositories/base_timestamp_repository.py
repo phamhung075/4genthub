@@ -234,7 +234,7 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
         Raises:
             DatabaseException: If database operation fails
         """
-        from datetime import timedelta, timezone
+        from datetime import timezone, timedelta
 
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=max_staleness_hours)
 

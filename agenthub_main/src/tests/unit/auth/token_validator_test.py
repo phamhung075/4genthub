@@ -6,7 +6,7 @@ This module tests the token validation, rate limiting, and security monitoring f
 
 import pytest
 import time
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
 from collections import deque
 
@@ -43,10 +43,10 @@ class TestTokenValidator:
         return TokenInfo(
             token_hash="hashed_token_123",
             user_id="user_123",
-            created_at=datetime.now(UTC),
-            expires_at=datetime.now(UTC) + timedelta(hours=24),
+            created_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
             usage_count=5,
-            last_used=datetime.now(UTC)
+            last_used=datetime.now(timezone.utc)
         )
     
     # Initialization Tests
@@ -237,8 +237,8 @@ class TestTokenValidator:
         
         mock_mcp_token = Mock()
         mock_mcp_token.user_id = "user_mcp_123"
-        mock_mcp_token.created_at = datetime.now(UTC)
-        mock_mcp_token.expires_at = datetime.now(UTC) + timedelta(hours=1)
+        mock_mcp_token.created_at = datetime.now(timezone.utc)
+        mock_mcp_token.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         
         with patch.object(validator, '_validate_mcp_token', AsyncMock(return_value=mock_mcp_token)):
             result = await validator._validate_mcp_token(token)

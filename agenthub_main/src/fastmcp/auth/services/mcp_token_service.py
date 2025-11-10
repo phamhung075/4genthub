@@ -9,7 +9,7 @@ import asyncio
 import logging
 import secrets
 import hashlib
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from sqlalchemy import select, update
@@ -72,7 +72,7 @@ class MCPTokenService:
         token = f"mcp_{token_bytes.hex()}"
         
         # Set expiration
-        created_at = datetime.now(UTC)
+        created_at = datetime.now(timezone.utc)
         expires_at = created_at + timedelta(hours=expires_in_hours)
         
         # Create token object
@@ -116,7 +116,7 @@ class MCPTokenService:
             return None
         
         # Check expiration
-        if mcp_token.expires_at and datetime.now(UTC) > mcp_token.expires_at:
+        if mcp_token.expires_at and datetime.now(timezone.utc) > mcp_token.expires_at:
             logger.debug(f"MCP token expired: {token[:10]}...")
             # Remove expired token
             del self._tokens[token]
@@ -147,7 +147,7 @@ class MCPTokenService:
                     .where(ApiToken.token_hash == token_hash)
                     .values(
                         usage_count=ApiToken.usage_count + 1,
-                        last_used_at=datetime.now(UTC)
+                        last_used_at=datetime.now(timezone.utc)
                     )
                 )
                 result = db_session.execute(stmt)
@@ -196,7 +196,7 @@ class MCPTokenService:
         Returns:
             Number of tokens cleaned up
         """
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
         tokens_to_remove = []
         
         for token, mcp_token in self._tokens.items():
@@ -219,7 +219,7 @@ class MCPTokenService:
         Returns:
             Dictionary with token statistics
         """
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
         active_tokens = 0
         expired_tokens = 0
         
@@ -251,7 +251,7 @@ class MCPTokenService:
             List of MCPToken objects
         """
         user_tokens = []
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
         
         for mcp_token in self._tokens.values():
             if mcp_token.user_id == user_id:

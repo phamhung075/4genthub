@@ -239,7 +239,7 @@ class TaskApplicationFacade:
                 if not branch_result.get("success") or not branch_result.get("git_branch"):
                     logger.info(f"Git branch entity missing for git_branch_id={git_branch_id}, auto-creating...")
 
-                    from datetime import datetime, timezone
+                    from datetime import datetime
                     from ...domain.entities.git_branch import GitBranch
                     from sqlalchemy import text
 
@@ -323,7 +323,7 @@ class TaskApplicationFacade:
             # Step 5: Auto-create context if missing
             logger.info(f"Branch context missing for git_branch_id={git_branch_id}, auto-creating...")
 
-            from datetime import datetime, timezone
+            from datetime import datetime
 
             auto_create_data = {
                 "auto_created": True,
@@ -1890,7 +1890,7 @@ class TaskApplicationFacade:
             True if a similar task was recently created, False otherwise
         """
         try:
-            from datetime import datetime, timedelta, timezone
+            from datetime import datetime, timezone, timedelta
             from ...domain.value_objects.task_id import TaskId
 
             # Check for tasks created in the last 10 seconds with same title and branch

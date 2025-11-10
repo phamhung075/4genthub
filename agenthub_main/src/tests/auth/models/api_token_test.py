@@ -3,7 +3,7 @@ Tests for API Token Model
 """
 
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch
 
 from fastmcp.auth.models.api_token import ApiToken, Base

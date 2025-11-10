@@ -9,7 +9,7 @@ import pytest
 import os
 import uuid
 from unittest.mock import Mock, MagicMock, AsyncMock, patch
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 from starlette.datastructures import Headers, QueryParams, URL

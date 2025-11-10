@@ -25,7 +25,7 @@ import pytest
 import time
 import threading
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List
 from unittest.mock import Mock, patch, MagicMock
 from queue import Empty, Full
@@ -1079,7 +1079,7 @@ class _MockTestEventWorkerHealthChecks:
         time.sleep(0.1)
 
         # Manually set stale heartbeat
-        from datetime import timedelta
+        from datetime import timezone, timedelta
         event_worker._last_heartbeat = datetime.now(timezone.utc) - timedelta(seconds=30)
 
         # Should be unhealthy (heartbeat > 2x interval)

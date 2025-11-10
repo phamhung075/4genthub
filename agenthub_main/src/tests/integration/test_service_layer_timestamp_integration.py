@@ -262,7 +262,7 @@ class TestServiceLayerTimestampIntegration:
         # Verify clean timestamp handling
         # created_at should be the same (allowing for database round-trip precision issues)
         # The key is that created_at should not be reset to "now" during updates
-        # Allow up to 10 seconds difference for database precision, timezone conversions,
+        # Allow up to 10 seconds difference for database precision conversions,
         # and the time taken by the status transition from todo -> in_progress -> done
         # The process involves context creation, status transitions, and multiple saves
         # Note: The complete_task use case performs multiple saves which may cause slight timestamp drift

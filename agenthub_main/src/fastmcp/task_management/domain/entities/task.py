@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timezone
 from typing import Any
 
 from .base.base_timestamp_entity import BaseTimestampEntity
@@ -29,7 +29,7 @@ def normalize_datetime(dt_input: str | datetime) -> datetime:
         dt = dt.replace(tzinfo=timezone.utc)
     # If aware but not UTC, convert to UTC
     elif dt.tzinfo != timezone.utc:
-        dt = dt.astimezone(timezone.utc)
+        dt = dt.astimezone(UTC)
 
     return dt
 

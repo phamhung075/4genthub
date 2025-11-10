@@ -16,7 +16,7 @@ NO LEGACY COMPATIBILITY - Clean validation implementation only.
 """
 
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timezone
 from typing import Optional, Tuple
 
 
@@ -73,7 +73,7 @@ class LabelValidator:
         timestamp: Optional[datetime],
         field_name: str = "timestamp"
     ) -> None:
-        """Validate timestamp is not None and is UTC-aware.
+        """Validate timestamp is not None and is timezone.utc-aware.
 
         Args:
             timestamp: The datetime to validate
@@ -106,7 +106,7 @@ class LabelValidator:
             raise LabelValidationError(
                 field=field_name,
                 message="Timestamp must be in UTC timezone",
-                hint=f"Convert to UTC using: {field_name}.astimezone(timezone.utc)"
+                hint=f"Convert to UTC using: {field_name}.astimezone(UTC)"
             )
 
     @classmethod

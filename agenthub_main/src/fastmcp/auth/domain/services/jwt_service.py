@@ -6,7 +6,7 @@ This service handles JWT token creation, validation, and refresh token managemen
 
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, Tuple
 import jwt
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
@@ -381,7 +381,7 @@ class JWTService:
             
             exp = payload.get("exp")
             if exp:
-                return datetime.fromtimestamp(exp, tz=timezone.utc)
+                return datetime.fromtimestamp(exp, tz=UTC)
             
         except Exception as e:
             logger.warning(f"Could not extract token expiry: {e}")

@@ -706,7 +706,7 @@ async def login(request: LoginRequest):
 
                 # Issue a local JWT token for development
                 import jwt
-                from datetime import datetime, timedelta, timezone
+                from datetime import datetime, timedelta
 
                 jwt_secret = os.getenv("JWT_SECRET_KEY")
                 if jwt_secret:
@@ -1125,7 +1125,7 @@ async def dev_login():
 
     # Issue a local JWT token for development
     import jwt
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timezone, timedelta
 
     jwt_secret = os.getenv("JWT_SECRET_KEY")
     if not jwt_secret:

@@ -12,7 +12,7 @@ import time
 import uuid
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import threading
 import logging
 from pathlib import Path

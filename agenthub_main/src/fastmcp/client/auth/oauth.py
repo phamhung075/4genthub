@@ -154,7 +154,7 @@ class FileTokenStorage(TokenStorage):
 
         try:
             tokens = OAuthToken.model_validate_json(path.read_text())
-            # now = datetime.datetime.now(datetime.timezone.utc)
+            # now = datetime.datetime.now(datetime.UTC)
             # if tokens.expires_at is not None and tokens.expires_at <= now:
             #     logger.debug(f"Token expired for {self.get_base_url(self.server_url)}")
             #     return None

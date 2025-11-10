@@ -10,7 +10,7 @@ Tests the vision system value objects including:
 """
 
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from uuid import UUID, uuid4
 from unittest.mock import patch
 

@@ -357,7 +357,7 @@ class UserFriendlyErrorHandler:
                         "issue": "Label timestamps must be UTC-aware",
                         "expected": "datetime.now(timezone.utc)",
                         "actual": "datetime.now() (naive datetime)",
-                        "fix_location": "Label repository or service layer needs to add timezone.utc",
+                        "fix_location": "Label repository or service layer needs to add UTC",
                     },
                     "workaround": {
                         "description": "Create task without labels, add labels later",

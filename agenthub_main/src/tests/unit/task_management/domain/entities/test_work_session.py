@@ -1,7 +1,7 @@
 """Unit tests for WorkSession entity."""
 
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 import time
 from unittest.mock import patch
 

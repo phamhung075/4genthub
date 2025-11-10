@@ -1,7 +1,7 @@
 """WorkSession Domain Entity"""
 
 from typing import Dict, List, Optional
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass, field
 from enum import Enum
 

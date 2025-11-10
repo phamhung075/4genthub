@@ -8,7 +8,7 @@ providing per-user agent instance management with full database capabilities.
 import logging
 import json
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from sqlalchemy import and_, or_, func
 
 from ....domain.entities.user_agent_instance import UserAgentInstance
@@ -71,7 +71,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                     existing.share_created_at = model_dict.get("share_created_at")
                     existing.usage_count = model_dict.get("usage_count", 0)
                     existing.last_used_at = model_dict.get("last_used_at")
-                    existing.updated_at = datetime.now(timezone.utc)
+                    existing.updated_at = datetime.now(UTC)
 
                     logger.info(f"Updated user agent instance: {instance.agent_name} for user {instance.user_id}")
                 else:
@@ -542,7 +542,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                 if orm_instance.last_used_at.tzinfo is None:
                     # Assume UTC if no timezone info (SQLite behavior)
                     from datetime import timezone as dt_timezone
-                    last_used_at = orm_instance.last_used_at.replace(tzinfo=dt_timezone.utc)
+                    last_used_at = orm_instance.last_used_at.replace(tzinfo=dt_UTC)
                 else:
                     last_used_at = orm_instance.last_used_at
 
