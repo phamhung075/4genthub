@@ -4,6 +4,13 @@ env:
   # enable colored output
   # https://github.com/pytest-dev/pytest/issues/7443
   PY_COLORS: 1
+  # Database configuration for static analysis
+  DATABASE_TYPE: postgresql
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: agenthub_test
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
 
 on:
   push:
@@ -43,4 +50,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
       - name: Run pre-commit
-        uses: pre-commit/action@v3.0.1
+        run: |
+          export DATABASE_TYPE=postgresql
+          export POSTGRES_HOST=localhost
+          export POSTGRES_PORT=5432
+          export POSTGRES_DB=agenthub_test
+          export POSTGRES_USER=postgres
+          export POSTGRES_PASSWORD=postgres
+          uv run pre-commit run --all-files

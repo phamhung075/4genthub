@@ -84,6 +84,12 @@ jobs:
 
       - name: Run linting
         run: |
+          export DATABASE_TYPE=postgresql
+          export POSTGRES_HOST=localhost
+          export POSTGRES_PORT=5432
+          export POSTGRES_DB=agenthub_test
+          export POSTGRES_USER=postgres
+          export POSTGRES_PASSWORD=postgres
           uv run ruff check src/
 
       - name: Validate Docker build

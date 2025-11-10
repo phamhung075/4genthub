@@ -134,11 +134,23 @@ jobs:
 
       - name: Run safety check for known vulnerabilities
         run: |
+          export DATABASE_TYPE=postgresql
+          export POSTGRES_HOST=localhost
+          export POSTGRES_PORT=5432
+          export POSTGRES_DB=agenthub_test
+          export POSTGRES_USER=postgres
+          export POSTGRES_PASSWORD=postgres
           uv add --dev safety
           uv run safety check --json --output safety-report.json || true
 
       - name: Run bandit security linter
         run: |
+          export DATABASE_TYPE=postgresql
+          export POSTGRES_HOST=localhost
+          export POSTGRES_PORT=5432
+          export POSTGRES_DB=agenthub_test
+          export POSTGRES_USER=postgres
+          export POSTGRES_PASSWORD=postgres
           uv add --dev bandit
           uv run bandit -r src/ -f json -o bandit-report.json || true
 
