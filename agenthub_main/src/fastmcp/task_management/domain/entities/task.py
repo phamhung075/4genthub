@@ -1413,6 +1413,7 @@ class Task(BaseTimestampEntity):
             "assignees": assignees_list,
             "labels": self.labels.copy() if self.labels is not None else [],
             "dependencies": [dep.value if hasattr(dep, 'value') else str(dep) for dep in self.dependencies],
+            "dependency_count": len(self.dependencies) if self.dependencies else 0,  # Total dependency count
             "subtasks": self.subtasks.copy(),
             "subtask_count": len(self.subtasks) if self.subtasks else 0,  # Total subtask count
             "completed_subtasks": self.completed_subtasks,  # Count of completed subtasks

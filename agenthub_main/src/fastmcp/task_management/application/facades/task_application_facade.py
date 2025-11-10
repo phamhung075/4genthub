@@ -1613,22 +1613,26 @@ class TaskApplicationFacade:
             # This ensures UI updates in real-time with agent names and dependency data
             try:
                 from ...domain.websocket_protocol import TaskUpdatePayload
-                from ...infrastructure.notifications.websocket_notification_service import WebSocketNotificationService
+                # WebSocketNotificationService already imported at top of file
 
                 # Get user_id (use "system" as fallback for background operations)
                 user_id = "system"
 
                 # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
                 try:
+                    # Convert enum values to strings for Pydantic validation
+                    status_value = task.status.value if hasattr(task.status, 'value') else str(task.status)
+                    priority_value = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+
                     payload = TaskUpdatePayload(
                         id=task_dict.get("id") or task_id,
                         title=task_dict.get("title") or task.title,
-                        description=task_dict.get("description"),
-                        status=task_dict.get("status") or task.status,
-                        priority=task_dict.get("priority") or task.priority,
-                        git_branch_id=task_dict.get("git_branch_id") or task.git_branch_id,
-                        assignees=task_dict.get("assignees"),
-                        labels=task_dict.get("labels"),
+                        description=task_dict.get("description") or task.description,
+                        status=task_dict.get("status") or status_value,
+                        priority=task_dict.get("priority") or priority_value,
+                        git_branch_id=task_dict.get("git_branch_id") or str(task.git_branch_id),
+                        assignees=task_dict.get("assignees") or task.assignees,
+                        labels=task_dict.get("labels") or task.labels,
                         updated_at=task_dict.get("updated_at")
                     )
                     validated_task_data = payload.model_dump()
@@ -1695,22 +1699,26 @@ class TaskApplicationFacade:
             # This ensures UI updates in real-time with agent names and dependency data
             try:
                 from ...domain.websocket_protocol import TaskUpdatePayload
-                from ...infrastructure.notifications.websocket_notification_service import WebSocketNotificationService
+                # WebSocketNotificationService already imported at top of file
 
                 # Get user_id (use "system" as fallback for background operations)
                 user_id = "system"
 
                 # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
                 try:
+                    # Convert enum values to strings for Pydantic validation
+                    status_value = task.status.value if hasattr(task.status, 'value') else str(task.status)
+                    priority_value = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+
                     payload = TaskUpdatePayload(
                         id=task_dict.get("id") or task_id,
                         title=task_dict.get("title") or task.title,
-                        description=task_dict.get("description"),
-                        status=task_dict.get("status") or task.status,
-                        priority=task_dict.get("priority") or task.priority,
-                        git_branch_id=task_dict.get("git_branch_id") or task.git_branch_id,
-                        assignees=task_dict.get("assignees"),
-                        labels=task_dict.get("labels"),
+                        description=task_dict.get("description") or task.description,
+                        status=task_dict.get("status") or status_value,
+                        priority=task_dict.get("priority") or priority_value,
+                        git_branch_id=task_dict.get("git_branch_id") or str(task.git_branch_id),
+                        assignees=task_dict.get("assignees") or task.assignees,
+                        labels=task_dict.get("labels") or task.labels,
                         updated_at=task_dict.get("updated_at")
                     )
                     validated_task_data = payload.model_dump()

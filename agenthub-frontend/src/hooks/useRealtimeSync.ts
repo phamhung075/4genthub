@@ -131,30 +131,23 @@ export const useRealtimeSync = (
           break;
 
         case 'updated':
-          // CRITICAL: Delay cache update to allow update animation to play (~150ms)
-          // If we update immediately, React re-renders before animation triggers
+          // 🔥 FIX: Backend sends incomplete data (MinimalResponseSerializer excludes dependencies/assignees)
+          // Instead of updating cache with incomplete data, INVALIDATE to trigger refetch
+          // This ensures UI always displays complete, fresh data including dependencies
+
+          // CRITICAL: Delay to allow update animation to play (~150ms)
           setTimeout(() => {
+            // ✅ INVALIDATE queries to force refetch of complete data
+            // This ensures dependencies, assignees, labels are all fetched
+            queryClient.invalidateQueries({ queryKey: ['task', taskId, false] });
+            queryClient.invalidateQueries({ queryKey: ['task', taskId, true] });
 
-            // Update individual task cache
-            queryClient.setQueryData(['task', taskId, false], taskData);
-            queryClient.setQueryData(['task', taskId, true], taskData);
-
-            // Update task in the tasks list
             if (taskData.git_branch_id) {
-              queryClient.setQueryData<Task[]>(
-                ['tasks', taskData.git_branch_id],
-                (old) => {
-                  if (!old) return old;
-                  return old.map(t => t.id === taskId ? taskData : t);
-                }
-              );
+              queryClient.invalidateQueries({ queryKey: ['tasks', taskData.git_branch_id] });
             }
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
 
-            // Update in generic tasks list
-            queryClient.setQueryData<Task[]>(['tasks'], (old) => {
-              if (!old) return old;
-              return old.map(t => t.id === taskId ? taskData : t);
-            });
+            logger.debug(`[useRealtimeSync] Invalidated task queries for ${taskId} (forces refetch of complete data)`);
           }, 150); // Match UPDATE animation duration from WebSocketAnimationService.ts
 
           // 🔇 SUPPRESS toast for automatic task updates (subtask count changes)
@@ -362,24 +355,20 @@ export const useRealtimeSync = (
           break;
 
         case 'updated':
-          // CRITICAL: Delay cache update to allow update animation to play (~150ms)
-          // If we update immediately, React re-renders before animation triggers
-          setTimeout(() => {
+          // 🔥 FIX: Backend sends incomplete data (MinimalResponseSerializer excludes assignees)
+          // Instead of updating cache with incomplete data, INVALIDATE to trigger refetch
+          // This ensures assignees (inherited from parent) are always displayed correctly
 
-            // Update subtask in the subtasks list
+          // CRITICAL: Delay to allow update animation to play (~150ms)
+          setTimeout(() => {
+            // ✅ INVALIDATE queries to force refetch of complete data
             if (taskId) {
-              queryClient.setQueryData<Subtask[]>(
-                ['subtasks', taskId],
-                (old) => {
-                  if (!old) return old;
-                  // ✅ FIX: Merge with existing data to preserve fields that might not be in the update payload
-                  // This prevents loss of title, description, or other fields if backend sends partial data
-                  return old.map(s => s.id === subtaskData.id ? { ...s, ...subtaskData } : s);
-                }
-              );
+              queryClient.invalidateQueries({ queryKey: ['subtasks', taskId] });
 
               // Also invalidate parent task to update counts
               queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+
+              logger.debug(`[useRealtimeSync] Invalidated subtask queries for task ${taskId} (forces refetch with inherited assignees)`);
             }
           }, 150); // Match UPDATE animation duration from WebSocketAnimationService.ts
 

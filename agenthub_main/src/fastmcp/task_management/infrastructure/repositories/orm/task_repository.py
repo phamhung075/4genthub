@@ -1082,10 +1082,11 @@ class ORMTaskRepository(
             try:
                 results = query.all()
                 
-                # Get labels and assignees separately (more efficient than join for this use case)
+                # Get labels, assignees, and dependencies separately (more efficient than join for this use case)
                 task_ids = [r.id for r in results]
                 labels_by_task = {}
                 assignees_by_task = {}
+                dependencies_by_task = {}
 
                 if task_ids:
                     # Get labels
@@ -1111,9 +1112,23 @@ class ORMTaskRepository(
                                 assignees_by_task[task_id] = []
                             assignees_by_task[task_id].append(assignee_id)
 
+                    # Get dependencies (CRITICAL FIX for real-time dependency display)
+                    dependencies_query = session.query(
+                        TaskDependency.task_id,
+                        TaskDependency.depends_on_task_id
+                    ).filter(TaskDependency.task_id.in_(task_ids))
+
+                    for task_id, depends_on_id in dependencies_query:
+                        if task_id not in dependencies_by_task:
+                            dependencies_by_task[task_id] = []
+                        dependencies_by_task[task_id].append(str(depends_on_id))
+
                 # Build minimal response
                 minimal_tasks = []
                 for r in results:
+                    # Get dependencies for this task
+                    dependencies = dependencies_by_task.get(r.id, [])
+
                     task_data = {
                         'id': r.id,
                         'title': r.title,
@@ -1126,7 +1141,11 @@ class ORMTaskRepository(
                         'labels': labels_by_task.get(r.id, []),
                         'due_date': r.due_date,
                         'updated_at': r.updated_at.isoformat() if r.updated_at else None,
-                        'git_branch_id': r.git_branch_id
+                        'git_branch_id': r.git_branch_id,
+                        # CRITICAL FIX: Include dependencies for real-time display
+                        'dependencies': dependencies,
+                        'has_dependencies': bool(dependencies),
+                        'dependency_count': len(dependencies)
                     }
 
                     # Add assignees array if performance mode is enabled (enhanced feature)
