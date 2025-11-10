@@ -121,7 +121,7 @@ jobs:
       run: |
         export PYTHONPATH="$(pwd)/src"
         export $(cat .env.test | grep -v '^#' | xargs)
-        python -c "
+        uv run python -c "
         import sys
         sys.path.append('src')
         from fastmcp.task_management.infrastructure.database.database_setup import setup_database
@@ -131,6 +131,7 @@ jobs:
     - name: Run ${{ matrix.test-type }} tests
       working-directory: agenthub_main
       run: |
+        source .venv/bin/activate
         chmod +x scripts/run_tests_enhanced.sh
         scripts/run_tests_enhanced.sh --type ${{ matrix.test-type }} --ci ${{ matrix.coverage && '--coverage-threshold 80' || '--quick' }}
 
@@ -206,6 +207,7 @@ jobs:
     - name: Run performance tests
       working-directory: agenthub_main
       run: |
+        source .venv/bin/activate
         chmod +x scripts/run_tests_enhanced.sh
         scripts/run_tests_enhanced.sh --type performance --ci
 
