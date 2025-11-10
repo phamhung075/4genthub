@@ -6,15 +6,15 @@ and converts them into AgentTemplate domain entities.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
 from ...domain.entities.agent_template import AgentTemplate
-from ...domain.value_objects.agent_template_id import AgentTemplateId
 from ...domain.value_objects.agent_configuration import AgentConfiguration
+from ...domain.value_objects.agent_template_id import AgentTemplateId
 
 logger = logging.getLogger(__name__)
 
@@ -131,8 +131,8 @@ class YAMLAgentTemplateLoader:
                 "author": agent_info.get("author", "agenthub"),
                 **metadata_data
             },
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(datetime.UTC),
+            updated_at=datetime.now(datetime.UTC)
         )
 
         return template
@@ -153,7 +153,7 @@ class YAMLAgentTemplateLoader:
             return {}
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 if multi_document:
                     # Load all documents and return the first one (metadata.yaml case)
                     docs = list(yaml.safe_load_all(f))
@@ -165,7 +165,7 @@ class YAMLAgentTemplateLoader:
             logger.error(f"Error loading YAML file {file_path}: {e}")
             return {}
 
-    def _load_rules(self, rules_dir: Path) -> Optional[list[str]]:
+    def _load_rules(self, rules_dir: Path) -> list[str] | None:
         """
         Load all rules from rules/*.yaml files
 

@@ -1,13 +1,15 @@
 """AgentTemplate Domain Entity - Immutable Template for Agent Instances"""
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
-import yaml
 import logging
+from dataclasses import dataclass, field
+from typing import Any
+
+import yaml
 
 from fastmcp.task_management.domain.entities.base.base_timestamp_entity import BaseTimestampEntity
-from ..value_objects.agent_template_id import AgentTemplateId
+
 from ..value_objects.agent_configuration import AgentConfiguration
+from ..value_objects.agent_template_id import AgentTemplateId
 
 logger = logging.getLogger(__name__)
 
@@ -37,14 +39,14 @@ class AgentTemplate(BaseTimestampEntity):
         - Value objects for structured data (AgentConfiguration)
     """
 
-    id: Optional[AgentTemplateId] = None
+    id: AgentTemplateId | None = None
     slug: str = ""
     name: str = ""
     category: str = ""
     description: str = ""
     version: str = "1.0.0"
-    default_configuration: Optional[AgentConfiguration] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    default_configuration: AgentConfiguration | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Initialize timestamps and validate entity."""
@@ -102,7 +104,7 @@ class AgentTemplate(BaseTimestampEntity):
     def from_yaml(
         cls,
         yaml_path: str,
-        template_id: Optional[AgentTemplateId] = None
+        template_id: AgentTemplateId | None = None
     ) -> "AgentTemplate":
         """Create AgentTemplate from YAML file in agent-library.
 
@@ -165,7 +167,7 @@ class AgentTemplate(BaseTimestampEntity):
         )
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentTemplate":
+    def from_dict(cls, data: dict[str, Any]) -> "AgentTemplate":
         """Create AgentTemplate from dictionary (e.g., from database).
 
         Args:
@@ -203,7 +205,7 @@ class AgentTemplate(BaseTimestampEntity):
             updated_at=data.get('updated_at')
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert template to dictionary for storage/serialization.
 
         Returns:
