@@ -3,6 +3,13 @@ name: Run tests
 env:
   # enable colored output
   PY_COLORS: 1
+  # Database configuration for tests
+  DATABASE_TYPE: postgresql
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: agenthub_test
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
 
 on:
   push:
@@ -32,6 +39,21 @@ jobs:
         python-version: ["3.10"]
       fail-fast: false
     timeout-minutes: 5
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: agenthub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - uses: actions/checkout@v4
