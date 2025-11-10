@@ -7,7 +7,7 @@ multiple authentication methods (Supabase JWT, local JWT, MCP tokens).
 
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest

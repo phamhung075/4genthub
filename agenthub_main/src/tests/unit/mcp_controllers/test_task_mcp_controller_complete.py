@@ -369,7 +369,8 @@ class TestTaskMCPControllerComplete:
             action="update",
             task_id=sample_task_data["task_id"],
             title="Updated Task Title",
-            status="in_progress"
+            status="in_progress",
+            details="Completed initial implementation and started testing phase"
         )
 
         # Verify facade was called
@@ -1053,7 +1054,8 @@ class TestTaskMCPControllerComplete:
         update_result = await controller.manage_task(
             action="update",
             task_id=sample_task_data["task_id"],
-            status="in_progress"
+            status="in_progress",
+            details="Started working on task implementation"
         )
         assert update_result["success"] is True
         
@@ -1102,7 +1104,7 @@ class TestTaskMCPControllerComplete:
         
         # Execute concurrent updates
         tasks = [
-            controller.manage_task(action="update", task_id=task_id, status="in_progress"),
+            controller.manage_task(action="update", task_id=task_id, status="in_progress", details="Task started and progressing"),
             controller.manage_task(action="update", task_id=task_id, priority="high"),
             controller.manage_task(action="update", task_id=task_id, details="Updated details")
         ]

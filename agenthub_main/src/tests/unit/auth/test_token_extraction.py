@@ -4,7 +4,7 @@ Tests for extracting user_id from JWT tokens using Keycloak authentication.
 NO hardcoded IDs, NO legacy code - only token-based authentication.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock
 
 import jwt
@@ -104,9 +104,8 @@ class TestTokenExtraction:
         
         # Create service instance
         service = TokenExtractionService()
-        
+
         # Create mock token
-        from datetime import UTC, datetime
         payload = {
             "sub": "test-user-id-789",
             "email": "user@test.com",
