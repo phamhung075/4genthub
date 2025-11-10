@@ -5,9 +5,9 @@ Request and response models for user-specific agent system endpoints.
 """
 
 from datetime import datetime
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from typing import Any
 
+from pydantic import BaseModel, Field
 
 # ============================================================================
 # Agent Template Models (Read-Only)
@@ -22,11 +22,11 @@ class AgentTemplateResponse(BaseModel):
     category: str = Field(..., description="Agent category")
     version: str = Field(..., description="Template version")
     system_prompt: str = Field(..., description="Default system prompt")
-    tools: List[str] = Field(default_factory=list, description="Available tools")
-    capabilities: Dict[str, Any] = Field(default_factory=dict, description="Agent capabilities")
-    rules: Optional[Any] = Field(None, description="Agent rules (can be list of strings or list of rule objects)")
-    output_format: Optional[Any] = Field(None, description="Output format preference (can be string or format object)")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    tools: list[str] = Field(default_factory=list, description="Available tools")
+    capabilities: dict[str, Any] = Field(default_factory=dict, description="Agent capabilities")
+    rules: Any | None = Field(None, description="Agent rules (can be list of strings or list of rule objects)")
+    output_format: Any | None = Field(None, description="Output format preference (can be string or format object)")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     created_at: datetime = Field(..., description="Creation timestamp")
 
     class Config:
@@ -36,9 +36,9 @@ class AgentTemplateResponse(BaseModel):
 class AgentTemplateListResponse(BaseModel):
     """Response model for list of agent templates"""
     success: bool = True
-    templates: List[AgentTemplateResponse]
+    templates: list[AgentTemplateResponse]
     count: int
-    message: Optional[str] = None
+    message: str | None = None
 
 
 # ============================================================================
@@ -48,25 +48,25 @@ class AgentTemplateListResponse(BaseModel):
 class CreateInstanceRequest(BaseModel):
     """Request to create/customize agent instance"""
     template_slug: str = Field(..., description="Template to instantiate from")
-    agent_name: Optional[str] = Field(None, description="Custom name for instance")
-    system_prompt: Optional[str] = Field(None, description="Custom system prompt")
-    tools: Optional[List[str]] = Field(None, description="Custom tool list")
-    capabilities: Optional[Dict[str, Any]] = Field(None, description="Custom capabilities")
-    rules: Optional[List[str]] = Field(None, description="Custom rules")
-    output_format: Optional[str] = Field(None, description="Custom output format")
+    agent_name: str | None = Field(None, description="Custom name for instance")
+    system_prompt: str | None = Field(None, description="Custom system prompt")
+    tools: list[str] | None = Field(None, description="Custom tool list")
+    capabilities: dict[str, Any] | None = Field(None, description="Custom capabilities")
+    rules: list[str] | None = Field(None, description="Custom rules")
+    output_format: str | None = Field(None, description="Custom output format")
     visibility: str = Field(default="private", description="'private' or 'public'")
 
 
 class UpdateInstanceRequest(BaseModel):
     """Request to update agent instance"""
-    agent_name: Optional[str] = Field(None, description="Updated name")
-    is_enabled: Optional[bool] = Field(None, description="Whether agent is enabled for use in call_agent tools")
-    system_prompt: Optional[str] = Field(None, description="Updated system prompt")
-    tools: Optional[List[str]] = Field(None, description="Updated tool list")
-    capabilities: Optional[Dict[str, Any]] = Field(None, description="Updated capabilities")
-    rules: Optional[List[str]] = Field(None, description="Updated rules")
-    output_format: Optional[str] = Field(None, description="Updated output format")
-    visibility: Optional[str] = Field(None, description="Updated visibility")
+    agent_name: str | None = Field(None, description="Updated name")
+    is_enabled: bool | None = Field(None, description="Whether agent is enabled for use in call_agent tools")
+    system_prompt: str | None = Field(None, description="Updated system prompt")
+    tools: list[str] | None = Field(None, description="Updated tool list")
+    capabilities: dict[str, Any] | None = Field(None, description="Updated capabilities")
+    rules: list[str] | None = Field(None, description="Updated rules")
+    output_format: str | None = Field(None, description="Updated output format")
+    visibility: str | None = Field(None, description="Updated visibility")
 
 
 class UserAgentInstanceResponse(BaseModel):
@@ -79,21 +79,21 @@ class UserAgentInstanceResponse(BaseModel):
     is_enabled: bool = Field(default=True, description="Whether agent is enabled for use in call_agent tools")
     visibility: str = Field(..., description="'private' or 'public'")
     usage_count: int = Field(default=0, description="Number of times used")
-    last_used_at: Optional[datetime] = Field(None, description="Last usage timestamp")
+    last_used_at: datetime | None = Field(None, description="Last usage timestamp")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
 
     # Import/sharing metadata
     is_imported: bool = Field(default=False, description="Whether this is an imported agent (read-only for non-owners)")
-    original_creator_id: Optional[str] = Field(None, description="Original creator's user ID (if imported)")
+    original_creator_id: str | None = Field(None, description="Original creator's user ID (if imported)")
     is_read_only: bool = Field(default=False, description="Whether current user can edit this agent")
 
     # Configuration details
     system_prompt: str = Field(..., description="Active system prompt")
-    tools: List[str] = Field(default_factory=list, description="Active tools")
-    capabilities: Dict[str, Any] = Field(default_factory=dict, description="Active capabilities")
-    rules: Optional[Any] = Field(None, description="Active rules (can be list of strings or list of rule objects)")
-    output_format: Optional[Any] = Field(None, description="Active output format (can be string or format object)")
+    tools: list[str] = Field(default_factory=list, description="Active tools")
+    capabilities: dict[str, Any] = Field(default_factory=dict, description="Active capabilities")
+    rules: Any | None = Field(None, description="Active rules (can be list of strings or list of rule objects)")
+    output_format: Any | None = Field(None, description="Active output format (can be string or format object)")
 
     class Config:
         from_attributes = True
@@ -102,9 +102,9 @@ class UserAgentInstanceResponse(BaseModel):
 class UserAgentInstanceListResponse(BaseModel):
     """Response model for list of user instances"""
     success: bool = True
-    instances: List[UserAgentInstanceResponse]
+    instances: list[UserAgentInstanceResponse]
     count: int
-    message: Optional[str] = None
+    message: str | None = None
 
 
 # ============================================================================
@@ -115,9 +115,9 @@ class UserUsageStats(BaseModel):
     """User's agent usage statistics"""
     total_calls: int = Field(..., description="Total agent calls")
     unique_agents: int = Field(..., description="Number of unique agents used")
-    most_used_agent: Optional[str] = Field(None, description="Most frequently used agent")
-    last_activity: Optional[datetime] = Field(None, description="Last agent usage")
-    usage_by_agent: Dict[str, int] = Field(default_factory=dict, description="Call count per agent")
+    most_used_agent: str | None = Field(None, description="Most frequently used agent")
+    last_activity: datetime | None = Field(None, description="Last agent usage")
+    usage_by_agent: dict[str, int] = Field(default_factory=dict, description="Call count per agent")
 
 
 class PopularAgentStats(BaseModel):
@@ -132,9 +132,9 @@ class PopularAgentStats(BaseModel):
 class UsageAnalyticsResponse(BaseModel):
     """Response model for usage analytics"""
     success: bool = True
-    user_stats: Optional[UserUsageStats] = None
-    popular_agents: Optional[List[PopularAgentStats]] = None
-    message: Optional[str] = None
+    user_stats: UserUsageStats | None = None
+    popular_agents: list[PopularAgentStats] | None = None
+    message: str | None = None
 
 
 # ============================================================================
@@ -144,20 +144,20 @@ class UsageAnalyticsResponse(BaseModel):
 class AgentConfigurationResponse(BaseModel):
     """Response model for agent configuration"""
     success: bool = True
-    instance_id: Optional[str] = Field(None, description="Instance ID if exists")
+    instance_id: str | None = Field(None, description="Instance ID if exists")
     template_id: str = Field(..., description="Template ID")
     is_customized: bool = Field(..., description="Whether config is customized")
-    configuration: Dict[str, Any] = Field(..., description="Complete configuration")
-    message: Optional[str] = None
+    configuration: dict[str, Any] = Field(..., description="Complete configuration")
+    message: str | None = None
 
 
 class UpdateConfigurationRequest(BaseModel):
     """Request to update agent configuration"""
-    system_prompt: Optional[str] = Field(None, description="Updated system prompt")
-    tools: Optional[List[str]] = Field(None, description="Updated tool list")
-    capabilities: Optional[Dict[str, Any]] = Field(None, description="Updated capabilities")
-    rules: Optional[List[str]] = Field(None, description="Updated rules")
-    output_format: Optional[str] = Field(None, description="Updated output format")
+    system_prompt: str | None = Field(None, description="Updated system prompt")
+    tools: list[str] | None = Field(None, description="Updated tool list")
+    capabilities: dict[str, Any] | None = Field(None, description="Updated capabilities")
+    rules: list[str] | None = Field(None, description="Updated rules")
+    output_format: str | None = Field(None, description="Updated output format")
 
 
 # ============================================================================
@@ -171,7 +171,7 @@ class ShareAgentResponse(BaseModel):
     share_token: str = Field(..., description="64-character share token")
     shareable_url: str = Field(..., description="URL for sharing")
     visibility: str = Field(..., description="Visibility status ('public')")
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class ImportAgentRequest(BaseModel):
@@ -194,11 +194,11 @@ class MarketplaceAgentResponse(BaseModel):
 class MarketplaceListResponse(BaseModel):
     """Response model for marketplace agent list"""
     success: bool = True
-    agents: List[MarketplaceAgentResponse] = Field(default_factory=list)
+    agents: list[MarketplaceAgentResponse] = Field(default_factory=list)
     total: int = Field(..., description="Total number of agents")
     page: int = Field(default=1, description="Current page number")
     page_size: int = Field(default=50, description="Results per page")
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class SharedAgentPreviewResponse(BaseModel):
@@ -207,10 +207,10 @@ class SharedAgentPreviewResponse(BaseModel):
     agent_name: str = Field(..., description="Agent display name")
     template_slug: str = Field(..., description="Template slug")
     creator_display_name: str = Field(..., description="Creator attribution")
-    configuration_preview: Dict[str, Any] = Field(..., description="Configuration details")
+    configuration_preview: dict[str, Any] = Field(..., description="Configuration details")
     customizations_summary: str = Field(..., description="Summary of changes from template")
     can_import: bool = Field(default=True, description="Whether user can import this agent")
-    message: Optional[str] = None
+    message: str | None = None
 
 
 # ============================================================================
@@ -221,11 +221,11 @@ class SuccessResponse(BaseModel):
     """Generic success response"""
     success: bool = True
     message: str
-    data: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
 
 
 class ErrorResponse(BaseModel):
     """Generic error response"""
     success: bool = False
     error: str
-    detail: Optional[str] = None
+    detail: str | None = None

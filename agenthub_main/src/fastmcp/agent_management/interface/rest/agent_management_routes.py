@@ -6,35 +6,37 @@ templates, analytics, and configurations.
 """
 
 import logging
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ....auth.interface.fastapi_auth import get_current_user, get_db
 from ....auth.domain.entities.user import User
+from ....auth.interface.fastapi_auth import get_current_user, get_db
 from ...application.facades.agent_management_facade import AgentManagementFacade
-from ...infrastructure.repositories.orm.agent_template_repository import ORMAgentTemplateRepository
-from ...infrastructure.repositories.orm.user_agent_instance_repository import ORMUserAgentInstanceRepository
 from ...domain.value_objects.user_id import UserId
-
+from ...infrastructure.repositories.orm.agent_template_repository import (
+    ORMAgentTemplateRepository,
+)
+from ...infrastructure.repositories.orm.user_agent_instance_repository import (
+    ORMUserAgentInstanceRepository,
+)
 from .models import (
+    AgentConfigurationResponse,
     AgentTemplateListResponse,
     AgentTemplateResponse,
-    UserAgentInstanceListResponse,
-    UserAgentInstanceResponse,
     CreateInstanceRequest,
-    UpdateInstanceRequest,
-    UsageAnalyticsResponse,
-    UserUsageStats,
-    PopularAgentStats,
-    AgentConfigurationResponse,
-    UpdateConfigurationRequest,
-    SuccessResponse,
-    ShareAgentResponse,
     ImportAgentRequest,
     MarketplaceAgentResponse,
     MarketplaceListResponse,
+    ShareAgentResponse,
     SharedAgentPreviewResponse,
+    SuccessResponse,
+    UpdateConfigurationRequest,
+    UpdateInstanceRequest,
+    UsageAnalyticsResponse,
+    UserAgentInstanceListResponse,
+    UserAgentInstanceResponse,
+    UserUsageStats,
 )
 
 logger = logging.getLogger(__name__)
@@ -309,7 +311,9 @@ async def create_instance(
 
         # Broadcast WebSocket event for real-time UI updates
         try:
-            from ....task_management.application.services.websocket_notification_service import WebSocketNotificationService
+            from ....task_management.application.services.websocket_notification_service import (
+                WebSocketNotificationService,
+            )
             agent_data = {
                 "id": str(instance.id.value),
                 "user_id": str(instance.user_id.value),
@@ -365,7 +369,7 @@ async def create_instance(
 
 @router.post(
     "/instances/bulk-create",
-    response_model=List[UserAgentInstanceResponse],
+    response_model=list[UserAgentInstanceResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Bulk create agent instances",
     description="Create instances for multiple templates in a single request. Only creates instances that don't already exist."
@@ -391,7 +395,9 @@ async def bulk_create_instances(
         created_instances = facade.bulk_create_instances(user_id=user_id, template_slugs=None)
 
         # Broadcast WebSocket events for each created instance (real-time UI updates)
-        from ....task_management.application.services.websocket_notification_service import WebSocketNotificationService
+        from ....task_management.application.services.websocket_notification_service import (
+            WebSocketNotificationService,
+        )
         for instance in created_instances:
             try:
                 # Prepare agent data for WebSocket payload
@@ -473,7 +479,7 @@ async def update_instance(
         # Handle both UUID and non-UUID user IDs (for development)
         try:
             user_id = UserId(current_user.id)
-        except ValueError as e:
+        except ValueError:
             # Convert non-UUID ID to deterministic UUID v5
             import uuid
             namespace_uuid = uuid.UUID('00000000-0000-0000-0000-000000000000')
@@ -499,7 +505,9 @@ async def update_instance(
 
         # Broadcast WebSocket event for real-time UI updates
         try:
-            from ....task_management.application.services.websocket_notification_service import WebSocketNotificationService
+            from ....task_management.application.services.websocket_notification_service import (
+                WebSocketNotificationService,
+            )
             agent_data = {
                 "id": str(updated_instance.id.value),
                 "user_id": str(updated_instance.user_id.value),
@@ -610,7 +618,9 @@ async def delete_instance(
 
         # Broadcast WebSocket event for real-time UI updates
         try:
-            from ....task_management.application.services.websocket_notification_service import WebSocketNotificationService
+            from ....task_management.application.services.websocket_notification_service import (
+                WebSocketNotificationService,
+            )
             agent_data = {
                 "id": instance_id,
                 "user_id": str(current_user.id),
@@ -1064,7 +1074,7 @@ async def import_agent(
         # Handle both UUID and non-UUID user IDs (for development)
         try:
             user_id = UserId(current_user.id)
-        except ValueError as e:
+        except ValueError:
             # If user ID is not a valid UUID (e.g., 'dev-user-001' in development),
             # create a deterministic UUID from it using UUID v5 (name-based)
             import uuid
@@ -1129,9 +1139,9 @@ async def import_agent(
 
 @router.get("/marketplace", response_model=MarketplaceListResponse)
 async def browse_marketplace(
-    category: Optional[str] = None,
-    search: Optional[str] = None,
-    sort: Optional[str] = "recent",
+    category: str | None = None,
+    search: str | None = None,
+    sort: str | None = "recent",
     page: int = 1,
     page_size: int = 50,
     facade: AgentManagementFacade = Depends(get_facade)
@@ -1249,7 +1259,7 @@ async def preview_shared_agent(
         500: Server error during preview
     """
     try:
-        logger.info(f"Previewing shared agent with token")
+        logger.info("Previewing shared agent with token")
 
         # Call facade to get preview
         instance = facade.get_shared_agent_preview(share_token)

@@ -1,6 +1,7 @@
 """UserAgentInstanceId Value Object - Type-safe UUID identifier for user agent instances"""
 
 from dataclasses import dataclass
+
 from fastmcp.task_management.domain.value_objects.base_entity_id import EntityId
 
 

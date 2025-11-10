@@ -1,0 +1,9 @@
+# Trivy Ignore File
+# This file contains CVEs that are acknowledged but cannot be fixed
+
+# CVE-2024-23342: ecdsa Minerva timing attack
+# Status: No fix available (latest version 0.19.1 is vulnerable)
+# Mitigation: We use python-jose with cryptography backend for production JWT operations
+# The ecdsa library is a transitive dependency but not used directly for security-critical operations
+# Risk Assessment: LOW - Not used in production cryptographic operations
+CVE-2024-23342
