@@ -1,15 +1,18 @@
 """UserAgentInstance Domain Entity - User-specific customizable agent instance"""
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
-from datetime import datetime, timezone
+from __future__ import annotations
+
 import logging
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 from fastmcp.task_management.domain.entities.base.base_timestamp_entity import BaseTimestampEntity
+
+from ..value_objects.agent_configuration import AgentConfiguration
+from ..value_objects.agent_template_id import AgentTemplateId
 from ..value_objects.user_agent_instance_id import UserAgentInstanceId
 from ..value_objects.user_id import UserId
-from ..value_objects.agent_template_id import AgentTemplateId
-from ..value_objects.agent_configuration import AgentConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -52,19 +55,19 @@ class UserAgentInstance(BaseTimestampEntity):
         - Immutable configuration through AgentConfiguration value object
     """
 
-    id: Optional[UserAgentInstanceId] = None
-    user_id: Optional[UserId] = None
-    template_id: Optional[AgentTemplateId] = None
+    id: UserAgentInstanceId | None = None
+    user_id: UserId | None = None
+    template_id: AgentTemplateId | None = None
     agent_name: str = ""
     is_customized: bool = False
     is_enabled: bool = True  # Default to enabled
-    configuration: Optional[AgentConfiguration] = None
+    configuration: AgentConfiguration | None = None
     visibility: str = "private"  # 'private' or 'public'
-    share_token: Optional[str] = None
-    original_creator_id: Optional[UserId] = None
+    share_token: str | None = None
+    original_creator_id: UserId | None = None
     usage_count: int = 0
-    last_used_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    last_used_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Initialize timestamps and validate entity."""
@@ -126,7 +129,7 @@ class UserAgentInstance(BaseTimestampEntity):
     def customize_configuration(
         self,
         new_configuration: AgentConfiguration,
-        customization_notes: Optional[str] = None
+        customization_notes: str | None = None
     ) -> None:
         """Customize the agent configuration.
 
@@ -153,7 +156,7 @@ class UserAgentInstance(BaseTimestampEntity):
         if customization_notes:
             metadata_copy = self.metadata.copy()
             metadata_copy['last_customization'] = {
-                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'timestamp': datetime.now(datetime.UTC).isoformat(),
                 'notes': customization_notes
             }
             object.__setattr__(self, 'metadata', metadata_copy)
@@ -173,14 +176,14 @@ class UserAgentInstance(BaseTimestampEntity):
         object.__setattr__(self, 'usage_count', self.usage_count + 1)
 
         # Update last used timestamp
-        object.__setattr__(self, 'last_used_at', datetime.now(timezone.utc))
+        object.__setattr__(self, 'last_used_at', datetime.now(datetime.UTC))
 
         logger.debug(
             f"Tracked usage for instance {self.id}: count={self.usage_count}, "
             f"last_used_at={self.last_used_at}"
         )
 
-    def get_creator_display_name(self, creator_email: Optional[str] = None) -> str:
+    def get_creator_display_name(self, creator_email: str | None = None) -> str:
         """Get the display name for the creator of this instance.
 
         Returns "System Default" for non-customized instances or instances
@@ -250,7 +253,7 @@ class UserAgentInstance(BaseTimestampEntity):
         return self.original_creator_id is not None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "UserAgentInstance":
+    def from_dict(cls, data: dict[str, Any]) -> UserAgentInstance:
         """Create UserAgentInstance from dictionary (e.g., from database).
 
         Args:
@@ -337,7 +340,7 @@ class UserAgentInstance(BaseTimestampEntity):
             updated_at=updated_at
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert instance to dictionary for storage/serialization.
 
         Returns:
