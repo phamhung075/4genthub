@@ -69,4 +69,11 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests
+        env:
+          DATABASE_TYPE: postgresql
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agenthub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         run: uv run pytest tests

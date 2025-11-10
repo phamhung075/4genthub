@@ -73,6 +73,13 @@ jobs:
 
       - name: Run tests
         if: ${{ !inputs.skip_tests }}
+        env:
+          DATABASE_TYPE: postgresql
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agenthub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         run: |
           uv run pytest tests/ -v --tb=short
 
@@ -83,7 +90,14 @@ jobs:
       - name: Validate Docker build
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:test --target runtime .
-          docker run --rm ${{ env.IMAGE_NAME }}:test python -c "
+          docker run --rm \
+            -e DATABASE_TYPE=postgresql \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e POSTGRES_DB=agenthub_test \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            ${{ env.IMAGE_NAME }}:test python -c "
           from src.fastmcp.server.mcp_entry_point import create_agenthub_server
           server = create_agenthub_server()
           tools = server.get_tools()
@@ -171,7 +185,14 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm ${{ env.IMAGE_NAME }}:${{ needs.validate.outputs.version }} python -c "
+          docker run --rm \
+            -e DATABASE_TYPE=postgresql \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e POSTGRES_DB=agenthub_test \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            ${{ env.IMAGE_NAME }}:${{ needs.validate.outputs.version }} python -c "
           from src.fastmcp.server.mcp_entry_point import create_agenthub_server
           server = create_agenthub_server()
           tools = server.get_tools()
