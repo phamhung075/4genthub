@@ -1,17 +1,17 @@
 """AgentTemplate Domain Entity - Immutable Template for Agent Instances"""
 
-
 import logging
 from dataclasses import dataclass, field
 from typing import Any
 
 import yaml
 
-from ..value_objects.agent_configuration import AgentConfiguration
-from ..value_objects.agent_template_id import AgentTemplateId
 from fastmcp.task_management.domain.entities.base.base_timestamp_entity import (
     BaseTimestampEntity,
 )
+
+from ..value_objects.agent_configuration import AgentConfiguration
+from ..value_objects.agent_template_id import AgentTemplateId
 
 logger = logging.getLogger(__name__)
 

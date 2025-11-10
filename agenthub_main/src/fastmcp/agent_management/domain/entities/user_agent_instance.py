@@ -3,16 +3,17 @@
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
+
+from fastmcp.task_management.domain.entities.base.base_timestamp_entity import (
+    BaseTimestampEntity,
+)
 
 from ..value_objects.agent_configuration import AgentConfiguration
 from ..value_objects.agent_template_id import AgentTemplateId
 from ..value_objects.user_agent_instance_id import UserAgentInstanceId
 from ..value_objects.user_id import UserId
-from fastmcp.task_management.domain.entities.base.base_timestamp_entity import (
-    BaseTimestampEntity,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +157,7 @@ class UserAgentInstance(BaseTimestampEntity):
         if customization_notes:
             metadata_copy = self.metadata.copy()
             metadata_copy['last_customization'] = {
-                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'timestamp': datetime.now(UTC).isoformat(),
                 'notes': customization_notes
             }
             object.__setattr__(self, 'metadata', metadata_copy)
@@ -176,7 +177,7 @@ class UserAgentInstance(BaseTimestampEntity):
         object.__setattr__(self, 'usage_count', self.usage_count + 1)
 
         # Update last used timestamp
-        object.__setattr__(self, 'last_used_at', datetime.now(timezone.utc))
+        object.__setattr__(self, 'last_used_at', datetime.now(UTC))
 
         logger.debug(
             f"Tracked usage for instance {self.id}: count={self.usage_count}, "
