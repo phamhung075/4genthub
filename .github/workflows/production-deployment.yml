@@ -31,7 +31,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   NODE_VERSION: '18'
-  PYTHON_VERSION: '3.14'
+  PYTHON_VERSION: '3.13'
 
 jobs:
   # Security and vulnerability scanning

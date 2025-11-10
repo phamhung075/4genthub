@@ -46,7 +46,7 @@ dependencies = [
     # Monitoring and metrics dependencies
     "prometheus-client>=0.21.1", # Prometheus metrics for observability
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 readme = "../README.md"
 license = "Apache-2.0"
 
@@ -64,11 +64,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
 ]
 
@@ -190,7 +188,7 @@ addopts = [
 [tool.pyright]
 include = ["src", "tests"]
 exclude = ["**/node_modules", "**/__pycache__", ".venv", ".git", "dist"]
-pythonVersion = "3.14"
+pythonVersion = "3.13"
 pythonPlatform = "Darwin"
 typeCheckingMode = "basic"
 reportMissingImports = true
