@@ -71,7 +71,7 @@ jobs:
         cache: 'pip'
 
     - name: Cache test dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-test-${{ hashFiles('agenthub_main/src/tests/hooks/requirements-test.txt') }}
@@ -127,7 +127,7 @@ jobs:
 
     - name: Upload coverage to Codecov (unit tests only)
       if: matrix.test-type == 'unit'
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: agenthub_main/coverage.xml
         flags: unittests
@@ -135,7 +135,7 @@ jobs:
         fail_ci_if_error: false
 
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ matrix.test-type }}
@@ -195,7 +195,7 @@ jobs:
         scripts/run_tests_enhanced.sh --type performance --ci
 
     - name: Upload performance results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: performance-results
         path: agenthub_main/test_reports/
@@ -208,7 +208,7 @@ jobs:
 
     steps:
     - name: Download all test artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
 
     - name: Combine coverage reports
       run: |
@@ -241,7 +241,7 @@ jobs:
         bandit -r agenthub_main/src -f json -o security_report.json || true
 
     - name: Upload security report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-report
         path: security_report.json
