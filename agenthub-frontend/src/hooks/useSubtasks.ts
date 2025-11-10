@@ -116,11 +116,9 @@ export const useSubtaskMutations = () => {
     },
     onSuccess: (data, { taskId }) => {
       logger.debug('[useSubtaskMutations] Subtask created:', data);
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['subtasks', taskId] });
-      // Also invalidate parent task to update subtask count
-      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      // 🔥 REMOVED invalidateQueries - WebSocket handler updates cache in real-time
+      // This prevents double animations from optimistic update + WebSocket + refetch
+      // WebSocket 'created' message will replace the temp optimistic subtask with real data
     }
   });
 

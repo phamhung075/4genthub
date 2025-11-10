@@ -24,6 +24,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
   const [completionSummary, setCompletionSummary] = useState("");
   const [impactOnParent, setImpactOnParent] = useState("");
   const [challengesOvercome, setChallengesOvercome] = useState("");
+  const [isCompleted, setIsCompleted] = useState(false);
 
   // Use React Query mutation hook
   const { completeSubtaskAsync, isCompleting, completeError } = useSubtaskMutations();
@@ -38,6 +39,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
       setCompletionSummary("");
       setImpactOnParent("");
       setChallengesOvercome("");
+      setIsCompleted(false);
     }
   }, [subtask]);
 
@@ -85,6 +87,8 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
       // Only proceed if API call succeeded
       if (result) {
         console.log('[SubtaskCompleteDialog] Calling onComplete and onClose');
+        // Hide button immediately to prevent multiple clicks
+        setIsCompleted(true);
         onComplete(result);
         // Close dialog only after successful completion
         onClose();
@@ -106,6 +110,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
     setCompletionSummary("");
     setImpactOnParent("");
     setChallengesOvercome("");
+    setIsCompleted(false);
     // Call onClose for manual close action
     onClose();
   };
@@ -117,6 +122,7 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
       setCompletionSummary("");
       setImpactOnParent("");
       setChallengesOvercome("");
+      setIsCompleted(false);
       // Call both callbacks to ensure parent state updates
       onOpenChange(false);
       onClose();
@@ -232,26 +238,28 @@ export const SubtaskCompleteDialog: React.FC<SubtaskCompleteDialogProps> = ({
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel} disabled={isCompleting}>
+          <Button variant="outline" onClick={handleCancel} disabled={isCompleting || isCompleted}>
             Cancel
           </Button>
-          <Button
-            variant="default"
-            onClick={handleComplete}
-            disabled={isCompleting || !isValidSummary}
-          >
-            {isCompleting ? (
-              <>
-                <Check className="w-4 h-4 animate-spin mr-2" />
-                Completing...
-              </>
-            ) : (
-              <>
-                <Check className="w-4 h-4 mr-2" />
-                Complete Subtask
-              </>
-            )}
-          </Button>
+          {!isCompleted && (
+            <Button
+              variant="default"
+              onClick={handleComplete}
+              disabled={isCompleting || !isValidSummary}
+            >
+              {isCompleting ? (
+                <>
+                  <Check className="w-4 h-4 animate-spin mr-2" />
+                  Completing...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Complete Subtask
+                </>
+              )}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

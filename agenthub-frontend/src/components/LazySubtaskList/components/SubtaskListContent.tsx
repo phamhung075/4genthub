@@ -15,7 +15,7 @@ interface SubtaskListContentProps {
   loadingSubtasks: Set<string>;
   showDetails: string | null;
   parentTaskId: string;
-  onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void;
+  onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void | Promise<void>;
   onAgentInfoClick: (agentName: string) => void;
   onDeleteSubtask: (subtaskId: string) => void;
   onRegisterCallbacks: (subtaskId: string, callbacks: RowAnimationCallbacks) => void;

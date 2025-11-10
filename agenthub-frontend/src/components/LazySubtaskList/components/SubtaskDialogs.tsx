@@ -16,6 +16,7 @@ import logger from "../../../utils/logger";
 // Lazy load heavy dialog components
 const DeleteConfirmDialog = lazy(() => import("../../DeleteConfirmDialog"));
 const SubtaskCompleteDialog = lazy(() => import("../../SubtaskCompleteDialog"));
+const SubtaskEditDialog = lazy(() => import("../../SubtaskEditDialog"));
 const SubtaskDetailsDialog = lazy(() => import("../../SubtaskDetailsDialog"));
 const AgentInfoDialog = lazy(() => import("../../AgentInfoDialog"));
 
@@ -125,32 +126,23 @@ export function SubtaskDialogs({
           />
         )}
 
-        {/* TODO: Replace with proper SubtaskEditDialog when available */}
-        {editingSubtask && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">Edit Subtask</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Editing: {editingSubtask.title}
-              </p>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => onEditingSubtaskChange(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => {
-                    // TODO: Implement save functionality
-                    onEditingSubtaskChange(null);
-                  }}
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </div>
-          </div>
+        {/* Edit Subtask Dialog */}
+        {activeDialog.type === 'edit' && activeDialog.subtask && (
+          <SubtaskEditDialog
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) {
+                onActiveDialogChange({ type: null });
+              }
+            }}
+            subtask={activeDialog.subtask}
+            parentTaskId={parentTaskId}
+            onClose={() => onActiveDialogChange({ type: null })}
+            onUpdated={(updatedSubtask) => {
+              logger.debug('Subtask updated:', updatedSubtask);
+              // No need to manually refresh - WebSocket will handle it
+            }}
+          />
         )}
 
         {/* Subtask Details Dialog */}

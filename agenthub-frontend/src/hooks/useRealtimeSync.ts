@@ -336,6 +336,23 @@ export const useRealtimeSync = (
                   return old.map(s => s.id === subtaskData.id ? subtaskData : s);
                 }
 
+                // 🎯 NEW: Replace temp optimistic subtask with real backend data
+                // Match by title and recent creation (within 10 seconds)
+                const now = new Date().getTime();
+                const tempSubtaskIndex = old.findIndex(s => {
+                  if (!s.id.startsWith('temp-')) return false;
+
+                  const titleMatches = s.title === subtaskData.title;
+                  const createdRecently = now - new Date(s.created_at).getTime() < 10000;
+
+                  return titleMatches && createdRecently;
+                });
+
+                if (tempSubtaskIndex !== -1) {
+                  // Replace temp subtask with real one (no animation)
+                  return old.map((s, idx) => idx === tempSubtaskIndex ? subtaskData : s);
+                }
+
                 return [...old, subtaskData];
               }
             );
