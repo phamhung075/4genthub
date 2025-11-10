@@ -311,7 +311,8 @@ class TestTaskMCPController:
             action="update",
             task_id=sample_task_data["task_id"],
             title="Updated Task Title",
-            status="in_progress"
+            status="in_progress",
+            details="Completed initial implementation and started testing phase"
         )
 
         # Verify facade was called
