@@ -8,22 +8,22 @@ high-level API for agent instantiation and retrieval.
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from ...domain.entities.agent_template import AgentTemplate
 from ...domain.entities.user_agent_instance import UserAgentInstance
-from ...domain.value_objects.user_id import UserId
-from ...domain.value_objects.user_agent_instance_id import UserAgentInstanceId
-from ...domain.value_objects.agent_configuration import AgentConfiguration
 from ...domain.enums.ordering import InstanceOrdering
 from ...domain.services.agent_instantiation_service import AgentInstantiationService
 from ...domain.services.agent_sharing_service import AgentSharingService
+from ...domain.value_objects.agent_configuration import AgentConfiguration
+from ...domain.value_objects.user_agent_instance_id import UserAgentInstanceId
+from ...domain.value_objects.user_id import UserId
+from ...infrastructure.database.models import AgentImportHistoryORM
 from ...infrastructure.repositories import (
     ORMAgentTemplateRepository,
-    ORMUserAgentInstanceRepository
+    ORMUserAgentInstanceRepository,
 )
-from ...infrastructure.database.models import AgentImportHistoryORM
 
 logger = logging.getLogger(__name__)
 
@@ -672,8 +672,8 @@ class AgentManagementFacade:
 
         if not imported_instance:
             raise ValueError(
-                f"Failed to import agent. Invalid token, instance not public, "
-                f"or user already has this template."
+                "Failed to import agent. Invalid token, instance not public, "
+                "or user already has this template."
             )
 
         # Record import history
@@ -685,7 +685,7 @@ class AgentManagementFacade:
                     importer_user_id=str(importer_user_id.value),
                     source_instance_id=str(source_instance.id.value),
                     imported_instance_id=str(imported_instance.id.value),
-                    imported_at=datetime.now(timezone.utc),
+                    imported_at=datetime.now(datetime.UTC),
                     share_token=share_token
                 )
                 session.add(history_record)
@@ -705,7 +705,7 @@ class AgentManagementFacade:
         self,
         limit: int = 50,
         offset: int = 0,
-        order_by: 'InstanceOrdering' = None
+        order_by: InstanceOrdering = None
     ) -> list[UserAgentInstance]:
         """Get list of publicly shared agents for marketplace browsing.
 
@@ -742,7 +742,7 @@ class AgentManagementFacade:
         Returns:
             The instance if found and public, None otherwise
         """
-        logger.info(f"Previewing shared agent with token")
+        logger.info("Previewing shared agent with token")
 
         if not share_token or len(share_token) != 64:
             raise ValueError("Invalid share token")

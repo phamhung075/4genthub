@@ -6,10 +6,11 @@ and converts them into AgentTemplate domain entities.
 """
 
 import logging
-import yaml
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Optional
+
+import yaml
 
 from ...domain.entities.agent_template import AgentTemplate
 from ...domain.value_objects.agent_template_id import AgentTemplateId
@@ -34,7 +35,7 @@ class YAMLAgentTemplateLoader:
         if not self.agents_path.exists():
             raise ValueError(f"Agent library path not found: {self.agents_path}")
 
-    def load_all_agents(self) -> List[AgentTemplate]:
+    def load_all_agents(self) -> list[AgentTemplate]:
         """
         Load all agent templates from the agent-library
 
@@ -136,7 +137,7 @@ class YAMLAgentTemplateLoader:
 
         return template
 
-    def _load_yaml(self, file_path: Path, multi_document: bool = False) -> Dict[str, Any]:
+    def _load_yaml(self, file_path: Path, multi_document: bool = False) -> dict[str, Any]:
         """
         Load and parse a YAML file
 
@@ -164,7 +165,7 @@ class YAMLAgentTemplateLoader:
             logger.error(f"Error loading YAML file {file_path}: {e}")
             return {}
 
-    def _load_rules(self, rules_dir: Path) -> Optional[List[str]]:
+    def _load_rules(self, rules_dir: Path) -> Optional[list[str]]:
         """
         Load all rules from rules/*.yaml files
 
@@ -195,7 +196,7 @@ class YAMLAgentTemplateLoader:
 
         return rules if rules else None
 
-    def _extract_tools(self, capabilities_data: Dict[str, Any]) -> List[str]:
+    def _extract_tools(self, capabilities_data: dict[str, Any]) -> list[str]:
         """
         Extract MCP tools list from capabilities.yaml
 
@@ -211,7 +212,7 @@ class YAMLAgentTemplateLoader:
             return tools if isinstance(tools, list) else []
         return []
 
-    def _build_capabilities_object(self, capabilities_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _build_capabilities_object(self, capabilities_data: dict[str, Any]) -> dict[str, Any]:
         """
         Build structured capabilities object from capabilities.yaml
 
