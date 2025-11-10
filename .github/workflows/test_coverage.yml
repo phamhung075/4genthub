@@ -68,37 +68,23 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-        # cache handled by separate step below
 
-    - name: Cache uv dependencies
-
-      uses: actions/cache@v4
-
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
       with:
-
-        path: ~/.cache/uv
-
-        key: ${{ runner.os }}-uv-${{ hashFiles('agenthub_main/pyproject.toml') }}
-
-        restore-keys: |
-
-          ${{ runner.os }}-uv-
+        enable-cache: true
+        cache-dependency-glob: "agenthub_main/pyproject.toml"
 
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y postgresql-client libpq-dev
 
-    - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
-
     - name: Install Python dependencies
       working-directory: agenthub_main
       run: |
-        # Install dependencies using uv
+        # Install dependencies using uv (includes all dev dependencies from pyproject.toml)
         uv sync --group dev
-        # Install test dependencies
-        uv pip install pytest pytest-cov pytest-asyncio pytest-timeout pytest-xdist
 
     - name: Setup test environment
       working-directory: agenthub_main
@@ -116,12 +102,23 @@ jobs:
         # Create reports directory
         mkdir -p test_reports
 
+    - name: Run database migrations
+      working-directory: agenthub_main
+      run: |
+        export PYTHONPATH="$(pwd)/src"
+        export $(cat .env.test | grep -v '^#' | xargs)
+        uv run python -c "
+        import sys
+        sys.path.append('src')
+        from fastmcp.task_management.infrastructure.database.database_setup import setup_database
+        setup_database()
+        "
+
     - name: Run ${{ matrix.test-type }} tests
       working-directory: agenthub_main
       run: |
-        source .venv/bin/activate
         chmod +x scripts/run_tests_enhanced.sh
-        scripts/run_tests_enhanced.sh --type ${{ matrix.test-type }} --ci ${{ matrix.coverage && '--coverage-threshold 80' || '--quick' }}
+        uv run scripts/run_tests_enhanced.sh --type ${{ matrix.test-type }} --ci ${{ matrix.coverage && '--coverage-threshold 80' || '--quick' }}
 
     - name: Upload coverage to Codecov (unit tests only)
       if: matrix.test-type == 'unit'
@@ -179,25 +176,21 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-
     - name: Install uv
-
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
-
-
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+        cache-dependency-glob: "agenthub_main/pyproject.toml"
 
     - name: Install dependencies
-
       working-directory: agenthub_main
-
       run: uv sync --group dev
 
     - name: Run performance tests
       working-directory: agenthub_main
       run: |
-        source .venv/bin/activate
         chmod +x scripts/run_tests_enhanced.sh
-        scripts/run_tests_enhanced.sh --type performance --ci
+        uv run scripts/run_tests_enhanced.sh --type performance --ci
 
     - name: Upload performance results
       uses: actions/upload-artifact@v4

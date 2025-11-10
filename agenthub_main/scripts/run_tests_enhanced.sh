@@ -123,11 +123,16 @@ export FASTMCP_TEST_MODE=1
 # Create reports directory
 mkdir -p test_reports
 
-# Install test dependencies if needed
-if [ ! -f "src/tests/hooks/requirements-test.installed" ]; then
+# Install test dependencies if needed (using uv with pyproject.toml)
+if [ ! -f ".test-deps.installed" ]; then
     print_status $YELLOW "📦 Installing test dependencies..."
-    pip install -r src/tests/hooks/requirements-test.txt
-    touch src/tests/hooks/requirements-test.installed
+    if command -v uv &> /dev/null; then
+        uv sync --group dev
+    else
+        # Fallback to pip with pyproject.toml
+        pip install -e ".[dev]"
+    fi
+    touch .test-deps.installed
 fi
 
 # Function to run tests with timing
