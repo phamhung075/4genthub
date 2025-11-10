@@ -82,14 +82,16 @@ class AgentInheritanceService:
         
         for subtask in subtasks:
             if subtask.should_inherit_assignees():
-                original_assignees = subtask.assignees.copy()
+                # Safely get original assignees with defensive check
+                original_assignees = getattr(subtask, 'assignees', []).copy() if hasattr(subtask, 'assignees') else []
                 self.apply_agent_inheritance(subtask, parent_task)
-                
-                # Save if changed
-                if subtask.assignees != original_assignees:
+
+                # Save if changed - safely compare with None check
+                current_assignees = getattr(subtask, 'assignees', [])
+                if current_assignees != original_assignees:
                     self._subtask_repository.save(subtask)
                     updated_subtasks.append(subtask)
-                    logger.info(f"Updated subtask {subtask.id} with inherited assignees: {subtask.assignees}")
+                    logger.info(f"Updated subtask {subtask.id} with inherited assignees: {current_assignees}")
         
         logger.info(f"Applied inheritance to {len(updated_subtasks)} subtasks for task {task_id}")
         return updated_subtasks
@@ -136,13 +138,15 @@ class AgentInheritanceService:
         }
         
         for subtask in subtasks:
+            # Safely get assignees with defensive check
+            current_assignees = getattr(subtask, 'assignees', [])
             subtask_info = {
                 "id": str(subtask.id),
                 "title": subtask.title,
                 "has_assignees": subtask.has_assignees(),
                 "should_inherit": subtask.should_inherit_assignees(),
-                "current_assignees": subtask.assignees,
-                "assignee_count": len(subtask.assignees)
+                "current_assignees": current_assignees,
+                "assignee_count": len(current_assignees)
             }
             
             if subtask.has_assignees():

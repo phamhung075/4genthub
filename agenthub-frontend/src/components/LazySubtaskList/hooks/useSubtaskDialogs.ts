@@ -278,6 +278,7 @@ export function useSubtaskDialogs(
 
     // Utility handlers
     handleDialogAction,
+    setActiveDialog, // Export to allow parent to control active dialog state
 
     // State helpers
     hasOpenDialog,
