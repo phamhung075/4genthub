@@ -41,14 +41,14 @@
       "files": [
         {
           "hash": "61587f83204df9c2dd789040c767bfb0",
-          "modified": "2025-11-09T13:20:59.070218",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "AI_README.md",
           "path": "_workplace/workers/fix_tests_loop/AI_README.md",
           "size": 4622
         },
         {
           "hash": "28a3c0fd1e4fd381966c4f992350599d",
-          "modified": "2025-11-09T13:20:20.856670",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
           "size": 7055
@@ -61,7 +61,7 @@
       "files": [
         {
           "hash": "36624cd06e514fded174a5abc0d0f669",
-          "modified": "2025-11-09T12:11:35.283559",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "api-parameter-handling-complete.md",
           "path": "api-behavior/api-parameter-handling-complete.md",
           "size": 6961
@@ -74,7 +74,7 @@
       "files": [
         {
           "hash": "af1bdf78b02c9d4fb564bbc2c8e66045",
-          "modified": "2025-11-09T12:51:24.638761",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "mcp-tools-api-complete.md",
           "path": "api-integration/mcp-tools-api-complete.md",
           "size": 16259
@@ -87,14 +87,14 @@
       "files": [
         {
           "hash": "72ad16444d92300d0c5e873469b605b6",
-          "modified": "2025-11-08T00:50:26.427875",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "Architecture_Technique.md",
           "path": "architecture-design/Architecture_Technique.md",
           "size": 38486
         },
         {
           "hash": "85f2412ad093c14d30da8d78fca755e0",
-          "modified": "2025-11-09T13:11:27.551636",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "product-architecture-complete.md",
           "path": "architecture-design/product-architecture-complete.md",
           "size": 17758
@@ -114,7 +114,7 @@
       "files": [
         {
           "hash": "d3c0afbe57ba04d9657c087544c15aa4",
-          "modified": "2025-11-09T12:26:09.310738",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "complete-authentication-guide.md",
           "path": "authentication/complete-authentication-guide.md",
           "size": 15097
@@ -189,21 +189,21 @@
       "files": [
         {
           "hash": "71a11cbc8b54acb9d447d1fcbee8f474",
-          "modified": "2025-11-09T12:56:55.628106",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "ddd-architecture-complete.md",
           "path": "development-guides/ddd-architecture-complete.md",
           "size": 19775
         },
         {
           "hash": "29fc9ca53ffa689b8e4f252f0922f1fe",
-          "modified": "2025-11-09T12:58:29.571748",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "development-workflow-complete.md",
           "path": "development-guides/development-workflow-complete.md",
           "size": 15718
         },
         {
           "hash": "63e703ab9ef7b34925b3352a3be688eb",
-          "modified": "2025-11-09T13:04:56.265096",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "development-infrastructure-complete.md",
           "path": "development-guides/development-infrastructure-complete.md",
           "size": 17730
@@ -216,7 +216,7 @@
       "files": [
         {
           "hash": "562b23f4dfe1e3b13f5418294bc38b77",
-          "modified": "2025-11-09T13:11:06.474828",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "toast-notification-architecture.md",
           "path": "development-guides/ui-patterns/toast-notification-architecture.md",
           "size": 11780
@@ -229,13 +229,26 @@
       "files": [
         {
           "hash": "304e8101cda8f4292826701bd246ffdf",
-          "modified": "2025-11-09T12:47:40.137007",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "complete-operations-guide.md",
           "path": "operations/complete-operations-guide.md",
           "size": 17882
         }
       ],
       "path": "operations"
+    },
+    "reports-status": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "f12615c092db465fc146be6fce29ff14",
+          "modified": "2025-11-10T14:44:56.547313",
+          "name": "dead-code-cleanup-2025-11-10.md",
+          "path": "reports-status/dead-code-cleanup-2025-11-10.md",
+          "size": 11355
+        }
+      ],
+      "path": "reports-status"
     },
     "root": {
       "count": 12,
@@ -332,7 +345,7 @@
       "files": [
         {
           "hash": "acb5504f0da54a4da35f5a6f077c4a8a",
-          "modified": "2025-11-09T12:23:57.169986",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "complete-setup-guide.md",
           "path": "setup-guides/complete-setup-guide.md",
           "size": 12192
@@ -345,21 +358,21 @@
       "files": [
         {
           "hash": "2fe07f7c974ace497fe158d1a365a807",
-          "modified": "2025-11-09T12:20:37.059579",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "contract-integration-complete.md",
           "path": "testing-qa/contract-integration-complete.md",
           "size": 14043
         },
         {
           "hash": "98adf9dc28a550157ed4a6043e93ef54",
-          "modified": "2025-11-09T12:19:23.529011",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "qa-strategy-planning-complete.md",
           "path": "testing-qa/qa-strategy-planning-complete.md",
           "size": 9374
         },
         {
           "hash": "152d62f7e8b23d0f993953d8190c0f5f",
-          "modified": "2025-11-09T12:18:14.287109",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "mcp-tools-validation-complete.md",
           "path": "testing-qa/mcp-tools-validation-complete.md",
           "size": 7898
@@ -385,7 +398,7 @@
       "files": [
         {
           "hash": "54f3d8f479a209511416a925ce951f94",
-          "modified": "2025-11-09T12:42:57.736902",
+          "modified": "2025-11-09T13:32:05.796333",
           "name": "complete-troubleshooting-guide.md",
           "path": "troubleshooting-guides/complete-troubleshooting-guide.md",
           "size": 13214
@@ -394,7 +407,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-09T13:20:59.155257",
+  "generated_at": "2025-11-10T14:44:56.646107",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -403,7 +416,6 @@
         ]
       }
     },
-    "_obsolete_docs": {},
     "_workplace": {
       "workers": {
         "files": [
@@ -482,6 +494,11 @@
         "complete-operations-guide.md"
       ]
     },
+    "reports-status": {
+      "files": [
+        "dead-code-cleanup-2025-11-10.md"
+      ]
+    },
     "setup-guides": {
       "files": [
         "complete-setup-guide.md"
@@ -506,5 +523,5 @@
     }
   },
   "total_directories": 18,
-  "total_files": 41
+  "total_files": 42
 }

@@ -8,6 +8,48 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Removed
 
+**Dead Code Cleanup - Compatibility Shims & Duplicate Implementations** (2025-11-10)
+
+Removed 4 dead code items (6 total files, ~650 lines) including compatibility layers, unused wrappers, and duplicate implementations no longer used anywhere in codebase.
+
+**Infrastructure Layer** (`agenthub_main/src/fastmcp/task_management/infrastructure/`)
+- Removed `orm/` directory (2 files, ~450 bytes)
+  - Pure re-export shims from when models moved to `database/`
+  - 0 import references found across entire codebase
+  - Actual models at: `infrastructure/database/models.py` (750 lines, actively used)
+- Removed `mock_repository_factory_wrapper.py` (55 lines)
+  - Wrapper to import from test fixtures with fallback
+  - 0 import references - never adopted by consumers
+  - Infrastructure `mock_repository_factory.py` is actively used by 5 test files
+- Files: `infrastructure/orm.obsolete/`, `mock_repository_factory_wrapper.py.obsolete`
+
+**Domain Layer** (`agenthub_main/src/fastmcp/task_management/domain/`)
+- Removed `models/` directory (2 files, ~360 bytes)
+  - Compatibility layer for `ContextLevel` enum
+  - 0 import references found across entire codebase
+  - Actual location: `domain/value_objects/context_enums.py` (actively imported by 20+ files)
+- Files: `domain/models.obsolete/`
+
+**Test Fixtures** (`agenthub_main/src/tests/fixtures/mocks/repositories/`)
+- Removed `mock_repository_factory.py` (594 lines)
+  - Orphaned duplicate of infrastructure implementation (464 lines)
+  - Only imported by dead wrapper (which was never used)
+  - All tests import from infrastructure version
+- Files: `mock_repository_factory.py.obsolete`
+
+**Impact**
+- Lines removed: ~650 lines of dead code
+- Codebase clarity: Single source of truth for each entity
+- Import paths: No confusing multiple paths to same code
+- Maintenance: Fewer files to understand/maintain
+- Pattern detection: Identified wrapper/duplicate implementation anti-patterns
+- Verification: Import tests pass ✅
+- Recovery: Reversible via `.obsolete` naming pattern
+
+**Details**: See `ai_docs/reports-status/dead-code-cleanup-2025-11-10.md`
+
+---
+
 **Scripts Directory Cleanup** (2025-11-09)
 
 **Backend Scripts** (`agenthub_main/scripts/`)
