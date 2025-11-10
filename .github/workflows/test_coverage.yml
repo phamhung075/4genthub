@@ -11,7 +11,7 @@ on:
     - cron: '0 2 * * *'
 
 env:
-  PYTHON_VERSION: '3.14'
+  PYTHON_VERSION: '3.13'
   COVERAGE_THRESHOLD: 80
 
 jobs:
@@ -110,8 +110,8 @@ jobs:
         uv run python -c "
         import sys
         sys.path.append('src')
-        from fastmcp.task_management.infrastructure.database.database_setup import setup_database
-        setup_database()
+        from fastmcp.task_management.infrastructure.database.database_initializer import initialize_database
+        initialize_database()
         "
 
     - name: Run ${{ matrix.test-type }} tests
