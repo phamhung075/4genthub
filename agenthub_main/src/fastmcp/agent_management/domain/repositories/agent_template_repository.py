@@ -1,7 +1,9 @@
 """AgentTemplateRepository - Repository interface for AgentTemplate aggregate"""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Optional, List
+
 from ..entities.agent_template import AgentTemplate
 from ..value_objects.agent_template_id import AgentTemplateId
 
@@ -26,7 +28,7 @@ class AgentTemplateRepository(ABC):
         pass
 
     @abstractmethod
-    def find_by_id(self, template_id: AgentTemplateId) -> Optional[AgentTemplate]:
+    def find_by_id(self, template_id: AgentTemplateId) -> AgentTemplate | None:
         """Find a template by its ID.
 
         Args:
@@ -38,7 +40,7 @@ class AgentTemplateRepository(ABC):
         pass
 
     @abstractmethod
-    def find_by_slug(self, slug: str) -> Optional[AgentTemplate]:
+    def find_by_slug(self, slug: str) -> AgentTemplate | None:
         """Find a template by its slug.
 
         Args:
@@ -50,7 +52,7 @@ class AgentTemplateRepository(ABC):
         pass
 
     @abstractmethod
-    def find_all(self) -> List[AgentTemplate]:
+    def find_all(self) -> list[AgentTemplate]:
         """Get all agent templates.
 
         Returns:
@@ -59,7 +61,7 @@ class AgentTemplateRepository(ABC):
         pass
 
     @abstractmethod
-    def find_by_category(self, category: str) -> List[AgentTemplate]:
+    def find_by_category(self, category: str) -> list[AgentTemplate]:
         """Find templates by category.
 
         Args:

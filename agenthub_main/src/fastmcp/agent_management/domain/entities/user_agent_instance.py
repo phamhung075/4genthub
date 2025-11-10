@@ -7,12 +7,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from fastmcp.task_management.domain.entities.base.base_timestamp_entity import BaseTimestampEntity
-
 from ..value_objects.agent_configuration import AgentConfiguration
 from ..value_objects.agent_template_id import AgentTemplateId
 from ..value_objects.user_agent_instance_id import UserAgentInstanceId
 from ..value_objects.user_id import UserId
+from fastmcp.task_management.domain.entities.base.base_timestamp_entity import (
+    BaseTimestampEntity,
+)
 
 logger = logging.getLogger(__name__)
 
