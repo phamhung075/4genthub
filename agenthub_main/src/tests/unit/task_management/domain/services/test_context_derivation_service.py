@@ -1,17 +1,21 @@
 """Unit tests for ContextDerivationService domain service"""
 
-import pytest
-from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock, AsyncMock
-from typing import Optional, Dict, Any
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock
 
-from fastmcp.task_management.domain.services.context_derivation_service import ContextDerivationService
+import pytest
+
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.repositories.git_branch_repository import (
+    GitBranchRepository,
+)
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.services.context_derivation_service import (
+    ContextDerivationService,
+)
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.domain.repositories.git_branch_repository import GitBranchRepository
 
 
 class MockGitBranch:
@@ -54,8 +58,8 @@ class TestContextDerivationService:
             status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id="test-branch-id",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         # Create test git branch
@@ -96,8 +100,8 @@ class TestContextDerivationService:
             status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id=None,  # No branch ID
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         self.mock_task_repository.find_by_id = AsyncMock(return_value=task_without_branch)
@@ -412,8 +416,8 @@ class TestContextDerivationServiceIntegration:
             status=TaskStatus.in_progress(),
             priority=Priority.from_string("high"),
             git_branch_id="auth-branch",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         # Create git branch with project
@@ -451,8 +455,8 @@ class TestContextDerivationServiceIntegration:
             status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id="complex-branch",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         complex_branch = MockGitBranch(
@@ -496,8 +500,8 @@ class TestContextDerivationServiceIntegration:
             status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id="failing-branch",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         self.mock_task_repository.find_by_id.return_value = partial_task
@@ -549,8 +553,8 @@ class TestContextDerivationServiceIntegration:
             status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id="inherit-branch",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         inherit_branch = MockGitBranch(
@@ -577,8 +581,8 @@ class TestContextDerivationServiceIntegration:
             status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id=None,  # No branch
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         self.mock_task_repository.find_by_id = AsyncMock(return_value=task_without_branch)

@@ -3,13 +3,12 @@ Integration tests for Subtask API endpoints
 Tests the complete API flow to ensure subtasks use correct parent_task_id
 """
 
-import pytest
-import requests
-import json
-from uuid import uuid4
-from typing import Dict, Any
 import sys
 from pathlib import Path
+from uuid import uuid4
+
+import pytest
+import requests
 
 # Add the src directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -24,7 +23,7 @@ def check_server_available():
     try:
         response = requests.get(f"{API_BASE_URL}/health", timeout=1)
         return response.status_code == 200
-    except:
+    except Exception:
         return False
 
 

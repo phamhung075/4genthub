@@ -4,6 +4,8 @@ This module defines value objects for the Vision Enrichment System,
 which tracks alignment between tasks and organizational objectives.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum

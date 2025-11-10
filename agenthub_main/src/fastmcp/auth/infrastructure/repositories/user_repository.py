@@ -4,6 +4,8 @@ User Repository Implementation
 This repository handles user persistence using SQLAlchemy.
 """
 
+from __future__ import annotations
+
 import logging
 
 from sqlalchemy import or_

@@ -4,30 +4,35 @@ E2E Test Configuration for Agent Management
 Reuses integration test fixtures and adds E2E-specific setup.
 """
 
-import pytest
+from datetime import UTC, datetime
 from uuid import uuid4
 
-# Import fixtures from integration tests
-from tests.agent_management.integration.conftest import (
-    test_database_url,
-    test_engine,
-    db_session,
-    sample_agent_template,
-    sample_user_id,
-    sample_user_instance,
-    reset_database_config
+import pytest
+
+from fastmcp.agent_management.application.facades.agent_management_facade import (
+    AgentManagementFacade,
 )
+from fastmcp.agent_management.domain.entities.agent_template import AgentTemplate
+from fastmcp.agent_management.domain.services.agent_customization_service import (
+    AgentCustomizationService,
+)
+from fastmcp.agent_management.domain.services.agent_instantiation_service import (
+    AgentInstantiationService,
+)
+from fastmcp.agent_management.domain.services.agent_sharing_service import (
+    AgentSharingService,
+)
+from fastmcp.agent_management.domain.value_objects import AgentTemplateId
 
 # Import facade dependencies
-from fastmcp.agent_management.infrastructure.repositories.orm.agent_template_repository import ORMAgentTemplateRepository
-from fastmcp.agent_management.infrastructure.repositories.orm.user_agent_instance_repository import ORMUserAgentInstanceRepository
-from fastmcp.agent_management.application.facades.agent_management_facade import AgentManagementFacade
-from fastmcp.agent_management.domain.services.agent_instantiation_service import AgentInstantiationService
-from fastmcp.agent_management.domain.services.agent_customization_service import AgentCustomizationService
-from fastmcp.agent_management.domain.services.agent_sharing_service import AgentSharingService
-from fastmcp.agent_management.domain.entities.agent_template import AgentTemplate
-from fastmcp.agent_management.domain.value_objects import AgentTemplateId
-from datetime import datetime, timezone
+from fastmcp.agent_management.infrastructure.repositories.orm.agent_template_repository import (
+    ORMAgentTemplateRepository,
+)
+from fastmcp.agent_management.infrastructure.repositories.orm.user_agent_instance_repository import (
+    ORMUserAgentInstanceRepository,
+)
+
+# Import fixtures from integration tests
 
 
 @pytest.fixture
@@ -57,8 +62,8 @@ def test_template(db_session):
             "description": "Agent for E2E testing",
             "author": "Test Suite"
         },
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
 
     template_repo.create(template)
@@ -70,7 +75,7 @@ def test_template(db_session):
     try:
         template_repo.delete_by_id(template.id)
         db_session.commit()
-    except:
+    except Exception:
         pass
 
 

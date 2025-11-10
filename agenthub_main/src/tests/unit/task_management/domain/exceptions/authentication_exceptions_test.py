@@ -13,9 +13,9 @@ import pytest
 
 from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
     AuthenticationError,
-    UserAuthenticationRequiredError,
+    DefaultUserProhibitedError,
     InvalidUserIdError,
-    DefaultUserProhibitedError
+    UserAuthenticationRequiredError,
 )
 
 

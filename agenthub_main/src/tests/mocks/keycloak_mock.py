@@ -17,10 +17,11 @@ Usage:
     >>> mock_server.stop()
 """
 
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone, timedelta
+from __future__ import annotations
+
 import uuid
-import json
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 
 class MockKeycloakServer:
@@ -39,9 +40,9 @@ class MockKeycloakServer:
         """
         self.realm = realm
         self.base_url = base_url
-        self.users: Dict[str, Dict[str, Any]] = {}
-        self.tokens: Dict[str, Dict[str, Any]] = {}
-        self.refresh_tokens: Dict[str, str] = {}
+        self.users: dict[str, dict[str, Any]] = {}
+        self.tokens: dict[str, dict[str, Any]] = {}
+        self.refresh_tokens: dict[str, str] = {}
         self._running = False
 
         # Add default test users
@@ -78,10 +79,10 @@ class MockKeycloakServer:
         self,
         email: str,
         password: str,
-        user_id: Optional[str] = None,
-        username: Optional[str] = None,
-        roles: Optional[List[str]] = None,
-        permissions: Optional[List[str]] = None
+        user_id: str | None = None,
+        username: str | None = None,
+        roles: list[str | None] = None,
+        permissions: list[str | None] = None
     ) -> str:
         """Add a user to the mock server.
 
@@ -107,7 +108,7 @@ class MockKeycloakServer:
             "roles": roles or ["user"],
             "permissions": permissions or ["mcp:read"],
             "enabled": True,
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "created_at": datetime.now(UTC).isoformat()
         }
 
         return user_id
@@ -122,7 +123,7 @@ class MockKeycloakServer:
         email: str,
         password: str,
         client_id: str = "mcp-client"
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any | None]:
         """Authenticate a user and return tokens.
 
         Args:
@@ -145,7 +146,7 @@ class MockKeycloakServer:
         self.tokens[access_token] = {
             "user_id": user["id"],
             "email": user["email"],
-            "expires_at": datetime.now(timezone.utc) + timedelta(hours=1)
+            "expires_at": datetime.now(UTC) + timedelta(hours=1)
         }
         self.refresh_tokens[refresh_token] = access_token
 
@@ -158,7 +159,7 @@ class MockKeycloakServer:
             "email": user["email"]
         }
 
-    def _generate_access_token(self, user: Dict[str, Any], client_id: str) -> str:
+    def _generate_access_token(self, user: dict[str, Any], client_id: str) -> str:
         """Generate a mock access token (in reality, this would be a JWT)."""
         from tests.utils.auth_token_builder import AuthTokenBuilder
 
@@ -171,11 +172,11 @@ class MockKeycloakServer:
                 .with_audience(client_id)
                 .build())
 
-    def _generate_refresh_token(self, user: Dict[str, Any]) -> str:
+    def _generate_refresh_token(self, user: dict[str, Any]) -> str:
         """Generate a mock refresh token."""
         return f"refresh_{user['id']}_{uuid.uuid4()}"
 
-    def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
+    def validate_token(self, token: str) -> dict[str, Any | None]:
         """Validate an access token.
 
         Args:
@@ -189,13 +190,13 @@ class MockKeycloakServer:
             return None
 
         # Check expiration
-        if datetime.now(timezone.utc) > token_info["expires_at"]:
+        if datetime.now(UTC) > token_info["expires_at"]:
             del self.tokens[token]
             return None
 
         return token_info
 
-    def refresh_access_token(self, refresh_token: str) -> Optional[Dict[str, Any]]:
+    def refresh_access_token(self, refresh_token: str) -> dict[str, Any | None]:
         """Refresh an access token using a refresh token.
 
         Args:
@@ -231,7 +232,7 @@ class MockKeycloakServer:
         self.tokens[new_access_token] = {
             "user_id": user["id"],
             "email": user["email"],
-            "expires_at": datetime.now(timezone.utc) + timedelta(hours=1)
+            "expires_at": datetime.now(UTC) + timedelta(hours=1)
         }
         self.refresh_tokens[new_refresh_token] = new_access_token
 
@@ -261,18 +262,18 @@ class MockKeycloakServer:
         if refresh_to_remove:
             del self.refresh_tokens[refresh_to_remove]
 
-    def get_jwks(self) -> Dict[str, Any]:
+    def get_jwks(self) -> dict[str, Any]:
         """Get the JWKS (JSON Web Key Set) for token validation.
 
         Returns:
             JWKS dictionary
         """
-        from tests.utils.auth_token_builder import AuthTokenBuilder, MockKeycloakJWKS
+        from tests.utils.auth_token_builder import MockKeycloakJWKS
 
         jwks_mock = MockKeycloakJWKS()
         return jwks_mock.get_jwks()
 
-    def get_user_info(self, token: str) -> Optional[Dict[str, Any]]:
+    def get_user_info(self, token: str) -> dict[str, Any | None]:
         """Get user information from an access token.
 
         Args:
@@ -308,10 +309,10 @@ class MockKeycloakClient:
             server: Mock Keycloak server instance
         """
         self.server = server
-        self.current_token: Optional[str] = None
-        self.current_refresh_token: Optional[str] = None
+        self.current_token: str | None = None
+        self.current_refresh_token: str | None = None
 
-    def login(self, email: str, password: str) -> Optional[str]:
+    def login(self, email: str, password: str) -> str | None:
         """Login and get an access token.
 
         Args:
@@ -336,7 +337,7 @@ class MockKeycloakClient:
             self.current_token = None
             self.current_refresh_token = None
 
-    def refresh_token(self) -> Optional[str]:
+    def refresh_token(self) -> str | None:
         """Refresh the current access token.
 
         Returns:
@@ -364,7 +365,7 @@ class MockKeycloakClient:
 
         return self.server.validate_token(self.current_token) is not None
 
-    def get_user_info(self) -> Optional[Dict[str, Any]]:
+    def get_user_info(self) -> dict[str, Any | None]:
         """Get information about the current user.
 
         Returns:

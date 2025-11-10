@@ -3,6 +3,8 @@
 Infrastructure utilities for directory management following DDD principles.
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 

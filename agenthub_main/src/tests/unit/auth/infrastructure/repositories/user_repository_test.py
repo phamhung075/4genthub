@@ -12,15 +12,17 @@ Tests cover all methods in UserRepository including:
 - search functionality
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from unittest.mock import Mock, patch, MagicMock
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
 
-from fastmcp.auth.infrastructure.repositories.user_repository import UserRepository
+import pytest
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from fastmcp.auth.domain.entities.user import User as DomainUser
+from fastmcp.auth.domain.entities.user import UserRole, UserStatus
 from fastmcp.auth.infrastructure.database.models import User as UserModel
-from fastmcp.auth.domain.entities.user import User as DomainUser, UserStatus, UserRole
+from fastmcp.auth.infrastructure.repositories.user_repository import UserRepository
 
 
 class TestUserRepository:
@@ -48,9 +50,9 @@ class TestUserRepository:
             status=UserStatus.ACTIVE,
             roles=[UserRole.USER],
             email_verified=True,
-            email_verified_at=datetime.now(timezone.utc),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            email_verified_at=datetime.now(UTC),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
     
     @pytest.fixture
@@ -65,7 +67,7 @@ class TestUserRepository:
         db_user.status = UserStatus.ACTIVE.value
         db_user.roles = [UserRole.USER.value]
         db_user.email_verified = True
-        db_user.email_verified_at = datetime.now(timezone.utc)
+        db_user.email_verified_at = datetime.now(UTC)
         db_user.last_login_at = None
         db_user.failed_login_attempts = 0
         db_user.locked_until = None
@@ -74,8 +76,8 @@ class TestUserRepository:
         db_user.password_reset_expires = None
         db_user.refresh_token_family = None
         db_user.refresh_token_version = 0
-        db_user.created_at = datetime.now(timezone.utc)
-        db_user.updated_at = datetime.now(timezone.utc)
+        db_user.created_at = datetime.now(UTC)
+        db_user.updated_at = datetime.now(UTC)
         db_user.created_by = None
         db_user.project_ids = []
         db_user.default_project_id = None

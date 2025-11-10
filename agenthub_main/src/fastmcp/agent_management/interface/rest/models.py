@@ -4,6 +4,8 @@ Pydantic Models for Agent Management REST API
 Request and response models for user-specific agent system endpoints.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any
 

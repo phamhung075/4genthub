@@ -2,20 +2,22 @@
 Tests for Search Tasks Use Case
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.application.use_cases.search_tasks import SearchTasksUseCase
+import pytest
+
 from fastmcp.task_management.application.dtos.task import (
     SearchTasksRequest,
-    TaskListResponse
 )
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.application.use_cases.search_tasks import (
+    SearchTasksUseCase,
+)
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestSearchTasksUseCase:

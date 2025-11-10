@@ -1,5 +1,7 @@
 """Task Application Facade - Orchestrates task-related use cases"""
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC
 from typing import Any
@@ -1193,7 +1195,7 @@ class TaskApplicationFacade:
         except Exception as e:
             try:
                 logger.error(f"Unexpected error in complete_task: {e}")
-            except:
+            except Exception:
                 # If logger fails, use logging directly
                 import logging
                 logging.getLogger(__name__).error(f"Unexpected error in complete_task (logger failed): {e}")

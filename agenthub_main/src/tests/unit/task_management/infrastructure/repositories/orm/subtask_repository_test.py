@@ -11,24 +11,23 @@ Tests the SubtaskRepository ORM implementation including:
 - Complex query operations
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime, timezone
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import json
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
+
+import pytest
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.exceptions.base_exceptions import (
-    DatabaseException,
-    ResourceNotFoundException,
-    ValidationException
+from fastmcp.task_management.infrastructure.database.models import (
+    Subtask as SubtaskModel,
 )
-from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
-from fastmcp.task_management.infrastructure.database.models import Subtask as SubtaskModel
+from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+    ORMSubtaskRepository,
+)
 
 
 def create_mock_with_spec(spec_class):
@@ -163,8 +162,8 @@ class TestORMSubtaskRepositoryDataConversion:
         mock_model.priority = "medium"
         mock_model.assignees = json.dumps(["@user1"])
         mock_model.progress_percentage = 0
-        mock_model.created_at = datetime.now(timezone.utc)
-        mock_model.updated_at = datetime.now(timezone.utc)
+        mock_model.created_at = datetime.now(UTC)
+        mock_model.updated_at = datetime.now(UTC)
         mock_model.completion_summary = None
         mock_model.testing_notes = None
 
@@ -216,7 +215,7 @@ class TestORMSubtaskRepositorySaveOperations:
         # Mock created model
         mock_created_model = create_mock_with_spec(Subtask)
         mock_created_model.id = "sub-123"
-        mock_created_model.updated_at = datetime.now(timezone.utc)
+        mock_created_model.updated_at = datetime.now(UTC)
 
         # Mock session context manager
         mock_session_ctx = Mock()
@@ -246,7 +245,7 @@ class TestORMSubtaskRepositorySaveOperations:
         # Mock existing model in database
         mock_existing_model = create_mock_with_spec(Subtask)
         mock_existing_model.id = "sub-123"
-        mock_existing_model.updated_at = datetime.now(timezone.utc)
+        mock_existing_model.updated_at = datetime.now(UTC)
 
         # Mock query chain
         mock_query = Mock()
@@ -287,7 +286,7 @@ class TestORMSubtaskRepositorySaveOperations:
         # Mock new model creation
         mock_new_model = create_mock_with_spec(Subtask)
         mock_new_model.id = "sub-nonexistent"
-        mock_new_model.updated_at = datetime.now(timezone.utc)
+        mock_new_model.updated_at = datetime.now(UTC)
 
         # Mock session context manager
         mock_session_ctx = Mock()
@@ -351,8 +350,8 @@ class TestORMSubtaskRepositoryFindOperations:
         mock_model.priority = "medium"
         mock_model.assignees = '["@user1"]'
         mock_model.progress_percentage = 0
-        mock_model.created_at = datetime.now(timezone.utc)
-        mock_model.updated_at = datetime.now(timezone.utc)
+        mock_model.created_at = datetime.now(UTC)
+        mock_model.updated_at = datetime.now(UTC)
         mock_model.completion_summary = ""
         mock_model.testing_notes = ""
 

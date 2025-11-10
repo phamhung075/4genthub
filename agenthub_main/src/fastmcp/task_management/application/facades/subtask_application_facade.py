@@ -3,6 +3,8 @@
 Handles subtask-related application boundary concerns, orchestrating subtask use cases and response formatting.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -404,7 +406,7 @@ class SubtaskApplicationFacade:
             sync_service = TaskContextSyncService(task_repository)
             try:
                 # Check if we're already in an event loop
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # We're in an async context - schedule as background task
                 asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
                 logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
@@ -504,7 +506,7 @@ class SubtaskApplicationFacade:
             sync_service = TaskContextSyncService(task_repository)
             try:
                 # Check if we're already in an event loop
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # We're in an async context - schedule as background task
                 asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
                 logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
@@ -563,7 +565,7 @@ class SubtaskApplicationFacade:
                 )
 
                 # Create WebSocket message using typed payload
-                ws_message = create_delete_message(
+                create_delete_message(
                     entity='subtask',
                     payload=delete_payload,
                     user_id=user_id
@@ -622,7 +624,7 @@ class SubtaskApplicationFacade:
                 sync_service = TaskContextSyncService(task_repository)
                 try:
                     # Check if we're already in an event loop
-                    loop = asyncio.get_running_loop()
+                    asyncio.get_running_loop()
                     # We're in an async context - schedule as background task
                     asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
                     logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
@@ -707,7 +709,7 @@ class SubtaskApplicationFacade:
             sync_service = TaskContextSyncService(task_repository)
             try:
                 # Check if we're already in an event loop
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # We're in an async context - schedule as background task
                 asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
                 logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
@@ -840,7 +842,7 @@ class SubtaskApplicationFacade:
                 sync_service = TaskContextSyncService(task_repository)
                 try:
                     # Check if we're already in an event loop
-                    loop = asyncio.get_running_loop()
+                    asyncio.get_running_loop()
                     # We're in an async context - schedule as background task
                     asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
                     logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")

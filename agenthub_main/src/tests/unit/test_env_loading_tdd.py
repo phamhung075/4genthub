@@ -7,8 +7,9 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock, mock_open
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -32,7 +33,6 @@ class TestEnvironmentLoading:
 
     def test_settings_should_not_use_complex_path_resolution(self):
         """Settings should use simple path resolution for env files."""
-        from fastmcp.settings import Settings
 
         # Read the settings file to check path resolution approach
         settings_file = Path(__file__).parent.parent.parent / "fastmcp" / "settings.py"
@@ -71,7 +71,9 @@ class TestEnvironmentLoading:
     def test_database_config_should_use_env_variables(self):
         """DatabaseConfig should correctly use environment variables."""
         # Test that DatabaseConfig reads from environment (loaded via load_dotenv at import)
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
 
         db_config = DatabaseConfig()
         config = db_config.get_database_info()
@@ -111,7 +113,10 @@ class TestEnvironmentLoading:
             'PYTEST_CURRENT_TEST': 'test'
         }):
             from sqlalchemy import create_engine, text
-            from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+
+            from fastmcp.task_management.infrastructure.database.database_config import (
+                DatabaseConfig,
+            )
 
             db_config = DatabaseConfig()
 
@@ -198,7 +203,9 @@ class TestEnvironmentLoading:
             # Test environment consistency for dynamically set vars
             assert os.getenv('TEST_VAR') == 'test_value'
 
-            from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+            from fastmcp.task_management.infrastructure.database.database_config import (
+                DatabaseConfig,
+            )
             db_config = DatabaseConfig()
             config = db_config.get_database_info()
 
@@ -305,7 +312,9 @@ class TestDatabaseConnection:
         env_file = project_root / ".env"
         load_dotenv(env_file, override=True)
 
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
 
         db_config = DatabaseConfig()
         config = db_config.get_database_info()
@@ -333,7 +342,9 @@ class TestDatabaseConnection:
         env_file = project_root / ".env"
         load_dotenv(env_file, override=True)
 
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
 
         db_config = DatabaseConfig()
         config = db_config.get_database_info()
@@ -358,7 +369,9 @@ class TestErrorHandling:
         # SQLite cannot work without a database file path - should raise ValueError
 
         # First, reset the DatabaseConfig singleton to ensure clean state
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         DatabaseConfig.reset_instance()
 
         with patch.dict(os.environ, {
@@ -367,7 +380,7 @@ class TestErrorHandling:
         }, clear=True):
             # DATABASE_PATH is required for SQLite - should raise ValueError
             with pytest.raises(ValueError, match="DATABASE_PATH environment variable is NOT configured"):
-                db_config = DatabaseConfig()
+                DatabaseConfig()
 
     def test_invalid_port_number(self):
         """Test handling of invalid port numbers."""
@@ -384,7 +397,9 @@ class TestErrorHandling:
         try:
             os.environ['DATABASE_PORT'] = 'not-a-number'
 
-            from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+            from fastmcp.task_management.infrastructure.database.database_config import (
+                DatabaseConfig,
+            )
 
             # Should handle invalid port gracefully
             db_config = DatabaseConfig()

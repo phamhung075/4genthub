@@ -20,27 +20,36 @@ User Requirements:
 - "need make it layer by layer follow DDD clean code"
 """
 
-import pytest
 import asyncio
-import json
-from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
-from unittest.mock import Mock, patch, AsyncMock
+import logging
+from datetime import datetime
+from typing import Any
+from unittest.mock import patch
 from uuid import uuid4
 
-# Import application layer
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
+import pytest
 
-# Import infrastructure layer
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-
-# Import WebSocket broadcast function
-from fastmcp.server.routes.websocket_routes import broadcast_data_change, active_connections, connection_users
 from fastmcp.auth.domain.entities.user import User
 
-import logging
+# Import WebSocket broadcast function
+from fastmcp.server.routes.websocket_routes import (
+    active_connections,
+    connection_users,
+)
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.update_task_request import (
+    UpdateTaskRequest,
+)
+
+# Import application layer
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
+
+# Import infrastructure layer
+
 logger = logging.getLogger(__name__)
 
 
@@ -50,10 +59,10 @@ class MockWebSocketConnection:
     def __init__(self, user_id: str, user_email: str):
         self.user_id = user_id
         self.user_email = user_email
-        self.received_messages: List[Dict[str, Any]] = []
+        self.received_messages: list[dict[str, Any]] = []
         self.connected = True
 
-    async def send_json(self, message: Dict[str, Any]):
+    async def send_json(self, message: dict[str, Any]):
         """Mock sending JSON message - just store it"""
         if self.connected:
             self.received_messages.append(message)
@@ -61,11 +70,11 @@ class MockWebSocketConnection:
         else:
             raise Exception("WebSocket not connected")
 
-    def get_messages_by_type(self, event_type: str) -> List[Dict[str, Any]]:
+    def get_messages_by_type(self, event_type: str) -> list[dict[str, Any]]:
         """Get messages filtered by event type"""
         return [msg for msg in self.received_messages if msg['payload']['action'] == event_type]
 
-    def get_messages_by_entity(self, entity_type: str) -> List[Dict[str, Any]]:
+    def get_messages_by_entity(self, entity_type: str) -> list[dict[str, Any]]:
         """Get messages filtered by entity type"""
         return [msg for msg in self.received_messages if msg['payload']['entity'] == entity_type]
 
@@ -226,7 +235,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
     assert "status" in task_data, "Missing 'status' in task data"
     assert "priority" in task_data, "Missing 'priority' in task data"
 
-    logger.info(f"✅ E2E TEST PASSED: Task create notification received with correct data structure")
+    logger.info("✅ E2E TEST PASSED: Task create notification received with correct data structure")
 
     # ============================================================================
     # TEST 2: Task Update Triggers WebSocket Notification to Frontend
@@ -295,7 +304,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         assert task_data["status"] == "in_progress" or "in_progress" in str(task_data["status"]), \
             f"Status not updated in notification: {task_data['status']}"
 
-        logger.info(f"✅ E2E TEST PASSED: Task update notification received with updated data")
+        logger.info("✅ E2E TEST PASSED: Task update notification received with updated data")
 
     # ============================================================================
     # TEST 3: Task Delete Triggers WebSocket Notification to Frontend
@@ -359,7 +368,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         assert task_data["id"] == task_id, \
             f"Task ID mismatch: expected '{task_id}', got '{task_data['id']}'"
 
-        logger.info(f"✅ E2E TEST PASSED: Task delete notification received with task ID")
+        logger.info("✅ E2E TEST PASSED: Task delete notification received with task ID")
 
     # ============================================================================
     # TEST 4: Verify Data Model Matches TypeScript Interface Exactly
@@ -413,7 +422,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         self.mock_websocket.clear_messages()
 
         # Act: Create task
-        response = self.create_task_use_case.execute(request)
+        self.create_task_use_case.execute(request)
         await asyncio.sleep(0.1)
 
         # Assert: Get notification
@@ -451,7 +460,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         assert isinstance(metadata["entity_id"], str), "metadata.entity_id must be string"
         assert isinstance(metadata["event_type"], str), "metadata.event_type must be string"
 
-        logger.info(f"✅ E2E TEST PASSED: Data model matches TypeScript interface exactly")
+        logger.info("✅ E2E TEST PASSED: Data model matches TypeScript interface exactly")
 
     # ============================================================================
     # TEST 5: Verify Cascade Data Included for Frontend Animations
@@ -488,7 +497,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         self.mock_websocket.clear_messages()
 
         # Act: Create task
-        response = self.create_task_use_case.execute(request)
+        self.create_task_use_case.execute(request)
         await asyncio.sleep(0.1)
 
         # Assert: Get notification
@@ -527,7 +536,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         assert "cascade" not in notification["metadata"], \
             "❌ CASCADE DATA IN METADATA! Should only be in payload.data (bug fix verification)"
 
-        logger.info(f"✅ E2E TEST PASSED: Cascade data included in payload.data for frontend animations")
+        logger.info("✅ E2E TEST PASSED: Cascade data included in payload.data for frontend animations")
 
     # ============================================================================
     # TEST 6: Verify Notifications Triggered ONLY by WebSocket, Not API Response
@@ -580,7 +589,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         assert len(notifications) > 0, \
             "❌ NO WEBSOCKET NOTIFICATION! Notification should arrive via WebSocket, not API"
 
-        logger.info(f"✅ E2E TEST PASSED: API response clean, notification via WebSocket only")
+        logger.info("✅ E2E TEST PASSED: API response clean, notification via WebSocket only")
 
     # ============================================================================
     # TEST 7: Multiple Connections for Same User All Receive Notification
@@ -640,7 +649,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
 
             assert tab1_data["title"] == tab2_data["title"], "Notification data differs between tabs"
 
-            logger.info(f"✅ E2E TEST PASSED: Multiple tabs received identical notification")
+            logger.info("✅ E2E TEST PASSED: Multiple tabs received identical notification")
 
         finally:
             # Cleanup second connection
@@ -714,7 +723,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
                 f"❌ SECURITY ISSUE: User B received notification for User A's task! " \
                 f"Received: {user_b_notifications}"
 
-            logger.info(f"✅ E2E TEST PASSED: Multi-tenant isolation enforced, no cross-user leaks")
+            logger.info("✅ E2E TEST PASSED: Multi-tenant isolation enforced, no cross-user leaks")
 
         finally:
             # Cleanup User B connection

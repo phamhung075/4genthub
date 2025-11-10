@@ -35,17 +35,14 @@ Following DDD Clean Architecture Principles:
 - Verifies multi-tenant isolation and authorization
 """
 
-import pytest
-import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
-from datetime import datetime, timezone
-from uuid import uuid4, UUID
-from typing import Dict, Any, List
+from unittest.mock import AsyncMock, patch
+from uuid import uuid4
 
-from fastmcp.task_management.application.services.websocket_notification_service import WebSocketNotificationService
-from fastmcp.task_management.domain.value_objects import TaskStatus, Priority
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.git_branch_id import GitBranchId
+import pytest
+
+from fastmcp.task_management.application.services.websocket_notification_service import (
+    WebSocketNotificationService,
+)
 
 
 class TestDualConsumerTaskBroadcasts:

@@ -1,20 +1,23 @@
 """Unit tests for TaskCompletionService - Domain Service for Task Completion Business Rules"""
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from typing import List, Dict, Any, Optional
+from unittest.mock import Mock
 
+import pytest
+
+from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.exceptions.task_exceptions import (
+    TaskCompletionError,
+)
+from fastmcp.task_management.domain.repositories.subtask_repository import (
+    SubtaskRepository,
+)
 from fastmcp.task_management.domain.services.task_completion_service import (
     TaskCompletionService,
-    TaskContextRepositoryProtocol
+    TaskContextRepositoryProtocol,
 )
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.repositories.subtask_repository import SubtaskRepository
-from fastmcp.task_management.domain.exceptions.task_exceptions import TaskCompletionError
 
 
 # Fixtures at module level

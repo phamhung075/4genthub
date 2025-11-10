@@ -1,23 +1,35 @@
 """Tests for SubtaskApplicationService"""
 
-import pytest
 from unittest.mock import Mock, create_autospec
-from typing import Any, Dict, Optional
 
-from fastmcp.task_management.application.services.subtask_application_service import SubtaskApplicationService
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.domain.repositories.subtask_repository import SubtaskRepository
+import pytest
+
 from fastmcp.task_management.application.dtos.subtask import (
     AddSubtaskRequest,
+    SubtaskResponse,
     UpdateSubtaskRequest,
-    SubtaskResponse
+)
+from fastmcp.task_management.application.services.subtask_application_service import (
+    SubtaskApplicationService,
 )
 from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
-from fastmcp.task_management.application.use_cases.update_subtask import UpdateSubtaskUseCase
-from fastmcp.task_management.application.use_cases.remove_subtask import RemoveSubtaskUseCase
-from fastmcp.task_management.application.use_cases.complete_subtask import CompleteSubtaskUseCase
-from fastmcp.task_management.application.use_cases.get_subtasks import GetSubtasksUseCase
+from fastmcp.task_management.application.use_cases.complete_subtask import (
+    CompleteSubtaskUseCase,
+)
 from fastmcp.task_management.application.use_cases.get_subtask import GetSubtaskUseCase
+from fastmcp.task_management.application.use_cases.get_subtasks import (
+    GetSubtasksUseCase,
+)
+from fastmcp.task_management.application.use_cases.remove_subtask import (
+    RemoveSubtaskUseCase,
+)
+from fastmcp.task_management.application.use_cases.update_subtask import (
+    UpdateSubtaskUseCase,
+)
+from fastmcp.task_management.domain.repositories.subtask_repository import (
+    SubtaskRepository,
+)
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
 
 
 class TestSubtaskApplicationService:

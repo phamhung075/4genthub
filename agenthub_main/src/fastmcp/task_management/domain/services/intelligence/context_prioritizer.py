@@ -11,6 +11,8 @@ Key Features:
 - Dynamic weight adjustment based on context
 """
 
+from __future__ import annotations
+
 import logging
 import math
 from dataclasses import dataclass, field
@@ -47,7 +49,7 @@ class ScoringWeights:
     project_priority: float = 0.10       # 10% weight
     dependency_boost: float = 0.05       # 5% boost weight
     
-    def normalize(self) -> 'ScoringWeights':
+    def normalize(self) -> ScoringWeights:
         """Normalize weights to sum to 1.0."""
         total = (self.semantic_relevance + self.recency + self.frequency + 
                 self.completeness + self.user_preference + self.project_priority + 
@@ -473,7 +475,7 @@ class ContextPrioritizer:
             return 0.0
         
         context_id = context_data.get('id') or str(context_data.get('context_id', ''))
-        current_task_id = current_task.get('id') or str(current_task.get('task_id', ''))
+        current_task.get('id') or str(current_task.get('task_id', ''))
         
         # Check for direct dependency
         current_dependencies = current_task.get('dependencies', [])

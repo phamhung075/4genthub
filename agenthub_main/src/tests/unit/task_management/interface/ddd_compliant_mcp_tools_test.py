@@ -5,9 +5,10 @@ Tests the DDD-compliant MCP tools initialization, registration, and
 proper architectural patterns with mock dependencies.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from contextlib import ExitStack
+from unittest.mock import Mock, patch
+
+import pytest
 
 
 class TestDDDCompliantMCPTools:
@@ -43,7 +44,9 @@ class TestDDDCompliantMCPTools:
             # Claude agent controller removed
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
             
-            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+                DDDCompliantMCPTools,
+            )
             
             tools = DDDCompliantMCPTools(
                 config_overrides=self.config_overrides,
@@ -74,7 +77,9 @@ class TestDDDCompliantMCPTools:
             # Claude agent controller removed
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
             
-            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+                DDDCompliantMCPTools,
+            )
             
             tools = DDDCompliantMCPTools(enable_vision_system=False)
             
@@ -103,7 +108,9 @@ class TestDDDCompliantMCPTools:
             # Claude agent controller removed
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
             
-            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+                DDDCompliantMCPTools,
+            )
             
             mock_mcp = Mock()
             tools = DDDCompliantMCPTools(enable_vision_system=False)
@@ -146,7 +153,9 @@ class TestDDDCompliantMCPTools:
             # Claude agent controller removed
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
             
-            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+            from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+                DDDCompliantMCPTools,
+            )
             
             tools = DDDCompliantMCPTools(enable_vision_system=False)
             

@@ -1,12 +1,15 @@
 """Test suite for Connection Repository Interface"""
 
-import pytest
-from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
-from unittest.mock import Mock, MagicMock
+from abc import ABC
+from typing import Any
+from unittest.mock import Mock
 
-from fastmcp.connection_management.domain.repositories.connection_repository import ConnectionRepository
+import pytest
+
 from fastmcp.connection_management.domain.entities.connection import Connection
+from fastmcp.connection_management.domain.repositories.connection_repository import (
+    ConnectionRepository,
+)
 
 
 class TestConnectionRepository:
@@ -91,14 +94,14 @@ class MockConnectionRepository(ConnectionRepository):
     """Mock implementation of ConnectionRepository for testing"""
 
     def __init__(self):
-        self.connections: Dict[str, Connection] = {}
-        self.call_log: List[str] = []
+        self.connections: dict[str, Connection] = {}
+        self.call_log: list[str] = []
 
-    def find_by_id(self, connection_id: str) -> Optional[Connection]:
+    def find_by_id(self, connection_id: str) -> Connection | None:
         self.call_log.append(f"find_by_id({connection_id})")
         return self.connections.get(connection_id)
 
-    def find_all_active(self) -> List[Connection]:
+    def find_all_active(self) -> list[Connection]:
         self.call_log.append("find_all_active()")
         return [conn for conn in self.connections.values() if conn.is_active()]
 
@@ -106,7 +109,7 @@ class MockConnectionRepository(ConnectionRepository):
         self.call_log.append(f"save_connection({connection.id})")
         self.connections[connection.id] = connection
 
-    def create_connection(self, connection_id: str, client_info: Dict[str, Any]) -> Connection:
+    def create_connection(self, connection_id: str, client_info: dict[str, Any]) -> Connection:
         self.call_log.append(f"create_connection({connection_id}, {client_info})")
         connection = Mock(spec=Connection)
         connection.id = connection_id
@@ -126,7 +129,7 @@ class MockConnectionRepository(ConnectionRepository):
         self.call_log.append("get_connection_count()")
         return len([conn for conn in self.connections.values() if conn.is_active()])
 
-    def get_connection_statistics(self) -> Dict[str, Any]:
+    def get_connection_statistics(self) -> dict[str, Any]:
         self.call_log.append("get_connection_statistics()")
         active_count = self.get_connection_count()
         total_count = len(self.connections)
@@ -311,19 +314,19 @@ class TestRepositoryContractCompliance:
         
         # This should work - all methods implemented
         class CompleteRepository(ConnectionRepository):
-            def find_by_id(self, connection_id: str) -> Optional[Connection]:
+            def find_by_id(self, connection_id: str) -> Connection | None:
                 return None
-            def find_all_active(self) -> List[Connection]:
+            def find_all_active(self) -> list[Connection]:
                 return []
             def save_connection(self, connection: Connection) -> None:
                 pass
-            def create_connection(self, connection_id: str, client_info: Dict[str, Any]) -> Connection:
+            def create_connection(self, connection_id: str, client_info: dict[str, Any]) -> Connection:
                 return Mock(spec=Connection)
             def remove_connection(self, connection_id: str) -> bool:
                 return False
             def get_connection_count(self) -> int:
                 return 0
-            def get_connection_statistics(self) -> Dict[str, Any]:
+            def get_connection_statistics(self) -> dict[str, Any]:
                 return {}
         
         repo = CompleteRepository()
@@ -334,7 +337,7 @@ class TestRepositoryContractCompliance:
         
         # This should fail - missing methods
         class IncompleteRepository(ConnectionRepository):
-            def find_by_id(self, connection_id: str) -> Optional[Connection]:
+            def find_by_id(self, connection_id: str) -> Connection | None:
                 return None
             # Missing other required methods
         

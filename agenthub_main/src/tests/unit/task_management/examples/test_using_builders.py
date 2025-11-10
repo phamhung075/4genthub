@@ -1,13 +1,15 @@
 """Example tests demonstrating the use of test data builders."""
 
+
 import pytest
-from datetime import datetime, timezone
 
 from tests.unit.task_management.fixtures.builders import (
-    a_task, an_agent, a_project, a_subtask, a_work_session
+    a_project,
+    a_subtask,
+    a_task,
+    a_work_session,
+    an_agent,
 )
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestBuilderExamples:

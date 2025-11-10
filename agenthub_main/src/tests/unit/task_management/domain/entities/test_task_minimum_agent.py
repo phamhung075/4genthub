@@ -1,13 +1,11 @@
 """Unit tests for minimum agent requirement on task creation"""
 
-import pytest
-from datetime import datetime, timezone
 from uuid import uuid4
+
+import pytest
 
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestTaskMinimumAgentRequirement:
@@ -102,7 +100,7 @@ class TestTaskMinimumAgentRequirement:
         """Test that other validations run before agent validation"""
         # Title validation should fail first
         with pytest.raises(ValueError, match="Task title cannot be empty"):
-            task = Task(
+            Task(
                 id=TaskId(str(uuid4())),
                 title="",  # Empty title
                 description="Valid description",
@@ -111,7 +109,7 @@ class TestTaskMinimumAgentRequirement:
 
         # Description validation should fail after title passes
         with pytest.raises(ValueError, match="Task description cannot be empty"):
-            task = Task(
+            Task(
                 id=TaskId(str(uuid4())),
                 title="Valid title",
                 description="",  # Empty description

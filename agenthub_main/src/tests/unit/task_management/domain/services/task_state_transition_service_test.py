@@ -1,20 +1,19 @@
 """Unit tests for TaskStateTransitionService."""
 
-import pytest
-from unittest.mock import Mock, MagicMock
-from datetime import datetime, timezone
-from typing import List, Dict, Any
+from unittest.mock import Mock
 
+import pytest
+
+from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.services.task_state_transition_service import (
+    SubtaskRepositoryProtocol,
+    TaskRepositoryProtocol,
     TaskStateTransitionService,
     TransitionContext,
-    SubtaskRepositoryProtocol,
-    TaskRepositoryProtocol
 )
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
 class TestTaskStateTransitionService:
@@ -521,7 +520,6 @@ class TestTaskStateTransitionService:
 
         dep_task = Mock(spec=Task)
         dep_task.id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
-        dep_task_id_str = "dep-id-1"
 
         # Test with status having is_done method
         dep_task.status = Mock()

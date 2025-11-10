@@ -11,20 +11,28 @@ Tests the create task use case including:
 - Business logic validation
 """
 
-import pytest
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
-import uuid
-from datetime import datetime, timezone
 
+import pytest
+
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.create_task_response import (
+    CreateTaskResponse,
+)
 from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.create_task_response import CreateTaskResponse
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
 from fastmcp.task_management.domain.exceptions.task_exceptions import TaskCreationError
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.value_objects.priority import (
+    PriorityLevel,
+)
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatusEnum,
+)
 
 
 class TestCreateTaskUseCaseInitialization:
@@ -102,8 +110,8 @@ class TestCreateTaskUseCaseExecution:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -175,8 +183,8 @@ class TestCreateTaskUseCaseExecution:
             "assignees": ["@user1", "@user2"],
             "labels": ["feature", "urgent"],
             "dueDate": "2024-12-31",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "dependencies": ["dep-1", "dep-2"],
             "subtasks": []
         })
@@ -239,8 +247,8 @@ class TestCreateTaskUseCaseExecution:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -304,8 +312,8 @@ class TestCreateTaskUseCaseExecution:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -387,8 +395,8 @@ class TestCreateTaskUseCaseValidation:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "existing-branch",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -507,8 +515,8 @@ class TestCreateTaskUseCaseDependencies:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -564,8 +572,8 @@ class TestCreateTaskUseCaseDependencies:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -623,8 +631,8 @@ class TestCreateTaskUseCaseDependencies:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -675,8 +683,8 @@ class TestCreateTaskUseCaseRepositoryInteraction:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -720,8 +728,8 @@ class TestCreateTaskUseCaseRepositoryInteraction:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -806,8 +814,8 @@ class TestCreateTaskUseCaseEdgeCases:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,
@@ -858,8 +866,8 @@ class TestCreateTaskUseCaseEdgeCases:
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "assignees": [],
             "labels": [],
             "details": None,

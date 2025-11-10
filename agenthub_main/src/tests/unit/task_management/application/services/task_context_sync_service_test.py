@@ -10,17 +10,19 @@ This module tests the TaskContextSyncService functionality including:
 - User scoping and repository management
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.application.services.task_context_sync_service import TaskContextSyncService
+import pytest
+
+from fastmcp.task_management.application.services.task_context_sync_service import (
+    TaskContextSyncService,
+)
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus  
 from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
 class TestTaskContextSyncService:
@@ -267,7 +269,9 @@ class TestTaskContextSyncServiceSyncContext:
     @pytest.mark.asyncio
     async def test_sync_context_and_get_task_no_user_id_raises_error(self, service):
         """Test context sync without user_id raises UserAuthenticationRequiredError"""
-        from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+        from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
+            UserAuthenticationRequiredError,
+        )
         
         with pytest.raises(UserAuthenticationRequiredError) as exc_info:
             await service.sync_context_and_get_task("task-123")
@@ -380,7 +384,7 @@ class TestTaskContextSyncServiceSyncContext:
         mock_task_response = Mock()
         mock_get_task_use_case.execute.return_value = mock_task_response
         
-        result = await service.sync_context_and_get_task("task-123", user_id="user-123", project_id="test-project")
+        await service.sync_context_and_get_task("task-123", user_id="user-123", project_id="test-project")
         
         # Verify context creation was called with correct structure
         mock_context_service.create_context.assert_called_once()
@@ -438,7 +442,7 @@ class TestTaskContextSyncServiceSyncContext:
                 mock_use_case_class.return_value = mock_get_task_use_case
                 
                 service = TaskContextSyncService(mock_task_repository, user_id="user-123")
-                result = await service.sync_context_and_get_task("task-123", user_id="user-123", project_id="user-project")
+                await service.sync_context_and_get_task("task-123", user_id="user-123", project_id="user-project")
                 
                 # Verify user-scoped repository was used
                 mock_task_repository.with_user.assert_called_once_with("user-123")
@@ -467,7 +471,9 @@ class TestTaskContextSyncServiceErrorScenarios:
     @pytest.mark.asyncio
     async def test_sync_context_user_authentication_error(self, mock_validate_user, service):
         """Test context sync with user authentication error"""
-        from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+        from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
+            UserAuthenticationRequiredError,
+        )
         
         mock_validate_user.side_effect = UserAuthenticationRequiredError("Invalid user")
         

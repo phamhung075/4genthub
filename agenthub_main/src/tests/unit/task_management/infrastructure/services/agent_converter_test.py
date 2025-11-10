@@ -6,13 +6,19 @@ Date: 2025-09-26
 Tests the agent converter service that converts simplified agent data to full Agent entities.
 """
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
 
-from fastmcp.task_management.infrastructure.services.agent_converter import AgentConverter
-from fastmcp.task_management.domain.entities.agent import Agent, AgentCapability, AgentStatus
-from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
+import pytest
+
+from fastmcp.task_management.domain.entities.agent import (
+    Agent,
+    AgentCapability,
+    AgentStatus,
+)
+from fastmcp.task_management.infrastructure.services.agent_converter import (
+    AgentConverter,
+)
 
 
 class TestAgentConverter:
@@ -314,7 +320,7 @@ class TestAgentConverter:
     
     def test_agent_timestamp_fields(self, converter):
         """Test that created_at and updated_at are properly set"""
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         
         agent_data = {
             "id": "timestamp_test",
@@ -324,7 +330,7 @@ class TestAgentConverter:
         
         result = converter.convert_simplified_agent_to_entity(agent_data, "project_time")
         
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
         
         # Timestamps should be between before and after
         assert before <= result.created_at <= after

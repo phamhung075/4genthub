@@ -1,7 +1,9 @@
 """Tests for GitBranchId value object"""
 
-import pytest
 import uuid
+
+import pytest
+
 from fastmcp.task_management.domain.value_objects.git_branch_id import GitBranchId
 
 
@@ -107,7 +109,7 @@ class TestGitBranchIdEquality:
         git_branch_id = GitBranchId.generate_new()
         assert git_branch_id != git_branch_id.value
         assert git_branch_id != 12345
-        assert git_branch_id != None
+        assert git_branch_id is not None
 
     def test_equal_git_branch_ids_have_same_hash(self):
         """Should have same hash when values are equal"""

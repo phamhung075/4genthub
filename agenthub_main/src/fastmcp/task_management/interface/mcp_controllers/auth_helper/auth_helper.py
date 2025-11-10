@@ -4,6 +4,8 @@ This module provides authentication functionality for MCP controllers
 to extract user_id from JWT tokens. No legacy code, no hardcoded IDs.
 """
 
+from __future__ import annotations
+
 import logging
 
 from .services.authentication_service import AuthenticationService

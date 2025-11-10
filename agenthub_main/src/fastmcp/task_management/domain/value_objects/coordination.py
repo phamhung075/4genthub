@@ -1,5 +1,7 @@
 """Coordination Value Objects for Multi-Agent Workflows"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum

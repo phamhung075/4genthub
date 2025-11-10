@@ -2,18 +2,18 @@
 Tests for FastAPI authentication dependencies.
 """
 
+import os
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock, patch
+
+import jwt
 import pytest
-from unittest.mock import patch, Mock
-from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
-import jwt
-import os
 
 from fastmcp.auth.dependencies import (
     get_current_user,
     get_optional_current_user,
-    JWT_ALGORITHM
 )
 from fastmcp.auth.domain.entities.user import User
 
@@ -35,7 +35,7 @@ class TestGetCurrentUser:
             "sub": "user123",
             "email": "user@example.com",
             "username": "testuser",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
     
     @pytest.mark.asyncio
@@ -64,7 +64,7 @@ class TestGetCurrentUser:
             payload = {
                 "user_id": "user456",  # Using user_id instead of sub
                 "email": "another@example.com",
-                "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+                "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
             }
             
             with patch('jwt.decode', return_value=payload):
@@ -123,7 +123,7 @@ class TestGetCurrentUser:
             
             payload = {
                 "email": "user@example.com",
-                "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+                "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
                 # Missing both sub and user_id
             }
             
@@ -143,7 +143,7 @@ class TestGetCurrentUser:
             
             payload = {
                 "sub": "user123",
-                "exp": (datetime.now(timezone.utc) - timedelta(hours=1)).timestamp()  # Expired
+                "exp": (datetime.now(UTC) - timedelta(hours=1)).timestamp()  # Expired
             }
             
             with patch('jwt.decode', return_value=payload):
@@ -246,6 +246,7 @@ class TestJWTConfiguration:
         with patch.dict(os.environ, {"JWT_ALGORITHM": "RS256"}):
             # Need to reload module to pick up new env var
             import importlib
+
             import fastmcp.auth.dependencies
             importlib.reload(fastmcp.auth.dependencies)
             
@@ -255,6 +256,7 @@ class TestJWTConfiguration:
         """Test warning is logged when JWT_SECRET_KEY not set."""
         with patch.dict(os.environ, {}, clear=True):
             import importlib
+
             import fastmcp.auth.dependencies
             importlib.reload(fastmcp.auth.dependencies)
             

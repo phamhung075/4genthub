@@ -4,6 +4,8 @@ Validation Factory for Task MCP Controller
 Coordinates validation components for task operations.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

@@ -1,14 +1,15 @@
 """Unit tests for GitBranch entity."""
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
-from unittest.mock import Mock
 
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
+
 
 class TestGitBranchCreation:
     """Test entity."""
@@ -343,7 +344,7 @@ class TestGitBranchAvailability:
         
         # Mock the _is_task_available_for_work method behavior
         # Task 1 should be available, Task 2 should not (blocked by dependency)
-        available = tree.get_available_tasks()
+        tree.get_available_tasks()
         
         # In actual implementation, this would check dependencies
         # For now, both might appear available unless method checks dependencies
@@ -463,7 +464,7 @@ class TestGitBranchIntegration:
         tree = GitBranch.create("Test Tree", "Test", "project-1")
         
         # Add tasks with same priority but different creation times
-        base_time = datetime.now(timezone.utc)
+        base_time = datetime.now(UTC)
         
         task1 = Task(
             id=TaskId.from_string("550e8400-e29b-41d4-a716-446655440001"),

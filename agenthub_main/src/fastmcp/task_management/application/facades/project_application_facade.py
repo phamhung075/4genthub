@@ -1,6 +1,8 @@
 """
 Project Application Facade
 """
+from __future__ import annotations
+
 from typing import Any
 
 from ...infrastructure.repositories.project_repository_factory import (
@@ -25,7 +27,7 @@ class ProjectApplicationFacade:
                 # Fallback for backward compatibility - will raise an error if no user_id is provided later
                 self._project_service = ProjectManagementService(GlobalRepositoryManager.get_default(), user_id)
     
-    def with_user(self, user_id: str) -> 'ProjectApplicationFacade':
+    def with_user(self, user_id: str) -> ProjectApplicationFacade:
         """Create a new facade instance scoped to a specific user."""
         return ProjectApplicationFacade(self._project_service.with_user(user_id), user_id)
 

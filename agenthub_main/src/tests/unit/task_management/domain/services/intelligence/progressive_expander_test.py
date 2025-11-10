@@ -2,18 +2,17 @@
 Unit tests for the Progressive Expander
 """
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-import json
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List
 
 from fastmcp.task_management.domain.services.intelligence.progressive_expander import (
+    ContextLevel,
+    ExpansionCandidate,
+    ExpansionResult,
+    ExpansionTrigger,
     ProgressiveExpander,
     UserPreferences,
-    ContextLevel,
-    ExpansionTrigger,
-    ExpansionCandidate,
-    ExpansionResult
 )
 
 
@@ -172,7 +171,7 @@ class TestProgressiveExpander:
         progressive_expander.context_access_patterns[context_id] = {
             'access_count': 10,
             'total_sessions': 20,  # 50% access rate
-            'last_accessed': datetime.now(timezone.utc) - timedelta(hours=2)
+            'last_accessed': datetime.now(UTC) - timedelta(hours=2)
         }
         
         priority_with_history = progressive_expander._calculate_expansion_priority(
@@ -378,7 +377,7 @@ class TestProgressiveExpander:
         # Add some expansion history
         for i in range(5):
             progressive_expander.expansion_history.append({
-                'timestamp': datetime.now(timezone.utc),
+                'timestamp': datetime.now(UTC),
                 'token_budget': 1000,
                 'tokens_used': 500 + (i * 50),
                 'contexts_expanded': 3 + i,
@@ -481,7 +480,7 @@ class TestEdgeCases:
         """Test token estimation with special values"""
         # With datetime
         context_with_datetime = {
-            'created_at': datetime.now(timezone.utc),
+            'created_at': datetime.now(UTC),
             'data': 'test'
         }
         tokens = progressive_expander.estimate_context_tokens(context_with_datetime)

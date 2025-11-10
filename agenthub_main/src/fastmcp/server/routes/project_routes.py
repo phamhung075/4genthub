@@ -5,6 +5,8 @@ This module provides user-isolated project management endpoints
 using JWT authentication and user-scoped repositories.
 """
 
+from __future__ import annotations
+
 import logging
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status

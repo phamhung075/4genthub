@@ -9,15 +9,20 @@ SQLAlchemy ORM models and database foreign key constraints.
 
 import asyncio
 import uuid
+
 import pytest
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from fastmcp.task_management.infrastructure.database.database_config import Base
 
 # Import the ORM models
 from fastmcp.task_management.infrastructure.database.models import (
-    Task, Subtask, Project, ProjectGitBranch
+    Project,
+    ProjectGitBranch,
+    Subtask,
+    Task,
 )
-from fastmcp.task_management.infrastructure.database.database_config import Base
 
 
 @pytest.mark.asyncio

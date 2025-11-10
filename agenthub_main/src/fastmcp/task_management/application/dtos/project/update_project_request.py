@@ -1,5 +1,7 @@
 """Request DTO for updating a project"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 

@@ -2,6 +2,8 @@
 Provides safe migration capabilities with instant rollback support.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -69,7 +71,7 @@ class FeatureFlagService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'FeatureFlagService':
+    def with_user(self, user_id: str) -> FeatureFlagService:
         """Create a new service instance scoped to a specific user."""
         return FeatureFlagService(self._config_path, user_id)
     

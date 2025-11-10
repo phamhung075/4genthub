@@ -5,6 +5,8 @@ This module provides v2 API endpoints for context management with proper user is
 using JWT authentication and user-scoped context facades.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from typing import Any
@@ -507,10 +509,9 @@ async def list_contexts(
     """
     try:
         # Parse filters if provided
-        parsed_filters = {}
         if filters:
             try:
-                parsed_filters = json.loads(filters)
+                json.loads(filters)
             except json.JSONDecodeError as e:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,

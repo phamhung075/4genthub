@@ -4,18 +4,16 @@ Tests complex ID confusion scenarios and behavioral patterns that prevent
 the critical MCP ID vs Application ID confusion bug.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from uuid import uuid4
-from typing import Dict, List, Any
 from dataclasses import dataclass
+from uuid import uuid4
+
+import pytest
+
 from fastmcp.utilities.id_validator import (
-    IDValidator,
     IDType,
-    ValidationResult,
     IDValidationError,
-    validate_uuid,
-    prevent_id_confusion,
+    IDValidator,
+    ValidationResult,
 )
 
 
@@ -401,7 +399,7 @@ class TestIDConfusionScenarios:
                 }
                 return subtask_id
 
-            def get_subtasks_for_task(self, task_id: str) -> List[Dict]:
+            def get_subtasks_for_task(self, task_id: str) -> list[Dict]:
                 """Get all subtasks for a task."""
                 # Validate task exists
                 if task_id not in self.tasks:
@@ -421,12 +419,12 @@ class TestIDConfusionScenarios:
         })
 
         # Insert subtasks
-        subtask1_id = db.insert_subtask({
+        db.insert_subtask({
             "parent_task_id": task_id,
             "title": "Subtask 1"
         })
 
-        subtask2_id = db.insert_subtask({
+        db.insert_subtask({
             "parent_task_id": task_id,
             "title": "Subtask 2"
         })

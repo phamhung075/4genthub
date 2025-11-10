@@ -2,22 +2,20 @@
 Tests for Get Task Use Case
 """
 
-import pytest
-import asyncio
-from unittest.mock import Mock, MagicMock, AsyncMock, patch
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.application.use_cases.get_task import GetTaskUseCase
-from fastmcp.task_management.application.dtos.task import TaskResponse
+import pytest
+
 from fastmcp.task_management.application.dtos.context import GetContextRequest
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.application.use_cases.get_task import GetTaskUseCase
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
-from fastmcp.task_management.domain.events import TaskRetrieved
 
 
 class TestGetTaskUseCase:
@@ -95,8 +93,8 @@ class TestGetTaskUseCase:
         task.assignees = ["coding-agent", "@test-orchestrator-agent"]
         task.labels = ["bug", "urgent"]
         task.context_id = "context-123"
-        task.created_at = datetime.now(timezone.utc)
-        task.updated_at = datetime.now(timezone.utc)
+        task.created_at = datetime.now(UTC)
+        task.updated_at = datetime.now(UTC)
         task.details = "Test details"
         task.estimated_effort = "2 hours"
         task.dependencies = []

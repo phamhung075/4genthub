@@ -5,6 +5,8 @@ This module integrates Supabase's built-in authentication system,
 providing email verification, password reset, and OAuth capabilities.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import re
@@ -367,7 +369,7 @@ class SupabaseAuthService:
             SupabaseAuthResult indicating success
         """
         try:
-            response = self.client.auth.reset_password_for_email(
+            self.client.auth.reset_password_for_email(
                 email,
                 {
                     "redirect_to": f"{os.getenv('FRONTEND_URL', 'http://localhost:3800')}/auth/reset-password"

@@ -61,11 +61,6 @@ def measure_metadata_flattening():
 
     # Example duplicates being removed (with full nesting):
     # Full structure that gets removed/flattened:
-    full_duplicate_structure = '''
-    "metadata":{"task_id":"550e8400-e29b-41d4-a716-446655440000","status":"in_progress","priority":"high","version":1},
-    "objective":{"title":"Implement authentication system with JWT tokens and role-based access","estimated_effort":"2h","acceptance_criteria":"User can login and access protected routes"},
-    "progress":{"completion_percentage":60,"blockers":"Waiting on database migration approval","insights":"Consider using bcrypt for password hashing"}
-    '''
 
     # More realistic calculation based on actual context_data structures
     # These are the nested duplicate fields that get removed:
@@ -250,7 +245,7 @@ def generate_report():
     print(f"   Optimization: {parent_data['optimization']}")
     print(f"   Characters saved per subtask: {parent_data['chars_saved_per_subtask']}")
     print(f"   Tokens saved per subtask: ~{parent_data['tokens_saved_per_subtask']}")
-    print(f"   Scenarios:")
+    print("   Scenarios:")
     for scenario, tokens in parent_data['scenarios'].items():
         print(f"     - {scenario}: ~{tokens} tokens")
     print(f"   Note: {parent_data['note']}")
@@ -298,7 +293,7 @@ def generate_report():
     print(f"   ✓ Metadata flattening: {metadata_data['tokens_saved_per_response']} tokens")
     print(f"   ✓ Parent ID smart removal: {parent_data['tokens_saved_per_subtask']} tokens/subtask")
     print(f"   ✓ Timestamp deduplication: {timestamp_data['tokens_saved_per_response']} tokens")
-    print(f"   ✓ Empty arrays preserved: API contract maintained")
+    print("   ✓ Empty arrays preserved: API contract maintained")
     print(f"   ✓ Total savings achieved: {agg['with_5_subtasks_tokens']} tokens (with subtasks)")
     print(f"   ✓ Target comparison: {agg['with_subtasks_vs_target_percentage']:.1f}% of revised target")
     print()
@@ -306,7 +301,7 @@ def generate_report():
     print("=" * 80)
     print("SUMMARY")
     print("=" * 80)
-    print(f"Phase 2 successfully removes redundant IDs and flattens duplicated")
+    print("Phase 2 successfully removes redundant IDs and flattens duplicated")
     print(f"context data, achieving approximately {agg['base_savings_tokens']} tokens base savings")
     print(f"per operation ({agg['base_vs_target_percentage']:.1f}% of revised target).")
     print()
@@ -314,9 +309,9 @@ def generate_report():
     print(f"tokens per operation ({agg['with_subtasks_vs_target_percentage']:.1f}% of revised target),")
     print(f"{'meeting' if agg['target_met'] else 'approaching'} the 305-token revised goal.")
     print()
-    print(f"Critical decision: Empty arrays MUST be preserved to maintain Phase 1")
-    print(f"API contracts, reducing target from 355 to 305 tokens but ensuring")
-    print(f"frontend compatibility and predictable behavior.")
+    print("Critical decision: Empty arrays MUST be preserved to maintain Phase 1")
+    print("API contracts, reducing target from 355 to 305 tokens but ensuring")
+    print("frontend compatibility and predictable behavior.")
     print("=" * 80)
 
     return aggregate_data

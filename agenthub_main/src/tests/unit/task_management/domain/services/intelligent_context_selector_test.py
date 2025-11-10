@@ -5,33 +5,32 @@ for intelligent context selection with semantic matching, progressive expansion,
 and prediction capabilities.
 """
 
-import pytest
-from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock, patch, call
 import time
-from typing import List, Dict, Any
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
 
+import pytest
+
+from fastmcp.task_management.domain.services.intelligence.context_prioritizer import (
+    ContextScore,
+)
 from fastmcp.task_management.domain.services.intelligence.intelligent_context_selector import (
     IntelligentContextSelector,
+    SelectionMetrics,
     SelectionResult,
-    SelectionMetrics
+)
+from fastmcp.task_management.domain.services.intelligence.predictive_loader import (
+    PredictionResult,
+)
+from fastmcp.task_management.domain.services.intelligence.progressive_expander import (
+    ContextLevel,
+    ExpansionResult,
+    ExpansionTrigger,
+    UserPreferences,
 )
 from fastmcp.task_management.domain.services.intelligence.semantic_matcher import (
     ContextItem,
-    SimilarityResult
-)
-from fastmcp.task_management.domain.services.intelligence.progressive_expander import (
-    ExpansionResult,
-    ExpansionCandidate,
-    UserPreferences,
-    ContextLevel,
-    ExpansionTrigger
-)
-from fastmcp.task_management.domain.services.intelligence.predictive_loader import (
-    PredictionResult
-)
-from fastmcp.task_management.domain.services.intelligence.context_prioritizer import (
-    ContextScore
+    SimilarityResult,
 )
 
 
@@ -334,7 +333,7 @@ class TestIntelligentContextSelector:
         selector.semantic_matcher.find_similar_contexts.return_value = []
         
         # First call
-        result1 = selector.select_context("test query", max_tokens=1000)
+        selector.select_context("test query", max_tokens=1000)
         
         # Second call with same parameters
         result2 = selector.select_context("test query", max_tokens=1000)
@@ -353,13 +352,13 @@ class TestIntelligentContextSelector:
         selector.cache_ttl_seconds = 0.1  # 100ms for testing
         
         # First call
-        result1 = selector.select_context("test query", max_tokens=1000)
+        selector.select_context("test query", max_tokens=1000)
         
         # Wait for cache to expire
         time.sleep(0.2)
         
         # Second call should not use cache
-        result2 = selector.select_context("test query", max_tokens=1000)
+        selector.select_context("test query", max_tokens=1000)
         
         # Semantic matcher should be called twice
         assert selector.semantic_matcher.generate_embedding.call_count == 2
@@ -533,7 +532,7 @@ class TestIntelligentContextSelector:
         """Test performance optimization when cache hit rate is poor."""
         # Set metrics to indicate poor cache performance
         selector.metrics.cache_hit_rate = 0.05
-        selector.result_cache = {f'key{i}': (Mock(), datetime.now(timezone.utc)) for i in range(20)}
+        selector.result_cache = {f'key{i}': (Mock(), datetime.now(UTC)) for i in range(20)}
         
         result = selector.optimize_performance()
         
@@ -604,7 +603,7 @@ class TestIntelligentContextSelector:
         selector.context_prioritizer.score_contexts_batch.return_value = [mock_score]
         
         # Execute with aggressive expansion
-        result = selector.select_context(
+        selector.select_context(
             query="test",
             max_tokens=2000,
             aggressive_expansion=True
@@ -626,7 +625,7 @@ class TestIntelligentContextSelector:
             
             # Mock low hit rate
             with patch.object(selector, '_estimate_hit_rate', return_value=0.5):
-                result = selector.select_context("test", max_tokens=1000)
+                selector.select_context("test", max_tokens=1000)
         
         # Check warnings were logged
         assert any('Selection time' in record.message and 'exceeded target' in record.message 
@@ -672,7 +671,7 @@ class TestIntelligentContextSelector:
         selector.context_prioritizer.score_contexts_batch.return_value = mock_scores
         
         # Execute
-        result = selector.select_context("test", max_tokens=2000)
+        selector.select_context("test", max_tokens=2000)
         
         # Verify expansion candidates were created with correct triggers
         expand_call = selector.progressive_expander.expand_context_progressive.call_args
@@ -719,7 +718,7 @@ class TestIntelligentContextSelector:
         selector.context_prioritizer.score_contexts_batch.return_value = mock_scores
         
         # Execute
-        result = selector.select_context("test", max_tokens=5000)
+        selector.select_context("test", max_tokens=5000)
         
         # Verify context levels were mapped correctly
         expand_call = selector.progressive_expander.expand_context_progressive.call_args

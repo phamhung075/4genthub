@@ -3,21 +3,18 @@ Integration Tests for Selective Field Queries
 Tests the ContextFieldSelector integration with repositories
 """
 
-import pytest
 import unittest
-from unittest.mock import MagicMock, patch
-from typing import Dict, Any, List
 
 # Import the classes we're testing
 from fastmcp.task_management.application.services.context_field_selector import (
-    ContextFieldSelector, 
-    FieldSet
-)
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
-    ORMTaskRepository
+    ContextFieldSelector,
+    FieldSet,
 )
 from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
-    ORMProjectRepository
+    ORMProjectRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
 )
 
 

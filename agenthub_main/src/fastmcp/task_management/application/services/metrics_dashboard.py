@@ -4,6 +4,8 @@ This module provides a comprehensive metrics dashboard for monitoring
 and visualizing the performance of the MCP optimization system.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import time

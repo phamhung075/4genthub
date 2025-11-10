@@ -4,13 +4,9 @@ WebSocket v2.0 Integration Test
 Tests the key functionality of the new WebSocket implementation
 """
 
-import json
-import asyncio
-import time
 from datetime import datetime
+
 import pytest
-import httpx
-from unittest.mock import MagicMock, AsyncMock, patch
 
 
 class TestWebSocketV2Integration:
@@ -18,7 +14,7 @@ class TestWebSocketV2Integration:
 
     def test_protocol_structure(self):
         """Test that protocol structure matches v2.0 specification"""
-        from fastmcp.websocket.protocol import WSMessage, WSPayload, WSData, CascadeData
+        from fastmcp.websocket.protocol import CascadeData, WSData, WSMessage, WSPayload
 
         # Create a test message
         cascade = CascadeData(
@@ -55,8 +51,9 @@ class TestWebSocketV2Integration:
 
     def test_batch_processor(self):
         """Test AI message batching at 500ms intervals"""
+        from unittest.mock import Mock
+
         from fastmcp.websocket.batch_processor import BatchProcessor
-        from unittest.mock import Mock, AsyncMock
 
         # Create mock dependencies
         mock_manager = Mock()
@@ -86,7 +83,7 @@ class TestWebSocketV2Integration:
         # Test basic initialization - match current implementation
         assert processor.batch_interval == 0.5  # 500ms
         assert processor.max_batch_size == 50
-        assert processor.is_running == False
+        assert not processor.is_running
         assert processor.current_batch == []
         
         # Test that processor can be created successfully
@@ -96,8 +93,9 @@ class TestWebSocketV2Integration:
 
     def test_connection_manager(self):
         """Test WebSocket connection management"""
-        from fastmcp.websocket.connection_manager import ConnectionManager
         from unittest.mock import Mock
+
+        from fastmcp.websocket.connection_manager import ConnectionManager
 
         # Create mock session factory
         mock_session_factory = Mock()
@@ -177,12 +175,13 @@ class TestWebSocketV2Integration:
 
     def test_dual_track_routing(self):
         """Test that messages are routed correctly based on source"""
-        from fastmcp.websocket.connection_manager import ConnectionManager
         from unittest.mock import Mock
+
+        from fastmcp.websocket.connection_manager import ConnectionManager
 
         # Create mock session factory
         mock_session_factory = Mock()
-        manager = ConnectionManager(mock_session_factory)
+        ConnectionManager(mock_session_factory)
 
         # Test AI message (should be buffered)
         ai_message = {

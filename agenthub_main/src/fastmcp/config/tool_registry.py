@@ -5,6 +5,8 @@ This module provides a registry system for conditionally mounting MCP tools
 based on configuration settings.
 """
 
+from __future__ import annotations
+
 import logging
 from collections.abc import Callable
 from typing import Any
@@ -154,7 +156,7 @@ class ToolRegistry:
 
         # Create a wrapper function with the server decorator
         # This mimics how controllers register tools with @mcp.tool()
-        decorated_func = server.tool(description=description)(tool_func)
+        server.tool(description=description)(tool_func)
 
         # The tool is now registered with the server through the decorator
         logger.debug(f"Successfully mounted tool: {tool_name} with description: {description}")

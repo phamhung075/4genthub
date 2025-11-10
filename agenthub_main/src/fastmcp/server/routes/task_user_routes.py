@@ -5,6 +5,8 @@ This module demonstrates how to implement user-based data isolation
 in API routes using JWT authentication and user-scoped repositories.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 
@@ -420,9 +422,9 @@ async def get_subtask_summaries(
         try:
             body = await request.body()
             data = json.loads(body) if body else {}
-            include_counts = data.get("include_counts", True)
-        except:
-            include_counts = True
+            data.get("include_counts", True)
+        except Exception:
+            pass
         
         logger.info(f"Loading subtask summaries for task {task_id} by user {current_user.email}")
         

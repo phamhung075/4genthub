@@ -17,17 +17,18 @@ Author: Test Orchestrator Agent
 Date: 2025-10-30
 """
 
+from __future__ import annotations
+
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
 import pytest
-import time
-from datetime import datetime, timezone
-from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
 from freezegun import freeze_time
 
 from fastmcp.task_management.application.services.websocket_notification_service import (
     WebSocketNotificationService,
     _is_duplicate_notification,
     _notification_cache,
-    _cache_ttl
 )
 
 
@@ -512,7 +513,6 @@ class TestMultiTenantIsolation:
         WebSocketNotificationService._get_task_context("task-123", "user-123")
 
         # Verify user_id filter was applied
-        filter_calls = mock_session.query.return_value.join.return_value.filter.call_args_list
         # User filter should be in the filter calls
         assert mock_session.query.return_value.join.return_value.filter.called
 

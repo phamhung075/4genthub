@@ -4,20 +4,24 @@ Test script to verify dependencies parameter handling in manage_task create acti
 Tests all three formats: array, string, and comma-separated string.
 """
 
-import json
 import asyncio
-from typing import Dict, Any
-from unittest.mock import MagicMock, AsyncMock, patch
-import sys
 import os
+import sys
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import TaskMCPController
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import (
+    TaskMCPController,
+)
+
 
 def create_mock_facade():
     """Create a mock facade that simulates successful task creation."""

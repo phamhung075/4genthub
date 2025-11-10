@@ -2,14 +2,12 @@
 Tests for Supabase Authentication Service
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
-import os
-from typing import Dict, Any
 
 from fastmcp.auth.infrastructure.supabase_auth import (
     SupabaseAuthService,
-    SupabaseAuthResult
 )
 
 

@@ -5,16 +5,19 @@ Tests the core functionality of the base ORM repository including
 CRUD operations, session management, and error handling.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from contextlib import contextmanager
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.infrastructure.repositories.base_orm_repository import BaseORMRepository
+import pytest
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
+
 from fastmcp.task_management.domain.exceptions.base_exceptions import (
     DatabaseException,
-    DatabaseIntegrityException
+    DatabaseIntegrityException,
+)
+from fastmcp.task_management.infrastructure.repositories.base_orm_repository import (
+    BaseORMRepository,
 )
 
 

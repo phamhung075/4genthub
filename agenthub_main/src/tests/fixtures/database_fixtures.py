@@ -5,9 +5,10 @@ This module provides fixtures that ensure proper database setup for tests,
 including creating necessary parent records before creating child records.
 """
 
-import pytest
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
+import pytest
 from sqlalchemy import text
 
 
@@ -17,7 +18,9 @@ def test_project_data(request):
     Create a test project with proper database setup.
     Returns project_id and git_branch_id for use in tests.
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
     
     # Generate unique IDs for this test
     project_id = f"test-project-{uuid.uuid4()}"
@@ -38,8 +41,8 @@ def test_project_data(request):
                 'description': 'Project for testing',
                 'user_id': 'test_user',
                 'status': 'active',
-                'created_at': datetime.now(timezone.utc),
-                'updated_at': datetime.now(timezone.utc),
+                'created_at': datetime.now(UTC),
+                'updated_at': datetime.now(UTC),
                 'metadata': '{}'
             })
             
@@ -60,8 +63,8 @@ def test_project_data(request):
                 'project_id': project_id,
                 'name': 'test-branch',
                 'description': 'Branch for testing',
-                'created_at': datetime.now(timezone.utc),
-                'updated_at': datetime.now(timezone.utc),
+                'created_at': datetime.now(UTC),
+                'updated_at': datetime.now(UTC),
                 'priority': 'medium',
                 'status': 'todo',
                 'metadata': '{}',
@@ -106,7 +109,9 @@ def valid_git_branch_id():
     Provides a valid git_branch_id that exists in the database.
     Creates the necessary project and branch records.
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
     
     branch_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
@@ -125,8 +130,8 @@ def valid_git_branch_id():
                 'description': 'Test project',
                 'user_id': 'test_user',
                 'status': 'active',
-                'created_at': datetime.now(timezone.utc),
-                'updated_at': datetime.now(timezone.utc),
+                'created_at': datetime.now(UTC),
+                'updated_at': datetime.now(UTC),
                 'metadata': '{}'
             })
             
@@ -147,8 +152,8 @@ def valid_git_branch_id():
                 'project_id': project_id,
                 'name': 'valid-test-branch',
                 'description': 'Valid branch for testing',
-                'created_at': datetime.now(timezone.utc),
-                'updated_at': datetime.now(timezone.utc),
+                'created_at': datetime.now(UTC),
+                'updated_at': datetime.now(UTC),
                 'priority': 'medium',
                 'status': 'todo',
                 'metadata': '{}',

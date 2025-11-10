@@ -9,12 +9,10 @@ Tests the selective field query optimization system including:
 """
 
 import unittest
-from unittest.mock import MagicMock, patch
-from typing import Dict, Any, List
 
 from fastmcp.task_management.application.services.context_field_selector import (
     ContextFieldSelector,
-    FieldSet
+    FieldSet,
 )
 
 

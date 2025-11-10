@@ -1,5 +1,7 @@
 """Task Workflow Operations Handler"""
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 

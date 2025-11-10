@@ -5,19 +5,31 @@ This module provides shared fixtures and configuration for all MCP controller te
 It includes common test data, mock setups, and reusable testing utilities.
 """
 
-import pytest
+from __future__ import annotations
+
 import asyncio
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import Mock, AsyncMock, patch
-from typing import Dict, Any, Optional, List
+from datetime import UTC, datetime
+from typing import Any
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
+from fastmcp.task_management.application.facades.git_branch_application_facade import (
+    GitBranchApplicationFacade,
+)
+from fastmcp.task_management.application.facades.project_application_facade import (
+    ProjectApplicationFacade,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
 
 # Import common dependencies that need to be mocked across tests
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.facades.project_application_facade import ProjectApplicationFacade
-from fastmcp.task_management.application.facades.git_branch_application_facade import GitBranchApplicationFacade
-from fastmcp.task_management.interface.utils.response_formatter import StandardResponseFormatter
+from fastmcp.task_management.interface.utils.response_formatter import (
+    StandardResponseFormatter,
+)
 
 
 @pytest.fixture(scope="session")
@@ -62,7 +74,7 @@ def sample_subtask_id():
 @pytest.fixture
 def current_timestamp():
     """Current timestamp for testing."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @pytest.fixture
@@ -277,13 +289,13 @@ def response_formatter():
 def create_test_task():
     """Factory function to create test task data with variations."""
     def _create_task(
-        task_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None,
+        task_id: str | None = None,
+        git_branch_id: str | None = None,
         title: str = "Test Task",
         status: str = "todo",
         priority: str = "medium",
-        assignees: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        assignees: list[str | None] = None
+    ) -> dict[str, Any]:
         return {
             "task_id": task_id or str(uuid.uuid4()),
             "git_branch_id": git_branch_id or str(uuid.uuid4()),
@@ -293,8 +305,8 @@ def create_test_task():
             "priority": priority,
             "assignees": assignees or ["coding-agent"],
             "labels": ["test"],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat()
         }
     return _create_task
 
@@ -303,17 +315,17 @@ def create_test_task():
 def create_test_project():
     """Factory function to create test project data with variations."""
     def _create_project(
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         name: str = "Test Project",
         status: str = "active"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "project_id": project_id or str(uuid.uuid4()),
             "name": name,
             "description": f"Description for {name}",
             "status": status,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "created_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat()
         }
     return _create_project
 
@@ -322,7 +334,7 @@ def create_test_project():
 @pytest.fixture
 def create_success_response():
     """Factory to create successful API responses."""
-    def _create_response(data: Any = None, message: str = "Operation successful") -> Dict[str, Any]:
+    def _create_response(data: Any = None, message: str = "Operation successful") -> dict[str, Any]:
         return {
             "success": True,
             "data": data,
@@ -334,7 +346,7 @@ def create_success_response():
 @pytest.fixture
 def create_error_response():
     """Factory to create error API responses."""
-    def _create_response(error: str, error_code: str = "OPERATION_FAILED") -> Dict[str, Any]:
+    def _create_response(error: str, error_code: str = "OPERATION_FAILED") -> dict[str, Any]:
         return {
             "success": False,
             "error": error,
@@ -347,7 +359,7 @@ def create_error_response():
 @pytest.fixture
 def assert_response_structure():
     """Utility to validate response structure."""
-    def _assert_structure(response: Dict[str, Any], expect_success: bool = True):
+    def _assert_structure(response: dict[str, Any], expect_success: bool = True):
         """Validate that response has proper structure."""
         assert "success" in response
         assert response["success"] is expect_success

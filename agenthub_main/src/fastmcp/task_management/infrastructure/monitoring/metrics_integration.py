@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+from __future__ import annotations
+
 Metrics Integration Module
 
 Integrates optimization metrics collection into the MCP system,
@@ -68,7 +70,7 @@ class MetricsMiddleware:
         
         # Record metrics
         end_time = time.perf_counter()
-        processing_time = (end_time - start_time) * 1000  # Convert to milliseconds
+        (end_time - start_time) * 1000  # Convert to milliseconds
         
         # Extract route information
         path = scope.get("path", "unknown")
@@ -121,7 +123,6 @@ def metrics_track(
             tags = {**(custom_tags or {}), "operation": operation_name}
             
             start_time = time.perf_counter() if track_timing else None
-            success = True
             error_type = None
             
             try:
@@ -134,7 +135,6 @@ def metrics_track(
                 return result
                 
             except Exception as e:
-                success = False
                 error_type = type(e).__name__
                 
                 # Track error if enabled
@@ -152,7 +152,7 @@ def metrics_track(
                 # Track timing if enabled
                 if track_timing and start_time is not None:
                     end_time = time.perf_counter()
-                    duration_ms = (end_time - start_time) * 1000
+                    (end_time - start_time) * 1000
                     collector.record_timing_metric(
                         f"{operation_name}_duration",
                         start_time,
@@ -166,7 +166,6 @@ def metrics_track(
             tags = {**(custom_tags or {}), "operation": operation_name}
             
             start_time = time.perf_counter() if track_timing else None
-            success = True
             error_type = None
             
             try:
@@ -179,7 +178,6 @@ def metrics_track(
                 return result
                 
             except Exception as e:
-                success = False
                 error_type = type(e).__name__
                 
                 # Track error if enabled
@@ -197,7 +195,7 @@ def metrics_track(
                 # Track timing if enabled
                 if track_timing and start_time is not None:
                     end_time = time.perf_counter()
-                    duration_ms = (end_time - start_time) * 1000
+                    (end_time - start_time) * 1000
                     collector.record_timing_metric(
                         f"{operation_name}_duration",
                         start_time,

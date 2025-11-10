@@ -1,5 +1,7 @@
 """Agent Repository Factory - Clean DDD Implementation"""
 
+from __future__ import annotations
+
 import logging
 import os
 from enum import Enum
@@ -202,7 +204,7 @@ class AgentRepositoryConfig:
         )
     
     @classmethod
-    def from_environment(cls) -> 'AgentRepositoryConfig':
+    def from_environment(cls) -> AgentRepositoryConfig:
         """Create configuration from environment variables"""
         return cls(
             repository_type=os.getenv("MCP_AGENT_REPOSITORY_TYPE"),

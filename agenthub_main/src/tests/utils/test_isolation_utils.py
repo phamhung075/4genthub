@@ -4,15 +4,16 @@ Test Isolation Utilities
 Provides utilities for test isolation, cleanup, and environment management.
 Consolidated from various test isolation patterns across the project.
 """
-from sqlalchemy import text
-from contextlib import contextmanager
 import logging
-import uuid
 import os
-import tempfile
 import shutil
+import tempfile
+import uuid
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator, Dict, Any
+
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
@@ -234,7 +235,6 @@ def isolated_test_data(session):
             self.agent_id = create_unique_id("agent")
     
     test_ids = TestIds()
-    created_ids = []
     
     try:
         yield test_ids

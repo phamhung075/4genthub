@@ -5,6 +5,8 @@ This is the main entry point for the subtask MCP controller, now refactored into
 architecture using factory pattern to maintain separation of concerns and automatic progress tracking.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
@@ -160,7 +162,7 @@ class SubtaskMCPController(ContextPropagationMixin):
             # No event loop, create one
             return asyncio.run(coro)
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """Register MCP tools with the server."""
 
         # Get centralized parameter definitions

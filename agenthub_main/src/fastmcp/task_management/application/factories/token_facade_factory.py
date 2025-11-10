@@ -6,6 +6,8 @@ Follows DDD principles by properly injecting infrastructure dependencies.
 """
 
 
+from __future__ import annotations
+
 from sqlalchemy.orm import Session
 
 from ..facades.token_application_facade import TokenApplicationFacade

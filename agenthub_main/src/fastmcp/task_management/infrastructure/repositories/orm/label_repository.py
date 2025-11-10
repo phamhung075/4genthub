@@ -5,6 +5,8 @@ This module implements the Label repository using SQLAlchemy ORM,
 providing CRUD operations for labels and their relationships with tasks.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import Any
 

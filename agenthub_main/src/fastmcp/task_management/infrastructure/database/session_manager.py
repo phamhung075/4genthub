@@ -5,12 +5,15 @@ This module provides session management to replace the SQLite connection pool.
 It offers context managers and transaction support using SQLAlchemy sessions.
 """
 
+from __future__ import annotations
+
 import logging
 import threading
 import time
-from contextlib import contextmanager
+from collections.abc import Generator
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
-from typing import Any, ContextManager
+from typing import Any
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -62,7 +65,7 @@ class SQLAlchemySessionManager:
         logger.info("SQLAlchemy session manager initialized")
     
     @contextmanager
-    def get_session(self) -> ContextManager[Session]:
+    def get_session(self) -> Generator[Session, None, None]:
         """
         Get a database session context manager.
         
@@ -119,7 +122,7 @@ class SQLAlchemySessionManager:
             logger.debug("Session closed")
     
     @contextmanager
-    def transaction(self) -> ContextManager['SQLAlchemySessionManager']:
+    def transaction(self) -> Generator[SQLAlchemySessionManager, None, None]:
         """
         Start a database transaction.
         
@@ -256,7 +259,7 @@ def close_session_manager():
 
 # Convenience functions for direct use
 @contextmanager
-def get_session() -> ContextManager[Session]:
+def get_session() -> Generator[Session, None, None]:
     """Get a database session (convenience function)"""
     manager = get_session_manager()
     with manager.get_session() as session:
@@ -264,7 +267,7 @@ def get_session() -> ContextManager[Session]:
 
 
 @contextmanager
-def transaction() -> ContextManager[SQLAlchemySessionManager]:
+def transaction() -> Generator[SQLAlchemySessionManager, None, None]:
     """Start a database transaction (convenience function)"""
     manager = get_session_manager()
     with manager.transaction() as tx_manager:

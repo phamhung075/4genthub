@@ -1,10 +1,10 @@
 """Unit tests for User Domain Entity following DDD patterns"""
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch
+from datetime import UTC, datetime, timedelta
 
-from fastmcp.auth.domain.entities.user import User, UserStatus, UserRole
+import pytest
+
+from fastmcp.auth.domain.entities.user import User, UserRole, UserStatus
 
 
 class TestUserEntity:
@@ -29,7 +29,7 @@ class TestUserEntity:
     
     def test_user_creation_with_all_fields(self):
         """Test user creation with all fields specified"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         user = User(
             id="user123",
             email="test@example.com",
@@ -102,7 +102,7 @@ class TestUserEntity:
         
         # Reactivate but lock account
         user.activate()
-        user.locked_until = datetime.now(timezone.utc) + timedelta(hours=1)
+        user.locked_until = datetime.now(UTC) + timedelta(hours=1)
         assert user.is_active() is False
     
     def test_is_locked_checks_lock_expiry(self):
@@ -117,11 +117,11 @@ class TestUserEntity:
         assert user.is_locked() is False
         
         # Lock for 1 hour
-        user.locked_until = datetime.now(timezone.utc) + timedelta(hours=1)
+        user.locked_until = datetime.now(UTC) + timedelta(hours=1)
         assert user.is_locked() is True
         
         # Lock already expired
-        user.locked_until = datetime.now(timezone.utc) - timedelta(hours=1)
+        user.locked_until = datetime.now(UTC) - timedelta(hours=1)
         assert user.is_locked() is False
     
     def test_can_login_checks_lock_and_suspension(self):
@@ -136,7 +136,7 @@ class TestUserEntity:
         assert user.can_login() is True
         
         # Lock account
-        user.locked_until = datetime.now(timezone.utc) + timedelta(hours=1)
+        user.locked_until = datetime.now(UTC) + timedelta(hours=1)
         assert user.can_login() is False
         
         # Unlock but suspend
@@ -174,7 +174,7 @@ class TestUserEntity:
         
         # Set up failed state
         user.failed_login_attempts = 3
-        user.locked_until = datetime.now(timezone.utc) + timedelta(hours=1)
+        user.locked_until = datetime.now(UTC) + timedelta(hours=1)
         
         # Record successful login
         user.record_successful_login()
@@ -213,7 +213,7 @@ class TestUserEntity:
         
         assert user.password_reset_token == token
         assert user.password_reset_expires is not None
-        assert user.password_reset_expires > datetime.now(timezone.utc)
+        assert user.password_reset_expires > datetime.now(UTC)
     
     def test_complete_password_reset(self):
         """Test complete_password_reset updates password and clears reset fields"""
@@ -225,7 +225,7 @@ class TestUserEntity:
         
         # Set up reset state
         user.password_reset_token = "token123"
-        user.password_reset_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+        user.password_reset_expires = datetime.now(UTC) + timedelta(hours=1)
         old_version = user.refresh_token_version
         
         # Complete reset
@@ -326,7 +326,7 @@ class TestUserEntity:
     
     def test_from_dict_creates_user(self):
         """Test from_dict creates User instance from dictionary"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         data = {
             "id": "user123",
             "email": "test@example.com",

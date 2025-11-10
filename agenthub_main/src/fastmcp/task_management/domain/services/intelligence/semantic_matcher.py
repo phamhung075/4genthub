@@ -11,6 +11,8 @@ Key Features:
 - Caching for performance optimization
 """
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import pickle
@@ -54,7 +56,7 @@ class MockSentenceTransformer:
         """Return a standard embedding dimension for testing."""
         return 384
         
-    def encode(self, texts: list[str], **kwargs) -> 'np.ndarray':
+    def encode(self, texts: list[str], **kwargs) -> np.ndarray:
         """Return mock embeddings for testing."""
         if HAS_NUMPY:
             return np.random.random((len(texts), 384))

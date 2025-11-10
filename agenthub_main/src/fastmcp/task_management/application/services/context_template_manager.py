@@ -4,6 +4,8 @@ This module defines standardized context templates that specify exactly what con
 is needed for each operation type, reducing unnecessary context fetching by 60-80%.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from enum import Enum

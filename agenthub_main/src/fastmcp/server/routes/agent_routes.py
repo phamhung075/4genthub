@@ -329,7 +329,7 @@ async def call_agent(
     """
     try:
         agent_name = request.get("agent_name")
-        params = request.get("params", {})
+        request.get("params", {})
 
         if not agent_name:
             raise HTTPException(

@@ -11,20 +11,25 @@ Tests the ProjectRepository ORM implementation including:
 - Query operations and filtering
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from fastmcp.task_management.domain.entities.project import Project as ProjectEntity
-from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.exceptions.base_exceptions import (
+    DatabaseException,
     ResourceNotFoundException,
-    ValidationException, 
-    DatabaseException
+    ValidationException,
 )
-from fastmcp.task_management.infrastructure.repositories.orm.project_repository import ORMProjectRepository
-from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch
+from fastmcp.task_management.infrastructure.database.models import (
+    Project,
+    ProjectGitBranch,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
+    ORMProjectRepository,
+)
 
 
 class TestORMProjectRepositoryInitialization:
@@ -72,8 +77,8 @@ class TestORMProjectRepositoryEntityConversion:
         mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_project.name = "Test Project"
         mock_project.description = "Test Description"
-        mock_project.created_at = datetime.now(timezone.utc)
-        mock_project.updated_at = datetime.now(timezone.utc)
+        mock_project.created_at = datetime.now(UTC)
+        mock_project.updated_at = datetime.now(UTC)
         mock_project.git_branchs = []  # No branches
         
         entity = self.repo._model_to_entity(mock_project)
@@ -97,8 +102,8 @@ class TestORMProjectRepositoryEntityConversion:
         mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_project.name = "Test Project"
         mock_project.description = "Test Description"
-        mock_project.created_at = datetime.now(timezone.utc)
-        mock_project.updated_at = datetime.now(timezone.utc)
+        mock_project.created_at = datetime.now(UTC)
+        mock_project.updated_at = datetime.now(UTC)
 
         # Mock git branches
         mock_branch1 = Mock(spec=ProjectGitBranch)
@@ -107,8 +112,8 @@ class TestORMProjectRepositoryEntityConversion:
         mock_branch1.description = "Main branch"
         mock_branch1.project_id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_branch1.task_count = 5
-        mock_branch1.created_at = datetime.now(timezone.utc)
-        mock_branch1.updated_at = datetime.now(timezone.utc)
+        mock_branch1.created_at = datetime.now(UTC)
+        mock_branch1.updated_at = datetime.now(UTC)
 
         mock_branch2 = Mock(spec=ProjectGitBranch)
         mock_branch2.id = "a0f9d214-599f-44d1-aaed-57e2ca2308a8"
@@ -116,8 +121,8 @@ class TestORMProjectRepositoryEntityConversion:
         mock_branch2.description = "Authentication feature"
         mock_branch2.project_id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_branch2.task_count = 3
-        mock_branch2.created_at = datetime.now(timezone.utc)
-        mock_branch2.updated_at = datetime.now(timezone.utc)
+        mock_branch2.created_at = datetime.now(UTC)
+        mock_branch2.updated_at = datetime.now(UTC)
 
         mock_project.git_branchs = [mock_branch1, mock_branch2]
 
@@ -135,8 +140,8 @@ class TestORMProjectRepositoryEntityConversion:
     # def test_entity_to_model_conversion(self):
     #     """Test converting project entity to model."""
     #     # Create project entity
-    #     from datetime import datetime, timezone
-    #     now = datetime.now(timezone.utc)
+    #     from datetime import datetime, UTC
+    #     now = datetime.now(UTC)
     #     entity = ProjectEntity(
     #         id="project-123",
     #         name="Test Project",
@@ -170,15 +175,15 @@ class TestORMProjectRepositoryCRUDOperations:
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="New Project",
             description="New Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         # Mock model conversion
         mock_project_model = Mock(spec=Project)
         mock_project_model.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
 
-        with patch.object(self.repo, '_model_to_entity', return_value=entity) as mock_to_entity:
+        with patch.object(self.repo, '_model_to_entity', return_value=entity):
             with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
                 with patch.object(self.repo, 'transaction'):
                     with patch('uuid.uuid4', return_value='50ebbfda-bdc9-4349-8c64-315c4e9fb9fa'):
@@ -203,8 +208,8 @@ class TestORMProjectRepositoryCRUDOperations:
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="New Project",
             description="New Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         # Mock database error directly - the create method doesn't exist, so mock transaction instead
@@ -225,8 +230,8 @@ class TestORMProjectRepositoryCRUDOperations:
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="Found Project",
             description="Found Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         # Mock query
@@ -311,8 +316,8 @@ class TestORMProjectRepositoryCRUDOperations:
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="Updated Project",
             description="Updated Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         # Mock the database session and query
@@ -346,8 +351,8 @@ class TestORMProjectRepositoryCRUDOperations:
             id="nonexistent",
             name="Updated Project",
             description="Updated Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         # Mock query to return None (project not found)
@@ -581,8 +586,8 @@ class TestORMProjectRepositoryUserScoping:
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="User Project",
             description="User Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         # _entity_to_model doesn't exist, mock the database session instead
@@ -616,8 +621,8 @@ class TestORMProjectRepositoryCacheIntegration:
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="New Project",
             description="New Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         # _entity_to_model doesn't exist, mock the database session instead
@@ -640,8 +645,8 @@ class TestORMProjectRepositoryCacheIntegration:
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="Updated Project",
             description="Updated Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         # Mock the database session and query
@@ -677,8 +682,8 @@ class TestORMProjectRepositoryCacheIntegration:
         mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_project.name = "Test Project"
         mock_project.description = "Test Description"
-        mock_project.created_at = datetime.now(timezone.utc)
-        mock_project.updated_at = datetime.now(timezone.utc)
+        mock_project.created_at = datetime.now(UTC)
+        mock_project.updated_at = datetime.now(UTC)
         mock_project.git_branchs = []  # Empty list to avoid iteration issues
         
         # Mock query
@@ -715,8 +720,8 @@ class TestORMProjectRepositoryErrorHandling:
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="New Project",
             description="New Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         # Mock the transaction method to raise an error that will trigger rollback
@@ -732,8 +737,8 @@ class TestORMProjectRepositoryErrorHandling:
             id="",  # Invalid empty ID
             name="Project",
             description="Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         # ValidationException gets wrapped in DatabaseException by the repository
@@ -748,16 +753,16 @@ class TestORMProjectRepositoryErrorHandling:
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="Updated Project",
             description="Updated Description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         mock_existing = Mock(spec=Project)
         mock_existing.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_existing.name = "Old Project"
         mock_existing.description = "Old Description"
-        mock_existing.created_at = datetime.now(timezone.utc)
-        mock_existing.updated_at = datetime.now(timezone.utc)
+        mock_existing.created_at = datetime.now(UTC)
+        mock_existing.updated_at = datetime.now(UTC)
         
         # Mock query
         mock_query = Mock()

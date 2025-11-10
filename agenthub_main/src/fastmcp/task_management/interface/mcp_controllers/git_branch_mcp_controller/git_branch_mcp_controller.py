@@ -5,6 +5,8 @@ This is the main entry point for the git branch MCP controller, now refactored i
 architecture using factory pattern to maintain separation of concerns and workflow guidance.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -113,7 +115,7 @@ class GitBranchMCPController(ContextPropagationMixin):
             self._workflow_guidance = None
             logger.info("GitBranchMCPController initialized with workflow guidance disabled (token optimization)")
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """Register MCP tools with the server."""
 
         # Get centralized parameter definitions

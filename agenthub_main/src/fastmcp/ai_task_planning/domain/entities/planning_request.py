@@ -4,6 +4,8 @@ Represents a high-level request for AI-powered task planning.
 Contains all information needed to generate an intelligent task breakdown.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -166,7 +168,7 @@ class PlanningRequest:
         }
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'PlanningRequest':
+    def from_dict(cls, data: dict[str, Any]) -> PlanningRequest:
         """Create from dictionary"""
         requirements = [
             RequirementItem(

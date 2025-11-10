@@ -27,24 +27,17 @@ Requirements Coverage:
 - UI updates and feedback
 """
 
-import pytest
 import asyncio
-import json
-from datetime import datetime, timezone
-from typing import Dict, Any, List
+import logging
 from uuid import uuid4
 
+import pytest
+
 # Import application layer
-from fastmcp.agent_management.application.facades.agent_management_facade import AgentManagementFacade
-from fastmcp.agent_management.domain.entities.agent_template import AgentTemplate
-from fastmcp.agent_management.domain.entities.user_agent_instance import UserAgentInstance
-from fastmcp.agent_management.domain.value_objects import UserId, AgentTemplateId
+from fastmcp.agent_management.domain.value_objects import UserId
 
 # Import infrastructure layer
-from fastmcp.agent_management.infrastructure.repositories.orm.agent_template_repository import ORMAgentTemplateRepository
-from fastmcp.agent_management.infrastructure.repositories.orm.user_agent_instance_repository import ORMUserAgentInstanceRepository
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -507,7 +500,7 @@ class TestAgentCustomizationE2EEdgeCases:
     ):
         """Test that unauthorized users cannot access configuration editor"""
 
-        browser = MockBrowserContext()
+        MockBrowserContext()
 
         # User A creates instance
         user_a_id = UserId(uuid4())

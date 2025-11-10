@@ -8,20 +8,19 @@ Tests both baseline (unoptimized) and optimized response sizes across various sc
 """
 
 import asyncio
-import time
 import json
 import statistics
-import sys
-from pathlib import Path
-from dataclasses import dataclass, asdict
-from typing import Dict, List, Optional, Any, Tuple
-from unittest.mock import Mock, patch
-import logging
+import time
+from dataclasses import asdict, dataclass
+from typing import Any
 
 # Import performance test components
-from .. import PERFORMANCE_CONFIG, setup_performance_logger
+from .. import setup_performance_logger
 from ..mocks.mock_mcp_server import create_performance_test_server
-from .performance_suite import PerformanceMetric, BenchmarkResult, PerformanceBenchmark, ResourceMonitor
+from .performance_suite import (
+    BenchmarkResult,
+    PerformanceBenchmark,
+)
 
 logger = setup_performance_logger()
 
@@ -70,7 +69,7 @@ class ResponseSizeBenchmark(PerformanceBenchmark):
         if self.mock_server:
             self.mock_server.reset_metrics()
     
-    def _create_baseline_response(self, scenario: str) -> Dict[str, Any]:
+    def _create_baseline_response(self, scenario: str) -> dict[str, Any]:
         """Create unoptimized baseline response for scenario."""
         if scenario == "simple_task_list":
             return {
@@ -275,7 +274,7 @@ class ResponseSizeBenchmark(PerformanceBenchmark):
         # Add more scenarios as needed
         return {"success": True, "data": {"message": f"Baseline response for {scenario}"}}
     
-    def _create_optimized_response(self, scenario: str) -> Dict[str, Any]:
+    def _create_optimized_response(self, scenario: str) -> dict[str, Any]:
         """Create optimized response for scenario."""
         if scenario == "simple_task_list":
             return {
@@ -340,7 +339,7 @@ class ResponseSizeBenchmark(PerformanceBenchmark):
         
         return {"success": True, "data": {"msg": f"Optimized {scenario}"}}
     
-    def _measure_response_size(self, response_data: Dict[str, Any]) -> int:
+    def _measure_response_size(self, response_data: dict[str, Any]) -> int:
         """Measure response size in bytes."""
         json_string = json.dumps(response_data, separators=(',', ':'))
         return len(json_string.encode('utf-8'))
@@ -416,7 +415,7 @@ class ResponseSizeBenchmark(PerformanceBenchmark):
                 self.create_metric("target_achievement_rate", (targets_met / len(self.scenarios)) * 100, "percent", 80.0, "overall")
             ])
             
-            logger.info(f"Overall Results:")
+            logger.info("Overall Results:")
             logger.info(f"  Average reduction: {avg_reduction:.1f}%")
             logger.info(f"  Range: {min_reduction:.1f}% - {max_reduction:.1f}%")
             logger.info(f"  Scenarios meeting target: {targets_met}/{len(self.scenarios)}")

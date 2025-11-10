@@ -2,22 +2,21 @@
 Tests for Email Token Repository
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timezone, timedelta
 import json
-import tempfile
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import tempfile
+from datetime import UTC, datetime, timedelta
+from unittest.mock import MagicMock, patch
+
+import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from fastmcp.auth.infrastructure.repositories.email_token_repository import (
-    EmailTokenRepository,
+    Base,
     EmailToken,
     EmailTokenModel,
+    EmailTokenRepository,
     get_email_token_repository,
-    Base
 )
 
 
@@ -26,7 +25,7 @@ class TestEmailToken:
     
     def test_email_token_creation(self):
         """Test creating an EmailToken"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=1)
         
         token = EmailToken(
@@ -90,7 +89,7 @@ class TestEmailTokenRepository:
     @pytest.fixture
     def sample_token(self):
         """Create sample EmailToken for testing"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return EmailToken(
             token="test-token-123",
             email="test@example.com",
@@ -106,7 +105,7 @@ class TestEmailTokenRepository:
         with patch.dict(os.environ, {"DATABASE_URL": "sqlite:///test.db"}):
             with patch('fastmcp.auth.infrastructure.repositories.email_token_repository.create_engine') as mock_engine:
                 with patch.object(Base.metadata, 'create_all'):
-                    repo = EmailTokenRepository()
+                    EmailTokenRepository()
                     mock_engine.assert_called_once_with("sqlite:///test.db")
     
     def test_repository_initialization_custom_url(self):
@@ -114,7 +113,7 @@ class TestEmailTokenRepository:
         custom_url = "sqlite:///custom.db"
         with patch('fastmcp.auth.infrastructure.repositories.email_token_repository.create_engine') as mock_engine:
             with patch.object(Base.metadata, 'create_all'):
-                repo = EmailTokenRepository(custom_url)
+                EmailTokenRepository(custom_url)
                 mock_engine.assert_called_once_with(custom_url)
     
     def test_save_token_success(self, repository, sample_token):
@@ -170,7 +169,7 @@ class TestEmailTokenRepository:
     
     def test_get_tokens_by_email(self, repository):
         """Test getting tokens by email"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         # Create multiple tokens for same email
         token1 = EmailToken(
@@ -235,7 +234,7 @@ class TestEmailTokenRepository:
         """Test marking token as used with custom timestamp"""
         repository.save_token(sample_token)
         
-        used_time = datetime.now(timezone.utc) - timedelta(minutes=10)
+        used_time = datetime.now(UTC) - timedelta(minutes=10)
         result = repository.mark_token_used(sample_token.token, used_time)
         assert result is True
         
@@ -293,7 +292,7 @@ class TestEmailTokenRepository:
     
     def test_cleanup_expired_tokens(self, repository):
         """Test cleaning up expired tokens"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         # Create expired token
         expired_token = EmailToken(
@@ -374,7 +373,7 @@ class TestEmailTokenRepository:
     
     def test_validate_token_expired(self, repository):
         """Test validating expired token"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expired_token = EmailToken(
             token="expired-token",
             email="test@example.com",
@@ -426,7 +425,7 @@ class TestEmailTokenRepository:
     
     def test_get_token_stats(self, repository):
         """Test getting token statistics"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         # Create various tokens
         tokens = [
@@ -477,7 +476,7 @@ class TestEmailTokenRepository:
     
     def test_model_to_token_conversion(self, repository):
         """Test conversion from SQLAlchemy model to EmailToken"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         metadata = {"key": "value", "number": 42}
         
         model = EmailTokenModel(
@@ -504,7 +503,7 @@ class TestEmailTokenRepository:
     
     def test_model_to_token_invalid_json(self, repository):
         """Test conversion with invalid JSON metadata"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         model = EmailTokenModel(
             token="test-token",
@@ -521,7 +520,7 @@ class TestEmailTokenRepository:
     
     def test_token_to_model_conversion(self, repository):
         """Test conversion from EmailToken to SQLAlchemy model"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         metadata = {"key": "value"}
         
         token = EmailToken(
@@ -544,7 +543,7 @@ class TestEmailTokenRepository:
     
     def test_token_to_model_invalid_metadata(self, repository):
         """Test conversion with non-serializable metadata"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         # Create token with non-serializable metadata
         token = EmailToken(
@@ -627,7 +626,7 @@ class TestEdgeCases:
     
     def test_large_metadata_handling(self, repository):
         """Test handling of large metadata"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         large_metadata = {"data": "x" * 10000}  # Large metadata
         
         token = EmailToken(

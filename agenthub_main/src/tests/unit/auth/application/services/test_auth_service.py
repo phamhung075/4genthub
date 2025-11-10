@@ -5,20 +5,17 @@ Tests the authentication service that orchestrates authentication operations
 including registration, login, password management, and token handling.
 """
 
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from unittest.mock import Mock, AsyncMock, MagicMock, patch
-from datetime import datetime, timezone, timedelta
 
 from fastmcp.auth.application.services.auth_service import (
     AuthService,
-    LoginResult,
-    RegistrationResult
 )
-from fastmcp.auth.domain.entities.user import User, UserStatus, UserRole
-from fastmcp.auth.domain.services.password_service import PasswordService
+from fastmcp.auth.domain.entities.user import User, UserRole, UserStatus
 from fastmcp.auth.domain.services.jwt_service import JWTService
-from fastmcp.auth.domain.value_objects.email import Email
-from fastmcp.auth.domain.value_objects.user_id import UserId
+from fastmcp.auth.domain.services.password_service import PasswordService
 
 
 @pytest.fixture
@@ -79,8 +76,8 @@ def sample_user():
         status=UserStatus.ACTIVE,
         email_verified=True,
         roles=[UserRole.USER],
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         refresh_token_family="test_family",
         refresh_token_version=0
     )
@@ -106,8 +103,8 @@ class TestAuthServiceRegistration:
             full_name=full_name,
             status=UserStatus.PENDING_VERIFICATION,
             email_verified=False,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         # Act
@@ -262,7 +259,7 @@ class TestAuthServiceLogin:
         """Test login fails with locked account"""
         # Arrange
         sample_user.failed_login_attempts = 10
-        sample_user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
+        sample_user.locked_until = datetime.now(UTC) + timedelta(minutes=30)
         mock_user_repository.get_by_email.return_value = sample_user
         
         # Act

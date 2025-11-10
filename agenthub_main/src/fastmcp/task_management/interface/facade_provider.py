@@ -11,6 +11,8 @@ DDD Compliance:
 - Single point of facade access for all controllers
 """
 
+from __future__ import annotations
+
 import logging
 
 from sqlalchemy.orm import Session

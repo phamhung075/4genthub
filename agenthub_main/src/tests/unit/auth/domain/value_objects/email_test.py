@@ -1,6 +1,7 @@
 """Unit tests for Email value object"""
 
 import pytest
+
 from fastmcp.auth.domain.value_objects.email import Email
 
 

@@ -5,16 +5,19 @@ Tests verify that subtask operations (create, update, complete, delete)
 trigger parent task count and progress updates correctly.
 """
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
-from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
+import pytest
+
+from fastmcp.task_management.application.facades.subtask_application_facade import (
+    SubtaskApplicationFacade,
+)
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
-from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockTaskRepository, MockSubtaskRepository
+from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import (
+    MockSubtaskRepository,
+    MockTaskRepository,
+)
 
 
 @pytest.fixture
@@ -134,7 +137,7 @@ class TestUpdateSubtaskRecalculatesProgress:
             title="Subtask 1",
             assignees="agent-1"
         )
-        subtask2 = facade.create_subtask(
+        facade.create_subtask(
             task_id=str(parent_task.id),
             title="Subtask 2",
             assignees="agent-2"

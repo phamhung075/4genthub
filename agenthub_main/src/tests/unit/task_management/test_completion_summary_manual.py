@@ -19,12 +19,12 @@ project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
 # Import after setting environment
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from sqlalchemy import text
 import uuid
-import json
+
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
+
 
 def test_completion_summary_storage():
     """Test that completion_summary is stored properly in context"""
@@ -44,9 +44,9 @@ def test_completion_summary_storage():
         print("🔄 Using simplified entity approach to bypass authentication issues...")
 
         from fastmcp.task_management.domain.entities.task import Task as TaskEntity
+        from fastmcp.task_management.domain.value_objects.priority import Priority
         from fastmcp.task_management.domain.value_objects.task_id import TaskId
         from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-        from fastmcp.task_management.domain.value_objects.priority import Priority
 
         # Create a simple in-memory task entity to test completion_summary
         task_id = TaskId(str(uuid.uuid4()))

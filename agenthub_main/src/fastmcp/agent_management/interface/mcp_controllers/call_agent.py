@@ -5,6 +5,8 @@ MCP tool for loading and invoking specialized agents using the new
 database-backed user agent instance system.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -40,16 +42,16 @@ def call_agent_mcp_tool(name_agent: str, user_id: str = None) -> dict[str, Any]:
                 "slug": str,
                 "description": str,
                 "system_prompt": str,
-                "tools": List[str],
-                "capabilities": Dict[str, Any],
-                "rules": Optional[List[str]],
-                "output_format": Optional[str],
+                "tools": list[str],
+                "capabilities": dict[str, Any],
+                "rules": list[str | None],
+                "output_format": str | None,
                 "category": str,
                 "version": str,
                 "is_customized": bool,
                 "instance_id": str,
                 "template_id": str,
-                "metadata": Dict[str, Any]
+                "metadata": dict[str, Any]
             },
             "source": "agent-management-system"
         }

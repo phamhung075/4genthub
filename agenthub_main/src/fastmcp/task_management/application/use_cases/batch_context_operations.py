@@ -5,6 +5,8 @@ Provides efficient batch operations for multiple context updates,
 reducing network overhead and database transactions.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from dataclasses import dataclass

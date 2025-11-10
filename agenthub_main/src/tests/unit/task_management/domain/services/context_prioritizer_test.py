@@ -1,16 +1,16 @@
 """Unit tests for ContextPrioritizer domain service"""
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch
 import math
+from datetime import UTC, datetime, timedelta
+
+import pytest
 
 from fastmcp.task_management.domain.services.intelligence.context_prioritizer import (
     ContextPrioritizer,
+    ContextScore,
     ScoreFactor,
     ScoringWeights,
-    ContextScore,
-    UserPreferences
+    UserPreferences,
 )
 
 
@@ -165,7 +165,7 @@ class TestContextPrioritizer:
     def test_recency_score_with_recent_access(self, prioritizer, sample_context):
         """Test recency score with recent access"""
         # Record recent access
-        prioritizer.record_context_access('ctx-123', datetime.now(timezone.utc))
+        prioritizer.record_context_access('ctx-123', datetime.now(UTC))
         
         score = prioritizer.score_context(
             context_id='ctx-123',
@@ -180,7 +180,7 @@ class TestContextPrioritizer:
     def test_recency_score_decay(self, prioritizer, sample_context):
         """Test recency score decay over time"""
         # Record access 12 hours ago
-        access_time = datetime.now(timezone.utc) - timedelta(hours=12)
+        access_time = datetime.now(UTC) - timedelta(hours=12)
         prioritizer.record_context_access('ctx-123', access_time)
         
         score = prioritizer.score_context(
@@ -197,7 +197,7 @@ class TestContextPrioritizer:
     def test_frequency_score_calculation(self, prioritizer, sample_context):
         """Test frequency score based on access history"""
         # Record multiple accesses
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for days_ago in [1, 3, 5, 10, 20]:
             access_time = now - timedelta(days=days_ago)
             prioritizer.record_context_access('ctx-123', access_time)
@@ -434,7 +434,7 @@ class TestContextPrioritizer:
     def test_record_context_access_cleanup(self, prioritizer):
         """Test old access records are cleaned up"""
         # Record old access beyond cleanup window
-        old_time = datetime.now(timezone.utc) - timedelta(days=65)
+        old_time = datetime.now(UTC) - timedelta(days=65)
         prioritizer.record_context_access('ctx-123', old_time)
         
         # Record recent access

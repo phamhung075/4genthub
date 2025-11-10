@@ -1,5 +1,7 @@
 """GitBranch Domain Entity"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 from ..value_objects.git_branch_id import GitBranchId
@@ -47,7 +49,7 @@ class GitBranch(BaseTimestampEntity):
             raise ValueError("GitBranch project_id cannot be empty")
     
     @classmethod
-    def create(cls, name: str, description: str, project_id: str) -> 'GitBranch':
+    def create(cls, name: str, description: str, project_id: str) -> GitBranch:
         """Create a new GitBranch with a generated UUID"""
         return cls(
             id=GitBranchId.generate_new(),

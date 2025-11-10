@@ -1,12 +1,13 @@
 """Unit tests for WorkSession entity."""
 
-import pytest
-from datetime import datetime, timezone, timedelta
 import time
-from unittest.mock import patch
+from datetime import UTC, datetime, timedelta
+
+import pytest
 
 from fastmcp.task_management.domain.entities.work_session import (
-    WorkSession, SessionStatus
+    SessionStatus,
+    WorkSession,
 )
 
 
@@ -20,7 +21,7 @@ class TestWorkSessionCreation:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="feature-branch",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         assert session.id == "session-1"
@@ -44,7 +45,7 @@ class TestWorkSessionCreation:
             agent_id="agent-2",
             task_id="task-2",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             max_duration=max_duration,
             auto_save_interval=600,
             session_notes="Initial notes"
@@ -62,7 +63,7 @@ class TestWorkSessionCreation:
             agent_id="agent-3",
             task_id="task-3",
             git_branch_name="dev",
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             resources_locked=resources
         )
         
@@ -79,7 +80,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.pause_session("Taking a break")
@@ -97,7 +98,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         session.status = SessionStatus.COMPLETED
         
@@ -111,12 +112,11 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         # Pause then resume
         session.pause_session("Taking a break")  # Add reason to create progress update
-        paused_at = session.paused_at
         
         # Wait a bit to ensure pause duration
         time.sleep(0.1)
@@ -137,7 +137,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         with pytest.raises(ValueError, match="Cannot resume session in active state"):
@@ -150,7 +150,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.complete_session(success=True, notes="Task completed")
@@ -168,7 +168,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.complete_session(success=False, notes="Encountered error")
@@ -183,7 +183,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.pause_session()
@@ -199,7 +199,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         session.status = SessionStatus.COMPLETED
         
@@ -213,7 +213,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.cancel_session("User requested cancellation")
@@ -231,7 +231,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.timeout_session()
@@ -252,7 +252,7 @@ class TestWorkSessionProgressTracking:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.add_progress_update(
@@ -276,7 +276,7 @@ class TestWorkSessionProgressTracking:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.add_progress_update("started", "Beginning work")
@@ -293,7 +293,7 @@ class TestWorkSessionProgressTracking:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
 
         initial_activity = session.last_activity
@@ -314,7 +314,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.lock_resource("database-1")
@@ -330,7 +330,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.lock_resource("file-1")
@@ -346,7 +346,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.lock_resource("cache-1")
@@ -363,7 +363,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.unlock_resource("not-locked")
@@ -377,7 +377,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         # Lock multiple resources
@@ -396,7 +396,7 @@ class TestWorkSessionDuration:
     
     def test_get_active_duration_for_active_session(self):
         """Test getting active duration for active session."""
-        started = datetime.now(timezone.utc) - timedelta(minutes=30)
+        started = datetime.now(UTC) - timedelta(minutes=30)
         session = WorkSession(
             id="session-1",
             agent_id="agent-1",
@@ -413,7 +413,7 @@ class TestWorkSessionDuration:
     
     def test_get_active_duration_with_pauses(self):
         """Test getting active duration excluding pauses."""
-        started = datetime.now(timezone.utc) - timedelta(hours=1)
+        started = datetime.now(UTC) - timedelta(hours=1)
         session = WorkSession(
             id="session-1",
             agent_id="agent-1",
@@ -433,7 +433,7 @@ class TestWorkSessionDuration:
     
     def test_get_active_duration_for_completed_session(self):
         """Test getting active duration for completed session."""
-        started = datetime.now(timezone.utc) - timedelta(hours=2)
+        started = datetime.now(UTC) - timedelta(hours=2)
         ended = started + timedelta(hours=1, minutes=30)
         
         session = WorkSession(
@@ -452,7 +452,7 @@ class TestWorkSessionDuration:
     
     def test_get_total_duration(self):
         """Test getting total duration including pauses."""
-        started = datetime.now(timezone.utc) - timedelta(hours=2)
+        started = datetime.now(UTC) - timedelta(hours=2)
         session = WorkSession(
             id="session-1",
             agent_id="agent-1",
@@ -472,7 +472,7 @@ class TestWorkSessionDuration:
     
     def test_get_total_duration_for_ended_session(self):
         """Test getting total duration for ended session."""
-        started = datetime.now(timezone.utc) - timedelta(hours=3)
+        started = datetime.now(UTC) - timedelta(hours=3)
         ended = started + timedelta(hours=2)
         
         session = WorkSession(
@@ -500,7 +500,7 @@ class TestWorkSessionScenarios:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         # First pause/resume
@@ -525,7 +525,7 @@ class TestWorkSessionScenarios:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         # Lock resources
@@ -544,7 +544,7 @@ class TestWorkSessionScenarios:
     
     def test_max_duration_check(self):
         """Test session with max duration configuration."""
-        started = datetime.now(timezone.utc) - timedelta(hours=3)
+        started = datetime.now(UTC) - timedelta(hours=3)
         session = WorkSession(
             id="session-1",
             agent_id="agent-1",
@@ -571,7 +571,7 @@ class TestWorkSessionScenarios:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             session_notes="Initial setup"
         )
         

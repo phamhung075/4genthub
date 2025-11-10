@@ -1,5 +1,7 @@
 """Context Response DTOs"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -17,7 +19,7 @@ class ContextResponse:
     
     @classmethod
     def success_response(cls, context: TaskContext = None, data: dict[str, Any] = None, 
-                        message: str = "Operation successful") -> 'ContextResponse':
+                        message: str = "Operation successful") -> ContextResponse:
         """Create a success response"""
         return cls(
             success=True,
@@ -27,7 +29,7 @@ class ContextResponse:
         )
     
     @classmethod
-    def error_response(cls, error: str, message: str = "Operation failed") -> 'ContextResponse':
+    def error_response(cls, error: str, message: str = "Operation failed") -> ContextResponse:
         """Create an error response"""
         return cls(
             success=False,
@@ -79,7 +81,7 @@ class ListContextsResponse(ContextResponse):
     
     @classmethod
     def success_response(cls, contexts: list[TaskContext], 
-                        message: str = "Contexts retrieved successfully") -> 'ListContextsResponse':
+                        message: str = "Contexts retrieved successfully") -> ListContextsResponse:
         """Create a success response with contexts"""
         return cls(
             success=True,
@@ -101,7 +103,7 @@ class GetPropertyResponse(ContextResponse):
     
     @classmethod
     def success_response(cls, value: Any, 
-                        message: str = "Property retrieved successfully") -> 'GetPropertyResponse':
+                        message: str = "Property retrieved successfully") -> GetPropertyResponse:
         """Create a success response with property value"""
         return cls(
             success=True,

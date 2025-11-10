@@ -5,6 +5,8 @@ Standardized implementation using BaseDomainEvent.
 All task-related events follow consistent patterns with immutable frozen dataclasses.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any
 

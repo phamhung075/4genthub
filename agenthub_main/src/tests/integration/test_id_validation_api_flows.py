@@ -4,23 +4,20 @@ Tests how ID validation integrates with actual API endpoints and controllers
 to prevent MCP ID vs Application ID confusion in production scenarios.
 """
 
-import pytest
-import json
-from uuid import uuid4
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any, List
 import sys
 from pathlib import Path
+from unittest.mock import Mock
+from uuid import uuid4
+
+import pytest
 
 # Add the src directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from fastmcp.utilities.id_validator import (
-    IDValidator,
-    IDType,
-    ValidationResult,
     IDValidationError,
-    prevent_id_confusion
+    IDValidator,
+    prevent_id_confusion,
 )
 
 
@@ -424,7 +421,7 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                 return subtask_id
 
-            def get_subtasks_for_task(self, task_id: str, user_id: str) -> List[Dict]:
+            def get_subtasks_for_task(self, task_id: str, user_id: str) -> list[Dict]:
                 """Get subtasks with validation."""
                 # Validate task exists and user has access
                 if task_id not in self.tasks:

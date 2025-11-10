@@ -17,19 +17,19 @@ Infrastructure Layer focuses on:
 - Message formatting
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
 from datetime import datetime
-import json
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
+from fastmcp.auth.domain.entities.user import User
 
 # Import the functions and data structures we're testing
 from fastmcp.server.routes.websocket_routes import (
+    WebSocketConnection,  # Updated: connection state dataclass
     broadcast_data_change,
     connections,  # Updated: unified connections dictionary
-    WebSocketConnection,  # Updated: connection state dataclass
-    is_user_authorized_for_message
-)
-from fastmcp.auth.domain.entities.user import User
+    )
 
 
 class TestBroadcastDataChange:
@@ -342,9 +342,8 @@ class TestBroadcastDataChange:
                 data={"title": "Test Task"}
             )
             success = True
-        except Exception as e:
+        except Exception:
             success = False
-            error = e
 
         # Assert: No error raised
         assert success, "Broadcast should handle empty connections gracefully"

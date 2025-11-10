@@ -1,6 +1,8 @@
 """
 Git Branch Application Facade (for Task Trees)
 """
+from __future__ import annotations
+
 from datetime import UTC
 from typing import Any
 
@@ -53,7 +55,7 @@ class GitBranchApplicationFacade:
             
             # Check if we're already in an event loop
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # If we're in a running loop, use asyncio.create_task() instead
                 import threading
                 
@@ -229,7 +231,7 @@ class GitBranchApplicationFacade:
             
             # Check if we're already in an event loop
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # If we're in a running loop, use a thread to run the async function
                 import threading
                 
@@ -349,7 +351,7 @@ class GitBranchApplicationFacade:
             
             # Check if we're already in an event loop
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # If we're in a running loop, use a thread to run the async function
                 import threading
                 
@@ -413,7 +415,7 @@ class GitBranchApplicationFacade:
             
             # Check if we're already in an event loop
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # If we're in a running loop, use a thread to run the async function
                 import threading
                 

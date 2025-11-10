@@ -4,6 +4,8 @@ This module provides minimal OAuth classes for import compatibility.
 Actual authentication uses JWT tokens.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from pydantic import BaseModel

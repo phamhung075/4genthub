@@ -1,22 +1,23 @@
 """Unit tests for TaskRepository interface."""
 
-import pytest
-from typing import List, Optional, Dict, Any
-from unittest.mock import Mock, MagicMock
-from datetime import datetime, timezone
+from __future__ import annotations
 
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from typing import Any
+
+import pytest
+
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class MockTaskRepository(TaskRepository):
     """Mock implementation of TaskRepository for testing."""
     
     def __init__(self):
-        self.tasks: Dict[str, Task] = {}
+        self.tasks: dict[str, Task] = {}
         self.next_id_counter = 1
         
     def save(self, task: Task) -> bool:
@@ -26,34 +27,34 @@ class MockTaskRepository(TaskRepository):
         self.tasks[task.id.value] = task
         return True
     
-    def find_by_id(self, task_id: TaskId) -> Optional[Task]:
+    def find_by_id(self, task_id: TaskId) -> Task | None:
         """Find task by ID."""
         return self.tasks.get(task_id.value)
     
-    def find_all(self) -> List[Task]:
+    def find_all(self) -> list[Task]:
         """Find all tasks."""
         return list(self.tasks.values())
     
-    def find_by_status(self, status: TaskStatus) -> List[Task]:
+    def find_by_status(self, status: TaskStatus) -> list[Task]:
         """Find tasks by status."""
         return [task for task in self.tasks.values() if task.status.value == status.value]
     
-    def find_by_priority(self, priority: Priority) -> List[Task]:
+    def find_by_priority(self, priority: Priority) -> list[Task]:
         """Find tasks by priority."""
         return [task for task in self.tasks.values() if task.priority.value == priority.value]
     
-    def find_by_assignee(self, assignee: str) -> List[Task]:
+    def find_by_assignee(self, assignee: str) -> list[Task]:
         """Find tasks by assignee."""
         return [task for task in self.tasks.values() if assignee in task.assignees]
     
-    def find_by_labels(self, labels: List[str]) -> List[Task]:
+    def find_by_labels(self, labels: list[str]) -> list[Task]:
         """Find tasks containing any of the specified labels."""
         return [
             task for task in self.tasks.values()
             if any(label in task.labels for label in labels)
         ]
     
-    def search(self, query: str, limit: int = 10) -> List[Task]:
+    def search(self, query: str, limit: int = 10) -> list[Task]:
         """Search tasks by query string."""
         query_lower = query.lower()
         results = []
@@ -88,7 +89,7 @@ class MockTaskRepository(TaskRepository):
         """Get total number of tasks."""
         return len(self.tasks)
     
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get task statistics."""
         status_counts = {}
         priority_counts = {}
@@ -110,7 +111,7 @@ class MockTaskRepository(TaskRepository):
             "with_labels": sum(1 for task in self.tasks.values() if task.labels)
         }
     
-    def find_by_criteria(self, filters: Dict[str, Any], limit: Optional[int] = None) -> List[Task]:
+    def find_by_criteria(self, filters: dict[str, Any], limit: int | None = None) -> list[Task]:
         """Find tasks by multiple criteria."""
         results = list(self.tasks.values())
         
@@ -138,7 +139,7 @@ class MockTaskRepository(TaskRepository):
         
         return results
     
-    def find_by_id_all_states(self, task_id: TaskId) -> Optional[Task]:
+    def find_by_id_all_states(self, task_id: TaskId) -> Task | None:
         """Find task by ID across all states (active, completed, archived)."""
         # In this mock implementation, we don't differentiate between states
         # so this is equivalent to find_by_id

@@ -1,18 +1,21 @@
 """Tests for NotificationService implementation."""
 
 import asyncio
-import json
-import pytest
-import tempfile
 import os
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-from pathlib import Path
-from typing import Dict, Any
+import tempfile
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from fastmcp.task_management.infrastructure.notification_service import (
-    NotificationService, NotificationChannel, InMemoryNotificationChannel, 
-    LoggingNotificationChannel, FileNotificationChannel, Notification, NotificationPriority
+    FileNotificationChannel,
+    InMemoryNotificationChannel,
+    LoggingNotificationChannel,
+    Notification,
+    NotificationChannel,
+    NotificationPriority,
+    NotificationService,
 )
 
 
@@ -28,7 +31,7 @@ class TestNotification:
             message="Test message",
             data={"key": "value"},
             priority=NotificationPriority.HIGH,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             recipients=["user1@example.com"]
         )
         
@@ -42,7 +45,7 @@ class TestNotification:
     
     def test_notification_dataclass_fields(self):
         """Test notification dataclass fields."""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         notif = Notification(
             id="notif_123",
             type="test_type",
@@ -84,7 +87,7 @@ class TestInMemoryNotificationChannel:
             message="Hello World",
             data={"message": "Hello"},
             priority=NotificationPriority.MEDIUM,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         
         result = await channel.send(notification)
@@ -105,7 +108,7 @@ class TestInMemoryNotificationChannel:
             message="Message 1",
             data={},
             priority=NotificationPriority.LOW,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         notif2 = Notification(
             id="test2",
@@ -114,7 +117,7 @@ class TestInMemoryNotificationChannel:
             message="Message 2",
             data={},
             priority=NotificationPriority.HIGH,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         channel.notifications = [notif1, notif2]
         
@@ -133,7 +136,7 @@ class TestInMemoryNotificationChannel:
             message="Message 1",
             data={},
             priority=NotificationPriority.LOW,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         notif2 = Notification(
             id="test2",
@@ -142,7 +145,7 @@ class TestInMemoryNotificationChannel:
             message="Message 2",
             data={},
             priority=NotificationPriority.HIGH,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         channel.notifications = [notif1, notif2]
         
@@ -165,7 +168,7 @@ class TestInMemoryNotificationChannel:
             message="Message",
             data={},
             priority=NotificationPriority.LOW,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         channel.notifications = [notif]
         
@@ -194,7 +197,7 @@ class TestInMemoryNotificationChannel:
             message="Hello World",
             data={"message": "Hello"},
             priority=NotificationPriority.MEDIUM,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         
         await channel.send(notification)
@@ -222,7 +225,7 @@ class TestLoggingNotificationChannel:
                 message="Info message",
                 data={"message": "Info message"},
                 priority=NotificationPriority.LOW,
-                timestamp=datetime.now(timezone.utc)
+                timestamp=datetime.now(UTC)
             )
             
             result = await channel.send(notification)
@@ -241,7 +244,7 @@ class TestLoggingNotificationChannel:
                 message="Warning message",
                 data={"message": "Warning message"},
                 priority=NotificationPriority.MEDIUM,
-                timestamp=datetime.now(timezone.utc)
+                timestamp=datetime.now(UTC)
             )
             
             result = await channel.send(notification)
@@ -260,7 +263,7 @@ class TestLoggingNotificationChannel:
                 message="Error message",
                 data={"message": "Error message"},
                 priority=NotificationPriority.HIGH,
-                timestamp=datetime.now(timezone.utc)
+                timestamp=datetime.now(UTC)
             )
             
             result = await channel.send(notification)
@@ -279,7 +282,7 @@ class TestLoggingNotificationChannel:
                 message="Critical message",
                 data={"message": "Critical message"},
                 priority=NotificationPriority.URGENT,
-                timestamp=datetime.now(timezone.utc)
+                timestamp=datetime.now(UTC)
             )
             
             result = await channel.send(notification)
@@ -318,7 +321,7 @@ class TestFileNotificationChannel:
             message="File message",
             data={"message": "File message"},
             priority=NotificationPriority.MEDIUM,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         
         result = await channel.send(notification)
@@ -326,7 +329,7 @@ class TestFileNotificationChannel:
         assert result is True
         
         # Read the file and verify content
-        with open(channel.file_path, 'r') as f:
+        with open(channel.file_path) as f:
             content = f.read()
             assert "test_file" in content
             assert "File message" in content
@@ -342,7 +345,7 @@ class TestFileNotificationChannel:
             message="First message",
             data={"msg": "First"},
             priority=NotificationPriority.LOW,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         notif2 = Notification(
             id="test2",
@@ -351,13 +354,13 @@ class TestFileNotificationChannel:
             message="Second message",
             data={"msg": "Second"},
             priority=NotificationPriority.HIGH,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         
         await channel.send(notif1)
         await channel.send(notif2)
         
-        with open(channel.file_path, 'r') as f:
+        with open(channel.file_path) as f:
             lines = f.readlines()
             assert len(lines) == 2
             assert "test1" in lines[0]
@@ -376,7 +379,7 @@ class TestFileNotificationChannel:
             message="Test message",
             data={"message": "Test"},
             priority=NotificationPriority.MEDIUM,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC)
         )
         
         with patch('fastmcp.task_management.infrastructure.notification_service.logger') as mock_logger:
@@ -662,7 +665,9 @@ class TestNotificationServiceSingleton:
     @pytest.mark.asyncio
     async def test_get_notification_service_singleton(self):
         """Test that get_notification_service returns the same instance."""
-        from fastmcp.task_management.infrastructure.notification_service import get_notification_service
+        from fastmcp.task_management.infrastructure.notification_service import (
+            get_notification_service,
+        )
         
         service1 = get_notification_service()
         service2 = get_notification_service()

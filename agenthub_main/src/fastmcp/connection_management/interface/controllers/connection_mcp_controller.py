@@ -4,6 +4,8 @@ This controller provides a basic health check endpoint for system monitoring.
 Simplified from the original complex controller to focus only on essential health monitoring.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -37,7 +39,7 @@ class ConnectionMCPController:
         self._connection_facade = connection_facade
         logger.info("Simplified ConnectionMCPController initialized with health check only")
     
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """Register simplified health check tool with the FastMCP server"""
         
         @mcp.tool(description="Basic health check endpoint for system monitoring")

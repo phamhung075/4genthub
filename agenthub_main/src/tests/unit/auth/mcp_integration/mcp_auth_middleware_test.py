@@ -5,16 +5,15 @@ This module tests the MCPAuthMiddleware which extracts JWT tokens from HTTP
 Authorization headers and sets the user context for MCP operations.
 """
 
-import pytest
-import logging
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from contextvars import ContextVar
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+
+from fastmcp.auth.mcp_integration.jwt_auth_backend import MCPUserContext
 from fastmcp.auth.mcp_integration.mcp_auth_middleware import (
     MCPAuthMiddleware,
-    get_mcp_auth_middleware
+    get_mcp_auth_middleware,
 )
-from fastmcp.auth.mcp_integration.jwt_auth_backend import MCPUserContext
 from fastmcp.auth.middleware.request_context_middleware import current_user_context
 
 
@@ -200,7 +199,7 @@ class TestMCPAuthMiddleware:
         send = AsyncMock()
         
         # Set an initial context value
-        initial_token = current_user_context.set(None)
+        current_user_context.set(None)
         
         await middleware(scope, receive, send)
         

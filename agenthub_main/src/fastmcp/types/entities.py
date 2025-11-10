@@ -3,6 +3,8 @@ Entity DTOs - Core domain objects
 Matches frontend types in api.types.ts
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -63,7 +65,7 @@ class TaskDTO(BaseModel):
     progress_percentage: int | None = None
     progress_history: dict[str, Any] | None = None
     progress_count: int | None = None
-    subtasks: list['SubtaskDTO'] | None = None
+    subtasks: list[SubtaskDTO] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -130,8 +132,8 @@ class ProjectDTO(BaseModel):
     status: str | None = None
     branch_count: int | None = None
     task_count: int | None = None
-    git_branchs: dict[str, 'BranchDTO'] | None = None  # API returns Record<string, Branch>
-    branches: list['BranchDTO'] | None = None  # Legacy array format
+    git_branchs: dict[str, BranchDTO] | None = None  # API returns Record<string, Branch>
+    branches: list[BranchDTO] | None = None  # Legacy array format
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,16 +1,24 @@
 """Unit tests for TemplateDomainService"""
 
-import pytest
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock
-from typing import List, Dict, Any
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.domain.services.template_domain_service import TemplateDomainService
-from fastmcp.task_management.domain.entities.template import Template, TemplateRenderRequest, TemplateUsage
-from fastmcp.task_management.domain.value_objects.template_id import TemplateId
-from fastmcp.task_management.domain.value_objects.template_enums import (
-    TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
+import pytest
+
+from fastmcp.task_management.domain.entities.template import (
+    Template,
+    TemplateRenderRequest,
 )
+from fastmcp.task_management.domain.services.template_domain_service import (
+    TemplateDomainService,
+)
+from fastmcp.task_management.domain.value_objects.template_enums import (
+    TemplateCategory,
+    TemplatePriority,
+    TemplateStatus,
+    TemplateType,
+)
+from fastmcp.task_management.domain.value_objects.template_id import TemplateId
 
 
 class TestTemplateDomainService:
@@ -269,7 +277,7 @@ class TestTemplateDomainService:
         template_id = TemplateId.generate_new()
         
         with patch('fastmcp.task_management.domain.services.template_domain_service.datetime') as mock_dt:
-            mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+            mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
             mock_dt.now.return_value = mock_now
             
             usage = service.create_template_usage(

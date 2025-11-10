@@ -1,13 +1,11 @@
 """Unit tests for EventDispatcher domain service"""
 
-import pytest
-from unittest.mock import Mock, patch, call
-import logging
+from unittest.mock import Mock, patch
 
 from fastmcp.task_management.domain.services.event_dispatcher import (
     EventDispatcher,
+    dispatch_domain_event,
     get_event_dispatcher,
-    dispatch_domain_event
 )
 
 

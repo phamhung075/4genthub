@@ -1,5 +1,7 @@
 """Information about a task from tasks.json"""
 
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass
 
 from ....domain.value_objects.priority import Priority

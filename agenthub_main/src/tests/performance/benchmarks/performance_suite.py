@@ -6,15 +6,18 @@ the agenthub system including metrics collection, resource monitoring,
 and result reporting.
 """
 
-import time
-import psutil
-import statistics
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Union
-from pathlib import Path
-from datetime import datetime
+from __future__ import annotations
+
 import json
 import logging
+import statistics
+import time
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +28,7 @@ class PerformanceMetric:
     name: str
     value: float
     unit: str
-    target: Optional[float] = None
+    target: float | None = None
     category: str = "general"
     timestamp: float = field(default_factory=time.time)
     
@@ -50,12 +53,12 @@ class ResourceUsage:
 class BenchmarkResult:
     """Results from a performance benchmark."""
     benchmark_name: str
-    metrics: List[PerformanceMetric]
+    metrics: list[PerformanceMetric]
     success_rate: float
     execution_time: float
-    resource_usage: List[ResourceUsage] = field(default_factory=list)
-    error_details: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    resource_usage: list[ResourceUsage] = field(default_factory=list)
+    error_details: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
     
     @property
@@ -63,14 +66,14 @@ class BenchmarkResult:
         """Check if all metrics with targets meet their thresholds."""
         return all(metric.meets_target for metric in self.metrics if metric.target is not None)
     
-    def get_metric(self, name: str) -> Optional[PerformanceMetric]:
+    def get_metric(self, name: str) -> PerformanceMetric | None:
         """Get specific metric by name."""
         for metric in self.metrics:
             if metric.name == name:
                 return metric
         return None
     
-    def get_metrics_by_category(self, category: str) -> List[PerformanceMetric]:
+    def get_metrics_by_category(self, category: str) -> list[PerformanceMetric]:
         """Get all metrics in specific category."""
         return [metric for metric in self.metrics if metric.category == category]
 
@@ -79,7 +82,7 @@ class ResourceMonitor:
     """System resource monitoring utility."""
     
     def __init__(self):
-        self.samples: List[ResourceUsage] = []
+        self.samples: list[ResourceUsage] = []
         self.monitoring = False
         
     def start_monitoring(self):
@@ -88,7 +91,7 @@ class ResourceMonitor:
         self.samples.clear()
         self.sample_resources()
         
-    def stop_monitoring(self) -> List[ResourceUsage]:
+    def stop_monitoring(self) -> list[ResourceUsage]:
         """Stop monitoring and return samples."""
         if self.monitoring:
             self.sample_resources()
@@ -116,13 +119,13 @@ class ResourceMonitor:
         except Exception as e:
             logger.warning(f"Failed to sample resources: {e}")
     
-    def get_peak_usage(self) -> Optional[ResourceUsage]:
+    def get_peak_usage(self) -> ResourceUsage | None:
         """Get peak resource usage."""
         if not self.samples:
             return None
         return max(self.samples, key=lambda s: s.memory_mb)
     
-    def get_average_usage(self) -> Optional[ResourceUsage]:
+    def get_average_usage(self) -> ResourceUsage | None:
         """Get average resource usage."""
         if not self.samples:
             return None
@@ -158,7 +161,7 @@ class PerformanceBenchmark:
         raise NotImplementedError("Subclasses must implement run_benchmark")
     
     def create_metric(self, name: str, value: float, unit: str, 
-                     target: Optional[float] = None, category: str = "general") -> PerformanceMetric:
+                     target: float | None = None, category: str = "general") -> PerformanceMetric:
         """Create a performance metric."""
         return PerformanceMetric(
             name=name,
@@ -172,8 +175,8 @@ class PerformanceBenchmark:
 class PerformanceSuite:
     """Collection of performance benchmarks with comprehensive reporting."""
     
-    def __init__(self, output_dir: Optional[Path] = None):
-        self.benchmarks: List[PerformanceBenchmark] = []
+    def __init__(self, output_dir: Path | None = None):
+        self.benchmarks: list[PerformanceBenchmark] = []
         self.output_dir = output_dir or Path(__file__).parent / "results"
         self.output_dir.mkdir(exist_ok=True, parents=True)
         
@@ -181,7 +184,7 @@ class PerformanceSuite:
         """Add benchmark to suite."""
         self.benchmarks.append(benchmark)
         
-    async def run_all_benchmarks(self) -> List[BenchmarkResult]:
+    async def run_all_benchmarks(self) -> list[BenchmarkResult]:
         """Run all benchmarks in suite."""
         results = []
         
@@ -212,7 +215,7 @@ class PerformanceSuite:
                 
         return results
     
-    def save_results(self, results: List[BenchmarkResult], filename: str = None):
+    def save_results(self, results: list[BenchmarkResult], filename: str = None):
         """Save benchmark results to file."""
         if not filename:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -257,7 +260,7 @@ class PerformanceSuite:
         logger.info(f"📊 Results saved to: {output_file}")
         return output_file
     
-    def generate_report(self, results: List[BenchmarkResult]) -> str:
+    def generate_report(self, results: list[BenchmarkResult]) -> str:
         """Generate human-readable performance report."""
         report_lines = []
         report_lines.append("=" * 80)
@@ -270,7 +273,7 @@ class PerformanceSuite:
         overall_success = statistics.mean([r.success_rate for r in results]) if results else 0.0
         total_time = sum(r.execution_time for r in results)
         
-        report_lines.append(f"Summary:")
+        report_lines.append("Summary:")
         report_lines.append(f"  Total Benchmarks: {len(results)}")
         report_lines.append(f"  Successful: {successful}/{len(results)}")
         report_lines.append(f"  Overall Success Rate: {overall_success:.1%}")

@@ -1,8 +1,8 @@
 """Project Builder for Test Data Creation"""
 
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
+from typing import Any
 
 
 class ProjectBuilder:
@@ -15,9 +15,9 @@ class ProjectBuilder:
         self.description = "Test project description"
         self.user_id = "test-user"
         self.status = "active"
-        self.created_at = datetime.now(timezone.utc)
-        self.updated_at = datetime.now(timezone.utc)
-        self.metadata: Dict[str, Any] = {}
+        self.created_at = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
+        self.metadata: dict[str, Any] = {}
 
     def with_id(self, project_id: str) -> 'ProjectBuilder':
         """Set project ID."""
@@ -49,7 +49,7 @@ class ProjectBuilder:
         self.metadata[key] = value
         return self
 
-    def build(self) -> Dict[str, Any]:
+    def build(self) -> dict[str, Any]:
         """Build and return the project data dictionary."""
         return {
             "id": self.project_id,

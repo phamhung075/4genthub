@@ -1,12 +1,16 @@
 """Test suite for Server Repository Interface"""
 
-import pytest
-from abc import ABC, abstractmethod
-from typing import Optional
+from __future__ import annotations
+
+from abc import ABC
 from unittest.mock import Mock
 
-from fastmcp.connection_management.domain.repositories.server_repository import ServerRepository
+import pytest
+
 from fastmcp.connection_management.domain.entities.server import Server
+from fastmcp.connection_management.domain.repositories.server_repository import (
+    ServerRepository,
+)
 
 
 class TestServerRepository:
@@ -67,10 +71,10 @@ class MockServerRepository(ServerRepository):
     """Mock implementation of ServerRepository for testing"""
 
     def __init__(self):
-        self.current_server: Optional[Server] = None
+        self.current_server: Server | None = None
         self.call_log: list = []
 
-    def get_current_server(self) -> Optional[Server]:
+    def get_current_server(self) -> Server | None:
         self.call_log.append("get_current_server()")
         return self.current_server
 
@@ -268,7 +272,7 @@ class TestRepositoryContractCompliance:
         
         # This should work - all methods implemented
         class CompleteServerRepository(ServerRepository):
-            def get_current_server(self) -> Optional[Server]:
+            def get_current_server(self) -> Server | None:
                 return None
             def save_server(self, server: Server) -> None:
                 pass
@@ -286,7 +290,7 @@ class TestRepositoryContractCompliance:
         
         # This should fail - missing methods
         class IncompleteServerRepository(ServerRepository):
-            def get_current_server(self) -> Optional[Server]:
+            def get_current_server(self) -> Server | None:
                 return None
             # Missing other required methods
         

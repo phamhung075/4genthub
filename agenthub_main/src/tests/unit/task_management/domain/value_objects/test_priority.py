@@ -1,7 +1,11 @@
 """Unit tests for Priority value object."""
 
 import pytest
-from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
+
+from fastmcp.task_management.domain.value_objects.priority import (
+    Priority,
+    PriorityLevel,
+)
 
 
 class TestPriorityCreation:

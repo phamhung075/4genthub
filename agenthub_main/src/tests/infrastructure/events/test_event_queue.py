@@ -21,28 +21,23 @@ Coverage Target: 100% for both classes
 Thread Safety: All tests verify concurrent access safety
 """
 
-import pytest
-import time
 import threading
+import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
-from unittest.mock import Mock, patch, MagicMock
-from queue import Empty, Full
+from unittest.mock import Mock, patch
 
+import pytest
+
+from fastmcp.task_management.domain.events.base import BaseDomainEvent
 from fastmcp.task_management.infrastructure.events.event_queue import (
     EventQueue,
     QueueState,
-    QueueMetrics,
 )
 from fastmcp.task_management.infrastructure.events.event_worker import (
-    EventWorker,
-    EventQueueItem,
     DeadLetterEvent,
-    RETRY_BACKOFF_SCHEDULE,
+    EventWorker,
 )
-from fastmcp.task_management.domain.events.base import BaseDomainEvent
-
 
 # Test Fixtures and Helpers
 # ========================
@@ -109,8 +104,8 @@ class _MockTestEventQueueBasicOperations:
     def test_initialization(self, event_queue):
         """Test queue initializes with correct defaults."""
         assert event_queue.size() == 0
-        assert event_queue.is_empty() == True
-        assert event_queue.is_full() == False
+        assert event_queue.is_empty()
+        assert not event_queue.is_full()
         assert event_queue._maxsize == 1000
         assert event_queue._state == QueueState.RUNNING
 
@@ -118,15 +113,15 @@ class _MockTestEventQueueBasicOperations:
         """Test basic put/get operations."""
         # Put event
         result = event_queue.put(mock_event)
-        assert result == True
+        assert result
         assert event_queue.size() == 1
-        assert event_queue.is_empty() == False
+        assert not event_queue.is_empty()
 
         # Get event
         retrieved = event_queue.get(block=False)
         assert retrieved is mock_event
         assert event_queue.size() == 0
-        assert event_queue.is_empty() == True
+        assert event_queue.is_empty()
 
     def test_fifo_ordering(self, event_queue):
         """Test FIFO ordering is maintained."""
@@ -145,7 +140,7 @@ class _MockTestEventQueueBasicOperations:
     def test_put_nowait_convenience_method(self, event_queue, mock_event):
         """Test put_nowait convenience method."""
         result = event_queue.put_nowait(mock_event)
-        assert result == True
+        assert result
         assert event_queue.size() == 1
 
     def test_get_nowait_convenience_method(self, event_queue, mock_event):
@@ -173,13 +168,13 @@ class _MockTestEventQueueBasicOperations:
 
     def test_is_full_detection(self, small_queue):
         """Test is_full() correctly detects full queue."""
-        assert small_queue.is_full() == False
+        assert not small_queue.is_full()
 
         small_queue.put(_MockTestEvent(data="1"))
-        assert small_queue.is_full() == False
+        assert not small_queue.is_full()
 
         small_queue.put(_MockTestEvent(data="2"))
-        assert small_queue.is_full() == True
+        assert small_queue.is_full()
 
 
 class _MockTestEventQueueBlockingOperations:
@@ -207,7 +202,7 @@ class _MockTestEventQueueBlockingOperations:
 
         thread.join()
 
-        assert result == True
+        assert result
         assert elapsed >= 0.2  # Waited for space
         assert elapsed < 1.0   # Didn't timeout
 
@@ -222,7 +217,7 @@ class _MockTestEventQueueBlockingOperations:
         result = small_queue.put(_MockTestEvent(data="3"), block=True, timeout=0.1)
         elapsed = time.time() - start
 
-        assert result == False  # Failed due to timeout
+        assert not result  # Failed due to timeout
         assert 0.05 < elapsed < 0.2  # Approximately 0.1s timeout
 
     def test_non_blocking_put_drops_when_full(self, small_queue):
@@ -233,7 +228,7 @@ class _MockTestEventQueueBlockingOperations:
 
         # Non-blocking put should fail immediately
         result = small_queue.put(_MockTestEvent(data="3"), block=False)
-        assert result == False
+        assert not result
 
         # Metrics should track drop
         metrics = small_queue.get_metrics()
@@ -437,12 +432,12 @@ class _MockTestEventQueueBackpressure:
     def test_backpressure_drops_events_when_full(self, small_queue):
         """Test backpressure mechanism drops events when queue full."""
         # Fill queue
-        assert small_queue.put(_MockTestEvent(data="1")) == True
-        assert small_queue.put(_MockTestEvent(data="2")) == True
+        assert small_queue.put(_MockTestEvent(data="1"))
+        assert small_queue.put(_MockTestEvent(data="2"))
 
         # Queue full - next put should drop
         result = small_queue.put(_MockTestEvent(data="3"), block=False)
-        assert result == False
+        assert not result
 
         metrics = small_queue.get_metrics()
         assert metrics["total_dropped"] == 1
@@ -489,14 +484,14 @@ class _MockTestEventQueueStateManagement:
     def test_pause_drops_events(self, event_queue, mock_event):
         """Test paused queue drops new events."""
         # Normal operation
-        assert event_queue.put(mock_event) == True
+        assert event_queue.put(mock_event)
 
         # Pause queue
         event_queue.pause()
 
         # Events should be dropped
         result = event_queue.put(_MockTestEvent(data="dropped"))
-        assert result == False
+        assert not result
 
         metrics = event_queue.get_metrics()
         assert metrics["state"] == "paused"
@@ -505,10 +500,10 @@ class _MockTestEventQueueStateManagement:
     def test_resume_after_pause(self, event_queue, mock_event):
         """Test queue resumes normal operation after pause."""
         event_queue.pause()
-        assert event_queue.put(mock_event) == False  # Dropped
+        assert not event_queue.put(mock_event)  # Dropped
 
         event_queue.resume()
-        assert event_queue.put(mock_event) == True  # Accepted
+        assert event_queue.put(mock_event)  # Accepted
 
         metrics = event_queue.get_metrics()
         assert metrics["state"] == "running"
@@ -562,7 +557,7 @@ class _MockTestEventQueueStateManagement:
 
         assert removed == 10
         assert event_queue.size() == 0
-        assert event_queue.is_empty() == True
+        assert event_queue.is_empty()
 
 
 class _MockTestEventQueueMetrics:
@@ -694,7 +689,7 @@ class _MockTestEventQueueEdgeCases:
         # Force an error by mocking the internal queue
         with patch.object(event_queue._queue, 'put', side_effect=Exception("Test error")):
             result = event_queue.put(_MockTestEvent())
-            assert result == False
+            assert not result
 
         metrics = event_queue.get_metrics()
         assert metrics["total_errors"] >= 1
@@ -723,13 +718,13 @@ class _MockTestEventWorkerLifecycle:
             heartbeat_interval=10
         )
 
-        assert worker._running == False
+        assert not worker._running
         assert worker._worker_thread is None
         assert worker._heartbeat_interval == 10
 
         stats = worker.get_stats()
         assert stats["events_processed"] == 0
-        assert stats["is_running"] == False
+        assert not stats["is_running"]
 
     def test_worker_start(self, event_worker):
         """Test worker starts successfully."""
@@ -738,9 +733,9 @@ class _MockTestEventWorkerLifecycle:
         # Give thread time to start
         time.sleep(0.1)
 
-        assert event_worker._running == True
+        assert event_worker._running
         assert event_worker._worker_thread is not None
-        assert event_worker._worker_thread.is_alive() == True
+        assert event_worker._worker_thread.is_alive()
 
     def test_worker_start_is_idempotent(self, event_worker):
         """Test multiple start calls have no adverse effects."""
@@ -750,7 +745,7 @@ class _MockTestEventWorkerLifecycle:
         # Second start should be no-op
         event_worker.start()
 
-        assert event_worker._running == True
+        assert event_worker._running
 
     def test_worker_stop(self, event_worker):
         """Test worker stops gracefully."""
@@ -759,22 +754,22 @@ class _MockTestEventWorkerLifecycle:
 
         event_worker.stop(timeout=2)
 
-        assert event_worker._running == False
+        assert not event_worker._running
         if event_worker._worker_thread:
-            assert event_worker._worker_thread.is_alive() == False
+            assert not event_worker._worker_thread.is_alive()
 
     def test_worker_stop_without_start(self, event_worker):
         """Test stop on non-running worker is safe."""
         # Should not raise
         event_worker.stop()
-        assert event_worker._running == False
+        assert not event_worker._running
 
     def test_worker_thread_is_non_daemon(self, event_worker):
         """Test worker thread is non-daemon for graceful shutdown."""
         event_worker.start()
         time.sleep(0.1)
 
-        assert event_worker._worker_thread.daemon == False
+        assert not event_worker._worker_thread.daemon
 
 
 class _MockTestEventWorkerEventProcessing:
@@ -842,7 +837,7 @@ class _MockTestEventWorkerEventProcessing:
     def test_enqueue_event_returns_true_on_success(self, event_worker):
         """Test enqueue_event returns True when successful."""
         result = event_worker.enqueue_event(_MockTestEvent())
-        assert result == True
+        assert result
 
     def test_enqueue_event_returns_false_when_queue_full(self):
         """Test enqueue_event returns False when queue is full."""
@@ -852,12 +847,12 @@ class _MockTestEventWorkerEventProcessing:
         )
 
         # Fill queue
-        assert worker.enqueue_event(_MockTestEvent()) == True
-        assert worker.enqueue_event(_MockTestEvent()) == True
+        assert worker.enqueue_event(_MockTestEvent())
+        assert worker.enqueue_event(_MockTestEvent())
 
         # Queue full
         result = worker.enqueue_event(_MockTestEvent())
-        assert result == False
+        assert not result
 
         stats = worker.get_stats()
         assert stats["queue_overflow_count"] == 1
@@ -1067,11 +1062,11 @@ class _MockTestEventWorkerHealthChecks:
         event_worker.start()
         time.sleep(0.2)
 
-        assert event_worker.is_healthy() == True
+        assert event_worker.is_healthy()
 
     def test_is_healthy_false_when_stopped(self, event_worker):
         """Test is_healthy returns False when stopped."""
-        assert event_worker.is_healthy() == False
+        assert not event_worker.is_healthy()
 
     def test_is_healthy_false_with_stale_heartbeat(self, event_worker):
         """Test is_healthy returns False with stale heartbeat."""
@@ -1079,11 +1074,11 @@ class _MockTestEventWorkerHealthChecks:
         time.sleep(0.1)
 
         # Manually set stale heartbeat
-        from datetime import timezone, timedelta
-        event_worker._last_heartbeat = datetime.now(timezone.utc) - timedelta(seconds=30)
+        from datetime import UTC, timedelta
+        event_worker._last_heartbeat = datetime.now(UTC) - timedelta(seconds=30)
 
         # Should be unhealthy (heartbeat > 2x interval)
-        assert event_worker.is_healthy() == False
+        assert not event_worker.is_healthy()
 
 
 class _MockTestEventWorkerGracefulShutdown:
@@ -1252,7 +1247,7 @@ class _MockTestEventWorkerEdgeCases:
         time.sleep(2.0)
 
         # Worker should still be running
-        assert event_worker.is_healthy() == True
+        assert event_worker.is_healthy()
 
 
 # Integration Tests

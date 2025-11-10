@@ -5,6 +5,8 @@ This engine learns from historical task dependencies to predict likely dependenc
 for new tasks using machine learning techniques.
 """
 
+from __future__ import annotations
+
 import logging
 
 # Optional numpy import with fallback

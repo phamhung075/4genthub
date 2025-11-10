@@ -15,13 +15,14 @@ Expected Contract:
 - Task statistics: task_count, completed_tasks, progress_percentage
 """
 
-import pytest
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import uuid4
-from typing import Dict, Any
+
+import pytest
 
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
-from fastmcp.task_management.domain.value_objects.git_branch_id import GitBranchId
 
 
 @pytest.fixture
@@ -95,7 +96,7 @@ class TestGitBranchAPIContractBasicFields:
         Status: ✅ SHOULD PASS - Required for actual git branch reference.
 
         Frontend expects: git_branch_name: string
-        Backend has: git_branch_name: Optional[str]
+        Backend has: git_branch_name: str | None
         """
         assert hasattr(sample_git_branch, "git_branch_name"), (
             "GitBranch must have 'git_branch_name' field"
@@ -253,8 +254,8 @@ class TestGitBranchAPIContractOptionalFields:
         Status: ✅ SHOULD PASS - Agent assignment tracking.
 
         Backend has:
-        - assigned_agent_id: Optional[str] (single agent, legacy)
-        - assigned_agents: List[str] (multiple agents, current)
+        - assigned_agent_id: str | None (single agent, legacy)
+        - assigned_agents: list[str] (multiple agents, current)
         """
         assert hasattr(sample_git_branch, "assigned_agent_id"), (
             "GitBranch should have 'assigned_agent_id' field"
@@ -278,8 +279,8 @@ class TestGitBranchAPIContractTaskManagement:
         Status: ✅ SHOULD PASS - Core task tree functionality.
 
         Backend has:
-        - root_tasks: Dict[str, Task]
-        - all_tasks: Dict[str, Task]
+        - root_tasks: dict[str, Task]
+        - all_tasks: dict[str, Task]
         """
         assert hasattr(sample_git_branch, "root_tasks"), (
             "GitBranch must have 'root_tasks' field"

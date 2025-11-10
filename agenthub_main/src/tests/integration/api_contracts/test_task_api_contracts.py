@@ -20,16 +20,20 @@ Tests SHOULD PASS:
 - Progress: progress_percentage
 """
 
-import pytest
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import uuid4
-from typing import Dict, Any
 
-from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
-from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
-from fastmcp.task_management.application.dtos.task import CreateTaskRequest, TaskResponse
+import pytest
+
 from fastmcp.task_management.application.dtos.subtask import AddSubtaskRequest
-
+from fastmcp.task_management.application.dtos.task import (
+    CreateTaskRequest,
+    TaskResponse,
+)
+from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
+from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
 
 # Note: user_id, project_id, and git_branch_id fixtures are provided by conftest.py
 # These fixtures create actual database records with valid IDs, not random UUIDs
@@ -41,35 +45,45 @@ from fastmcp.task_management.application.dtos.subtask import AddSubtaskRequest
 @pytest.fixture
 def task_repository(shared_test_db, user_id):
     """Create real task repository for integration tests."""
-    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+        ORMTaskRepository,
+    )
     return ORMTaskRepository(session=None, user_id=user_id)
 
 
 @pytest.fixture
 def subtask_repository(shared_test_db, user_id):
     """Create real subtask repository for integration tests."""
-    from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+        ORMSubtaskRepository,
+    )
     return ORMSubtaskRepository(session=None, user_id=user_id)
 
 
 @pytest.fixture
 def git_branch_repository(shared_test_db, user_id):
     """Create real git branch repository for integration tests."""
-    from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
+        ORMGitBranchRepository,
+    )
     return ORMGitBranchRepository(session=None, user_id=user_id)
 
 
 @pytest.fixture
 def create_task_use_case(task_repository):
     """Create CreateTaskUseCase with real repositories."""
-    from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
+    from fastmcp.task_management.application.use_cases.create_task import (
+        CreateTaskUseCase,
+    )
     return CreateTaskUseCase(task_repository=task_repository)
 
 
 @pytest.fixture
 def add_subtask_use_case(task_repository, subtask_repository):
     """Create AddSubtaskUseCase with real repositories."""
-    from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
+    from fastmcp.task_management.application.use_cases.add_subtask import (
+        AddSubtaskUseCase,
+    )
     return AddSubtaskUseCase(
         task_repository=task_repository,
         subtask_repository=subtask_repository
@@ -215,7 +229,7 @@ class TestTaskAPIContractTimestamps:
         Status: ✅ SHOULD PASS - Confirmed match in comparison matrix.
 
         Frontend expects: created_at?: string
-        Backend returns: created_at: Optional[datetime] → serialized as ISO string
+        Backend returns: created_at: datetime | None → serialized as ISO string
         """
         assert hasattr(sample_task, "created_at"), "Task must have 'created_at' field"
 
@@ -241,7 +255,7 @@ class TestTaskAPIContractTimestamps:
         Status: ✅ SHOULD PASS - Confirmed match in comparison matrix.
 
         Frontend expects: updated_at?: string
-        Backend returns: updated_at: Optional[datetime] → serialized as ISO string
+        Backend returns: updated_at: datetime | None → serialized as ISO string
         """
         assert hasattr(sample_task, "updated_at"), "Task must have 'updated_at' field"
 
@@ -320,7 +334,7 @@ class TestTaskAPIContractMissingFields:
         Status: ❌ WILL FAIL - Backend returns full subtasks array, not count.
 
         Frontend expects: subtask_count: number
-        Backend returns: subtasks: List[Dict[str, Any]] (full array)
+        Backend returns: subtasks: list[dict[str, Any]] (full array)
 
         Impact: Frontend must count array length (inefficient, especially for large lists).
         Fix required: Add computed subtask_count field to TaskResponse.

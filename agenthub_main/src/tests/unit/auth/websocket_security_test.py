@@ -3,15 +3,17 @@ Unit tests for WebSocket security and user-scoped authorization.
 Tests the critical security fix for broadcast message filtering.
 """
 
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
 from fastapi import WebSocket
-from datetime import datetime, timezone
+
 from fastmcp.auth.domain.entities.user import User
 from fastmcp.server.routes.websocket_routes import (
-    is_user_authorized_for_message,
+    WebSocketConnection,
     connections,
-    WebSocketConnection
+    is_user_authorized_for_message,
 )
 
 
@@ -49,8 +51,8 @@ class TestWebSocketSecurity:
             user=user,
             client_id="test-client-123",
             subscription={},
-            connected_at=datetime.now(timezone.utc),
-            last_activity=datetime.now(timezone.utc)
+            connected_at=datetime.now(UTC),
+            last_activity=datetime.now(UTC)
         )
 
         # Mock database session and query
@@ -121,8 +123,8 @@ class TestWebSocketSecurity:
             user=user,
             client_id="test-client-456",
             subscription={},
-            connected_at=datetime.now(timezone.utc),
-            last_activity=datetime.now(timezone.utc)
+            connected_at=datetime.now(UTC),
+            last_activity=datetime.now(UTC)
         )
 
         # Mock database session that raises an exception

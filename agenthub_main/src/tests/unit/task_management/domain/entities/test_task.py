@@ -1,16 +1,21 @@
 """Unit tests for Task entity."""
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch
 
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
-from fastmcp.task_management.domain.events import (
-    TaskCreated, TaskUpdated, TaskDeleted
+from fastmcp.task_management.domain.events import TaskCreated, TaskUpdated
+from fastmcp.task_management.domain.value_objects.priority import (
+    Priority,
+    PriorityLevel,
 )
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatus,
+    TaskStatusEnum,
+)
+
 
 class TestTaskCreation:
     """Test entity."""
@@ -38,8 +43,8 @@ class TestTaskCreation:
         task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
         status = TaskStatus.in_progress()
         priority = Priority.high()
-        created_at = datetime.now(timezone.utc) - timedelta(days=1)
-        updated_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC) - timedelta(days=1)
+        updated_at = datetime.now(UTC)
         
         task = Task(
             id=task_id,
@@ -262,7 +267,6 @@ class TestTaskFieldUpdates:
     def test_update_priority(self):
         """Test updating task priority."""
         task = Task(title="Test", description="Test")
-        original_priority = task.priority
         original_updated = task.updated_at
         
         task.update_priority(Priority.high())
@@ -624,13 +628,13 @@ class TestTaskTimezoneHandling:
         
         assert task.created_at.tzinfo is not None
         assert task.updated_at.tzinfo is not None
-        assert task.created_at.tzinfo == timezone.utc
-        assert task.updated_at.tzinfo == timezone.utc
+        assert task.created_at.tzinfo == UTC
+        assert task.updated_at.tzinfo == UTC
     
     def test_naive_timestamp_conversion(self):
         """Test conversion of naive timestamps to UTC."""
-        naive_created = datetime.now(timezone.utc)  # Naive datetime
-        naive_updated = datetime.now(timezone.utc)
+        naive_created = datetime.now(UTC)  # Naive datetime
+        naive_updated = datetime.now(UTC)
         
         task = Task(
             title="Test",
@@ -639,8 +643,8 @@ class TestTaskTimezoneHandling:
             updated_at=naive_updated
         )
         
-        assert task.created_at.tzinfo == timezone.utc
-        assert task.updated_at.tzinfo == timezone.utc
+        assert task.created_at.tzinfo == UTC
+        assert task.updated_at.tzinfo == UTC
 
 class TestTaskDomainEvents:
     """Test entity."""

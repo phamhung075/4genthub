@@ -6,16 +6,15 @@ including automatic initialization, touch() method behavior, domain events, vali
 and edge cases. These are unit tests focused on the base class behavior.
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from time import sleep
-from unittest.mock import patch, MagicMock
 import uuid
+from datetime import UTC, datetime, timedelta
+from time import sleep
+from unittest.mock import patch
 
 from fastmcp.task_management.domain.entities.base.base_timestamp_entity import (
     BaseTimestampEntity,
+    TimestampCreatedEvent,
     TimestampUpdatedEvent,
-    TimestampCreatedEvent
 )
 
 
@@ -45,8 +44,8 @@ class TestBaseTimestampEntity:
         # Verify timestamps were automatically set
         assert entity.created_at is not None
         assert entity.updated_at is not None
-        assert entity.created_at.tzinfo == timezone.utc
-        assert entity.updated_at.tzinfo == timezone.utc
+        assert entity.created_at.tzinfo == UTC
+        assert entity.updated_at.tzinfo == UTC
 
         # Both timestamps should be the same for new entity
         assert entity.created_at == entity.updated_at
@@ -98,7 +97,7 @@ class TestBaseTimestampEntity:
         # Verify updated_at changed but created_at remained the same
         assert entity.created_at == original_created
         assert entity.updated_at > original_updated
-        assert entity.updated_at.tzinfo == timezone.utc
+        assert entity.updated_at.tzinfo == UTC
 
     def test_touch_method_fires_domain_event(self):
         """Test that touch() method fires TimestampUpdatedEvent"""
@@ -299,7 +298,7 @@ class TestBaseTimestampEntity:
     def test_timestamp_consistency_during_creation(self, mock_datetime):
         """Test that created_at and updated_at are set to same value during creation"""
         # Mock datetime.now to return consistent time
-        fixed_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        fixed_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = fixed_time
 
         entity = _MockEntity()
@@ -367,7 +366,7 @@ class TestTimestampUpdatedEvent:
 
     def test_event_creation(self):
         """Test TimestampUpdatedEvent creation and properties"""
-        old_time = datetime.now(timezone.utc)
+        old_time = datetime.now(UTC)
         new_time = old_time + timedelta(seconds=1)
 
         event = TimestampUpdatedEvent(
@@ -383,7 +382,7 @@ class TestTimestampUpdatedEvent:
 
     def test_event_to_dict(self):
         """Test TimestampUpdatedEvent to_dict method"""
-        old_time = datetime.now(timezone.utc)
+        old_time = datetime.now(UTC)
         new_time = old_time + timedelta(seconds=1)
 
         event = TimestampUpdatedEvent(
@@ -406,7 +405,7 @@ class TestTimestampCreatedEvent:
 
     def test_creation_event(self):
         """Test TimestampCreatedEvent creation and properties"""
-        created_time = datetime.now(timezone.utc)
+        created_time = datetime.now(UTC)
 
         event = TimestampCreatedEvent(
             entity_id="new-entity-789",
@@ -419,7 +418,7 @@ class TestTimestampCreatedEvent:
 
     def test_creation_event_to_dict(self):
         """Test TimestampCreatedEvent to_dict method"""
-        created_time = datetime.now(timezone.utc)
+        created_time = datetime.now(UTC)
 
         event = TimestampCreatedEvent(
             entity_id="new-entity-101112",

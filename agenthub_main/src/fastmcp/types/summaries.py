@@ -3,6 +3,8 @@ Summary DTOs - Lightweight objects for list views
 Matches frontend types in taskTypes.ts
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field

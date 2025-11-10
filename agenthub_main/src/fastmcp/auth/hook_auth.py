@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+from __future__ import annotations
+
 Hook Authentication System - Separate auth for Claude hooks
 
 This module provides authentication specifically for hook-to-MCP communication,

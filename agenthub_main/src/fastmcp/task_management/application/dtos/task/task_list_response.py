@@ -1,5 +1,7 @@
 """Response DTO for task list operations"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,7 +17,7 @@ class TaskListResponse:
     query: str | None = None
     
     @classmethod
-    def from_domain_list(cls, tasks, git_branch_repository=None, task_repository=None, filters_applied: dict[str, Any] | None = None, query: str | None = None) -> 'TaskListResponse':
+    def from_domain_list(cls, tasks, git_branch_repository=None, task_repository=None, filters_applied: dict[str, Any] | None = None, query: str | None = None) -> TaskListResponse:
         """Create response DTO from list of domain entities with batch loading optimization.
 
         BATCH LOADING IMPLEMENTATION:

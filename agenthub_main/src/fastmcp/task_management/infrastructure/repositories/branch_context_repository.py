@@ -2,6 +2,8 @@
 Branch Context Repository for unified context system.
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from contextlib import contextmanager
@@ -49,7 +51,7 @@ class BranchContextRepository(CacheInvalidationMixin, BaseORMRepository):
         self.session_factory = session_factory
         self.user_id = user_id
     
-    def with_user(self, user_id: str) -> 'BranchContextRepository':
+    def with_user(self, user_id: str) -> BranchContextRepository:
         """Create a new repository instance scoped to a specific user."""
         return BranchContextRepository(self.session_factory, user_id)
     

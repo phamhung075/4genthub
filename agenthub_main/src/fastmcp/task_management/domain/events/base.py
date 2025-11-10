@@ -5,6 +5,8 @@ This module provides the foundation for all domain events in the system.
 Events are immutable, self-contained records of state changes in aggregates.
 """
 
+from __future__ import annotations
+
 from abc import ABC
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime

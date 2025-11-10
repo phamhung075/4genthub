@@ -14,18 +14,18 @@ This module provides comprehensive test coverage for database migration function
 Target: 85%+ code coverage on database_migrations.py (230 lines)
 """
 
-import pytest
 import os
 import tempfile
-from unittest.mock import Mock, patch, MagicMock, call
-from datetime import datetime, timezone
-from sqlalchemy import create_engine, text, inspect
-from sqlalchemy.exc import SQLAlchemyError, OperationalError
+from unittest.mock import Mock, patch
+
+import pytest
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from fastmcp.database_migrations import (
     DatabaseMigrator,
     get_migrator,
-    run_startup_migrations
+    run_startup_migrations,
 )
 
 
@@ -122,7 +122,7 @@ class TestRunMigrations:
         # Cleanup
         try:
             os.unlink(db_path)
-        except:
+        except Exception:
             pass
 
     def test_run_migrations_skips_non_postgresql(self):
@@ -140,7 +140,6 @@ class TestRunMigrations:
             db_path = f.name
 
         try:
-            db_url = f"sqlite:///{db_path}"
 
             # Mock as PostgreSQL
             with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
@@ -160,14 +159,14 @@ class TestRunMigrations:
                 mock_engine.connect.return_value = mock_conn
                 mock_create_engine.return_value = mock_engine
 
-                migrator = DatabaseMigrator(database_url=f"postgresql://user:pass@localhost/db")
+                migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
                 result = migrator.run_migrations()
 
                 assert result is True
         finally:
             try:
                 os.unlink(db_path)
-            except:
+            except Exception:
                 pass
 
     def test_run_migrations_adds_progress_history_column(self):
@@ -233,7 +232,7 @@ class TestRunMigrations:
         finally:
             try:
                 os.unlink(db_path)
-            except:
+            except Exception:
                 pass
 
     def test_run_migrations_adds_progress_count_column(self):
@@ -293,7 +292,7 @@ class TestRunMigrations:
         finally:
             try:
                 os.unlink(db_path)
-            except:
+            except Exception:
                 pass
 
     def test_run_migrations_migrates_data_from_details(self, caplog):

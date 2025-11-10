@@ -6,12 +6,16 @@ This confirms that:
 - get, update, and complete operations don't require git_branch_id
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../'))
 
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.validators.context_validator import ContextValidator
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.validators.context_validator import (
+    ContextValidator,
+)
 from fastmcp.task_management.utils.response_formatter import StandardResponseFormatter
+
 
 def test_context_validation():
     """Test context validation for different operations."""
@@ -32,7 +36,7 @@ def test_context_validation():
         print(f"  Valid: {result}")
         if error:
             print(f"  Error: {error.get('error', 'N/A')}")
-        assert result == False, f"{op} should require git_branch_id"
+        assert not result, f"{op} should require git_branch_id"
 
         # Test with git_branch_id
         result, error = validator.validate_context_requirements(
@@ -41,7 +45,7 @@ def test_context_validation():
         )
         print(f"\n{op.upper()} with git_branch_id:")
         print(f"  Valid: {result}")
-        assert result == True, f"{op} should be valid with git_branch_id"
+        assert result, f"{op} should be valid with git_branch_id"
 
     # Test operations that should NOT require git_branch_id
     no_git_branch_ops = ["get", "update", "complete", "delete", "list", "search"]
@@ -55,7 +59,7 @@ def test_context_validation():
         print(f"  Valid: {result}")
         if error:
             print(f"  Error: {error}")
-        assert result == True, f"{op} should NOT require git_branch_id"
+        assert result, f"{op} should NOT require git_branch_id"
 
     print("\n" + "=" * 50)
     print("✅ All validation tests passed!")

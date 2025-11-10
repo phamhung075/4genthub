@@ -1,24 +1,31 @@
 """Unit tests for RuleCompositionService domain service"""
 
-import pytest
 import json
+from typing import Any
 from unittest.mock import Mock, patch
-from typing import List, Dict, Any
 
-from fastmcp.task_management.domain.services.rule_composition_service import (
-    RuleCompositionService,
-    IRuleCompositionService
+from fastmcp.task_management.domain.entities.rule_entity import (
+    RuleInheritance,
 )
-from fastmcp.task_management.domain.entities.rule_entity import RuleContent, RuleInheritance
-from fastmcp.task_management.domain.value_objects.rule_value_objects import CompositionResult
-from fastmcp.task_management.domain.value_objects.rule_enums import RuleFormat, ConflictResolution, InheritanceType
+from fastmcp.task_management.domain.services.rule_composition_service import (
+    IRuleCompositionService,
+    RuleCompositionService,
+)
+from fastmcp.task_management.domain.value_objects.rule_enums import (
+    ConflictResolution,
+    InheritanceType,
+    RuleFormat,
+)
+from fastmcp.task_management.domain.value_objects.rule_value_objects import (
+    CompositionResult,
+)
 
 
 class MockRuleContent:
     """Mock RuleContent entity for testing"""
     
-    def __init__(self, rule_path: str, rule_type: str = "workflow", sections: Dict[str, str] = None, 
-                 variables: Dict[str, Any] = None, parsed_content: Dict[str, Any] = None, raw_content: str = ""):
+    def __init__(self, rule_path: str, rule_type: str = "workflow", sections: dict[str, str] = None, 
+                 variables: dict[str, Any] = None, parsed_content: dict[str, Any] = None, raw_content: str = ""):
         self.rule_path = rule_path
         self.rule_type = Mock()
         self.rule_type.value = rule_type

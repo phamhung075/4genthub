@@ -9,14 +9,16 @@ Tests the repository layer for token balance operations including:
 - Usage statistics
 """
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timezone, timedelta
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from unittest.mock import Mock, patch
+from sqlalchemy.orm import sessionmaker
 
 from fastmcp.auth.infrastructure.database.models import Base, User, UserTokenBalance
-from fastmcp.auth.infrastructure.repositories.token_balance_repository import TokenBalanceRepository
+from fastmcp.auth.infrastructure.repositories.token_balance_repository import (
+    TokenBalanceRepository,
+)
 
 
 @pytest.fixture
@@ -225,7 +227,7 @@ class TestTokenBalanceRepository:
 
         # Set next_reset_at to future date
         balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
-        balance.next_reset_at = datetime.now(timezone.utc) + timedelta(days=10)
+        balance.next_reset_at = datetime.now(UTC) + timedelta(days=10)
         balance.tokens_consumed_this_month = 300
         session.commit()
 
@@ -244,7 +246,7 @@ class TestTokenBalanceRepository:
 
         # Set next_reset_at to past date
         balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
-        balance.next_reset_at = datetime.now(timezone.utc) - timedelta(days=1)
+        balance.next_reset_at = datetime.now(UTC) - timedelta(days=1)
         balance.tokens_consumed_this_month = 300
         balance.monthly_quota = 10000
         session.commit()
@@ -258,7 +260,7 @@ class TestTokenBalanceRepository:
         assert balance_after.available_tokens == 10000
         assert balance_after.tokens_consumed_this_month == 0
         assert balance_after.last_reset_at is not None
-        assert balance_after.next_reset_at > datetime.now(timezone.utc)
+        assert balance_after.next_reset_at > datetime.now(UTC)
 
     # ============================================================================
     # UPDATE QUOTA TESTS

@@ -5,6 +5,8 @@ This module contains the comprehensive documentation for the manage_agent MCP to
 Separated from the controller logic for better maintainability and organization.
 """
 
+from __future__ import annotations
+
 MANAGE_AGENT_DESCRIPTION = """
 AGENT MANAGEMENT - Registration & assignment: 33 specialized agents (coding, testing, architecture, DevOps, security, ML, etc.)
 

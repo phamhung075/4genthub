@@ -1,5 +1,7 @@
 """Context Domain Entities"""
 
+from __future__ import annotations
+
 import builtins
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -194,7 +196,7 @@ class GlobalContext:
         return result
     
     @classmethod
-    def from_dict(cls, data: builtins.dict[str, Any]) -> 'GlobalContext':
+    def from_dict(cls, data: builtins.dict[str, Any]) -> GlobalContext:
         """Create GlobalContext from dictionary with nested structure support."""
         instance = cls(
             id=data.get("id", ""),
@@ -299,7 +301,7 @@ class TaskContextUnified:
         Validate context data for business rules compliance.
 
         Returns:
-            tuple[bool, List[str]]: (is_valid, list_of_errors)
+            tuple[bool, list[str]]: (is_valid, list_of_errors)
 
         Business Rules:
         - Progress must be 0-100
@@ -770,7 +772,7 @@ class TaskContext:
         return result
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'TaskContext':
+    def from_dict(cls, data: dict[str, Any]) -> TaskContext:
         """Create TaskContext from dictionary"""
         # Handle nested format
         if 'metadata' in data:

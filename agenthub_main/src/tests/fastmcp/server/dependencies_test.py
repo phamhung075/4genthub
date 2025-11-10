@@ -5,15 +5,16 @@ This module tests the dependency injection functions used throughout the FastMCP
 Coverage target: 60%+ (currently 53.85%, gap 6.15%)
 """
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch
-from starlette.requests import Request
 from starlette.datastructures import Headers
+from starlette.requests import Request
 
 from fastmcp.server.dependencies import (
     get_context,
-    get_http_request,
     get_http_headers,
+    get_http_request,
 )
 
 
@@ -22,7 +23,7 @@ class TestGetContext:
 
     def test_get_context_with_active_context(self):
         """Test get_context returns active context when available."""
-        from fastmcp.server.context import _current_context, Context
+        from fastmcp.server.context import Context, _current_context
 
         # Create a mock context
         mock_context = MagicMock(spec=Context)

@@ -5,17 +5,20 @@ This module tests the application facade layer for agent management,
 ensuring correct orchestration between domain services and repositories.
 """
 
-import pytest
-from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock, patch
+from datetime import UTC, datetime
+from unittest.mock import Mock
 
-from fastmcp.agent_management.application.facades.agent_management_facade import AgentManagementFacade
+import pytest
+
+from fastmcp.agent_management.application.facades.agent_management_facade import (
+    AgentManagementFacade,
+)
 from fastmcp.agent_management.domain.entities import AgentTemplate, UserAgentInstance
 from fastmcp.agent_management.domain.value_objects import (
+    AgentConfiguration,
     AgentTemplateId,
     UserAgentInstanceId,
     UserId,
-    AgentConfiguration
 )
 
 
@@ -62,8 +65,8 @@ def sample_template():
         version="1.0.0",
         default_configuration=configuration,
         metadata={"source": "test"},
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
 
 
@@ -92,8 +95,8 @@ def sample_instance(sample_template):
         visibility="private",
         last_used_at=None,
         metadata={"customization_notes": "Added Grep tool and TypeScript support"},
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
 
 
@@ -257,8 +260,8 @@ class TestGetAgentForCall:
             visibility="private",
             last_used_at=None,
             metadata={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         mock_instance_repo.find_by_user_and_template_slug.return_value = default_instance
@@ -304,7 +307,7 @@ class TestGetAgentForCall:
         )
 
         # Act
-        result = facade.get_agent_for_call(user_id, agent_slug)
+        facade.get_agent_for_call(user_id, agent_slug)
 
         # Assert
         # Instance should be saved (usage tracking)
@@ -368,8 +371,8 @@ class TestGetUserInstances:
             visibility="private",
             last_used_at=None,
             metadata={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         mock_instance_repo.find_all_by_user.return_value = [sample_instance, instance2]
@@ -491,8 +494,8 @@ class TestListAvailableTemplates:
                 capabilities={}
             ),
             metadata={"source": "test"},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         mock_template_repo.find_all.return_value = [sample_template, template2]

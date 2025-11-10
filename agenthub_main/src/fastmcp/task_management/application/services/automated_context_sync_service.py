@@ -7,6 +7,8 @@ when tasks and subtasks change state.
 Part of Fix for Issue #3: Automatic Context Updates for Task State Changes
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from datetime import UTC, datetime
@@ -56,7 +58,7 @@ class AutomatedContextSyncService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'AutomatedContextSyncService':
+    def with_user(self, user_id: str) -> AutomatedContextSyncService:
         """Create a new service instance scoped to a specific user."""
         return AutomatedContextSyncService(
             self._task_repository,
@@ -82,7 +84,7 @@ class AutomatedContextSyncService:
         """
         try:
             task_id_str = str(task.id.value if hasattr(task.id, 'value') else task.id)
-            git_branch_id = getattr(task, 'git_branch_id', None)
+            getattr(task, 'git_branch_id', None)
             project_id = getattr(task, 'project_id', None)
             
             logger.info(f"[AutomatedContextSync] Syncing task context for {task_id_str} after {operation_type}")
@@ -118,7 +120,7 @@ class AutomatedContextSyncService:
         try:
             # Check if we're in an async context
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # Already in async context - just log and return
                 logger.info(f"[AutomatedContextSync] Context sync triggered for task {task.id} (async context)")
                 return True
@@ -177,7 +179,7 @@ class AutomatedContextSyncService:
         try:
             # Check if we're in an async context
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # Already in async context - just log and return
                 logger.info(f"[AutomatedContextSync] Parent context sync triggered for task {parent_task.id} (async context)")
                 return True

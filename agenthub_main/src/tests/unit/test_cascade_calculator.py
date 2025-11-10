@@ -13,23 +13,23 @@ Test Requirements:
 - Test cache functionality
 """
 
-import pytest
 import time
 import uuid
-from unittest.mock import AsyncMock, Mock, patch
-from typing import Dict, Any, List
+from unittest.mock import AsyncMock
+
+import pytest
 
 from fastmcp.task_management.domain.services.cascade_calculator import (
     CascadeCalculator,
+    CascadeResult,
     EntityType,
-    CascadeResult
 )
 from fastmcp.task_management.domain.services.protocols.cascade_data_provider import (
-    TaskCascadeData,
-    SubtaskCascadeData,
     BranchCascadeData,
+    ContextCascadeData,
     ProjectCascadeData,
-    ContextCascadeData
+    SubtaskCascadeData,
+    TaskCascadeData,
 )
 
 

@@ -1,5 +1,7 @@
 """Project Application Service following DDD patterns"""
 
+from __future__ import annotations
+
 from typing import Any
 
 from fastmcp.task_management.application.use_cases.create_git_branch import (
@@ -51,7 +53,7 @@ class ProjectApplicationService:
                     return repo_class(self._project_repository.session, user_id=self._user_id)
         return self._project_repository
     
-    def with_user(self, user_id: str) -> 'ProjectApplicationService':
+    def with_user(self, user_id: str) -> ProjectApplicationService:
         """Create a new service instance scoped to a specific user."""
         return ProjectApplicationService(self._project_repository, user_id)
     

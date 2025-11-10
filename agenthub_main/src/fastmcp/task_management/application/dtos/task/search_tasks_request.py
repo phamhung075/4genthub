@@ -1,5 +1,7 @@
 """Request DTO for searching tasks with hierarchical storage support"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 

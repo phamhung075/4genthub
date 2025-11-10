@@ -6,6 +6,8 @@ architecture using service pattern to maintain separation of concerns while pres
 AI agent guidance functionality with multi-project awareness.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

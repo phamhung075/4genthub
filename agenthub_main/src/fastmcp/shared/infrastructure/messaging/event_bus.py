@@ -4,6 +4,8 @@ This module provides a centralized event bus for publishing and subscribing
 to domain events across the application with support for async handlers.
 """
 
+from __future__ import annotations
+
 import asyncio
 import inspect
 import logging

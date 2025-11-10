@@ -5,10 +5,8 @@ Simple test script to validate the duplicate name prevention functionality.
 This script tests the domain validation services to ensure they work correctly.
 """
 
-import sys
-import os
-import asyncio
 import logging
+
 import pytest
 
 # Set up logging
@@ -22,8 +20,12 @@ async def test_project_name_validation():
     logger.info("Testing project name validation...")
 
     try:
-        from fastmcp.task_management.domain.services.project_name_validator import ProjectNameValidator
-        from fastmcp.task_management.domain.exceptions.base_exceptions import ValidationException
+        from fastmcp.task_management.domain.exceptions.base_exceptions import (
+            ValidationException,
+        )
+        from fastmcp.task_management.domain.services.project_name_validator import (
+            ProjectNameValidator,
+        )
 
         # Create a mock repository for testing
         class MockProjectRepository:
@@ -88,8 +90,12 @@ async def test_branch_name_validation():
     logger.info("Testing git branch name validation...")
 
     try:
-        from fastmcp.task_management.domain.services.git_branch_name_validator import GitBranchNameValidator
-        from fastmcp.task_management.domain.exceptions.base_exceptions import ValidationException
+        from fastmcp.task_management.domain.exceptions.base_exceptions import (
+            ValidationException,
+        )
+        from fastmcp.task_management.domain.services.git_branch_name_validator import (
+            GitBranchNameValidator,
+        )
 
         # Create a mock repository for testing
         class MockGitBranchRepository:

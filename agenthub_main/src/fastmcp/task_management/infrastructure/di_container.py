@@ -4,6 +4,8 @@ This module provides a simple DI container for managing infrastructure
 component instances and their dependencies.
 """
 
+from __future__ import annotations
+
 import logging
 from collections.abc import Callable
 from typing import Any, TypeVar

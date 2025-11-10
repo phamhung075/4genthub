@@ -9,30 +9,28 @@ and automated reporting functionality.
 
 import asyncio
 import json
-import random
-import time
-from pathlib import Path
-from datetime import datetime, timedelta
-import sys
 import os
+import random
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
 
 # Add the src directory to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from fastmcp.task_management.infrastructure.monitoring.optimization_metrics import (
-    OptimizationMetricsCollector,
-    get_global_optimization_collector
-)
 from fastmcp.task_management.infrastructure.monitoring.metrics_integration import (
-    MetricsCollectionService,
     initialize_metrics_system,
     optimization_context,
     response_optimization_tracker,
-    track_optimization
+    track_optimization,
+)
+from fastmcp.task_management.infrastructure.monitoring.optimization_metrics import (
+    get_global_optimization_collector,
 )
 from fastmcp.task_management.infrastructure.workers.metrics_reporter import (
     MetricsReporter,
-    ReportConfig
+    ReportConfig,
 )
 
 
@@ -525,7 +523,9 @@ class MetricsValidationTest:
         
         try:
             # Stop metrics collection if running
-            from fastmcp.task_management.infrastructure.monitoring.metrics_integration import get_metrics_service
+            from fastmcp.task_management.infrastructure.monitoring.metrics_integration import (
+                get_metrics_service,
+            )
             service = get_metrics_service()
             await service.stop_metrics_collection()
             

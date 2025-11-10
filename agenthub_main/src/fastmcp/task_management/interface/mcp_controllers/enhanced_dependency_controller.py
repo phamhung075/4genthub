@@ -6,6 +6,8 @@ AI-powered features including automated dependency detection, ML-based suggestio
 and intelligent graph optimization.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated, Any
@@ -44,7 +46,7 @@ class EnhancedDependencyController:
 
     def __init__(
         self,
-        task_facade: "TaskApplicationFacade",
+        task_facade: TaskApplicationFacade,
         task_repository: TaskRepository,
         dependency_resolver: DependencyResolverService,
     ):
@@ -60,7 +62,7 @@ class EnhancedDependencyController:
 
         logger.info("EnhancedDependencyController initialized with AI capabilities")
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """Register enhanced dependency management tools with MCP server"""
 
         # Main AI-enhanced dependency analysis tool

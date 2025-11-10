@@ -1,5 +1,7 @@
 """Project Health Check Use Case"""
 
+from __future__ import annotations
+
 from datetime import UTC
 from typing import Any
 

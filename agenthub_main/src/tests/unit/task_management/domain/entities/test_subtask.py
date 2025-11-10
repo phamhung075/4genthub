@@ -1,15 +1,16 @@
 """Unit tests for Subtask entity."""
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch
+
 from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.events import TaskUpdated
+from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
-from fastmcp.task_management.domain.events import TaskUpdated
+
 
 class TestSubtaskCreation:
     """Test entity."""
@@ -36,8 +37,8 @@ class TestSubtaskCreation:
         assert subtask.priority.value == "high"
         assert isinstance(subtask.created_at, datetime)
         assert isinstance(subtask.updated_at, datetime)
-        assert subtask.created_at.tzinfo == timezone.utc
-        assert subtask.updated_at.tzinfo == timezone.utc
+        assert subtask.created_at.tzinfo == UTC
+        assert subtask.updated_at.tzinfo == UTC
         assert subtask.created_at == subtask.updated_at
         assert subtask.assignees == []
     
@@ -73,8 +74,8 @@ class TestSubtaskCreation:
         )
         
         # Timestamps should be made timezone-aware
-        assert subtask.created_at.tzinfo == timezone.utc
-        assert subtask.updated_at.tzinfo == timezone.utc
+        assert subtask.created_at.tzinfo == UTC
+        assert subtask.updated_at.tzinfo == UTC
     
     def test_subtask_validation_empty_title(self):
         """Test that empty title raises ValueError."""
@@ -646,8 +647,8 @@ class TestSubtaskSerialization:
         # But to_dict should return them in external format (without @)
         data_out = subtask.to_dict()
         assert data_out["assignees"] == ["coding-agent", "devops-agent"]
-        assert subtask.created_at == datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-        assert subtask.updated_at == datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
+        assert subtask.created_at == datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        assert subtask.updated_at == datetime(2024, 1, 1, 13, 0, 0, tzinfo=UTC)
     
     def test_from_dict_minimal(self):
         """Test creating subtask from minimal dictionary data."""

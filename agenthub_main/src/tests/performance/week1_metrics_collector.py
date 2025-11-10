@@ -14,15 +14,17 @@ Features:
 - Performance regression detection
 """
 
-import json
+from __future__ import annotations
+
 import csv
-import time
+import json
 import statistics
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
-from pathlib import Path
+import time
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
 
 class MetricStatus(Enum):
@@ -39,8 +41,8 @@ class OperationMetric:
     operation_name: str
     baseline_target_ms: float
     optimized_target_ms: float
-    measurements: List[float] = field(default_factory=list)
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    measurements: list[float] = field(default_factory=list)
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     @property
     def count(self) -> int:
@@ -123,7 +125,7 @@ class OperationMetric:
 
         return MetricStatus.FAIL
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "operation_name": self.operation_name,
@@ -158,18 +160,18 @@ class Week1MetricsCollector:
     detection.
     """
 
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: Path | None = None):
         """
         Initialize metrics collector.
 
         Args:
             output_dir: Directory for saving metrics reports
         """
-        self.metrics: Dict[str, OperationMetric] = {}
+        self.metrics: dict[str, OperationMetric] = {}
         self.output_dir = output_dir or Path("./performance_reports")
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.start_time = time.time()
-        self.test_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        self.test_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
     def register_operation(
         self,
@@ -204,15 +206,15 @@ class Week1MetricsCollector:
 
         self.metrics[operation_name].measurements.append(duration_ms)
 
-    def get_metric(self, operation_name: str) -> Optional[OperationMetric]:
+    def get_metric(self, operation_name: str) -> OperationMetric | None:
         """Get metrics for a specific operation."""
         return self.metrics.get(operation_name)
 
-    def get_all_metrics(self) -> Dict[str, OperationMetric]:
+    def get_all_metrics(self) -> dict[str, OperationMetric]:
         """Get all collected metrics."""
         return self.metrics
 
-    def generate_summary(self) -> Dict[str, Any]:
+    def generate_summary(self) -> dict[str, Any]:
         """
         Generate comprehensive summary report.
 
@@ -232,7 +234,7 @@ class Week1MetricsCollector:
 
         return {
             "test_id": self.test_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "duration_seconds": round(time.time() - self.start_time, 2),
             "summary": {
                 "total_operations": total_operations,
@@ -246,7 +248,7 @@ class Week1MetricsCollector:
             "operations": operations_data
         }
 
-    def export_json(self, filename: Optional[str] = None) -> Path:
+    def export_json(self, filename: str | None = None) -> Path:
         """
         Export metrics to JSON file.
 
@@ -267,7 +269,7 @@ class Week1MetricsCollector:
 
         return filepath
 
-    def export_csv(self, filename: Optional[str] = None) -> Path:
+    def export_csv(self, filename: str | None = None) -> Path:
         """
         Export metrics to CSV file.
 
@@ -378,7 +380,7 @@ class Week1MetricsCollector:
 
         print("\n" + "="*100)
 
-    def compare_with_baseline(self, baseline_file: Path) -> Dict[str, Any]:
+    def compare_with_baseline(self, baseline_file: Path) -> dict[str, Any]:
         """
         Compare current metrics with a baseline report.
 
@@ -388,14 +390,14 @@ class Week1MetricsCollector:
         Returns:
             Comparison analysis dictionary
         """
-        with open(baseline_file, 'r') as f:
+        with open(baseline_file) as f:
             baseline_data = json.load(f)
 
         current_summary = self.generate_summary()
         comparison = {
             "baseline_test_id": baseline_data.get("test_id"),
             "current_test_id": current_summary["test_id"],
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "improvements": {},
             "regressions": {},
             "summary": {}
@@ -455,6 +457,6 @@ if __name__ == "__main__":
     json_file = collector.export_json()
     csv_file = collector.export_csv()
 
-    print(f"\nReports exported:")
+    print("\nReports exported:")
     print(f"  JSON: {json_file}")
     print(f"  CSV: {csv_file}")

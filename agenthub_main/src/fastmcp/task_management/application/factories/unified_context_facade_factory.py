@@ -4,6 +4,8 @@ Unified Context Facade Factory
 Factory for creating UnifiedContextFacade instances with proper dependency injection.
 """
 
+from __future__ import annotations
+
 import logging
 
 from ...application.facades.unified_context_facade import UnifiedContextFacade

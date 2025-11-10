@@ -1,16 +1,16 @@
 """Unit tests for DependencyValidationService domain service"""
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, MagicMock
-from typing import List, Dict, Any, Optional
+from datetime import UTC, datetime
+from unittest.mock import Mock
 
-from fastmcp.task_management.domain.services.dependency_validation_service import DependencyValidationService
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.services.dependency_validation_service import (
+    DependencyValidationService,
+)
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
 
 
 class TestDependencyValidationService:
@@ -55,7 +55,7 @@ class TestDependencyValidationService:
         )
 
     def _create_test_task(self, task_id: str, title: str, status: str = "todo", 
-                         dependencies: List[str] = None) -> Task:
+                         dependencies: list[str] = None) -> Task:
         """Helper to create test tasks with dependencies"""
         task = Task(
             title=title,
@@ -64,8 +64,8 @@ class TestDependencyValidationService:
             status=TaskStatus.from_string(status),
             priority=Priority.from_string("medium"),
             git_branch_id="test-1",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         if dependencies:
@@ -121,7 +121,7 @@ class TestDependencyValidationService:
         )
         
         all_tasks = [task_with_deps, self.dependency_task_done]
-        task_map = {str(task.id): task for task in all_tasks}
+        {str(task.id): task for task in all_tasks}
         
         self.mock_repository.find_by_id.return_value = task_with_deps
         self.mock_repository.find_all.return_value = all_tasks
@@ -554,7 +554,7 @@ class TestDependencyValidationServiceIntegration:
         self.service = DependencyValidationService(self.mock_repository, self.mock_id_validator)
 
     def _create_test_task(self, task_id: str, title: str, status: str = "todo",
-                         dependencies: List[str] = None) -> Task:
+                         dependencies: list[str] = None) -> Task:
         """Helper to create test tasks with dependencies"""
         task = Task(
             title=title,
@@ -563,8 +563,8 @@ class TestDependencyValidationServiceIntegration:
             status=TaskStatus.from_string(status),
             priority=Priority.from_string("medium"),
             git_branch_id="test-1",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         if dependencies:
@@ -691,7 +691,7 @@ class TestDependencyValidationServiceIntegration:
         assert status["can_proceed"] is False
 
     def _create_test_task(self, task_id: str, title: str, status: str = "todo", 
-                         dependencies: List[str] = None) -> Task:
+                         dependencies: list[str] = None) -> Task:
         """Helper to create test tasks with dependencies for integration tests"""
         task = Task(
             title=title,
@@ -700,8 +700,8 @@ class TestDependencyValidationServiceIntegration:
             status=TaskStatus.from_string(status),
             priority=Priority.from_string("medium"),
             git_branch_id="integration-1",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         if dependencies:

@@ -2,25 +2,23 @@
 Tests for Update Task Use Case
 """
 
-import pytest
-import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
 import logging
-from datetime import datetime, timezone, date
+from datetime import UTC, date, datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.application.use_cases.update_task import UpdateTaskUseCase
+import pytest
+
 from fastmcp.task_management.application.dtos.task import (
     UpdateTaskRequest,
-    UpdateTaskResponse,
-    TaskResponse
 )
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.application.use_cases.update_task import UpdateTaskUseCase
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.events import TaskUpdated
+from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.exceptions.task_exceptions import TaskNotFoundError
-from fastmcp.task_management.domain.events import TaskUpdated
 
 
 class TestUpdateTaskUseCase:
@@ -60,8 +58,8 @@ class TestUpdateTaskUseCase:
         task.details = "Original details"
         task.estimated_effort = "2 hours"
         task.due_date = None
-        task.created_at = datetime.now(timezone.utc)
-        task.updated_at = datetime.now(timezone.utc)
+        task.created_at = datetime.now(UTC)
+        task.updated_at = datetime.now(UTC)
         
         # Mock domain methods
         task.update_title = Mock()

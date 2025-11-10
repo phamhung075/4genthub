@@ -9,6 +9,8 @@ Date: 2025-08-16
 Task: API Optimization - Implement Response Caching
 """
 
+from __future__ import annotations
+
 import hashlib
 import inspect
 import json

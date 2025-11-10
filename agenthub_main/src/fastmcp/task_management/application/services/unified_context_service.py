@@ -3,6 +3,8 @@ Unified Context Service for all context management operations.
 Handles inheritance, delegation, caching, and business rules.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -79,7 +81,7 @@ class UnifiedContextService:
             user_id=self._user_id
         )
 
-    def with_user(self, user_id: str) -> 'UnifiedContextService':
+    def with_user(self, user_id: str) -> UnifiedContextService:
         """Create a new service instance scoped to a specific user."""
         # Create user-scoped repositories
         global_repo = self._get_user_scoped_repository_for_user(self.repositories[ContextLevel.GLOBAL], user_id)
@@ -270,10 +272,8 @@ class UnifiedContextService:
                     # Continue without auto-detection, will fail validation if git_branch_id is required
             
             # Check if this is a task context with auto-detected git_branch_id
-            auto_detected_branch_id = False
             if context_level == ContextLevel.TASK and data is not None and data.get("git_branch_id"):
                 # Check if git_branch_id was auto-detected (added by us above)
-                auto_detected_branch_id = True
                 logger.info(f"Attempting task context creation with git_branch_id: {data.get('git_branch_id')}")
             
             # Auto-create parent contexts if enabled and needed
@@ -768,8 +768,8 @@ class UnifiedContextService:
             # Normalize context_id for backward compatibility
             
             # Validate levels
-            source_level = ContextLevel(level)
-            target_level = ContextLevel(delegate_to)
+            ContextLevel(level)
+            ContextLevel(delegate_to)
             
             # Skip delegation for now (delegation service is async)
             # TODO: Make delegation service sync or skip delegation in sync mode

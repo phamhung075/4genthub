@@ -6,22 +6,27 @@ AI comprehension testing, load testing, and existing performance validations
 to provide complete Phase 4 optimization validation.
 """
 
+from __future__ import annotations
+
 import asyncio
-import time
 import json
-import statistics
+import time
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
-import logging
+from typing import Any
+
+from fastmcp.task_management.infrastructure.monitoring.metrics_collector import (
+    MetricsCollector,
+    start_global_collection,
+    stop_global_collection,
+)
 
 # Import all benchmark components
 from .. import PERFORMANCE_CONFIG, setup_performance_logger
-from .performance_suite import PerformanceSuite, BenchmarkResult, PerformanceMetric
-from .response_size_tests import ResponseSizeBenchmark
 from .ai_comprehension_tests import AIComprehensionBenchmark
 from .load_testing_suite import LoadTestingBenchmark
-from fastmcp.task_management.infrastructure.monitoring.metrics_collector import MetricsCollector, start_global_collection, stop_global_collection
+from .performance_suite import BenchmarkResult, PerformanceSuite
+from .response_size_tests import ResponseSizeBenchmark
 
 logger = setup_performance_logger()
 
@@ -29,7 +34,7 @@ logger = setup_performance_logger()
 class Phase4ComprehensiveBenchmarkSuite:
     """Complete Phase 4 performance benchmark suite."""
     
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: Path | None = None):
         self.output_dir = output_dir or Path(__file__).parent / "results" / "phase4"
         self.output_dir.mkdir(exist_ok=True, parents=True)
         
@@ -55,7 +60,7 @@ class Phase4ComprehensiveBenchmarkSuite:
             "cpu_usage_limit": PERFORMANCE_CONFIG["load_testing"]["cpu_usage_limit_percent"]
         }
     
-    async def run_comprehensive_benchmarks(self) -> Dict[str, Any]:
+    async def run_comprehensive_benchmarks(self) -> dict[str, Any]:
         """Run all Phase 4 benchmarks and return comprehensive results."""
         logger.info("=== Starting Phase 4 Comprehensive Performance Benchmark Suite ===")
         suite_start = time.perf_counter()
@@ -65,7 +70,6 @@ class Phase4ComprehensiveBenchmarkSuite:
         
         all_results = {}
         benchmark_summaries = []
-        overall_metrics = []
         
         try:
             # 1. Response Size Reduction Benchmarks
@@ -206,7 +210,7 @@ class Phase4ComprehensiveBenchmarkSuite:
             error_details=[f"Benchmark failed: {error_message}"]
         )
     
-    def _create_benchmark_summary(self, name: str, result: BenchmarkResult) -> Dict[str, Any]:
+    def _create_benchmark_summary(self, name: str, result: BenchmarkResult) -> dict[str, Any]:
         """Create summary for a benchmark result."""
         return {
             "name": name,
@@ -218,7 +222,7 @@ class Phase4ComprehensiveBenchmarkSuite:
             "key_metrics": self._extract_key_metrics(result)
         }
     
-    def _extract_key_metrics(self, result: BenchmarkResult) -> Dict[str, Any]:
+    def _extract_key_metrics(self, result: BenchmarkResult) -> dict[str, Any]:
         """Extract key metrics from benchmark result."""
         key_metrics = {}
         
@@ -233,7 +237,7 @@ class Phase4ComprehensiveBenchmarkSuite:
         
         return key_metrics
     
-    def _analyze_phase4_results(self, all_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_phase4_results(self, all_results: dict[str, Any]) -> dict[str, Any]:
         """Analyze overall Phase 4 results against targets."""
         analysis = {
             "target_analysis": {},
@@ -314,8 +318,8 @@ class Phase4ComprehensiveBenchmarkSuite:
         return analysis
     
     def _generate_comprehensive_report(self, 
-                                     all_results: Dict[str, Any], 
-                                     benchmark_summaries: List[Dict[str, Any]],
+                                     all_results: dict[str, Any], 
+                                     benchmark_summaries: list[dict[str, Any]],
                                      suite_duration: float) -> str:
         """Generate comprehensive Phase 4 performance report."""
         report_lines = []
@@ -323,7 +327,7 @@ class Phase4ComprehensiveBenchmarkSuite:
         # Header
         report_lines.extend([
             "# Phase 4 Comprehensive Performance Validation Report",
-            f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
+            f"Generated: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}",
             f"Suite Duration: {suite_duration:.2f} seconds",
             ""
         ])
@@ -422,9 +426,9 @@ class Phase4ComprehensiveBenchmarkSuite:
         
         return "\n".join(report_lines)
     
-    async def _save_comprehensive_results(self, all_results: Dict[str, Any], report: str):
+    async def _save_comprehensive_results(self, all_results: dict[str, Any], report: str):
         """Save comprehensive results to files."""
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         
         # Save JSON results
         results_file = self.output_dir / f"phase4_comprehensive_results_{timestamp}.json"
@@ -442,7 +446,7 @@ class Phase4ComprehensiveBenchmarkSuite:
         with open(metrics_file, 'w') as f:
             json.dump(metrics_report, f, indent=2, default=str)
         
-        logger.info(f"Phase 4 comprehensive results saved:")
+        logger.info("Phase 4 comprehensive results saved:")
         logger.info(f"  Results: {results_file}")
         logger.info(f"  Report: {report_file}")
         logger.info(f"  Metrics: {metrics_file}")

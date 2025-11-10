@@ -1,19 +1,18 @@
 """Unit tests for AddSubtaskUseCase with agent inheritance"""
 
-import pytest
 import uuid
-from unittest.mock import Mock, MagicMock
-from datetime import datetime, timezone
+from unittest.mock import Mock
 
+import pytest
+
+from fastmcp.task_management.application.dtos.subtask.add_subtask_request import (
+    AddSubtaskRequest,
+)
 from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
-from fastmcp.task_management.application.dtos.subtask.add_subtask_request import AddSubtaskRequest
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.exceptions import TaskNotFoundError
+from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 
 
 class TestAddSubtaskWithInheritance:
@@ -264,7 +263,6 @@ class TestAddSubtaskWithInheritance:
     
     def test_inheritance_logging_behavior(self):
         """Test that inheritance generates appropriate log messages"""
-        import logging
         from unittest.mock import patch
         
         request = AddSubtaskRequest(

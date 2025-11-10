@@ -21,18 +21,18 @@ Test Strategy:
 - Tests serve as specification for correct DTO transformation
 """
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
-from fastmcp.task_management.domain.entities.task import Task
+import pytest
+
+from fastmcp.task_management.application.dtos.task.task_response import TaskResponse
 from fastmcp.task_management.domain.entities.label import Label
 from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.application.dtos.task.task_response import TaskResponse
-
 
 # ============================================================================
 # TEST FIXTURES
@@ -92,8 +92,8 @@ def sample_task_entity():
         dependencies=[],
         git_branch_id=git_branch_id,
         estimated_effort="2 hours",
-        created_at=datetime(2025, 10, 27, 10, 0, 0, tzinfo=timezone.utc),
-        updated_at=datetime(2025, 10, 27, 12, 0, 0, tzinfo=timezone.utc),
+        created_at=datetime(2025, 10, 27, 10, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2025, 10, 27, 12, 0, 0, tzinfo=UTC),
     )
 
 
@@ -208,7 +208,7 @@ def test_dto_includes_project_id_from_git_branch_relationship(sample_task_entity
     """
     # Arrange: Simulate git_branch with project_id
     # (In real implementation, would mock git_branch_repository)
-    expected_project_id = str(uuid4())
+    str(uuid4())
 
     # Act: Convert entity to DTO
     dto = TaskResponse.from_domain(sample_task_entity)

@@ -6,6 +6,8 @@ for the unified context management tool, supporting the 4-tier hierarchy:
 GLOBAL → PROJECT → BRANCH → TASK
 """
 
+from __future__ import annotations
+
 MANAGE_UNIFIED_CONTEXT_DESCRIPTION = """
 CONTEXT MANAGEMENT - 4-tier hierarchy (Global→Project→Branch→Task): CRUD | inheritance | caching | delegation | insights
 

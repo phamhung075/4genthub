@@ -9,8 +9,10 @@ Tests the business logic methods added to TaskContextUnified entity:
 Rich Domain Model implementation with business logic methods.
 """
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
+
 from fastmcp.task_management.domain.entities.context import TaskContextUnified
 
 
@@ -543,13 +545,13 @@ class TestAddInsight:
             branch_id="br-9"
         )
 
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         context.add_insight(
             category="insight",
             content="Test insight",
             agent="test-agent"
         )
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         assert "timestamp" in context.insights[0]
         timestamp = datetime.fromisoformat(context.insights[0]["timestamp"])
@@ -714,9 +716,9 @@ class TestUpdateProgress:
             progress=50
         )
 
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         context.update_progress(75, notes="Test")
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         history_timestamp = datetime.fromisoformat(
             context.metadata["progress_history"][0]["timestamp"]

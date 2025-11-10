@@ -1,8 +1,8 @@
 """Unit tests for TaskId value object."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-import uuid
-from unittest.mock import patch, Mock
 
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 
@@ -184,7 +184,7 @@ class TestTaskIdEquality:
         
         assert subtask_id != "550e8400-e29b-41d4-a716-446655440001"
         assert subtask_id != 123
-        assert subtask_id != None
+        assert subtask_id is not None
         assert subtask_id != []
     
     def test_subtask_id_hashing(self):

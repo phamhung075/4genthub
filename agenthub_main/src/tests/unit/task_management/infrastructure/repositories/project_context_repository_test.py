@@ -5,16 +5,20 @@ Tests the project context repository functionality with correct interface
 that matches the actual repository implementation.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 import uuid
-from datetime import datetime, timezone
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.infrastructure.repositories.project_context_repository import ProjectContextRepository
-from fastmcp.task_management.infrastructure.database.models import ProjectContext as ProjectContextModel
+import pytest
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
 from fastmcp.task_management.domain.entities.context import ProjectContext
+from fastmcp.task_management.infrastructure.database.models import (
+    ProjectContext as ProjectContextModel,
+)
+from fastmcp.task_management.infrastructure.repositories.project_context_repository import (
+    ProjectContextRepository,
+)
 
 
 class TestProjectContextRepository:
@@ -94,7 +98,7 @@ class TestProjectContextRepositoryUserScoping:
             
             # Mock the _to_entity method return
             with patch.object(self.repo_user_1, '_to_entity', return_value=entity):
-                result = self.repo_user_1.create(entity)
+                self.repo_user_1.create(entity)
                 
                 # Assert that user_id is included in the model creation
                 MockModel.assert_called_once()
@@ -195,7 +199,7 @@ class TestProjectContextRepositoryUserScoping:
             MockModel.return_value = mock_model
             
             with patch.object(repo_no_user, '_to_entity', return_value=entity):
-                result = repo_no_user.create(entity)
+                repo_no_user.create(entity)
                 
                 # Assert that user_id is None
                 call_kwargs = MockModel.call_args[1]

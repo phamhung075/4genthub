@@ -1,5 +1,7 @@
 """Update Subtask Use Case"""
 
+from __future__ import annotations
+
 import logging
 
 from ...application.dtos.subtask import SubtaskResponse, UpdateSubtaskRequest
@@ -149,7 +151,7 @@ class UpdateSubtaskUseCase:
             
             # Check if we're already in an async context
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # We're in an async context, but this is a sync method
                 logger.debug(f"[UpdateSubtaskUseCase] Running in async context, context sync triggered for parent task {task_id_str}")
                 logger.info(f"[UpdateSubtaskUseCase] Parent task context sync triggered for task {task_id_str}")

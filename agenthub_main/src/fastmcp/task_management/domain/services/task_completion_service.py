@@ -1,5 +1,7 @@
 """Task Completion Service - Domain Service for Task Completion Business Rules"""
 
+from __future__ import annotations
+
 import logging
 from typing import Any, Protocol
 
@@ -49,7 +51,7 @@ class TaskCompletionService:
             task: The task to validate for completion
             
         Returns:
-            Tuple of (can_complete: bool, error_message: Optional[str])
+            Tuple of (can_complete: bool, error_message: str | None)
         """
         try:
             error_messages = []

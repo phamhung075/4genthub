@@ -18,6 +18,8 @@ NO LEGACY SUPPORT:
 - Clean implementation only
 """
 
+from __future__ import annotations
+
 import logging
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -161,7 +163,7 @@ class DatabaseUtils:
             DatabaseException: If validation fails critically
         """
         try:
-            with self.get_session() as session:
+            with self.get_session():
                 inspector = inspect(self.engine)
                 validation_results = {
                     "status": "valid",

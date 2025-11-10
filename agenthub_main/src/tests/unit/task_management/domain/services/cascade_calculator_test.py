@@ -1,14 +1,13 @@
 """Unit tests for CascadeCalculator domain service"""
-import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from datetime import datetime, timezone
 import time
-import uuid
+from unittest.mock import AsyncMock, Mock
+
+import pytest
 
 from fastmcp.task_management.domain.services.cascade_calculator import (
     CascadeCalculator,
     CascadeResult,
-    EntityType
+    EntityType,
 )
 
 
@@ -114,7 +113,7 @@ class TestCascadeCalculator:
         # Call with cache enabled
         result = await calculator.calculate_cascade("test-id", EntityType.TASK, use_cache=True)
         
-        assert result.cache_hit == True
+        assert result.cache_hit
         assert result.entity_id == "test-id"
     
     @pytest.mark.asyncio
@@ -353,7 +352,7 @@ class TestCascadeCalculator:
 
     def test_is_cache_valid_no_entry(self, calculator):
         """Test cache validity check with no entry"""
-        assert calculator._is_cache_valid("missing-key") == False
+        assert not calculator._is_cache_valid("missing-key")
     
     def test_is_cache_valid_expired(self, calculator):
         """Test cache validity check with expired entry"""
@@ -361,7 +360,7 @@ class TestCascadeCalculator:
         calculator._cache["test-key"] = Mock()
         calculator._cache_timestamps["test-key"] = time.time() - 400  # 400 seconds ago
         
-        assert calculator._is_cache_valid("test-key") == False
+        assert not calculator._is_cache_valid("test-key")
     
     def test_is_cache_valid_fresh(self, calculator):
         """Test cache validity check with fresh entry"""
@@ -369,7 +368,7 @@ class TestCascadeCalculator:
         calculator._cache["test-key"] = Mock()
         calculator._cache_timestamps["test-key"] = time.time() - 100  # 100 seconds ago
         
-        assert calculator._is_cache_valid("test-key") == True
+        assert calculator._is_cache_valid("test-key")
     
     def test_clear_cache(self, calculator):
         """Test cache clearing"""

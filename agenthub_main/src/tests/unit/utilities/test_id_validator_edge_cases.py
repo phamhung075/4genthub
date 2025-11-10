@@ -4,17 +4,17 @@ Tests complex scenarios and edge cases to ensure robust ID validation
 that prevents MCP ID vs Application ID confusion.
 """
 
+from uuid import uuid4
+
 import pytest
-from unittest.mock import patch
-from uuid import uuid4, UUID
+
 from fastmcp.utilities.id_validator import (
-    IDValidator,
     IDType,
-    ValidationResult,
     IDValidationError,
-    validate_uuid,
+    IDValidator,
+    is_mcp_task_id,
     prevent_id_confusion,
-    is_mcp_task_id
+    validate_uuid,
 )
 
 
@@ -181,7 +181,7 @@ class TestIDValidatorEdgeCases:
     def test_task_context_validation_edge_cases(self):
         """Test task context validation with edge cases."""
         task_id = str(uuid4())
-        git_branch_id = str(uuid4())
+        str(uuid4())
 
         # Test with None git_branch_id (valid scenario)
         result = self.validator.validate_task_context(task_id=task_id)
@@ -333,7 +333,6 @@ class TestIDValidatorEdgeCases:
     def test_memory_efficiency_large_batch(self):
         """Test memory efficiency with large batch of validations."""
         import gc
-        import sys
 
         # Get initial memory usage
         gc.collect()

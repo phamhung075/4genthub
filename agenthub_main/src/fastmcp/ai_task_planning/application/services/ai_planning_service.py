@@ -4,6 +4,8 @@ Core application service that orchestrates the AI task planning process.
 Coordinates requirement analysis, task generation, and plan optimization.
 """
 
+from __future__ import annotations
+
 import uuid
 from typing import Any
 

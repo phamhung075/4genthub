@@ -7,14 +7,19 @@ when the parent task is deleted, addressing the missing CASCADE configuration.
 """
 
 import uuid
-from sqlalchemy.orm import sessionmaker
+
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from fastmcp.task_management.infrastructure.database.database_config import Base
 
 # Import the ORM models
 from fastmcp.task_management.infrastructure.database.models import (
-    Task, TaskContext, Project, ProjectGitBranch
+    Project,
+    ProjectGitBranch,
+    Task,
+    TaskContext,
 )
-from fastmcp.task_management.infrastructure.database.database_config import Base
 
 
 def test_task_context_cascade_deletion():

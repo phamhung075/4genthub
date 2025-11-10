@@ -1,9 +1,11 @@
 """Agent Coordination Service for Multi-Agent Task Management"""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
 from ...domain.entities.agent import Agent
@@ -101,7 +103,7 @@ class AgentCoordinationService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
     
-    def with_user(self, user_id: str) -> 'AgentCoordinationService':
+    def with_user(self, user_id: str) -> AgentCoordinationService:
         """Create a new service instance scoped to a specific user."""
         return AgentCoordinationService(
             self.task_repository,

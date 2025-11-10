@@ -1,5 +1,7 @@
 """In-Memory Server Repository Implementation"""
 
+from __future__ import annotations
+
 from typing import Any
 
 from ...domain.entities.server import Server

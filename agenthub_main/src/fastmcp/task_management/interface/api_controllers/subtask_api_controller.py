@@ -5,6 +5,8 @@ This controller handles frontend subtask management operations following proper 
 It serves as the interface layer, delegating business logic to application facades.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import Any

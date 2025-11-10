@@ -11,15 +11,17 @@ Tests ensure proper SSL configuration for different deployment scenarios
 and prevent regression of the Docker SSL/log level fixes.
 """
 
-import pytest
 import os
-import tempfile
 import subprocess
-import logging
-from unittest.mock import Mock, patch, MagicMock
+import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
-from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+import pytest
+
+from fastmcp.task_management.infrastructure.database.database_config import (
+    DatabaseConfig,
+)
 
 
 class TestDatabaseSSLModeValidation:

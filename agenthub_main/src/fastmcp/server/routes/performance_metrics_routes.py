@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """Performance Metrics API Routes - Aggregates system performance data"""
 
+from __future__ import annotations
+
 import logging
 import os
 from datetime import datetime, timedelta

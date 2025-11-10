@@ -5,6 +5,8 @@ This module processes task-related domain events, maintains statistics,
 updates metrics, and triggers follow-up actions.
 """
 
+from __future__ import annotations
+
 import logging
 from collections import defaultdict
 from typing import Any

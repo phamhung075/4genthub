@@ -8,16 +8,26 @@ Related Investigation: Task 51155169-3077-4c5c-bd2a-9e086aaadd50 - Phase 2
 Goal: Find bugs that 120+ contract tests didn't catch by testing REAL workflows
 """
 
-import pytest
-from uuid import uuid4
 from unittest.mock import patch
+from uuid import uuid4
 
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+import pytest
+
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.facades.subtask_application_facade import (
+    SubtaskApplicationFacade,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+    ORMSubtaskRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 
 
 @pytest.fixture
@@ -47,8 +57,11 @@ def mock_auth(user_id):
 @pytest.fixture
 def project_with_branch(shared_test_db, user_id, mock_auth):
     """Create test project with git branch for E2E testing."""
-    from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
     from uuid import uuid4
+
+    from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+        DDDCompliantMCPTools,
+    )
 
     mcp_tools = DDDCompliantMCPTools(enable_vision_system=False)
 
@@ -86,7 +99,7 @@ def project_with_branch(shared_test_db, user_id, mock_auth):
             force="true",
             user_id=user_id
         )
-    except:
+    except Exception:
         pass
 
 

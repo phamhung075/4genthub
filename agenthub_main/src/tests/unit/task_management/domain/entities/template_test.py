@@ -3,23 +3,24 @@ Unit tests for Template domain entities.
 Tests Template, TemplateResult, TemplateRenderRequest, and TemplateUsage entities.
 """
 
+from datetime import UTC, datetime
+from unittest.mock import patch
+
 import pytest
-from datetime import datetime, timezone
-from unittest.mock import patch, MagicMock
 
 from fastmcp.task_management.domain.entities.template import (
     Template,
-    TemplateResult,
     TemplateRenderRequest,
-    TemplateUsage
+    TemplateResult,
+    TemplateUsage,
+)
+from fastmcp.task_management.domain.value_objects.template_enums import (
+    TemplateCategory,
+    TemplatePriority,
+    TemplateStatus,
+    TemplateType,
 )
 from fastmcp.task_management.domain.value_objects.template_id import TemplateId
-from fastmcp.task_management.domain.value_objects.template_enums import (
-    TemplateType,
-    TemplateCategory,
-    TemplateStatus,
-    TemplatePriority
-)
 
 
 class TestTemplateEntity:
@@ -46,8 +47,8 @@ class TestTemplateEntity:
             'file_patterns': ['*.py', '*.js'],
             'variables': ['variable', 'name'],
             'metadata': {'author': 'test_user', 'tags': ['test']},
-            'created_at': datetime.now(timezone.utc),
-            'updated_at': datetime.now(timezone.utc)
+            'created_at': datetime.now(UTC),
+            'updated_at': datetime.now(UTC)
         }
     
     @pytest.fixture
@@ -105,7 +106,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_update_content_with_valid_content_success(self, mock_datetime, template):
         """Test updating template content successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         new_content = 'Updated template content with {{new_variable}}'
@@ -130,7 +131,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_update_metadata_success(self, mock_datetime, template):
         """Test updating template metadata successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         new_metadata = {'version': '2.0', 'category': 'enhanced'}
@@ -154,7 +155,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_add_compatible_agent_new_agent_success(self, mock_datetime, template):
         """Test adding new compatible agent successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         new_agent = 'agent3'
@@ -179,7 +180,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_remove_compatible_agent_existing_agent_success(self, mock_datetime, template):
         """Test removing existing compatible agent successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         agent_to_remove = template.compatible_agents[0]
@@ -205,7 +206,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_add_file_pattern_new_pattern_success(self, mock_datetime, template):
         """Test adding new file pattern successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         new_pattern = '*.tsx'
@@ -229,7 +230,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_remove_file_pattern_existing_pattern_success(self, mock_datetime, template):
         """Test removing existing file pattern successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         pattern_to_remove = template.file_patterns[0]
@@ -253,7 +254,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_add_variable_new_variable_success(self, mock_datetime, template):
         """Test adding new variable successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         new_variable = 'new_var'
@@ -277,7 +278,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_remove_variable_existing_variable_success(self, mock_datetime, template):
         """Test removing existing variable successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         variable_to_remove = template.variables[0]
@@ -301,7 +302,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_activate_template_success(self, mock_datetime, template):
         """Test activating template successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         template.is_active = False
@@ -316,7 +317,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_deactivate_template_success(self, mock_datetime, template):
         """Test deactivating template successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         template.deactivate()
@@ -328,7 +329,7 @@ class TestTemplateEntity:
     @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_archive_template_success(self, mock_datetime, template):
         """Test archiving template successfully"""
-        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
         
         template.archive()
@@ -465,7 +466,7 @@ class TestTemplateResultEntity:
             content="Rendered template content",
             template_id=TemplateId.generate_new(),
             variables_used={"name": "test", "version": "1.0"},
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             generation_time_ms=150,
             cache_hit=False,
             output_path="/path/to/output.txt"
@@ -487,7 +488,7 @@ class TestTemplateResultEntity:
             content="Content",
             template_id=TemplateId.generate_new(),
             variables_used={},
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             generation_time_ms=100,
             cache_hit=True
         )
@@ -570,7 +571,7 @@ class TestTemplateUsageEntity:
             output_path="/output/generated_file.txt",
             generation_time_ms=250,
             cache_hit=False,
-            used_at=datetime.now(timezone.utc)
+            used_at=datetime.now(UTC)
         )
     
     def test_template_usage_creation_success(self, template_usage):
@@ -596,7 +597,7 @@ class TestTemplateUsageEntity:
             output_path=None,
             generation_time_ms=100,
             cache_hit=True,
-            used_at=datetime.now(timezone.utc)
+            used_at=datetime.now(UTC)
         )
         
         assert usage.task_id is None
@@ -638,8 +639,8 @@ class TestTemplateBusinessRules:
             file_patterns=['*.py'],
             variables=['var1'],
             metadata={'key': 'value'},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
     
     def test_template_version_increments_on_content_update(self, template):
@@ -764,8 +765,8 @@ class TestTemplateEdgeCases:
             file_patterns=[],
             variables=[],
             metadata={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         assert '🚀' in template.name
@@ -788,8 +789,8 @@ class TestTemplateEdgeCases:
             file_patterns=[],
             variables=[],
             metadata={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         assert template.compatible_agents == []
@@ -814,8 +815,8 @@ class TestTemplateEdgeCases:
             file_patterns=[],
             variables=[],
             metadata={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         assert len(template.content) == 10000
@@ -842,8 +843,8 @@ class TestTemplateEdgeCases:
                     'null_value': None
                 }
             },
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             version=5,
             is_active=False
         )

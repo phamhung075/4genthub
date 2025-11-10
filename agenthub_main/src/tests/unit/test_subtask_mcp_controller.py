@@ -3,17 +3,18 @@ Unit tests for SubtaskMCPController parameter fixing
 Tests the critical fix for task_id vs git_branch_id confusion
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from uuid import uuid4
 import sys
 from pathlib import Path
+from unittest.mock import Mock
+from uuid import uuid4
+
+import pytest
 
 # Add the src directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from fastmcp.task_management.interface.mcp_controllers.subtask_mcp_controller.subtask_mcp_controller import (
-    SubtaskMCPController
+    SubtaskMCPController,
 )
 
 

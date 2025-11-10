@@ -2,11 +2,16 @@
 Unit tests for GitBranchNameValidator domain service
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import AsyncMock, Mock
 
-from fastmcp.task_management.domain.services.git_branch_name_validator import GitBranchNameValidator
-from fastmcp.task_management.domain.exceptions.base_exceptions import ValidationException
+import pytest
+
+from fastmcp.task_management.domain.exceptions.base_exceptions import (
+    ValidationException,
+)
+from fastmcp.task_management.domain.services.git_branch_name_validator import (
+    GitBranchNameValidator,
+)
 
 
 class MockBranch:
@@ -74,7 +79,7 @@ class TestGitBranchNameValidator:
                 with pytest.raises(ValidationException, match="cannot contain spaces"):
                     await validator.validate_name_format(test_name)
             elif expected_char:
-                with pytest.raises(ValidationException, match=f"cannot contain the character"):
+                with pytest.raises(ValidationException, match="cannot contain the character"):
                     await validator.validate_name_format(test_name)
 
     @pytest.mark.asyncio

@@ -13,18 +13,19 @@ This module provides comprehensive test coverage for database initialization fun
 Target: 85%+ code coverage on database_init.py (86 lines)
 """
 
-import pytest
 import os
-import uuid
 import tempfile
-from unittest.mock import Mock, patch, MagicMock, call
-from datetime import datetime, timezone
-from sqlalchemy import create_engine, text, inspect
-from sqlalchemy.exc import SQLAlchemyError, OperationalError
+import uuid
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
+
+import pytest
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from fastmcp.database_init import (
     DatabaseInitializer,
-    initialize_database_for_current_user
+    initialize_database_for_current_user,
 )
 
 
@@ -156,7 +157,7 @@ class TestCreateDefaultProject:
         # Cleanup
         try:
             os.unlink(db_path)
-        except:
+        except Exception:
             pass
 
     def test_create_default_project_new_user(self, temp_sqlite_db):
@@ -292,9 +293,9 @@ class TestCreateDefaultProject:
         user_id = str(uuid.uuid4())
         initializer = DatabaseInitializer(database_url=temp_sqlite_db)
 
-        before_creation = datetime.now(timezone.utc)
+        before_creation = datetime.now(UTC)
         project_id = initializer.create_default_project(user_id)
-        after_creation = datetime.now(timezone.utc)
+        after_creation = datetime.now(UTC)
 
         # Verify timestamps
         engine = create_engine(temp_sqlite_db)
@@ -368,7 +369,7 @@ class TestInitializeForUser:
 
         try:
             os.unlink(db_path)
-        except:
+        except Exception:
             pass
 
     def test_initialize_for_user_new_user(self, temp_sqlite_db_with_tables):
@@ -452,7 +453,7 @@ class TestEnsureTablesExist:
 
         try:
             os.unlink(db_path)
-        except:
+        except Exception:
             pass
 
     @pytest.fixture
@@ -500,7 +501,7 @@ class TestEnsureTablesExist:
 
         try:
             os.unlink(db_path)
-        except:
+        except Exception:
             pass
 
     def test_ensure_tables_exist_all_present_sqlite(self, temp_sqlite_db_with_all_tables):
@@ -635,7 +636,7 @@ class TestInitializeDatabaseForCurrentUser:
 
         try:
             os.unlink(db_path)
-        except:
+        except Exception:
             pass
 
     @patch.dict(os.environ, {"CURRENT_USER_ID": "test-user-123"})
@@ -828,7 +829,7 @@ class TestSecurityScenarios:
         finally:
             try:
                 os.unlink(db_path)
-            except:
+            except Exception:
                 pass
 
 
@@ -888,7 +889,7 @@ class TestEdgeCases:
         finally:
             try:
                 os.unlink(db_path)
-            except:
+            except Exception:
                 pass
 
     def test_very_long_user_id(self):
@@ -944,7 +945,7 @@ class TestEdgeCases:
         finally:
             try:
                 os.unlink(db_path)
-            except:
+            except Exception:
                 pass
 
     def test_unicode_user_id(self):
@@ -1009,5 +1010,5 @@ class TestEdgeCases:
         finally:
             try:
                 os.unlink(db_path)
-            except:
+            except Exception:
                 pass

@@ -8,7 +8,7 @@ with support for resource-specific CRUD operations.
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class ResourcePermission:
         return f"{self.resource.value}:{self.action.value}"
     
     @classmethod
-    def from_scope(cls, scope: str) -> Optional["ResourcePermission"]:
+    def from_scope(cls, scope: str) -> "ResourcePermission" | None:
         """Create ResourcePermission from scope string"""
         try:
             if ":" not in scope:

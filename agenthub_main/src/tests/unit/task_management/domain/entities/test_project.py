@@ -1,27 +1,34 @@
 """Unit tests for Project entity."""
 
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-import asyncio
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, AsyncMock, patch
-from fastmcp.task_management.domain.entities.project import Project
+
+from fastmcp.task_management.domain.entities.agent import (
+    Agent,
+    AgentCapability,
+)
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
-from fastmcp.task_management.domain.entities.agent import Agent, AgentCapability, AgentStatus
+from fastmcp.task_management.domain.entities.project import Project
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.work_session import WorkSession
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+from fastmcp.task_management.domain.value_objects.git_branch_id import GitBranchId
 from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.project_id import ProjectId
-from fastmcp.task_management.domain.value_objects.git_branch_id import GitBranchId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
 class TestProjectCreation:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -30,7 +37,7 @@ class TestProjectCreation:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test Project creation and initialization."""
@@ -48,8 +55,8 @@ class TestProjectCreation:
         assert project.description == "A test project description"
         assert isinstance(project.created_at, datetime)
         assert isinstance(project.updated_at, datetime)
-        assert project.created_at.tzinfo == timezone.utc
-        assert project.updated_at.tzinfo == timezone.utc
+        assert project.created_at.tzinfo == UTC
+        assert project.updated_at.tzinfo == UTC
         assert project.created_at == project.updated_at
         assert len(project.git_branchs) == 0
         assert len(project.registered_agents) == 0
@@ -80,8 +87,8 @@ class TestProjectCreation:
         )
         
         # Timestamps should be made timezone-aware
-        assert project.created_at.tzinfo == timezone.utc
-        assert project.updated_at.tzinfo == timezone.utc
+        assert project.created_at.tzinfo == UTC
+        assert project.updated_at.tzinfo == UTC
     
     def test_project_hashable(self):
         """Test that projects are hashable based on ID."""
@@ -104,8 +111,11 @@ class TestGitBranchManagement:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -114,7 +124,7 @@ class TestGitBranchManagement:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test Project task tree management functionality."""
@@ -144,7 +154,7 @@ class TestGitBranchManagement:
         project = Project.create(name="Test Project")
         
         # Create first tree
-        tree1 = project.create_git_branch("feature-auth", "Auth Feature")
+        project.create_git_branch("feature-auth", "Auth Feature")
         
         # The implementation checks if any existing tree's name matches the git_branch_name parameter
         # So we need to create a tree whose name matches the git_branch_name we're trying to use
@@ -169,8 +179,8 @@ class TestGitBranchManagement:
             name="Feature Branch",
             description="Test branch",
             project_id=str(project.id),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         mock_repo.create_branch = AsyncMock(return_value=mock_tree)
 
@@ -218,8 +228,8 @@ class TestGitBranchManagement:
             name="External Tree",
             description="Created externally",
             project_id=str(project.id),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         original_updated = project.updated_at
@@ -345,8 +355,11 @@ class TestCrossTreeDependencies:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -355,7 +368,7 @@ class TestCrossTreeDependencies:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test cross-tree dependency management."""
@@ -427,7 +440,7 @@ class TestCrossTreeDependencies:
         """Test finding which tree contains a task."""
         project = Project.create(name="Test Project")
         tree1 = project.create_git_branch("tree1", "Tree 1")
-        tree2 = project.create_git_branch("tree2", "Tree 2")
+        project.create_git_branch("tree2", "Tree 2")
         
         task1 = Task.create(
             id=TaskId.from_string("550e8400e29b41d4a716446655440001"),
@@ -448,8 +461,11 @@ class TestWorkCoordination:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -458,7 +474,7 @@ class TestWorkCoordination:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test work coordination and session management."""
@@ -628,8 +644,11 @@ class TestOrchestrationStatus:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -638,7 +657,7 @@ class TestOrchestrationStatus:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test orchestration status and reporting."""
@@ -750,8 +769,11 @@ class TestDependencyCoordination:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -760,7 +782,7 @@ class TestDependencyCoordination:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test cross-tree dependency coordination."""
@@ -918,8 +940,11 @@ class TestProjectIntegration:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -928,7 +953,7 @@ class TestProjectIntegration:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Integration tests for Project functionality."""

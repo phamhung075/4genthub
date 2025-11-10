@@ -14,28 +14,35 @@ Expected Contract:
 - Proper UUID format for IDs
 """
 
-import pytest
 from datetime import datetime
 from uuid import uuid4
-from typing import Dict, Any
 
+import pytest
+
+from fastmcp.task_management.application.dtos.subtask import AddSubtaskRequest
+from fastmcp.task_management.application.dtos.task import (
+    CreateTaskRequest,
+    TaskResponse,
+)
 from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
 from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
-from fastmcp.task_management.application.dtos.subtask import AddSubtaskRequest
-from fastmcp.task_management.application.dtos.task import CreateTaskRequest, TaskResponse
 
 
 @pytest.fixture
 def task_repository(shared_test_db, user_id):
     """Create real task repository for integration tests."""
-    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+        ORMTaskRepository,
+    )
     return ORMTaskRepository(session=None, user_id=user_id)
 
 
 @pytest.fixture
 def subtask_repository(shared_test_db, user_id):
     """Create real subtask repository for integration tests."""
-    from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+        ORMSubtaskRepository,
+    )
     return ORMSubtaskRepository(session=None, user_id=user_id)
 
 
@@ -314,7 +321,7 @@ class TestSubtaskAgentInheritance:
 
         Fields only present when agent_inheritance_applied = True:
         - agent_inheritance_applied: bool
-        - inherited_assignees: List[str]
+        - inherited_assignees: list[str]
         """
         # Check if inheritance was applied
         if hasattr(sample_subtask, "agent_inheritance_applied"):

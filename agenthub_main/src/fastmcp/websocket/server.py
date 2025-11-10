@@ -8,6 +8,8 @@ and provides dual-track message processing.
 NO backward compatibility - clean v2.0 implementation only.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import Any

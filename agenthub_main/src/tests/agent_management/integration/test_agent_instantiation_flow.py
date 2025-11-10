@@ -13,19 +13,21 @@ Test Coverage:
 - User agent instance customization persistence
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
-from fastmcp.agent_management.application.facades.agent_management_facade import AgentManagementFacade
-from fastmcp.agent_management.infrastructure.repositories import (
-    ORMAgentTemplateRepository,
-    ORMUserAgentInstanceRepository
+import pytest
+
+from fastmcp.agent_management.application.facades.agent_management_facade import (
+    AgentManagementFacade,
 )
 from fastmcp.agent_management.domain.services import AgentInstantiationService
 from fastmcp.agent_management.domain.value_objects import UserId
 from fastmcp.agent_management.infrastructure.database.models import (
-    AgentTemplateORM,
-    UserAgentInstanceORM
+    UserAgentInstanceORM,
+)
+from fastmcp.agent_management.infrastructure.repositories import (
+    ORMAgentTemplateRepository,
+    ORMUserAgentInstanceRepository,
 )
 
 
@@ -206,11 +208,11 @@ class TestAgentInstantiationFlow:
 
         # Verify timestamp is recent (within last 5 seconds)
         # Ensure both datetimes are timezone-aware for comparison
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         last_used_utc = db_instance.last_used_at
         if last_used_utc.tzinfo is None:
             # If database returned timezone-naive datetime, assume UTC
-            last_used_utc = last_used_utc.replace(tzinfo=timezone.utc)
+            last_used_utc = last_used_utc.replace(tzinfo=UTC)
         time_diff = now_utc - last_used_utc
         assert time_diff < timedelta(seconds=5)
 
@@ -472,9 +474,9 @@ class TestRepositoryIntegration:
         # Arrange
         from fastmcp.agent_management.domain.entities import UserAgentInstance
         from fastmcp.agent_management.domain.value_objects import (
+            AgentConfiguration,
             UserAgentInstanceId,
             UserId,
-            AgentConfiguration
         )
 
         user_id = UserId.generate_new()
@@ -496,8 +498,8 @@ class TestRepositoryIntegration:
             visibility="private",
             last_used_at=None,
             metadata={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         repo = ORMUserAgentInstanceRepository()

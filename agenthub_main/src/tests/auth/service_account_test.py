@@ -8,20 +8,20 @@ Comprehensive test coverage for service account authentication including:
 - Error handling and edge cases
 """
 
-import pytest
-import os
 import asyncio
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+import os
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, Mock, patch
+
 import httpx
-from jose import jwt
+import pytest
 
 from fastmcp.auth.service_account import (
+    ServiceAccountAuth,
     ServiceAccountConfig,
     ServiceToken,
-    ServiceAccountAuth,
+    authenticate_service_request,
     get_service_account_auth,
-    authenticate_service_request
 )
 
 
@@ -77,7 +77,7 @@ class TestServiceToken:
     
     def test_token_expiry_calculation(self):
         """Test token expiry calculations"""
-        created = datetime.now(timezone.utc)
+        created = datetime.now(UTC)
         token = ServiceToken(
             access_token="token",
             expires_in=3600,
@@ -93,7 +93,7 @@ class TestServiceToken:
         token = ServiceToken(
             access_token="token",
             expires_in=3600,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         assert not token.is_expired
         
@@ -101,7 +101,7 @@ class TestServiceToken:
         expired_token = ServiceToken(
             access_token="token",
             expires_in=60,
-            created_at=datetime.now(timezone.utc) - timedelta(minutes=2)
+            created_at=datetime.now(UTC) - timedelta(minutes=2)
         )
         assert expired_token.is_expired
         
@@ -109,7 +109,7 @@ class TestServiceToken:
         buffer_token = ServiceToken(
             access_token="token",
             expires_in=25,  # Expires in 25 seconds (within 30 second buffer)
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         assert buffer_token.is_expired
     
@@ -118,7 +118,7 @@ class TestServiceToken:
         token = ServiceToken(
             access_token="token",
             expires_in=3600,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         
         # Should be close to 3600
@@ -128,7 +128,7 @@ class TestServiceToken:
         expired_token = ServiceToken(
             access_token="token",
             expires_in=60,
-            created_at=datetime.now(timezone.utc) - timedelta(minutes=2)
+            created_at=datetime.now(UTC) - timedelta(minutes=2)
         )
         assert expired_token.seconds_until_expiry == 0
 
@@ -277,7 +277,7 @@ class TestServiceAccountAuth:
         auth_instance._current_token = ServiceToken(
             access_token="cached.token",
             expires_in=3600,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         
         token = await auth_instance.authenticate()
@@ -293,7 +293,7 @@ class TestServiceAccountAuth:
         auth_instance._current_token = ServiceToken(
             access_token="old.token",
             expires_in=3600,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         
         mock_response = Mock()
@@ -377,7 +377,7 @@ class TestServiceAccountAuth:
                 "sub": "service-account",
                 "azp": "service-client",
                 "typ": "Bearer",
-                "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+                "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
             }
 
             result = await auth_instance.validate_token(token)
@@ -487,7 +487,7 @@ class TestServiceAccountAuth:
         auth_instance._current_token = ServiceToken(
             access_token="current.token",
             expires_in=3600,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         
         headers = auth_instance.get_auth_headers()
@@ -504,7 +504,7 @@ class TestServiceAccountAuth:
         auth_instance._current_token = ServiceToken(
             access_token="expired.token",
             expires_in=60,
-            created_at=datetime.now(timezone.utc) - timedelta(minutes=2)
+            created_at=datetime.now(UTC) - timedelta(minutes=2)
         )
         
         headers = auth_instance.get_auth_headers()
@@ -517,7 +517,7 @@ class TestServiceAccountAuth:
         auth_instance._current_token = ServiceToken(
             access_token="health.token",
             expires_in=3600,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         
         # Mock well-known endpoint
@@ -553,7 +553,7 @@ class TestServiceAccountAuth:
         auth_instance._current_token = ServiceToken(
             access_token="expiring.token",
             expires_in=35,  # Expires in 35 seconds
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         
         # Mock authenticate for refresh

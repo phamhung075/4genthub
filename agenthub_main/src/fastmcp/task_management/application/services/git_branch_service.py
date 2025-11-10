@@ -1,6 +1,8 @@
 """
 Service for managing Git Branches
 """
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -37,7 +39,7 @@ class GitBranchService:
             from .facade_service import FacadeService
             self._hierarchical_context_service = FacadeService.get_unified_context_facade(user_id=user_id)
 
-    def with_user(self, user_id: str) -> 'GitBranchService':
+    def with_user(self, user_id: str) -> GitBranchService:
         """Create a new service instance scoped to a specific user."""
         return GitBranchService(self._project_repo, self._git_branch_repo, self._hierarchical_context_service, user_id)
 

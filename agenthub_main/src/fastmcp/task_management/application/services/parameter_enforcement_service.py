@@ -6,6 +6,8 @@ It provides progressive enforcement levels from logging-only to strict blocking.
 Part of Phase 2: Core Enforcement Implementation
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -120,7 +122,7 @@ class ParameterEnforcementService:
         self.agent_compliance: dict[str, AgentCompliance] = {}
         logger.info(f"ParameterEnforcementService initialized with level: {enforcement_level.value}")
 
-    def with_user(self, user_id: str) -> 'ParameterEnforcementService':
+    def with_user(self, user_id: str) -> ParameterEnforcementService:
         """Create a new service instance scoped to a specific user."""
         return ParameterEnforcementService(self.enforcement_level, user_id)
     

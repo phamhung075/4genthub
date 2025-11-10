@@ -14,10 +14,10 @@ Expected Contract:
 - Optional: git_branchs (Record<string, Branch>), status, owner_id
 """
 
-import pytest
 from datetime import datetime
 from uuid import uuid4
-from typing import Dict, Any
+
+import pytest
 
 from fastmcp.task_management.domain.entities.project import Project
 
@@ -147,7 +147,7 @@ class TestProjectAPIContractOptionalFields:
         Status: ✅ SHOULD PASS - Standard field for branch management.
 
         Frontend expects: git_branchs?: Record<string, Branch>
-        Backend has: git_branchs: Dict[str, GitBranch]
+        Backend has: git_branchs: dict[str, GitBranch]
         """
         assert hasattr(sample_project, "git_branchs"), (
             "Project must have 'git_branchs' field"
@@ -354,7 +354,7 @@ class TestProjectAPIContractGitBranchManagement:
         Status: ✅ SHOULD PASS - Required structure for frontend.
 
         Frontend expects: git_branchs?: Record<string, Branch>
-        Backend has: git_branchs: Dict[str, GitBranch]
+        Backend has: git_branchs: dict[str, GitBranch]
         """
         assert isinstance(sample_project.git_branchs, dict), (
             "git_branchs must be dictionary"

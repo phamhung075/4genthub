@@ -5,18 +5,29 @@ Tests complete task lifecycles and mixed operations to verify
 context_data remains consistent throughout complex workflows.
 """
 
-import pytest
 import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
-from concurrent.futures import ThreadPoolExecutor
-from unittest.mock import MagicMock, AsyncMock, patch
 
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
+import pytest
+
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.update_task_request import (
+    UpdateTaskRequest,
+)
+from fastmcp.task_management.application.facades.subtask_application_facade import (
+    SubtaskApplicationFacade,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockTaskRepository, MockSubtaskRepository
+from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import (
+    MockSubtaskRepository,
+    MockTaskRepository,
+)
 
 
 @pytest.fixture
@@ -292,7 +303,7 @@ class TestMixedOperationsMaintainConsistency:
         )
 
         # 3. Create another subtask
-        subtask2 = subtask_facade.create_subtask(
+        subtask_facade.create_subtask(
             task_id=parent_id,
             title="Subtask 2",
             assignees=["agent-2"]

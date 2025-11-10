@@ -2,6 +2,8 @@
 DTO for agent update requests.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 

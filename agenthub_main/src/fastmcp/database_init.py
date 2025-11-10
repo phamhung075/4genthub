@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Database initialization - creates initial projects and branches if needed"""
 
+from __future__ import annotations
+
 import logging
 import os
 import uuid

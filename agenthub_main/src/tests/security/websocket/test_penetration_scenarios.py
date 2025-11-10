@@ -17,24 +17,23 @@ ATTACK SCENARIOS TESTED:
 Each test simulates realistic attack conditions and validates that the security fixes prevent exploitation.
 """
 
-import pytest
-import asyncio
-import jwt
-import time
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, AsyncMock, MagicMock
 import logging
+import time
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import jwt
+import pytest
+
+from fastmcp.auth.domain.entities.user import User
 from fastmcp.server.routes.websocket_routes import (
-    broadcast_data_change,
     active_connections,
+    broadcast_data_change,
     connection_subscriptions,
     connection_users,
-    validate_websocket_token,
     is_user_authorized_for_message,
-    realtime_updates
+    validate_websocket_token,
 )
-from fastmcp.auth.domain.entities.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +52,8 @@ class AttackSimulator:
             "user_id": user_id,
             "email": f"{user_id}@attacker.com",
             "aud": "authenticated",
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=expires_in_minutes),
-            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(UTC) + timedelta(minutes=expires_in_minutes),
+            "iat": datetime.now(UTC),
             **extra_claims
         }
         return jwt.encode(payload, self.secret_key, algorithm="HS256")
@@ -73,7 +72,7 @@ class AttackSimulator:
         result = {
             "attack": attack_name,
             "success": success,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "details": details
         }
         self.attack_results.append(result)
@@ -121,7 +120,7 @@ class TestTokenExpiryPersistenceAttack:
             active_connections[f"{victim_id}_conn"] = {mock_websocket}
 
             # Phase 2: Token expires (simulate time passing)
-            expired_token = attacker.create_token(victim_id, expires_in_minutes=-30)
+            attacker.create_token(victim_id, expires_in_minutes=-30)
 
             # Phase 3: Auth system detects expiry
             mock_validate.return_value = None  # Token validation now fails
@@ -169,7 +168,7 @@ class TestTokenExpiryPersistenceAttack:
         victim_id = "victim_refresh_failure"
 
         # Simulate token refresh failure scenario
-        short_lived_token = attacker.create_token(victim_id, expires_in_minutes=1)
+        attacker.create_token(victim_id, expires_in_minutes=1)
         victim_user = attacker.create_user(victim_id)
 
         mock_websocket = AsyncMock()
@@ -248,7 +247,6 @@ class TestSessionHijackingAttack:
         EXPECTED: System should detect and prevent unauthorized token usage
         """
         victim_id = "victim_token_theft"
-        attacker_id = "malicious_attacker"
 
         # Phase 1: Legitimate user's token
         legitimate_token = attacker.create_token(victim_id)
@@ -282,7 +280,7 @@ class TestSessionHijackingAttack:
         EXPECTED: System should detect unusual concurrent sessions
         """
         victim_id = "victim_concurrent"
-        token = attacker.create_token(victim_id)
+        attacker.create_token(victim_id)
         victim_user = attacker.create_user(victim_id)
 
         # Legitimate connection
@@ -324,7 +322,7 @@ class TestPermissionEscalationAttack:
         EXPECTED: Authorization system should block unauthorized data access
         """
         low_priv_user = attacker.create_user("low_priv_user")
-        admin_user = attacker.create_user("admin_user")
+        attacker.create_user("admin_user")
 
         # Low-privilege connection
         low_priv_ws = AsyncMock()
@@ -414,7 +412,7 @@ class TestCrossTenantAttack:
         EXPECTED: Strict tenant isolation should prevent cross-tenant access
         """
         tenant_a_user = attacker.create_user("tenant_a_user", "user@tenant-a.com")
-        tenant_b_user = attacker.create_user("tenant_b_user", "user@tenant-b.com")
+        attacker.create_user("tenant_b_user", "user@tenant-b.com")
 
         # Tenant A user connection
         tenant_a_ws = AsyncMock()
@@ -475,7 +473,7 @@ class TestPerformanceAttacks:
                 active_connections[f"attacker_{i}"] = {mock_ws}
                 connections_created += 1
 
-        except Exception as e:
+        except Exception:
             # Connection limit reached
             pass
 
@@ -517,7 +515,7 @@ class TestPerformanceAttacks:
                 )
                 messages_sent += 1
 
-        except Exception as e:
+        except Exception:
             # Rate limiting kicked in
             pass
 

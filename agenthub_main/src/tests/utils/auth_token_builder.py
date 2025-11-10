@@ -23,14 +23,17 @@ Usage Examples:
     >>> invalid_token = AuthTokenBuilder.generate_invalid_token(reason="bad_signature")
 """
 
-import jwt
+from __future__ import annotations
+
 import json
 import uuid
-from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Optional, Any
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import jwt
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.backends import default_backend
 
 
 class JWKSKeyPair:
@@ -61,9 +64,8 @@ class JWKSKeyPair:
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
 
-    def get_jwks(self) -> Dict[str, Any]:
+    def get_jwks(self) -> dict[str, Any]:
         """Get JWKS (JSON Web Key Set) representation."""
-        from cryptography.hazmat.primitives.asymmetric import rsa as rsa_numbers
 
         public_numbers = self.public_key.public_numbers()
 
@@ -95,7 +97,7 @@ class AuthTokenBuilder:
     """
 
     # Class-level key pair for consistent signing across tests
-    _default_key_pair: Optional[JWKSKeyPair] = None
+    _default_key_pair: JWKSKeyPair | None = None
 
     def __init__(self):
         """Initialize token builder with default values."""
@@ -107,10 +109,10 @@ class AuthTokenBuilder:
         self.issuer = "http://localhost:8080/realms/agenthub"
         self.audience = "mcp-client"
         self.subject = self.user_id
-        self.issued_at = datetime.now(timezone.utc)
+        self.issued_at = datetime.now(UTC)
         self.expires_at = self.issued_at + timedelta(hours=1)
         self.not_before = self.issued_at
-        self.custom_claims: Dict[str, Any] = {}
+        self.custom_claims: dict[str, Any] = {}
         self.key_pair = self._get_default_key_pair()
 
     @classmethod
@@ -125,86 +127,86 @@ class AuthTokenBuilder:
         """Reset the default key pair (useful for testing key rotation)."""
         cls._default_key_pair = None
 
-    def with_user_id(self, user_id: str) -> 'AuthTokenBuilder':
+    def with_user_id(self, user_id: str) -> AuthTokenBuilder:
         """Set the user ID for the token."""
         self.user_id = user_id
         self.subject = user_id
         return self
 
-    def with_email(self, email: str) -> 'AuthTokenBuilder':
+    def with_email(self, email: str) -> AuthTokenBuilder:
         """Set the email address for the token."""
         self.email = email
         return self
 
-    def with_username(self, username: str) -> 'AuthTokenBuilder':
+    def with_username(self, username: str) -> AuthTokenBuilder:
         """Set the username for the token."""
         self.username = username
         return self
 
-    def with_role(self, role: str) -> 'AuthTokenBuilder':
+    def with_role(self, role: str) -> AuthTokenBuilder:
         """Add a role to the token."""
         if role not in self.roles:
             self.roles.append(role)
         return self
 
-    def with_roles(self, roles: List[str]) -> 'AuthTokenBuilder':
+    def with_roles(self, roles: list[str]) -> AuthTokenBuilder:
         """Set multiple roles for the token."""
         self.roles = roles
         return self
 
-    def with_admin_role(self) -> 'AuthTokenBuilder':
+    def with_admin_role(self) -> AuthTokenBuilder:
         """Convenience method to add admin role and permissions."""
         self.roles.append("admin")
         self.permissions = ["mcp:*", "admin:*"]
         return self
 
-    def with_permission(self, permission: str) -> 'AuthTokenBuilder':
+    def with_permission(self, permission: str) -> AuthTokenBuilder:
         """Add a permission to the token."""
         if permission not in self.permissions:
             self.permissions.append(permission)
         return self
 
-    def with_permissions(self, permissions: List[str]) -> 'AuthTokenBuilder':
+    def with_permissions(self, permissions: list[str]) -> AuthTokenBuilder:
         """Set multiple permissions for the token."""
         self.permissions = permissions
         return self
 
-    def with_issuer(self, issuer: str) -> 'AuthTokenBuilder':
+    def with_issuer(self, issuer: str) -> AuthTokenBuilder:
         """Set the token issuer."""
         self.issuer = issuer
         return self
 
-    def with_audience(self, audience: str) -> 'AuthTokenBuilder':
+    def with_audience(self, audience: str) -> AuthTokenBuilder:
         """Set the token audience."""
         self.audience = audience
         return self
 
-    def with_expiry(self, expires_at: datetime) -> 'AuthTokenBuilder':
+    def with_expiry(self, expires_at: datetime) -> AuthTokenBuilder:
         """Set the token expiration time."""
         self.expires_at = expires_at
         return self
 
-    def with_expired_token(self, hours_ago: int = 1) -> 'AuthTokenBuilder':
+    def with_expired_token(self, hours_ago: int = 1) -> AuthTokenBuilder:
         """Create an expired token for testing token refresh/validation."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.issued_at = now - timedelta(hours=hours_ago + 1)
         self.expires_at = now - timedelta(hours=hours_ago)
         return self
 
-    def with_not_yet_valid_token(self, hours_future: int = 1) -> 'AuthTokenBuilder':
+    def with_not_yet_valid_token(self, hours_future: int = 1) -> AuthTokenBuilder:
         """Create a token that's not yet valid (nbf in future)."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.issued_at = now
         self.not_before = now + timedelta(hours=hours_future)
         self.expires_at = now + timedelta(hours=hours_future + 1)
         return self
 
-    def with_custom_claim(self, key: str, value: Any) -> 'AuthTokenBuilder':
+    def with_custom_claim(self, key: str, value: Any) -> AuthTokenBuilder:
         """Add a custom claim to the token."""
         self.custom_claims[key] = value
         return self
 
-    def with_custom_key_pair(self, key_pair: JWKSKeyPair) -> 'AuthTokenBuilder':
+    def with_custom_key_pair(self, key_pair: JWKSKeyPair) -> AuthTokenBuilder:
         """Use a custom key pair instead of the default."""
         self.key_pair = key_pair
         return self
@@ -241,7 +243,7 @@ class AuthTokenBuilder:
 
         return token
 
-    def build_with_payload(self) -> tuple[str, Dict[str, Any]]:
+    def build_with_payload(self) -> tuple[str, dict[str, Any]]:
         """Build token and return both the token string and payload.
 
         Useful for tests that need to inspect the payload.
@@ -299,7 +301,7 @@ class AuthTokenBuilder:
                 "sub": "test-user",
                 "iss": "test-issuer",
                 "aud": "test-audience",
-                "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+                "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
             }
             return jwt.encode(payload, "secret-key", algorithm="HS256")
 
@@ -307,7 +309,7 @@ class AuthTokenBuilder:
             raise ValueError(f"Unknown invalid token reason: {reason}")
 
     @staticmethod
-    def decode_token(token: str, verify: bool = False) -> Dict[str, Any]:
+    def decode_token(token: str, verify: bool = False) -> dict[str, Any]:
         """Decode a JWT token without validation (for inspection).
 
         Args:
@@ -341,11 +343,11 @@ class MockKeycloakJWKS:
         >>> # Use this in tests to mock the Keycloak JWKS endpoint
     """
 
-    def __init__(self, key_pair: Optional[JWKSKeyPair] = None):
+    def __init__(self, key_pair: JWKSKeyPair | None = None):
         """Initialize with a key pair or use the default."""
         self.key_pair = key_pair or AuthTokenBuilder._get_default_key_pair()
 
-    def get_jwks(self) -> Dict[str, Any]:
+    def get_jwks(self) -> dict[str, Any]:
         """Get the JWKS JSON structure."""
         return self.key_pair.get_jwks()
 
@@ -357,10 +359,10 @@ class MockKeycloakJWKS:
 # Convenience functions for quick token generation
 
 def create_test_token(
-    user_id: Optional[str] = None,
+    user_id: str | None = None,
     email: str = "test@example.com",
-    roles: Optional[List[str]] = None,
-    permissions: Optional[List[str]] = None,
+    roles: list[str] | None = None,
+    permissions: list[str] | None = None,
     expired: bool = False
 ) -> str:
     """Quick helper to create a test token with common parameters.

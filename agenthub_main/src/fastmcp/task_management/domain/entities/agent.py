@@ -1,5 +1,7 @@
 """Agent Domain Entity"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -308,7 +310,7 @@ class Agent(BaseTimestampEntity):
             return True
 
         # Convert agent capabilities to lowercase strings for comparison
-        agent_caps_strings = {cap.value.lower() for cap in self.capabilities}
+        {cap.value.lower() for cap in self.capabilities}
 
         # Check each requirement
         for req in task_requirements:
@@ -381,7 +383,7 @@ class Agent(BaseTimestampEntity):
                 - workload_score: float - Current workload (0.0-1.0+)
                 - current_tasks: int - Number of active tasks
                 - capacity: int - Maximum concurrent tasks
-                - blocking_reasons: List[str] - Why agent is unavailable (if applicable)
+                - blocking_reasons: list[str] - Why agent is unavailable (if applicable)
                 - estimated_capacity: int - How many more tasks can be accepted
 
         Business Rules:
@@ -446,7 +448,7 @@ class Agent(BaseTimestampEntity):
         capabilities: list[AgentCapability] = None,
         specializations: list[str] = None,
         preferred_languages: list[str] = None
-    ) -> 'Agent':
+    ) -> Agent:
         """Factory method to create a new agent"""
         # Convert string id to AgentId value object
         agent_id_vo = AgentId(agent_id) if isinstance(agent_id, str) else agent_id

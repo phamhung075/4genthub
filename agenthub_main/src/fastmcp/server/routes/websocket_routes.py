@@ -1191,13 +1191,13 @@ def cleanup_expired_notifications(older_than_hours: int = 24) -> int:
 
             # Delete undelivered notifications older than cutoff
             undelivered_deleted = session.query(MissedNotification).filter(
-                MissedNotification.delivered == False,
+                not MissedNotification.delivered,
                 MissedNotification.created_at < undelivered_cutoff
             ).delete()
 
             # Delete delivered notifications older than 7 days
             delivered_deleted = session.query(MissedNotification).filter(
-                MissedNotification.delivered == True,
+                MissedNotification.delivered,
                 MissedNotification.created_at < delivered_cutoff
             ).delete()
 

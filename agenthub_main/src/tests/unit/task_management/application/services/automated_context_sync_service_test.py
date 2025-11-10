@@ -3,18 +3,22 @@
 Tests for automated context synchronization across task and subtask operations.
 """
 
-import pytest
-import asyncio
-from unittest.mock import Mock, patch, AsyncMock
-from datetime import datetime, timezone
-from typing import Dict, Any, List
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.application.services.automated_context_sync_service import AutomatedContextSyncService
-from fastmcp.task_management.application.services.task_context_sync_service import TaskContextSyncService
-from fastmcp.task_management.domain.entities.task import Task
+import pytest
+
+from fastmcp.task_management.application.services.automated_context_sync_service import (
+    AutomatedContextSyncService,
+)
+from fastmcp.task_management.application.services.task_context_sync_service import (
+    TaskContextSyncService,
+)
 from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.repositories.subtask_repository import (
+    SubtaskRepository,
+)
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.domain.repositories.subtask_repository import SubtaskRepository
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 
 
@@ -522,7 +526,7 @@ class TestBatchOperations:
             mock_tasks.append(mock_task)
         
         # Mock repository responses
-        with patch('fastmcp.task_management.domain.value_objects.task_id.TaskId') as mock_task_id:
+        with patch('fastmcp.task_management.domain.value_objects.task_id.TaskId'):
             mock_task_repo.find_by_id.side_effect = mock_tasks
             
             results = await service.sync_multiple_tasks(task_ids)

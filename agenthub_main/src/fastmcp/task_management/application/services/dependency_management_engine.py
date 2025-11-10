@@ -5,6 +5,8 @@ This module provides an AI-enhanced dependency management system that extends th
 MCP dependency framework with intelligent analysis, automated detection, and execution optimization.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -325,7 +327,7 @@ class DependencyManagementEngine:
         
         logger.info("DependencyManagementEngine initialized")
     
-    def with_user(self, user_id: str) -> 'DependencyManagementEngine':
+    def with_user(self, user_id: str) -> DependencyManagementEngine:
         """Create a new engine instance scoped to a specific user"""
         return DependencyManagementEngine(
             self.dependency_resolver.with_user(user_id),

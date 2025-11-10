@@ -4,6 +4,8 @@ Bridge between AI planning engine and MCP task management system.
 Provides seamless integration for AI-enhanced task operations.
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from typing import Any

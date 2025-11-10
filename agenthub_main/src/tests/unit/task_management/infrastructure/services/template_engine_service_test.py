@@ -1,18 +1,21 @@
 """Unit tests for template engine infrastructure service"""
 
-import unittest
-from unittest.mock import Mock, patch, AsyncMock, MagicMock, call
-from datetime import datetime, timezone
 import json
-import hashlib
-import time
+import unittest
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.infrastructure.services.template_engine_service import TemplateEngineService
-from fastmcp.task_management.domain.entities.template import TemplateResult, TemplateRenderRequest
-from fastmcp.task_management.domain.value_objects.template_id import TemplateId
+from fastmcp.task_management.domain.entities.template import (
+    TemplateRenderRequest,
+    TemplateResult,
+)
 from fastmcp.task_management.domain.exceptions.template_exceptions import (
-    TemplateRenderError, 
-    TemplateCompilationError
+    TemplateCompilationError,
+    TemplateRenderError,
+)
+from fastmcp.task_management.domain.value_objects.template_id import TemplateId
+from fastmcp.task_management.infrastructure.services.template_engine_service import (
+    TemplateEngineService,
 )
 
 
@@ -98,7 +101,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
             'content': 'Cached content',
             'template_id': str(template_id.value),
             'variables_used': {'test': 'value'},
-            'generated_at': datetime.now(timezone.utc).isoformat(),
+            'generated_at': datetime.now(UTC).isoformat(),
             'generation_time_ms': 50,
             'cache_hit': True,
             'output_path': None
@@ -389,7 +392,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
             content="Test",
             template_id=template_id,
             variables_used={},
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             generation_time_ms=10,
             cache_hit=False,
             output_path=None
@@ -484,7 +487,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
             content="Test content",
             template_id=template_id,
             variables_used={"test": "value"},
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             generation_time_ms=10,
             cache_hit=False,
             output_path=None

@@ -1,19 +1,17 @@
 """Test suite for Connection Management Domain Events"""
 
-import pytest
-from datetime import datetime, timezone
-from typing import Dict, Any
+from datetime import UTC, datetime
 
 from fastmcp.connection_management.domain.events.connection_events import (
-    ConnectionEvent,
-    ServerHealthChecked,
-    ConnectionHealthChecked,
-    StatusUpdateRequested,
-    ClientRegisteredForUpdates,
-    ServerCapabilitiesRequested,
-    StatusUpdateBroadcasted,
     ClientRegistered,
-    ClientUnregistered
+    ClientRegisteredForUpdates,
+    ClientUnregistered,
+    ConnectionEvent,
+    ConnectionHealthChecked,
+    ServerCapabilitiesRequested,
+    ServerHealthChecked,
+    StatusUpdateBroadcasted,
+    StatusUpdateRequested,
 )
 
 
@@ -22,14 +20,14 @@ class TestConnectionEvent:
 
     def test_connection_event_init(self):
         """Test ConnectionEvent initialization"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         event = ConnectionEvent(timestamp=timestamp)
         
         assert event.timestamp == timestamp
         
     def test_connection_event_to_dict(self):
         """Test ConnectionEvent to_dict method"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         event = ConnectionEvent(timestamp=timestamp)
         
         result = event.to_dict()
@@ -45,7 +43,7 @@ class TestServerHealthChecked:
 
     def test_server_health_checked_init(self):
         """Test ServerHealthChecked initialization"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         server_name = "test_server"
         status = "healthy"
         uptime_seconds = 123.45
@@ -64,7 +62,7 @@ class TestServerHealthChecked:
         
     def test_server_health_checked_to_dict(self):
         """Test ServerHealthChecked to_dict method"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         server_name = "test_server"
         status = "healthy"
         uptime_seconds = 123.45
@@ -91,7 +89,7 @@ class TestConnectionHealthChecked:
 
     def test_connection_health_checked_init(self):
         """Test ConnectionHealthChecked initialization"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         connection_id = "conn_123"
         status = "active"
         idle_time_seconds = 60.0
@@ -110,7 +108,7 @@ class TestConnectionHealthChecked:
         
     def test_connection_health_checked_to_dict(self):
         """Test ConnectionHealthChecked to_dict method"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         connection_id = "conn_123"
         status = "active"
         idle_time_seconds = 60.0
@@ -137,7 +135,7 @@ class TestStatusUpdateRequested:
 
     def test_status_update_requested_init(self):
         """Test StatusUpdateRequested initialization"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         session_id = "session_123"
         update_type = "health_check"
         
@@ -153,7 +151,7 @@ class TestStatusUpdateRequested:
         
     def test_status_update_requested_to_dict(self):
         """Test StatusUpdateRequested to_dict method"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         session_id = "session_123"
         update_type = "health_check"
         
@@ -177,7 +175,7 @@ class TestClientRegisteredForUpdates:
 
     def test_client_registered_for_updates_init(self):
         """Test ClientRegisteredForUpdates initialization"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         session_id = "session_123"
         client_info = {"name": "test_client", "version": "1.0.0"}
         
@@ -193,7 +191,7 @@ class TestClientRegisteredForUpdates:
         
     def test_client_registered_for_updates_to_dict(self):
         """Test ClientRegisteredForUpdates to_dict method"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         session_id = "session_123"
         client_info = {"name": "test_client", "version": "1.0.0"}
         
@@ -217,7 +215,7 @@ class TestServerCapabilitiesRequested:
 
     def test_server_capabilities_requested_init(self):
         """Test ServerCapabilitiesRequested initialization"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         requester_session = "session_123"
         
         event = ServerCapabilitiesRequested(
@@ -230,7 +228,7 @@ class TestServerCapabilitiesRequested:
         
     def test_server_capabilities_requested_to_dict(self):
         """Test ServerCapabilitiesRequested to_dict method"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         requester_session = "session_123"
         
         event = ServerCapabilitiesRequested(
@@ -251,7 +249,7 @@ class TestStatusUpdateBroadcasted:
 
     def test_status_update_broadcasted_init(self):
         """Test StatusUpdateBroadcasted initialization"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         event_type = "health_update"
         session_id = "session_123"
         data = {"status": "healthy", "uptime": 123.45}
@@ -270,7 +268,7 @@ class TestStatusUpdateBroadcasted:
         
     def test_status_update_broadcasted_to_dict(self):
         """Test StatusUpdateBroadcasted to_dict method"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         event_type = "health_update"
         session_id = "session_123"
         data = {"status": "healthy", "uptime": 123.45}
@@ -297,7 +295,7 @@ class TestClientRegistered:
 
     def test_client_registered_init(self):
         """Test ClientRegistered initialization"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         session_id = "session_123"
         client_info = {"name": "test_client", "version": "1.0.0"}
         
@@ -313,7 +311,7 @@ class TestClientRegistered:
         
     def test_client_registered_to_dict(self):
         """Test ClientRegistered to_dict method"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         session_id = "session_123"
         client_info = {"name": "test_client", "version": "1.0.0"}
         
@@ -337,7 +335,7 @@ class TestClientUnregistered:
 
     def test_client_unregistered_init(self):
         """Test ClientUnregistered initialization"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         session_id = "session_123"
         reason = "client_disconnect"
         
@@ -353,7 +351,7 @@ class TestClientUnregistered:
         
     def test_client_unregistered_to_dict(self):
         """Test ClientUnregistered to_dict method"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         session_id = "session_123"
         reason = "client_disconnect"
         
@@ -377,7 +375,7 @@ class TestEventInheritance:
 
     def test_all_events_inherit_from_connection_event(self):
         """Test that all events inherit from ConnectionEvent"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         
         events = [
             ServerHealthChecked("server", "healthy", 123.45, timestamp),
@@ -401,7 +399,7 @@ class TestEventEdgeCases:
 
     def test_empty_client_info(self):
         """Test events with empty client info"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         client_info = {}
         
         event = ClientRegistered(
@@ -416,7 +414,7 @@ class TestEventEdgeCases:
         
     def test_empty_data_dict(self):
         """Test StatusUpdateBroadcasted with empty data"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         data = {}
         
         event = StatusUpdateBroadcasted(
@@ -432,7 +430,7 @@ class TestEventEdgeCases:
         
     def test_zero_uptime_and_idle_time(self):
         """Test events with zero time values"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         
         health_event = ServerHealthChecked("server", "healthy", 0.0, timestamp)
         assert health_event.uptime_seconds == 0.0
@@ -442,7 +440,7 @@ class TestEventEdgeCases:
         
     def test_special_characters_in_strings(self):
         """Test events with special characters in string fields"""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         
         event = ServerHealthChecked(
             server_name="test-server_123!@#",

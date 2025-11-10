@@ -3,6 +3,8 @@ FastAPI authentication interface supporting multiple providers.
 This file provides authentication functions that work with both Keycloak and Supabase.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 from collections.abc import Generator
@@ -99,6 +101,6 @@ async def get_optional_user(
     if credentials:
         try:
             return await get_current_user(credentials)
-        except:
+        except Exception:
             return None
     return None

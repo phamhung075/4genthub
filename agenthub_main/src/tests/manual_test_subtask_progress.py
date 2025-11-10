@@ -1,13 +1,14 @@
 """Manual test to verify subtask progress fix"""
 
 import sys
+
 sys.path.insert(0, '/home/daihungpham/__projects__/4genthub/agenthub_main/src')
 
 from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
+
 
 def test_is_completed_property():
     """Test that is_completed property works correctly"""
@@ -25,7 +26,7 @@ def test_is_completed_property():
         priority=Priority.medium()
     )
     print(f"Test 1 - Status='done': is_completed = {subtask1.is_completed} (expected: True)")
-    assert subtask1.is_completed == True, "Subtask with status='done' should be completed"
+    assert subtask1.is_completed, "Subtask with status='done' should be completed"
 
     # Test 2: Subtask with progress_percentage=100 should be completed
     subtask2 = Subtask(
@@ -40,7 +41,7 @@ def test_is_completed_property():
     print(f"Test 2 - Progress=100%: is_completed = {subtask2.is_completed} (expected: True)")
     # Note: When progress_percentage is set to 100, the entity automatically updates status to 'done'
     # This is correct behavior as per the Subtask.update_progress_percentage method
-    assert subtask2.is_completed == True, "Subtask with progress_percentage=100 should be completed"
+    assert subtask2.is_completed, "Subtask with progress_percentage=100 should be completed"
 
     # Test 3: Subtask with status='todo' should not be completed
     subtask3 = Subtask(
@@ -52,7 +53,7 @@ def test_is_completed_property():
         priority=Priority.medium()
     )
     print(f"Test 3 - Status='todo': is_completed = {subtask3.is_completed} (expected: False)")
-    assert subtask3.is_completed == False, "Subtask with status='todo' should not be completed"
+    assert not subtask3.is_completed, "Subtask with status='todo' should not be completed"
 
     # Test 4: Subtask with progress_percentage=50 should not be completed
     subtask4 = Subtask(
@@ -65,7 +66,7 @@ def test_is_completed_property():
         progress_percentage=50
     )
     print(f"Test 4 - Progress=50%: is_completed = {subtask4.is_completed} (expected: False)")
-    assert subtask4.is_completed == False, "Subtask with progress_percentage=50 should not be completed"
+    assert not subtask4.is_completed, "Subtask with progress_percentage=50 should not be completed"
 
     print("\n✅ All Subtask.is_completed tests passed!")
 
@@ -74,7 +75,6 @@ def test_task_progress_service():
     print("\n=== Testing TaskProgressService.update_task_progress_from_subtasks ===")
 
     # We'll simulate what the service does
-    from fastmcp.task_management.application.services.task_progress_service import TaskProgressService
 
     print("Note: This is a manual verification that the fix was applied.")
     print("The TaskProgressService.update_task_progress_from_subtasks method at line 79")
@@ -82,7 +82,7 @@ def test_task_progress_service():
     print("instead of: if hasattr(subtask, 'status') and str(subtask.status) == 'done':")
 
     # Read the file to verify
-    with open('/home/daihungpham/__projects__/4genthub/agenthub_main/src/fastmcp/task_management/application/services/task_progress_service.py', 'r') as f:
+    with open('/home/daihungpham/__projects__/4genthub/agenthub_main/src/fastmcp/task_management/application/services/task_progress_service.py') as f:
         content = f.read()
         if 'if subtask.is_completed:' in content:
             print("\n✅ Fix applied! TaskProgressService now uses subtask.is_completed")

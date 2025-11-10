@@ -1,13 +1,12 @@
 """Unit tests for Unified Context Service"""
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime
 import uuid
-import json
+from unittest.mock import Mock, patch
+
+import pytest
 
 from fastmcp.task_management.application.services.unified_context_service import (
-    UnifiedContextService
+    UnifiedContextService,
 )
 
 

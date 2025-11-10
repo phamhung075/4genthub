@@ -44,7 +44,10 @@ class TestTaskCountRegression(unittest.TestCase):
     def test_facade_uses_correct_method_call(self):
         """Verify facade code uses the correct repository method call"""
         import inspect
-        from fastmcp.task_management.application.facades.git_branch_application_facade import GitBranchApplicationFacade
+
+        from fastmcp.task_management.application.facades.git_branch_application_facade import (
+            GitBranchApplicationFacade,
+        )
         
         # Check get_branches_with_task_counts method
         source1 = inspect.getsource(GitBranchApplicationFacade.get_branches_with_task_counts)

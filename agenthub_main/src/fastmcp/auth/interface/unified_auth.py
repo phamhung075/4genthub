@@ -7,6 +7,8 @@ delegates to the appropriate authentication provider (Keycloak or local JWT).
 It ensures consistent user identity across all authentication methods.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 

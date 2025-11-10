@@ -1,7 +1,9 @@
 """Tests for AgentId value object"""
 
-import pytest
 import uuid
+
+import pytest
+
 from fastmcp.task_management.domain.value_objects.agent_id import AgentId
 
 
@@ -107,7 +109,7 @@ class TestAgentIdEquality:
         agent_id = AgentId.generate_new()
         assert agent_id != agent_id.value
         assert agent_id != 12345
-        assert agent_id != None
+        assert agent_id is not None
 
     def test_equal_agent_ids_have_same_hash(self):
         """Should have same hash when values are equal"""

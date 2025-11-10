@@ -5,6 +5,8 @@ This module provides SMTP-based email sending functionality for authentication
 features including user registration, password reset, and email verification.
 """
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import os
@@ -450,7 +452,7 @@ class SMTPEmailService:
                 server.login(self.config.smtp_username, self.config.smtp_password)
             
             # Send message
-            result = server.send_message(msg, to_addrs=[recipient])
+            server.send_message(msg, to_addrs=[recipient])
             server.quit()
             
             return EmailResult(

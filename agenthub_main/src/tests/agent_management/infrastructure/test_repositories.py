@@ -5,19 +5,18 @@ This module tests the ORM repositories to ensure they correctly
 persist and retrieve agent templates and user agent instances.
 """
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastmcp.agent_management.domain.entities import AgentTemplate, UserAgentInstance
 from fastmcp.agent_management.domain.value_objects import (
+    AgentConfiguration,
     AgentTemplateId,
     UserAgentInstanceId,
     UserId,
-    AgentConfiguration
 )
 from fastmcp.agent_management.infrastructure.repositories import (
     ORMAgentTemplateRepository,
-    ORMUserAgentInstanceRepository
+    ORMUserAgentInstanceRepository,
 )
 
 
@@ -45,8 +44,8 @@ def test_agent_template_repository_save_and_find():
         version="1.0.0",
         default_configuration=configuration,
         metadata={"source": "test"},
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
 
     # Act - Save
@@ -124,8 +123,8 @@ def test_user_agent_instance_repository_save_and_find():
         customization_notes="Added Edit tool and custom capability",
         configuration=instance_config,
         visibility="private",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
 
     # Act - Save instance
@@ -206,7 +205,7 @@ def test_user_agent_instance_sharing():
         configuration=template.default_configuration,
         visibility="public",
         share_token=share_token,
-        share_created_at=datetime.now(timezone.utc)
+        share_created_at=datetime.now(UTC)
     )
 
     # Act - Save and find by share token

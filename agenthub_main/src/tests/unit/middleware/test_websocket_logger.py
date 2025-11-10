@@ -5,9 +5,10 @@ Tests the WebSocket message validation logic.
 """
 
 import pytest
+
 from fastmcp.middleware.websocket_message_logger import (
-    WebSocketMessageValidator,
     WebSocketMessageLogger,
+    WebSocketMessageValidator,
 )
 
 

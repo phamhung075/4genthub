@@ -4,20 +4,24 @@ Comprehensive test for dependencies parameter handling in manage_task create act
 Tests all possible input formats to ensure flexibility.
 """
 
-import json
 import asyncio
-from typing import Dict, Any, List
-from unittest.mock import MagicMock, AsyncMock, patch
-import sys
 import os
+import sys
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import TaskMCPController
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
 from fastmcp.task_management.application.services.facade_service import FacadeService
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import (
+    TaskMCPController,
+)
+
 
 def create_mock_facade():
     """Create a mock facade that simulates successful task creation."""
@@ -163,7 +167,7 @@ async def test_all_dependency_formats():
                         print(f"      Expected {test_case['expected_count']} dependencies, got {actual_count}")
                         success_count += 1
                     else:
-                        print(f"   ⚠️  PARTIAL - Task created but dependency count mismatch")
+                        print("   ⚠️  PARTIAL - Task created but dependency count mismatch")
                         print(f"      Expected {test_case['expected_count']} dependencies, got {actual_count}")
                         print(f"      Actual dependencies: {actual_deps}")
                         failure_count += 1
@@ -223,7 +227,7 @@ async def test_all_dependency_formats():
                         task = data_wrapper.get("data", {}).get("task", {})
                     else:
                         task = data_wrapper.get("task", {}) or result.get("task", {})
-                    print(f"   ✅ PASS - Both parameters handled correctly")
+                    print("   ✅ PASS - Both parameters handled correctly")
                     print(f"      Assignees: {task.get('assignees', [])}")
                     print(f"      Dependencies: {task.get('dependencies', [])}")
                     success_count += 1

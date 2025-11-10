@@ -1,5 +1,7 @@
 """Template Repository Factory for Database Type Selection"""
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 

@@ -1,5 +1,7 @@
 """Task Progress Service - Domain Service for Task Progress Calculations"""
 
+from __future__ import annotations
+
 import logging
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Protocol

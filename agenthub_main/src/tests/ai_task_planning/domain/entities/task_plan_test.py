@@ -1,10 +1,13 @@
 """Test suite for TaskPlan domain entity"""
 
-import pytest
-from datetime import datetime, timezone
+from datetime import datetime
+
 from fastmcp.ai_task_planning.domain.entities.task_plan import (
-    TaskPlan, PlannedTask, TaskDependency, AgentAssignment,
-    TaskType, ExecutionPhase
+    AgentAssignment,
+    ExecutionPhase,
+    PlannedTask,
+    TaskPlan,
+    TaskType,
 )
 
 

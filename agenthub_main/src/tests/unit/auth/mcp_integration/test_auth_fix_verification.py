@@ -9,18 +9,20 @@ This test demonstrates that the critical authentication issue is resolved:
 - RequireAuthMiddleware passes ✅
 """
 
-import pytest
-import os
 import uuid
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import AsyncMock, Mock
 
-from mcp.server.auth.middleware.bearer_auth import BearerAuthBackend, RequireAuthMiddleware, AuthenticatedUser
+import pytest
+from mcp.server.auth.middleware.bearer_auth import (
+    AuthenticatedUser,
+    BearerAuthBackend,
+    RequireAuthMiddleware,
+)
 from mcp.server.auth.provider import AccessToken
 
-from fastmcp.auth.mcp_integration.jwt_auth_backend import JWTAuthBackend
+from fastmcp.auth.domain.entities.user import User, UserRole, UserStatus
 from fastmcp.auth.domain.services.jwt_service import JWTService
-from fastmcp.auth.domain.entities.user import User, UserStatus, UserRole
-from fastmcp.auth.domain.value_objects import UserId
+from fastmcp.auth.mcp_integration.jwt_auth_backend import JWTAuthBackend
 
 
 class TestAuthenticationFixVerification:

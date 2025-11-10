@@ -5,6 +5,8 @@ The system supports both SQLite and PostgreSQL/Supabase with optimized
 pooling for superior performance, concurrent access, and production reliability.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import queue

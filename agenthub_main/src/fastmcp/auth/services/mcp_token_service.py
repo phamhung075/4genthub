@@ -5,6 +5,8 @@ Provides MCP token generation, validation, and management functionality.
 This is a minimal implementation to satisfy import requirements.
 """
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import secrets

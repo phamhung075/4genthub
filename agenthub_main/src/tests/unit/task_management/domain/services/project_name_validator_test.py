@@ -1,13 +1,20 @@
 """Unit tests for ProjectNameValidator domain service."""
 
-import pytest
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
-from datetime import datetime, timezone
 
-from fastmcp.task_management.domain.services.project_name_validator import ProjectNameValidator
-from fastmcp.task_management.domain.repositories.project_repository import ProjectRepository
-from fastmcp.task_management.domain.exceptions.base_exceptions import ValidationException
+import pytest
+
 from fastmcp.task_management.domain.entities.project import Project
+from fastmcp.task_management.domain.exceptions.base_exceptions import (
+    ValidationException,
+)
+from fastmcp.task_management.domain.repositories.project_repository import (
+    ProjectRepository,
+)
+from fastmcp.task_management.domain.services.project_name_validator import (
+    ProjectNameValidator,
+)
 
 
 class TestProjectNameValidator:
@@ -68,8 +75,8 @@ class TestProjectNameValidator:
         existing_project = Project(
             id="existing123",
             name="Existing Project",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         mock_project_repository.find_by_name.return_value = existing_project
         
@@ -85,8 +92,8 @@ class TestProjectNameValidator:
         existing_project = Project(
             id="project123",
             name="My Project",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         mock_project_repository.find_by_name.return_value = existing_project
         
@@ -103,8 +110,8 @@ class TestProjectNameValidator:
         existing_project = Project(
             id="project123",
             name="My Project",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         mock_project_repository.find_by_name.return_value = existing_project
         
@@ -120,8 +127,8 @@ class TestProjectNameValidator:
         existing_project = Project(
             id="project123",
             name="My Project",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         # Mock should be called with normalized name
         mock_project_repository.find_by_name.return_value = existing_project
@@ -138,8 +145,8 @@ class TestProjectNameValidator:
         existing_project = Project(
             id="existing123",
             name="My Project",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         mock_project_repository.find_by_name.return_value = existing_project
         
@@ -158,8 +165,8 @@ class TestProjectNameValidator:
         existing_project = Project(
             id="project123",
             name="Common Name",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         mock_project_repository.find_by_name.return_value = existing_project
         

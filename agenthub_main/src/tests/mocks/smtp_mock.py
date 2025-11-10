@@ -19,11 +19,11 @@ Usage:
     >>> smtp.stop()
 """
 
-from typing import List, Dict, Any, Optional
-from datetime import datetime, timezone
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from __future__ import annotations
+
 import threading
+from datetime import UTC, datetime
+from typing import Any
 
 
 class MockEmailCapture:
@@ -31,7 +31,7 @@ class MockEmailCapture:
 
     def __init__(self):
         """Initialize email capture."""
-        self._emails: List[Dict[str, Any]] = []
+        self._emails: list[dict[str, Any]] = []
         self._lock = threading.Lock()
 
     def send_email(
@@ -40,9 +40,9 @@ class MockEmailCapture:
         to_addr: str,
         subject: str,
         body: str,
-        html: Optional[str] = None,
-        cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None
+        html: str | None = None,
+        cc: list[str | None] = None,
+        bcc: list[str | None] = None
     ):
         """Capture an email without actually sending it.
 
@@ -64,12 +64,12 @@ class MockEmailCapture:
                 "html": html,
                 "cc": cc or [],
                 "bcc": bcc or [],
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "sent": True
             }
             self._emails.append(email)
 
-    def get_sent_emails(self, to_addr: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_sent_emails(self, to_addr: str | None = None) -> list[dict[str, Any]]:
         """Get all captured emails.
 
         Args:
@@ -83,7 +83,7 @@ class MockEmailCapture:
                 return [e for e in self._emails if e["to"] == to_addr]
             return list(self._emails)
 
-    def get_last_email(self) -> Optional[Dict[str, Any]]:
+    def get_last_email(self) -> dict[str, Any | None]:
         """Get the most recently captured email.
 
         Returns:

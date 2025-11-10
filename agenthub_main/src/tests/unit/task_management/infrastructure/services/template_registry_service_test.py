@@ -5,11 +5,14 @@ Tests the template registry service's current behavior, which raises RuntimeErro
 indicating PostgreSQL refactoring is needed.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
+from unittest.mock import Mock
 
-from fastmcp.task_management.infrastructure.services.template_registry_service import TemplateRegistryService
+import pytest
+
+from fastmcp.task_management.infrastructure.services.template_registry_service import (
+    TemplateRegistryService,
+)
 
 
 class TestTemplateRegistryService:

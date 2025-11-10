@@ -16,23 +16,22 @@ This module tests the context request DTO classes including:
 - UpdateNextStepsRequest
 """
 
-import pytest
-from datetime import datetime, timezone
 from dataclasses import fields, is_dataclass
+from datetime import UTC, datetime
 
 from fastmcp.task_management.application.dtos.context.context_request import (
-    CreateContextRequest,
-    UpdateContextRequest,
-    GetContextRequest,
-    DeleteContextRequest,
-    ListContextsRequest,
-    GetPropertyRequest,
-    UpdatePropertyRequest,
-    MergeContextRequest,
-    MergeDataRequest,
     AddInsightRequest,
     AddProgressRequest,
-    UpdateNextStepsRequest
+    CreateContextRequest,
+    DeleteContextRequest,
+    GetContextRequest,
+    GetPropertyRequest,
+    ListContextsRequest,
+    MergeContextRequest,
+    MergeDataRequest,
+    UpdateContextRequest,
+    UpdateNextStepsRequest,
+    UpdatePropertyRequest,
 )
 
 
@@ -41,7 +40,7 @@ class TestCreateContextRequest:
     
     def test_create_context_request_creation(self):
         """Test creating a CreateContextRequest instance"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         request = CreateContextRequest(
             task_id="task-123",
             title="Test Context",

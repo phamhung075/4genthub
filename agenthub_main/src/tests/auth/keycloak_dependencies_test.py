@@ -8,27 +8,24 @@ Comprehensive test coverage for Keycloak authentication including:
 - Error handling and edge cases
 """
 
-import pytest
 import os
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock, patch
 
 import jwt
-from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
+import pytest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
+from jwt import DecodeError
 
+from fastmcp.auth.domain.entities.user import User
 from fastmcp.auth.keycloak_dependencies import (
-    get_keycloak_jwks_client,
+    JWT_ALGORITHM,
     get_current_user_universal,
+    get_keycloak_jwks_client,
     validate_keycloak_token,
     validate_local_token,
-    JWT_SECRET_KEY,
-    JWT_ALGORITHM,
-    KEYCLOAK_URL,
-    KEYCLOAK_REALM
 )
-from fastmcp.auth.domain.entities.user import User
 
 
 class TestKeycloakJWKSClient:
@@ -192,7 +189,7 @@ class TestKeycloakTokenValidation:
                         "sub": "kc-user-789",
                         "email": "kcuser@example.com",
                         "preferred_username": "kcuser789",
-                        "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+                        "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
                     }
                     
                     user = await validate_keycloak_token(token)
@@ -292,7 +289,7 @@ class TestKeycloakTokenValidation:
                     mock_decode.return_value = {
                         "sub": "user-no-email",
                         "preferred_username": "noemail",
-                        "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+                        "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
                     }
                     
                     user = await validate_keycloak_token("valid.token")
@@ -312,7 +309,7 @@ class TestLocalTokenValidation:
             "sub": "local-123",
             "email": "local@example.com",
             "username": "localuser",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
         
         with patch('jwt.decode') as mock_decode:
@@ -377,7 +374,7 @@ class TestLocalTokenValidation:
         payload = {
             "user_id": "legacy-user-456",  # Using user_id instead of sub
             "email": "legacy@example.com",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
         
         with patch('jwt.decode') as mock_decode:
@@ -392,7 +389,7 @@ class TestLocalTokenValidation:
         """Test local token validation with minimal claims"""
         payload = {
             "sub": "minimal-user",
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
         }
         
         with patch('jwt.decode') as mock_decode:
@@ -408,7 +405,7 @@ class TestLocalTokenValidation:
         """Test local token validation with expired timestamp"""
         payload = {
             "sub": "expired-user",
-            "exp": (datetime.now(timezone.utc) - timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(UTC) - timedelta(hours=1)).timestamp()
         }
         
         with patch('jwt.decode') as mock_decode:
@@ -462,13 +459,13 @@ class TestIntegration:
             # Token that expired 20 seconds ago (within 30 second leeway)
             payload = {
                 "sub": "skew-user",
-                "exp": (datetime.now(timezone.utc) - timedelta(seconds=20)).timestamp()
+                "exp": (datetime.now(UTC) - timedelta(seconds=20)).timestamp()
             }
             token = jwt.encode(payload, test_secret, algorithm=JWT_ALGORITHM)
 
             with patch('jwt.decode') as mock_decode:
                 # Mock successful decode with leeway
-                mock_decode.return_value = {**payload, "exp": (datetime.now(timezone.utc) + timedelta(seconds=10)).timestamp()}
+                mock_decode.return_value = {**payload, "exp": (datetime.now(UTC) + timedelta(seconds=10)).timestamp()}
 
                 user = validate_local_token(token)
 

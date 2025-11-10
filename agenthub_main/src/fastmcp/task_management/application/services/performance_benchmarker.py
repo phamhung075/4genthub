@@ -4,6 +4,8 @@ This module provides comprehensive performance benchmarking and measurement
 for the MCP response optimization system.
 """
 
+from __future__ import annotations
+
 import csv
 import io
 import json
@@ -212,7 +214,7 @@ class PerformanceBenchmarker:
             import tracemalloc
             tracemalloc.start()
             memory_before = tracemalloc.get_traced_memory()[0]
-        except:
+        except Exception:
             memory_before = 0
         
         # Calculate input size
@@ -220,7 +222,7 @@ class PerformanceBenchmarker:
         if input_data:
             try:
                 input_size = len(json.dumps(input_data, default=str).encode('utf-8'))
-            except:
+            except Exception:
                 input_size = sys.getsizeof(input_data)
         
         # Start timing
@@ -252,7 +254,7 @@ class PerformanceBenchmarker:
                 memory_after = tracemalloc.get_traced_memory()[0]
                 result.memory_usage_mb = (memory_after - memory_before) / (1024 * 1024)
                 tracemalloc.stop()
-            except:
+            except Exception:
                 result.memory_usage_mb = 0
             
             # Add to current suite
@@ -265,7 +267,6 @@ class PerformanceBenchmarker:
         test_responses: list[dict[str, Any]]
     ) -> dict[str, Any]:
         """Benchmark response optimization performance"""
-        results = {}
         
         # Test different response sizes
         for i, response in enumerate(test_responses):
@@ -281,7 +282,7 @@ class PerformanceBenchmarker:
                 # Calculate output size
                 try:
                     benchmark.output_size_bytes = len(json.dumps(optimized, default=str).encode('utf-8'))
-                except:
+                except Exception:
                     benchmark.output_size_bytes = sys.getsizeof(optimized)
                 
                 benchmark.metadata = {
@@ -330,7 +331,7 @@ class PerformanceBenchmarker:
                         # Calculate savings
                         try:
                             benchmark.output_size_bytes = len(json.dumps(minimal, default=str).encode('utf-8'))
-                        except:
+                        except Exception:
                             benchmark.output_size_bytes = sys.getsizeof(minimal)
                         
                         benchmark.metadata = {
@@ -420,7 +421,7 @@ class PerformanceBenchmarker:
                     )
                     op_enum = OperationType(operation)
                     template = template_manager.get_template(op_enum)
-                except:
+                except Exception:
                     template = {}
                 
                 # Step 2: Extract minimal context
@@ -456,7 +457,7 @@ class PerformanceBenchmarker:
                         "context_types_processed": len(minimal_context),
                         "template_fields": len(template)
                     }
-                except:
+                except Exception:
                     benchmark.output_size_bytes = sys.getsizeof(optimized)
         
         return self._get_category_summary(BenchmarkCategory.END_TO_END)
@@ -772,7 +773,7 @@ class PerformanceBenchmarker:
 
         # Run function
         start = time.perf_counter()
-        result_value = func(*args, **kwargs)
+        func(*args, **kwargs)
         end = time.perf_counter()
 
         # Get memory after

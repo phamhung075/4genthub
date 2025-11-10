@@ -3,7 +3,6 @@ Context-related enums for the unified context system.
 """
 
 from enum import Enum
-from typing import Optional
 
 
 class ContextLevel(str, Enum):
@@ -29,7 +28,7 @@ class ContextLevel(str, Enum):
         """String representation."""
         return self.value
     
-    def get_parent_level(self) -> Optional['ContextLevel']:
+    def get_parent_level(self) -> 'ContextLevel' | None:
         """Get the parent level in the hierarchy."""
         hierarchy = {
             ContextLevel.TASK: ContextLevel.BRANCH,

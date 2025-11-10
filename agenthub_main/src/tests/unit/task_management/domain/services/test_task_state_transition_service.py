@@ -1,22 +1,18 @@
 """Unit tests for TaskStateTransitionService domain service"""
 
-import pytest
-from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock
-from typing import List, Dict, Any, Optional
+from datetime import UTC, datetime
+from unittest.mock import Mock
 
+from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.services.task_state_transition_service import (
+    SubtaskRepositoryProtocol,
+    TaskRepositoryProtocol,
     TaskStateTransitionService,
     TransitionContext,
-    SubtaskRepositoryProtocol,
-    TaskRepositoryProtocol
 )
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.exceptions.task_exceptions import TaskStateTransitionError
 
 
 class MockSubtask:
@@ -52,8 +48,8 @@ class TestTaskStateTransitionService:
             status=TaskStatus.from_string("todo"),
             priority=Priority.from_string("medium"),
             git_branch_id="test-branch",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
     def test_can_transition_to_valid_transition(self):
@@ -558,8 +554,8 @@ class TestTaskStateTransitionService:
             status=TaskStatus.from_string(status),
             priority=Priority.from_string("medium"),
             git_branch_id="test-branch",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
 
@@ -589,8 +585,8 @@ class TestTaskStateTransitionServiceIntegration:
             status=TaskStatus.from_string("todo"),
             priority=Priority.from_string("high"),
             git_branch_id="workflow-branch",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         task.update_status = Mock()
@@ -661,7 +657,7 @@ class TestTaskStateTransitionServiceIntegration:
         assert len(updated_from_b) >= 1 or len(updated_from_c) >= 2
         # Check if A was unblocked in either step
         all_updates = updated_from_c + updated_from_b
-        unblocked_a = next((u for u in all_updates if u["task_id"] == str(task_a.id)), None)
+        next((u for u in all_updates if u["task_id"] == str(task_a.id)), None)
 
     def test_complex_subtask_completion_validation(self):
         """Test complex subtask completion validation"""
@@ -782,6 +778,6 @@ class TestTaskStateTransitionServiceIntegration:
             status=TaskStatus.from_string(status),
             priority=Priority.from_string("medium"),
             git_branch_id="test-branch",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )

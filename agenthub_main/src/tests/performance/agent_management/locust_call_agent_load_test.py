@@ -30,13 +30,13 @@ Usage:
            --html performance_report.html
 """
 
+import json
 import random
 import time
-import json
 
 # Try to import locust, skip gracefully if not available
 try:
-    from locust import HttpUser, task, between, events, LoadTestShape
+    from locust import HttpUser, LoadTestShape, between, events, task
     from locust.runners import MasterRunner
     LOCUST_AVAILABLE = True
 except ImportError:
@@ -144,7 +144,7 @@ def on_test_stop(environment, **kwargs):
         p95_first = percentile(first_call_sorted, 95)
         p99_first = percentile(first_call_sorted, 99)
 
-        print(f"\nFirst Call Latency:")
+        print("\nFirst Call Latency:")
         print(f"  P50: {p50_first:.2f}ms")
         print(f"  P95: {p95_first:.2f}ms {'✅' if p95_first < 500 else '❌'} (target: <500ms)")
         print(f"  P99: {p99_first:.2f}ms")
@@ -155,7 +155,7 @@ def on_test_stop(environment, **kwargs):
         p95_cached = percentile(cached_sorted, 95)
         p99_cached = percentile(cached_sorted, 99)
 
-        print(f"\nCached Call Latency:")
+        print("\nCached Call Latency:")
         print(f"  P50: {p50_cached:.2f}ms")
         print(f"  P95: {p95_cached:.2f}ms {'✅' if p95_cached < 100 else '❌'} (target: <100ms)")
         print(f"  P99: {p99_cached:.2f}ms")
@@ -240,7 +240,7 @@ class AgentManagementUser(HttpUser):
                     if 'result' in data:
                         response.success()
                     else:
-                        response.failure(f"Missing result in response")
+                        response.failure("Missing result in response")
                 except json.JSONDecodeError:
                     response.failure("Invalid JSON response")
             else:

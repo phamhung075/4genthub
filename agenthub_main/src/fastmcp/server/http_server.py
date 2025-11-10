@@ -195,7 +195,7 @@ def setup_auth_middleware_and_routes(
     required_scopes: list[str] = []
 
     # Create the adapter to bridge OAuthProvider to TokenVerifier for Keycloak
-    token_verifier = TokenVerifierAdapter(auth)
+    TokenVerifierAdapter(auth)
 
     # Using Keycloak JWT authentication
     middleware = []
@@ -805,7 +805,7 @@ def create_streamable_http_app(
         # Add simplified MCP registration endpoints directly to FastAPI app
         import time
         import uuid
-        from typing import Any, Dict
+        from typing import Any
 
         import fastapi
         
@@ -823,7 +823,7 @@ def create_streamable_http_app(
                 if request.headers.get("content-type") == "application/json":
                     try:
                         body = await request.json()
-                    except:
+                    except Exception:
                         pass  # Some clients send empty body
                 
                 # Generate session ID for this client

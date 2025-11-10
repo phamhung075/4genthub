@@ -14,6 +14,8 @@ Date: 2025-01-27
 Task: Phase 5: Performance Optimization & Caching
 """
 
+from __future__ import annotations
+
 import asyncio
 import hashlib
 import json

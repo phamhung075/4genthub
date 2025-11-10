@@ -1,6 +1,5 @@
 """Test messaging module initialization"""
 
-import pytest
 from importlib import import_module
 
 
@@ -15,13 +14,13 @@ class TestMessagingInit:
     def test_exported_items(self):
         """Test that all expected items are exported"""
         from fastmcp.shared.infrastructure.messaging import (
-            EventBus,
             DomainEvent,
+            EventBus,
+            EventHandler,
             EventMetadata,
             EventPriority,
-            EventHandler,
             get_event_bus,
-            set_event_bus
+            set_event_bus,
         )
         
         # Verify imports exist
@@ -59,7 +58,9 @@ class TestMessagingInit:
         from fastmcp.shared.infrastructure.messaging import EventBus, EventHandler
         from fastmcp.shared.infrastructure.messaging.event_bus import (
             EventBus as DirectEventBus,
-            EventHandler as DirectEventHandler
+        )
+        from fastmcp.shared.infrastructure.messaging.event_bus import (
+            EventHandler as DirectEventHandler,
         )
         
         # Verify same class references
@@ -68,7 +69,7 @@ class TestMessagingInit:
 
     def test_enums_and_types(self):
         """Test that enums and type definitions are properly imported"""
-        from fastmcp.shared.infrastructure.messaging import EventPriority, DomainEvent
+        from fastmcp.shared.infrastructure.messaging import DomainEvent, EventPriority
         
         # Test EventPriority is an enum
         assert hasattr(EventPriority, 'LOW')

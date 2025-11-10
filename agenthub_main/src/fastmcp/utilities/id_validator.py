@@ -7,6 +7,8 @@ where MCP task IDs are incorrectly stored as application task IDs.
 Based on: ai_docs/troubleshooting-guides/subtask-wrong-task-id-api-calls.md
 """
 
+from __future__ import annotations
+
 import html
 import logging
 import re
@@ -113,7 +115,7 @@ class IDValidator:
         # Normalize Unicode to prevent normalization attacks
         try:
             sanitized = unicodedata.normalize('NFKC', value)
-        except:
+        except Exception:
             sanitized = value
 
         # Remove control characters and format characters

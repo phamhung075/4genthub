@@ -2,6 +2,8 @@
 Task Context Repository for unified context system.
 """
 
+from __future__ import annotations
+
 import logging
 from contextlib import contextmanager
 from typing import Any
@@ -25,7 +27,7 @@ class TaskContextRepository(CacheInvalidationMixin, BaseORMRepository):
         self.session_factory = session_factory
         self.user_id = user_id
     
-    def with_user(self, user_id: str) -> 'TaskContextRepository':
+    def with_user(self, user_id: str) -> TaskContextRepository:
         """Create a new repository instance scoped to a specific user."""
         return TaskContextRepository(self.session_factory, user_id)
     

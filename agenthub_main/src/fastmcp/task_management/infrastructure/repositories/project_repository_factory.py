@@ -1,5 +1,7 @@
 """Project Repository Factory - Clean DDD Implementation"""
 
+from __future__ import annotations
+
 import logging
 import os
 from enum import Enum
@@ -260,7 +262,7 @@ class RepositoryConfig:
         )
     
     @classmethod
-    def from_environment(cls) -> 'RepositoryConfig':
+    def from_environment(cls) -> RepositoryConfig:
         """Create configuration from environment variables"""
         return cls(
             repository_type=os.getenv("MCP_PROJECT_REPOSITORY_TYPE"),

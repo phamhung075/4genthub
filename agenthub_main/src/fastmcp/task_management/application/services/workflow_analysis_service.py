@@ -5,6 +5,8 @@ This service analyzes task patterns, identifies bottlenecks,
 suggests optimizations, and learns from historical data.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -84,7 +86,7 @@ class WorkflowAnalysisService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'WorkflowAnalysisService':
+    def with_user(self, user_id: str) -> WorkflowAnalysisService:
         """Create a new service instance scoped to a specific user."""
         return WorkflowAnalysisService(
             self.task_repository,

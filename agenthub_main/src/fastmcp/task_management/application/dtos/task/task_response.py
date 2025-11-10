@@ -1,5 +1,7 @@
 """Response DTO for task operations"""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -106,7 +108,7 @@ class TaskResponse:
     def from_domain(cls, task, git_branch_repository=None, context_data: dict[str, Any] | None = None,
                    dependency_relationships: DependencyRelationships | None = None,
                    project_id: str | None = None,
-                   completed_subtasks: int | None = None) -> 'TaskResponse':
+                   completed_subtasks: int | None = None) -> TaskResponse:
         """Create response DTO from domain entity with optional context data.
 
         Args:

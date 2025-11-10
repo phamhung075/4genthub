@@ -8,20 +8,19 @@ Comprehensive test coverage for MCP Keycloak authentication including:
 - Error handling and edge cases
 """
 
-import pytest
 import os
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-from functools import wraps
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
 from fastmcp.auth.mcp_keycloak_auth import (
     MCPKeycloakAuth,
-    mcp_auth,
     get_mcp_user,
-    require_mcp_auth
+    mcp_auth,
+    require_mcp_auth,
 )
 
 
@@ -31,7 +30,7 @@ class TestMCPKeycloakAuth:
     @pytest.fixture
     def auth_instance(self):
         """Create MCPKeycloakAuth instance"""
-        with patch('fastmcp.auth.mcp_keycloak_auth.KeycloakAuthProvider') as mock_provider:
+        with patch('fastmcp.auth.mcp_keycloak_auth.KeycloakAuthProvider'):
             auth = MCPKeycloakAuth()
             # Replace with mock provider
             auth.keycloak_provider = AsyncMock()
@@ -79,8 +78,8 @@ class TestMCPKeycloakAuth:
             "preferred_username": "testuser",
             "realm_access": {"roles": ["mcp-user", "mcp-tools"]},
             "resource_access": {},
-            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp(),
-            "iat": datetime.now(timezone.utc).timestamp()
+            "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp(),
+            "iat": datetime.now(UTC).timestamp()
         }
         
         auth_instance.keycloak_provider.validate_token.return_value = mock_token_data
@@ -517,7 +516,7 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_full_authentication_flow(self):
         """Test complete authentication flow"""
-        with patch('fastmcp.auth.mcp_keycloak_auth.KeycloakAuthProvider') as mock_provider_class:
+        with patch('fastmcp.auth.mcp_keycloak_auth.KeycloakAuthProvider'):
             # Create auth instance
             auth = MCPKeycloakAuth()
             auth.keycloak_provider = AsyncMock()
@@ -529,7 +528,7 @@ class TestIntegration:
                 "preferred_username": "integrationuser",
                 "realm_access": {"roles": ["mcp-developer"]},
                 "resource_access": {},
-                "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+                "exp": (datetime.now(UTC) + timedelta(hours=1)).timestamp()
             }
             
             auth.keycloak_provider.validate_token.return_value = keycloak_token_data

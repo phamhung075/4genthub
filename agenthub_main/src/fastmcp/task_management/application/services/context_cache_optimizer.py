@@ -4,6 +4,8 @@ This module implements intelligent caching strategies for context data to minimi
 database queries and improve response times by 80-90%.
 """
 
+from __future__ import annotations
+
 import fnmatch
 import hashlib
 import json
@@ -232,7 +234,7 @@ class ContextCacheOptimizer:
                 # Calculate size normally
                 try:
                     size_bytes = len(json.dumps(data, default=str).encode('utf-8'))
-                except:
+                except Exception:
                     size_bytes = 1024  # Default estimate
             
             # Check size limits

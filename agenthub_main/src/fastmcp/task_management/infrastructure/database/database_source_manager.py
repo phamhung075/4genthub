@@ -13,12 +13,13 @@ SUPPORTED CONFIGURATIONS:
 USE database_config.py for database operations.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +49,11 @@ class DatabaseSourceManager:
     For PostgreSQL deployments, set DATABASE_TYPE=postgresql and DATABASE_URL.
     """
     
-    _instance: Optional['DatabaseSourceManager'] = None
+    _instance: DatabaseSourceManager | None = None
     _current_mode: DatabaseMode | None = None
     _database_path: str | None = None
     
-    def __new__(cls) -> 'DatabaseSourceManager':
+    def __new__(cls) -> DatabaseSourceManager:
         """Singleton pattern to ensure single database source"""
         if cls._instance is None:
             cls._instance = super().__new__(cls)

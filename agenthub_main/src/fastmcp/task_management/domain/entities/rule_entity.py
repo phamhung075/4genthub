@@ -6,6 +6,8 @@ Date: 2025-01-27
 This file contains the core domain entities for rule management following DDD principles.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any
 

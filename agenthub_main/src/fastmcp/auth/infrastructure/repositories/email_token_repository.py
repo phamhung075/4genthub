@@ -4,6 +4,8 @@ Email Token Repository
 Handles storage and retrieval of email verification and password reset tokens.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os

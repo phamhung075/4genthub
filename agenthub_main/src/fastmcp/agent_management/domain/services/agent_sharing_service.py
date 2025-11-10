@@ -1,5 +1,7 @@
 """AgentSharingService - Domain service for agent sharing and importing"""
 
+from __future__ import annotations
+
 import logging
 import secrets
 
@@ -283,7 +285,7 @@ class AgentSharingService:
         self,
         limit: int = 50,
         offset: int = 0,
-        order_by: 'InstanceOrdering' = None
+        order_by: InstanceOrdering = None
     ) -> list[UserAgentInstance]:
         """Get list of publicly shared instances for marketplace.
 

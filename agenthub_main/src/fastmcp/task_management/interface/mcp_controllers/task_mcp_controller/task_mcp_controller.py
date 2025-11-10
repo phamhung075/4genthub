@@ -5,6 +5,8 @@ This is the main entry point for the task MCP controller, now refactored into a 
 architecture using factory pattern to maintain separation of concerns.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -200,7 +202,7 @@ class TaskMCPController(ContextPropagationMixin):
         # Store last known git_branch_id for context operations
         self._last_git_branch_id = None
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """Register MCP tools with the server."""
 
         # Load description and parameters
@@ -762,7 +764,7 @@ class TaskMCPController(ContextPropagationMixin):
             task_id: Optional task ID for task-specific operations
 
         Returns:
-            Tuple of (success: bool, error_response: Optional[Dict])
+            Tuple of (success: bool, error_response: Dict | None)
         """
         # Delegate to authorization service
         return self._authorization_service.check_task_permission_from_context(
@@ -815,7 +817,7 @@ class TaskMCPController(ContextPropagationMixin):
 
         # Check if we're already in an async context
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             # If we're in an async context, we need to run in a new thread
             import concurrent.futures
 

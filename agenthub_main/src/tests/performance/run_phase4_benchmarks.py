@@ -6,22 +6,30 @@ Executable script for running Phase 4 comprehensive performance benchmarks.
 Designed for CI/CD integration and manual execution.
 """
 
-import sys
-import asyncio
 import argparse
+import asyncio
 import logging
+import sys
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from agenthub_main.src.tests.performance import setup_performance_logger
-from agenthub_main.src.tests.performance.benchmarks.comprehensive_benchmark_suite import Phase4ComprehensiveBenchmarkSuite
-from agenthub_main.src.tests.performance.benchmarks.response_size_tests import run_response_size_benchmark
-from agenthub_main.src.tests.performance.benchmarks.ai_comprehension_tests import run_ai_comprehension_benchmark
-from agenthub_main.src.tests.performance.benchmarks.load_testing_suite import run_load_testing_benchmark
+from agenthub_main.src.tests.performance.benchmarks.ai_comprehension_tests import (
+    run_ai_comprehension_benchmark,
+)
+from agenthub_main.src.tests.performance.benchmarks.comprehensive_benchmark_suite import (
+    Phase4ComprehensiveBenchmarkSuite,
+)
+from agenthub_main.src.tests.performance.benchmarks.load_testing_suite import (
+    run_load_testing_benchmark,
+)
+from agenthub_main.src.tests.performance.benchmarks.response_size_tests import (
+    run_response_size_benchmark,
+)
 
 logger = setup_performance_logger()
 
@@ -201,7 +209,7 @@ async def main():
     output_dir = args.output or Path("./results/phase4")
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    logger.info(f"Phase 4 Performance Benchmarks - Started at {datetime.now(timezone.utc).isoformat()}")
+    logger.info(f"Phase 4 Performance Benchmarks - Started at {datetime.now(UTC).isoformat()}")
     logger.info(f"Output directory: {output_dir.absolute()}")
     
     if args.ci_mode:

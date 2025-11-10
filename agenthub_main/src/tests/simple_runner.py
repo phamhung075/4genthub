@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Direct test runner without pytest to avoid hook issues."""
-import sys
-import os
-from pathlib import Path
-import unittest
 import importlib
+import os
+import sys
+import unittest
+from pathlib import Path
 
 # Setup path
 project_root = Path(__file__).parent.parent.parent  # agenthub_main
@@ -31,7 +31,7 @@ def run_test_imports():
             print(f"Importing {test_module}...")
             module = importlib.import_module(test_module)
             test_results.append((test_module, "OK", None, module))
-            print(f"  ✓ Success")
+            print("  ✓ Success")
         except ImportError as e:
             test_results.append((test_module, "IMPORT_ERROR", str(e), None))
             print(f"  ✗ Import Error: {e}")
@@ -79,7 +79,6 @@ def main():
     print("Running Tests:")
     print("=" * 60)
 
-    total_tests = 0
     failed_tests = 0
     error_tests = 0
 
@@ -93,7 +92,7 @@ def main():
                     error_tests += errors
                     print(f"  ✗ Failures: {failures}, Errors: {errors}")
                 else:
-                    print(f"  ✓ All tests passed")
+                    print("  ✓ All tests passed")
             except Exception as e:
                 print(f"  ✗ Error running tests: {e}")
                 error_tests += 1

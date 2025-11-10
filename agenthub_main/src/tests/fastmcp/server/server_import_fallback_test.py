@@ -12,11 +12,10 @@ Target Coverage: 15-20 lines (+2.5-3.3pp)
 Focus areas: Lines 103-108, 140-142, 341-347
 """
 
-import pytest
-import sys
-from unittest.mock import Mock, patch, MagicMock
 from typing import TYPE_CHECKING
+from unittest.mock import Mock, patch
 
+import pytest
 
 # ============================================================================
 # Test 1: TYPE_CHECKING Conditional Imports (Lines 102-108)
@@ -66,8 +65,9 @@ def test_type_checking_imports_structure():
     Validates that all TYPE_CHECKING imports follow proper patterns.
     """
     # Read the source to verify TYPE_CHECKING block structure
-    import fastmcp.server.server
     import inspect
+
+    import fastmcp.server.server
 
     source = inspect.getsource(fastmcp.server.server)
 
@@ -98,8 +98,9 @@ async def test_lifespan_wrapper_async_exit_stack_error_handling():
     Coverage target: Lines 140-142
     Validates that AsyncExitStack properly handles context manager errors.
     """
-    from fastmcp.server.server import _lifespan_wrapper, FastMCP
     from contextlib import asynccontextmanager
+
+    from fastmcp.server.server import FastMCP, _lifespan_wrapper
 
     # Create a FastMCP instance
     app = FastMCP(name="test_lifespan_error")
@@ -130,8 +131,9 @@ async def test_lifespan_wrapper_async_exit_stack_cleanup():
     Coverage target: Lines 140-142
     Validates cleanup behavior when lifespan context fails.
     """
-    from fastmcp.server.server import _lifespan_wrapper, FastMCP
     from contextlib import asynccontextmanager
+
+    from fastmcp.server.server import FastMCP, _lifespan_wrapper
 
     cleanup_called = False
 
@@ -206,7 +208,7 @@ def test_handle_deprecated_settings_fallback_configuration():
     Coverage target: Lines 341-347
     Validates that deprecated settings properly merge with defaults.
     """
-    from fastmcp.server.server import FastMCP, _settings
+    from fastmcp.server.server import FastMCP
 
     # Create server with mix of deprecated and valid parameters
     server = FastMCP(
@@ -301,8 +303,9 @@ def test_task_management_env_var_fallback():
     Coverage target: Lines 222-241
     Validates AGENTHUB_DISABLE_CURSOR_TOOLS environment variable handling.
     """
-    from fastmcp.server.server import FastMCP
     import os
+
+    from fastmcp.server.server import FastMCP
 
     # Save original env var
     original_env = os.environ.get("AGENTHUB_DISABLE_CURSOR_TOOLS")
@@ -322,7 +325,7 @@ def test_task_management_env_var_fallback():
 
         import_path = 'fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'
         with patch(import_path, side_effect=mock_init):
-            server = FastMCP(
+            FastMCP(
                 name="test_env_fallback",
                 enable_task_management=True
             )
@@ -389,8 +392,9 @@ async def test_async_exit_stack_multiple_contexts():
     Coverage target: Lines 140-142
     Validates proper nesting of multiple async context managers.
     """
-    from fastmcp.server.server import _lifespan_wrapper, FastMCP
     from contextlib import asynccontextmanager
+
+    from fastmcp.server.server import FastMCP, _lifespan_wrapper
 
     context_order = []
 

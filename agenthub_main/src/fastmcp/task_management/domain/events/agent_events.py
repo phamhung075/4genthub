@@ -5,6 +5,8 @@ These events track agent assignments, workload, collaboration, and coordination.
 All events follow the standardized BaseDomainEvent pattern.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any

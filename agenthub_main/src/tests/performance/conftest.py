@@ -4,15 +4,16 @@ Performance Test Configuration and Fixtures
 Provides shared fixtures and configuration for performance testing suite.
 """
 
-import pytest
-import tempfile
 import asyncio
+import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+
+import pytest
+
+from . import setup_performance_logger
 
 # Import performance test components
-from .mocks.mock_mcp_server import create_performance_test_server, MockMCPServerManager
-from . import PERFORMANCE_CONFIG, setup_performance_logger
+from .mocks.mock_mcp_server import MockMCPServerManager, create_performance_test_server
 
 
 @pytest.fixture(scope="session")

@@ -3,10 +3,12 @@
 Test manual task creation with direct calls
 """
 
-import sys
 import asyncio
-import pytest
+import sys
 from pathlib import Path
+
+import pytest
+
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 @pytest.mark.asyncio
@@ -29,7 +31,9 @@ async def test_manual_task_creation():
     print(f"Converted assignees: {assignees}")
     
     # Step 2: Test CreateTaskRequest DTO  
-    from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
+    from fastmcp.task_management.application.dtos.task.create_task_request import (
+        CreateTaskRequest,
+    )
     
     request = CreateTaskRequest(
         title="Manual test task",
@@ -52,7 +56,7 @@ async def test_manual_task_creation():
             assignees=request.assignees,
             git_branch_id=request.git_branch_id
         )
-        print(f"Task created successfully!")
+        print("Task created successfully!")
         print(f"Task assignees: {task.assignees}")
 
         # Step 4: Test the validation that fails in CRUD handler

@@ -18,7 +18,7 @@ class FlexibleSchemaGenerator:
     Generates flexible JSON schemas for MCP tools that accept multiple parameter formats.
 
     This class modifies the standard JSON schema generation to create "anyOf" schemas
-    for Union types that include List[str] and str, allowing the MCP framework to
+    for Union types that include list[str] and str, allowing the MCP framework to
     accept arrays in multiple formats:
     - Direct arrays: ["item1", "item2"]
     - JSON string arrays: '["item1", "item2"]'
@@ -237,7 +237,7 @@ def create_flexible_mcp_tool_decorator():
     Usage:
         @create_flexible_mcp_tool_decorator()
         @mcp.tool(name="my_tool")
-        def my_tool(param: Union[List[str], str] = None):
+        def my_tool(param: Union[list[str], str] = None):
             pass
     """
 

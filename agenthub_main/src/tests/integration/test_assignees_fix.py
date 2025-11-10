@@ -2,7 +2,6 @@
 """Test script to validate assignees parameter fix"""
 
 import sys
-import os
 
 # Add the project path to sys.path
 project_path = "./agenthub_main/src"
@@ -11,7 +10,10 @@ sys.path.insert(0, project_path)
 def test_agent_role_validation():
     """Test AgentRole validation directly"""
     try:
-        from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole, resolve_legacy_role
+        from fastmcp.task_management.domain.value_objects.agent_roles import (
+            AgentRole,
+            resolve_legacy_role,
+        )
         
         print("=== Testing AgentRole Validation ===")
         
@@ -49,7 +51,7 @@ def test_agent_role_validation():
                 final_assignee = f"@{resolved}"
                 print(f"  ✅ VALID (resolved): {final_assignee}")
             else:
-                print(f"  ❌ INVALID")
+                print("  ❌ INVALID")
                 
         # Test the validation logic from CRUD handler
         print("\n=== Testing CRUD Handler Logic ===")
@@ -111,7 +113,7 @@ def test_available_roles():
             
         # Check specific roles we're testing
         test_roles = ["coding-agent", "test-orchestrator-agent"]
-        print(f"\nChecking test roles:")
+        print("\nChecking test roles:")
         for role in test_roles:
             exists = role in all_roles
             print(f"  - {role}: {'✅ EXISTS' if exists else '❌ MISSING'}")

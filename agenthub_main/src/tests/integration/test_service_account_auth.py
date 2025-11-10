@@ -8,18 +8,17 @@ Note: Requires proper Keycloak configuration and environment variables.
 """
 
 import os
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-import asyncio
-import json
-from datetime import datetime, timezone, timedelta
-from unittest.mock import AsyncMock, patch, MagicMock
 
 from fastmcp.auth.service_account import (
     ServiceAccountAuth,
     ServiceAccountConfig,
     ServiceToken,
+    authenticate_service_request,
     get_service_account_auth,
-    authenticate_service_request
 )
 
 # Test configuration
@@ -71,7 +70,7 @@ class TestServiceAccountAuth:
         token = ServiceToken(
             access_token="test-token",
             expires_in=300,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
         
         # Token should not be expired
@@ -82,7 +81,7 @@ class TestServiceAccountAuth:
         expired_token = ServiceToken(
             access_token="expired-token",
             expires_in=60,
-            created_at=datetime.now(timezone.utc) - timedelta(seconds=120)
+            created_at=datetime.now(UTC) - timedelta(seconds=120)
         )
         
         # Token should be expired
@@ -284,7 +283,7 @@ class TestServiceAccountAuth:
         expired_token = ServiceToken(
             access_token="expired-header-token",
             expires_in=60,
-            created_at=datetime.now(timezone.utc) - timedelta(seconds=120)
+            created_at=datetime.now(UTC) - timedelta(seconds=120)
         )
         self.auth._current_token = expired_token
         
@@ -369,7 +368,7 @@ class TestAuthenticationHelper:
             "azp": "test-client",
             "sub": "service-account-test",
             "scope": "openid mcp:read mcp:write",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         
         with patch('fastmcp.auth.service_account.get_service_account_auth') as mock_get_auth:

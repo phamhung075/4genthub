@@ -1,12 +1,18 @@
 """Unit tests for Server domain entity"""
 
-import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 from unittest.mock import patch
+
 from fastmcp.connection_management.domain.entities.server import Server
-from fastmcp.connection_management.domain.value_objects.server_status import ServerStatus
-from fastmcp.connection_management.domain.value_objects.server_capabilities import ServerCapabilities
-from fastmcp.connection_management.domain.events.connection_events import ServerHealthChecked
+from fastmcp.connection_management.domain.events.connection_events import (
+    ServerHealthChecked,
+)
+from fastmcp.connection_management.domain.value_objects.server_capabilities import (
+    ServerCapabilities,
+)
+from fastmcp.connection_management.domain.value_objects.server_status import (
+    ServerStatus,
+)
 
 
 class TestServer:

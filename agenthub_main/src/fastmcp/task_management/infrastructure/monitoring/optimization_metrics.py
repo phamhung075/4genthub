@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+from __future__ import annotations
+
 Optimization Metrics Collector
 
 Comprehensive metrics collection system for tracking response optimization,
@@ -364,7 +366,7 @@ class OptimizationMetricsCollector(MetricsCollector):
         
         # Calculate optimization statistics
         compression_ratios = [opt.compression_ratio for opt in recent_optimizations]
-        processing_times = [self.get_metric_summary("response_processing_time", time_window_hours)]
+        [self.get_metric_summary("response_processing_time", time_window_hours)]
         
         # Profile distribution
         profile_counts = defaultdict(int)

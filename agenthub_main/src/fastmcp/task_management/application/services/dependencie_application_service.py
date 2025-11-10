@@ -1,5 +1,7 @@
 """Dependencie Application Service"""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
 from fastmcp.task_management.application.dtos.dependency import (
@@ -37,7 +39,7 @@ class DependencieApplicationService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'DependencieApplicationService':
+    def with_user(self, user_id: str) -> DependencieApplicationService:
         """Create a new service instance scoped to a specific user."""
         return DependencieApplicationService(self._task_repository, user_id)
 

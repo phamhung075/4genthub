@@ -15,20 +15,28 @@ Tests the Task entity including:
 - Business rules enforcement
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
+import pytest
+
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.value_objects.progress import ProgressType, ProgressTimeline
+from fastmcp.task_management.domain.events import TaskCreated, TaskDeleted, TaskUpdated
+from fastmcp.task_management.domain.events.progress_events import ProgressUpdated
+from fastmcp.task_management.domain.exceptions.vision_exceptions import (
+    MissingCompletionSummaryError,
+)
 from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
 from fastmcp.task_management.domain.value_objects.common_labels import CommonLabel
-from fastmcp.task_management.domain.exceptions.vision_exceptions import MissingCompletionSummaryError
-from fastmcp.task_management.domain.events import TaskCreated, TaskUpdated, TaskDeleted
-from fastmcp.task_management.domain.events.progress_events import ProgressUpdated
+from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.progress import (
+    ProgressType,
+)
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatus,
+    TaskStatusEnum,
+)
 
 
 class TestTaskCreation:
@@ -59,7 +67,7 @@ class TestTaskCreation:
     def test_create_task_with_full_data(self):
         """Test creating a task with all fields specified."""
         task_id = TaskId("test-123")
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         
         task = Task(
             id=task_id,
@@ -187,11 +195,11 @@ class TestTaskCreation:
         )
         
         # Should be converted to UTC
-        assert task.created_at.tzinfo == timezone.utc
-        assert task.updated_at.tzinfo == timezone.utc
+        assert task.created_at.tzinfo == UTC
+        assert task.updated_at.tzinfo == UTC
         
         # Test with aware datetime
-        aware_dt = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        aware_dt = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         task2 = Task(
             title="Test2",
             description="Test2",
@@ -199,8 +207,8 @@ class TestTaskCreation:
             updated_at=aware_dt
         )
         
-        assert task2.created_at.tzinfo == timezone.utc
-        assert task2.updated_at.tzinfo == timezone.utc
+        assert task2.created_at.tzinfo == UTC
+        assert task2.updated_at.tzinfo == UTC
 
 
 class TestTaskProperties:
@@ -252,12 +260,12 @@ class TestTaskProperties:
         assert not task.is_overdue()
         
         # Future due date - not overdue
-        future = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+        future = (datetime.now(UTC) + timedelta(days=1)).isoformat()
         task.due_date = future
         assert not task.is_overdue()
         
         # Past due date - overdue
-        past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        past = (datetime.now(UTC) - timedelta(days=1)).isoformat()
         task.due_date = past
         assert task.is_overdue()
         
@@ -894,7 +902,7 @@ class TestTaskCompletion:
         
         task.complete_task(
             completion_summary="Task completed successfully",
-            context_updated_at=datetime.now(timezone.utc) + timedelta(seconds=1)
+            context_updated_at=datetime.now(UTC) + timedelta(seconds=1)
         )
         
         assert task.status.value == TaskStatusEnum.DONE.value
@@ -937,7 +945,7 @@ class TestTaskCompletion:
     
     def test_complete_task_context_timing_validation(self):
         """Test context timing validation."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         task = Task(
             id=TaskId("task-1"),
             title="Test",
@@ -973,7 +981,7 @@ class TestTaskCompletion:
         
         task.complete_task(
             completion_summary="All done",
-            context_updated_at=datetime.now(timezone.utc) + timedelta(seconds=1)
+            context_updated_at=datetime.now(UTC) + timedelta(seconds=1)
         )
         
         # Check subtask event
@@ -999,7 +1007,7 @@ class TestTaskCompletion:
         
         # Test with context timing
         task.subtasks = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         task.updated_at = now
         
         # Context older than task

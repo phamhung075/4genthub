@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import datetime
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -98,34 +100,34 @@ class Client(Generic[ClientTransportT]):
         cls,
         transport: ClientTransportT,
         **kwargs: Any,
-    ) -> "Client[ClientTransportT]": ...
+    ) -> Client[ClientTransportT]: ...
 
     @overload
     def __new__(
         cls, transport: AnyUrl, **kwargs
-    ) -> "Client[SSETransport|StreamableHttpTransport]": ...
+    ) -> Client[SSETransport|StreamableHttpTransport]: ...
 
     @overload
     def __new__(
         cls, transport: FastMCP | FastMCP1Server, **kwargs
-    ) -> "Client[FastMCPTransport]": ...
+    ) -> Client[FastMCPTransport]: ...
 
     @overload
     def __new__(
         cls, transport: Path, **kwargs
-    ) -> "Client[PythonStdioTransport|NodeStdioTransport]": ...
+    ) -> Client[PythonStdioTransport|NodeStdioTransport]: ...
 
     @overload
     def __new__(
         cls, transport: MCPConfig | dict[str, Any], **kwargs
-    ) -> "Client[MCPConfigTransport]": ...
+    ) -> Client[MCPConfigTransport]: ...
 
     @overload
     def __new__(
         cls, transport: str, **kwargs
-    ) -> "Client[PythonStdioTransport|NodeStdioTransport|SSETransport|StreamableHttpTransport]": ...
+    ) -> Client[PythonStdioTransport|NodeStdioTransport|SSETransport|StreamableHttpTransport]: ...
 
-    def __new__(cls, transport, **kwargs) -> "Client":
+    def __new__(cls, transport, **kwargs) -> Client:
         instance = super().__new__(cls)
         return instance
 

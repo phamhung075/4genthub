@@ -4,6 +4,8 @@ This module provides event persistence capabilities for event sourcing
 and audit logging in the Vision System architecture.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import sqlite3

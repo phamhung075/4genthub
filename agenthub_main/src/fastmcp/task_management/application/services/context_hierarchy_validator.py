@@ -5,6 +5,8 @@ Validates context creation requirements and provides user-friendly guidance
 for the 4-tier hierarchy: Global → Project → Branch → Task
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -276,7 +278,7 @@ class ContextHierarchyValidator:
                 "exists": global_ctx is not None,
                 "id": "global_singleton"
             }
-        except:
+        except Exception:
             status["current_state"]["global"] = {"exists": False}
         
         # Get counts for other levels
@@ -285,7 +287,7 @@ class ContextHierarchyValidator:
                 "count": len(self.project_repo.list()),
                 "hint": "Use manage_project(action='list') for details"
             }
-        except:
+        except Exception:
             status["current_state"]["projects"] = {"count": 0}
         
         try:
@@ -293,7 +295,7 @@ class ContextHierarchyValidator:
                 "count": len(self.branch_repo.list()),
                 "hint": "Use manage_git_branch(action='list') for details"
             }
-        except:
+        except Exception:
             status["current_state"]["branches"] = {"count": 0}
         
         try:
@@ -301,7 +303,7 @@ class ContextHierarchyValidator:
                 "count": len(self.task_repo.list()),
                 "hint": "Use manage_task(action='list') for details"
             }
-        except:
+        except Exception:
             status["current_state"]["tasks"] = {"count": 0}
         
         return status

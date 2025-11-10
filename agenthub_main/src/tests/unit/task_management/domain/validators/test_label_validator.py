@@ -4,12 +4,13 @@ This module tests all validation rules for label creation and updates,
 ensuring that business rules are properly enforced at the domain layer.
 """
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timezone, timedelta
 
 from fastmcp.task_management.domain.validators.label_validator import (
+    LabelValidationError,
     LabelValidator,
-    LabelValidationError
 )
 
 
@@ -19,7 +20,7 @@ class TestTimestampValidation:
     def test_validate_timestamp_utc_aware_success(self):
         """Test that UTC-aware timestamps pass validation."""
         validator = LabelValidator()
-        utc_time = datetime.now(timezone.utc)
+        utc_time = datetime.now(UTC)
 
         # Should not raise any exception
         validator.validate_timestamp(utc_time, "created_at")
@@ -43,14 +44,13 @@ class TestTimestampValidation:
             validator.validate_timestamp(naive_time, "created_at")
 
         assert "timezone-aware" in str(exc_info.value)
-        assert "datetime.now(timezone.utc)" in str(exc_info.value)
+        assert "datetime.now(UTC)" in str(exc_info.value)
 
     def test_validate_timestamp_non_utc_fails(self):
         """Test that non-UTC timezones fail validation."""
         validator = LabelValidator()
         # Create a timezone-aware datetime with non-UTC timezone
         from datetime import timedelta
-        from datetime import timezone as dt_timezone
 
         # Create a timezone offset (e.g., UTC+5)
         eastern = dt_timezone(timedelta(hours=-5))
@@ -64,7 +64,7 @@ class TestTimestampValidation:
     def test_validate_timestamps_consistency_success(self):
         """Test that consistent timestamps pass validation."""
         validator = LabelValidator()
-        created = datetime.now(timezone.utc)
+        created = datetime.now(UTC)
         updated = created + timedelta(seconds=1)
 
         # Should not raise any exception
@@ -73,7 +73,7 @@ class TestTimestampValidation:
     def test_validate_timestamps_consistency_same_time(self):
         """Test that equal created_at and updated_at pass validation."""
         validator = LabelValidator()
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
 
         # Should not raise - updated_at can equal created_at
         validator.validate_timestamps_consistency(timestamp, timestamp)
@@ -81,7 +81,7 @@ class TestTimestampValidation:
     def test_validate_timestamps_consistency_fails(self):
         """Test that updated_at earlier than created_at fails."""
         validator = LabelValidator()
-        created = datetime.now(timezone.utc)
+        created = datetime.now(UTC)
         updated = created - timedelta(seconds=1)
 
         with pytest.raises(LabelValidationError) as exc_info:
@@ -339,8 +339,8 @@ class TestLabelCreationValidation:
             name="backend",
             color="#ff0000",
             description="Backend API tasks",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         assert success is True
@@ -385,7 +385,7 @@ class TestLabelCreationValidation:
         """Test that inconsistent timestamps fail creation validation."""
         validator = LabelValidator()
 
-        created = datetime.now(timezone.utc)
+        created = datetime.now(UTC)
         updated = created - timedelta(seconds=1)  # Earlier than created
 
         success, error = validator.validate_label_creation(

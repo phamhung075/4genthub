@@ -1,5 +1,7 @@
 """Context JSON Schema Definition and Validation"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -180,7 +182,7 @@ class TaskContext:
         return convert_dataclass(self)
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'TaskContext':
+    def from_dict(cls, data: dict[str, Any]) -> TaskContext:
         """Create TaskContext from dictionary"""
         # Handle metadata with value object conversion
         metadata_data = data.get('metadata', {})

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Test that database initialization fix works"""
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Load environment from .env.dev
@@ -19,7 +19,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 def test_database_initialization():
     """Test that SessionLocal is properly initialized"""
-    from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig, get_db_config
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        DatabaseConfig,
+        get_db_config,
+    )
 
     try:
         print("\n" + "="*60)
@@ -61,7 +64,7 @@ def test_database_initialization():
         return True
 
     except Exception as e:
-        print(f"\n❌ Database initialization test FAILED!")
+        print("\n❌ Database initialization test FAILED!")
         print(f"Error: {e}")
         import traceback
         traceback.print_exc()

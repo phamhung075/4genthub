@@ -6,6 +6,8 @@ New agents get more warnings before strict enforcement kicks in.
 Part of Phase 2: Core Enforcement Implementation
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime

@@ -5,12 +5,14 @@ Consolidates database fixture patterns and provides consistent test data creatio
 Replaces scattered database setup patterns with a unified approach.
 """
 
+from __future__ import annotations
+
 import uuid
-from datetime import datetime, timezone
-from typing import Dict, Optional, List, Any
-from dataclasses import dataclass, field
-from sqlalchemy import text
+from dataclasses import dataclass
+from datetime import UTC, datetime
+
 import pytest
+from sqlalchemy import text
 
 
 @dataclass
@@ -82,9 +84,9 @@ class TestDataBuilder:
 
 
 def create_test_project_data(
-    project_id: Optional[str] = None,
-    git_branch_id: Optional[str] = None,
-    project_name: Optional[str] = None,
+    project_id: str | None = None,
+    git_branch_id: str | None = None,
+    project_name: str | None = None,
     branch_name: str = "test-branch",
     user_id: str = "test_user"
 ) -> TestProjectData:
@@ -110,7 +112,9 @@ def create_database_records(test_data: TestProjectData) -> None:
     Args:
         test_data: TestProjectData instance with the records to create
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
     
     db_config = get_db_config()
     
@@ -126,8 +130,8 @@ def create_database_records(test_data: TestProjectData) -> None:
                 'description': 'Project for testing',
                 'user_id': test_data.user_id,
                 'status': 'active',
-                'created_at': datetime.now(timezone.utc),
-                'updated_at': datetime.now(timezone.utc),
+                'created_at': datetime.now(UTC),
+                'updated_at': datetime.now(UTC),
                 'metadata': '{}'
             })
             
@@ -148,8 +152,8 @@ def create_database_records(test_data: TestProjectData) -> None:
                 'project_id': test_data.project_id,
                 'name': test_data.branch_name,
                 'description': 'Branch for testing',
-                'created_at': datetime.now(timezone.utc),
-                'updated_at': datetime.now(timezone.utc),
+                'created_at': datetime.now(UTC),
+                'updated_at': datetime.now(UTC),
                 'priority': 'medium',
                 'status': 'todo',
                 'metadata': '{}',
@@ -171,7 +175,9 @@ def cleanup_test_data(test_data: TestProjectData) -> None:
     Args:
         test_data: TestProjectData instance with the records to clean up
     """
-    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        get_db_config,
+    )
     
     db_config = get_db_config()
     
@@ -195,7 +201,7 @@ def cleanup_test_data(test_data: TestProjectData) -> None:
             session.rollback()
 
 
-def create_valid_git_branch(project_id: Optional[str] = None) -> str:
+def create_valid_git_branch(project_id: str | None = None) -> str:
     """
     Create a valid git branch ID that exists in the database.
     

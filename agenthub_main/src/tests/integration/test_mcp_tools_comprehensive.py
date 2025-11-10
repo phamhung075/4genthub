@@ -7,7 +7,8 @@ Tests all available MCP tool actions systematically
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Any
+
 
 class MCPToolsTester:
     def __init__(self):
@@ -78,12 +79,12 @@ Generated: {datetime.now().isoformat()}
                 
                 # Add fix prompt
                 report += f"#### Fix Prompt for Issue {i}\n"
-                report += f"```\n"
+                report += "```\n"
                 report += f"Fix the {issue['action']} functionality in agenthub_http.\n"
                 report += f"Error encountered: {issue['error']}\n"
-                report += f"Expected behavior: The action should complete successfully.\n"
-                report += f"Review the implementation and ensure proper error handling.\n"
-                report += f"```\n\n"
+                report += "Expected behavior: The action should complete successfully.\n"
+                report += "Review the implementation and ensure proper error handling.\n"
+                report += "```\n\n"
         
         return report
     

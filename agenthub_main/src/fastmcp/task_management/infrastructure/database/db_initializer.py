@@ -5,6 +5,8 @@ This module provides automatic database initialization and verification
 on server startup. It checks if tables exist and creates them if needed.
 """
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 

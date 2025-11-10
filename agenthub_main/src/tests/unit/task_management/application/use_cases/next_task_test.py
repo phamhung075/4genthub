@@ -10,17 +10,18 @@ This module tests the NextTaskUseCase functionality including:
 - Agent documentation generation coordination
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
-from datetime import datetime, timezone
-from typing import List, Dict, Any
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.application.use_cases.next_task import NextTaskUseCase, NextTaskResponse
+import pytest
+
+from fastmcp.task_management.application.use_cases.next_task import (
+    NextTaskResponse,
+    NextTaskUseCase,
+)
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 
 
 class TestNextTaskResponse:

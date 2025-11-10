@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Quick test diagnostics for iteration 34."""
 import subprocess
-import sys
 
 # Test one file at a time
 test_file = 'src/tests/unit/mcp_auto_injection/test_session_hooks.py'

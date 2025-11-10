@@ -3,6 +3,8 @@
 DDD use case for updating rules with proper validation and business logic.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from ...domain.repositories.rule_repository import RuleRepository

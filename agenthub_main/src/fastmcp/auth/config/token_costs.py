@@ -64,8 +64,7 @@ TOKEN_COSTS: dict[str, int] = {
     "get_agent": 1,        # Get agent details
     "list_agents": 1,      # List all agents
     "update_agent": 3,     # Update agent metadata
-    "unregister_agent": 3, # Unregister agent
-    "rebalance_agents": 5, # Rebalance agent assignments
+    "unregister_agent": 3, # Rebalance agent assignments
 
     # Context operations
     "create_context": 5,   # Create new context

@@ -13,15 +13,23 @@ Following DDD Architecture:
 - Notifications handled ONLY in Application Layer, never in Interface Layer
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.interface.api_controllers.task_api_controller import TaskAPIController
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
-from fastmcp.task_management.application.dtos.task.list_tasks_request import ListTasksRequest
-from fastmcp.types import TaskResponse, TasksResponse, DeleteResponse
+import pytest
+
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.list_tasks_request import (
+    ListTasksRequest,
+)
+from fastmcp.task_management.application.dtos.task.update_task_request import (
+    UpdateTaskRequest,
+)
+from fastmcp.task_management.interface.api_controllers.task_api_controller import (
+    TaskAPIController,
+)
+from fastmcp.types import DeleteResponse, TaskResponse, TasksResponse
 
 
 class TestTaskAPIControllerDelegation:
@@ -161,7 +169,7 @@ class TestTaskAPIControllerArchitectureBoundaries:
     def test_controller_only_delegates_to_handlers(self, controller):
         """Test that all public methods only delegate to handlers"""
         import inspect
-        from unittest.mock import Mock, MagicMock
+        from unittest.mock import MagicMock, Mock
 
         # Get all public methods (excluding special methods and mocks)
         public_methods = [name for name in dir(controller)
@@ -219,7 +227,7 @@ class TestTaskAPIControllerResponseIntegrity:
             request.git_branch_id = "branch-123"
             request.assignees = ["agent-1"]
 
-            result = controller.create_task(request, "user-123", Mock())
+            controller.create_task(request, "user-123", Mock())
 
             # Verify WebSocketNotificationService was NOT called from controller level
             # (It should only be called from use case/application layer)

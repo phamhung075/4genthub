@@ -4,15 +4,18 @@ Test to verify Supabase connection fix works correctly.
 This test verifies that uncommenting the DATABASE_URL fixes the connection issue.
 """
 
-import pytest
-import os
 import logging
-from unittest.mock import patch, MagicMock
-from contextlib import contextmanager
+import os
+from unittest.mock import MagicMock, patch
 
 # Import the modules we need to test
-from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
-from fastmcp.task_management.infrastructure.database.supabase_config import SupabaseConfig, is_supabase_configured
+from fastmcp.task_management.infrastructure.database.database_config import (
+    DatabaseConfig,
+)
+from fastmcp.task_management.infrastructure.database.supabase_config import (
+    SupabaseConfig,
+    is_supabase_configured,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -261,8 +264,8 @@ class TestSupabaseConnectionFix:
 
 if __name__ == "__main__":
     # Run the tests directly with pytest
-    import sys
     import subprocess
+    import sys
 
     result = subprocess.run([
         sys.executable, "-m", "pytest",

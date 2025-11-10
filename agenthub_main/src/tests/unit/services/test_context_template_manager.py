@@ -8,15 +8,15 @@ Tests the context template system including:
 - Performance metrics
 """
 
-import unittest
 import tempfile
-import yaml
+import unittest
 from pathlib import Path
-from typing import Dict, Any
+
+import yaml
 
 from fastmcp.task_management.application.services.context_template_manager import (
     ContextTemplateManager,
-    OperationType
+    OperationType,
 )
 
 
@@ -272,7 +272,7 @@ class TestContextTemplateManager(unittest.TestCase):
             self.assertTrue(output_path.exists())
             
             # Load and verify
-            with open(output_path, 'r') as f:
+            with open(output_path) as f:
                 saved_data = yaml.safe_load(f)
             
             self.assertIn("version", saved_data)

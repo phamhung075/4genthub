@@ -1,6 +1,6 @@
 """Test suite for ai_task_planning package initialization"""
 
-import pytest
+
 from fastmcp import ai_task_planning
 
 

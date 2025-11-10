@@ -2,24 +2,23 @@
 Tests for HTTP Server components - Starlette application and middleware configuration.
 """
 
-import os
-import pytest
-from unittest.mock import Mock, patch, MagicMock, AsyncMock, call
-from contextlib import asynccontextmanager
-from typing import Dict, Any, List
-import json
 import asyncio
+import os
+from contextlib import asynccontextmanager
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 try:
     from starlette.applications import Starlette
-    from starlette.testclient import TestClient
     from starlette.middleware import Middleware
     from starlette.middleware.cors import CORSMiddleware
     from starlette.middleware.trustedhost import TrustedHostMiddleware
     from starlette.requests import Request
-    from starlette.responses import Response, JSONResponse
-    from starlette.routing import Route, Mount, BaseRoute
-    from starlette.types import Scope, Receive, Send
+    from starlette.responses import JSONResponse, Response
+    from starlette.routing import BaseRoute, Mount, Route
+    from starlette.testclient import TestClient
+    from starlette.types import Receive, Scope, Send
     STARLETTE_AVAILABLE = True
 except ImportError:
     Starlette = None
@@ -47,20 +46,20 @@ except ImportError:
 
 try:
     from fastmcp.server.http_server import (
-        StarletteWithLifespan,
-        _current_http_request,
         KEYCLOAK_MIDDLEWARE_AVAILABLE,
-        TokenVerifier,
-        TokenVerifierAdapter,
-        RequestContextMiddleware,
         HTTPSRedirectMiddleware,
         MCPHeaderValidationMiddleware,
+        RequestContextMiddleware,
+        StarletteWithLifespan,
+        TokenVerifier,
+        TokenVerifierAdapter,
+        _current_http_request,
         create_base_app,
-        setup_auth_middleware_and_routes,
-        set_http_request,
         create_http_server_factory,
         create_sse_app,
-        create_streamable_http_app
+        create_streamable_http_app,
+        set_http_request,
+        setup_auth_middleware_and_routes,
     )
     HTTP_SERVER_AVAILABLE = True
 except ImportError:
@@ -190,7 +189,9 @@ class TestKeycloakMiddlewareIntegration:
         # When middleware is available, it should be importable
         with patch('fastmcp.server.http_server.KEYCLOAK_MIDDLEWARE_AVAILABLE', True):
             # Import from the original module to get the patched value
-            from fastmcp.server.http_server import KEYCLOAK_MIDDLEWARE_AVAILABLE as patched_value
+            from fastmcp.server.http_server import (
+                KEYCLOAK_MIDDLEWARE_AVAILABLE as patched_value,
+            )
             assert patched_value is True
 
     def test_keycloak_middleware_unavailable(self):
@@ -198,7 +199,9 @@ class TestKeycloakMiddlewareIntegration:
         # When middleware is unavailable, flag should be False
         with patch('fastmcp.server.http_server.KEYCLOAK_MIDDLEWARE_AVAILABLE', False):
             # Import from the original module to get the patched value
-            from fastmcp.server.http_server import KEYCLOAK_MIDDLEWARE_AVAILABLE as patched_value
+            from fastmcp.server.http_server import (
+                KEYCLOAK_MIDDLEWARE_AVAILABLE as patched_value,
+            )
             assert patched_value is False
 
 
@@ -1023,7 +1026,7 @@ class TestMCPHeaderValidationMiddleware:
             ]
         }
         receive = AsyncMock()
-        send = AsyncMock()
+        AsyncMock()
         
         # Create a mock to capture the response
         response_sent = False
@@ -1054,7 +1057,7 @@ class TestMCPHeaderValidationMiddleware:
             ]
         }
         receive = AsyncMock()
-        send = AsyncMock()
+        AsyncMock()
         
         # Create a mock to capture the response
         response_sent = False
@@ -1127,7 +1130,7 @@ class TestMCPHeaderValidationMiddleware:
             "headers": []
         }
         receive = AsyncMock()
-        send = AsyncMock()
+        AsyncMock()
         
         # Create a mock to capture the response
         response_sent = False
@@ -1177,7 +1180,7 @@ class TestMCPHeaderValidationMiddleware:
             ]
         }
         receive = AsyncMock()
-        send = AsyncMock()
+        AsyncMock()
         
         # Create a mock to capture the response
         headers_sent = {}
@@ -1254,7 +1257,7 @@ class TestCreateSSEApp:
         mock_create_base_app.return_value = mock_app
         
         # Create SSE app with auth
-        result = create_sse_app(
+        create_sse_app(
             server=mock_server,
             message_path="/messages",
             sse_path="/sse",
@@ -1292,7 +1295,7 @@ class TestCreateSSEApp:
             'fastmcp.server.routes.agent_routes': None,
             'fastmcp.server.routes.subtask_routes': None,
         }):
-            result = create_sse_app(
+            create_sse_app(
                 server=mock_server,
                 message_path="/messages",
                 sse_path="/sse"
@@ -1389,7 +1392,7 @@ class TestCreateStreamableHTTPApp:
         mock_create_base_app.return_value = mock_app
         
         # Create streamable HTTP app with all options
-        result = create_streamable_http_app(
+        create_streamable_http_app(
             server=mock_server,
             streamable_http_path="/mcp",
             event_store=mock_event_store,
@@ -1426,7 +1429,7 @@ class TestCreateStreamableHTTPApp:
         mock_create_base_app.return_value = mock_app
         
         # Create streamable HTTP app with auth
-        result = create_streamable_http_app(
+        create_streamable_http_app(
             server=mock_server,
             streamable_http_path="/mcp",
             auth=mock_auth

@@ -5,6 +5,8 @@ Provides version control for context changes with rollback capabilities,
 enabling audit trails and recovery from unwanted changes.
 """
 
+from __future__ import annotations
+
 import difflib
 import hashlib
 import json

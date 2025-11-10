@@ -14,49 +14,52 @@ Test Coverage:
 - Error handling and edge cases
 """
 
-import pytest
 import asyncio
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
-# Domain Events
-from fastmcp.task_management.domain.events.base import BaseDomainEvent, DomainEvent
-from fastmcp.task_management.domain.events.task_lifecycle_events import (
-    TaskCreatedEvent,
-    TaskUpdatedEvent,
-    TaskDeletedEvent,
-    TaskStatusChangedEvent,
-    TaskCompletedEvent,
-    TaskRetrievedEvent,
-    TaskMovedToBranchEvent,
+import pytest
+
+from fastmcp.task_management.application.event_handlers.agent_event_handlers import (
+    AgentEventHandlers,
+)
+from fastmcp.task_management.application.event_handlers.project_event_handlers import (
+    ProjectEventHandlers,
+)
+
+# Event Handlers
+from fastmcp.task_management.application.event_handlers.task_event_handlers import (
+    TaskEventHandlers,
 )
 from fastmcp.task_management.domain.events.agent_events import (
     AgentAssigned,
     AgentUnassigned,
     AgentWorkloadChanged,
 )
+
+# Domain Events
+from fastmcp.task_management.domain.events.base import BaseDomainEvent
 from fastmcp.task_management.domain.events.project_lifecycle_events import (
-    ProjectCreatedEvent,
     ProjectArchived,
+    ProjectCreatedEvent,
     ProjectHealthChanged,
     ProjectStatisticsUpdatedEvent,
+)
+from fastmcp.task_management.domain.events.task_lifecycle_events import (
+    TaskCompletedEvent,
+    TaskCreatedEvent,
+    TaskDeletedEvent,
+    TaskMovedToBranchEvent,
+    TaskStatusChangedEvent,
+    TaskUpdatedEvent,
 )
 
 # Event Infrastructure
 from fastmcp.task_management.infrastructure.event_bus import (
-    EventBus,
-    EventSubscription,
     get_event_bus,
     reset_event_bus,
 )
-
-# Event Handlers
-from fastmcp.task_management.application.event_handlers.task_event_handlers import TaskEventHandlers
-from fastmcp.task_management.application.event_handlers.agent_event_handlers import AgentEventHandlers
-from fastmcp.task_management.application.event_handlers.project_event_handlers import ProjectEventHandlers
-
 
 # ==============================================================================
 # Test Fixtures
@@ -327,7 +330,7 @@ class TestTaskLifecycleEvents:
         assert event.time_spent_minutes == 90
         assert isinstance(event.occurred_at, datetime)
         # Completion time should be recent
-        time_diff = (datetime.now(timezone.utc) - event.occurred_at).total_seconds()
+        time_diff = (datetime.now(UTC) - event.occurred_at).total_seconds()
         assert time_diff < 1  # Less than 1 second old
 
     def test_task_status_changed_event_transitions(self):
@@ -628,10 +631,10 @@ class TestEventBusIntegration:
         processing_times = []
 
         async def slow_handler(event: TaskCreatedEvent):
-            start = datetime.now(timezone.utc)
+            start = datetime.now(UTC)
             await asyncio.sleep(0.05)
             processed.append(event)
-            end = datetime.now(timezone.utc)
+            end = datetime.now(UTC)
             processing_times.append((end - start).total_seconds())
 
         event_bus.subscribe(TaskCreatedEvent, slow_handler)

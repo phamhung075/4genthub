@@ -6,12 +6,10 @@ for domain repositories following DDD principles.
 """
 
 import pytest
-from typing import List
 
 from fastmcp.task_management.domain.repositories.base_repository import (
     BaseRepository,
     PaginationRequest,
-    PaginationResult
 )
 
 

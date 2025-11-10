@@ -1,5 +1,7 @@
 """Task Application Service (task operations only)"""
 
+from __future__ import annotations
+
 from typing import Any
 
 from fastmcp.task_management.application.dtos.task import (
@@ -119,7 +121,7 @@ class TaskApplicationService:
                     return repo_class(self._task_repository.session, user_id=self._user_id)
         return self._task_repository
     
-    def with_user(self, user_id: str) -> 'TaskApplicationService':
+    def with_user(self, user_id: str) -> TaskApplicationService:
         """Create a new service instance scoped to a specific user."""
         return TaskApplicationService(self._task_repository, self._context_service, user_id)
 

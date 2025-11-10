@@ -7,14 +7,13 @@ covering lines 722-806 in mcp_entry_point.py.
 Target: 2-3 production-ready tests following existing patterns.
 """
 
-import pytest
-import os
-import sys
-from unittest.mock import Mock, patch, MagicMock, call
-from io import StringIO
-from contextlib import contextmanager
 import logging
+import sys
+from contextlib import contextmanager
+from io import StringIO
+from unittest.mock import Mock, patch
 
+import pytest
 
 # Test markers
 pytestmark = [
@@ -68,9 +67,9 @@ class TestHTTPServerIntegration:
              patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
              patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
              patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server, \
-             patch('fastmcp.auth.middleware.dual_auth_middleware.DualAuthMiddleware') as mock_dual_auth, \
-             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware') as mock_request_ctx, \
-             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware') as mock_debug_middleware, \
+             patch('fastmcp.auth.middleware.dual_auth_middleware.DualAuthMiddleware'), \
+             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware'), \
+             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware'), \
              patch('fastmcp.config.cors_factory.cors_factory') as mock_cors_factory, \
              capture_logs() as log_capture:
 
@@ -144,8 +143,8 @@ class TestHTTPServerIntegration:
              patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
              patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server, \
              patch('fastmcp.auth.middleware.dual_auth_middleware.DualAuthMiddleware') as mock_dual_auth, \
-             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware') as mock_request_ctx, \
-             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware') as mock_debug_middleware, \
+             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware'), \
+             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware'), \
              patch('fastmcp.config.cors_factory.cors_factory') as mock_cors_factory, \
              capture_logs() as log_capture:
 

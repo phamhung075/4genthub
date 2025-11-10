@@ -4,6 +4,8 @@ Interface layer adapter for backward compatibility with existing multi-agent too
 Moved from interface/mcp_tools/simple_multi_agent_tools.py for proper DDD layering.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

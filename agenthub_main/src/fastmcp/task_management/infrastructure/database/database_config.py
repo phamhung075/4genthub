@@ -6,6 +6,8 @@ supporting both local PostgreSQL and cloud Supabase deployments.
 """
 
 # Load environment variables BEFORE any configuration
+from __future__ import annotations
+
 from pathlib import Path
 
 try:
@@ -120,8 +122,6 @@ class DatabaseConfig:
         self._initializing = True
         try:
             # Check if we're in test mode
-            import sys
-            is_test_mode = 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ
 
             # NO FALLBACK - Require explicit DATABASE_TYPE configuration
             self.database_type = os.getenv("DATABASE_TYPE")

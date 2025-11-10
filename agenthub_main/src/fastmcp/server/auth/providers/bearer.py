@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 from dataclasses import dataclass
 from typing import Any, TypedDict
@@ -51,7 +53,7 @@ class RSAKeyPair:
     public_key: str
 
     @classmethod
-    def generate(cls) -> "RSAKeyPair":
+    def generate(cls) -> RSAKeyPair:
         """
         Generate an RSA key pair for testing.
 

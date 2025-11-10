@@ -17,10 +17,12 @@ Usage Examples:
     >>> req, resp = MCPMessageFixtures.get_request_response_pair("task_create")
 """
 
-from typing import Dict, List, Any, Tuple, Optional
-from datetime import datetime, timezone
+from __future__ import annotations
+
 import json
 import uuid
+from datetime import UTC, datetime
+from typing import Any
 
 
 class MCPMessageFixtures:
@@ -34,8 +36,8 @@ class MCPMessageFixtures:
     def get_task_create_request(
         title: str = "Test Task",
         assignees: str = "coding-agent",
-        git_branch_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        git_branch_id: str | None = None
+    ) -> dict[str, Any]:
         """Generate a valid task creation request."""
         return {
             "action": "create",
@@ -50,10 +52,10 @@ class MCPMessageFixtures:
         }
 
     @staticmethod
-    def get_task_create_response(task_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_task_create_response(task_id: str | None = None) -> dict[str, Any]:
         """Generate a valid task creation response."""
         task_id = task_id or str(uuid.uuid4())
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         return {
             "success": True,
@@ -82,7 +84,7 @@ class MCPMessageFixtures:
         }
 
     @staticmethod
-    def get_task_update_request(task_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_task_update_request(task_id: str | None = None) -> dict[str, Any]:
         """Generate a valid task update request."""
         return {
             "action": "update",
@@ -93,7 +95,7 @@ class MCPMessageFixtures:
         }
 
     @staticmethod
-    def get_task_complete_request(task_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_task_complete_request(task_id: str | None = None) -> dict[str, Any]:
         """Generate a valid task completion request."""
         return {
             "action": "complete",
@@ -103,7 +105,7 @@ class MCPMessageFixtures:
         }
 
     @staticmethod
-    def get_task_list_request(git_branch_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_task_list_request(git_branch_id: str | None = None) -> dict[str, Any]:
         """Generate a valid task list request."""
         return {
             "action": "list",
@@ -118,9 +120,9 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_subtask_create_request(
-        task_id: Optional[str] = None,
+        task_id: str | None = None,
         title: str = "Test Subtask"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a valid subtask creation request."""
         return {
             "action": "create",
@@ -133,9 +135,9 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_subtask_update_request(
-        task_id: Optional[str] = None,
-        subtask_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        task_id: str | None = None,
+        subtask_id: str | None = None
+    ) -> dict[str, Any]:
         """Generate a valid subtask update request."""
         return {
             "action": "update",
@@ -152,8 +154,8 @@ class MCPMessageFixtures:
     @staticmethod
     def get_context_create_request(
         level: str = "task",
-        context_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        context_id: str | None = None
+    ) -> dict[str, Any]:
         """Generate a valid context creation request."""
         return {
             "action": "create",
@@ -169,9 +171,9 @@ class MCPMessageFixtures:
     @staticmethod
     def get_context_get_request(
         level: str = "task",
-        context_id: Optional[str] = None,
+        context_id: str | None = None,
         include_inherited: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a valid context get request."""
         return {
             "action": "get",
@@ -183,8 +185,8 @@ class MCPMessageFixtures:
     @staticmethod
     def get_context_update_request(
         level: str = "task",
-        context_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        context_id: str | None = None
+    ) -> dict[str, Any]:
         """Generate a valid context update request."""
         return {
             "action": "update",
@@ -201,7 +203,7 @@ class MCPMessageFixtures:
     # =========================================================================
 
     @staticmethod
-    def get_project_create_request(name: str = "Test Project") -> Dict[str, Any]:
+    def get_project_create_request(name: str = "Test Project") -> dict[str, Any]:
         """Generate a valid project creation request."""
         return {
             "action": "create",
@@ -210,7 +212,7 @@ class MCPMessageFixtures:
         }
 
     @staticmethod
-    def get_project_get_request(project_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_project_get_request(project_id: str | None = None) -> dict[str, Any]:
         """Generate a valid project get request."""
         return {
             "action": "get",
@@ -218,7 +220,7 @@ class MCPMessageFixtures:
         }
 
     @staticmethod
-    def get_project_list_request() -> Dict[str, Any]:
+    def get_project_list_request() -> dict[str, Any]:
         """Generate a valid project list request."""
         return {
             "action": "list"
@@ -230,9 +232,9 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_branch_create_request(
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         name: str = "feature/test"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a valid branch creation request."""
         return {
             "action": "create",
@@ -242,7 +244,7 @@ class MCPMessageFixtures:
         }
 
     @staticmethod
-    def get_branch_list_request(project_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_branch_list_request(project_id: str | None = None) -> dict[str, Any]:
         """Generate a valid branch list request."""
         return {
             "action": "list",
@@ -255,9 +257,9 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_agent_register_request(
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         name: str = "test-agent"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a valid agent registration request."""
         return {
             "action": "register",
@@ -268,10 +270,10 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_agent_assign_request(
-        project_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        project_id: str | None = None,
+        agent_id: str | None = None,
+        git_branch_id: str | None = None
+    ) -> dict[str, Any]:
         """Generate a valid agent assignment request."""
         return {
             "action": "assign",
@@ -285,7 +287,7 @@ class MCPMessageFixtures:
     # =========================================================================
 
     @staticmethod
-    def get_invalid_request(error_type: str) -> Dict[str, Any]:
+    def get_invalid_request(error_type: str) -> dict[str, Any]:
         """Generate invalid requests for error handling tests.
 
         Args:
@@ -352,8 +354,8 @@ class MCPMessageFixtures:
     @staticmethod
     def get_error_response(
         error_type: str,
-        detail: Optional[str] = None
-    ) -> Dict[str, Any]:
+        detail: str | None = None
+    ) -> dict[str, Any]:
         """Generate error response for testing error handling.
 
         Args:
@@ -377,7 +379,7 @@ class MCPMessageFixtures:
             "error": {
                 "type": error_type,
                 "message": detail or error_messages.get(error_type, "Unknown error"),
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             }
         }
 
@@ -388,7 +390,7 @@ class MCPMessageFixtures:
     @staticmethod
     def get_request_response_pair(
         operation: str
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         """Get matching request/response pair for integration tests.
 
         Args:
@@ -412,7 +414,7 @@ class MCPMessageFixtures:
                         "id": task_id,
                         "status": "in_progress",
                         "progress_percentage": 50,
-                        "updated_at": datetime.now(timezone.utc).isoformat()
+                        "updated_at": datetime.now(UTC).isoformat()
                     }
                 }
             }
@@ -428,7 +430,7 @@ class MCPMessageFixtures:
                 "data": {
                     "context_id": context_id,
                     "level": "task",
-                    "created_at": datetime.now(timezone.utc).isoformat()
+                    "created_at": datetime.now(UTC).isoformat()
                 }
             }
             return request, response
@@ -441,7 +443,7 @@ class MCPMessageFixtures:
     # =========================================================================
 
     @staticmethod
-    def serialize_message(message: Dict[str, Any], pretty: bool = False) -> str:
+    def serialize_message(message: dict[str, Any], pretty: bool = False) -> str:
         """Serialize message to JSON string.
 
         Args:
@@ -456,7 +458,7 @@ class MCPMessageFixtures:
         return json.dumps(message, default=str)
 
     @staticmethod
-    def deserialize_message(json_str: str) -> Dict[str, Any]:
+    def deserialize_message(json_str: str) -> dict[str, Any]:
         """Deserialize JSON string to message dictionary.
 
         Args:
@@ -469,9 +471,9 @@ class MCPMessageFixtures:
 
     @staticmethod
     def validate_message_structure(
-        message: Dict[str, Any],
-        required_fields: List[str]
-    ) -> Tuple[bool, Optional[str]]:
+        message: dict[str, Any],
+        required_fields: list[str]
+    ) -> tuple[bool, str | None]:
         """Validate that a message has required fields.
 
         Args:
@@ -494,16 +496,16 @@ class MCPMessageFixtures:
 
 # Convenience functions for quick access
 
-def get_sample_task_request() -> Dict[str, Any]:
+def get_sample_task_request() -> dict[str, Any]:
     """Quick helper to get a sample task creation request."""
     return MCPMessageFixtures.get_task_create_request()
 
 
-def get_sample_task_response() -> Dict[str, Any]:
+def get_sample_task_response() -> dict[str, Any]:
     """Quick helper to get a sample task creation response."""
     return MCPMessageFixtures.get_task_create_response()
 
 
-def get_sample_error_response(error_type: str = "missing_required") -> Dict[str, Any]:
+def get_sample_error_response(error_type: str = "missing_required") -> dict[str, Any]:
     """Quick helper to get a sample error response."""
     return MCPMessageFixtures.get_error_response(error_type)

@@ -1,16 +1,16 @@
 """Unit tests for progress tracking value objects."""
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any
 
 from fastmcp.task_management.domain.value_objects.progress import (
-    ProgressType,
-    ProgressStatus,
+    ProgressCalculationStrategy,
     ProgressMetadata,
     ProgressSnapshot,
+    ProgressStatus,
     ProgressTimeline,
-    ProgressCalculationStrategy
+    ProgressType,
 )
 
 
@@ -46,7 +46,7 @@ class TestProgressMetadata:
 
     def test_create_progress_metadata(self):
         """Test creating ProgressMetadata with all fields."""
-        estimated = datetime.now(timezone.utc) + timedelta(days=3)
+        estimated = datetime.now(UTC) + timedelta(days=3)
         
         metadata = ProgressMetadata(
             blockers=["Missing API specs", "Dependency not ready"],
@@ -74,7 +74,7 @@ class TestProgressMetadata:
 
     def test_to_dict(self):
         """Test converting metadata to dictionary."""
-        estimated = datetime.now(timezone.utc)
+        estimated = datetime.now(UTC)
         
         metadata = ProgressMetadata(
             blockers=["Blocker 1"],
@@ -105,7 +105,7 @@ class TestProgressMetadata:
 
     def test_from_dict(self):
         """Test creating metadata from dictionary."""
-        estimated = datetime.now(timezone.utc)
+        estimated = datetime.now(UTC)
         data = {
             "blockers": ["Test blocker"],
             "dependencies": ["dep-123"],
@@ -148,7 +148,7 @@ class TestProgressSnapshot:
 
     def test_create_progress_snapshot(self):
         """Test creating ProgressSnapshot with all fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         metadata = ProgressMetadata(confidence_level=0.85)
         
         snapshot = ProgressSnapshot(
@@ -203,7 +203,7 @@ class TestProgressSnapshot:
 
     def test_to_dict(self):
         """Test converting snapshot to dictionary."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         metadata = ProgressMetadata(
             blockers=["Test blocker"],
             confidence_level=0.9
@@ -236,7 +236,7 @@ class TestProgressSnapshot:
 
     def test_from_dict(self):
         """Test creating snapshot from dictionary."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         data = {
             "id": "from-dict-id",
             "task_id": "task-789",
@@ -329,7 +329,7 @@ class TestProgressTimeline:
         timeline = ProgressTimeline(task_id="task-123")
         
         # Add snapshots in reverse chronological order
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for i in range(3):
             snapshot = ProgressSnapshot(
                 task_id="task-123",
@@ -350,7 +350,7 @@ class TestProgressTimeline:
         assert timeline.get_latest_snapshot() is None
         
         # Add snapshots
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         old_snapshot = ProgressSnapshot(
             task_id="task-123",
             timestamp=now - timedelta(hours=2),
@@ -445,7 +445,7 @@ class TestProgressTimeline:
         """Test that overall progress uses only the latest snapshot per type."""
         timeline = ProgressTimeline(task_id="task-123")
         
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         # Add multiple snapshots for same type
         old_impl = ProgressSnapshot(
@@ -518,7 +518,7 @@ class TestProgressTimeline:
     def test_get_progress_trend(self):
         """Test getting progress trend for last N hours."""
         timeline = ProgressTimeline(task_id="task-123")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         # Add snapshots at different times
         for i in range(48, -1, -6):  # 48, 42, 36, ..., 6, 0 hours ago

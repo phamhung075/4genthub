@@ -1,9 +1,12 @@
 """Test suite for PlanningRequest domain entity"""
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
+
 from fastmcp.ai_task_planning.domain.entities.planning_request import (
-    PlanningRequest, RequirementItem, ComplexityLevel, PlanningContext
+    ComplexityLevel,
+    PlanningContext,
+    PlanningRequest,
+    RequirementItem,
 )
 
 
@@ -189,7 +192,7 @@ class TestPlanningRequest:
     
     def test_planning_request_with_full_context(self):
         """Test creating planning request with all fields"""
-        deadline = datetime.now(timezone.utc) + timedelta(days=7)
+        deadline = datetime.now(UTC) + timedelta(days=7)
         
         request = PlanningRequest(
             id="plan_456",
@@ -219,7 +222,7 @@ class TestPlanningRequest:
     
     def test_to_dict_serialization(self):
         """Test serializing planning request to dictionary"""
-        deadline = datetime.now(timezone.utc) + timedelta(days=5)
+        deadline = datetime.now(UTC) + timedelta(days=5)
         
         request = PlanningRequest(
             id="plan_789",
@@ -255,8 +258,8 @@ class TestPlanningRequest:
     
     def test_from_dict_deserialization(self):
         """Test deserializing planning request from dictionary"""
-        deadline = datetime.now(timezone.utc) + timedelta(days=3)
-        created_at = datetime.now(timezone.utc)
+        deadline = datetime.now(UTC) + timedelta(days=3)
+        created_at = datetime.now(UTC)
         
         data = {
             'id': 'plan_999',

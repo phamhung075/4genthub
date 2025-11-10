@@ -19,26 +19,24 @@ Date: 2025-10-24
 Task: Implement comprehensive Redis cache decorator tests (Task 2.5)
 """
 
-import pytest
-import pytest_asyncio
 import asyncio
 import json
-import time
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from datetime import timedelta
-from typing import Any, Dict
+from typing import Any
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+import pytest_asyncio
 
 # Import the cache decorator and manager
 from fastmcp.server.cache.redis_cache_decorator import (
-    RedisCacheManager,
-    redis_cache,
-    get_cache_manager,
     CacheInvalidator,
     CacheMetrics,
+    RedisCacheManager,
+    _cache_manager,
     cache_metrics,
-    _cache_manager
+    get_cache_manager,
+    redis_cache,
 )
-
 
 # =============================================================================
 # FIXTURES
@@ -345,7 +343,7 @@ class TestRedisFailureHandling:
             return x * 2
 
         # Simulate timeout
-        cache_manager._client.get = AsyncMock(side_effect=asyncio.TimeoutError())
+        cache_manager._client.get = AsyncMock(side_effect=TimeoutError())
 
         with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
             result = await expensive_function(5)
@@ -893,7 +891,7 @@ class TestIntegration:
         call_count = 0
 
         @redis_cache(ttl=300, key_prefix="integration_test")
-        async def expensive_operation(x: int) -> Dict[str, Any]:
+        async def expensive_operation(x: int) -> dict[str, Any]:
             nonlocal call_count
             call_count += 1
             return {"result": x * 2, "computed": True}

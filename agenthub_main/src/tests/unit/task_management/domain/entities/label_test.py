@@ -1,7 +1,8 @@
 """Test suite for Label Domain Entity"""
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
 
 from fastmcp.task_management.domain.entities.label import Label
 
@@ -30,7 +31,7 @@ class TestLabelInitialization:
         name = "Feature"
         color = "#00ff00"
         description = "New feature implementation"
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         
         label = Label(
             id=label_id,
@@ -220,8 +221,8 @@ class TestLabelEquality:
     def test_labels_with_same_data_are_equal(self):
         """Test that labels with same data are considered equal"""
         # Use timezone-aware datetime as required by BaseTimestampEntity
-        created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-        updated_at = datetime(2024, 1, 1, 12, 0, 1, tzinfo=timezone.utc)
+        created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        updated_at = datetime(2024, 1, 1, 12, 0, 1, tzinfo=UTC)
         
         label1 = Label(
             id=1,
@@ -400,9 +401,9 @@ class TestLabelEdgeCases:
     def test_label_created_at_with_future_date(self):
         """Test label with future created_at date"""
         # Use timezone-aware datetime
-        future_date = datetime(2030, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        future_date = datetime(2030, 12, 31, 23, 59, 59, tzinfo=UTC)
         # updated_at must be >= created_at per BaseTimestampEntity validation
-        future_updated = datetime(2030, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        future_updated = datetime(2030, 12, 31, 23, 59, 59, tzinfo=UTC)
         
         label = Label(id=1, name="Future", created_at=future_date, updated_at=future_updated)
         
@@ -427,7 +428,7 @@ class TestLabelSerializationScenarios:
 
     def test_label_attributes_are_accessible(self):
         """Test that all label attributes are accessible"""
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         
         label = Label(
             id=123,
@@ -484,7 +485,7 @@ class TestLabelSerializationScenarios:
         label.name = "Updated Name"
         label.color = "#ff00ff"
         label.description = "Updated description"
-        label.created_at = datetime.now(timezone.utc)
+        label.created_at = datetime.now(UTC)
         
         assert label.name == "Updated Name"
         assert label.color == "#ff00ff"
@@ -493,7 +494,7 @@ class TestLabelSerializationScenarios:
 
     def test_label_modification_preserves_other_fields(self):
         """Test that modifying one field doesn't affect others"""
-        original_created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)  # BaseTimestampEntity requires timezone-aware
+        original_created_at = datetime(2024, 1, 1, tzinfo=UTC)  # BaseTimestampEntity requires timezone-aware
         
         label = Label(
             id=789,

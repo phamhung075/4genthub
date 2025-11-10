@@ -1,5 +1,7 @@
 """Subtask Domain Entity"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -384,7 +386,7 @@ class Subtask(BaseTimestampEntity):
         """
         if not self.assignees and parent_assignees:
             # Only inherit if subtask has no assignees assigned
-            old_assignees = self.assignees.copy()
+            self.assignees.copy()
             self.assignees = parent_assignees.copy()
             self.touch("assignees_inherited")
             
@@ -512,7 +514,7 @@ class Subtask(BaseTimestampEntity):
     @classmethod
     def create(cls, id: TaskId, title: str, description: str, parent_task_id: TaskId,
                status: TaskStatus | None = None, priority: Priority | None = None,
-               **kwargs) -> 'Subtask':
+               **kwargs) -> Subtask:
         """Factory method to create a new subtask"""
         if status is None:
             status = TaskStatus.todo()
@@ -541,7 +543,7 @@ class Subtask(BaseTimestampEntity):
         )
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any], parent_task_id: TaskId) -> 'Subtask':
+    def from_dict(cls, data: dict[str, Any], parent_task_id: TaskId) -> Subtask:
         """Create a subtask from dictionary data"""
         # Convert timestamps if present
         created_at = None

@@ -13,31 +13,33 @@ Test Coverage:
 - Performance optimization paths
 """
 
-import pytest
 import json
 import subprocess
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock, call, mock_open
-from datetime import datetime, timezone, timedelta
 
 # Import session hook components
 import sys
+import tempfile
+from datetime import UTC, datetime
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
+
 hooks_path = Path(__file__).parent.parent.parent.parent.parent.parent / ".claude" / "hooks"
 sys.path.insert(0, str(hooks_path))
 
 # Try to import session_start, skip tests if not available (e.g., in CI where .claude is not tracked)
 try:
     from session_start import (
-        log_session_start,
+        format_mcp_context,
+        get_git_branch_context,
         get_git_status,
         get_recent_issues,
-        query_mcp_pending_tasks,
-        query_mcp_next_task,
-        get_git_branch_context,
-        format_mcp_context,
         load_development_context,
-        main
+        log_session_start,
+        main,
+        query_mcp_next_task,
+        query_mcp_pending_tasks,
     )
     SESSION_START_AVAILABLE = True
 except ImportError:
@@ -60,7 +62,7 @@ class TestLogSessionStart:
         input_data = {
             "session_id": "test-session-123",
             "source": "startup",
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat()
         }
         
         log_session_start(input_data)
@@ -68,7 +70,7 @@ class TestLogSessionStart:
         log_file = temp_ai_data_dir / 'session_start.json'
         assert log_file.exists()
         
-        with open(log_file, 'r') as f:
+        with open(log_file) as f:
             logged_data = json.load(f)
         
         assert len(logged_data) == 1
@@ -88,7 +90,7 @@ class TestLogSessionStart:
         log_session_start(new_input)
         
         # Verify both entries exist
-        with open(log_file, 'r') as f:
+        with open(log_file) as f:
             logged_data = json.load(f)
         
         assert len(logged_data) == 2
@@ -107,7 +109,7 @@ class TestLogSessionStart:
         input_data = {"session_id": "test-session", "source": "startup"}
         log_session_start(input_data)
         
-        with open(log_file, 'r') as f:
+        with open(log_file) as f:
             logged_data = json.load(f)
         
         assert len(logged_data) == 1

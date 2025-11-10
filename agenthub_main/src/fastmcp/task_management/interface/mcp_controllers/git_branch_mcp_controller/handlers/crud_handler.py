@@ -4,6 +4,8 @@ Git Branch CRUD Handler
 Handles basic CRUD operations for git branch management.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

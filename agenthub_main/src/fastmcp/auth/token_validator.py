@@ -5,6 +5,8 @@ Provides comprehensive token validation, rate limiting, and security monitoring
 for the MCP server MVP implementation.
 """
 
+from __future__ import annotations
+
 import logging
 import time
 from collections import defaultdict, deque

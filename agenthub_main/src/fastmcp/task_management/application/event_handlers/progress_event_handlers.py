@@ -4,9 +4,11 @@ These handlers process progress-related domain events and trigger appropriate
 actions such as notifications, aggregations, and state updates.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Any
 
 from ...domain.events.progress_events import (
     ProgressMilestoneReached,
@@ -105,8 +107,8 @@ class ProgressMilestoneReachedHandler:
     """Handler for ProgressMilestoneReached events."""
     
     def __init__(self,
-                 notification_service: Optional['NotificationService'] = None,
-                 event_store: Optional['EventStore'] = None):
+                 notification_service: NotificationService | None = None,
+                 event_store: EventStore | None = None):
         """Initialize the handler."""
         self.notification_service = notification_service
         self.event_store = event_store
@@ -147,7 +149,7 @@ class ProgressStalledHandler:
     
     def __init__(self,
                  task_repository: TaskRepository,
-                 notification_service: Optional['NotificationService'] = None):
+                 notification_service: NotificationService | None = None):
         """Initialize the handler."""
         self.task_repository = task_repository
         self.notification_service = notification_service
@@ -241,7 +243,7 @@ class ProgressTypeCompletedHandler:
     
     def __init__(self,
                  task_repository: TaskRepository,
-                 notification_service: Optional['NotificationService'] = None):
+                 notification_service: NotificationService | None = None):
         """Initialize the handler."""
         self.task_repository = task_repository
         self.notification_service = notification_service
@@ -287,8 +289,8 @@ class ProgressEventHandlers:
     def __init__(self,
                  task_repository: TaskRepository,
                  context_repository: ContextRepository,
-                 notification_service: Optional['NotificationService'] = None,
-                 event_store: Optional['EventStore'] = None):
+                 notification_service: NotificationService | None = None,
+                 event_store: EventStore | None = None):
         """Initialize the registry with all handlers."""
         self.handlers = {
             ProgressUpdated: ProgressUpdatedHandler(

@@ -11,6 +11,8 @@ The controller now uses:
 - Workflow guidance system integration
 """
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -95,7 +97,7 @@ class AgentMCPController:
         self._operation_factory = AgentOperationFactory(self._response_formatter)
         self._response_factory = AgentResponseFactory(self._response_formatter)
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """Register agent management MCP tools with the FastMCP server"""
         # Get centralized parameter definitions
         params = get_manage_agent_parameters()

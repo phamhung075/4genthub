@@ -1,5 +1,7 @@
 """User Domain Entity for Authentication"""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -215,7 +217,7 @@ class User(BaseTimestampEntity):
         }
     
     @classmethod
-    def from_dict(cls, data: dict) -> "User":
+    def from_dict(cls, data: dict) -> User:
         """Create User from dictionary"""
         # Parse dates
         for date_field in ["created_at", "updated_at", "email_verified_at", "last_login_at", 

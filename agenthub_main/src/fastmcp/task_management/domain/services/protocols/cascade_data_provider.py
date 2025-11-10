@@ -9,6 +9,8 @@ Infrastructure implementations (e.g., SQLAlchemyCascadeDataProvider) provide the
 data access logic using specific technologies.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Protocol
 

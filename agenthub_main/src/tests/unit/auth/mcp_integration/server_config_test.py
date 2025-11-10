@@ -2,23 +2,27 @@
 Tests for MCP Server Configuration with JWT Authentication
 """
 
-import pytest
 import os
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
+import pytest
 from starlette.middleware import Middleware
 
+from fastmcp.auth.mcp_integration.jwt_auth_backend import JWTAuthBackend
 from fastmcp.auth.mcp_integration.server_config import (
     configure_jwt_auth_for_mcp,
-    get_jwt_middleware,
-    setup_mcp_with_jwt_auth,
-    integrate_jwt_with_http_server,
     configure_jwt_from_env,
-    validate_jwt_configuration
+    get_jwt_middleware,
+    integrate_jwt_with_http_server,
+    setup_mcp_with_jwt_auth,
+    validate_jwt_configuration,
 )
-from fastmcp.auth.mcp_integration.jwt_auth_backend import JWTAuthBackend
+
 # UserContextMiddleware has been replaced with RequestContextMiddleware
 try:
-    from fastmcp.auth.middleware.request_context_middleware import RequestContextMiddleware as UserContextMiddleware
+    from fastmcp.auth.middleware.request_context_middleware import (
+        RequestContextMiddleware as UserContextMiddleware,
+    )
 except ImportError:
     UserContextMiddleware = None
 

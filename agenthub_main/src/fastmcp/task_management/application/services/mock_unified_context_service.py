@@ -5,6 +5,8 @@ from test fixtures. The actual implementation is in:
 tests/fixtures/mocks/services/mock_unified_context_service.py
 """
 
+from __future__ import annotations
+
 import logging
 import sys
 from pathlib import Path

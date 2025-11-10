@@ -5,6 +5,8 @@ It converts between MCP request formats and application DTOs, then
 delegates all business logic to the TaskApplicationFacade.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -35,12 +37,12 @@ class DependencyMCPController:
     - Handling protocol-specific errors
     """
 
-    def __init__(self, task_facade: "TaskApplicationFacade"):
+    def __init__(self, task_facade: TaskApplicationFacade):
         self._handler = DependencyOperationHandler(task_facade)
         self._description_service = DescriptionService()
         logger.info("DependencyMCPController initialized")
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         # Get centralized parameter definitions
         params = get_manage_dependency_parameters()
 

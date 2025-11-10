@@ -1,6 +1,8 @@
 """Remove Dependency Use Case"""
 
 
+from __future__ import annotations
+
 from ...application.dtos.dependency import DependencyResponse
 from ...domain import TaskId, TaskNotFoundError, TaskRepository
 

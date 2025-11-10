@@ -14,23 +14,31 @@ Tests complete flow:
 Following DDD Architecture - Layer by Layer
 """
 
-import pytest
 import asyncio
+import logging
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Any
 from unittest.mock import patch
 from uuid import uuid4
 
-# Import application layer
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
+import pytest
+
+from fastmcp.auth.domain.entities.user import User
 
 # Import WebSocket infrastructure
 from fastmcp.server.routes.websocket_routes import active_connections, connection_users
-from fastmcp.auth.domain.entities.user import User
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.update_task_request import (
+    UpdateTaskRequest,
+)
 
-import logging
+# Import application layer
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,10 +48,10 @@ class MockWebSocketConnection:
     def __init__(self, user_id: str, user_email: str):
         self.user_id = user_id
         self.user_email = user_email
-        self.received_messages: List[Dict[str, Any]] = []
+        self.received_messages: list[dict[str, Any]] = []
         self.connected = True
 
-    async def send_json(self, message: Dict[str, Any]):
+    async def send_json(self, message: dict[str, Any]):
         """Mock sending JSON message - just store it"""
         if self.connected:
             self.received_messages.append(message)
@@ -51,7 +59,7 @@ class MockWebSocketConnection:
         else:
             raise Exception("WebSocket not connected")
 
-    def get_messages_by_type(self, event_type: str) -> List[Dict[str, Any]]:
+    def get_messages_by_type(self, event_type: str) -> list[dict[str, Any]]:
         """Get messages filtered by event type"""
         return [msg for msg in self.received_messages if msg['payload']['action'] == event_type]
 

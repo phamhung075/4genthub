@@ -3,6 +3,8 @@
 Application layer service for managing audit trails and compliance monitoring.
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -40,7 +42,7 @@ class AuditService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'AuditService':
+    def with_user(self, user_id: str) -> AuditService:
         """Create a new service instance scoped to a specific user."""
         return AuditService(user_id)
         

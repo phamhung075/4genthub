@@ -10,9 +10,10 @@ Usage:
     >>> redis.delete("key")
 """
 
-from typing import Optional, Any, Dict
-from datetime import datetime, timezone, timedelta
-import json
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 
 class MockRedisClient:
@@ -20,15 +21,15 @@ class MockRedisClient:
 
     def __init__(self):
         """Initialize the mock Redis client."""
-        self._data: Dict[str, Any] = {}
-        self._expiry: Dict[str, datetime] = {}
+        self._data: dict[str, Any] = {}
+        self._expiry: dict[str, datetime] = {}
 
     def set(
         self,
         key: str,
         value: Any,
-        ex: Optional[int] = None,
-        px: Optional[int] = None,
+        ex: int | None = None,
+        px: int | None = None,
         nx: bool = False,
         xx: bool = False
     ) -> bool:
@@ -60,16 +61,16 @@ class MockRedisClient:
 
         # Set expiry if specified
         if ex:
-            self._expiry[key] = datetime.now(timezone.utc) + timedelta(seconds=ex)
+            self._expiry[key] = datetime.now(UTC) + timedelta(seconds=ex)
         elif px:
-            self._expiry[key] = datetime.now(timezone.utc) + timedelta(milliseconds=px)
+            self._expiry[key] = datetime.now(UTC) + timedelta(milliseconds=px)
         elif key in self._expiry:
             # Remove expiry if no expiry specified
             del self._expiry[key]
 
         return True
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get a value by key.
 
         Args:
@@ -127,7 +128,7 @@ class MockRedisClient:
         if key not in self._data:
             return False
 
-        self._expiry[key] = datetime.now(timezone.utc) + timedelta(seconds=seconds)
+        self._expiry[key] = datetime.now(UTC) + timedelta(seconds=seconds)
         return True
 
     def ttl(self, key: str) -> int:
@@ -145,7 +146,7 @@ class MockRedisClient:
         if key not in self._expiry:
             return -1
 
-        ttl = (self._expiry[key] - datetime.now(timezone.utc)).total_seconds()
+        ttl = (self._expiry[key] - datetime.now(UTC)).total_seconds()
         return int(ttl) if ttl > 0 else -2
 
     def flushdb(self):
@@ -226,7 +227,7 @@ class MockRedisClient:
         self._data[name][key] = value
         return 1 if is_new else 0
 
-    def hget(self, name: str, key: str) -> Optional[Any]:
+    def hget(self, name: str, key: str) -> Any | None:
         """Get a field from a hash.
 
         Args:
@@ -241,7 +242,7 @@ class MockRedisClient:
 
         return self._data[name].get(key)
 
-    def hgetall(self, name: str) -> Dict[str, Any]:
+    def hgetall(self, name: str) -> dict[str, Any]:
         """Get all fields and values from a hash.
 
         Args:
@@ -257,7 +258,7 @@ class MockRedisClient:
 
     def _cleanup_expired(self):
         """Remove expired keys."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expired_keys = [
             key for key, expiry in self._expiry.items()
             if expiry <= now

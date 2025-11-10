@@ -1,20 +1,30 @@
 """Comprehensive test suite for Agent Application Facade"""
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
-from dataclasses import asdict
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.application.facades.agent_application_facade import AgentApplicationFacade
-from fastmcp.task_management.domain.repositories.agent_repository import AgentRepository
-from fastmcp.task_management.domain.exceptions.task_exceptions import AgentNotFoundError, ProjectNotFoundError
-from fastmcp.task_management.application.use_cases.register_agent import RegisterAgentResponse
-from fastmcp.task_management.application.use_cases.unregister_agent import UnregisterAgentResponse
-from fastmcp.task_management.application.use_cases.assign_agent import AssignAgentResponse
-from fastmcp.task_management.application.use_cases.unassign_agent import UnassignAgentResponse
+import pytest
+
+from fastmcp.task_management.application.facades.agent_application_facade import (
+    AgentApplicationFacade,
+)
+from fastmcp.task_management.application.use_cases.assign_agent import (
+    AssignAgentResponse,
+)
 from fastmcp.task_management.application.use_cases.get_agent import GetAgentResponse
 from fastmcp.task_management.application.use_cases.list_agents import ListAgentsResponse
+from fastmcp.task_management.application.use_cases.register_agent import (
+    RegisterAgentResponse,
+)
+from fastmcp.task_management.application.use_cases.unregister_agent import (
+    UnregisterAgentResponse,
+)
 from fastmcp.task_management.domain.entities.agent import Agent
+from fastmcp.task_management.domain.exceptions.task_exceptions import (
+    AgentNotFoundError,
+    ProjectNotFoundError,
+)
+from fastmcp.task_management.domain.repositories.agent_repository import AgentRepository
 
 
 class TestAgentApplicationFacade:

@@ -8,17 +8,26 @@ Bug Description: The delete button on the sidebar cannot delete git branches tha
 Expected Behavior: Branches with 0 tasks should be deletable.
 """
 
-import pytest
-import uuid
-import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import Dict, Any
+import uuid
 
-from fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller import GitBranchMCPController
-from fastmcp.task_management.application.factories.git_branch_facade_factory import GitBranchFacadeFactory
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch, Task
+import pytest
+
+from fastmcp.task_management.application.factories.git_branch_facade_factory import (
+    GitBranchFacadeFactory,
+)
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
+from fastmcp.task_management.infrastructure.database.models import (
+    Project,
+    ProjectGitBranch,
+    Task,
+)
+from fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller import (
+    GitBranchMCPController,
+)
+
 # Removed unused imports
 
 logger = logging.getLogger(__name__)
@@ -31,8 +40,12 @@ class TestGitBranchZeroTasksDeletionIntegration:
     def setup_method(self):
         """Set up integration test data in actual database"""
         # Ensure database is properly initialized
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from fastmcp.task_management.infrastructure.database.auto_migration import run_auto_migrations
+        from fastmcp.task_management.infrastructure.database.auto_migration import (
+            run_auto_migrations,
+        )
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         # Force database initialization to ensure schema is up to date
         db_config = get_db_config()
@@ -128,7 +141,7 @@ class TestGitBranchZeroTasksDeletionIntegration:
             
             session.commit()
             
-            logger.info(f"Created integration test data:")
+            logger.info("Created integration test data:")
             logger.info(f"  Project: {self.project_id}")
             logger.info(f"  Empty Branch: {self.empty_branch_id} (0 tasks)")
             logger.info(f"  Branch with Tasks: {self.branch_with_tasks_id} (2 tasks)")
@@ -358,7 +371,7 @@ class TestGitBranchZeroTasksDeletionIntegration:
         """COMPREHENSIVE TEST: Create -> Verify Empty -> Delete -> Verify Gone"""
         
         # Create a new empty branch
-        new_branch_id = str(uuid.uuid4())
+        str(uuid.uuid4())
         new_branch_name = "feature/lifecycle-test-branch"
         
         # Create through controller

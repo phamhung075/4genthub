@@ -11,14 +11,15 @@ FEATURES:
 - Attack simulation utilities
 """
 
-import pytest
 import asyncio
 import logging
-import time
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timezone
-import jwt
 import os
+import time
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import jwt
+import pytest
 
 # Store original environment state for restoration
 _original_auth_enabled = os.environ.get('AUTH_ENABLED')
@@ -30,7 +31,7 @@ from fastmcp.auth.domain.entities.user import User
 from fastmcp.server.routes.websocket_routes import (
     active_connections,
     connection_subscriptions,
-    connection_users
+    connection_users,
 )
 
 logger = logging.getLogger(__name__)
@@ -173,8 +174,8 @@ class TestUserFactory:
             "email": f"{user_id}@test.com",
             "aud": "authenticated",
             "iss": "test-issuer",
-            "exp": datetime.now(timezone.utc).timestamp() + (expires_in_minutes * 60),
-            "iat": datetime.now(timezone.utc).timestamp(),
+            "exp": datetime.now(UTC).timestamp() + (expires_in_minutes * 60),
+            "iat": datetime.now(UTC).timestamp(),
             "role": "authenticated",
             **claims
         }
@@ -276,7 +277,7 @@ class SecurityTestMetrics:
             "test_name": test_name,
             "passed": passed,
             "duration": duration,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "details": details or {}
         })
 
@@ -286,7 +287,7 @@ class SecurityTestMetrics:
             "metric": metric_name,
             "value": value,
             "unit": unit,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat()
         })
 
     def record_vulnerability(self, vulnerability_type: str, severity: str, description: str, exploitable: bool):
@@ -296,7 +297,7 @@ class SecurityTestMetrics:
             "severity": severity,
             "description": description,
             "exploitable": exploitable,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat()
         })
 
     def generate_security_report(self) -> dict:
@@ -318,7 +319,7 @@ class SecurityTestMetrics:
             "test_results": self.test_results,
             "performance_metrics": self.performance_metrics,
             "vulnerability_reports": self.vulnerability_reports,
-            "generated_at": datetime.now(timezone.utc).isoformat()
+            "generated_at": datetime.now(UTC).isoformat()
         }
 
 

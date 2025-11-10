@@ -1,17 +1,14 @@
 """Unit tests for AgentInheritanceService"""
 
-import pytest
 import uuid
-from unittest.mock import Mock, MagicMock
-from datetime import datetime, timezone
+from unittest.mock import Mock
 
-from fastmcp.task_management.application.services.agent_inheritance_service import AgentInheritanceService
-from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.application.services.agent_inheritance_service import (
+    AgentInheritanceService,
+)
 from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestAgentInheritanceService:
@@ -318,13 +315,12 @@ class TestAgentInheritanceService:
     
     def test_inheritance_with_logging_verification(self):
         """Test that service generates appropriate log messages"""
-        import logging
         from unittest.mock import patch
         
         # Patch the logger used by the service
         with patch('fastmcp.task_management.application.services.agent_inheritance_service.logger') as mock_logger:
             # Apply inheritance
-            result = self.service.apply_agent_inheritance(self.subtask_no_assignees, self.parent_task)
+            self.service.apply_agent_inheritance(self.subtask_no_assignees, self.parent_task)
             
             # Verify appropriate log messages were generated
             assert mock_logger.info.call_count >= 1

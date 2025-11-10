@@ -16,36 +16,50 @@ Reference: Task 51155169 - Phase 3 Investigation
 User reported: Progress calculations incorrect, not updating properly
 """
 
-import pytest
-from typing import Dict, Any
 
-from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
+import pytest
+
+from fastmcp.task_management.application.dtos.subtask import (
+    AddSubtaskRequest,
+    UpdateSubtaskRequest,
+)
+from fastmcp.task_management.application.dtos.task import (
+    CreateTaskRequest,
+    UpdateTaskRequest,
+)
 from fastmcp.task_management.application.use_cases.add_subtask import AddSubtaskUseCase
-from fastmcp.task_management.application.use_cases.update_subtask import UpdateSubtaskUseCase
-from fastmcp.task_management.application.use_cases.update_task import UpdateTaskUseCase
+from fastmcp.task_management.application.use_cases.create_task import CreateTaskUseCase
 from fastmcp.task_management.application.use_cases.get_task import GetTaskUseCase
-from fastmcp.task_management.application.dtos.task import CreateTaskRequest, UpdateTaskRequest
-from fastmcp.task_management.application.dtos.subtask import AddSubtaskRequest, UpdateSubtaskRequest
+from fastmcp.task_management.application.use_cases.update_subtask import (
+    UpdateSubtaskUseCase,
+)
+from fastmcp.task_management.application.use_cases.update_task import UpdateTaskUseCase
 
 
 @pytest.fixture
 def task_repository(shared_test_db, user_id):
     """Create real task repository for integration tests."""
-    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+        ORMTaskRepository,
+    )
     return ORMTaskRepository(user_id=user_id)
 
 
 @pytest.fixture
 def subtask_repository(shared_test_db, user_id):
     """Create real subtask repository for integration tests."""
-    from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+        ORMSubtaskRepository,
+    )
     return ORMSubtaskRepository(user_id=user_id)
 
 
 @pytest.fixture
 def git_branch_repository(shared_test_db, user_id):
     """Create real git branch repository for integration tests."""
-    from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
+        ORMGitBranchRepository,
+    )
     return ORMGitBranchRepository(user_id=user_id)
 
 
@@ -303,7 +317,7 @@ class TestProgressCalculationWithSubtasks:
             request = AddSubtaskRequest(
                 task_id=parent_id,
                 title=f"Subtask {i+1}",
-                description=f"Will complete all",
+                description="Will complete all",
                 user_id=user_id,
             )
             result = add_subtask_use_case.execute(request)

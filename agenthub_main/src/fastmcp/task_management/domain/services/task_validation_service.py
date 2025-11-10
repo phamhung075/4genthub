@@ -1,5 +1,7 @@
 """Task Validation Service - Domain Service for Complex Task Business Validation"""
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
 from typing import Any, Protocol
@@ -143,7 +145,7 @@ class TaskValidationService:
             task: The task to validate relationships for
             
         Returns:
-            Tuple of (is_valid: bool, error_messages: List[str])
+            Tuple of (is_valid: bool, error_messages: list[str])
         """
         try:
             errors = []

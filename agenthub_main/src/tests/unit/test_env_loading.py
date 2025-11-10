@@ -3,8 +3,9 @@
 import os
 import sys
 from pathlib import Path
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, mock_open
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -27,7 +28,7 @@ def test_env_file_loads_from_project_root():
         assert os.getenv('DATABASE_USER') == 'test-user'
 
         # Verify values match expected format
-        db_host = os.getenv('DATABASE_HOST')
+        os.getenv('DATABASE_HOST')
         db_port = os.getenv('DATABASE_PORT')
         db_name = os.getenv('DATABASE_NAME')
 

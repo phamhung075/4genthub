@@ -13,19 +13,32 @@ Key Differences from Contract Tests:
 Related Investigation: Task 51155169-3077-4c5c-bd2a-9e086aaadd50
 """
 
-import pytest
-from uuid import uuid4
-from sqlalchemy import text
 from unittest.mock import patch
 
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
-from fastmcp.task_management.application.dtos.subtask.create_subtask_request import CreateSubtaskRequest
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+import pytest
+from sqlalchemy import text
+
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.update_task_request import (
+    UpdateTaskRequest,
+)
+from fastmcp.task_management.application.facades.subtask_application_facade import (
+    SubtaskApplicationFacade,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+    ORMSubtaskRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 
 
 @pytest.fixture

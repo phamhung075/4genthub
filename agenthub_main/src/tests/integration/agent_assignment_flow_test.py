@@ -1,19 +1,26 @@
 """Integration tests for agent assignment and inheritance flow"""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any, List
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.handlers.crud_handler import CRUDHandler
-from fastmcp.task_management.interface.mcp_controllers.subtask_mcp_controller.handlers.crud_handler import SubtaskCRUDHandler
-from fastmcp.task_management.interface.utils.response_formatter import StandardResponseFormatter
+import pytest
+
+from fastmcp.task_management.application.facades.subtask_application_facade import (
+    SubtaskApplicationFacade,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.interface.mcp_controllers.subtask_mcp_controller.handlers.crud_handler import (
+    SubtaskCRUDHandler,
+)
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.handlers.crud_handler import (
+    CRUDHandler,
+)
+from fastmcp.task_management.interface.utils.response_formatter import (
+    StandardResponseFormatter,
+)
 
 
 class TestAgentAssignmentAtCreation:

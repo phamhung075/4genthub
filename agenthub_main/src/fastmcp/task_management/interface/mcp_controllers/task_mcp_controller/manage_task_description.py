@@ -5,6 +5,8 @@ This module contains the comprehensive documentation for the manage_task MCP too
 Separated from the controller logic for better maintainability and organization.
 """
 
+from __future__ import annotations
+
 TOOL_NAME = "manage_task"
 
 TOOL_DESCRIPTION = (

@@ -3,6 +3,8 @@ Keycloak Authentication Service for MCP
 Clean implementation with no backward compatibility
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
@@ -372,5 +374,5 @@ class KeycloakAuth:
         """Cleanup on deletion"""
         try:
             asyncio.create_task(self.close())
-        except:
+        except Exception:
             pass

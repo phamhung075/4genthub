@@ -2,20 +2,21 @@
 Tests for Delete Task Use Case
 """
 
+from datetime import UTC, datetime
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
-import logging
 
 from fastmcp.task_management.application.use_cases.delete_task import DeleteTaskUseCase
-from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.interfaces.database_session import (
+    IDatabaseSessionFactory,
+)
+from fastmcp.task_management.domain.interfaces.logging_service import ILoggingService
+from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.events import TaskDeleted
-from fastmcp.task_management.domain.interfaces.database_session import IDatabaseSessionFactory
-from fastmcp.task_management.domain.interfaces.logging_service import ILoggingService
-from datetime import datetime, timezone
 
 
 class TestDeleteTaskUseCase:
@@ -78,8 +79,8 @@ class TestDeleteTaskUseCase:
         task.title = "Test Task"
         task.status = TaskStatus.TODO
         task.priority = Priority.high()
-        task.created_at = datetime.now(timezone.utc)
-        task.updated_at = datetime.now(timezone.utc)
+        task.created_at = datetime.now(UTC)
+        task.updated_at = datetime.now(UTC)
         
         return task
     
@@ -288,7 +289,7 @@ class TestDeleteTaskUseCase:
     def test_logging_initialization(self, mock_task_repository, mock_logging_service, mock_logger):
         """Test proper logger initialization"""
         # Arrange & Act
-        use_case = DeleteTaskUseCase(
+        DeleteTaskUseCase(
             task_repository=mock_task_repository,
             logging_service=mock_logging_service
         )

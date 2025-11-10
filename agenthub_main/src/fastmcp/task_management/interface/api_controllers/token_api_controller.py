@@ -6,6 +6,8 @@ It delegates all business logic to the TokenApplicationFacade, ensuring
 proper separation of concerns and no direct database access.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

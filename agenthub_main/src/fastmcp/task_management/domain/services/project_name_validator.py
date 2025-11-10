@@ -5,6 +5,8 @@ This domain service validates project names according to business rules,
 including checking for duplicates within the user's scope.
 """
 
+from __future__ import annotations
+
 import logging
 
 from ..exceptions.base_exceptions import ValidationException

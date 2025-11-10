@@ -11,13 +11,13 @@ REQUIREMENTS:
 - Ensure type safety with Pydantic validation
 """
 
-import pytest
 import logging
-from typing import Dict, Any
+
+import pytest
 
 from fastmcp.task_management.domain.websocket_protocol import (
     TaskDeletePayload,
-    convert_task_delete_legacy
+    convert_task_delete_legacy,
 )
 
 

@@ -1,5 +1,7 @@
 """Request DTO for creating a task with hierarchical storage support"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 from ....domain.value_objects import (

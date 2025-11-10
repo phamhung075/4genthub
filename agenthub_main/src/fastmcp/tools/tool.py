@@ -219,14 +219,14 @@ class FunctionTool(Tool):
         Extract the target type from an annotation, handling Optional types.
         
         Args:
-            annotation: Type annotation (e.g., int, Optional[int], Annotated[Optional[int], ...])
+            annotation: Type annotation (e.g., int, int | None, Annotated[int | None, ...])
             
         Returns:
-            The inner type for type conversion (e.g., int from Optional[int])
+            The inner type for type conversion (e.g., int from int | None)
         """
         import typing
         
-        # Handle Annotated types first (e.g., Annotated[Optional[int], Field(...)])
+        # Handle Annotated types first (e.g., Annotated[int | None, Field(...)])
         if hasattr(annotation, '__origin__') and getattr(annotation, '__origin__', None) is typing.Annotated:
             # Extract the first argument which is the actual type
             args = getattr(annotation, '__args__', ())
@@ -238,7 +238,7 @@ class FunctionTool(Tool):
         args = getattr(annotation, '__args__', ())
         
         if origin is typing.Union and len(args) == 2 and type(None) in args:
-            # This is Optional[T] which is Union[T, None]
+            # This is T | None which is Union[T, None]
             inner_type = args[0] if args[1] is type(None) else args[1]
             return inner_type
         

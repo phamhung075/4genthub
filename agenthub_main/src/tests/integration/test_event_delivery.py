@@ -14,18 +14,18 @@ Test Coverage:
 Week 1 Performance Optimization - Day 4
 """
 
-import pytest
-import time
 import threading
-from typing import List
+import time
 
-from fastmcp.task_management.infrastructure.events import EventQueue, EventWorker
-from fastmcp.task_management.infrastructure.event_bus import EventBus
+import pytest
+
 from fastmcp.task_management.domain.events.task_lifecycle_events import (
+    TaskCompletedEvent,
     TaskCreatedEvent,
     TaskUpdatedEvent,
-    TaskCompletedEvent,
 )
+from fastmcp.task_management.infrastructure.event_bus import EventBus
+from fastmcp.task_management.infrastructure.events import EventQueue, EventWorker
 
 
 class TestEventDeliveryIntegration:

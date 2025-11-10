@@ -22,15 +22,17 @@ TEST COVERAGE:
 - Authorization bypass prevention
 """
 
-import pytest
-import asyncio
-import json
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from datetime import datetime, timedelta, timezone
 import logging
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 # Import modules to test
-from fastmcp.server.routes.websocket_routes import broadcast_data_change, active_connections, connection_users
+from fastmcp.server.routes.websocket_routes import (
+    active_connections,
+    broadcast_data_change,
+    connection_users,
+)
 
 logger = logging.getLogger(__name__)
 

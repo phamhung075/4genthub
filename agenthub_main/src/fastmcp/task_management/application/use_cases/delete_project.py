@@ -9,6 +9,8 @@ This module provides comprehensive project deletion with cascade deletion of all
 - Dependencies
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

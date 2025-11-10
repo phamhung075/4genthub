@@ -10,16 +10,19 @@ This module tests the CreateGitBranchUseCase functionality including:
 - Error scenarios and edge cases
 """
 
-import pytest
-import sys
-from unittest.mock import Mock, AsyncMock, patch
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.application.use_cases.create_git_branch import CreateGitBranchUseCase
-from fastmcp.task_management.domain.entities.project import Project
+import pytest
+
+from fastmcp.task_management.application.use_cases.create_git_branch import (
+    CreateGitBranchUseCase,
+)
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
-from fastmcp.task_management.domain.repositories.project_repository import ProjectRepository
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+from fastmcp.task_management.domain.entities.project import Project
+from fastmcp.task_management.domain.repositories.project_repository import (
+    ProjectRepository,
+)
 
 
 class TestCreateGitBranchUseCase:
@@ -45,7 +48,7 @@ class TestCreateGitBranchUseCase:
         project.id = "project-123"
         project.name = "Test Project"
         project.description = "Test Description"
-        project.created_at = datetime.now(timezone.utc)
+        project.created_at = datetime.now(UTC)
         project.create_git_branch = Mock()
         return project
     
@@ -57,7 +60,7 @@ class TestCreateGitBranchUseCase:
         git_branch.name = "feature/test-branch"
         git_branch.description = "Test branch description"
         git_branch.project_id = "project-123"
-        git_branch.created_at = datetime.now(timezone.utc)
+        git_branch.created_at = datetime.now(UTC)
         git_branch.get_task_count.return_value = 0
         git_branch.get_completed_task_count.return_value = 0
         git_branch.get_progress_percentage.return_value = 0.0
@@ -103,7 +106,7 @@ class TestCreateGitBranchUseCaseExecute:
         git_branch.name = "feature/test-branch"
         git_branch.description = "Test branch description"
         git_branch.project_id = "project-123"
-        git_branch.created_at = datetime.now(timezone.utc)
+        git_branch.created_at = datetime.now(UTC)
         git_branch.get_task_count.return_value = 0
         git_branch.get_completed_task_count.return_value = 0
         git_branch.get_progress_percentage.return_value = 0.0
@@ -302,7 +305,7 @@ class TestCreateGitBranchUseCaseContextCreation:
         git_branch.name = "feature/context-test"
         git_branch.description = "Context test branch"
         git_branch.project_id = "project-123"
-        git_branch.created_at = datetime.now(timezone.utc)
+        git_branch.created_at = datetime.now(UTC)
         git_branch.get_task_count.return_value = 0
         git_branch.get_completed_task_count.return_value = 0
         git_branch.get_progress_percentage.return_value = 0.0
@@ -410,7 +413,7 @@ class TestCreateGitBranchUseCaseContextCreation:
         mock_project_entity.create_git_branch.return_value = mock_git_branch_entity
         
         # Mock context creation dependencies
-        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory'):
             with patch('fastmcp.config.auth_config.AuthConfig') as mock_auth_config:
                 # Setup authentication - no default user allowed and no user provided
                 mock_auth_config.is_default_user_allowed.return_value = False
@@ -536,7 +539,7 @@ class TestCreateGitBranchUseCaseErrorHandling:
         mock_git_branch.name = "feature/update-error"
         mock_git_branch.description = ""
         mock_git_branch.project_id = "project-123"
-        mock_git_branch.created_at = datetime.now(timezone.utc)
+        mock_git_branch.created_at = datetime.now(UTC)
         mock_git_branch.get_task_count = Mock(return_value=0)
         mock_git_branch.get_completed_task_count = Mock(return_value=0)
         mock_git_branch.get_progress_percentage = Mock(return_value=0.0)
@@ -617,7 +620,7 @@ class TestCreateGitBranchUseCaseIntegration:
         mock_git_branch.name = "feature/integration-test"
         mock_git_branch.description = "Integration test branch"
         mock_git_branch.project_id = "project-123"
-        mock_git_branch.created_at = datetime.now(timezone.utc)
+        mock_git_branch.created_at = datetime.now(UTC)
         mock_git_branch.get_task_count.return_value = 0
         mock_git_branch.get_completed_task_count.return_value = 0
         mock_git_branch.get_progress_percentage.return_value = 0.0

@@ -5,20 +5,30 @@ Tests the use case for checking server health, including server creation,
 health status retrieval, and error handling.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
 import time
+from unittest.mock import Mock
 
-from fastmcp.connection_management.application.use_cases.check_server_health import CheckServerHealthUseCase
+import pytest
+
 from fastmcp.connection_management.application.dtos.connection_dtos import (
     HealthCheckRequest,
-    HealthCheckResponse
 )
-from fastmcp.connection_management.domain.repositories.server_repository import ServerRepository
-from fastmcp.connection_management.domain.services.server_health_service import ServerHealthService
+from fastmcp.connection_management.application.use_cases.check_server_health import (
+    CheckServerHealthUseCase,
+)
 from fastmcp.connection_management.domain.entities.server import Server
-from fastmcp.connection_management.domain.value_objects.server_status import ServerStatus
-from fastmcp.connection_management.domain.exceptions.connection_exceptions import ServerHealthCheckFailedError
+from fastmcp.connection_management.domain.exceptions.connection_exceptions import (
+    ServerHealthCheckFailedError,
+)
+from fastmcp.connection_management.domain.repositories.server_repository import (
+    ServerRepository,
+)
+from fastmcp.connection_management.domain.services.server_health_service import (
+    ServerHealthService,
+)
+from fastmcp.connection_management.domain.value_objects.server_status import (
+    ServerStatus,
+)
 
 
 @pytest.fixture

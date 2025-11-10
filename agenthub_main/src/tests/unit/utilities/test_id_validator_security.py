@@ -4,16 +4,14 @@ Tests security aspects including injection attacks, malformed inputs,
 and security boundaries to ensure robust protection against malicious inputs.
 """
 
-import pytest
-import re
+from unittest.mock import patch
 from uuid import uuid4
-from unittest.mock import patch, Mock
+
+import pytest
+
 from fastmcp.utilities.id_validator import (
-    IDValidator,
-    IDType,
-    ValidationResult,
     IDValidationError,
-    validate_uuid,
+    IDValidator,
     prevent_id_confusion,
 )
 

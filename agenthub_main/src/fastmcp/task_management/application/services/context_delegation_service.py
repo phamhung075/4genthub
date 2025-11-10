@@ -5,6 +5,8 @@ Manages the delegation of context data from lower levels to higher levels:
 Task → Project → Global with automatic and manual delegation capabilities.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from dataclasses import dataclass
@@ -62,7 +64,7 @@ class ContextDelegationService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'ContextDelegationService':
+    def with_user(self, user_id: str) -> ContextDelegationService:
         """Create a new service instance scoped to a specific user."""
         return ContextDelegationService(self.repository, user_id)
     

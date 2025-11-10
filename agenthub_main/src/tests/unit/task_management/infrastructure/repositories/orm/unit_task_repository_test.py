@@ -11,26 +11,21 @@ Tests the TaskRepository ORM implementation including:
 - Database transaction handling
 """
 
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
+
 import pytest
-import uuid
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, MagicMock, patch
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from fastmcp.task_management.domain.entities.task import Task as TaskEntity
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.exceptions.task_exceptions import (
-    TaskCreationError,
-    TaskNotFoundError,
-    TaskUpdateError,
-)
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
 from fastmcp.task_management.infrastructure.database.models import (
-    Task, TaskAssignee, TaskDependency, TaskLabel, Label, Base
+    Task,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
 )
 
 
@@ -253,8 +248,8 @@ class TestORMTaskRepositoryConversion:
         mock_task_model.details = "Some details"
         mock_task_model.estimated_effort = "2 hours"
         mock_task_model.due_date = "2024-12-31"
-        mock_task_model.created_at = datetime.now(timezone.utc)
-        mock_task_model.updated_at = datetime.now(timezone.utc)
+        mock_task_model.created_at = datetime.now(UTC)
+        mock_task_model.updated_at = datetime.now(UTC)
         mock_task_model.context_id = "context-789"
         mock_task_model.overall_progress = 50
 
@@ -562,7 +557,7 @@ class TestORMTaskRepositoryCacheIntegration:
         """Test cache is invalidated on task deletion."""
         # Mock delete_task method with cache invalidation
         with patch.object(self.repo, 'delete_task', return_value=True):
-            with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
+            with patch.object(self.repo, 'invalidate_cache_for_entity'):
 
                 result = self.repo.delete(TaskId("task-123"))
 

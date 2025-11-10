@@ -1,4 +1,3 @@
-from typing import List
 """
 Database Connection Analysis Tests
 
@@ -6,24 +5,34 @@ This module contains tests to analyze which repository classes are using
 SQLite instead of Supabase and identify the root causes.
 """
 
-import pytest
-import os
 import logging
-from typing import Dict, List, Any
-from contextlib import contextmanager
-from unittest.mock import Mock, patch, MagicMock
+import os
+from typing import Any
 
 # Import the database configuration and repository classes
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config, DatabaseConfig
-from fastmcp.task_management.infrastructure.repositories.global_context_repository import GlobalContextRepository
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
+from fastmcp.task_management.infrastructure.database.supabase_config import (
+    is_supabase_configured,
+)
+from fastmcp.task_management.infrastructure.repositories.base_orm_repository import (
+    BaseORMRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.global_context_repository import (
+    GlobalContextRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
+    ORMProjectRepository,
+)
+
 # Note: GlobalContextRepository is already user-scoped internally
 # from fastmcp.task_management.infrastructure.repositories.global_context_repository_user_scoped import (
 #     GlobalContextRepository as UserScopedGlobalContextRepository
 # )
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.infrastructure.repositories.orm.project_repository import ORMProjectRepository
-from fastmcp.task_management.infrastructure.repositories.base_orm_repository import BaseORMRepository
-from fastmcp.task_management.infrastructure.database.supabase_config import get_supabase_config, is_supabase_configured
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +43,7 @@ class DatabaseConnectionAnalyzer:
     def __init__(self):
         self.analysis_results = {}
         
-    def analyze_database_config(self) -> Dict[str, Any]:
+    def analyze_database_config(self) -> dict[str, Any]:
         """Analyze the database configuration."""
         results = {
             "config_source": "database_config.py",
@@ -117,7 +126,7 @@ class DatabaseConnectionAnalyzer:
             
         return results
     
-    def analyze_repository_session_usage(self, repo_class, repo_name: str) -> Dict[str, Any]:
+    def analyze_repository_session_usage(self, repo_class, repo_name: str) -> dict[str, Any]:
         """Analyze how a repository class gets its database sessions."""
         results = {
             "repository": repo_name,
@@ -186,7 +195,7 @@ class DatabaseConnectionAnalyzer:
             
         return results
     
-    def analyze_all_repositories(self) -> Dict[str, Any]:
+    def analyze_all_repositories(self) -> dict[str, Any]:
         """Analyze all repository classes."""
         repositories_to_check = {
             "global_context": GlobalContextRepository,
@@ -206,7 +215,7 @@ class DatabaseConnectionAnalyzer:
             
         return results
     
-    def identify_root_causes(self, analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def identify_root_causes(self, analysis: dict[str, Any]) -> list[dict[str, Any]]:
         """Identify root causes of database connection issues."""
         root_causes = []
         
@@ -235,7 +244,7 @@ class DatabaseConnectionAnalyzer:
         
         return root_causes
     
-    def generate_fix_recommendations(self, analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def generate_fix_recommendations(self, analysis: dict[str, Any]) -> list[dict[str, Any]]:
         """Generate recommendations to fix the issues."""
         recommendations = []
         
@@ -312,7 +321,7 @@ class TestDatabaseConnectionAnalysis:
         assert "database_type" in results
         assert "issues" in results
         
-        print(f"Database Config Analysis:")
+        print("Database Config Analysis:")
         print(f"  Type: {results.get('database_type')}")
         print(f"  Status: {results.get('status')}")
         print(f"  Engine URL: {results.get('actual_engine_url')}")
@@ -328,7 +337,7 @@ class TestDatabaseConnectionAnalysis:
         assert "database_config" in results
         assert "repositories" in results
         
-        print(f"\nRepository Analysis:")
+        print("\nRepository Analysis:")
         for repo_name, repo_info in results["repositories"].items():
             print(f"  {repo_name}:")
             print(f"    Class: {repo_info.get('class_name')}")
@@ -367,24 +376,24 @@ class TestDatabaseConnectionAnalysis:
         root_causes = self.analyzer.identify_root_causes(analysis)
         recommendations = self.analyzer.generate_fix_recommendations(analysis)
         
-        print(f"\n" + "="*80)
-        print(f"COMPLETE DATABASE CONNECTION ANALYSIS REPORT")
-        print(f"="*80)
+        print("\n" + "="*80)
+        print("COMPLETE DATABASE CONNECTION ANALYSIS REPORT")
+        print("="*80)
         
-        print(f"\n1. EXECUTIVE SUMMARY")
+        print("\n1. EXECUTIVE SUMMARY")
         print(f"   - Database Type: {analysis['database_config'].get('database_type')}")
         print(f"   - Critical Issues: {sum(1 for cause in root_causes if cause['impact'] == 'HIGH')}")
         print(f"   - Repositories Analyzed: {len(analysis['repositories'])}")
         print(f"   - Fix Recommendations: {len(recommendations)}")
         
-        print(f"\n2. DATABASE CONFIGURATION STATUS")
+        print("\n2. DATABASE CONFIGURATION STATUS")
         db_config = analysis["database_config"]
         print(f"   - Configuration Type: {db_config.get('config_type')}")
         print(f"   - Engine URL: {db_config.get('actual_engine_url')}")
         print(f"   - Supabase Configured: {db_config.get('supabase_configured')}")
         print(f"   - Status: {db_config.get('status')}")
         
-        print(f"\n3. REPOSITORY ANALYSIS")
+        print("\n3. REPOSITORY ANALYSIS")
         for repo_name, repo_info in analysis["repositories"].items():
             status = "✅ OK" if not repo_info.get("issues") else "❌ ISSUES"
             print(f"   - {repo_name}: {status}")
@@ -392,11 +401,11 @@ class TestDatabaseConnectionAnalysis:
                 for issue in repo_info["issues"]:
                     print(f"     * {issue['severity']}: {issue['message']}")
         
-        print(f"\n4. ROOT CAUSES")
+        print("\n4. ROOT CAUSES")
         for i, cause in enumerate(root_causes, 1):
             print(f"   {i}. [{cause['impact']}] {cause['cause']}")
         
-        print(f"\n5. RECOMMENDATIONS")
+        print("\n5. RECOMMENDATIONS")
         for i, rec in enumerate(recommendations, 1):
             print(f"   {i}. [{rec['priority']}] {rec['action']}")
         

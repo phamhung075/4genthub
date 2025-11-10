@@ -5,6 +5,8 @@ This controller handles frontend task management operations following proper DDD
 It serves as the interface layer, delegating business logic to application facades.
 """
 
+from __future__ import annotations
+
 import logging
 
 # Using FacadeService from application layer - proper DDD boundaries maintained

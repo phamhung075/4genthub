@@ -28,10 +28,11 @@ Architecture:
    Parse & Display
 """
 
-import pytest
 import json
-from datetime import datetime, timezone
-from typing import Dict, Any
+from datetime import UTC, datetime
+from typing import Any
+
+import pytest
 
 
 @pytest.mark.integration
@@ -45,7 +46,7 @@ class TestCClaudeWaitTaskFormat:
     """
 
     @pytest.fixture
-    def mock_task_websocket_message(self) -> Dict[str, Any]:
+    def mock_task_websocket_message(self) -> dict[str, Any]:
         """
         Mock WebSocket v2.0 message for task completion.
 
@@ -81,7 +82,7 @@ class TestCClaudeWaitTaskFormat:
             },
             "metadata": {
                 "entity_id": "task-abc-123-def-456",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "status": "done",
                 "title": "Implement JWT Authentication",
                 "completion_summary": "Successfully implemented JWT authentication with 2-hour expiry, refresh token mechanism, and secure httpOnly cookie storage. All acceptance criteria met.",
@@ -126,7 +127,7 @@ class TestCClaudeWaitTaskFormat:
         }
 
     @pytest.fixture
-    def expected_task_output_format(self) -> Dict[str, Any]:
+    def expected_task_output_format(self) -> dict[str, Any]:
         """
         Expected JSON format that poll_mcp_websocket.py should return
         for cclaude-wait bash script to consume.
@@ -236,8 +237,8 @@ class TestCClaudeWaitTaskFormat:
 
         # Verify deserialization works (simulates jq parsing)
         parsed = json.loads(json_str)
-        assert parsed["success"] == True
-        assert parsed["is_subtask"] == False
+        assert parsed["success"]
+        assert not parsed["is_subtask"]
         assert parsed["progress_count"] == 3
         assert len(parsed["insights_found"]) == 3
 
@@ -293,7 +294,7 @@ class TestCClaudeWaitSubtaskFormat:
     """
 
     @pytest.fixture
-    def mock_subtask_websocket_message(self) -> Dict[str, Any]:
+    def mock_subtask_websocket_message(self) -> dict[str, Any]:
         """
         Mock WebSocket v2.0 message for subtask completion.
         """
@@ -323,7 +324,7 @@ class TestCClaudeWaitSubtaskFormat:
             "metadata": {
                 "entity_id": "subtask-xyz-456",
                 "parent_task_id": "task-abc-123",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "status": "done",
                 "title": "Implement Token Validation Middleware",
                 "completion_summary": "Created Express middleware that validates JWT tokens, checks expiry, and attaches user info to request object",
@@ -357,7 +358,7 @@ class TestCClaudeWaitSubtaskFormat:
         }
 
     @pytest.fixture
-    def expected_subtask_output_format(self) -> Dict[str, Any]:
+    def expected_subtask_output_format(self) -> dict[str, Any]:
         """
         Expected JSON format for subtask completion.
 
@@ -416,7 +417,7 @@ class TestCClaudeWaitSubtaskFormat:
 
         assert "task_id" in result, "Missing parent task_id"
         assert "subtask_id" in result, "Missing subtask_id"
-        assert result["is_subtask"] == True
+        assert result["is_subtask"]
         assert result["task_id"] == "task-abc-123"
         assert result["subtask_id"] == "subtask-xyz-456"
 
@@ -482,8 +483,8 @@ class TestCClaudeWaitSubtaskFormat:
         assert "is_subtask" in task_result
 
         # But values differ
-        assert subtask_result["is_subtask"] == True
-        assert task_result["is_subtask"] == False
+        assert subtask_result["is_subtask"]
+        assert not task_result["is_subtask"]
 
         # Subtask has extra fields
         assert "subtask_id" in subtask_result
@@ -513,7 +514,7 @@ class TestCClaudeWaitFormatImprovements:
     """
 
     @pytest.fixture
-    def improved_task_format(self) -> Dict[str, Any]:
+    def improved_task_format(self) -> dict[str, Any]:
         """
         Proposed improved format for task completion.
 
@@ -813,8 +814,8 @@ class TestCClaudeWaitFormatImprovements:
         assert "assignees" in result
 
         # Old format fields preserved
-        assert result["success"] == True
-        assert result["is_subtask"] == False
+        assert result["success"]
+        assert not result["is_subtask"]
         assert result["progress_percentage"] == 100
 
 
@@ -852,8 +853,8 @@ class TestCClaudeWaitBashIntegration:
         task_result = {"is_subtask": False}
         subtask_result = {"is_subtask": True}
 
-        assert json.loads(json.dumps(task_result))["is_subtask"] == False
-        assert json.loads(json.dumps(subtask_result))["is_subtask"] == True
+        assert not json.loads(json.dumps(task_result))["is_subtask"]
+        assert json.loads(json.dumps(subtask_result))["is_subtask"]
 
     def test_bash_can_iterate_insights(self):
         """

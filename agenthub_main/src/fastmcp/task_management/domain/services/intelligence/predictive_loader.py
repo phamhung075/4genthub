@@ -10,6 +10,8 @@ Key Features:
 - Pattern recognition for workflow optimization
 """
 
+from __future__ import annotations
+
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -459,7 +461,7 @@ class PredictiveLoader:
         
         for session in recent_sessions:
             tools = session.get('tool_sequence', [])
-            contexts = session.get('context_sequence', [])
+            session.get('context_sequence', [])
             
             # Create patterns from tool sequences
             for window_size in [2, 3, 4]:

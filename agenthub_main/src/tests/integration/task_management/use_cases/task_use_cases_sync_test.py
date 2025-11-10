@@ -5,17 +5,26 @@ Tests verify that create_task, update_task, and complete_task use cases
 correctly trigger synchronization to context_data and handle failures gracefully.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
+import pytest
+
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.update_task_request import (
+    UpdateTaskRequest,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockTaskRepository
+from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import (
+    MockTaskRepository,
+)
 
 
 @pytest.fixture
@@ -223,7 +232,7 @@ class TestCompleteTaskSyncsStatusAndMetadata:
         )
 
         # Assert
-        completed_task = task_repository.find_by_id(task.id)
+        task_repository.find_by_id(task.id)
         # Completion data would be in context_data or task details
         # This verifies the sync happened without errors
 

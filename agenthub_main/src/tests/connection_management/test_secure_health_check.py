@@ -1,13 +1,19 @@
 """Test secure health check implementation"""
 
 import os
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any
+from unittest.mock import Mock, patch
 
-from fastmcp.connection_management.infrastructure.services.mcp_server_health_service import MCPServerHealthService
-from fastmcp.connection_management.interface.controllers.connection_mcp_controller import ConnectionMCPController
-from fastmcp.connection_management.application.facades.connection_application_facade import ConnectionApplicationFacade
+import pytest
+
+from fastmcp.connection_management.application.facades.connection_application_facade import (
+    ConnectionApplicationFacade,
+)
+from fastmcp.connection_management.infrastructure.services.mcp_server_health_service import (
+    MCPServerHealthService,
+)
+from fastmcp.connection_management.interface.controllers.connection_mcp_controller import (
+    ConnectionMCPController,
+)
 
 
 class TestSecureHealthCheck:

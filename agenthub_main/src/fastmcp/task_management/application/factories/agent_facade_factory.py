@@ -6,6 +6,8 @@ CRITICAL CHANGE: This factory now requires proper user authentication.
 The default_id fallback has been removed to enforce security requirements.
 """
 
+from __future__ import annotations
+
 import logging
 
 from ...application.facades.agent_application_facade import AgentApplicationFacade

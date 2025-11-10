@@ -1,19 +1,21 @@
 """Unit tests for ContextDerivationService - Domain Service for Context Derivation Logic"""
 
-import pytest
-from unittest.mock import Mock, AsyncMock, MagicMock
-from typing import Optional
 import logging
+from unittest.mock import AsyncMock, Mock
 
-from fastmcp.task_management.domain.services.context_derivation_service import (
-    ContextDerivationService
-)
-from fastmcp.task_management.domain.entities.task import Task
+import pytest
+
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.entities.project import Project
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.repositories.git_branch_repository import (
+    GitBranchRepository,
+)
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.task_management.domain.repositories.git_branch_repository import GitBranchRepository
+from fastmcp.task_management.domain.services.context_derivation_service import (
+    ContextDerivationService,
+)
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 
 
 class TestContextDerivationService:

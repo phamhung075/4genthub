@@ -3,13 +3,14 @@ Unit tests for WorkSession domain entity.
 Tests all methods, state transitions, edge cases, and business rules.
 """
 
+from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, MagicMock
 
 from fastmcp.task_management.domain.entities.work_session import (
+    SessionStatus,
     WorkSession,
-    SessionStatus
 )
 
 
@@ -24,7 +25,7 @@ class TestWorkSessionEntity:
             'agent_id': 'agent1',
             'task_id': 'task1',
             'git_branch_name': 'feature/test-branch',
-            'started_at': datetime.now(timezone.utc)
+            'started_at': datetime.now(UTC)
         }
     
     @pytest.fixture
@@ -518,7 +519,7 @@ class TestWorkSessionBusinessRules:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
     
     def test_session_state_transitions_valid(self, work_session):
@@ -640,7 +641,7 @@ class TestWorkSessionEdgeCases:
                 agent_id='agent1',
                 task_id='task1',
                 git_branch_name='main',
-                started_at=datetime.now(timezone.utc)
+                started_at=datetime.now(UTC)
             )
         
         with pytest.raises(ValueError, match="WorkSession agent_id cannot be empty"):
@@ -649,7 +650,7 @@ class TestWorkSessionEdgeCases:
                 agent_id='',
                 task_id='task1',
                 git_branch_name='main',
-                started_at=datetime.now(timezone.utc)
+                started_at=datetime.now(UTC)
             )
         
         with pytest.raises(ValueError, match="WorkSession task_id cannot be empty"):
@@ -658,7 +659,7 @@ class TestWorkSessionEdgeCases:
                 agent_id='agent1',
                 task_id='',
                 git_branch_name='main',
-                started_at=datetime.now(timezone.utc)
+                started_at=datetime.now(UTC)
             )
         
         with pytest.raises(ValueError, match="WorkSession git_branch_name cannot be empty"):
@@ -667,7 +668,7 @@ class TestWorkSessionEdgeCases:
                 agent_id='agent1',
                 task_id='task1',
                 git_branch_name='',
-                started_at=datetime.now(timezone.utc)
+                started_at=datetime.now(UTC)
             )
     
     def test_extreme_duration_values(self):
@@ -677,7 +678,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             max_duration=timedelta(days=365)  # Very long duration
         )
         
@@ -690,7 +691,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             session_notes="Initial notes"
         )
         
@@ -709,7 +710,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         # Add many progress updates
@@ -727,7 +728,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         # Lock many resources
@@ -747,7 +748,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent_μ',
             task_id='task_∑',
             git_branch_name='feature/测试-branch',
-            started_at=datetime.now(timezone.utc)
+            started_at=datetime.now(UTC)
         )
         
         session.add_progress_update("test_💻", "Message with émojis and ñ characters")

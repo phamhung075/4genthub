@@ -6,21 +6,21 @@ Date: 2025-09-26
 Tests the agent documentation generator that converts YAML agent definitions to MDC format.
 """
 
-import pytest
-from pathlib import Path
-import tempfile
-import shutil
-import yaml
 import os
-from unittest.mock import Mock, patch, MagicMock, mock_open
+import tempfile
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
+import yaml
 
 from fastmcp.task_management.infrastructure.services.agent_doc_generator import (
-    AgentDocGenerator, 
+    AgentDocGenerator,
     _find_project_root,
     clear_agents_output_dir,
     convert_yaml_to_mdc,
     generate_agent_docs,
-    generate_docs_for_assignees
+    generate_docs_for_assignees,
 )
 
 

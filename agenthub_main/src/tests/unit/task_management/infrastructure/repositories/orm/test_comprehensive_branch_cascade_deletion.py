@@ -5,18 +5,31 @@ This test verifies that all related records are properly deleted when a branch i
 ensuring no foreign key constraint violations and no orphaned data.
 """
 
-import pytest
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from fastmcp.task_management.infrastructure.database.models import (
-    Base, ProjectGitBranch, Project, Task, Subtask, TaskAssignee, 
-    TaskDependency, TaskLabel, Label, BranchContext, TaskContext,
-    ContextDelegation, ContextInheritanceCache
+    Base,
+    BranchContext,
+    ContextDelegation,
+    ContextInheritanceCache,
+    Label,
+    Project,
+    ProjectGitBranch,
+    Subtask,
+    Task,
+    TaskAssignee,
+    TaskContext,
+    TaskDependency,
+    TaskLabel,
 )
-from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
+    ORMGitBranchRepository,
+)
 
 
 @pytest.fixture
@@ -107,13 +120,13 @@ def sample_data(test_db, test_user_id):
             task_id=task_id,
             assignee_id=f"assignee-{task_id[:8]}",
             user_id=test_user_id,
-            assigned_at=datetime.now(timezone.utc)
+            assigned_at=datetime.now(UTC)
         )
         test_db.add(assignee)
     
     # Create task dependencies (task1 depends on task2, task2 depends on task3)
     if len(task_ids) >= 2:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         dependency1 = TaskDependency(
             task_id=task_ids[0],
             depends_on_task_id=task_ids[1],
@@ -134,7 +147,7 @@ def sample_data(test_db, test_user_id):
             test_db.add(dependency2)
     
     # Create label and task labels
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     label = Label(
         id="test-label-1",
         name="test-label",
@@ -197,12 +210,12 @@ def sample_data(test_db, test_user_id):
         delegation_reason="Test delegation",
         trigger_type="manual",
         user_id=test_user_id,
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC)
     )
     test_db.add(delegation)
     
     # Create context inheritance cache
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     cache = ContextInheritanceCache(
         id=str(uuid.uuid4()),
         context_id=branch_id,

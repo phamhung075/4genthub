@@ -24,17 +24,19 @@ Categories:
     5. Complete Contract Validators - Validate entire response objects
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
-from uuid import UUID
-import pytest
+from __future__ import annotations
 
+from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+import pytest
 
 # ============================================================================
 # FIELD PRESENCE VALIDATORS
 # ============================================================================
 
-def assert_has_required_fields(obj: Any, fields: List[str]) -> None:
+def assert_has_required_fields(obj: Any, fields: list[str]) -> None:
     """
     Assert that an object has all required fields.
 
@@ -60,7 +62,7 @@ def assert_has_required_fields(obj: Any, fields: List[str]) -> None:
         )
 
 
-def assert_has_optional_fields(obj: Any, fields: List[str]) -> List[str]:
+def assert_has_optional_fields(obj: Any, fields: list[str]) -> list[str]:
     """
     Check which optional fields are present on an object.
 
@@ -115,7 +117,7 @@ def assert_field_type(obj: Any, field: str, expected_type: type) -> None:
     )
 
 
-def assert_field_types(obj: Any, field_type_map: Dict[str, type]) -> None:
+def assert_field_types(obj: Any, field_type_map: dict[str, type]) -> None:
     """
     Assert multiple fields have expected types.
 
@@ -287,8 +289,8 @@ def validate_assignees_format(obj: Any, field: str = "assignees") -> None:
 def assert_valid_enum_value(
     obj: Any,
     field: str,
-    valid_values: List[str],
-    enum_name: Optional[str] = None
+    valid_values: list[str],
+    enum_name: str | None = None
 ) -> None:
     """
     Assert that a field value is one of the valid enum values.
@@ -357,8 +359,8 @@ def validate_task_priority(obj: Any, field: str = "priority") -> None:
 def assert_value_in_range(
     obj: Any,
     field: str,
-    min_value: Union[int, float],
-    max_value: Union[int, float]
+    min_value: int | float,
+    max_value: int | float
 ) -> None:
     """
     Assert that a numeric field value is within a specified range.
@@ -558,7 +560,7 @@ def validate_complete_subtask_contract(subtask: Any) -> None:
 # NAMING CONVENTION VALIDATORS
 # ============================================================================
 
-def validate_snake_case_fields(obj_dict: Dict[str, Any], expected_snake_case: List[str]) -> None:
+def validate_snake_case_fields(obj_dict: dict[str, Any], expected_snake_case: list[str]) -> None:
     """
     Validate that serialized object uses snake_case for specified fields.
 
@@ -600,7 +602,7 @@ def snake_to_camel(snake_str: str) -> str:
 # WEBSOCKET MESSAGE VALIDATORS
 # ============================================================================
 
-def validate_websocket_message_structure(message: Dict[str, Any]) -> None:
+def validate_websocket_message_structure(message: dict[str, Any]) -> None:
     """
     Validate that a WebSocket message has the expected structure.
 
@@ -622,7 +624,7 @@ def validate_websocket_message_structure(message: Dict[str, Any]) -> None:
 
 
 def validate_websocket_task_message(
-    message: Dict[str, Any],
+    message: dict[str, Any],
     expect_complete_task: bool = True
 ) -> None:
     """

@@ -1,30 +1,28 @@
 """Unit tests for context schema infrastructure service"""
 
-import pytest
-from datetime import datetime
 from dataclasses import is_dataclass
-import json
 
+import pytest
+
+from fastmcp.task_management.domain.value_objects.priority import (
+    Priority,
+    PriorityLevel,
+)
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatus,
+    TaskStatusEnum,
+)
 from fastmcp.task_management.infrastructure.services.context_schema import (
+    ContextCustomSection,
+    ContextDependency,
+    ContextInsight,
     ContextMetadata,
     ContextObjective,
-    ContextRequirement,
-    ContextRequirements,
-    ContextTechnical,
-    ContextDependency,
-    ContextDependencies,
     ContextProgressAction,
-    ContextProgress,
-    ContextInsight,
-    ContextNotes,
-    ContextSubtask,
-    ContextSubtasks,
-    ContextCustomSection,
+    ContextRequirement,
+    ContextSchema,
     TaskContext,
-    ContextSchema
 )
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
 
 
 class TestContextMetadata:

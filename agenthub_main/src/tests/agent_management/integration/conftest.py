@@ -5,27 +5,28 @@ This module provides pytest fixtures for integration testing with a real databas
 It sets up an isolated test database, creates schema, and handles cleanup.
 """
 
-import pytest
-import os
 import json
-import tempfile
-from pathlib import Path
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
+from datetime import UTC, datetime
 
-from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig, Base
-from fastmcp.agent_management.infrastructure.database.models import (
-    AgentTemplateORM,
-    UserAgentInstanceORM
-)
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
 from fastmcp.agent_management.domain.entities import AgentTemplate, UserAgentInstance
 from fastmcp.agent_management.domain.value_objects import (
+    AgentConfiguration,
     AgentTemplateId,
     UserAgentInstanceId,
     UserId,
-    AgentConfiguration
 )
-from datetime import datetime, timezone
+from fastmcp.agent_management.infrastructure.database.models import (
+    AgentTemplateORM,
+    UserAgentInstanceORM,
+)
+from fastmcp.task_management.infrastructure.database.database_config import (
+    Base,
+    DatabaseConfig,
+)
 
 
 @pytest.fixture(scope="session")
@@ -127,8 +128,8 @@ def sample_agent_template(db_session):
         rules=json.dumps(list(configuration.rules)) if configuration.rules else None,  # Serialize to JSON
         output_format=json.dumps(configuration.output_format) if configuration.output_format else None,  # Serialize to JSON
         metadata_json=json.dumps(configuration.metadata),  # Serialize to JSON
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
 
     # Save to database
@@ -207,8 +208,8 @@ def sample_user_instance(db_session, sample_agent_template, sample_user_id):
         output_format=json.dumps(custom_configuration.output_format) if custom_configuration.output_format else None,  # Serialize to JSON
         visibility="private",
         metadata_json=json.dumps({}),  # Serialize to JSON
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
 
     # Save to database

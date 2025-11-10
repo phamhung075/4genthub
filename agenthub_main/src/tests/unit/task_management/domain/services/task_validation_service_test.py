@@ -1,19 +1,17 @@
 """Unit tests for TaskValidationService - Domain Service for Complex Task Business Validation"""
 
-import pytest
-from unittest.mock import Mock, MagicMock
-from typing import List, Dict, Any, Optional
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock
 
-from fastmcp.task_management.domain.services.task_validation_service import (
-    TaskValidationService,
-    GitBranchRepositoryProtocol,
-    ProjectRepositoryProtocol
-)
+import pytest
+
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.services.task_validation_service import (
+    GitBranchRepositoryProtocol,
+    ProjectRepositoryProtocol,
+    TaskValidationService,
+)
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestTaskValidationService:
@@ -235,7 +233,7 @@ class TestTaskValidationService:
                 priority="medium"
             )
             # Set due date 3 years in the future (invalid)
-            task.due_date = datetime.now(timezone.utc) + timedelta(days=365 * 3)
+            task.due_date = datetime.now(UTC) + timedelta(days=365 * 3)
 
             # Act
             errors = validation_service.validate_task_creation(task)
@@ -792,7 +790,7 @@ class TestTaskValidationServiceIntegration:
         task.labels = ["feature", "authentication", "security", "high-priority"]
         task.dependencies = []
         task.estimated_effort = "2 weeks"
-        task.due_date = datetime.now(timezone.utc) + timedelta(days=30)
+        task.due_date = datetime.now(UTC) + timedelta(days=30)
         
         # Test creation validation
         creation_errors = service.validate_task_creation(task)
@@ -855,7 +853,7 @@ class TestTaskValidationServiceIntegration:
         task.labels = [""] * 11  # Too many empty labels
         task.dependencies = [str(task.id)]  # Self-dependency
         task.estimated_effort = "sometime"  # Invalid format
-        task.due_date = datetime.now(timezone.utc) + timedelta(days=365 * 3)  # Too far in future
+        task.due_date = datetime.now(UTC) + timedelta(days=365 * 3)  # Too far in future
         
         # Test that all validation types catch their respective errors
         creation_errors = service.validate_task_creation(task)

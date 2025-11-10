@@ -10,11 +10,17 @@ This is critical because:
 3. Better to fail explicitly than corrupt data silently
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+
 from fastmcp.task_management.application.exceptions import RepositoryProviderError
-from fastmcp.task_management.application.services.task_application_service import TaskApplicationService
-from fastmcp.task_management.application.services.task_context_sync_service import TaskContextSyncService
+from fastmcp.task_management.application.services.task_application_service import (
+    TaskApplicationService,
+)
+from fastmcp.task_management.application.services.task_context_sync_service import (
+    TaskContextSyncService,
+)
 
 
 class TestRepositoryProviderFailFast:
@@ -224,7 +230,7 @@ class TestRepositoryProviderSuccessPath:
                 mock_provider.return_value = mock_instance
 
                 # Act: Create service
-                service = TaskApplicationService(mock_task_repo)
+                TaskApplicationService(mock_task_repo)
 
                 # Assert: No error or warning logging
                 mock_logger.error.assert_not_called()

@@ -5,6 +5,8 @@ Main protocol implementation with validation, message creation, and cascade inte
 NO backward compatibility - clean v2.0 implementation only.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from datetime import UTC, datetime

@@ -5,6 +5,8 @@ Provides high-performance caching for resolved contexts to minimize
 resolution overhead in the hierarchical context system.
 """
 
+from __future__ import annotations
+
 import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -41,7 +43,7 @@ class ContextCacheService:
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
-    def with_user(self, user_id: str) -> 'ContextCacheService':
+    def with_user(self, user_id: str) -> ContextCacheService:
         """Create a new service instance scoped to a specific user."""
         return ContextCacheService(self.repository, self.default_ttl_hours, user_id)
     

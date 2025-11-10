@@ -1,15 +1,13 @@
 """Tests for EventStore implementation."""
 
 import asyncio
-import json
-import pytest
-import tempfile
 import os
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, AsyncMock
-from pathlib import Path
+import tempfile
+from datetime import UTC, datetime, timedelta
 
-from fastmcp.task_management.infrastructure.event_store import EventStore, StoredEvent
+import pytest
+
+from fastmcp.task_management.infrastructure.event_store import EventStore
 
 
 class SampleEvent:
@@ -18,7 +16,7 @@ class SampleEvent:
         self.aggregate_id = aggregate_id
         self.data = data
         self.user_id = user_id
-        self.occurred_at = datetime.now(timezone.utc)
+        self.occurred_at = datetime.now(UTC)
     
     def to_dict(self):
         return {
@@ -122,7 +120,7 @@ class TestEventStore:
         class OtherEventClass:
             def __init__(self, aggregate_id: str):
                 self.aggregate_id = aggregate_id
-                self.occurred_at = datetime.now(timezone.utc)
+                self.occurred_at = datetime.now(UTC)
                 self.user_id = "test_user"
             
             def to_dict(self):
@@ -146,7 +144,7 @@ class TestEventStore:
     @pytest.mark.asyncio
     async def test_get_events_in_range(self, event_store):
         """Test retrieving events within a time range."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         # Create events at different times
         event1 = SampleEvent("agg_1", "data_1")
@@ -183,7 +181,7 @@ class TestEventStore:
     @pytest.mark.asyncio
     async def test_get_events_in_range_with_types(self, event_store):
         """Test retrieving specific event types within a time range."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         event1 = SampleEvent("agg_1", "data_1")
         event1.occurred_at = now
@@ -266,7 +264,7 @@ class TestEventStore:
         
         # Create snapshot
         await asyncio.sleep(0.01)
-        snapshot_time = datetime.now(timezone.utc)
+        snapshot_time = datetime.now(UTC)
         await event_store.create_snapshot(aggregate_id, aggregate_type, {"checkpoint": 1}, 1)
         
         # Append more events after snapshot
@@ -343,14 +341,14 @@ class TestEventStore:
             def __init__(self):
                 self.aggregate_id = "complex_agg"
                 self.user_id = "test_user"
-                self.occurred_at = datetime.now(timezone.utc)
+                self.occurred_at = datetime.now(UTC)
                 self.complex_data = {
                     "nested": {
                         "value": 123,
                         "list": [1, 2, 3],
                         "bool": True
                     },
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "timestamp": datetime.now(UTC).isoformat()
                 }
             
             def to_dict(self):
@@ -417,7 +415,10 @@ class TestEventStoreSingleton:
     
     def test_get_event_store_singleton(self):
         """Test that get_event_store returns the same instance."""
-        from fastmcp.task_management.infrastructure.event_store import get_event_store, reset_event_store
+        from fastmcp.task_management.infrastructure.event_store import (
+            get_event_store,
+            reset_event_store,
+        )
         
         # Reset first to ensure clean state
         reset_event_store()

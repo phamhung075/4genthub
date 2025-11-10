@@ -7,6 +7,8 @@ Supports efficient batching of multiple entity updates with cascade data.
 NO backward compatibility - clean v2.0 implementation only.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import uuid
@@ -35,7 +37,7 @@ class BatchProcessor:
     - Efficient memory usage
     """
 
-    def __init__(self, manager: "ConnectionManager", session_factory):
+    def __init__(self, manager: ConnectionManager, session_factory):
         """
         Initialize batch processor.
 

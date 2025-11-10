@@ -1,12 +1,26 @@
 """Unit tests for Context entity and related classes."""
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
+
 from fastmcp.task_management.domain.entities.context import (
-    ContextMetadata, ContextObjective, ContextRequirement, ContextRequirements,
-    ContextTechnical, ContextDependency, ContextDependencies, ContextProgressAction,
-    ContextProgress, ContextInsight, ContextNotes, ContextSubtask, ContextSubtasks,
-    ContextCustomSection, TaskContext, ContextSchema
+    ContextCustomSection,
+    ContextDependencies,
+    ContextDependency,
+    ContextInsight,
+    ContextMetadata,
+    ContextNotes,
+    ContextObjective,
+    ContextProgress,
+    ContextProgressAction,
+    ContextRequirement,
+    ContextRequirements,
+    ContextSchema,
+    ContextSubtask,
+    ContextSubtasks,
+    ContextTechnical,
+    TaskContext,
 )
 from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
@@ -30,7 +44,7 @@ class TestContextMetadata:
     
     def test_metadata_creation_full(self):
         """Test creating metadata with all fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         metadata = ContextMetadata(
             task_id="task-456",
             status=TaskStatus.in_progress(),
@@ -66,7 +80,7 @@ class TestContextObjective:
     
     def test_objective_creation_full(self):
         """Test creating objective with all fields."""
-        due_date = datetime.now(timezone.utc)
+        due_date = datetime.now(UTC)
         objective = ContextObjective(
             title="Complete Feature",
             description="Implement user authentication",
@@ -461,7 +475,7 @@ class TestTaskContextSerialization:
     
     def test_to_dict_with_datetime(self):
         """Test that datetime objects are properly serialized."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         metadata = ContextMetadata(
             task_id="dt-task",
             created_at=now,
@@ -780,7 +794,7 @@ class TestContextIntegration:
         # Add progress
         context.progress.completed_actions.append(
             ContextProgressAction(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 action="Started implementation",
                 agent="dev-agent"
             )
@@ -800,7 +814,7 @@ class TestContextIntegration:
         # Add insights
         context.notes.agent_insights.append(
             ContextInsight(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 agent="dev-agent",
                 category="insight",
                 content="Found existing utility function",

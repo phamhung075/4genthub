@@ -10,18 +10,19 @@ Phase 3 Success Metrics (from task spec):
 - Improved task completion rate ✓
 """
 
-import pytest
 import time
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timezone
-import numpy as np
+from unittest.mock import Mock, patch
 
+import numpy as np
+import pytest
+
+from fastmcp.task_management.domain.services.intelligence.context_prioritizer import (
+    UserPreferences,
+)
 from fastmcp.task_management.domain.services.intelligence.intelligent_context_selector import (
     IntelligentContextSelector,
     SelectionResult,
-    SelectionMetrics
 )
-from fastmcp.task_management.domain.services.intelligence.context_prioritizer import UserPreferences
 
 
 class TestIntelligentContextSelector:
@@ -160,7 +161,10 @@ class TestIntelligentContextSelector:
             selector.load_available_contexts(sample_contexts)
 
             # Mock the semantic matcher to return auth-related contexts
-            from fastmcp.task_management.domain.services.intelligence.semantic_matcher import SimilarityResult, ContextItem
+            from fastmcp.task_management.domain.services.intelligence.semantic_matcher import (
+                ContextItem,
+                SimilarityResult,
+            )
             mock_results = [
                 SimilarityResult(
                     item=ContextItem(
@@ -537,7 +541,10 @@ class TestIntelligentContextSelectorPerformance:
             selector.load_available_contexts(all_contexts)
             
             # Mock the semantic matcher to return auth-related contexts
-            from fastmcp.task_management.domain.services.intelligence.semantic_matcher import SimilarityResult, ContextItem
+            from fastmcp.task_management.domain.services.intelligence.semantic_matcher import (
+                ContextItem,
+                SimilarityResult,
+            )
             mock_results = [
                 SimilarityResult(
                     item=ContextItem(

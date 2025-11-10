@@ -7,8 +7,9 @@ with Pydantic validation and fallback handling.
 This test suite follows the BranchDeletePayload pattern from git_branch_service.py:206-221
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from pydantic import ValidationError
 
 from fastmcp.task_management.domain.websocket_protocol import ProjectDeletePayload
@@ -99,8 +100,13 @@ class TestProjectManagementServiceWebSocketIntegration:
     @patch('fastmcp.task_management.application.services.project_management_service.WebSocketNotificationService')
     def test_successful_payload_validation_and_broadcast(self, mock_ws_service, mock_logger):
         """Test successful ProjectDeletePayload validation and WebSocket broadcast"""
-        from fastmcp.task_management.application.services.project_management_service import ProjectManagementService
-        from fastmcp.task_management.infrastructure.persistence.sqlalchemy.repositories.sqlalchemy_project_repository import SQLAlchemyProjectRepository
+        from fastmcp.task_management.infrastructure.persistence.sqlalchemy.repositories.sqlalchemy_project_repository import (
+            SQLAlchemyProjectRepository,
+        )
+
+        from fastmcp.task_management.application.services.project_management_service import (
+            ProjectManagementService,
+        )
         from fastmcp.task_management.domain.entities.project import Project
 
         # Setup mock repository
@@ -155,8 +161,13 @@ class TestProjectManagementServiceWebSocketIntegration:
                 [{'type': 'value_error', 'loc': ('id',), 'msg': 'Test validation error', 'input': ''}]
             )
 
-            from fastmcp.task_management.application.services.project_management_service import ProjectManagementService
-            from fastmcp.task_management.infrastructure.persistence.sqlalchemy.repositories.sqlalchemy_project_repository import SQLAlchemyProjectRepository
+            from fastmcp.task_management.infrastructure.persistence.sqlalchemy.repositories.sqlalchemy_project_repository import (
+                SQLAlchemyProjectRepository,
+            )
+
+            from fastmcp.task_management.application.services.project_management_service import (
+                ProjectManagementService,
+            )
             from fastmcp.task_management.domain.entities.project import Project
 
             # Setup mock repository

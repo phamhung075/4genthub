@@ -11,6 +11,8 @@ DDD Compliance:
 - Provides typed repository interfaces, not concrete implementations
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

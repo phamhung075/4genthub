@@ -6,22 +6,41 @@ timestamp management system. Tests cover service operations, repository interact
 and end-to-end workflows with clean timestamp patterns.
 """
 
-import pytest
-from datetime import datetime, timezone
-import uuid
 import asyncio
+import uuid
+from datetime import UTC, datetime
 
-from fastmcp.task_management.application.services.task_application_service import TaskApplicationService
-from fastmcp.task_management.application.services.project_application_service import ProjectApplicationService
-from fastmcp.task_management.application.dtos.task import CreateTaskRequest, UpdateTaskRequest
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.infrastructure.repositories.orm.project_repository import ORMProjectRepository
+import pytest
+
+from fastmcp.task_management.application.dtos.task import (
+    CreateTaskRequest,
+    UpdateTaskRequest,
+)
+from fastmcp.task_management.application.services.project_application_service import (
+    ProjectApplicationService,
+)
+from fastmcp.task_management.application.services.task_application_service import (
+    TaskApplicationService,
+)
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.project import Project
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
+from fastmcp.task_management.domain.value_objects.priority import (
+    Priority,
+    PriorityLevel,
+)
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatus,
+    TaskStatusEnum,
+)
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
+    ORMProjectRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 
 
 class TestServiceLayerTimestampIntegration:
@@ -35,7 +54,9 @@ class TestServiceLayerTimestampIntegration:
     @pytest.fixture
     def db_session(self):
         """Shared database session for all repositories"""
-        from fastmcp.task_management.infrastructure.database.auto_migration import run_auto_migrations
+        from fastmcp.task_management.infrastructure.database.auto_migration import (
+            run_auto_migrations,
+        )
         
         db_config = get_db_config()
         
@@ -82,7 +103,7 @@ class TestServiceLayerTimestampIntegration:
         
         async def create_project_and_branch():
             # Create project
-            project_result = await project_service.create_project(
+            await project_service.create_project(
                 project_id=project_id,
                 name="Integration Test Project",
                 description="Project for service layer timestamp integration tests"
@@ -118,12 +139,12 @@ class TestServiceLayerTimestampIntegration:
         )
 
         # Record time before service call
-        before_creation = datetime.now(timezone.utc)
+        before_creation = datetime.now(UTC)
         
         response = await task_service.create_task(request)
 
         # Record time after service call
-        after_creation = datetime.now(timezone.utc)
+        after_creation = datetime.now(UTC)
 
         # Verify task was created successfully
         assert response.success
@@ -134,8 +155,8 @@ class TestServiceLayerTimestampIntegration:
         assert task.created_at is not None
         assert task.updated_at is not None
         # Convert task timestamps to timezone-aware if needed
-        task_created = task.created_at if task.created_at.tzinfo else task.created_at.replace(tzinfo=timezone.utc)
-        task_updated = task.updated_at if task.updated_at.tzinfo else task.updated_at.replace(tzinfo=timezone.utc)
+        task_created = task.created_at if task.created_at.tzinfo else task.created_at.replace(tzinfo=UTC)
+        task_updated = task.updated_at if task.updated_at.tzinfo else task.updated_at.replace(tzinfo=UTC)
         assert before_creation <= task_created <= after_creation
         assert before_creation <= task_updated <= after_creation
 
@@ -202,9 +223,9 @@ class TestServiceLayerTimestampIntegration:
         
         # If timestamps don't have timezone info, add UTC
         if original_created and not original_created.tzinfo:
-            original_created = original_created.replace(tzinfo=timezone.utc)
+            original_created = original_created.replace(tzinfo=UTC)
         if original_updated and not original_updated.tzinfo:
-            original_updated = original_updated.replace(tzinfo=timezone.utc)
+            original_updated = original_updated.replace(tzinfo=UTC)
 
         # Small delay
         await asyncio.sleep(0.1)  # Changed to async sleep
@@ -234,12 +255,12 @@ class TestServiceLayerTimestampIntegration:
         completed_created_at = completed_task.created_at
         completed_updated_at = completed_task.updated_at
         if completed_created_at and not completed_created_at.tzinfo:
-            completed_created_at = completed_created_at.replace(tzinfo=timezone.utc)
+            completed_created_at = completed_created_at.replace(tzinfo=UTC)
         if completed_updated_at and not completed_updated_at.tzinfo:
-            completed_updated_at = completed_updated_at.replace(tzinfo=timezone.utc)
+            completed_updated_at = completed_updated_at.replace(tzinfo=UTC)
         
         # Debug prints with more detail
-        print(f"\nDEBUG TIMESTAMPS:")
+        print("\nDEBUG TIMESTAMPS:")
         print(f"Original created: {original_created} (type: {type(original_created)}, tzinfo: {original_created.tzinfo})")
         print(f"Original updated: {original_updated} (type: {type(original_updated)}, tzinfo: {original_updated.tzinfo})")
         print(f"Completed created: {completed_created_at} (type: {type(completed_created_at)}, tzinfo: {completed_created_at.tzinfo})")
@@ -249,7 +270,7 @@ class TestServiceLayerTimestampIntegration:
         if hasattr(completed_task.status, 'value'):
             print(f"Status.value: {completed_task.status.value}")
         else:
-            print(f"Status has no .value attribute")
+            print("Status has no .value attribute")
         
         # Compare timestamps with normalized timezone
         # Allow small differences due to database precision and timezone handling
@@ -285,7 +306,7 @@ class TestServiceLayerTimestampIntegration:
             print(f"Completed: {completed_updated_at}")
             assert False, "Timestamp went backwards, which should never happen"
         elif updated_diff == 0:
-            print(f"INFO: updated_at did not change during completion (operations in same transaction)")
+            print("INFO: updated_at did not change during completion (operations in same transaction)")
             # This is acceptable - verify task was at least completed successfully
             # NOTE: Due to database schema issues, status might not reflect as 'done' on retrieval
             # but the completion response confirmed success
@@ -361,14 +382,14 @@ class TestServiceLayerTimestampIntegration:
         )
 
         # Record timestamps before save
-        before_save = datetime.now(timezone.utc)
+        before_save = datetime.now(UTC)
 
         # Save through repository
         save_result = task_repository.save(task)
         assert save_result  # Verify save succeeded
 
         # Record timestamps after save
-        after_save = datetime.now(timezone.utc)
+        after_save = datetime.now(UTC)
 
         # NOTE: The current implementation uses SQLAlchemy event handlers to set timestamps
         # during database operations, not preserving the entity's original timestamps
@@ -384,8 +405,8 @@ class TestServiceLayerTimestampIntegration:
         assert retrieved_task.updated_at is not None
         
         # Ensure timestamps have timezone info
-        created_tz = retrieved_task.created_at if retrieved_task.created_at.tzinfo else retrieved_task.created_at.replace(tzinfo=timezone.utc)
-        updated_tz = retrieved_task.updated_at if retrieved_task.updated_at.tzinfo else retrieved_task.updated_at.replace(tzinfo=timezone.utc)
+        created_tz = retrieved_task.created_at if retrieved_task.created_at.tzinfo else retrieved_task.created_at.replace(tzinfo=UTC)
+        updated_tz = retrieved_task.updated_at if retrieved_task.updated_at.tzinfo else retrieved_task.updated_at.replace(tzinfo=UTC)
         
         # Timestamps should be within the save operation window
         assert before_save <= created_tz <= after_save
@@ -522,8 +543,8 @@ class TestServiceLayerTimestampIntegration:
         task = task_response.task  # CreateTaskResponse has .task
         assert task.created_at is not None
         assert task.updated_at is not None
-        assert task.created_at.tzinfo == timezone.utc
-        assert task.updated_at.tzinfo == timezone.utc
+        assert task.created_at.tzinfo == UTC
+        assert task.updated_at.tzinfo == UTC
 
     def test_service_layer_touch_method_integration(self, task_service, test_project_and_branch):
         """Test that service layer operations properly integrate with entity touch() method"""

@@ -6,6 +6,8 @@ Date: 2025-01-27
 This file contains the infrastructure implementation for rule parsing following DDD principles.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import re
@@ -179,7 +181,6 @@ class RuleParserService(IRuleParserService):
         
         # Look for description in YAML frontmatter
         if content.startswith('---'):
-            in_frontmatter = True
             for line in lines[1:]:
                 if line.strip() == '---':
                     break
@@ -219,7 +220,7 @@ class RuleParserService(IRuleParserService):
                         elif isinstance(tags_value, str):
                             # Single tag as string
                             tags.append(tags_value)
-                except:
+                except Exception:
                     pass
         
         # Look for hashtags in content
@@ -260,7 +261,7 @@ class RuleParserService(IRuleParserService):
                     if isinstance(frontmatter_data, dict):
                         parsed_content.update(frontmatter_data)
                         variables.update(frontmatter_data.get('variables', {}))
-                except:
+                except Exception:
                     pass
                 
                 lines = lines[frontmatter_end + 1:]

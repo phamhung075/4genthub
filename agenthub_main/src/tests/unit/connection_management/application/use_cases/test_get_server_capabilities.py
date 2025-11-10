@@ -1,18 +1,19 @@
 """Unit tests for Get Server Capabilities Use Case"""
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
-from uuid import uuid4
+from unittest.mock import Mock, patch
 
-from fastmcp.connection_management.application.use_cases.get_server_capabilities import (
-    GetServerCapabilitiesUseCase
-)
 from fastmcp.connection_management.application.dtos.connection_dtos import (
     ServerCapabilitiesRequest,
-    ServerCapabilitiesResponse
+    ServerCapabilitiesResponse,
+)
+from fastmcp.connection_management.application.use_cases.get_server_capabilities import (
+    GetServerCapabilitiesUseCase,
 )
 from fastmcp.connection_management.domain.entities.server import Server
-from fastmcp.connection_management.domain.value_objects.server_capabilities import ServerCapabilities
+from fastmcp.connection_management.domain.value_objects.server_capabilities import (
+    ServerCapabilities,
+)
 
 
 class TestGetServerCapabilitiesUseCase(unittest.TestCase):
@@ -182,7 +183,7 @@ class TestGetServerCapabilitiesUseCase(unittest.TestCase):
         self.mock_server_repository.get_current_server.side_effect = Exception(error_message)
         
         # Act
-        response = self.use_case.execute(request)
+        self.use_case.execute(request)
         
         # Assert
         mock_logger.error.assert_called_once()

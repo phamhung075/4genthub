@@ -1,5 +1,7 @@
 """Request DTO for adding a dependency between tasks."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 

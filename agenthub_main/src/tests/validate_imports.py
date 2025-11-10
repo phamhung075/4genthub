@@ -2,16 +2,15 @@
 """
 Import validation script for test files
 """
-import sys
-import os
 import ast
-import importlib.util
+import sys
 from pathlib import Path
+
 
 def check_file_imports(filepath):
     """Check if a Python file has any import errors"""
     try:
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             content = f.read()
         
         # Parse AST to check syntax
@@ -51,7 +50,7 @@ def main():
             print(f"❌ {relative_path}: {message}")
             errors_found += 1
     
-    print(f"\n📊 Results:")
+    print("\n📊 Results:")
     print(f"   Files checked: {files_checked}")
     print(f"   Errors found: {errors_found}")
     

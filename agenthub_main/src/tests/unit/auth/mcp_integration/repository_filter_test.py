@@ -2,14 +2,16 @@
 Tests for user-filtered repository wrappers
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+
 from fastmcp.auth.mcp_integration.repository_filter import (
+    UserFilteredContextRepository,
+    UserFilteredProjectRepository,
     UserFilteredRepository,
     UserFilteredTaskRepository,
-    UserFilteredProjectRepository,
-    UserFilteredContextRepository,
-    create_user_filtered_repository
+    create_user_filtered_repository,
 )
 
 

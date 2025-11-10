@@ -4,14 +4,17 @@ Unit tests for JWT Authentication Middleware
 Tests JWT token extraction, user context management, and middleware functionality.
 """
 
-import pytest
-from unittest.mock import Mock, patch
-import jwt
-from datetime import datetime, timezone, timedelta
 import logging
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock, patch
+
+import jwt
+import pytest
 
 from fastmcp.auth.middleware.jwt_auth_middleware import (
-    JWTAuthMiddleware, UserContextManager, create_auth_middleware
+    JWTAuthMiddleware,
+    UserContextManager,
+    create_auth_middleware,
 )
 
 
@@ -35,8 +38,8 @@ class TestJWTAuthMiddleware:
         """Generate a valid JWT token"""
         payload = {
             "sub": "user123",
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-            "iat": datetime.now(timezone.utc)
+            "exp": datetime.now(UTC) + timedelta(hours=1),
+            "iat": datetime.now(UTC)
         }
         return jwt.encode(payload, secret_key, algorithm=algorithm)
     
@@ -45,8 +48,8 @@ class TestJWTAuthMiddleware:
         """Generate a valid JWT token with user_id field"""
         payload = {
             "user_id": "user456",
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-            "iat": datetime.now(timezone.utc)
+            "exp": datetime.now(UTC) + timedelta(hours=1),
+            "iat": datetime.now(UTC)
         }
         return jwt.encode(payload, secret_key, algorithm=algorithm)
     
@@ -55,8 +58,8 @@ class TestJWTAuthMiddleware:
         """Generate an expired JWT token"""
         payload = {
             "sub": "user789",
-            "exp": datetime.now(timezone.utc) - timedelta(hours=1),
-            "iat": datetime.now(timezone.utc) - timedelta(hours=2)
+            "exp": datetime.now(UTC) - timedelta(hours=1),
+            "iat": datetime.now(UTC) - timedelta(hours=2)
         }
         return jwt.encode(payload, secret_key, algorithm=algorithm)
     
@@ -96,8 +99,8 @@ class TestJWTAuthMiddleware:
     def test_extract_user_from_token_without_user_claim(self, middleware, secret_key, algorithm):
         """Test extracting user from token without user_id or sub claim"""
         payload = {
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-            "iat": datetime.now(timezone.utc),
+            "exp": datetime.now(UTC) + timedelta(hours=1),
+            "iat": datetime.now(UTC),
             "other": "data"
         }
         token = jwt.encode(payload, secret_key, algorithm=algorithm)

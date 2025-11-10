@@ -5,19 +5,18 @@ Simple tests to verify core functionality without complex dependencies.
 """
 
 import json
-import pytest
 from datetime import datetime
 
+import pytest
+
 from fastmcp.websocket import (
-    WSMessage,
-    WSPayload,
-    WSData,
-    WSMetadata,
     CascadeData,
-    validate_message,
-    MessageSizeError,
-    ProtocolError,
     InvalidVersionError,
+    WSData,
+    WSMessage,
+    WSMetadata,
+    WSPayload,
+    validate_message,
 )
 
 

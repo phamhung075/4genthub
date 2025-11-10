@@ -18,6 +18,8 @@ Clean Code Requirements:
 - Clean error handling
 """
 
+from __future__ import annotations
+
 import logging
 import time
 from dataclasses import dataclass
@@ -82,7 +84,7 @@ class CascadeCalculator:
     - Infrastructure independence (can switch databases without changing domain logic)
     """
 
-    def __init__(self, data_provider: "CascadeDataProvider"):
+    def __init__(self, data_provider: CascadeDataProvider):
         """
         Initialize cascade calculator with data provider.
 

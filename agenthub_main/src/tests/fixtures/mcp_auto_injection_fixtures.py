@@ -12,16 +12,14 @@ Fixtures Categories:
 - Validation Helpers
 """
 
-import pytest
-import json
-import time
-import tempfile
 import subprocess
-import threading
+import tempfile
+import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, MagicMock
-from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Any
+
+import pytest
 import requests
 
 
@@ -31,7 +29,7 @@ def test_data_generator():
     class TestDataGenerator:
         def __init__(self):
             self.counter = 0
-            self.base_timestamp = datetime.now(timezone.utc)
+            self.base_timestamp = datetime.now(UTC)
         
         def generate_task(self, **overrides):
             """Generate test task with consistent structure."""
@@ -87,7 +85,7 @@ def test_data_generator():
             base_input = {
                 "session_id": f"test-session-{self.counter}",
                 "source": "startup",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "user_id": f"test-user-{self.counter}"
             }
             base_input.update(overrides)
@@ -120,7 +118,7 @@ def mock_keycloak_server():
             self.response_delay = response_delay
             self.error_rate = error_rate
         
-        def issue_token(self, client_id: str, client_secret: str) -> Dict[str, Any]:
+        def issue_token(self, client_id: str, client_secret: str) -> dict[str, Any]:
             """Issue JWT token with realistic behavior."""
             import random
             
@@ -148,8 +146,8 @@ def mock_keycloak_server():
             token_data = {
                 "token_id": token_id,
                 "client_id": client_id,
-                "issued_at": datetime.now(timezone.utc),
-                "expires_at": datetime.now(timezone.utc) + timedelta(seconds=expires_in),
+                "issued_at": datetime.now(UTC),
+                "expires_at": datetime.now(UTC) + timedelta(seconds=expires_in),
                 "scopes": ["openid", "profile", "email"]
             }
             
@@ -169,9 +167,9 @@ def mock_keycloak_server():
             if not token_data:
                 return False
             
-            return datetime.now(timezone.utc) < token_data["expires_at"]
+            return datetime.now(UTC) < token_data["expires_at"]
         
-        def get_token_info(self, token: str) -> Optional[Dict]:
+        def get_token_info(self, token: str) -> Dict | None:
             """Get token information."""
             return self.issued_tokens.get(token)
         
@@ -182,10 +180,10 @@ def mock_keycloak_server():
                 return True
             return False
         
-        def get_stats(self) -> Dict[str, Any]:
+        def get_stats(self) -> dict[str, Any]:
             """Get server statistics."""
             active_tokens = sum(1 for token_data in self.issued_tokens.values()
-                              if datetime.now(timezone.utc) < token_data["expires_at"])
+                              if datetime.now(UTC) < token_data["expires_at"])
             
             return {
                 "total_tokens_issued": self.token_counter,
@@ -219,14 +217,14 @@ def mock_mcp_server():
                     "name": "Test Project Alpha",
                     "description": "Primary test project",
                     "status": "active",
-                    "created_at": datetime.now(timezone.utc).isoformat()
+                    "created_at": datetime.now(UTC).isoformat()
                 },
                 "proj-2": {
                     "id": "proj-2", 
                     "name": "Test Project Beta",
                     "description": "Secondary test project",
                     "status": "active",
-                    "created_at": datetime.now(timezone.utc).isoformat()
+                    "created_at": datetime.now(UTC).isoformat()
                 }
             }
             
@@ -298,20 +296,20 @@ def mock_mcp_server():
             self.response_delay = response_delay
             self.error_rate = error_rate
         
-        def add_test_task(self, task_data: Dict[str, Any]) -> str:
+        def add_test_task(self, task_data: dict[str, Any]) -> str:
             """Add task to test data."""
             task_id = task_data.get("id", f"task-{len(self.tasks) + 1}")
             self.tasks[task_id] = task_data
             return task_id
         
-        def update_task(self, task_id: str, updates: Dict[str, Any]) -> bool:
+        def update_task(self, task_id: str, updates: dict[str, Any]) -> bool:
             """Update existing task."""
             if task_id in self.tasks:
                 self.tasks[task_id].update(updates)
                 return True
             return False
         
-        def handle_request(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def handle_request(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
             """Handle mock MCP request with realistic behavior."""
             import random
             
@@ -346,7 +344,7 @@ def mock_mcp_server():
                     "error_type": type(e).__name__
                 }
         
-        def _route_request(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _route_request(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
             """Route request to appropriate handler."""
             if endpoint == "manage_task":
                 return self._handle_task_request(payload)
@@ -362,7 +360,7 @@ def mock_mcp_server():
                     "error": f"Unknown endpoint: {endpoint}"
                 }
         
-        def _handle_task_request(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _handle_task_request(self, payload: dict[str, Any]) -> dict[str, Any]:
             """Handle task management requests."""
             action = payload.get("action")
             
@@ -382,7 +380,7 @@ def mock_mcp_server():
                     "error": f"Unknown task action: {action}"
                 }
         
-        def _list_tasks(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _list_tasks(self, payload: dict[str, Any]) -> dict[str, Any]:
             """List tasks with filtering."""
             status_filter = payload.get("status", "").split(",") if payload.get("status") else []
             git_branch_id = payload.get("git_branch_id")
@@ -413,7 +411,7 @@ def mock_mcp_server():
                 }
             }
         
-        def _get_next_task(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _get_next_task(self, payload: dict[str, Any]) -> dict[str, Any]:
             """Get next recommended task."""
             git_branch_id = payload.get("git_branch_id")
             
@@ -433,7 +431,7 @@ def mock_mcp_server():
             
             return {"success": True, "data": candidates[0].copy()}
         
-        def _get_task(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _get_task(self, payload: dict[str, Any]) -> dict[str, Any]:
             """Get specific task."""
             task_id = payload.get("task_id")
             task = self.tasks.get(task_id)
@@ -443,7 +441,7 @@ def mock_mcp_server():
             else:
                 return {"success": False, "error": "Task not found"}
         
-        def _create_task(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _create_task(self, payload: dict[str, Any]) -> dict[str, Any]:
             """Create new task."""
             task_id = f"task-{len(self.tasks) + 1}"
             task_data = {
@@ -455,13 +453,13 @@ def mock_mcp_server():
                 "git_branch_id": payload.get("git_branch_id"),
                 "project_id": payload.get("project_id"),
                 "assignees": payload.get("assignees", []),
-                "created_at": datetime.now(timezone.utc).isoformat()
+                "created_at": datetime.now(UTC).isoformat()
             }
             
             self.tasks[task_id] = task_data
             return {"success": True, "data": task_data}
         
-        def _update_task(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _update_task(self, payload: dict[str, Any]) -> dict[str, Any]:
             """Update existing task."""
             task_id = payload.get("task_id")
             task = self.tasks.get(task_id)
@@ -475,11 +473,11 @@ def mock_mcp_server():
                 if field in payload:
                     task[field] = payload[field]
             
-            task["updated_at"] = datetime.now(timezone.utc).isoformat()
+            task["updated_at"] = datetime.now(UTC).isoformat()
             
             return {"success": True, "data": task.copy()}
         
-        def _handle_project_request(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _handle_project_request(self, payload: dict[str, Any]) -> dict[str, Any]:
             """Handle project requests."""
             action = payload.get("action", "list")
             
@@ -488,7 +486,7 @@ def mock_mcp_server():
             else:
                 return {"success": False, "error": f"Unknown project action: {action}"}
         
-        def _handle_git_branch_request(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _handle_git_branch_request(self, payload: dict[str, Any]) -> dict[str, Any]:
             """Handle git branch requests."""
             action = payload.get("action", "list")
             
@@ -504,7 +502,7 @@ def mock_mcp_server():
             else:
                 return {"success": False, "error": f"Unknown branch action: {action}"}
         
-        def _handle_context_request(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _handle_context_request(self, payload: dict[str, Any]) -> dict[str, Any]:
             """Handle context requests."""
             action = payload.get("action", "get")
             context_id = payload.get("context_id")
@@ -521,7 +519,7 @@ def mock_mcp_server():
             else:
                 return {"success": False, "error": f"Unknown context action: {action}"}
         
-        def get_stats(self) -> Dict[str, Any]:
+        def get_stats(self) -> dict[str, Any]:
             """Get server statistics."""
             return {
                 "request_count": self.request_counter,
@@ -647,7 +645,7 @@ def performance_monitor():
                 return True
             return duration <= threshold
         
-        def get_summary(self) -> Dict[str, Any]:
+        def get_summary(self) -> dict[str, Any]:
             """Get performance measurement summary."""
             completed_measurements = {
                 mid: m for mid, m in self.measurements.items()
@@ -704,7 +702,7 @@ def validation_helpers():
     """Validation helper utilities for test assertions."""
     class ValidationHelpers:
         @staticmethod
-        def validate_context_structure(context: str) -> Dict[str, bool]:
+        def validate_context_structure(context: str) -> dict[str, bool]:
             """Validate session context structure."""
             validations = {
                 "has_initialization": "🚀 INITIALIZATION REQUIRED" in context,
@@ -719,7 +717,7 @@ def validation_helpers():
             return validations
         
         @staticmethod
-        def validate_mcp_response(response: Dict[str, Any]) -> Dict[str, bool]:
+        def validate_mcp_response(response: dict[str, Any]) -> dict[str, bool]:
             """Validate MCP server response structure."""
             validations = {
                 "has_success_field": "success" in response,
@@ -741,7 +739,7 @@ def validation_helpers():
             return validations
         
         @staticmethod
-        def validate_authentication_token(token_response: Dict[str, Any]) -> Dict[str, bool]:
+        def validate_authentication_token(token_response: dict[str, Any]) -> dict[str, bool]:
             """Validate authentication token response."""
             validations = {
                 "has_access_token": "access_token" in token_response,
@@ -755,7 +753,7 @@ def validation_helpers():
             return validations
         
         @staticmethod
-        def validate_cache_operation(operation_result: Any, operation_type: str) -> Dict[str, bool]:
+        def validate_cache_operation(operation_result: Any, operation_type: str) -> dict[str, bool]:
             """Validate cache operation results."""
             if operation_type == "set":
                 return {
@@ -776,7 +774,7 @@ def validation_helpers():
                 return {"unknown_operation": False}
         
         @staticmethod
-        def assert_all_validations(validations: Dict[str, bool], context: str = ""):
+        def assert_all_validations(validations: dict[str, bool], context: str = ""):
             """Assert all validation checks pass."""
             failed_validations = [key for key, passed in validations.items() if not passed]
             

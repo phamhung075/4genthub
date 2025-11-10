@@ -228,7 +228,6 @@ class MinimalResponseSerializer:
         minimal_operations = {"create", "update", "complete"}
 
         # Use full serialization for read operations
-        full_operations = {"get", "list", "search", "next"}
 
         return operation in minimal_operations
 

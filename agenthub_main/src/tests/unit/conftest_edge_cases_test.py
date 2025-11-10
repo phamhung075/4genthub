@@ -11,13 +11,10 @@ Covers:
 Target: Production-ready tests with complete helper function coverage
 """
 
-import pytest
-from pathlib import Path
-import tempfile
 import shutil
-import sys
-from unittest.mock import Mock, patch, MagicMock, call
-from typing import Generator
+import tempfile
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 
 class TestPytestSessionfinishCleanup:
@@ -340,6 +337,7 @@ class TestPostgreSQLSessionFixture:
 
         # Read the actual fixture code to verify error handling pattern
         import inspect
+
         from tests.conftest import postgresql_session_db
 
         source = inspect.getsource(postgresql_session_db)
@@ -353,6 +351,7 @@ class TestPostgreSQLSessionFixture:
     def test_postgresql_session_fixture_general_error_handling(self):
         """Test PostgreSQL session fixture handles general errors with pytest.fail."""
         import inspect
+
         from tests.conftest import postgresql_session_db
 
         source = inspect.getsource(postgresql_session_db)
@@ -365,6 +364,7 @@ class TestPostgreSQLSessionFixture:
     def test_postgresql_session_fixture_cleanup_flow(self):
         """Test PostgreSQL session fixture has proper cleanup in finally/teardown."""
         import inspect
+
         from tests.conftest import postgresql_session_db
 
         source = inspect.getsource(postgresql_session_db)
@@ -381,6 +381,7 @@ class TestPostgreSQLSessionFixture:
         """Test specific lines 1526-1532 structure matches requirements."""
         # This tests the actual code structure at lines 1526-1532
         import inspect
+
         from tests.conftest import postgresql_session_db
 
         source = inspect.getsource(postgresql_session_db)

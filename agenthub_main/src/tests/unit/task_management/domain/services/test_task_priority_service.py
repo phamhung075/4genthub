@@ -1,18 +1,16 @@
 """Unit tests for TaskPriorityService domain service"""
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, MagicMock, AsyncMock
-from typing import List, Dict, Any
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock
 
-from fastmcp.task_management.domain.services.task_priority_service import (
-    TaskPriorityService, 
-    TaskRepositoryProtocol
-)
 from fastmcp.task_management.domain.entities.task import Task
+from fastmcp.task_management.domain.services.task_priority_service import (
+    TaskPriorityService,
+    TaskRepositoryProtocol,
+)
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestTaskPriorityService:
@@ -29,7 +27,7 @@ class TestTaskPriorityService:
             title="Critical Bug Fix",
             priority="high",
             status="in_progress",
-            due_date=datetime.now(timezone.utc) + timedelta(days=1)
+            due_date=datetime.now(UTC) + timedelta(days=1)
         )
         
         self.medium_priority_task = self._create_test_task(
@@ -37,7 +35,7 @@ class TestTaskPriorityService:
             title="Feature Implementation",
             priority="medium",
             status="todo",
-            due_date=datetime.now(timezone.utc) + timedelta(days=7)
+            due_date=datetime.now(UTC) + timedelta(days=7)
         )
         
         self.old_task = self._create_test_task(
@@ -45,7 +43,7 @@ class TestTaskPriorityService:
             title="Legacy Task",
             priority="low",
             status="todo",
-            created_at=datetime.now(timezone.utc) - timedelta(days=90)
+            created_at=datetime.now(UTC) - timedelta(days=90)
         )
 
     def _create_test_task(self, task_id: str, title: str, priority: str = "medium",
@@ -75,8 +73,8 @@ class TestTaskPriorityService:
             status=task_status,
             priority=Priority.from_string(priority),
             git_branch_id="branch-1",
-            created_at=created_at or datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=created_at or datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
         if due_date:
@@ -135,7 +133,7 @@ class TestTaskPriorityService:
             task_id="overdue-task",
             title="Overdue Task",
             priority="medium",
-            due_date=datetime.now(timezone.utc) - timedelta(days=1)
+            due_date=datetime.now(UTC) - timedelta(days=1)
         )
         
         # Act
@@ -426,7 +424,7 @@ class TestTaskPriorityService:
             
     def test_calculate_urgency_score_various_due_dates(self):
         """Test urgency score calculation for various due date scenarios"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Test overdue task has highest urgency
         overdue_task = self._create_test_task(
@@ -500,7 +498,7 @@ class TestTaskPriorityService:
             
     def test_calculate_age_score_various_ages(self):
         """Test age score calculation for tasks of different ages"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         age_tests = [
             (now, 10.0),  # Very new (today)
@@ -683,9 +681,9 @@ class TestTaskPriorityServiceIntegration:
             status=TaskStatus.from_string("todo"),
             priority=Priority.from_string("critical"),
             git_branch_id="main-branch",
-            due_date=datetime.now(timezone.utc) + timedelta(hours=4),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            due_date=datetime.now(UTC) + timedelta(hours=4),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         
     def _create_feature_in_progress(self) -> Task:
@@ -697,8 +695,8 @@ class TestTaskPriorityServiceIntegration:
             status=TaskStatus.from_string("in_progress"),
             priority=Priority.from_string("high"),
             git_branch_id="main-branch",
-            created_at=datetime.now(timezone.utc) - timedelta(days=2),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC) - timedelta(days=2),
+            updated_at=datetime.now(UTC)
         )
         
     def _create_stale_task(self) -> Task:
@@ -710,8 +708,8 @@ class TestTaskPriorityServiceIntegration:
             status=TaskStatus.from_string("todo"),
             priority=Priority.from_string("low"),
             git_branch_id="main-branch",
-            created_at=datetime.now(timezone.utc) - timedelta(days=100),
-            updated_at=datetime.now(timezone.utc) - timedelta(days=95)
+            created_at=datetime.now(UTC) - timedelta(days=100),
+            updated_at=datetime.now(UTC) - timedelta(days=95)
         )
         
     def _create_blocked_task(self) -> Task:
@@ -723,8 +721,8 @@ class TestTaskPriorityServiceIntegration:
             status=TaskStatus.from_string("blocked"),
             priority=Priority.from_string("medium"),
             git_branch_id="main-branch",
-            created_at=datetime.now(timezone.utc) - timedelta(days=5),
-            updated_at=datetime.now(timezone.utc) - timedelta(days=1)
+            created_at=datetime.now(UTC) - timedelta(days=5),
+            updated_at=datetime.now(UTC) - timedelta(days=1)
         )
 
     def _ensure_uuid_format(self, task_id: str) -> str:
@@ -753,6 +751,6 @@ class TestTaskPriorityServiceIntegration:
             status=TaskStatus.from_string("todo"),
             priority=Priority.from_string(priority),
             git_branch_id="test-branch",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )

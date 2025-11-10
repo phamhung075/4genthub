@@ -4,8 +4,10 @@ This factory provides access to domain interfaces without violating DDD layer bo
 It delegates to infrastructure adapters through dependency injection.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +66,7 @@ class DomainServiceFactory:
     _document_validator: IDocumentValidator | None = None
     _path_resolver: IPathResolver | None = None
     _agent_doc_generator: IAgentDocGenerator | None = None
-    _hint_manager: Optional['HintManager'] = None
+    _hint_manager: HintManager | None = None
     
     def __new__(cls):
         if cls._instance is None:
@@ -222,7 +224,7 @@ class DomainServiceFactory:
         return cls._agent_doc_generator
 
     @classmethod
-    def get_hint_manager(cls) -> 'HintManager':
+    def get_hint_manager(cls) -> HintManager:
         """Get hint manager"""
         if cls._hint_manager is None:
             cls._lazy_init_hint_manager()

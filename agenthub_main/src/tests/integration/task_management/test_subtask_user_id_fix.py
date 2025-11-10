@@ -5,19 +5,29 @@ due to missing user_id in the database.
 """
 
 import os
-import pytest
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastmcp.task_management.infrastructure.database.database_config import Base
-from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch, Task, Subtask as SubtaskModel
-from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+
 from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.infrastructure.database.database_config import Base
+from fastmcp.task_management.infrastructure.database.models import (
+    Project,
+    ProjectGitBranch,
+    Task,
+)
+from fastmcp.task_management.infrastructure.database.models import (
+    Subtask as SubtaskModel,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+    ORMSubtaskRepository,
+)
 
 # Ensure MVP mode is disabled for this test
 os.environ['PRODUCTION'] = 'false'
@@ -48,8 +58,8 @@ class TestSubtaskUserIdFix:
             name="Test Project for Subtask",
             description="Project for testing subtask user_id fix",
             user_id=self.user_id,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         self.session.add(project)
         
@@ -60,8 +70,8 @@ class TestSubtaskUserIdFix:
             name="test/subtask-fix",
             description="Branch for testing subtask creation",
             user_id=self.user_id,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         self.session.add(branch)
         
@@ -74,8 +84,8 @@ class TestSubtaskUserIdFix:
             status="todo",
             priority="medium",
             user_id=self.user_id,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
         self.session.add(task)
         self.session.commit()
@@ -89,7 +99,7 @@ class TestSubtaskUserIdFix:
             self.session.query(ProjectGitBranch).filter(ProjectGitBranch.id == self.branch_id).delete()
             self.session.query(Project).filter(Project.id == self.project_id).delete()
             self.session.commit()
-        except:
+        except Exception:
             self.session.rollback()
         finally:
             self.session.close()
@@ -162,14 +172,18 @@ class TestSubtaskUserIdFix:
         assert result is False, "Subtask save should return False without user_id"
         
         # Verify it was NOT saved in database
-        from fastmcp.task_management.infrastructure.database.models import Subtask as SubtaskModel
+        from fastmcp.task_management.infrastructure.database.models import (
+            Subtask as SubtaskModel,
+        )
         db_subtask = self.session.query(SubtaskModel).filter_by(id=str(subtask_id)).first()
         
         assert db_subtask is None, "Subtask should NOT be saved without authentication"
     
     def test_subtask_repository_from_factory(self):
         """Test that subtask repository created from factory has proper user_id"""
-        from fastmcp.task_management.infrastructure.repositories.repository_factory import RepositoryFactory
+        from fastmcp.task_management.infrastructure.repositories.repository_factory import (
+            RepositoryFactory,
+        )
         
         # Get subtask repository from factory with user_id
         subtask_repo = RepositoryFactory.get_subtask_repository(user_id=self.user_id)
@@ -185,7 +199,9 @@ class TestSubtaskUserIdFix:
         assert subtask_repo.user_id == self.user_id, f"Repository user_id should be {self.user_id}"
         
         # Test basic functionality by creating a new repository with our session
-        from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+        from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+            ORMSubtaskRepository,
+        )
         test_repo = ORMSubtaskRepository(session=self.session, user_id=self.user_id)
         
         # Override the repository's transaction method to use our test session

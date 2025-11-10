@@ -4,10 +4,7 @@ This tests the expected patterns and behaviors of AgentApplicationFacade
 without requiring actual imports of the implementation.
 """
 
-import pytest
-import pytest_asyncio
-from unittest.mock import Mock, AsyncMock, call
-from datetime import datetime, timezone
+from unittest.mock import Mock
 
 
 class TestAgentApplicationFacadePattern:
@@ -255,7 +252,7 @@ class TestAgentApplicationFacadePattern:
         def register_with_error_handling(project_id, agent_id, name):
             try:
                 request = Mock()
-                response = mock_use_case.execute(request)
+                mock_use_case.execute(request)
                 return {"success": True}
             except ValueError as e:
                 return {

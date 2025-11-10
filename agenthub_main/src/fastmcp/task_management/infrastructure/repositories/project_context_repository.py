@@ -2,6 +2,8 @@
 Project Context Repository for unified context system.
 """
 
+from __future__ import annotations
+
 import logging
 from contextlib import contextmanager
 from typing import Any
@@ -26,7 +28,7 @@ class ProjectContextRepository(CacheInvalidationMixin, BaseORMRepository):
         self.model_class = ProjectContextModel
         self.user_id = user_id
     
-    def with_user(self, user_id: str) -> 'ProjectContextRepository':
+    def with_user(self, user_id: str) -> ProjectContextRepository:
         """Create a new repository instance scoped to a specific user."""
         return ProjectContextRepository(self.session_factory, user_id)
     

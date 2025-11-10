@@ -1,19 +1,22 @@
 """Unit tests for Get Server Status Use Case"""
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
-from uuid import uuid4
+from unittest.mock import Mock, patch
 
-from fastmcp.connection_management.application.use_cases.get_server_status import (
-    GetServerStatusUseCase
-)
 from fastmcp.connection_management.application.dtos.connection_dtos import (
     ServerStatusRequest,
-    ServerStatusResponse
+    ServerStatusResponse,
+)
+from fastmcp.connection_management.application.use_cases.get_server_status import (
+    GetServerStatusUseCase,
 )
 from fastmcp.connection_management.domain.entities.server import Server
-from fastmcp.connection_management.domain.value_objects.server_capabilities import ServerCapabilities
-from fastmcp.connection_management.domain.value_objects.server_status import ServerStatus
+from fastmcp.connection_management.domain.value_objects.server_capabilities import (
+    ServerCapabilities,
+)
+from fastmcp.connection_management.domain.value_objects.server_status import (
+    ServerStatus,
+)
 
 
 class TestGetServerStatusUseCase(unittest.TestCase):
@@ -226,7 +229,7 @@ class TestGetServerStatusUseCase(unittest.TestCase):
         self.mock_server_repository.get_current_server.side_effect = Exception(error_message)
         
         # Act
-        response = self.use_case.execute(request)
+        self.use_case.execute(request)
         
         # Assert
         mock_logger.error.assert_called_once()

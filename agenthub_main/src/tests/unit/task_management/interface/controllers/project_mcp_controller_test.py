@@ -9,17 +9,18 @@ Tests the project MCP controller including:
 - Workflow guidance integration
 """
 
-import pytest
-import logging
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
-from typing import Dict, Any
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.interface.mcp_controllers.project_mcp_controller.project_mcp_controller import ProjectMCPController
-from fastmcp.task_management.application.factories.project_facade_factory import ProjectFacadeFactory
-from fastmcp.task_management.application.facades.project_application_facade import ProjectApplicationFacade
-from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
-    UserAuthenticationRequiredError,
-    DefaultUserProhibitedError
+import pytest
+
+from fastmcp.task_management.application.facades.project_application_facade import (
+    ProjectApplicationFacade,
+)
+from fastmcp.task_management.application.factories.project_facade_factory import (
+    ProjectFacadeFactory,
+)
+from fastmcp.task_management.interface.mcp_controllers.project_mcp_controller.project_mcp_controller import (
+    ProjectMCPController,
 )
 
 

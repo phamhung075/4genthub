@@ -1,21 +1,29 @@
 """Unit tests for Hint Rules Domain Service"""
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch, MagicMock
-from typing import List, Dict, Any, Optional
+from datetime import UTC, datetime, timedelta
+from unittest.mock import Mock
 
+import pytest
+
+from fastmcp.task_management.domain.entities.context import TaskContext
+from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.services.hint_rules import (
-    RuleContext, HintRule, ProgressBasedHintRule, StalledProgressRule,
-    ImplementationReadyForTestingRule, MissingContextRule, ComplexDependencyRule,
-    NearCompletionRule, CollaborationNeededRule
+    CollaborationNeededRule,
+    ComplexDependencyRule,
+    ImplementationReadyForTestingRule,
+    MissingContextRule,
+    NearCompletionRule,
+    ProgressBasedHintRule,
+    RuleContext,
+    StalledProgressRule,
 )
 from fastmcp.task_management.domain.value_objects.hints import (
-    WorkflowHint, HintType, HintPriority, HintMetadata
+    HintPriority,
+    HintType,
 )
-from fastmcp.task_management.domain.value_objects.progress import ProgressType, ProgressStatus
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.context import TaskContext
+from fastmcp.task_management.domain.value_objects.progress import (
+    ProgressType,
+)
 
 
 class TestRuleContext:
@@ -144,7 +152,7 @@ class TestStalledProgressRule:
     
     def test_evaluate_recent_progress(self, rule, mock_task):
         """Test evaluation with recent progress"""
-        recent_time = datetime.now(timezone.utc) - timedelta(hours=10)
+        recent_time = datetime.now(UTC) - timedelta(hours=10)
         mock_task.progress_timeline = [
             {"timestamp": recent_time.isoformat()}
         ]
@@ -156,7 +164,7 @@ class TestStalledProgressRule:
     
     def test_evaluate_stalled_blocked(self, rule, mock_task):
         """Test evaluation for stalled blocked task"""
-        stalled_time = datetime.now(timezone.utc) - timedelta(hours=49)  # More than 48 hours for CRITICAL priority
+        stalled_time = datetime.now(UTC) - timedelta(hours=49)  # More than 48 hours for CRITICAL priority
         mock_task.progress_timeline = [
             {"timestamp": stalled_time.isoformat()}
         ]
@@ -173,7 +181,7 @@ class TestStalledProgressRule:
     
     def test_evaluate_stalled_not_blocked(self, rule, mock_task):
         """Test evaluation for stalled non-blocked task"""
-        stalled_time = datetime.now(timezone.utc) - timedelta(hours=30)
+        stalled_time = datetime.now(UTC) - timedelta(hours=30)
         mock_task.progress_timeline = [
             {"timestamp": stalled_time.isoformat()}
         ]
@@ -499,7 +507,7 @@ class TestCollaborationNeededRule:
         task.status.value = "in_progress"
         task.priority = Mock()
         task.priority.label = "medium"
-        task.created_at = datetime.now(timezone.utc) - timedelta(days=3)
+        task.created_at = datetime.now(UTC) - timedelta(days=3)
         task.progress = 0.2
         return task
     
@@ -516,7 +524,7 @@ class TestCollaborationNeededRule:
     
     def test_evaluate_long_running_task(self, rule, mock_task):
         """Test evaluation for long-running task"""
-        mock_task.created_at = datetime.now(timezone.utc) - timedelta(days=10)
+        mock_task.created_at = datetime.now(UTC) - timedelta(days=10)
         
         context = RuleContext(task=mock_task)
         result = rule.evaluate(context)
@@ -550,7 +558,7 @@ class TestCollaborationNeededRule:
     
     def test_evaluate_completed_task(self, rule, mock_task):
         """Test evaluation skips completed tasks"""
-        mock_task.created_at = datetime.now(timezone.utc) - timedelta(days=10)
+        mock_task.created_at = datetime.now(UTC) - timedelta(days=10)
         mock_task.status.value = "done"
         
         context = RuleContext(task=mock_task)

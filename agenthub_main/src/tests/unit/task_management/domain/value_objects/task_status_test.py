@@ -1,6 +1,10 @@
 """Unit tests for TaskStatus value object."""
 import pytest
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
+
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatus,
+    TaskStatusEnum,
+)
 
 
 class TestTaskStatus:

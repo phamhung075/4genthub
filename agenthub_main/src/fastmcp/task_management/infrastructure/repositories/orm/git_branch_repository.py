@@ -5,6 +5,8 @@ SQLAlchemy ORM-based implementation of the Git Branch Repository
 for managing project branches/task trees.
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -56,7 +58,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
 
         logger.info(f"ORMGitBranchRepository initialized for user: {user_id}, performance_mode: {performance_mode}")
 
-    def with_user(self, user_id: str) -> 'ORMGitBranchRepository':
+    def with_user(self, user_id: str) -> ORMGitBranchRepository:
         """
         Create a new repository instance scoped to a specific user.
 

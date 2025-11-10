@@ -5,6 +5,8 @@ Comprehensive metrics collection for monitoring performance benchmarks,
 system health, and optimization effectiveness in real-time and batch modes.
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging

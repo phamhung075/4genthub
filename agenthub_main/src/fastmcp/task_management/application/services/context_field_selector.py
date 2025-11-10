@@ -4,6 +4,8 @@ This module implements selective field queries to reduce database load and netwo
 by fetching only required fields instead of full context objects.
 """
 
+from __future__ import annotations
+
 import logging
 from enum import Enum
 from typing import Any

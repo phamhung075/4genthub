@@ -8,8 +8,9 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, mock_open, PropertyMock
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -96,7 +97,7 @@ class TestEnvFilePriority:
         # Read the actual settings file to verify implementation
         settings_file = Path(__file__).parent.parent.parent / "fastmcp" / "settings.py"
         if settings_file.exists():
-            content = settings_file.read_text()
+            settings_file.read_text()
 
             # Should have logic to check .env.dev first
             # This could be implemented as:
@@ -152,18 +153,18 @@ class TestEnvFilePriority:
         # Load files in priority order
         if env_dev_file.exists():
             load_dotenv(env_dev_file, override=True)
-            db_type_dev = os.getenv('DATABASE_TYPE')
+            os.getenv('DATABASE_TYPE')
         else:
             load_dotenv(env_file, override=True)
-            db_type_dev = os.getenv('DATABASE_TYPE')
+            os.getenv('DATABASE_TYPE')
 
         # Should have loaded database type
         assert os.getenv('DATABASE_TYPE') is not None
 
     def test_settings_logs_which_env_file_used(self):
         """Settings should log which environment file is being used"""
+
         from fastmcp.settings import Settings
-        import logging
 
         with patch('fastmcp.utilities.logging.get_logger') as mock_logger:
             mock_log_instance = MagicMock()
@@ -175,7 +176,7 @@ class TestEnvFilePriority:
 
             if env_dev_file.exists():
                 with patch('pathlib.Path.exists', return_value=True):
-                    settings = Settings()
+                    Settings()
                     # Should have logged about using .env.dev
                     # Check if info was called (exact message may vary)
 
@@ -222,7 +223,10 @@ class TestEnvPriorityImplementation:
     def test_database_config_with_env_priority(self):
         """Database config should use the prioritized env file"""
         from dotenv import load_dotenv
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
 
         # Load with priority
         project_root = Path(__file__).parent.parent.parent.parent.parent
@@ -253,8 +257,9 @@ class TestEnvPriorityImplementation:
 
     def test_env_loading_consistency_across_modules(self):
         """All modules should load the same prioritized env file"""
-        from dotenv import load_dotenv
         import os
+
+        from dotenv import load_dotenv
 
         project_root = Path(__file__).parent.parent.parent.parent.parent
         env_dev_file = project_root / ".env.dev"

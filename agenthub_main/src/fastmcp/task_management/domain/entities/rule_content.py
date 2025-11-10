@@ -4,6 +4,8 @@ These entities represent the core domain concepts for rule management
 following DDD principles.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum

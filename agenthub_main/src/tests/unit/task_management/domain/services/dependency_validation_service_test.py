@@ -1,15 +1,16 @@
 """Unit tests for DependencyValidationService"""
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime, timezone
-from typing import List
+from unittest.mock import Mock, patch
 
-from fastmcp.task_management.domain.services.dependency_validation_service import DependencyValidationService
+import pytest
+
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
-from fastmcp.utilities.id_validator import IDValidator, IDValidationError
+from fastmcp.task_management.domain.services.dependency_validation_service import (
+    DependencyValidationService,
+)
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.utilities.id_validator import IDValidator
 
 
 class TestDependencyValidationService:

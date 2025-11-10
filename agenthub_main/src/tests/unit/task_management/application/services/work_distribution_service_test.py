@@ -5,29 +5,34 @@ This module tests the work distribution, task assignment, strategy implementatio
 and analytics functionality.
 """
 
-import pytest
 import uuid
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import List, Dict, Any, Set
-from collections import defaultdict
+from datetime import UTC, datetime, timedelta
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 from fastmcp.task_management.application.services.work_distribution_service import (
-    WorkDistributionService,
+    DistributionPlan,
     DistributionStrategy,
-    WorkDistributionException,
     TaskRequirements,
-    DistributionPlan
+    WorkDistributionService,
 )
-from fastmcp.task_management.domain.entities.agent import Agent, AgentStatus, AgentCapability
+from fastmcp.task_management.domain.entities.agent import (
+    Agent,
+    AgentCapability,
+)
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
 from fastmcp.task_management.domain.value_objects.agents import (
-    AgentRole, AgentExpertise, AgentProfile, AgentCapabilities
+    AgentExpertise,
+    AgentRole,
 )
-from fastmcp.task_management.domain.value_objects.coordination import WorkAssignment
-from fastmcp.task_management.application.services.agent_coordination_service import AgentCoordinationService
+from fastmcp.task_management.domain.value_objects.priority import (
+    PriorityLevel,
+)
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatusEnum,
+)
 
 
 class TestDistributionStrategy:
@@ -87,7 +92,7 @@ class TestTaskRequirements:
         excluded_agents = ["agent3"]
         collaboration_needed = True
         estimated_hours = 8.5
-        deadline = datetime.now(timezone.utc) + timedelta(days=7)
+        deadline = datetime.now(UTC) + timedelta(days=7)
         
         requirements = TaskRequirements(
             task_id=self.task_id,
@@ -129,7 +134,7 @@ class TestTaskRequirements:
     
     def test_from_task_with_metadata(self):
         """Test creating TaskRequirements from task with full metadata"""
-        deadline = datetime.now(timezone.utc) + timedelta(days=3)
+        deadline = datetime.now(UTC) + timedelta(days=3)
         task = Mock(spec=Task)
         task.id = Mock()
         task.id.value = self.task_id
@@ -460,7 +465,7 @@ class TestTaskDistribution:
         self.task_repository.get.side_effect = [self.task1, self.task2]
         self.agent_repository.get_all.return_value = [self.agent1, self.agent2]
         
-        with patch.object(self.service, '_execute_distribution_plan') as mock_execute:
+        with patch.object(self.service, '_execute_distribution_plan'):
             plan = await self.service.distribute_tasks(
                 ["task1", "task2"],
                 strategy=DistributionStrategy.LOAD_BALANCED
@@ -479,7 +484,7 @@ class TestTaskDistribution:
         # Mock coordination service to find best agent
         self.coordination_service.find_best_agent_for_task.return_value = self.agent1
         
-        with patch.object(self.service, '_execute_distribution_plan') as mock_execute:
+        with patch.object(self.service, '_execute_distribution_plan'):
             plan = await self.service.distribute_tasks(
                 ["task1"],
                 strategy=DistributionStrategy.SKILL_MATCHED
@@ -506,7 +511,7 @@ class TestTaskDistribution:
         self.task_repository.get.side_effect = [high_priority_task, medium_priority_task]
         self.agent_repository.get_all.return_value = [self.agent1, self.agent2]
         
-        with patch.object(self.service, '_execute_distribution_plan') as mock_execute:
+        with patch.object(self.service, '_execute_distribution_plan'):
             plan = await self.service.distribute_tasks(
                 ["high_task", "med_task"],
                 strategy=DistributionStrategy.PRIORITY_BASED
@@ -549,7 +554,7 @@ class TestTaskDistribution:
         self.task_repository.get.side_effect = [self.task1]
         self.agent_repository.get_by_project.return_value = [self.agent1]
         
-        with patch.object(self.service, '_execute_distribution_plan') as mock_execute:
+        with patch.object(self.service, '_execute_distribution_plan'):
             plan = await self.service.distribute_tasks(
                 ["task1"],
                 project_id=project_id
@@ -734,7 +739,7 @@ class TestAgentPerformanceAndMatching:
         score = self.service._get_agent_performance_score(agent)
         
         # Should be (0.8 * 0.7) + (2.0 * 0.3) = 0.56 + 0.6 = 1.16, capped at 1.0
-        expected_duration_factor = min(1.0, 8.0 / 4.0)  # 2.0, but capped at 1.0
+        min(1.0, 8.0 / 4.0)  # 2.0, but capped at 1.0
         expected_score = (0.8 * 0.7) + (1.0 * 0.3)  # 0.56 + 0.3 = 0.86
         assert abs(score - expected_score) < 0.01
     
@@ -1098,7 +1103,7 @@ class TestIntegration:
         assert critical_assignment[1] == "expert"
         assert critical_assignment[2] == "priority_specialist"
     
-    def _create_task(self, task_id: str, priority: str, metadata: Dict[str, Any]) -> Mock:
+    def _create_task(self, task_id: str, priority: str, metadata: dict[str, Any]) -> Mock:
         """Helper to create mock task"""
         task = Mock()
         task.id = Mock()
@@ -1112,7 +1117,7 @@ class TestIntegration:
         return task
     
     def _create_agent(self, agent_id: str, success_rate: float, 
-                      avg_duration: float, capabilities: List[AgentCapability]) -> Mock:
+                      avg_duration: float, capabilities: list[AgentCapability]) -> Mock:
         """Helper to create mock agent"""
         agent = Mock()
         agent.id = agent_id

@@ -11,20 +11,17 @@ Tests the Project entity including:
 - Validation and business rules
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, AsyncMock, patch
 import uuid
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-from fastmcp.task_management.domain.entities.project import Project
-from fastmcp.task_management.domain.entities.git_branch import GitBranch
+import pytest
+
 from fastmcp.task_management.domain.entities.agent import Agent, AgentCapability
-from fastmcp.task_management.domain.entities.work_session import WorkSession
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.project_id import ProjectId
+from fastmcp.task_management.domain.entities.git_branch import GitBranch
+from fastmcp.task_management.domain.entities.project import Project
 from fastmcp.task_management.domain.value_objects.git_branch_id import GitBranchId
+from fastmcp.task_management.domain.value_objects.project_id import ProjectId
 
 
 class TestProjectCreation:
@@ -42,8 +39,8 @@ class TestProjectCreation:
         assert project.description == "A test project"
         assert project.created_at is not None
         assert project.updated_at is not None
-        assert project.created_at.tzinfo == timezone.utc
-        assert project.updated_at.tzinfo == timezone.utc
+        assert project.created_at.tzinfo == UTC
+        assert project.updated_at.tzinfo == UTC
         assert project.git_branchs == {}
         assert project.registered_agents == {}
         assert project.agent_assignments == {}
@@ -73,8 +70,8 @@ class TestProjectCreation:
     def test_project_direct_instantiation(self):
         """Test creating a project with direct instantiation."""
         project_id = str(uuid.uuid4())
-        created_at = datetime.now(timezone.utc)
-        updated_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
+        updated_at = datetime.now(UTC)
 
         project = Project(
             id=project_id,
@@ -103,8 +100,8 @@ class TestProjectCreation:
         )
         
         # Should be converted to UTC
-        assert project.created_at.tzinfo == timezone.utc
-        assert project.updated_at.tzinfo == timezone.utc
+        assert project.created_at.tzinfo == UTC
+        assert project.updated_at.tzinfo == UTC
     
     def test_project_hashable(self):
         """Test project can be hashed for use in sets/dicts."""
@@ -173,7 +170,7 @@ class TestGitBranchManagement:
             name="External Branch",
             description="Created externally",
             project_id=str(project.id),
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
 
         original_updated = project.updated_at
@@ -213,7 +210,7 @@ class TestGitBranchManagement:
             name="Async Branch",
             description="Created async",
             project_id=str(project.id),
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         ))
 
         git_branch = await project.create_git_branch_async(
@@ -241,7 +238,7 @@ class TestGitBranchManagement:
             name="Existing",
             description="Already exists",
             project_id=str(project.id),
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
 
         mock_repo = Mock()

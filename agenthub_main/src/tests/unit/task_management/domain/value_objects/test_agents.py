@@ -1,16 +1,16 @@
 """Unit tests for agent value objects."""
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
-from typing import Dict, Set
 
 from fastmcp.task_management.domain.value_objects.agents import (
-    AgentRole,
-    AgentExpertise,
     AgentCapabilities,
+    AgentExpertise,
+    AgentPerformanceMetrics,
     AgentProfile,
+    AgentRole,
     AgentStatus,
-    AgentPerformanceMetrics
 )
 
 
@@ -253,7 +253,7 @@ class TestAgentStatus:
 
     def test_create_agent_status(self):
         """Test creating agent status with valid data."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         status = AgentStatus(
             agent_id="agent-123",
             is_available=True,
@@ -281,7 +281,7 @@ class TestAgentStatus:
             current_workload=3,
             max_workload=5,
             active_tasks=[],
-            last_activity=datetime.now(timezone.utc)
+            last_activity=datetime.now(UTC)
         )
         
         assert status.workload_percentage == 60.0
@@ -294,7 +294,7 @@ class TestAgentStatus:
             current_workload=0,
             max_workload=0,
             active_tasks=[],
-            last_activity=datetime.now(timezone.utc)
+            last_activity=datetime.now(UTC)
         )
         
         assert status.workload_percentage == 0.0
@@ -307,7 +307,7 @@ class TestAgentStatus:
             current_workload=3,
             max_workload=5,
             active_tasks=[],
-            last_activity=datetime.now(timezone.utc)
+            last_activity=datetime.now(UTC)
         )
         
         assert status_available.can_accept_work is True
@@ -318,7 +318,7 @@ class TestAgentStatus:
             current_workload=5,
             max_workload=5,
             active_tasks=[],
-            last_activity=datetime.now(timezone.utc)
+            last_activity=datetime.now(UTC)
         )
         
         assert status_full.can_accept_work is False
@@ -329,7 +329,7 @@ class TestAgentStatus:
             current_workload=0,
             max_workload=5,
             active_tasks=[],
-            last_activity=datetime.now(timezone.utc)
+            last_activity=datetime.now(UTC)
         )
         
         assert status_unavailable.can_accept_work is False
@@ -342,7 +342,7 @@ class TestAgentStatus:
             current_workload=2,
             max_workload=5,
             active_tasks=[],
-            last_activity=datetime.now(timezone.utc)
+            last_activity=datetime.now(UTC)
         )
         
         # (5-2)/5 = 0.6
@@ -356,7 +356,7 @@ class TestAgentStatus:
             current_workload=0,
             max_workload=5,
             active_tasks=[],
-            last_activity=datetime.now(timezone.utc)
+            last_activity=datetime.now(UTC)
         )
         
         assert status.capacity_score() == 0.0
@@ -369,7 +369,7 @@ class TestAgentStatus:
             current_workload=0,
             max_workload=0,
             active_tasks=[],
-            last_activity=datetime.now(timezone.utc)
+            last_activity=datetime.now(UTC)
         )
         
         assert status.capacity_score() == 0.0
@@ -504,7 +504,7 @@ class TestAgentPerformanceMetrics:
             current_workload=0,
             max_workload=5,
             active_tasks=[],
-            last_activity=datetime.now(timezone.utc)
+            last_activity=datetime.now(UTC)
         )
         
         with pytest.raises(AttributeError):

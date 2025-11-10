@@ -8,10 +8,8 @@ Production-ready tests covering:
 These tests focus on the DebugLoggingMiddleware behavior and ASGI protocol compliance.
 """
 
+
 import pytest
-import asyncio
-import time
-from unittest.mock import Mock, AsyncMock
 
 from fastmcp.server.mcp_entry_point import DebugLoggingMiddleware
 
@@ -448,7 +446,7 @@ class TestASGIMiddlewareEdgeCases:
                     "status": None,  # Malformed!
                     "headers": []
                 })
-            except:
+            except Exception:
                 # If framework rejects, send valid response
                 await send({
                     "type": "http.response.start",

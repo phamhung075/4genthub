@@ -5,6 +5,8 @@ This module provides FastAPI endpoints that integrate with Supabase Auth
 for user registration, login, password reset, and email verification.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

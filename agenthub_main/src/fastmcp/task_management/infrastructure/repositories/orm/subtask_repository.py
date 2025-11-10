@@ -5,6 +5,8 @@ This module provides the ORM implementation of the SubtaskRepository
 interface using SQLAlchemy for database abstraction.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

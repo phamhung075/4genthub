@@ -5,16 +5,21 @@ This module tests the unified authentication middleware that handles
 multiple authentication methods (Supabase JWT, local JWT, MCP tokens).
 """
 
-import pytest
 import os
 import uuid
-from unittest.mock import Mock, MagicMock, AsyncMock, patch
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
+from starlette.datastructures import Headers, QueryParams
 from starlette.requests import Request
-from starlette.responses import Response, JSONResponse
-from starlette.datastructures import Headers, QueryParams, URL
-from fastmcp.auth.middleware.dual_auth_middleware import DualAuthMiddleware, create_dual_auth_middleware
-from fastmcp.auth.token_validator import TokenValidationError, RateLimitError
+from starlette.responses import JSONResponse, Response
+
+from fastmcp.auth.middleware.dual_auth_middleware import (
+    DualAuthMiddleware,
+    create_dual_auth_middleware,
+)
+from fastmcp.auth.token_validator import RateLimitError, TokenValidationError
 
 
 class TestDualAuthMiddleware:
@@ -232,8 +237,8 @@ class TestDualAuthMiddleware:
         with patch.object(middleware.token_validator, 'validate_token') as mock_validate:
             mock_token_info = Mock()
             mock_token_info.user_id = 'user_mcp_123'
-            mock_token_info.created_at = datetime.now(timezone.utc)
-            mock_token_info.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+            mock_token_info.created_at = datetime.now(UTC)
+            mock_token_info.expires_at = datetime.now(UTC) + timedelta(hours=1)
             mock_validate.return_value = mock_token_info
             
             result = await middleware._authenticate_request(mock_request, 'mcp')
@@ -258,14 +263,15 @@ class TestDualAuthMiddleware:
     @patch.dict(os.environ, {"PRODUCTION": "true"})
     async def test_dispatch_with_mock_token_user(self, middleware, mock_request, mock_call_next):
         """Test dispatch with mock JWT token containing user ID."""
+        from datetime import UTC, datetime, timedelta
+
         import jwt
-        from datetime import datetime, timezone, timedelta
         
         # Create mock JWT token with user ID
         mock_user_id = "mock-test-user-" + str(uuid.uuid4())
         payload = {
             "sub": mock_user_id,  # User ID in 'sub' claim
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
         }
         mock_token = jwt.encode(payload, "test-secret", algorithm="HS256")
         

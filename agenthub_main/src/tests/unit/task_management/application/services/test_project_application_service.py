@@ -1,18 +1,14 @@
 """Unit tests for ProjectApplicationService."""
 
+from unittest.mock import AsyncMock, Mock
+
 import pytest
 import pytest_asyncio
-from unittest.mock import Mock, AsyncMock, call
-from datetime import datetime, timezone
 
-from fastmcp.task_management.application.services.project_application_service import ProjectApplicationService
+from fastmcp.task_management.application.services.project_application_service import (
+    ProjectApplicationService,
+)
 from fastmcp.task_management.domain.entities.project import Project
-from fastmcp.task_management.domain.entities.agent import Agent, AgentCapability, AgentStatus
-from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.entities.git_branch import GitBranch
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestProjectApplicationServiceInit:
@@ -113,8 +109,11 @@ class TestGetProject:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -123,7 +122,7 @@ class TestGetProject:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test get project functionality."""
@@ -171,8 +170,11 @@ class TestListProjects:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -181,7 +183,7 @@ class TestListProjects:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test list projects functionality."""
@@ -229,8 +231,11 @@ class TestUpdateProject:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -239,7 +244,7 @@ class TestUpdateProject:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test update project functionality."""
@@ -309,8 +314,11 @@ class TestCreateGitBranch:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -319,7 +327,7 @@ class TestCreateGitBranch:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test create task tree functionality."""
@@ -374,8 +382,11 @@ class TestProjectHealthCheck:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -384,7 +395,7 @@ class TestProjectHealthCheck:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test project health check functionality."""
@@ -449,8 +460,11 @@ class TestRegisterAgent:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -459,7 +473,7 @@ class TestRegisterAgent:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test register agent functionality."""
@@ -550,8 +564,11 @@ class TestAssignAgentToTree:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -560,7 +577,7 @@ class TestAssignAgentToTree:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test assign agent to tree functionality."""
@@ -649,8 +666,11 @@ class TestUnregisterAgent:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -659,7 +679,7 @@ class TestUnregisterAgent:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test unregister agent functionality."""
@@ -735,8 +755,11 @@ class TestCleanupObsolete:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -745,7 +768,7 @@ class TestCleanupObsolete:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test cleanup obsolete functionality."""
@@ -843,8 +866,11 @@ class TestCleanupProjectData:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -853,7 +879,7 @@ class TestCleanupProjectData:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test internal cleanup project data method."""
@@ -940,8 +966,11 @@ class TestProjectApplicationServiceIntegration:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -950,7 +979,7 @@ class TestProjectApplicationServiceIntegration:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test integration scenarios for ProjectApplicationService."""

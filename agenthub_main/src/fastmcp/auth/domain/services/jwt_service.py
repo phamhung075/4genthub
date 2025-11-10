@@ -4,6 +4,8 @@ JWT Service for token generation and validation
 This service handles JWT token creation, validation, and refresh token management.
 """
 
+from __future__ import annotations
+
 import logging
 import secrets
 from datetime import UTC, datetime, timedelta
@@ -154,7 +156,6 @@ class JWTService:
         try:
             # Decode and verify token with flexible validation options
             payload = None
-            decode_options = {}
             
             # If audience is expected, validate it through JWT library
             if expected_audience:

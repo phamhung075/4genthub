@@ -15,13 +15,11 @@ import inspect
 import json
 import logging
 import socket
-import subprocess
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+
 import docker
 import requests
-import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +101,7 @@ class DockerTestManager:
             dockerfile_path = self.project_root / "docker" / "Dockerfile"
             
             # Enhanced debugging information
-            logger.info(f"🏗️ Building agenthub test image...")
+            logger.info("🏗️ Building agenthub test image...")
             logger.info(f"Project root: {self.project_root}")
             logger.info(f"Dockerfile path: {dockerfile_path}")
             logger.info(f"Project root exists: {self.project_root.exists()}")
@@ -167,9 +165,9 @@ class DockerTestManager:
     
     async def start_test_container(self, 
                                  container_name: str = "agenthub-test",
-                                 ports: Dict[str, int] = None,
-                                 environment: Dict[str, str] = None,
-                                 volumes: Dict[str, Dict] = None) -> Dict:
+                                 ports: dict[str, int] = None,
+                                 environment: dict[str, str] = None,
+                                 volumes: dict[str, Dict] = None) -> Dict:
         """Start a test container with specified configuration"""
         try:
             # Find a free port if not specified
@@ -653,7 +651,7 @@ class PerformanceMonitor:
     def __init__(self):
         self.metrics = []
     
-    async def measure_response_time(self, func, *args, **kwargs) -> Tuple[any, float]:
+    async def measure_response_time(self, func, *args, **kwargs) -> tuple[any, float]:
         """Measure execution time of a function"""
         start_time = time.time()
         result = await func(*args, **kwargs) if inspect.iscoroutinefunction(func) else func(*args, **kwargs)

@@ -1,11 +1,15 @@
 """Unit tests for Connection domain entity"""
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import patch
+
 from fastmcp.connection_management.domain.entities.connection import Connection
-from fastmcp.connection_management.domain.value_objects.connection_health import ConnectionHealth
-from fastmcp.connection_management.domain.events.connection_events import ConnectionHealthChecked
+from fastmcp.connection_management.domain.events.connection_events import (
+    ConnectionHealthChecked,
+)
+from fastmcp.connection_management.domain.value_objects.connection_health import (
+    ConnectionHealth,
+)
 
 
 class TestConnection:

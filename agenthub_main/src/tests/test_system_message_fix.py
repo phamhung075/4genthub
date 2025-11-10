@@ -9,19 +9,20 @@ This script tests that:
 """
 
 import asyncio
-import uuid
-from unittest.mock import Mock, MagicMock
-import sys
-import os
+from unittest.mock import MagicMock, Mock
+
 import pytest
+
 
 @pytest.mark.asyncio
 async def test_system_message_authorization():
     """Test the WebSocket system message authorization logic."""
 
     # Import the function we're testing
-    from fastmcp.server.routes.websocket_routes import is_user_authorized_for_message, _check_resource_ownership
     from fastmcp.auth.domain.entities.user import User
+    from fastmcp.server.routes.websocket_routes import (
+        is_user_authorized_for_message,
+    )
 
     print("🧪 Testing WebSocket System Message Authorization Fix")
     print("=" * 60)
@@ -50,7 +51,7 @@ async def test_system_message_authorization():
         triggering_user_id="user123"  # Same as websocket1 user
     )
     print(f"  Result: {result} (Expected: True)")
-    assert result == True, "User should receive their own messages"
+    assert result, "User should receive their own messages"
     print("  ✅ PASSED")
 
     # Test 2: User does NOT receive other user's messages (existing behavior)
@@ -62,7 +63,7 @@ async def test_system_message_authorization():
         triggering_user_id="user456"  # Different from websocket1 user
     )
     print(f"  Result: {result} (Expected: False)")
-    assert result == False, "User should NOT receive other user's messages"
+    assert not result, "User should NOT receive other user's messages"
     print("  ✅ PASSED")
 
     # Test 3: System message authorization - this is our new functionality
@@ -91,7 +92,7 @@ async def test_system_message_authorization():
             triggering_user_id="system"  # System message
         )
         print(f"    Result: {result} (Expected: True)")
-        assert result == True, "User should receive system messages about their own tasks"
+        assert result, "User should receive system messages about their own tasks"
         print("    ✅ PASSED")
 
         # Test: User2 should NOT receive system message about user1's task
@@ -104,7 +105,7 @@ async def test_system_message_authorization():
             triggering_user_id="system"  # System message
         )
         print(f"    Result: {result} (Expected: False)")
-        assert result == False, "User should NOT receive system messages about other's tasks"
+        assert not result, "User should NOT receive system messages about other's tasks"
         print("    ✅ PASSED")
 
     print("\n🎉 All tests passed! System message authorization works correctly.")

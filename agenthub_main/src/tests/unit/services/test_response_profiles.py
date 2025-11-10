@@ -8,13 +8,12 @@ Tests the profile-based response optimization including:
 - Profile usage metrics
 """
 
-import unittest
 import json
-from typing import Dict, Any
+import unittest
 
 from fastmcp.task_management.application.services.response_optimizer import (
     ResponseOptimizer,
-    ResponseProfile
+    ResponseProfile,
 )
 
 
@@ -270,7 +269,7 @@ class TestResponseProfiles(unittest.TestCase):
         detailed_size = len(json.dumps(detailed))
         debug_size = len(json.dumps(debug))
         
-        print(f"\nProfile size comparison:")
+        print("\nProfile size comparison:")
         print(f"MINIMAL:  {minimal_size} bytes")
         print(f"STANDARD: {standard_size} bytes")
         print(f"DETAILED: {detailed_size} bytes")

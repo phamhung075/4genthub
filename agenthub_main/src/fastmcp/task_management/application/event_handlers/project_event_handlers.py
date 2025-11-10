@@ -5,6 +5,8 @@ This module processes project-related domain events, maintains project health,
 tracks statistics, and triggers project-level workflows.
 """
 
+from __future__ import annotations
+
 import logging
 from collections import defaultdict
 from datetime import UTC, datetime

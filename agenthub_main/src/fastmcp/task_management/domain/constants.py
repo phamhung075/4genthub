@@ -10,6 +10,9 @@ the ORM model as the source of truth.
 
 
 
+from __future__ import annotations
+
+
 def validate_user_id(user_id: str | None, operation: str = "This operation") -> str:
     """
     Validate and normalize user ID to UUID format.

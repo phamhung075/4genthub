@@ -4,18 +4,20 @@ This tests the expected patterns and behaviors of ProjectApplicationService
 without requiring actual imports of the implementation.
 """
 
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-import pytest_asyncio
-from unittest.mock import Mock, AsyncMock, call
-from datetime import datetime, timezone
 
 
 class TestProjectApplicationServicePattern:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -24,7 +26,7 @@ class TestProjectApplicationServicePattern:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test the general project application service pattern."""
@@ -255,8 +257,11 @@ class TestProjectServiceBehavior:
     
     def setup_method(self, method):
         """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from sqlalchemy import text
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
         
         db_config = get_db_config()
         with db_config.get_session() as session:
@@ -265,7 +270,7 @@ class TestProjectServiceBehavior:
                 session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
                 session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
                 session.commit()
-            except:
+            except Exception:
                 session.rollback()
 
     """Test expected behaviors of ProjectApplicationService specifically."""
@@ -277,7 +282,7 @@ class TestProjectServiceBehavior:
         create_use_case = AsyncMock()
         tree_use_case = AsyncMock()
         health_check_use_case = AsyncMock()
-        mock_repo = AsyncMock()
+        AsyncMock()
         
         # Create project
         create_response = {"success": True, "project": {"id": "project-1"}}

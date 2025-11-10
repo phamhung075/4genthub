@@ -6,6 +6,8 @@ It provides a clean interface between the API controllers and the domain/infrast
 ensuring proper separation of concerns and no direct database access from controllers.
 """
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import os

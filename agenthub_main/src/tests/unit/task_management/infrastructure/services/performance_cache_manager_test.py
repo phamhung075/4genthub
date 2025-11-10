@@ -5,20 +5,20 @@ Tests the enhanced performance cache manager with multi-level caching,
 intelligent eviction policies, and performance monitoring.
 """
 
-import asyncio
-import json
-import pickle
-import pytest
 import time
-from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock, AsyncMock, mock_open
-import threading
+
+import pytest
 
 from fastmcp.task_management.infrastructure.services.performance_cache_manager import (
-    CacheLevel, CachePolicy, CacheMetrics, CacheConfiguration, CacheEntry,
-    PerformanceMetrics, MemoryStorage, DiskStorage, EnhancedRuleCacheManager,
-    create_performance_cache_manager
+    CacheConfiguration,
+    CacheEntry,
+    CacheLevel,
+    CachePolicy,
+    DiskStorage,
+    EnhancedRuleCacheManager,
+    MemoryStorage,
+    PerformanceMetrics,
+    create_performance_cache_manager,
 )
 
 

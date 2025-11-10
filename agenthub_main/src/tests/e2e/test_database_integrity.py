@@ -13,22 +13,39 @@ These tests use REAL database operations to catch issues that mocks miss.
 Related Investigation: Task 51155169-3077-4c5c-bd2a-9e086aaadd50 Phase 2
 """
 
-import pytest
-from uuid import uuid4
-from sqlalchemy import text
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from time import sleep
-import threading
 from unittest.mock import patch
+from uuid import uuid4
 
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
-from fastmcp.task_management.application.dtos.subtask.create_subtask_request import CreateSubtaskRequest
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+import pytest
+from sqlalchemy import text
+
+from fastmcp.task_management.application.dtos.subtask.create_subtask_request import (
+    CreateSubtaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.dtos.task.update_task_request import (
+    UpdateTaskRequest,
+)
+from fastmcp.task_management.application.facades.subtask_application_facade import (
+    SubtaskApplicationFacade,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+    ORMSubtaskRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 
 
 @pytest.fixture
@@ -78,7 +95,9 @@ def subtask_repository(db_config, user_id):
 @pytest.fixture
 def git_branch_repository(user_id):
     """Create real git branch repository with authenticated user."""
-    from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
+        ORMGitBranchRepository,
+    )
     return ORMGitBranchRepository(user_id=user_id)
 
 
@@ -510,7 +529,7 @@ class TestConcurrentOperations:
         # Use ThreadPoolExecutor for concurrent creation
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(create_subtask, i) for i in range(num_subtasks)]
-            results = [f.result() for f in as_completed(futures)]
+            [f.result() for f in as_completed(futures)]
 
         # Don't assert all(results) - some may return False due to transient errors
         # but the operation succeeded via retry logic
@@ -600,7 +619,7 @@ class TestConcurrentOperations:
                 executor.submit(complete_subtask, subtask_id, i)
                 for i, subtask_id in enumerate(subtask_ids)
             ]
-            results = [f.result() for f in as_completed(futures)]
+            [f.result() for f in as_completed(futures)]
 
         # Don't assert all(results) - some may return False due to transient errors
         # but the operation succeeded via retry logic
@@ -679,7 +698,7 @@ class TestConcurrentOperations:
         # Perform 20 concurrent updates
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(update_task, i) for i in range(20)]
-            results = [f.result() for f in as_completed(futures)]
+            [f.result() for f in as_completed(futures)]
 
         # All updates should complete (even if some fail due to conflicts)
         assert len(update_results) == 20, \

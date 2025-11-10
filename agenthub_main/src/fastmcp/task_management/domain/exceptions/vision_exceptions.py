@@ -6,6 +6,9 @@ particularly for context enforcement and validation rules.
 
 
 
+from __future__ import annotations
+
+
 class VisionSystemError(Exception):
     """Base exception for all vision system errors."""
     pass

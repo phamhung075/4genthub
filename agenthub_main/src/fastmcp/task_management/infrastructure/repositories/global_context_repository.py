@@ -5,6 +5,8 @@ CRITICAL: Global contexts are NOT truly global - they are user-scoped.
 Each user has their own "global" context space.
 """
 
+from __future__ import annotations
+
 import logging
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -632,7 +634,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
         with self.get_db_session() as session:
             # Find contexts without user_id
             contexts_to_migrate = session.query(GlobalContextModel).filter(
-                GlobalContextModel.user_id == None
+                GlobalContextModel.user_id is None
             ).all()
             
             for context in contexts_to_migrate:

@@ -11,18 +11,25 @@ Tests the GitBranch entity including:
 - Status aggregation
 """
 
-import pytest
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
-import uuid
 import time
+import uuid
+from datetime import datetime
+from unittest.mock import Mock, patch
+
+import pytest
 
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.entities.task import Task
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
 from fastmcp.task_management.domain.value_objects.git_branch_id import GitBranchId
+from fastmcp.task_management.domain.value_objects.priority import (
+    Priority,
+    PriorityLevel,
+)
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import (
+    TaskStatus,
+    TaskStatusEnum,
+)
 
 
 class TestGitBranchCreation:
@@ -53,8 +60,8 @@ class TestGitBranchCreation:
     def test_create_git_branch_direct_instantiation(self):
         """Test creating a git branch with direct instantiation."""
         branch_id = str(uuid.uuid4())
-        created_at = datetime.now(timezone.utc)
-        updated_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
+        updated_at = datetime.now(UTC)
 
         git_branch = GitBranch(
             id=GitBranchId(value=branch_id),
@@ -527,9 +534,9 @@ class TestSerialization:
     
     def test_to_dict(self):
         """Test converting git branch to dictionary."""
-        from datetime import timezone
-        created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-        updated_at = datetime(2024, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
+        from datetime import UTC
+        created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        updated_at = datetime(2024, 1, 2, 12, 0, 0, tzinfo=UTC)
 
         git_branch = GitBranch(
             id=GitBranchId(value="550e8400-e29b-41d4-a716-446655440000"),

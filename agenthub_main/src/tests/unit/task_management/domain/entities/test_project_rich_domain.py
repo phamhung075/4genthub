@@ -8,10 +8,9 @@ Tests the business logic methods added to Project entity:
 Rich Domain Model implementation with business logic methods.
 """
 
-import pytest
-from fastmcp.task_management.domain.entities.project import Project
-from fastmcp.task_management.domain.entities.git_branch import GitBranch
+
 from fastmcp.task_management.domain.entities.agent import Agent
+from fastmcp.task_management.domain.entities.project import Project
 
 
 class TestProjectFeatureFlag:
@@ -269,11 +268,11 @@ class TestCalculateProjectHealth:
         project = Project.create(name="Test Project")
 
         # Create branches
-        branch1 = project.create_git_branch(
+        project.create_git_branch(
             git_branch_name="branch-1",
             name="Branch 1"
         )
-        branch2 = project.create_git_branch(
+        project.create_git_branch(
             git_branch_name="branch-2",
             name="Branch 2"
         )

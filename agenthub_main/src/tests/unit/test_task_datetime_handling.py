@@ -1,13 +1,14 @@
 """Unit tests for Task datetime timezone handling."""
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
+import pytest
+
 from fastmcp.task_management.domain.entities.task import Task, normalize_datetime
+from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
 
 
 class TestNormalizeDatetime:
@@ -16,7 +17,7 @@ class TestNormalizeDatetime:
     def test_normalize_naive_datetime_string(self):
         """Test normalizing a naive datetime string."""
         result = normalize_datetime("2025-10-29")
-        assert result.tzinfo == timezone.utc
+        assert result.tzinfo == UTC
         assert result.year == 2025
         assert result.month == 10
         assert result.day == 29
@@ -24,7 +25,7 @@ class TestNormalizeDatetime:
     def test_normalize_aware_datetime_string(self):
         """Test normalizing a timezone-aware datetime string."""
         result = normalize_datetime("2025-10-29T23:59:59+00:00")
-        assert result.tzinfo == timezone.utc
+        assert result.tzinfo == UTC
         assert result.year == 2025
         assert result.month == 10
         assert result.day == 29
@@ -35,7 +36,7 @@ class TestNormalizeDatetime:
         """Test normalizing a timezone-aware datetime with non-UTC offset."""
         # Input with +05:00 offset should be converted to UTC
         result = normalize_datetime("2025-10-29T23:59:59+05:00")
-        assert result.tzinfo == timezone.utc
+        assert result.tzinfo == UTC
         # UTC time should be 5 hours earlier
         assert result.hour == 18
         assert result.minute == 59
@@ -44,7 +45,7 @@ class TestNormalizeDatetime:
         """Test normalizing a naive datetime object."""
         naive_dt = datetime(2025, 10, 29, 12, 0, 0)
         result = normalize_datetime(naive_dt)
-        assert result.tzinfo == timezone.utc
+        assert result.tzinfo == UTC
         assert result.year == 2025
         assert result.month == 10
         assert result.day == 29
@@ -52,9 +53,9 @@ class TestNormalizeDatetime:
 
     def test_normalize_aware_datetime_object(self):
         """Test normalizing an aware datetime object."""
-        aware_dt = datetime(2025, 10, 29, 12, 0, 0, tzinfo=timezone.utc)
+        aware_dt = datetime(2025, 10, 29, 12, 0, 0, tzinfo=UTC)
         result = normalize_datetime(aware_dt)
-        assert result.tzinfo == timezone.utc
+        assert result.tzinfo == UTC
         assert result == aware_dt
 
 
@@ -100,7 +101,7 @@ class TestTaskDueDateHandling:
         # Should be stored as UTC-aware ISO string
         assert task.due_date is not None
         parsed = datetime.fromisoformat(task.due_date)
-        assert parsed.tzinfo == timezone.utc
+        assert parsed.tzinfo == UTC
         assert parsed.hour == 23
         assert parsed.minute == 59
 

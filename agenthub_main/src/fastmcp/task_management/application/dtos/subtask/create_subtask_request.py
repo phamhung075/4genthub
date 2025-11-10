@@ -2,6 +2,8 @@
 DTO for subtask creation requests.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 

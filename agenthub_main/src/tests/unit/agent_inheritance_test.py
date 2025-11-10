@@ -1,17 +1,15 @@
 """Unit tests for Agent Inheritance functionality"""
 
-import pytest
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
-from fastmcp.task_management.domain.entities.task import Task
+import pytest
+
+from fastmcp.task_management.application.services.agent_inheritance_service import (
+    AgentInheritanceService,
+)
 from fastmcp.task_management.domain.entities.subtask import Subtask
+from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
-from fastmcp.task_management.application.services.agent_inheritance_service import AgentInheritanceService
 
 
 class TestTaskEntityAgentInheritance:

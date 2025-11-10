@@ -5,6 +5,8 @@ Standardized implementation using BaseDomainEvent.
 All project-related events follow consistent patterns.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any
 

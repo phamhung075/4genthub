@@ -15,6 +15,8 @@ Author: Security Enhancement
 Date: 2025-01-30
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import time
@@ -42,7 +44,7 @@ class SecurityContext:
     
     @classmethod
     def from_request(cls, user_id: str = None, is_admin: bool = False, 
-                    is_internal: bool = False, environment: str = None) -> 'SecurityContext':
+                    is_internal: bool = False, environment: str = None) -> SecurityContext:
         """Create security context from request parameters"""
         # Determine access level
         if is_admin and is_internal:

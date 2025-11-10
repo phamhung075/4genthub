@@ -19,22 +19,20 @@ Requirements Coverage:
 - Active imports (original exists) included in marketplace
 """
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from fastmcp.agent_management.domain.entities import AgentTemplate, UserAgentInstance
 from fastmcp.agent_management.domain.value_objects import (
+    AgentConfiguration,
     AgentTemplateId,
     UserAgentInstanceId,
     UserId,
-    AgentConfiguration
 )
 from fastmcp.agent_management.infrastructure.repositories import (
     ORMAgentTemplateRepository,
-    ORMUserAgentInstanceRepository
+    ORMUserAgentInstanceRepository,
 )
-
 
 # ============================================================================
 # HELPER FUNCTIONS FOR TEST SETUP
@@ -60,8 +58,8 @@ def create_test_template(slug: str = "test-agent") -> AgentTemplate:
         version="1.0.0",
         default_configuration=configuration,
         metadata={"source": "test"},
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
 
 
@@ -94,8 +92,8 @@ def create_test_instance(
         share_token=share_token or (str(uuid4())[:64] if visibility == "public" else None),
         original_creator_id=original_creator_id,
         metadata={},
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         last_used_at=None
     )
 

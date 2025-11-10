@@ -1,5 +1,7 @@
 """Tracks current task and subtask progress"""
 
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass
 
 

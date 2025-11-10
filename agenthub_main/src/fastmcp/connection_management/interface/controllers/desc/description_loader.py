@@ -6,6 +6,8 @@ enabling clean separation between documentation and controller logic.
 Follows the same architecture pattern as task management.
 """
 
+from __future__ import annotations
+
 import fnmatch
 import importlib.util
 from pathlib import Path

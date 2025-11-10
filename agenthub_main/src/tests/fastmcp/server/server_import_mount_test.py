@@ -12,10 +12,10 @@ This test suite covers:
 Target Coverage: Lines 1656-1903, 2059-2170
 """
 
-import pytest
 import warnings
-import sys
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 # Check if client module can be imported, skip mount tests if not
 CLIENT_AVAILABLE = False
@@ -32,16 +32,17 @@ from fastmcp.server.server import (
     FastMCP,
     MountedServer,
     add_resource_prefix,
-    remove_resource_prefix
+    remove_resource_prefix,
 )
 
 # Import related components for testing
 try:
-    from fastmcp.tools import Tool, ToolManager
-    from fastmcp.resources import Resource, ResourceManager
-    from fastmcp.prompts import Prompt, PromptManager
-    from fastmcp.settings import Settings
     from mcp.server.lowlevel.server import Server as MCPServer
+
+    from fastmcp.prompts import Prompt, PromptManager
+    from fastmcp.resources import Resource, ResourceManager
+    from fastmcp.settings import Settings
+    from fastmcp.tools import Tool, ToolManager
 except ImportError as e:
     pytest.skip(f"Required imports not available: {e}", allow_module_level=True)
 

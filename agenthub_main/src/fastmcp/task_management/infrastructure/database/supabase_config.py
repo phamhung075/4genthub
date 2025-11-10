@@ -6,6 +6,8 @@ Supabase provides a PostgreSQL database with additional features like real-time 
 authentication, and storage.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import urllib.parse
@@ -168,7 +170,7 @@ class SupabaseConfig:
                 # Enable auto-explain for slow queries (if available)
                 try:
                     cursor.execute("SET auto_explain.log_min_duration = '1s'")
-                except:
+                except Exception:
                     pass  # auto_explain may not be available
         
         return engine

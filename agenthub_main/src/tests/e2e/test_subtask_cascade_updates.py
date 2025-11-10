@@ -14,17 +14,28 @@ Key Test Areas:
 Related Investigation: Task 51155169-3077-4c5c-bd2a-9e086aaadd50 Phase 2
 """
 
-import pytest
-from uuid import uuid4
-from sqlalchemy import text
-from datetime import datetime, timezone
 
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
-from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
-from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
-from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+import pytest
+from sqlalchemy import text
+
+from fastmcp.task_management.application.dtos.task.create_task_request import (
+    CreateTaskRequest,
+)
+from fastmcp.task_management.application.facades.subtask_application_facade import (
+    SubtaskApplicationFacade,
+)
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
+    ORMSubtaskRepository,
+)
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
+    ORMTaskRepository,
+)
 
 
 @pytest.fixture
@@ -491,7 +502,7 @@ class TestSubtaskContextCascade:
         sleep(0.1)
 
         # Create subtask
-        subtask_result = subtask_facade.create_subtask(
+        subtask_facade.create_subtask(
             task_id=task_id,
             title="Trigger parent update",
             user_id=user_id

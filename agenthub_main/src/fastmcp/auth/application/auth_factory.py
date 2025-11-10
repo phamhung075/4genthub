@@ -5,6 +5,8 @@ Factory pattern for creating authentication providers based on environment confi
 Supports Supabase, Keycloak, and Local auth providers.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 from abc import ABC, abstractmethod

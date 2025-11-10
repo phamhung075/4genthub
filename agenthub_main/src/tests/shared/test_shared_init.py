@@ -1,6 +1,5 @@
 """Test shared module initialization"""
 
-import pytest
 from importlib import import_module
 
 
@@ -15,12 +14,12 @@ class TestSharedInit:
     def test_exported_items(self):
         """Test that all expected items are exported"""
         from fastmcp.shared import (
-            EventBus,
             DomainEvent,
+            EventBus,
             EventMetadata,
             EventPriority,
             get_event_bus,
-            set_event_bus
+            set_event_bus,
         )
         
         # Verify imports exist
@@ -53,9 +52,13 @@ class TestSharedInit:
 
     def test_infrastructure_imports(self):
         """Test that infrastructure imports are correctly re-exported"""
-        from fastmcp.shared import EventBus, DomainEvent
-        from fastmcp.shared.infrastructure.messaging.event_bus import EventBus as DirectEventBus
-        from fastmcp.shared.infrastructure.messaging.event_bus import DomainEvent as DirectDomainEvent
+        from fastmcp.shared import DomainEvent, EventBus
+        from fastmcp.shared.infrastructure.messaging.event_bus import (
+            DomainEvent as DirectDomainEvent,
+        )
+        from fastmcp.shared.infrastructure.messaging.event_bus import (
+            EventBus as DirectEventBus,
+        )
         
         # Verify same class references
         assert EventBus is DirectEventBus
