@@ -52,15 +52,20 @@ class SearchHandler:
             if result.get("success") and "tasks" in result:
                 tasks = result["tasks"]
 
-                # Convert to minimal representation (only 4 essential fields)
+                # Convert to minimal representation (essential fields + dependencies for UI display)
                 minimal_tasks = []
                 for task in tasks:
-                    minimal_tasks.append({
+                    minimal_task = {
                         "id": task.get("id"),
                         "title": task.get("title"),
                         "status": task.get("status"),
-                        "priority": task.get("priority")
-                    })
+                        "priority": task.get("priority"),
+                        # CRITICAL: Include dependency info for frontend display (no manual refresh needed)
+                        "dependencies": task.get("dependencies", []),
+                        "has_dependencies": task.get("has_dependencies", False),
+                        "dependency_count": task.get("dependency_count", 0),
+                    }
+                    minimal_tasks.append(minimal_task)
 
                 result["tasks"] = minimal_tasks
 

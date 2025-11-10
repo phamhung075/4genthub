@@ -85,6 +85,7 @@ export interface Task {
   progress_history?: Record<string, any>; // Progress history entries
   subtask_count?: number; // Total number of subtasks
   completed_subtasks?: number; // Number of completed subtasks
+  dependency_count?: number; // Total number of dependencies
   progress_count?: number; // Number of progress history entries
 }
 

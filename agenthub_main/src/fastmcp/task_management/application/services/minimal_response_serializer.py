@@ -72,6 +72,9 @@ class MinimalResponseSerializer:
         if "completed_subtasks" in full_dict:
             minimal["completed_subtasks"] = full_dict["completed_subtasks"]
 
+        if "dependency_count" in full_dict:
+            minimal["dependency_count"] = full_dict["dependency_count"]
+
         # For create operations, include git_branch_id as it's context-critical
         if operation == "create" and "git_branch_id" in full_dict:
             minimal["git_branch_id"] = full_dict["git_branch_id"]

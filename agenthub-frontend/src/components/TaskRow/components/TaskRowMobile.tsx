@@ -32,7 +32,7 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
 
   // Use subtask_count from summary (from backend), fallback to fullTask array
   const subtaskCount = summary.subtask_count ?? fullTask?.subtasks?.length ?? 0;
-  const dependencyCount = fullTask?.dependencies?.length ?? 0;
+  const dependencyCount = summary.dependency_count ?? fullTask?.dependencies?.length ?? 0;
 
   // Combine animation classes with loading state
   const loadingClass = isLoading ? 'loading' : '';
