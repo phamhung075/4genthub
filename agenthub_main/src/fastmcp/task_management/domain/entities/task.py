@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .base.base_timestamp_entity import BaseTimestampEntity
@@ -26,32 +26,34 @@ def normalize_datetime(dt_input: str | datetime) -> datetime:
 
     # If naive, assume UTC
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     # If aware but not UTC, convert to UTC
-    elif dt.tzinfo != timezone.utc:
+    elif dt.tzinfo != UTC:
         dt = dt.astimezone(UTC)
 
     return dt
 
 
 from ...domain.value_objects.task_status import TaskStatusEnum
-from ..value_objects import (
-    AgentRole, resolve_legacy_role,
-    CommonLabel, LabelValidator,
-    EffortLevel, EstimatedEffort,
-    ProgressState,
-    get_role_metadata_from_yaml
-)
+from ..events import TaskCreated, TaskDeleted, TaskRetrieved, TaskUpdated
 from ..events.progress_events import (
     ProgressMilestoneReached,
     ProgressTypeCompleted,
     ProgressUpdated,
 )
-from ..events import TaskCreated, TaskDeleted, TaskRetrieved, TaskUpdated
 from ..exceptions.vision_exceptions import MissingCompletionSummaryError
+from ..value_objects import (
+    AgentRole,
+    CommonLabel,
+    EffortLevel,
+    EstimatedEffort,
+    LabelValidator,
+    ProgressState,
+    get_role_metadata_from_yaml,
+    resolve_legacy_role,
+)
 from ..value_objects.priority import Priority
 from ..value_objects.progress import (
-    ProgressCalculationStrategy,
     ProgressSnapshot,
     ProgressTimeline,
     ProgressType,
@@ -828,13 +830,13 @@ class Task(BaseTimestampEntity):
         """Update a subtask by ID - This method should be handled by the subtask repository"""
         # Since subtasks are now just IDs, updating them should be done via the subtask repository
         # This method is kept for compatibility but will not perform any updates
-        logger.warning(f"update_subtask called on task entity - should use subtask repository instead")
+        logger.warning("update_subtask called on task entity - should use subtask repository instead")
         return False
     
     def complete_subtask(self, subtask_id: str) -> bool:
         """Mark a subtask as completed - This method should be handled by the subtask repository"""
         # Since subtasks are now just IDs, completing them should be done via the subtask repository
-        logger.warning(f"complete_subtask called on task entity - should use subtask repository instead")
+        logger.warning("complete_subtask called on task entity - should use subtask repository instead")
         return False
     
     def complete_task(self, completion_summary: str | None = None, context_updated_at: datetime | None = None) -> None:
@@ -1049,11 +1051,11 @@ class Task(BaseTimestampEntity):
         try:
             # due_date is always stored as UTC-aware ISO string after normalization
             due_date = datetime.fromisoformat(self.due_date)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             # Ensure due_date is timezone-aware (defensive check)
             if due_date.tzinfo is None:
-                due_date = due_date.replace(tzinfo=timezone.utc)
+                due_date = due_date.replace(tzinfo=UTC)
 
             return now > due_date and not self.status.is_completed()
         except ValueError:
@@ -1385,7 +1387,9 @@ class Task(BaseTimestampEntity):
     
     def to_dict(self) -> dict[str, Any]:
         """Convert task to dictionary representation"""
-        from fastmcp.task_management.application.use_cases.agent_mappings import resolve_agent_name
+        from fastmcp.task_management.application.use_cases.agent_mappings import (
+            resolve_agent_name,
+        )
 
         # Handle assignees - convert to standardized kebab-case format
         assignees_list = []

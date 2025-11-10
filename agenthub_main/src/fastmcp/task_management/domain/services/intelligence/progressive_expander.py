@@ -11,12 +11,12 @@ Key Features:
 - Token-aware expansion (respects max_tokens limits)
 """
 
-import logging
-from typing import List, Dict, Any, Optional, Set, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime, timezone
 import json
+import logging
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class UserPreferences:
     
     # Notification preferences
     notify_on_expansion: bool = False
-    expansion_notifications: List[str] = field(default_factory=list)
+    expansion_notifications: list[str] = field(default_factory=list)
 
 
 class ContextLevel(Enum):
@@ -72,17 +72,17 @@ class ExpansionCandidate:
     priority_score: float  # 0.0 to 1.0
     estimated_tokens: int
     trigger: ExpansionTrigger
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class ExpansionResult:
     """Result of context expansion operation."""
-    expanded_contexts: List[Dict[str, Any]]
+    expanded_contexts: list[dict[str, Any]]
     total_tokens_used: int
     remaining_token_budget: int
-    expansion_path: List[str] = field(default_factory=list)
-    prefetched_contexts: List[str] = field(default_factory=list)
+    expansion_path: list[str] = field(default_factory=list)
+    prefetched_contexts: list[str] = field(default_factory=list)
 
 
 class ProgressiveExpander:
@@ -118,13 +118,13 @@ class ProgressiveExpander:
         self.expansion_factor = expansion_factor
         
         # Track expansion patterns for learning
-        self.expansion_history: List[Dict[str, Any]] = []
-        self.context_access_patterns: Dict[str, Dict[str, Any]] = {}
+        self.expansion_history: list[dict[str, Any]] = []
+        self.context_access_patterns: dict[str, dict[str, Any]] = {}
         
         logger.info(f"ProgressiveExpander initialized (budget: {default_token_budget} tokens)")
     
     
-    def estimate_context_tokens(self, context_data: Dict[str, Any]) -> int:
+    def estimate_context_tokens(self, context_data: dict[str, Any]) -> int:
         """
         Estimate token count for context data.
         
@@ -151,7 +151,7 @@ class ProgressiveExpander:
         self,
         context_id: str,
         context_level: ContextLevel,
-        query_context: Dict[str, Any],
+        query_context: dict[str, Any],
         trigger: ExpansionTrigger
     ) -> float:
         """
@@ -201,7 +201,7 @@ class ProgressiveExpander:
             last_accessed = self.context_access_patterns[context_id].get('last_accessed')
             if last_accessed:
                 # More recent access gets higher priority (up to 20% bonus)
-                hours_ago = (datetime.now(timezone.utc) - last_accessed).total_seconds() / 3600
+                hours_ago = (datetime.now(UTC) - last_accessed).total_seconds() / 3600
                 recency_bonus = max(0.0, 0.2 * (1.0 - min(1.0, hours_ago / 24)))  # Decay over 24 hours
         
         final_score = base_score * trigger_modifier + access_bonus + recency_bonus
@@ -210,11 +210,11 @@ class ProgressiveExpander:
     
     def identify_expansion_candidates(
         self,
-        current_context: Dict[str, Any],
+        current_context: dict[str, Any],
         query: str,
-        available_contexts: List[Dict[str, Any]],
-        similarity_scores: Optional[Dict[str, float]] = None
-    ) -> List[ExpansionCandidate]:
+        available_contexts: list[dict[str, Any]],
+        similarity_scores: dict[str, float] | None = None
+    ) -> list[ExpansionCandidate]:
         """
         Identify candidates for context expansion.
         
@@ -302,9 +302,9 @@ class ProgressiveExpander:
     
     def expand_context_progressive(
         self,
-        current_context: Dict[str, Any],
-        expansion_candidates: List[ExpansionCandidate],
-        token_budget: Optional[int] = None,
+        current_context: dict[str, Any],
+        expansion_candidates: list[ExpansionCandidate],
+        token_budget: int | None = None,
         aggressive: bool = False
     ) -> ExpansionResult:
         """
@@ -381,7 +381,7 @@ class ProgressiveExpander:
         
         # Record this expansion for learning
         self.expansion_history.append({
-            'timestamp': datetime.now(timezone.utc),
+            'timestamp': datetime.now(UTC),
             'token_budget': token_budget,
             'tokens_used': tokens_used,
             'contexts_expanded': len(expanded_contexts),
@@ -399,8 +399,8 @@ class ProgressiveExpander:
     
     def _has_dependency_relationship(
         self, 
-        candidate_context: Dict[str, Any], 
-        current_context: Dict[str, Any]
+        candidate_context: dict[str, Any], 
+        current_context: dict[str, Any]
     ) -> bool:
         """Check if candidate has dependency relationship with current context."""
         # Task-level dependency checking
@@ -456,12 +456,12 @@ class ProgressiveExpander:
         
         pattern = self.context_access_patterns[context_id]
         pattern['access_count'] += 1
-        pattern['last_accessed'] = datetime.now(timezone.utc)
+        pattern['last_accessed'] = datetime.now(UTC)
         
         # Could add keyword extraction from query here
     
     
-    def get_expansion_stats(self) -> Dict[str, Any]:
+    def get_expansion_stats(self) -> dict[str, Any]:
         """Get statistics about expansion patterns."""
         if not self.expansion_history:
             return {}

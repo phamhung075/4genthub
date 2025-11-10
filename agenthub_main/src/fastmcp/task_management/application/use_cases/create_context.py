@@ -1,21 +1,12 @@
 """Create Context Use Case"""
 
-from typing import Dict, Any
 
-from ...application.dtos.context import (
-    CreateContextRequest,
-    CreateContextResponse
-)
-from ...domain.entities.context import (
-    TaskContext,
-    ContextMetadata,
-    ContextObjective,
-    ContextSchema
-)
+from ...application.dtos.context import CreateContextRequest, CreateContextResponse
+from ...domain.entities.context import ContextMetadata, ContextObjective, TaskContext
 from ...domain.repositories.context_repository import ContextRepository
-from ...domain.value_objects import TaskStatus, Priority
-from ...domain.value_objects.task_status import TaskStatusEnum
+from ...domain.value_objects import Priority, TaskStatus
 from ...domain.value_objects.priority import PriorityLevel
+from ...domain.value_objects.task_status import TaskStatusEnum
 
 
 class CreateContextUseCase:

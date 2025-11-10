@@ -6,11 +6,11 @@ It provides progressive enforcement levels from logging-only to strict blocking.
 Part of Phase 2: Core Enforcement Implementation
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Dict, List, Optional, Any, Set
 import logging
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +28,13 @@ class EnforcementResult:
     """Result of parameter enforcement check"""
     allowed: bool  # Whether operation should proceed
     level: EnforcementLevel
-    missing_required: List[str] = field(default_factory=list)
-    missing_recommended: List[str] = field(default_factory=list)
+    missing_required: list[str] = field(default_factory=list)
+    missing_recommended: list[str] = field(default_factory=list)
     message: str = ""
-    hints: List[str] = field(default_factory=list)
-    examples: Dict[str, Any] = field(default_factory=dict)
+    hints: list[str] = field(default_factory=list)
+    examples: dict[str, Any] = field(default_factory=dict)
     compliance_tracked: bool = False
-    agent_id: Optional[str] = None
+    agent_id: str | None = None
 
 
 @dataclass
@@ -46,7 +46,7 @@ class AgentCompliance:
     warnings_issued: int = 0
     operations_blocked: int = 0
     consecutive_failures: int = 0
-    last_operation: Optional[datetime] = None
+    last_operation: datetime | None = None
     compliance_rate: float = 0.0
     
     def update_compliance(self, is_compliant: bool, was_blocked: bool = False):
@@ -66,7 +66,7 @@ class AgentCompliance:
             self.compliant_operations / self.total_operations 
             if self.total_operations > 0 else 0.0
         )
-        self.last_operation = datetime.now(timezone.utc)
+        self.last_operation = datetime.now(UTC)
 
 
 class ParameterEnforcementService:
@@ -108,7 +108,7 @@ class ParameterEnforcementService:
         "insights_found": ["Found existing utility for token generation", "Database index needed for performance"]
     }
     
-    def __init__(self, enforcement_level: EnforcementLevel = EnforcementLevel.WARNING, user_id: Optional[str] = None):
+    def __init__(self, enforcement_level: EnforcementLevel = EnforcementLevel.WARNING, user_id: str | None = None):
         """Initialize enforcement service
         
         Args:
@@ -117,7 +117,7 @@ class ParameterEnforcementService:
         """
         self._user_id = user_id  # Store user context
         self.enforcement_level = enforcement_level
-        self.agent_compliance: Dict[str, AgentCompliance] = {}
+        self.agent_compliance: dict[str, AgentCompliance] = {}
         logger.info(f"ParameterEnforcementService initialized with level: {enforcement_level.value}")
 
     def with_user(self, user_id: str) -> 'ParameterEnforcementService':
@@ -127,9 +127,9 @@ class ParameterEnforcementService:
     def enforce(
         self,
         action: str,
-        provided_params: Dict[str, Any],
-        agent_id: Optional[str] = None,
-        enforcement_level: Optional[EnforcementLevel] = None
+        provided_params: dict[str, Any],
+        agent_id: str | None = None,
+        enforcement_level: EnforcementLevel | None = None
     ) -> EnforcementResult:
         """Enforce parameter requirements for an action
         
@@ -205,9 +205,9 @@ class ParameterEnforcementService:
     
     def _create_soft_result(
         self,
-        missing_required: List[str],
-        missing_recommended: List[str],
-        agent_id: Optional[str]
+        missing_required: list[str],
+        missing_recommended: list[str],
+        agent_id: str | None
     ) -> EnforcementResult:
         """Create result for SOFT enforcement (log only)"""
         return EnforcementResult(
@@ -223,9 +223,9 @@ class ParameterEnforcementService:
     def _create_warning_result(
         self,
         action: str,
-        missing_required: List[str],
-        missing_recommended: List[str],
-        agent_id: Optional[str]
+        missing_required: list[str],
+        missing_recommended: list[str],
+        agent_id: str | None
     ) -> EnforcementResult:
         """Create result for WARNING enforcement"""
         hints = []
@@ -259,9 +259,9 @@ class ParameterEnforcementService:
     def _create_strict_result(
         self,
         action: str,
-        missing_required: List[str],
-        missing_recommended: List[str],
-        agent_id: Optional[str]
+        missing_required: list[str],
+        missing_recommended: list[str],
+        agent_id: str | None
     ) -> EnforcementResult:
         """Create result for STRICT enforcement (blocking)"""
         hints = [
@@ -324,11 +324,11 @@ class ParameterEnforcementService:
                 f"({compliance.compliant_operations}/{compliance.total_operations})"
             )
     
-    def get_agent_compliance(self, agent_id: str) -> Optional[AgentCompliance]:
+    def get_agent_compliance(self, agent_id: str) -> AgentCompliance | None:
         """Get compliance statistics for an agent"""
         return self.agent_compliance.get(agent_id)
     
-    def get_all_compliance_stats(self) -> Dict[str, AgentCompliance]:
+    def get_all_compliance_stats(self) -> dict[str, AgentCompliance]:
         """Get compliance statistics for all agents"""
         return self.agent_compliance.copy()
     
@@ -337,7 +337,7 @@ class ParameterEnforcementService:
         logger.info(f"Enforcement level changed from {self.enforcement_level.value} to {level.value}")
         self.enforcement_level = level
     
-    def get_parameter_hints(self, action: str) -> Dict[str, Any]:
+    def get_parameter_hints(self, action: str) -> dict[str, Any]:
         """Get helpful hints for parameters required by an action"""
         requirements = self.REQUIRED_PARAMS.get(action, {})
         hints = {

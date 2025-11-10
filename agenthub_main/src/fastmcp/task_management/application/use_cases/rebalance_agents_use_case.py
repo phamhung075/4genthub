@@ -1,14 +1,16 @@
 """
 Use Case: Rebalance Agents
 """
-from typing import Dict, Any
+from typing import Any
+
 from ...domain.repositories.project_repository import ProjectRepository
+
 
 class RebalanceAgentsUseCase:
     def __init__(self, project_repo: ProjectRepository):
         self._project_repo = project_repo
 
-    async def execute(self, project_id: str = None) -> Dict[str, Any]:
+    async def execute(self, project_id: str = None) -> dict[str, Any]:
         """Rebalance agent assignments across task trees"""
         try:
             if project_id:
@@ -48,7 +50,7 @@ class RebalanceAgentsUseCase:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    def _rebalance_project_agents(self, project) -> Dict[str, Any]:
+    def _rebalance_project_agents(self, project) -> dict[str, Any]:
         """Rebalance agents across task trees in a project entity"""
         changes = []
         

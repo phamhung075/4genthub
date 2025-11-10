@@ -5,7 +5,7 @@ Validates business rules and logic for task operations.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from ....utils.response_formatter import ErrorCodes, StandardResponseFormatter
@@ -46,7 +46,7 @@ class BusinessValidator:
         if due_date:
             try:
                 due_datetime = datetime.fromisoformat(due_date.replace("Z", "+00:00"))
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
 
                 # Allow up to 1 hour in the past to account for timezone differences
                 if due_datetime < now and (now - due_datetime).total_seconds() > 3600:

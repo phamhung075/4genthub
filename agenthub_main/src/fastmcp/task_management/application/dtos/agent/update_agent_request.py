@@ -3,7 +3,6 @@ DTO for agent update requests.
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -12,9 +11,9 @@ class UpdateAgentRequest:
     
     project_id: str
     agent_id: str
-    name: Optional[str] = None
-    call_agent: Optional[str] = None
-    user_id: Optional[str] = None
+    name: str | None = None
+    call_agent: str | None = None
+    user_id: str | None = None
     
     def validate(self) -> None:
         """Validate the request data."""

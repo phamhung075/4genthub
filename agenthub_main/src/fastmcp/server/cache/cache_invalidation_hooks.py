@@ -12,8 +12,8 @@ Task: API Optimization - Cache Invalidation
 import asyncio
 import inspect
 import logging
-from typing import Optional, Dict, Any
 from functools import wraps
+from typing import Any
 
 # Import cache invalidator
 try:
@@ -54,7 +54,7 @@ class CacheInvalidationHooks:
             logger.error(f"Failed to invalidate cache on task creation: {e}")
     
     @staticmethod
-    async def on_task_updated(task_id: str, updates: Dict[str, Any]):
+    async def on_task_updated(task_id: str, updates: dict[str, Any]):
         """Invalidate cache when a task is updated"""
         if not CACHE_INVALIDATION_ENABLED:
             return
@@ -97,7 +97,7 @@ class CacheInvalidationHooks:
             logger.error(f"Failed to invalidate cache on subtask creation: {e}")
     
     @staticmethod
-    async def on_subtask_updated(subtask_id: str, parent_task_id: str, updates: Dict[str, Any]):
+    async def on_subtask_updated(subtask_id: str, parent_task_id: str, updates: dict[str, Any]):
         """Invalidate cache when a subtask is updated"""
         if not CACHE_INVALIDATION_ENABLED:
             return

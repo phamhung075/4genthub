@@ -1,9 +1,9 @@
 """Agent Value Objects for Multi-Agent Coordination"""
 
-from typing import Dict, List, Optional, Set
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+
 
 class AgentRole(Enum):
     """Specialized agent roles for coordination"""
@@ -37,17 +37,17 @@ class AgentExpertise(Enum):
 class AgentCapabilities:
     """Value object representing agent capabilities"""
     primary_role: AgentRole
-    secondary_roles: Set[AgentRole] = field(default_factory=set)
-    expertise_areas: Set[AgentExpertise] = field(default_factory=set)
-    skill_levels: Dict[str, float] = field(default_factory=dict)  # skill -> proficiency (0-1)
+    secondary_roles: set[AgentRole] = field(default_factory=set)
+    expertise_areas: set[AgentExpertise] = field(default_factory=set)
+    skill_levels: dict[str, float] = field(default_factory=dict)  # skill -> proficiency (0-1)
     max_task_complexity: int = 5  # 1-10 scale
-    preferred_task_types: Set[str] = field(default_factory=set)
+    preferred_task_types: set[str] = field(default_factory=set)
     
     def can_handle_role(self, role: AgentRole) -> bool:
         """Check if agent can handle a specific role"""
         return role == self.primary_role or role in self.secondary_roles
     
-    def expertise_match_score(self, required_expertise: Set[AgentExpertise]) -> float:
+    def expertise_match_score(self, required_expertise: set[AgentExpertise]) -> float:
         """Calculate expertise match score (0-1)"""
         if not required_expertise:
             return 1.0
@@ -55,7 +55,7 @@ class AgentCapabilities:
         matching = self.expertise_areas.intersection(required_expertise)
         return len(matching) / len(required_expertise)
     
-    def skill_match_score(self, required_skills: Dict[str, float]) -> float:
+    def skill_match_score(self, required_skills: dict[str, float]) -> float:
         """Calculate skill match score based on proficiency levels"""
         if not required_skills:
             return 1.0
@@ -79,11 +79,11 @@ class AgentProfile:
     availability_score: float = 1.0  # 0-1, considers workload and status
     performance_score: float = 1.0  # 0-1, based on historical performance
     collaboration_style: str = "independent"  # independent, collaborative, supervisory
-    communication_preferences: Set[str] = field(default_factory=set)  # sync, async, broadcast
+    communication_preferences: set[str] = field(default_factory=set)  # sync, async, broadcast
     time_zone: str = "UTC"
-    working_hours: Optional[Dict[str, str]] = None
+    working_hours: dict[str, str] | None = None
     
-    def overall_suitability_score(self, task_requirements: Dict) -> float:
+    def overall_suitability_score(self, task_requirements: dict) -> float:
         """Calculate overall suitability for a task"""
         # Extract requirements
         required_role = task_requirements.get("role")
@@ -110,10 +110,10 @@ class AgentStatus:
     is_available: bool
     current_workload: int
     max_workload: int
-    active_tasks: List[str]
+    active_tasks: list[str]
     last_activity: datetime
-    status_message: Optional[str] = None
-    estimated_availability: Optional[datetime] = None
+    status_message: str | None = None
+    estimated_availability: datetime | None = None
     
     @property
     def workload_percentage(self) -> float:
@@ -148,7 +148,7 @@ class AgentPerformanceMetrics:
     quality_score: float = 1.0  # 0-1
     collaboration_score: float = 1.0  # 0-1
     reliability_score: float = 1.0  # 0-1
-    feedback_scores: List[float] = field(default_factory=list)
+    feedback_scores: list[float] = field(default_factory=list)
     
     @property
     def success_rate(self) -> float:
@@ -169,7 +169,7 @@ class AgentPerformanceMetrics:
         )
     
     def update_with_task_result(self, success: bool, completion_time: float, 
-                               quality_rating: Optional[float] = None) -> None:
+                               quality_rating: float | None = None) -> None:
         """Update metrics with task result"""
         if success:
             self.tasks_completed += 1

@@ -1,18 +1,21 @@
 """Agent Application Facade - Orchestrates agent-related use cases"""
 
 import logging
-from typing import Dict, Any
 from dataclasses import asdict
 from datetime import datetime
+from typing import Any
 
+from ...domain.exceptions.task_exceptions import (
+    AgentNotFoundError,
+    ProjectNotFoundError,
+)
 from ...domain.repositories.agent_repository import AgentRepository
-from ...domain.exceptions.task_exceptions import AgentNotFoundError, ProjectNotFoundError
-from ..use_cases.register_agent import RegisterAgentUseCase, RegisterAgentRequest
-from ..use_cases.unregister_agent import UnregisterAgentUseCase, UnregisterAgentRequest
-from ..use_cases.assign_agent import AssignAgentUseCase, AssignAgentRequest
-from ..use_cases.unassign_agent import UnassignAgentUseCase, UnassignAgentRequest
-from ..use_cases.get_agent import GetAgentUseCase, GetAgentRequest
-from ..use_cases.list_agents import ListAgentsUseCase, ListAgentsRequest
+from ..use_cases.assign_agent import AssignAgentRequest, AssignAgentUseCase
+from ..use_cases.get_agent import GetAgentRequest, GetAgentUseCase
+from ..use_cases.list_agents import ListAgentsRequest, ListAgentsUseCase
+from ..use_cases.register_agent import RegisterAgentRequest, RegisterAgentUseCase
+from ..use_cases.unassign_agent import UnassignAgentRequest, UnassignAgentUseCase
+from ..use_cases.unregister_agent import UnregisterAgentRequest, UnregisterAgentUseCase
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +43,7 @@ class AgentApplicationFacade:
         self._get_agent_use_case = GetAgentUseCase(agent_repository)
         self._list_agents_use_case = ListAgentsUseCase(agent_repository)
     
-    def register_agent(self, project_id: str, agent_id: str = None, name: str = None, call_agent: str = None, user_id: str = None) -> Dict[str, Any]:
+    def register_agent(self, project_id: str, agent_id: str = None, name: str = None, call_agent: str = None, user_id: str = None) -> dict[str, Any]:
         """Register a new agent to a project"""
         try:
             # Create request DTO
@@ -56,7 +59,9 @@ class AgentApplicationFacade:
 
             if response.success:
                 # Broadcast WebSocket event for real-time UI updates
-                from ..services.websocket_notification_service import WebSocketNotificationService
+                from ..services.websocket_notification_service import (
+                    WebSocketNotificationService,
+                )
                 agent_dict = asdict(response.agent)
                 WebSocketNotificationService.sync_broadcast_agent_event(
                     event_type="created",
@@ -131,7 +136,7 @@ class AgentApplicationFacade:
                 "hint": "An unexpected error occurred. Please check the logs or try again."
             }
     
-    def unregister_agent(self, project_id: str, agent_id: str, user_id: str = None) -> Dict[str, Any]:
+    def unregister_agent(self, project_id: str, agent_id: str, user_id: str = None) -> dict[str, Any]:
         """Unregister an agent from a project"""
         try:
             # Create request DTO
@@ -145,7 +150,9 @@ class AgentApplicationFacade:
 
             if response.success:
                 # Broadcast WebSocket event for real-time UI updates
-                from ..services.websocket_notification_service import WebSocketNotificationService
+                from ..services.websocket_notification_service import (
+                    WebSocketNotificationService,
+                )
                 WebSocketNotificationService.sync_broadcast_agent_event(
                     event_type="deleted",
                     agent_id=response.agent_id,
@@ -173,7 +180,7 @@ class AgentApplicationFacade:
             logger.error(f"Unexpected error in unregister_agent: {e}")
             return {"success": False, "action": "unregister", "error": f"Unexpected error: {str(e)}"}
     
-    def assign_agent(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
+    def assign_agent(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
         """Assign an agent to a task tree"""
         logger.debug(f"[FACADE] assign_agent called with project_id={project_id}, agent_id={agent_id}, git_branch_id={git_branch_id}")
         logger.debug(f"[FACADE] Type of git_branch_id: {type(git_branch_id)}")
@@ -186,7 +193,7 @@ class AgentApplicationFacade:
                 git_branch_id=git_branch_id
             )
             
-            logger.debug(f"[FACADE] Created AssignAgentRequest, about to execute use case")
+            logger.debug("[FACADE] Created AssignAgentRequest, about to execute use case")
             
             # Execute use case
             response = self._assign_agent_use_case.execute(request)
@@ -220,7 +227,7 @@ class AgentApplicationFacade:
             logger.error(f"Unexpected error in assign_agent: {e}")
             return {"success": False, "action": "assign", "error": f"Unexpected error in assigning agent: {str(e)}", "metadata": {"project_id": project_id, "agent_id": agent_id, "git_branch_id": git_branch_id, "timestamp": datetime.now().isoformat()}}
     
-    def unassign_agent(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
+    def unassign_agent(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
         """
         Unassigns an agent from a specific task tree within a project.
         
@@ -244,7 +251,7 @@ class AgentApplicationFacade:
                 "error": str(e)
             }
     
-    def get_agent(self, project_id: str, agent_id: str) -> Dict[str, Any]:
+    def get_agent(self, project_id: str, agent_id: str) -> dict[str, Any]:
         """Get agent details"""
         try:
             # Create request DTO
@@ -284,7 +291,7 @@ class AgentApplicationFacade:
             logger.error(f"Unexpected error in get_agent: {e}")
             return {"success": False, "action": "get", "error": f"Unexpected error in retrieving agent details: {str(e)}", "metadata": {"project_id": project_id, "agent_id": agent_id, "timestamp": datetime.now().isoformat()}}
     
-    def list_agents(self, project_id: str) -> Dict[str, Any]:
+    def list_agents(self, project_id: str) -> dict[str, Any]:
         """List all agents in a project"""
         try:
             # Create request DTO
@@ -321,14 +328,16 @@ class AgentApplicationFacade:
             logger.error(f"Unexpected error in list_agents: {e}")
             return {"success": False, "action": "list", "error": f"Unexpected error in listing agents: {str(e)}", "metadata": {"project_id": project_id, "timestamp": datetime.now().isoformat()}}
     
-    def update_agent(self, project_id: str, agent_id: str, name: str = None, call_agent: str = None, user_id: str = None) -> Dict[str, Any]:
+    def update_agent(self, project_id: str, agent_id: str, name: str = None, call_agent: str = None, user_id: str = None) -> dict[str, Any]:
         """Update agent information"""
         try:
             # Create request DTO - using a direct repository call since use case might not be fully defined yet
             updated_agent = self._agent_repository.update_agent(project_id, agent_id, name, call_agent)
 
             # Broadcast WebSocket event for real-time UI updates
-            from ..services.websocket_notification_service import WebSocketNotificationService
+            from ..services.websocket_notification_service import (
+                WebSocketNotificationService,
+            )
             WebSocketNotificationService.sync_broadcast_agent_event(
                 event_type="updated",
                 agent_id=agent_id,
@@ -358,7 +367,7 @@ class AgentApplicationFacade:
             logger.error(f"Unexpected error in update_agent: {e}")
             return {"success": False, "action": "update", "error": f"Unexpected error in updating agent: {str(e)}", "metadata": {"project_id": project_id, "agent_id": agent_id, "timestamp": datetime.now().isoformat()}}
     
-    def rebalance_agents(self, project_id: str) -> Dict[str, Any]:
+    def rebalance_agents(self, project_id: str) -> dict[str, Any]:
         """Rebalance agent assignments"""
         try:
             # Direct repository call since use case might not be fully defined yet

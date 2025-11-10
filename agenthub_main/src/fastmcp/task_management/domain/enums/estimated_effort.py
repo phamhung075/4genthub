@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 
 class EffortLevel(Enum):
@@ -52,7 +51,7 @@ class EstimatedEffort:
     def __str__(self) -> str:
         return self.value
     
-    def get_hours(self) -> Optional[float]:
+    def get_hours(self) -> float | None:
         """Get estimated hours for this effort"""
         # Check if it's a standard level
         for effort in EffortLevel:
@@ -62,7 +61,7 @@ class EstimatedEffort:
         # Try to parse custom format
         return self._parse_custom_hours()
     
-    def _parse_custom_hours(self) -> Optional[float]:
+    def _parse_custom_hours(self) -> float | None:
         """Parse custom effort format to hours"""
         import re
         if not self.value:

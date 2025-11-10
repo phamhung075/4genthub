@@ -6,10 +6,10 @@ all operations by the current user ID from JWT token context.
 """
 
 import logging
-from typing import Optional, List, Any, TypeVar, Generic
 from abc import ABC, abstractmethod
+from typing import Any, Generic, TypeVar
 
-from ..middleware.request_context_middleware import get_current_user_id, get_authentication_context as get_current_user_context
+from ..middleware.request_context_middleware import get_current_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -80,12 +80,12 @@ class UserFilteredRepository(Generic[T], ABC):
         return filters
     
     @abstractmethod
-    def find_by_id(self, entity_id: Any) -> Optional[T]:
+    def find_by_id(self, entity_id: Any) -> T | None:
         """Find entity by ID, filtered by current user."""
         pass
     
     @abstractmethod
-    def find_all(self, **filters) -> List[T]:
+    def find_all(self, **filters) -> list[T]:
         """Find all entities matching filters, filtered by current user."""
         pass
     
@@ -107,7 +107,7 @@ class UserFilteredTaskRepository(UserFilteredRepository):
     Ensures all task operations are filtered by the current user's ID.
     """
     
-    def find_by_id(self, task_id: Any) -> Optional[Any]:
+    def find_by_id(self, task_id: Any) -> Any | None:
         """
         Find task by ID, ensuring it belongs to current user.
         
@@ -134,7 +134,7 @@ class UserFilteredTaskRepository(UserFilteredRepository):
             logger.error(f"Error finding task {task_id}: {e}")
             return None
     
-    def find_all(self, **filters) -> List[Any]:
+    def find_all(self, **filters) -> list[Any]:
         """
         Find all tasks matching filters, filtered by current user.
         
@@ -155,7 +155,7 @@ class UserFilteredTaskRepository(UserFilteredRepository):
             logger.error(f"Error finding tasks: {e}")
             return []
     
-    def find_by_git_branch_id(self, git_branch_id: str) -> List[Any]:
+    def find_by_git_branch_id(self, git_branch_id: str) -> list[Any]:
         """
         Find tasks by git branch ID, filtered by current user.
         
@@ -202,7 +202,7 @@ class UserFilteredTaskRepository(UserFilteredRepository):
                 # For existing tasks, verify user_id matches
                 task_user_id = getattr(task, self._user_id_field, None)
                 if task_user_id != user_id:
-                    raise RuntimeError(f"Cannot save task belonging to another user")
+                    raise RuntimeError("Cannot save task belonging to another user")
             
             return self._base_repository.save(task)
         except Exception as e:
@@ -238,7 +238,7 @@ class UserFilteredProjectRepository(UserFilteredRepository):
     Ensures all project operations are filtered by the current user's ID.
     """
     
-    def find_by_id(self, project_id: Any) -> Optional[Any]:
+    def find_by_id(self, project_id: Any) -> Any | None:
         """Find project by ID, ensuring it belongs to current user."""
         try:
             project = self._base_repository.find_by_id(project_id)
@@ -256,7 +256,7 @@ class UserFilteredProjectRepository(UserFilteredRepository):
             logger.error(f"Error finding project {project_id}: {e}")
             return None
     
-    def find_all(self, **filters) -> List[Any]:
+    def find_all(self, **filters) -> list[Any]:
         """Find all projects, filtered by current user."""
         try:
             filters = self._add_user_filter(filters)
@@ -277,7 +277,7 @@ class UserFilteredProjectRepository(UserFilteredRepository):
                 # For existing projects, verify user_id matches
                 project_user_id = getattr(project, self._user_id_field, None)
                 if project_user_id != user_id:
-                    raise RuntimeError(f"Cannot save project belonging to another user")
+                    raise RuntimeError("Cannot save project belonging to another user")
             
             return self._base_repository.save(project)
         except Exception as e:
@@ -305,7 +305,7 @@ class UserFilteredContextRepository(UserFilteredRepository):
     Ensures all context operations are filtered by the current user's ID.
     """
     
-    def find_by_id(self, context_id: Any) -> Optional[Any]:
+    def find_by_id(self, context_id: Any) -> Any | None:
         """Find context by ID, ensuring it belongs to current user."""
         try:
             context = self._base_repository.find_by_id(context_id)
@@ -325,7 +325,7 @@ class UserFilteredContextRepository(UserFilteredRepository):
             logger.error(f"Error finding context {context_id}: {e}")
             return None
     
-    def find_all(self, **filters) -> List[Any]:
+    def find_all(self, **filters) -> list[Any]:
         """Find all contexts, filtered by current user."""
         try:
             user_id = self._get_current_user_id()
@@ -365,7 +365,7 @@ class UserFilteredContextRepository(UserFilteredRepository):
                     # For existing contexts, verify user_id matches
                     context_user_id = getattr(context, self._user_id_field, None)
                     if context_user_id is not None and context_user_id != user_id:
-                        raise RuntimeError(f"Cannot save context belonging to another user")
+                        raise RuntimeError("Cannot save context belonging to another user")
             
             return self._base_repository.save(context)
         except Exception as e:

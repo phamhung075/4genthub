@@ -5,21 +5,33 @@ This module defines all database models using SQLAlchemy ORM,
 supporting both SQLite and PostgreSQL databases.
 """
 
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
-from sqlalchemy import (
-    Column, String, Text, DateTime, Integer, Boolean, ForeignKey,
-    UniqueConstraint, CheckConstraint, Index, JSON, Float, Enum
-)
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from datetime import UTC, datetime
+from typing import Any, Optional
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from .database_config import Base
-from .uuid_column_type import UnifiedUUID, create_uuid_column
+
 from ...domain.value_objects import ProgressState
+from .database_config import Base
+
 # Import clean timestamp infrastructure
 from .timestamp_events import setup_timestamp_events
+from .uuid_column_type import UnifiedUUID
 
 # User-scoped global context approach implemented
 # Each user gets their own global context with unique UUIDs
@@ -40,15 +52,15 @@ class APIToken(Base):
     user_id: Mapped[str] = mapped_column(String, nullable=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
     token_hash: Mapped[str] = mapped_column(String, nullable=False)  # Store hashed token
-    scopes: Mapped[List[str]] = mapped_column(JSON, default=list)  # List of permission scopes
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    scopes: Mapped[list[str]] = mapped_column(JSON, default=list)  # List of permission scopes
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     usage_count: Mapped[int] = mapped_column(Integer, default=0)
     rate_limit: Mapped[int] = mapped_column(Integer, default=1000)  # Requests per hour
-    usage_stats: Mapped[Dict[str, int]] = mapped_column(JSON, default=dict)  # Operation-level usage tracking
+    usage_stats: Mapped[dict[str, int]] = mapped_column(JSON, default=dict)  # Operation-level usage tracking
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    token_metadata: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)  # Additional metadata
+    token_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)  # Additional metadata
 
 
 class MissedNotification(Base):
@@ -68,11 +80,11 @@ class MissedNotification(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     user_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    message: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
+    message: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     delivered: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     delivery_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    last_attempt_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     __table_args__ = (
         Index('idx_missed_notifications_user_delivered', 'user_id', 'delivered'),
@@ -98,10 +110,10 @@ class Project(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # No default - authentication required
     status: Mapped[str] = mapped_column(String, default="active")
-    model_metadata: Mapped[Dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
+    model_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
     
     # Relationships
-    git_branchs: Mapped[List["ProjectGitBranch"]] = relationship("ProjectGitBranch", back_populates="project", cascade="all, delete-orphan")
+    git_branchs: Mapped[list["ProjectGitBranch"]] = relationship("ProjectGitBranch", back_populates="project", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint('id', 'user_id', name='uq_project_user'),
@@ -138,18 +150,18 @@ class ProjectGitBranch(Base):
     # Clean timestamp fields - automatically managed by event handlers
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
-    assigned_agent_id: Mapped[Optional[str]] = mapped_column(String)
-    agent_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID)  # Fixed: Using UnifiedUUID for cross-database compatibility
+    assigned_agent_id: Mapped[str | None] = mapped_column(String)
+    agent_id: Mapped[str | None] = mapped_column(UnifiedUUID)  # Fixed: Using UnifiedUUID for cross-database compatibility
     priority: Mapped[str] = mapped_column(String, default="medium")
     status: Mapped[str] = mapped_column(String, default="todo")
-    model_metadata: Mapped[Dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
+    model_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
     task_count: Mapped[int] = mapped_column(Integer, default=0)
     completed_task_count: Mapped[int] = mapped_column(Integer, default=0)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     
     # Relationships
     project: Mapped[Project] = relationship("Project", back_populates="git_branchs")
-    tasks: Mapped[List["Task"]] = relationship("Task", back_populates="git_branch", cascade="all, delete-orphan")
+    tasks: Mapped[list["Task"]] = relationship("Task", back_populates="git_branch", cascade="all, delete-orphan")
     branch_context: Mapped[Optional["BranchContext"]] = relationship("BranchContext", back_populates="git_branch", uselist=False)
 
     __table_args__ = (
@@ -187,39 +199,39 @@ class Task(Base):
     git_branch_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("project_git_branchs.id", ondelete="CASCADE"), nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False, default="todo")
     priority: Mapped[str] = mapped_column(String, nullable=False, default="medium")
-    progress_history: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    progress_history: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     progress_count: Mapped[int] = mapped_column(Integer, default=0)
     estimated_effort: Mapped[str] = mapped_column(String, default="2 hours", nullable=False)
-    due_date: Mapped[Optional[str]] = mapped_column(String)
+    due_date: Mapped[str | None] = mapped_column(String)
     # Clean timestamp fields - automatically managed by event handlers
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     # Business timestamp - manually managed for task completion logic
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)  # Set when status='done'
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)  # Set when status='done'
     completion_summary: Mapped[str] = mapped_column(Text, default="")  # Added for schema validation
     testing_notes: Mapped[str] = mapped_column(Text, default="")  # Added for schema validation
-    context_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID)
+    context_id: Mapped[str | None] = mapped_column(UnifiedUUID)
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)
     progress_state: Mapped[ProgressState] = mapped_column(Enum(ProgressState), default=ProgressState.INITIAL, nullable=False)
-    completed_subtasks: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=0)  # Count of completed subtasks
-    subtask_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=0)  # Total count of subtasks
+    completed_subtasks: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)  # Count of completed subtasks
+    subtask_count: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)  # Total count of subtasks
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED (using String for Keycloak UUID)
     
     # AI Agent System Prompts and Context - Permanent fields for AI task execution
     ai_system_prompt: Mapped[str] = mapped_column(Text, default="", server_default="")  # System prompt for AI agent to understand task context
     ai_request_prompt: Mapped[str] = mapped_column(Text, default="", server_default="")  # Specific request prompt for AI to execute
-    ai_work_context: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")  # Additional context for AI work
+    ai_work_context: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")  # Additional context for AI work
     ai_completion_criteria: Mapped[str] = mapped_column(Text, default="", server_default="")  # Criteria for AI to determine task completion
-    ai_execution_history: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, default=list, server_default="[]")  # History of AI executions
-    ai_last_execution: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # Last time AI worked on this task
-    ai_model_preferences: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")
+    ai_execution_history: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, server_default="[]")  # History of AI executions
+    ai_last_execution: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # Last time AI worked on this task
+    ai_model_preferences: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")
     
     # Relationships
     git_branch: Mapped[ProjectGitBranch] = relationship("ProjectGitBranch", back_populates="tasks")
-    subtasks: Mapped[List["Subtask"]] = relationship("Subtask", back_populates="task", cascade="all, delete-orphan")
-    assignees: Mapped[List["TaskAssignee"]] = relationship("TaskAssignee", back_populates="task", cascade="all, delete-orphan")
-    dependencies: Mapped[List["TaskDependency"]] = relationship("TaskDependency", foreign_keys="TaskDependency.task_id", back_populates="task", cascade="all, delete-orphan")
-    labels: Mapped[List["TaskLabel"]] = relationship("TaskLabel", back_populates="task", cascade="all, delete-orphan")
+    subtasks: Mapped[list["Subtask"]] = relationship("Subtask", back_populates="task", cascade="all, delete-orphan")
+    assignees: Mapped[list["TaskAssignee"]] = relationship("TaskAssignee", back_populates="task", cascade="all, delete-orphan")
+    dependencies: Mapped[list["TaskDependency"]] = relationship("TaskDependency", foreign_keys="TaskDependency.task_id", back_populates="task", cascade="all, delete-orphan")
+    labels: Mapped[list["TaskLabel"]] = relationship("TaskLabel", back_populates="task", cascade="all, delete-orphan")
     task_context: Mapped[Optional["TaskContext"]] = relationship("TaskContext", back_populates="task", uselist=False, cascade="all, delete-orphan")
     
     # Create indexes for performance
@@ -261,32 +273,32 @@ class Subtask(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String, nullable=False, default="todo")
     priority: Mapped[str] = mapped_column(String, nullable=False, default="medium")
-    assignees: Mapped[List[str]] = mapped_column(JSON, default=list)
-    estimated_effort: Mapped[Optional[str]] = mapped_column(String)
+    assignees: Mapped[list[str]] = mapped_column(JSON, default=list)
+    estimated_effort: Mapped[str | None] = mapped_column(String)
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)
-    progress_history: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)  # Detailed progress tracking
+    progress_history: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)  # Detailed progress tracking
     progress_count: Mapped[int] = mapped_column(Integer, default=0)  # Number of progress entries
     progress_state: Mapped[ProgressState] = mapped_column(Enum(ProgressState), default=ProgressState.INITIAL, nullable=False)
     progress_notes: Mapped[str] = mapped_column(Text, default="")
     blockers: Mapped[str] = mapped_column(Text, default="")
     completion_summary: Mapped[str] = mapped_column(Text, default="")
     impact_on_parent: Mapped[str] = mapped_column(Text, default="")
-    insights_found: Mapped[List[str]] = mapped_column(JSON, default=list)
+    insights_found: Mapped[list[str]] = mapped_column(JSON, default=list)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # Keycloak user ID - String type for UUID strings
     # Clean timestamp fields - automatically managed by event handlers
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     # Business timestamp - manually managed for subtask completion logic
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
     
     # AI Agent System Prompts and Context for Subtasks - Permanent fields for AI subtask execution
     ai_system_prompt: Mapped[str] = mapped_column(Text, default="", server_default="")  # System prompt for AI agent to understand subtask context
     ai_request_prompt: Mapped[str] = mapped_column(Text, default="", server_default="")  # Specific request prompt for AI to execute
-    ai_work_context: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")  # Additional context for AI work
+    ai_work_context: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")  # Additional context for AI work
     ai_completion_criteria: Mapped[str] = mapped_column(Text, default="", server_default="")  # Criteria for AI to determine subtask completion
-    ai_execution_history: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, default=list, server_default="[]")  # History of AI executions
-    ai_last_execution: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # Last time AI worked on this subtask
-    ai_model_preferences: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")
+    ai_execution_history: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, server_default="[]")  # History of AI executions
+    ai_last_execution: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # Last time AI worked on this subtask
+    ai_model_preferences: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")
     
     # Relationships
     task: Mapped[Task] = relationship("Task", back_populates="subtasks")
@@ -323,7 +335,7 @@ class TaskAssignee(Base):
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True)
     task_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     assignee_id: Mapped[str] = mapped_column(String, nullable=False)
-    agent_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID)  # Fixed: Using UnifiedUUID for cross-database compatibility
+    agent_id: Mapped[str | None] = mapped_column(UnifiedUUID)  # Fixed: Using UnifiedUUID for cross-database compatibility
     role: Mapped[str] = mapped_column(String, default="contributor")
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     # Business timestamp - manually set when assignment happens
@@ -374,15 +386,15 @@ class Agent(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
     role: Mapped[str] = mapped_column(String, default="assistant")
-    capabilities: Mapped[List[str]] = mapped_column(JSON, default=list)
+    capabilities: Mapped[list[str]] = mapped_column(JSON, default=list)
     status: Mapped[str] = mapped_column(String, default="available")
     availability_score: Mapped[float] = mapped_column(Float, default=1.0)
     # Business timestamp - manually managed for agent activity
-    last_active_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_active_at: Mapped[datetime | None] = mapped_column(DateTime)
     # Clean timestamp fields - automatically managed by event handlers
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
-    model_metadata: Mapped[Dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
+    model_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # Keycloak user ID - String type for UUID strings
     
     # Indexes
@@ -414,7 +426,7 @@ class Label(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
     # Relationships
-    task_labels: Mapped[List["TaskLabel"]] = relationship("TaskLabel", back_populates="label", cascade="all, delete-orphan")
+    task_labels: Mapped[list["TaskLabel"]] = relationship("TaskLabel", back_populates="label", cascade="all, delete-orphan")
 
 
 class TaskLabel(Base):
@@ -452,16 +464,16 @@ class Template(Base):
     template_content: Mapped[str] = mapped_column(Text, default="")  # Fixed: Database has TEXT type
     template_type: Mapped[str] = mapped_column(String, default="general")  # Added for schema validation
     type: Mapped[str] = mapped_column(String, nullable=False)  # 'task', 'checklist', 'workflow'
-    content: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
+    content: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     category: Mapped[str] = mapped_column(String, default="general")
-    tags: Mapped[List[str]] = mapped_column(JSON, default=list)
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     usage_count: Mapped[int] = mapped_column(Integer, default=0)
-    user_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # Optional for shared templates
+    user_id: Mapped[str | None] = mapped_column(String, nullable=True)  # Optional for shared templates
     # Clean timestamp fields - automatically managed by event handlers
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
     created_by: Mapped[str] = mapped_column(String, nullable=False)  # DDD: No default, user context required
-    metadata_: Mapped[Dict[str, Any]] = mapped_column("metadata", JSON, default=dict)  # Added for schema validation
+    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)  # Added for schema validation
     
     __table_args__ = (
         Index('idx_template_type', 'type'),
@@ -478,19 +490,19 @@ class GlobalContext(Base):
     organization_id: Mapped[str] = mapped_column(UnifiedUUID, nullable=True)  # Optional org ID
     
     # Core organizational configuration (flat structure - maintained for backward compatibility)
-    organization_standards: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Coding style, git workflow, testing requirements
-    security_policies: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Authentication, encryption, access control
-    compliance_requirements: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # GDPR, HIPAA, SOC2, etc.
-    shared_resources: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # API keys, service accounts, shared tools
-    reusable_patterns: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Design patterns, code templates
-    global_preferences: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # User preferences, UI settings
-    delegation_rules: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Auto-delegation configuration
+    organization_standards: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Coding style, git workflow, testing requirements
+    security_policies: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Authentication, encryption, access control
+    compliance_requirements: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # GDPR, HIPAA, SOC2, etc.
+    shared_resources: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # API keys, service accounts, shared tools
+    reusable_patterns: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Design patterns, code templates
+    global_preferences: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # User preferences, UI settings
+    delegation_rules: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Auto-delegation configuration
     
     # Nested structure support (v2.0) - New field for organized categorization
-    nested_structure: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Modern nested structure
+    nested_structure: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Modern nested structure
 
     # Unified context API compatibility - stores additional context data for flexible operations
-    unified_context_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Stores additional context data for unified API operations
+    unified_context_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Stores additional context data for unified API operations
 
     # User isolation - required by database migration
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
@@ -501,7 +513,7 @@ class GlobalContext(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
     
     # Relationships with explicit primaryjoin
-    project_contexts: Mapped[List["ProjectContext"]] = relationship(
+    project_contexts: Mapped[list["ProjectContext"]] = relationship(
         "ProjectContext", 
         primaryjoin="GlobalContext.id == ProjectContext.parent_global_id",
         back_populates="global_context", 
@@ -517,39 +529,39 @@ class ProjectContext(Base):
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True, default=lambda: str(uuid.uuid4()))
     
     # Foreign keys - all UUID now
-    project_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, nullable=True)
-    parent_global_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("global_contexts.id"), nullable=True)
+    project_id: Mapped[str | None] = mapped_column(UnifiedUUID, nullable=True)
+    parent_global_id: Mapped[str | None] = mapped_column(UnifiedUUID, ForeignKey("global_contexts.id"), nullable=True)
     
     # Data field (used in actual database)
-    data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)
+    data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)
     
     # Project-specific configuration (matching CONTEXT_DATA_MODELS.md)
-    project_info: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Name, description, version, status
-    team_preferences: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Review requirements, merge strategy, notification settings
-    technology_stack: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Frontend, backend, database, infrastructure
-    project_workflow: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Phases, gates, approval processes
-    local_standards: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Project-specific standards and conventions
-    project_settings: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Build configs, deployment settings, env vars
-    technical_specifications: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # API specs, database schemas, architecture
-    global_overrides: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Overrides of global settings
-    delegation_rules: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Project-specific delegation rules
+    project_info: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Name, description, version, status
+    team_preferences: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Review requirements, merge strategy, notification settings
+    technology_stack: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Frontend, backend, database, infrastructure
+    project_workflow: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Phases, gates, approval processes
+    local_standards: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Project-specific standards and conventions
+    project_settings: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Build configs, deployment settings, env vars
+    technical_specifications: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # API specs, database schemas, architecture
+    global_overrides: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Overrides of global settings
+    delegation_rules: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Project-specific delegation rules
     
     # User isolation
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # REQUIRED for user isolation
     
     # Timestamps and versioning
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=1)
-    inheritance_disabled: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    version: Mapped[int | None] = mapped_column(Integer, nullable=True, default=1)
+    inheritance_disabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False)
     
     # Relationships with explicit primaryjoin
-    global_context: Mapped[Optional[GlobalContext]] = relationship(
+    global_context: Mapped[GlobalContext | None] = relationship(
         "GlobalContext", 
         primaryjoin="ProjectContext.parent_global_id == GlobalContext.id",
         back_populates="project_contexts"
     )
-    branch_contexts: Mapped[List["BranchContext"]] = relationship(
+    branch_contexts: Mapped[list["BranchContext"]] = relationship(
         "BranchContext", 
         primaryjoin="ProjectContext.id == BranchContext.parent_project_id",
         back_populates="project_context", 
@@ -565,32 +577,32 @@ class BranchContext(Base):
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True, default=lambda: str(uuid.uuid4()))
     
     # Foreign keys
-    branch_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("project_git_branchs.id"), nullable=True)
-    parent_project_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("project_contexts.id"), nullable=True)
+    branch_id: Mapped[str | None] = mapped_column(UnifiedUUID, ForeignKey("project_git_branchs.id"), nullable=True)
+    parent_project_id: Mapped[str | None] = mapped_column(UnifiedUUID, ForeignKey("project_contexts.id"), nullable=True)
     
     # Data field (used in actual database)
-    data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)
+    data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)
     
     # Branch-specific configuration (matching CONTEXT_DATA_MODELS.md)
-    branch_info: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Feature name, type, status, parent branch
-    branch_workflow: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Implementation status, dependencies installed, endpoints created
-    feature_flags: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Feature toggles and configuration
-    discovered_patterns: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Patterns discovered during development
-    branch_decisions: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Technical decisions made for this feature
-    active_patterns: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Currently active patterns and approaches
-    local_overrides: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Branch-specific overrides
-    delegation_rules: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Branch-specific delegation rules
+    branch_info: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Feature name, type, status, parent branch
+    branch_workflow: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Implementation status, dependencies installed, endpoints created
+    feature_flags: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Feature toggles and configuration
+    discovered_patterns: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Patterns discovered during development
+    branch_decisions: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Technical decisions made for this feature
+    active_patterns: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Currently active patterns and approaches
+    local_overrides: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Branch-specific overrides
+    delegation_rules: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Branch-specific delegation rules
     
     # Control flags
-    inheritance_disabled: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
+    inheritance_disabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False)
     
     # User isolation - required by database migration
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     
     # Timestamps and versioning
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=1)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    version: Mapped[int | None] = mapped_column(Integer, nullable=True, default=1)
     
     # Relationships with explicit primaryjoin
     project_context: Mapped[Optional["ProjectContext"]] = relationship(
@@ -603,7 +615,7 @@ class BranchContext(Base):
         primaryjoin="BranchContext.branch_id == ProjectGitBranch.id",
         back_populates="branch_context"
     )
-    task_contexts: Mapped[List["TaskContext"]] = relationship(
+    task_contexts: Mapped[list["TaskContext"]] = relationship(
         "TaskContext", 
         primaryjoin="BranchContext.id == TaskContext.parent_branch_context_id",
         back_populates="branch_context", 
@@ -619,36 +631,36 @@ class TaskContext(Base):
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True, default=lambda: str(uuid.uuid4()))
     
     # Foreign keys
-    task_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
-    parent_branch_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("project_git_branchs.id"), nullable=True)
-    parent_branch_context_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("branch_contexts.id"), nullable=True)
+    task_id: Mapped[str | None] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
+    parent_branch_id: Mapped[str | None] = mapped_column(UnifiedUUID, ForeignKey("project_git_branchs.id"), nullable=True)
+    parent_branch_context_id: Mapped[str | None] = mapped_column(UnifiedUUID, ForeignKey("branch_contexts.id"), nullable=True)
     
     # Data field (used in actual database)
-    data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)
+    data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)
     
     # Task-specific data (matching CONTEXT_DATA_MODELS.md)
-    task_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Title, status, progress, assignees
-    execution_context: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Files modified, tests added, current work
-    discovered_patterns: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Patterns found during implementation
-    implementation_notes: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Challenges, solutions, next steps
-    test_results: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Test outcomes, coverage, failing tests
-    blockers: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Current impediments and dependencies
-    local_decisions: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Task-specific technical decisions
-    delegation_queue: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Items to delegate to higher levels
-    local_overrides: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Task-specific overrides
-    delegation_triggers: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Automatic delegation conditions
+    task_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Title, status, progress, assignees
+    execution_context: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Files modified, tests added, current work
+    discovered_patterns: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Patterns found during implementation
+    implementation_notes: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Challenges, solutions, next steps
+    test_results: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Test outcomes, coverage, failing tests
+    blockers: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Current impediments and dependencies
+    local_decisions: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Task-specific technical decisions
+    delegation_queue: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Items to delegate to higher levels
+    local_overrides: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Task-specific overrides
+    delegation_triggers: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)  # Automatic delegation conditions
     
     # Control flags
-    inheritance_disabled: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
-    force_local_only: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
+    inheritance_disabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False)
+    force_local_only: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False)
     
     # User isolation - required by database migration
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     
     # Timestamps and versioning
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=1)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    version: Mapped[int | None] = mapped_column(Integer, nullable=True, default=1)
     
     # Relationships with explicit primaryjoin
     branch_context: Mapped[Optional["BranchContext"]] = relationship(
@@ -682,25 +694,25 @@ class ContextDelegation(Base):
     target_type: Mapped[str] = mapped_column(String, default="context")  # Added for schema validation
     
     # Delegation data
-    delegated_data: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
-    delegation_data: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)  # Added for schema validation
+    delegated_data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    delegation_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)  # Added for schema validation
     delegation_reason: Mapped[str] = mapped_column(String, nullable=False)
     trigger_type: Mapped[str] = mapped_column(String, nullable=False)  # 'manual', 'auto_pattern', 'auto_threshold'
     
     # Processing status
     auto_delegated: Mapped[bool] = mapped_column(Boolean, default=False)
-    confidence_score: Mapped[Optional[float]] = mapped_column(Float)
+    confidence_score: Mapped[float | None] = mapped_column(Float)
     processed: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String, default="pending")  # Added for schema validation
-    approved: Mapped[Optional[bool]] = mapped_column(Boolean)
-    processed_by: Mapped[Optional[str]] = mapped_column(String)
-    rejected_reason: Mapped[Optional[str]] = mapped_column(String)
-    error_message: Mapped[Optional[str]] = mapped_column(String)  # Added for schema validation
+    approved: Mapped[bool | None] = mapped_column(Boolean)
+    processed_by: Mapped[str | None] = mapped_column(String)
+    rejected_reason: Mapped[str | None] = mapped_column(String)
+    error_message: Mapped[str | None] = mapped_column(String)  # Added for schema validation
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime)
-    processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime)
     
     __table_args__ = (
         CheckConstraint("source_level IN ('task', 'branch', 'project', 'global')", name='chk_source_level'),
@@ -722,11 +734,11 @@ class ContextInheritanceCache(Base):
     context_type: Mapped[str] = mapped_column(String, default="hierarchical")  # Added for schema validation
     
     # Cache data
-    resolved_context: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
-    resolved_data: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)  # Added for schema validation
+    resolved_context: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    resolved_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)  # Added for schema validation
     dependencies_hash: Mapped[str] = mapped_column(String, nullable=False)
     resolution_path: Mapped[str] = mapped_column(String, nullable=False)
-    parent_chain: Mapped[List[str]] = mapped_column(JSON, default=list)  # SQLite compatible: Using JSON instead of ARRAY
+    parent_chain: Mapped[list[str]] = mapped_column(JSON, default=list)  # SQLite compatible: Using JSON instead of ARRAY
     
     # Cache metadata
     created_at: Mapped[datetime] = mapped_column(DateTime)
@@ -737,7 +749,7 @@ class ContextInheritanceCache(Base):
     
     # Invalidation tracking
     invalidated: Mapped[bool] = mapped_column(Boolean, default=False)
-    invalidation_reason: Mapped[Optional[str]] = mapped_column(String)
+    invalidation_reason: Mapped[str | None] = mapped_column(String)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     
     __table_args__ = (

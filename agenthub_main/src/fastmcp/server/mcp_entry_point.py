@@ -6,13 +6,12 @@ This script serves as the entry point for running the FastMCP server with
 integrated task management, agent orchestration, and authentication.
 """
 
-import logging
-import sys
-import os
-import time
 import json
+import logging
+import os
+import sys
+import time
 from pathlib import Path
-from typing import Any
 
 # Load environment variables from .env.dev or .env file FIRST
 try:
@@ -47,17 +46,16 @@ except Exception as e:
     print(f"⚠️ Failed to load .env file: {e}")
 
 # Import the FastMCP server class directly (avoid circular import)
-from fastmcp.server.server import FastMCP
-from fastmcp.utilities.logging import setup_comprehensive_logging
+# Import Starlette components for middleware
+from starlette.responses import JSONResponse
 
 # Import authentication system
 from fastmcp.auth import AuthMiddleware
 
 # Import connection management tools
 from fastmcp.server.connection_manager import get_connection_manager
-
-# Import Starlette components for middleware
-from starlette.responses import JSONResponse
+from fastmcp.server.server import FastMCP
+from fastmcp.utilities.logging import setup_comprehensive_logging
 
 
 class DebugLoggingMiddleware:
@@ -280,16 +278,23 @@ def create_agenthub_server() -> FastMCP:
     
     # Initialize database before server startup - FAIL FAST MODE
     try:
-        from fastmcp.task_management.infrastructure.database.init_database import init_database
+        from fastmcp.task_management.infrastructure.database.init_database import (
+            init_database,
+        )
         logger.info("Initializing database...")
         init_database()
         logger.info("Database initialized successfully")
 
         # Run schema validation after database initialization
         logger.info("Running database schema validation...")
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from fastmcp.task_management.infrastructure.database.schema_validator import validate_schema_on_startup
         import asyncio
+
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            get_db_config,
+        )
+        from fastmcp.task_management.infrastructure.database.schema_validator import (
+            validate_schema_on_startup,
+        )
 
         db_config = get_db_config()
         if db_config and db_config.engine:
@@ -426,7 +431,9 @@ def create_agenthub_server() -> FastMCP:
     # Register DDD-compliant task management tools manually - FAIL FAST MODE
     logger.info("Registering DDD-compliant task management tools...")
     try:
-        from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
+        from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+            DDDCompliantMCPTools,
+        )
         ddd_tools = DDDCompliantMCPTools()
         ddd_tools.register_tools(server)
         logger.info("DDD-compliant task management tools registered successfully")
@@ -496,7 +503,7 @@ def create_agenthub_server() -> FastMCP:
             import toml
             pyproject_path = Path(__file__).parent.parent.parent.parent / "pyproject.toml"
             if pyproject_path.exists():
-                with open(pyproject_path, 'r') as f:
+                with open(pyproject_path) as f:
                     pyproject_data = toml.load(f)
                     # Try to get version from tool.uv-dynamic-versioning.fallback-version
                     if "tool" in pyproject_data and "uv-dynamic-versioning" in pyproject_data["tool"]:
@@ -552,7 +559,9 @@ def create_agenthub_server() -> FastMCP:
     # Register DDD-compliant connection management tools - FAIL FAST MODE
     try:
         # Import with proper absolute path since this is run as a script
-        from fastmcp.connection_management.interface.ddd_compliant_connection_tools import register_ddd_connection_tools
+        from fastmcp.connection_management.interface.ddd_compliant_connection_tools import (
+            register_ddd_connection_tools,
+        )
         register_ddd_connection_tools(server)
         logger.info("DDD-compliant connection management tools registered")
     except ImportError as e:
@@ -566,7 +575,9 @@ def create_agenthub_server() -> FastMCP:
     async def initialize_database():
         """Initialize and verify database on server startup"""
         try:
-            from fastmcp.task_management.infrastructure.database.db_initializer import initialize_database_on_startup
+            from fastmcp.task_management.infrastructure.database.db_initializer import (
+                initialize_database_on_startup,
+            )
             logger.info("Checking database status...")
 
             # Initialize database (creates tables if missing)
@@ -675,7 +686,9 @@ def main():
         # Initialize branch statistics tracking system
         logger.info("📊 Initializing branch statistics tracking...")
         try:
-            from fastmcp.task_management.application.services.statistics_initializer import StatisticsInitializer
+            from fastmcp.task_management.application.services.statistics_initializer import (
+                StatisticsInitializer,
+            )
             StatisticsInitializer.initialize()
             logger.info("✅ Branch statistics tracking initialized successfully")
         except Exception as e:
@@ -685,7 +698,9 @@ def main():
         # Initialize domain event handlers - FAIL FAST MODE
         logger.info("🔄 Initializing domain event handlers...")
         try:
-            from fastmcp.task_management.infrastructure.events import initialize_event_handlers
+            from fastmcp.task_management.infrastructure.events import (
+                initialize_event_handlers,
+            )
             if initialize_event_handlers():
                 logger.info("✅ Domain event handlers initialized successfully")
             else:
@@ -749,7 +764,9 @@ def main():
             # Step 1: Add DualAuth middleware FIRST (runs first to process JWT tokens)
             if auth_enabled:
                 try:
-                    from fastmcp.auth.middleware.dual_auth_middleware import DualAuthMiddleware
+                    from fastmcp.auth.middleware.dual_auth_middleware import (
+                        DualAuthMiddleware,
+                    )
 
                     # Add DualAuthMiddleware first so JWT tokens are processed and request.state.user_id is set
                     middleware_stack.append(Middleware(DualAuthMiddleware))
@@ -764,7 +781,9 @@ def main():
             # Step 2: Add RequestContextMiddleware SECOND (runs after DualAuth to capture auth context) - FAIL FAST MODE
             # This runs AFTER DualAuthMiddleware processes authentication and sets request.state
             try:
-                from fastmcp.auth.middleware.request_context_middleware import RequestContextMiddleware
+                from fastmcp.auth.middleware.request_context_middleware import (
+                    RequestContextMiddleware,
+                )
                 middleware_stack.append(Middleware(RequestContextMiddleware))
                 logger.info("RequestContextMiddleware added for authentication context propagation")
             except ImportError as e:

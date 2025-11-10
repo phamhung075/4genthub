@@ -10,17 +10,17 @@ Purpose: Improve MCP connection diagnostics and reconnection guidance
 """
 
 import logging
-import time
-from typing import Dict, Any
 from datetime import datetime
+from typing import Any
 
 from fastmcp.server.context import Context
+
 from .connection_manager import get_connection_manager
 
 logger = logging.getLogger(__name__)
 
 
-async def connection_health_check(ctx: Context) -> Dict[str, Any]:
+async def connection_health_check(ctx: Context) -> dict[str, Any]:
     """
     Comprehensive connection health check for MCP clients
     
@@ -232,7 +232,7 @@ def register_connection_health_tool(server):
         reconnection_info = health_info.get("reconnection_info", {})
         if reconnection_info.get("recommended_action") == "reconnect":
             response += "**🔗 Reconnection Required:**\n"
-            response += f"Server was restarted. Please use the quick reconnection steps above.\n\n"
+            response += "Server was restarted. Please use the quick reconnection steps above.\n\n"
         
         # Error details
         if health_info.get("error"):

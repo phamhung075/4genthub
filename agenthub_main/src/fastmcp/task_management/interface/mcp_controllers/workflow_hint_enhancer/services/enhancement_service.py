@@ -5,7 +5,7 @@ Handles response enhancement with workflow hints and guidance.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 logger = logging.getLogger(__name__)

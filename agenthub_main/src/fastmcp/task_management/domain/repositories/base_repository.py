@@ -1,7 +1,7 @@
 """Base Repository Interface for DDD Standardization"""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any, TypeVar, Generic
+from typing import Any, Generic, TypeVar
 
 # Import pagination types from value_objects (moved in Phase 5.1)
 # Previously defined here, now properly located in value_objects layer
@@ -24,8 +24,8 @@ class BaseRepository(ABC, Generic[T]):
     @abstractmethod
     def find_by_criteria(
         self, 
-        filters: Dict[str, Any], 
-        pagination: Optional[PaginationRequest] = None
+        filters: dict[str, Any], 
+        pagination: PaginationRequest | None = None
     ) -> PaginationResult[T]:
         """
         Find entities by multiple criteria with optional pagination.
@@ -40,7 +40,7 @@ class BaseRepository(ABC, Generic[T]):
         pass
     
     @abstractmethod
-    def find_all(self, pagination: Optional[PaginationRequest] = None) -> PaginationResult[T]:
+    def find_all(self, pagination: PaginationRequest | None = None) -> PaginationResult[T]:
         """
         Find all entities with optional pagination.
         
@@ -58,7 +58,7 @@ class BaseRepository(ABC, Generic[T]):
         pass
     
     @abstractmethod
-    def count_by_criteria(self, filters: Dict[str, Any]) -> int:
+    def count_by_criteria(self, filters: dict[str, Any]) -> int:
         """Get count of entities matching the given criteria"""
         pass
     
@@ -68,7 +68,7 @@ class BaseRepository(ABC, Generic[T]):
         pass
     
     @abstractmethod
-    def bulk_save(self, entities: List[T]) -> List[T]:
+    def bulk_save(self, entities: list[T]) -> list[T]:
         """
         Save multiple entities in a single operation.
         
@@ -81,7 +81,7 @@ class BaseRepository(ABC, Generic[T]):
         pass
     
     @abstractmethod
-    def bulk_delete(self, entity_ids: List[Any]) -> int:
+    def bulk_delete(self, entity_ids: list[Any]) -> int:
         """
         Delete multiple entities by their identifiers.
 

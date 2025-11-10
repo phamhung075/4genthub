@@ -2,13 +2,13 @@
 FastAPI authentication dependencies for token management.
 """
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional
-import jwt
-import os
 import logging
-from datetime import datetime, timezone
+import os
+from datetime import UTC, datetime
+
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from fastmcp.auth.domain.entities.user import User
 
@@ -65,7 +65,7 @@ async def get_current_user(
         # Check token expiration
         exp = payload.get("exp")
         if exp:
-            if datetime.now(timezone.utc).timestamp() > exp:
+            if datetime.now(UTC).timestamp() > exp:
                 logger.error("Token expired")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -112,8 +112,8 @@ async def get_current_user(
 
 
 async def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> Optional[User]:
+    credentials: HTTPAuthorizationCredentials | None = Depends(security)
+) -> User | None:
     """
     Get the current authenticated user if available, otherwise return None.
     

@@ -5,8 +5,9 @@ by fetching only required fields instead of full context objects.
 """
 
 import logging
-from typing import List, Dict, Any, Optional, Set, Union
 from enum import Enum
+from typing import Any
+
 
 # Mock FieldSelectionConfig for backward compatibility
 class FieldSelectionConfig:
@@ -92,8 +93,8 @@ class ContextFieldSelector:
     def get_task_fields(
         self,
         task_id: str,
-        fields: Optional[Union[List[str], FieldSet]] = None
-    ) -> Dict[str, Any]:
+        fields: list[str] | FieldSet | None = None
+    ) -> dict[str, Any]:
         """
         Fetch only specified fields for a task
         
@@ -138,8 +139,8 @@ class ContextFieldSelector:
     def get_project_fields(
         self,
         project_id: str,
-        fields: Optional[Union[List[str], FieldSet]] = None
-    ) -> Dict[str, Any]:
+        fields: list[str] | FieldSet | None = None
+    ) -> dict[str, Any]:
         """
         Fetch only specified fields for a project
         
@@ -185,8 +186,8 @@ class ContextFieldSelector:
         self,
         context_id: str,
         level: str,
-        fields: Optional[Union[List[str], FieldSet]] = None
-    ) -> Dict[str, Any]:
+        fields: list[str] | FieldSet | None = None
+    ) -> dict[str, Any]:
         """
         Fetch only specified fields for a context
         
@@ -233,7 +234,7 @@ class ContextFieldSelector:
     def build_optimized_query(
         self,
         entity_class: Any,
-        fields: Optional[List[str]]
+        fields: list[str] | None
     ) -> Any:
         """
         Build an optimized SQLAlchemy query for selective fields
@@ -260,7 +261,7 @@ class ContextFieldSelector:
         
         return field_attrs
     
-    def _expand_field_dependencies(self, fields: List[str]) -> List[str]:
+    def _expand_field_dependencies(self, fields: list[str]) -> list[str]:
         """
         Expand fields to include their dependencies
         
@@ -316,8 +317,8 @@ class ContextFieldSelector:
     def cache_field_mapping(
         self,
         entity_id: str,
-        fields: List[str],
-        data: Dict[str, Any]
+        fields: list[str],
+        data: dict[str, Any]
     ) -> None:
         """
         Cache field mapping for faster subsequent queries
@@ -334,8 +335,8 @@ class ContextFieldSelector:
     def get_cached_fields(
         self,
         entity_id: str,
-        fields: List[str]
-    ) -> Optional[Dict[str, Any]]:
+        fields: list[str]
+    ) -> dict[str, Any] | None:
         """
         Retrieve cached field data if available
         
@@ -356,7 +357,7 @@ class ContextFieldSelector:
         self._metrics["cache_misses"] += 1
         return None
     
-    def get_metrics(self) -> Dict[str, int]:
+    def get_metrics(self) -> dict[str, int]:
         """
         Get optimization metrics
         
@@ -378,7 +379,7 @@ class ContextFieldSelector:
         self,
         entity_type: str,
         field_set: FieldSet
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Estimate performance savings for a given field set
         
@@ -427,9 +428,9 @@ class ContextFieldSelector:
 
     def exclude_fields(
         self,
-        context: Dict[str, Any],
-        fields: List[str]
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+        fields: list[str]
+    ) -> dict[str, Any]:
         """
         Exclude specific fields from context
 
@@ -447,9 +448,9 @@ class ContextFieldSelector:
 
     def select_for_action(
         self,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         action: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Select fields based on action context
 
@@ -465,9 +466,9 @@ class ContextFieldSelector:
 
     def select_nested_fields(
         self,
-        context: Dict[str, Any],
-        field_paths: List[str]
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+        field_paths: list[str]
+    ) -> dict[str, Any]:
         """
         Select nested fields using dot notation paths
 
@@ -502,9 +503,9 @@ class ContextFieldSelector:
 
     def handle_array_fields(
         self,
-        context: Dict[str, Any],
-        array_config: Dict[str, int]
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+        array_config: dict[str, int]
+    ) -> dict[str, Any]:
         """
         Handle array field truncation
 
@@ -525,9 +526,9 @@ class ContextFieldSelector:
 
     def apply_field_size_limits(
         self,
-        context: Dict[str, Any],
-        limits: Dict[str, int]
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+        limits: dict[str, int]
+    ) -> dict[str, Any]:
         """
         Apply size limits to specific fields
 
@@ -551,9 +552,9 @@ class ContextFieldSelector:
 
     def _apply_size_limit(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         size_limit: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Apply overall size limit to data"""
         import json
 
@@ -583,8 +584,8 @@ class ContextFieldSelector:
 
     def get_profile_configuration(
         self,
-        profile: Union[FieldSet, SelectionProfile]
-    ) -> Dict[str, Any]:
+        profile: FieldSet | SelectionProfile
+    ) -> dict[str, Any]:
         """
         Get configuration for a specific profile
 
@@ -603,9 +604,9 @@ class ContextFieldSelector:
 
     def discover_fields(
         self,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         max_depth: int = 3
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Dynamically discover fields in a context
 
@@ -637,9 +638,9 @@ class ContextFieldSelector:
 
     def apply_conditional_inclusion(
         self,
-        context: Dict[str, Any],
-        conditions: Dict[str, callable]
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+        conditions: dict[str, callable]
+    ) -> dict[str, Any]:
         """
         Include fields based on conditions
 
@@ -660,9 +661,9 @@ class ContextFieldSelector:
 
     def transform_fields(
         self,
-        context: Dict[str, Any],
-        transformations: Dict[str, callable]
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+        transformations: dict[str, callable]
+    ) -> dict[str, Any]:
         """
         Transform field values
 
@@ -683,9 +684,9 @@ class ContextFieldSelector:
 
     def optimize_for_performance(
         self,
-        contexts: List[Dict[str, Any]],
-        profile: Union[FieldSet, SelectionProfile]
-    ) -> List[Dict[str, Any]]:
+        contexts: list[dict[str, Any]],
+        profile: FieldSet | SelectionProfile
+    ) -> list[dict[str, Any]]:
         """
         Optimize multiple contexts for performance
 
@@ -701,7 +702,7 @@ class ContextFieldSelector:
     def cache_field_configuration(
         self,
         config_id: str,
-        configuration: Dict[str, Any]
+        configuration: dict[str, Any]
     ) -> None:
         """
         Cache a field configuration
@@ -714,8 +715,8 @@ class ContextFieldSelector:
 
     def merge_field_selections(
         self,
-        *selections: List[str]
-    ) -> List[str]:
+        *selections: list[str]
+    ) -> list[str]:
         """
         Merge multiple field selections
 
@@ -733,9 +734,9 @@ class ContextFieldSelector:
 
     def select_fields_for_action(
         self,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         action: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Select fields based on action (alias for select_for_action)
 
@@ -765,8 +766,8 @@ class ContextFieldSelector:
 
     def discover_common_fields(
         self,
-        contexts: List[Dict[str, Any]]
-    ) -> Set[str]:
+        contexts: list[dict[str, Any]]
+    ) -> set[str]:
         """
         Discover fields common to all contexts
 
@@ -786,8 +787,8 @@ class ContextFieldSelector:
 
     def discover_all_fields(
         self,
-        contexts: List[Dict[str, Any]]
-    ) -> Set[str]:
+        contexts: list[dict[str, Any]]
+    ) -> set[str]:
         """
         Discover all fields present in any context
 
@@ -804,8 +805,8 @@ class ContextFieldSelector:
 
     def score_field_importance(
         self,
-        context: Dict[str, Any]
-    ) -> Dict[str, float]:
+        context: dict[str, Any]
+    ) -> dict[str, float]:
         """
         Score the importance of all fields in context
 
@@ -823,7 +824,7 @@ class ContextFieldSelector:
     def _score_single_field_importance(
         self,
         field_name: str,
-        context: Dict[str, Any]
+        context: dict[str, Any]
     ) -> float:
         """
         Score the importance of a single field (renamed from original method)
@@ -861,8 +862,8 @@ class ContextFieldSelector:
 
     def get_profile_config(
         self,
-        profile: Union[FieldSet, SelectionProfile]
-    ) -> Dict[str, Any]:
+        profile: FieldSet | SelectionProfile
+    ) -> dict[str, Any]:
         """
         Get cached profile configuration (alias for get_profile_configuration)
 
@@ -882,8 +883,8 @@ class ContextFieldSelector:
 
     def merge_selections(
         self,
-        selections: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        selections: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """
         Merge multiple field selections into one dictionary
 
@@ -901,16 +902,16 @@ class ContextFieldSelector:
 
     def select_fields(
         self,
-        context: Dict[str, Any],
-        profile: Optional[Union[FieldSet, SelectionProfile, str]] = None,
-        custom_fields: Optional[List[str]] = None,
-        exclude_fields: Optional[List[str]] = None,
-        action: Optional[str] = None,
-        size_limit: Optional[int] = None,
-        max_field_size: Optional[int] = None,
-        conditional_rules: Optional[Dict[str, callable]] = None,
-        transformations: Optional[Dict[str, callable]] = None
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+        profile: FieldSet | SelectionProfile | str | None = None,
+        custom_fields: list[str] | None = None,
+        exclude_fields: list[str] | None = None,
+        action: str | None = None,
+        size_limit: int | None = None,
+        max_field_size: int | None = None,
+        conditional_rules: dict[str, callable] | None = None,
+        transformations: dict[str, callable] | None = None
+    ) -> dict[str, Any]:
         """
         Enhanced select_fields method with additional parameters from tests
 
@@ -1026,9 +1027,9 @@ class ContextFieldSelector:
 
     def _apply_field_size_limit(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         max_size: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Apply size limit to individual fields"""
         result = {}
         for key, value in data.items():

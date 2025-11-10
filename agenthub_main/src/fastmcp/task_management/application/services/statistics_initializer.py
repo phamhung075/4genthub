@@ -1,7 +1,6 @@
 """Statistics Initializer - Wires up event handlers on application startup"""
 
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +26,10 @@ class StatisticsInitializer:
 
         try:
             # Import here to avoid circular dependencies
-            from ..services.repository_provider_service import RepositoryProviderService
             from ..services.branch_statistics_integration_service import (
-                get_branch_statistics_integration_service
+                get_branch_statistics_integration_service,
             )
+            from ..services.repository_provider_service import RepositoryProviderService
 
             # Get repositories
             provider = RepositoryProviderService.get_instance()
@@ -51,7 +50,7 @@ class StatisticsInitializer:
             raise
 
     @classmethod
-    def recalculate_all_branches(cls, project_id: Optional[str] = None) -> dict:
+    def recalculate_all_branches(cls, project_id: str | None = None) -> dict:
         """
         Recalculate statistics for all branches.
         Useful for fixing inconsistencies or after bulk operations.
@@ -63,10 +62,10 @@ class StatisticsInitializer:
             Dictionary of branch statistics
         """
         try:
-            from ..services.repository_provider_service import RepositoryProviderService
             from ..services.branch_statistics_integration_service import (
-                get_branch_statistics_integration_service
+                get_branch_statistics_integration_service,
             )
+            from ..services.repository_provider_service import RepositoryProviderService
 
             # Get repositories
             provider = RepositoryProviderService.get_instance()

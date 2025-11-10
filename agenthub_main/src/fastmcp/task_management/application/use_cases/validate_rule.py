@@ -3,7 +3,8 @@
 DDD use case for validating rules and rule hierarchies.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 from ...domain.repositories.rule_repository import RuleRepository
 
 
@@ -13,7 +14,7 @@ class ValidateRuleUseCase:
     def __init__(self, rule_repository: RuleRepository):
         self._rule_repository = rule_repository
     
-    async def execute(self, rule_path: Optional[str] = None) -> Dict[str, Any]:
+    async def execute(self, rule_path: str | None = None) -> dict[str, Any]:
         """Validate a specific rule or all rules"""
         try:
             if rule_path:
@@ -29,7 +30,7 @@ class ValidateRuleUseCase:
                 "error": f"Failed to validate rules: {str(e)}"
             }
     
-    async def _validate_single_rule(self, rule_path: str) -> Dict[str, Any]:
+    async def _validate_single_rule(self, rule_path: str) -> dict[str, Any]:
         """Validate a single rule"""
         # Check if rule exists
         if not await self._rule_repository.rule_exists(rule_path):
@@ -78,7 +79,7 @@ class ValidateRuleUseCase:
             "validation_results": validation_results
         }
     
-    async def _validate_all_rules(self) -> Dict[str, Any]:
+    async def _validate_all_rules(self) -> dict[str, Any]:
         """Validate all rules in the repository"""
         integrity_results = await self._rule_repository.validate_rule_integrity()
         

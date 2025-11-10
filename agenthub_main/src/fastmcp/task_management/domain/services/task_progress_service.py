@@ -1,11 +1,11 @@
 """Task Progress Service - Domain Service for Task Progress Calculations"""
 
 import logging
-from typing import Dict, Any, List, Optional, Protocol
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any, Protocol
 
-from ..entities.task import Task
 from ..entities.subtask import Subtask
+from ..entities.task import Task
 from ..value_objects.task_id import TaskId
 from ..value_objects.task_status import TaskStatus
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class SubtaskRepositoryProtocol(Protocol):
     """Protocol for subtask repository to avoid infrastructure dependency."""
     
-    def find_by_parent_task_id(self, task_id: TaskId) -> List[Subtask]:
+    def find_by_parent_task_id(self, task_id: TaskId) -> list[Subtask]:
         """Find all subtasks for a given parent task."""
         pass
 
@@ -34,7 +34,7 @@ class TaskProgressService:
     - Generate progress summaries and reports
     """
     
-    def __init__(self, subtask_repository: Optional[SubtaskRepositoryProtocol] = None):
+    def __init__(self, subtask_repository: SubtaskRepositoryProtocol | None = None):
         """
         Initialize the task progress service.
         
@@ -43,7 +43,7 @@ class TaskProgressService:
         """
         self._subtask_repository = subtask_repository
     
-    def calculate_task_progress(self, task: Task) -> Dict[str, Any]:
+    def calculate_task_progress(self, task: Task) -> dict[str, Any]:
         """
         Calculate comprehensive progress information for a task.
         
@@ -109,7 +109,7 @@ class TaskProgressService:
             logger.error(f"Error calculating subtask completion percentage for task {task.id}: {e}")
             return 0.0
     
-    def get_subtask_summary(self, task: Task) -> Dict[str, Any]:
+    def get_subtask_summary(self, task: Task) -> dict[str, Any]:
         """
         Get a comprehensive summary of subtask completion status.
         
@@ -212,7 +212,7 @@ class TaskProgressService:
             logger.error(f"Error calculating progress score for task {task.id}: {e}")
             return 0.0
     
-    def _calculate_base_task_progress(self, task: Task) -> Dict[str, Any]:
+    def _calculate_base_task_progress(self, task: Task) -> dict[str, Any]:
         """Calculate progress based on task status alone."""
         status_value = self._get_status_progress_value(task.status)
         
@@ -224,14 +224,14 @@ class TaskProgressService:
             "is_blocked": self._is_status_blocked(task.status)
         }
     
-    def _calculate_subtask_progress(self, task: Task) -> Optional[Dict[str, Any]]:
+    def _calculate_subtask_progress(self, task: Task) -> dict[str, Any] | None:
         """Calculate progress based on subtasks."""
         if not self._subtask_repository:
             return None
         
         return self.get_subtask_summary(task)
     
-    def _calculate_overall_progress(self, base_progress: Dict[str, Any], subtask_progress: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _calculate_overall_progress(self, base_progress: dict[str, Any], subtask_progress: dict[str, Any] | None) -> dict[str, Any]:
         """Combine base task and subtask progress into overall progress."""
         base_percentage = base_progress["progress_percentage"]
         
@@ -255,7 +255,7 @@ class TaskProgressService:
             "calculation_method": "weighted_combination"
         }
     
-    def _can_complete_based_on_progress(self, overall_progress: Dict[str, Any], subtask_progress: Optional[Dict[str, Any]]) -> bool:
+    def _can_complete_based_on_progress(self, overall_progress: dict[str, Any], subtask_progress: dict[str, Any] | None) -> bool:
         """Determine if task can be completed based on progress rules."""
         # Rule 1: If there are subtasks, all must be completed
         if subtask_progress and subtask_progress["total"] > 0:
@@ -264,7 +264,7 @@ class TaskProgressService:
         # Rule 2: Task can be completed if progress is sufficient (configurable threshold)
         return overall_progress["percentage"] >= 0.0  # Allow completion at any progress level for now
     
-    def _identify_blocking_factors(self, task: Task, subtask_progress: Optional[Dict[str, Any]]) -> List[str]:
+    def _identify_blocking_factors(self, task: Task, subtask_progress: dict[str, Any] | None) -> list[str]:
         """Identify factors that prevent task completion."""
         blocking_factors = []
         
@@ -311,7 +311,7 @@ class TaskProgressService:
         status_str = str(status).lower()
         return status_str == 'blocked'
     
-    def _create_error_progress_response(self, task: Task, error_msg: str) -> Dict[str, Any]:
+    def _create_error_progress_response(self, task: Task, error_msg: str) -> dict[str, Any]:
         """Create error response for progress calculation failures."""
         return {
             "task_id": str(task.id),

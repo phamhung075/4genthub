@@ -9,17 +9,17 @@ Date: 2025-08-16
 Task: API Optimization - Implement Response Caching
 """
 
-import json
 import hashlib
-import asyncio
 import inspect
+import json
 import logging
+import os
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Union
-from datetime import timedelta
+from typing import Any
+
 import redis
 from redis.asyncio import Redis as AsyncRedis
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +29,8 @@ class RedisCacheManager:
     
     def __init__(
         self,
-        redis_url: Optional[str] = None,
-        redis_password: Optional[str] = None,
+        redis_url: str | None = None,
+        redis_password: str | None = None,
         default_ttl: int = 300,  # 5 minutes
         prefix: str = "api_cache"
     ):
@@ -47,8 +47,8 @@ class RedisCacheManager:
         self.redis_password = redis_password or os.getenv("REDIS_PASSWORD", "")
         self.default_ttl = default_ttl
         self.prefix = prefix
-        self._client: Optional[AsyncRedis] = None
-        self._sync_client: Optional[redis.Redis] = None
+        self._client: AsyncRedis | None = None
+        self._sync_client: redis.Redis | None = None
         
     async def get_client(self) -> AsyncRedis:
         """Get or create async Redis client"""
@@ -76,7 +76,7 @@ class RedisCacheManager:
             )
         return self._sync_client
     
-    def generate_cache_key(self, endpoint: str, params: Dict[str, Any]) -> str:
+    def generate_cache_key(self, endpoint: str, params: dict[str, Any]) -> str:
         """
         Generate cache key from endpoint and parameters
         
@@ -92,7 +92,7 @@ class RedisCacheManager:
         param_hash = hashlib.md5(sorted_params.encode()).hexdigest()
         return f"{self.prefix}:{endpoint}:{param_hash}"
     
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Get value from cache"""
         try:
             client = await self.get_client()
@@ -106,7 +106,7 @@ class RedisCacheManager:
             logger.warning(f"Cache GET error: {e}")
             return None
     
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """Set value in cache with TTL"""
         try:
             client = await self.get_client()
@@ -163,7 +163,7 @@ class RedisCacheManager:
 
 
 # Global cache manager instance
-_cache_manager: Optional[RedisCacheManager] = None
+_cache_manager: RedisCacheManager | None = None
 
 
 def get_cache_manager() -> RedisCacheManager:
@@ -175,9 +175,9 @@ def get_cache_manager() -> RedisCacheManager:
 
 
 def redis_cache(
-    ttl: Optional[int] = None,
-    key_prefix: Optional[str] = None,
-    invalidate_on: Optional[list] = None
+    ttl: int | None = None,
+    key_prefix: str | None = None,
+    invalidate_on: list | None = None
 ):
     """
     Decorator for caching API endpoint responses in Redis
@@ -274,7 +274,7 @@ class CacheInvalidator:
     """Handles cache invalidation on data changes"""
     
     @staticmethod
-    async def invalidate_task_cache(task_id: Optional[str] = None):
+    async def invalidate_task_cache(task_id: str | None = None):
         """Invalidate task-related cache entries"""
         cache_manager = get_cache_manager()
         
@@ -300,7 +300,7 @@ class CacheInvalidator:
         return total_deleted
     
     @staticmethod
-    async def invalidate_subtask_cache(parent_task_id: Optional[str] = None):
+    async def invalidate_subtask_cache(parent_task_id: str | None = None):
         """Invalidate subtask-related cache entries"""
         cache_manager = get_cache_manager()
         
@@ -321,7 +321,7 @@ class CacheInvalidator:
         return total_deleted
     
     @staticmethod
-    async def invalidate_context_cache(context_id: Optional[str] = None):
+    async def invalidate_context_cache(context_id: str | None = None):
         """Invalidate context-related cache entries"""
         cache_manager = get_cache_manager()
         
@@ -362,7 +362,7 @@ class CacheMetrics:
         return (self.hits / total) * 100
     
     @property
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Get cache statistics"""
         return {
             "hits": self.hits,

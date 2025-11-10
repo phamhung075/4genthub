@@ -1,14 +1,9 @@
 """List Tasks Use Case"""
 
 import logging
-from typing import List
 
-from ...application.dtos.task import (
-    ListTasksRequest,
-    TaskListResponse
-)
-
-from ...domain import TaskRepository, TaskStatus, Priority
+from ...application.dtos.task import ListTasksRequest, TaskListResponse
+from ...domain import Priority, TaskRepository, TaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +17,7 @@ class ListTasksUseCase:
     
     def execute(self, request: ListTasksRequest) -> TaskListResponse:
         """Execute the list tasks use case"""
-        logger.debug(f"[USE_CASE] ListTasksUseCase.execute called")
+        logger.debug("[USE_CASE] ListTasksUseCase.execute called")
         logger.debug(f"[USE_CASE] Request git_branch_id: {request.git_branch_id}")
         logger.debug(f"[USE_CASE] Request status: {request.status}")
         logger.debug(f"[USE_CASE] Request priority: {request.priority}")
@@ -51,7 +46,7 @@ class ListTasksUseCase:
             filters['git_branch_id'] = request.git_branch_id
             logger.debug(f"[USE_CASE] Added git_branch_id to filters: {request.git_branch_id}")
         else:
-            logger.debug(f"[USE_CASE] No git_branch_id in request, not filtering by branch")
+            logger.debug("[USE_CASE] No git_branch_id in request, not filtering by branch")
         
         logger.debug(f"[USE_CASE] Final filters being passed to repository: {filters}")
         

@@ -8,12 +8,12 @@ It offers context managers and transaction support using SQLAlchemy sessions.
 import logging
 import threading
 import time
-from typing import Optional, Dict, Any, ContextManager
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
+from dataclasses import dataclass
+from typing import Any, ContextManager
+
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from .database_config import get_db_config
 
@@ -190,7 +190,7 @@ class SQLAlchemySessionManager:
         with self.get_session() as session:
             return query_func(session, *args, **kwargs)
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get session usage statistics"""
         with self._stats_lock:
             stats_dict = {
@@ -221,7 +221,7 @@ class SQLAlchemySessionManager:
 
 
 # Global session manager instance
-_session_manager: Optional[SQLAlchemySessionManager] = None
+_session_manager: SQLAlchemySessionManager | None = None
 _manager_lock = threading.Lock()
 
 

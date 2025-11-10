@@ -1,8 +1,10 @@
 """Agent Repository Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any
+
 from ..entities.agent import Agent
+
 
 class AgentRepository(ABC):
     """
@@ -16,27 +18,27 @@ class AgentRepository(ABC):
         pass
     
     @abstractmethod
-    def unregister_agent(self, project_id: str, agent_id: str) -> Dict[str, Any]:
+    def unregister_agent(self, project_id: str, agent_id: str) -> dict[str, Any]:
         """Unregister an agent from a project"""
         pass
     
     @abstractmethod
-    def assign_agent_to_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
+    def assign_agent_to_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
         """Assign an agent to a task tree"""
         pass
     
     @abstractmethod
-    def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str = None) -> Dict[str, Any]:
+    def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str = None) -> dict[str, Any]:
         """Unassign an agent from task tree(s)"""
         pass
     
     @abstractmethod
-    def get_agent(self, project_id: str, agent_id: str) -> Dict[str, Any]:
+    def get_agent(self, project_id: str, agent_id: str) -> dict[str, Any]:
         """Get agent details"""
         pass
     
     @abstractmethod
-    def list_agents(self, project_id: str) -> Dict[str, Any]:
+    def list_agents(self, project_id: str) -> dict[str, Any]:
         """List all agents in a project"""
         pass
     
@@ -46,6 +48,6 @@ class AgentRepository(ABC):
         pass
     
     @abstractmethod
-    def rebalance_agents(self, project_id: str) -> Dict[str, Any]:
+    def rebalance_agents(self, project_id: str) -> dict[str, Any]:
         """Rebalance agent assignments across task trees"""
         pass

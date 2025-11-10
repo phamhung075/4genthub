@@ -4,25 +4,23 @@ Application service for project lifecycle and multi-agent coordination.
 Now uses SQLite database instead of JSON files for better data integrity and performance.
 """
 
-import os
-import json
 import logging
-from typing import Optional, Dict, Any
-from datetime import datetime
-from pathlib import Path
+from typing import Any
 
-from ...infrastructure.utilities.path_resolver import PathResolver
+from ...domain.repositories.project_repository import ProjectRepository
+from ...infrastructure.repositories.project_repository_factory import (
+    GlobalRepositoryManager,
+)
+from ..use_cases.cleanup_obsolete_use_case import CleanupObsoleteUseCase
 from ..use_cases.create_project import CreateProjectUseCase
 from ..use_cases.get_project import GetProjectUseCase
 from ..use_cases.list_projects import ListProjectsUseCase
-from ..use_cases.update_project import UpdateProjectUseCase
+
 # from ..use_cases.delete_project import DeleteProjectUseCase  # Not used, commented out
 from ..use_cases.project_health_check import ProjectHealthCheckUseCase
-from ..use_cases.cleanup_obsolete_use_case import CleanupObsoleteUseCase
-from ..use_cases.validate_integrity_use_case import ValidateIntegrityUseCase
 from ..use_cases.rebalance_agents_use_case import RebalanceAgentsUseCase
-from ...domain.repositories.project_repository import ProjectRepository
-from ...infrastructure.repositories.project_repository_factory import GlobalRepositoryManager
+from ..use_cases.update_project import UpdateProjectUseCase
+from ..use_cases.validate_integrity_use_case import ValidateIntegrityUseCase
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +28,7 @@ logger = logging.getLogger(__name__)
 class ProjectManagementService:
     """Application service for project lifecycle and multi-agent coordination using SQLite database"""
     
-    def __init__(self, project_repo: Optional[ProjectRepository] = None, user_id: Optional[str] = None):
+    def __init__(self, project_repo: ProjectRepository | None = None, user_id: str | None = None):
         """
         Initialize ProjectManagementService with SQLite repository
         
@@ -75,7 +73,7 @@ class ProjectManagementService:
         """Create a new service instance scoped to a specific user."""
         return ProjectManagementService(self._project_repo, user_id)
     
-    async def create_project(self, name: str, description: str = "") -> Dict[str, Any]:
+    async def create_project(self, name: str, description: str = "") -> dict[str, Any]:
         """Create a new project with auto-generated UUID"""
         try:
             logger.info(f"🔵 create_project called - name: {name}, user_id: {self._user_id}")
@@ -94,8 +92,10 @@ class ProjectManagementService:
             if result.get("success") and self._user_id:
                 logger.info(f"🔵 Entering broadcast block - user_id: {self._user_id}")
                 try:
-                    from .websocket_notification_service import WebSocketNotificationService
                     from ...domain.websocket_protocol import ProjectCreatePayload
+                    from .websocket_notification_service import (
+                        WebSocketNotificationService,
+                    )
 
                     raw_project_data = result.get("project", {})
 
@@ -137,7 +137,7 @@ class ProjectManagementService:
             logger.error(f"Failed to create project: {e}")
             return {"success": False, "error": str(e)}
     
-    async def get_project(self, project_id: str) -> Dict[str, Any]:
+    async def get_project(self, project_id: str) -> dict[str, Any]:
         """Get project details by UUID"""
         try:
             user_scoped_repo = self._get_user_scoped_repository()
@@ -147,7 +147,7 @@ class ProjectManagementService:
             logger.error(f"Failed to get project {project_id}: {e}")
             return {"success": False, "error": str(e)}
     
-    async def get_project_by_name(self, name: str) -> Dict[str, Any]:
+    async def get_project_by_name(self, name: str) -> dict[str, Any]:
         """Get project details by name"""
         try:
             # Use user-scoped repository for all operations
@@ -163,7 +163,7 @@ class ProjectManagementService:
             logger.error(f"Failed to get project by name '{name}': {e}")
             return {"success": False, "error": str(e)}
     
-    async def list_projects(self, include_branches: bool = True) -> Dict[str, Any]:
+    async def list_projects(self, include_branches: bool = True) -> dict[str, Any]:
         """
         List all projects
         
@@ -179,7 +179,7 @@ class ProjectManagementService:
             logger.error(f"Failed to list projects: {e}")
             return {"success": False, "error": str(e)}
     
-    async def update_project(self, project_id: str, name: str = None, description: str = None) -> Dict[str, Any]:
+    async def update_project(self, project_id: str, name: str = None, description: str = None) -> dict[str, Any]:
         """Update an existing project"""
         try:
             user_scoped_repo = self._get_user_scoped_repository()
@@ -189,8 +189,10 @@ class ProjectManagementService:
             # CRITICAL FIX: Ensure WebSocket broadcast for updates
             if result.get("success") and self._user_id:
                 try:
-                    from .websocket_notification_service import WebSocketNotificationService
                     from ...domain.websocket_protocol import ProjectUpdatePayload
+                    from .websocket_notification_service import (
+                        WebSocketNotificationService,
+                    )
 
                     raw_project_data = result.get("project", {})
 
@@ -224,7 +226,7 @@ class ProjectManagementService:
             logger.error(f"Failed to update project {project_id}: {e}")
             return {"success": False, "error": str(e)}
     
-    async def project_health_check(self, project_id: str = None) -> Dict[str, Any]:
+    async def project_health_check(self, project_id: str = None) -> dict[str, Any]:
         """Perform health check on project(s)"""
         try:
             user_scoped_repo = self._get_user_scoped_repository()
@@ -234,7 +236,7 @@ class ProjectManagementService:
             logger.error(f"Failed to perform health check: {e}")
             return {"success": False, "error": str(e)}
     
-    async def cleanup_obsolete(self, project_id: str = None) -> Dict[str, Any]:
+    async def cleanup_obsolete(self, project_id: str = None) -> dict[str, Any]:
         """Clean up obsolete project data"""
         try:
             user_scoped_repo = self._get_user_scoped_repository()
@@ -245,7 +247,7 @@ class ProjectManagementService:
             return {"success": False, "error": str(e)}
 
     
-    async def validate_integrity(self, project_id: str = None) -> Dict[str, Any]:
+    async def validate_integrity(self, project_id: str = None) -> dict[str, Any]:
         """Validate integrity of project data"""
         try:
             user_scoped_repo = self._get_user_scoped_repository()
@@ -256,7 +258,7 @@ class ProjectManagementService:
             return {"success": False, "error": str(e)}
 
     
-    async def rebalance_agents(self, project_id: str = None) -> Dict[str, Any]:
+    async def rebalance_agents(self, project_id: str = None) -> dict[str, Any]:
         """Rebalance agent assignments across task trees"""
         try:
             user_scoped_repo = self._get_user_scoped_repository()
@@ -266,7 +268,7 @@ class ProjectManagementService:
             logger.error(f"Failed to rebalance agents: {e}")
             return {"success": False, "error": str(e)}
     
-    async def delete_project(self, project_id: str, force: bool = False) -> Dict[str, Any]:
+    async def delete_project(self, project_id: str, force: bool = False) -> dict[str, Any]:
         """
         Delete a project with cascade deletion of all related data.
         Only allow deletion if project has only 'main' branch with 0 tasks (unless force=True).
@@ -288,7 +290,9 @@ class ProjectManagementService:
             # Validate deletion safety if not forced
             if not force:
                 # Get branches for this project using RepositoryFactory
-                from ...infrastructure.repositories.repository_factory import RepositoryFactory
+                from ...infrastructure.repositories.repository_factory import (
+                    RepositoryFactory,
+                )
 
                 # Create repository with user_id using factory pattern
                 git_branch_repo = RepositoryFactory.get_git_branch_repository(user_id=self._user_id)
@@ -328,8 +332,10 @@ class ProjectManagementService:
                         
                         # Check if main branch has any tasks
                         # Query task count for the branch
+                        from ...infrastructure.database.database_config import (
+                            get_session,
+                        )
                         from ...infrastructure.database.models import Task
-                        from ...infrastructure.database.database_config import get_session
                         branch_id = main_branch.id if hasattr(main_branch, 'id') else main_branch.get("id")
                         
                         # Get a database session to query tasks
@@ -355,7 +361,9 @@ class ProjectManagementService:
             logger.info(f"[DEBUG] Starting deletion process for project {project_id}")
 
             # Get branches using RepositoryFactory
-            from ...infrastructure.repositories.repository_factory import RepositoryFactory
+            from ...infrastructure.repositories.repository_factory import (
+                RepositoryFactory,
+            )
 
             # Create repository with user_id using factory pattern
             git_branch_repo = RepositoryFactory.get_git_branch_repository(user_id=self._user_id)
@@ -394,8 +402,10 @@ class ProjectManagementService:
                 # This prevents "missing ID" bugs by enforcing required fields
                 try:
                     logger.info(f"🔵 [DELETE] About to call sync_broadcast_project_event - project_id: {project_id}, user_id: {self._user_id}")
-                    from ..services.websocket_notification_service import WebSocketNotificationService
                     from ...domain.websocket_protocol import ProjectDeletePayload
+                    from ..services.websocket_notification_service import (
+                        WebSocketNotificationService,
+                    )
 
                     # ✅ NEW: Type-safe payload construction with Pydantic validation
                     # Pydantic will raise ValidationError if required fields are missing
@@ -427,7 +437,7 @@ class ProjectManagementService:
                     "project_id": project_id
                 }
             elif deleted and verify_project is not None:
-                logger.error(f"[DEBUG] Delete returned True but project still exists in database!")
+                logger.error("[DEBUG] Delete returned True but project still exists in database!")
                 return {"success": False, "error": f"Failed to delete project {project_id} - project still exists after deletion"}
             else:
                 logger.error(f"[DEBUG] Repository delete returned False for project {project_id}")

@@ -1,18 +1,14 @@
 """Get Task Use Case"""
 
-import logging
-import asyncio
 import inspect
-from typing import Optional, Union, Any
-from datetime import datetime, timezone
+import logging
+from typing import Any
 
-from ...application.dtos.task import TaskResponse
 from ...application.dtos.context import GetContextRequest
-
-from ...domain import TaskRepository, TaskId
-from ...domain.exceptions.task_exceptions import TaskNotFoundError
+from ...application.dtos.task import TaskResponse
+from ...domain import TaskId, TaskRepository
 from ...domain.events import TaskRetrieved
-from ...domain.interfaces.utility_service import IAgentDocGenerator
+from ...domain.exceptions.task_exceptions import TaskNotFoundError
 from ...infrastructure.services.agent_doc_generator import generate_docs_for_assignees
 
 logger = logging.getLogger(__name__)
@@ -21,7 +17,7 @@ logger = logging.getLogger(__name__)
 class GetTaskUseCase:
     """Use case for retrieving a task by ID with optional context data"""
     
-    def __init__(self, task_repository: TaskRepository, context_service: Optional[Any] = None, git_branch_repository=None):
+    def __init__(self, task_repository: TaskRepository, context_service: Any | None = None, git_branch_repository=None):
         """
         Initialize the GetTaskUseCase with required dependencies.
 
@@ -35,7 +31,7 @@ class GetTaskUseCase:
         self._git_branch_repository = git_branch_repository
     
     async def execute(self, task_id: str, generate_rules: bool = True, force_full_generation: bool = False,
-                     include_context: bool = False) -> Optional[TaskResponse]:
+                     include_context: bool = False) -> TaskResponse | None:
         """
         Execute the get task use case following clean relationship chain.
         

@@ -5,8 +5,8 @@ component instances and their dependencies.
 """
 
 import logging
-from typing import Any, Dict, Optional, Type, TypeVar, Callable, Union
-from pathlib import Path
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from .event_bus import EventBus, get_event_bus
 from .event_store import EventStore, get_event_store
@@ -26,12 +26,12 @@ class DIContainer:
     
     def __init__(self):
         """Initialize the DI container."""
-        self._instances: Dict[Union[str, Type], Any] = {}
-        self._factories: Dict[Union[str, Type], Callable] = {}
-        self._config: Dict[str, Any] = {}
+        self._instances: dict[str | type, Any] = {}
+        self._factories: dict[str | type, Callable] = {}
+        self._config: dict[str, Any] = {}
         self._initialized: bool = False
     
-    def register_singleton(self, key: Union[str, Type[T]], instance: T) -> None:
+    def register_singleton(self, key: str | type[T], instance: T) -> None:
         """
         Register a singleton instance.
         
@@ -42,7 +42,7 @@ class DIContainer:
         self._instances[key] = instance
         logger.debug(f"Registered singleton for {key}")
     
-    def register_factory(self, key: Union[str, Type[T]], factory: Callable[[], T]) -> None:
+    def register_factory(self, key: str | type[T], factory: Callable[[], T]) -> None:
         """
         Register a factory function for a service.
         
@@ -56,7 +56,7 @@ class DIContainer:
             del self._instances[key]
         logger.debug(f"Registered factory for {key}")
     
-    def register_instance(self, service_type: Type[T], instance: T) -> None:
+    def register_instance(self, service_type: type[T], instance: T) -> None:
         """
         Register a specific instance for a service type (backward compatibility).
         
@@ -66,7 +66,7 @@ class DIContainer:
         """
         self.register_singleton(service_type, instance)
     
-    def get(self, key: Union[str, Type[T]]) -> Optional[T]:
+    def get(self, key: str | type[T]) -> T | None:
         """
         Get an instance of a service.
         
@@ -90,7 +90,7 @@ class DIContainer:
         
         return None
     
-    def has(self, key: Union[str, Type]) -> bool:
+    def has(self, key: str | type) -> bool:
         """
         Check if a service is registered.
         
@@ -102,7 +102,7 @@ class DIContainer:
         """
         return key in self._instances or key in self._factories
     
-    def remove(self, key: Union[str, Type]) -> None:
+    def remove(self, key: str | type) -> None:
         """
         Remove a service registration.
         
@@ -120,7 +120,7 @@ class DIContainer:
         self._factories.clear()
         self._initialized = False
     
-    def get_all_services(self) -> Dict[Union[str, Type], Any]:
+    def get_all_services(self) -> dict[str | type, Any]:
         """
         Get all registered service instances.
         
@@ -136,7 +136,7 @@ class DIContainer:
                 all_services[key] = instance
         return all_services
     
-    def get_optional(self, service_type: Type[T]) -> Optional[T]:
+    def get_optional(self, service_type: type[T]) -> T | None:
         """
         Get an optional instance of a service.
         
@@ -148,7 +148,7 @@ class DIContainer:
         """
         return self.get(service_type)
     
-    def configure(self, config: Dict[str, Any]) -> None:
+    def configure(self, config: dict[str, Any]) -> None:
         """
         Configure the container with settings.
         
@@ -170,7 +170,7 @@ class DIContainer:
         """Convenience method to get EventBus instance."""
         return self.get("event_bus")
     
-    async def get_event_store(self) -> Optional[EventStore]:
+    async def get_event_store(self) -> EventStore | None:
         """Convenience method to get EventStore instance."""
         return self.get("event_store")
     
@@ -179,8 +179,8 @@ class DIContainer:
         return self.get("notification_service")
     
     async def initialize_infrastructure(self, 
-                                        event_store_path: Optional[str] = None,
-                                        notification_channels: Optional[list] = None) -> None:
+                                        event_store_path: str | None = None,
+                                        notification_channels: list | None = None) -> None:
         """
         Initialize all infrastructure components with configuration.
         
@@ -244,7 +244,7 @@ class DIContainer:
 
 
 # Global DI container instance
-_global_container: Optional[DIContainer] = None
+_global_container: DIContainer | None = None
 
 
 def get_container() -> DIContainer:
@@ -279,8 +279,8 @@ def get_infrastructure_notification_service() -> NotificationService:
     return get_container().get_notification_service()
 
 
-def initialize_infrastructure(event_store_path: Optional[str] = None,
-                             notification_channels: Optional[list] = None) -> DIContainer:
+def initialize_infrastructure(event_store_path: str | None = None,
+                             notification_channels: list | None = None) -> DIContainer:
     """
     Initialize infrastructure with default configuration.
     

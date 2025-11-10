@@ -5,13 +5,27 @@ Coordinates requirement analysis, task generation, and plan optimization.
 """
 
 import uuid
-from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime, timezone
+from typing import Any
 
-from ...domain.entities.planning_request import PlanningRequest, RequirementItem, PlanningContext, ComplexityLevel
-from ...domain.entities.task_plan import TaskPlan, PlannedTask, TaskType, ExecutionPhase, AgentAssignment
-from ...domain.services.requirement_analyzer import RequirementAnalyzer, AnalyzedRequirement
-from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+from fastmcp.task_management.application.facades.task_application_facade import (
+    TaskApplicationFacade,
+)
+
+from ...domain.entities.planning_request import (
+    PlanningRequest,
+)
+from ...domain.entities.task_plan import (
+    AgentAssignment,
+    ExecutionPhase,
+    PlannedTask,
+    TaskPlan,
+    TaskType,
+)
+from ...domain.services.requirement_analyzer import (
+    AnalyzedRequirement,
+    RequirementAnalyzer,
+)
+
 
 class AITaskPlanningService:
     """
@@ -21,7 +35,7 @@ class AITaskPlanningService:
     with intelligent agent assignments and dependency management.
     """
     
-    def __init__(self, task_facade: Optional[TaskApplicationFacade] = None):
+    def __init__(self, task_facade: TaskApplicationFacade | None = None):
         self.requirement_analyzer = RequirementAnalyzer()
         self.task_facade = task_facade
         
@@ -138,7 +152,7 @@ class AITaskPlanningService:
 
         return plan
     
-    async def _generate_tasks_from_requirements(self, plan: TaskPlan, analyzed_requirements: List[AnalyzedRequirement], 
+    async def _generate_tasks_from_requirements(self, plan: TaskPlan, analyzed_requirements: list[AnalyzedRequirement], 
                                               planning_request: PlanningRequest):
         """Generate tasks from analyzed requirements"""
         
@@ -243,7 +257,7 @@ class AITaskPlanningService:
                 plan.agent_workload[best_agent] = plan.agent_workload.get(best_agent, 0) + task.estimated_hours
                 plan.required_agents.add(best_agent)
     
-    async def _find_optimal_agent(self, task: PlannedTask, plan: TaskPlan) -> Optional[str]:
+    async def _find_optimal_agent(self, task: PlannedTask, plan: TaskPlan) -> str | None:
         """Find the optimal agent for a specific task"""
         
         # Score each agent based on capabilities and current workload
@@ -279,7 +293,7 @@ class AITaskPlanningService:
         
         return 'coding-agent'  # Default fallback
     
-    async def _generate_intelligent_dependencies(self, plan: TaskPlan, analyzed_requirements: List[AnalyzedRequirement]):
+    async def _generate_intelligent_dependencies(self, plan: TaskPlan, analyzed_requirements: list[AnalyzedRequirement]):
         """Generate intelligent dependencies based on task relationships"""
         
         # Phase-based dependencies
@@ -363,7 +377,7 @@ class AITaskPlanningService:
 
         return False
     
-    async def _fix_plan_issues(self, plan: TaskPlan, validation_errors: List[str]):
+    async def _fix_plan_issues(self, plan: TaskPlan, validation_errors: list[str]):
         """Attempt to fix common plan validation issues"""
         
         for error in validation_errors:
@@ -378,8 +392,8 @@ class AITaskPlanningService:
                 for task in unassigned:
                     task.agent_assignment = AgentAssignment('coding-agent')  # Default assignment
     
-    def _calculate_confidence_score(self, plan: TaskPlan, analyzed_requirements: List[AnalyzedRequirement], 
-                                   insights: Dict[str, Any]) -> float:
+    def _calculate_confidence_score(self, plan: TaskPlan, analyzed_requirements: list[AnalyzedRequirement], 
+                                   insights: dict[str, Any]) -> float:
         """Calculate confidence score for the generated plan"""
         
         confidence_factors = []
@@ -466,7 +480,7 @@ class AITaskPlanningService:
         else:
             return 'medium'
     
-    async def execute_plan_with_mcp(self, plan: TaskPlan, git_branch_id: str) -> Dict[str, Any]:
+    async def execute_plan_with_mcp(self, plan: TaskPlan, git_branch_id: str) -> dict[str, Any]:
         """
         Execute the task plan by creating MCP tasks.
         

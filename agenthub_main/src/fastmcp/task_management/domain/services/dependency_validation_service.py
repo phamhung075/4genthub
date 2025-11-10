@@ -1,13 +1,13 @@
 """Dependency Chain Validation Service"""
 
 import logging
-from typing import List, Dict, Any, Optional, Set, Tuple
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
+from ....utilities.id_validator import IDValidator
 from ..entities.task import Task
-from ..value_objects.task_id import TaskId
 from ..repositories.task_repository import TaskRepository
-from ....utilities.id_validator import IDValidator, IDValidationError
+from ..value_objects.task_id import TaskId
 
 logger = logging.getLogger(__name__)
 
@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 class DependencyValidationService:
     """Service for validating dependency chains and detecting issues"""
 
-    def __init__(self, task_repository: TaskRepository, id_validator: Optional[IDValidator] = None):
+    def __init__(self, task_repository: TaskRepository, id_validator: IDValidator | None = None):
         self._task_repository = task_repository
         self._id_validator = id_validator or IDValidator()
     
-    def validate_dependency_chain(self, task_id: TaskId) -> Dict[str, Any]:
+    def validate_dependency_chain(self, task_id: TaskId) -> dict[str, Any]:
         """
         Validate the entire dependency chain for a task.
 
@@ -104,7 +104,7 @@ class DependencyValidationService:
                 "issues": issues,
                 "errors": errors,
                 "can_proceed": self._can_task_proceed(task, task_map),
-                "validation_timestamp": datetime.now(timezone.utc).isoformat()
+                "validation_timestamp": datetime.now(UTC).isoformat()
             }
             
         except Exception as e:
@@ -115,7 +115,7 @@ class DependencyValidationService:
                 "issues": []
             }
     
-    def _validate_single_dependency(self, task: Task, dependency_id: str, task_map: Dict[str, Task]) -> List[Dict[str, Any]]:
+    def _validate_single_dependency(self, task: Task, dependency_id: str, task_map: dict[str, Task]) -> list[dict[str, Any]]:
         """
         Validate a single dependency relationship.
         
@@ -178,7 +178,7 @@ class DependencyValidationService:
         
         return issues
     
-    def _find_dependency_across_states(self, dependency_id: str) -> Optional[Task]:
+    def _find_dependency_across_states(self, dependency_id: str) -> Task | None:
         """
         Find a dependency task across all states (active, completed, archived).
 
@@ -207,7 +207,7 @@ class DependencyValidationService:
 
         return None
     
-    def _check_circular_dependencies(self, task: Task, all_tasks: List[Task]) -> Optional[List[str]]:
+    def _check_circular_dependencies(self, task: Task, all_tasks: list[Task]) -> list[str] | None:
         """
         Check for circular dependencies in the task chain.
         
@@ -223,7 +223,7 @@ class DependencyValidationService:
             path = []
             task_map = {str(t.id): t for t in all_tasks}
             
-            def dfs(current_task_id: str) -> Optional[List[str]]:
+            def dfs(current_task_id: str) -> list[str] | None:
                 if current_task_id in visited:
                     # Found a cycle - return the cycle path
                     cycle_start = path.index(current_task_id)
@@ -249,7 +249,7 @@ class DependencyValidationService:
             logger.error(f"Error checking circular dependencies: {e}")
             return None
     
-    def _check_orphaned_dependencies(self, task: Task, task_map: Dict[str, Task]) -> List[str]:
+    def _check_orphaned_dependencies(self, task: Task, task_map: dict[str, Task]) -> list[str]:
         """
         Check for dependencies that no longer exist.
         
@@ -271,7 +271,7 @@ class DependencyValidationService:
         
         return orphaned
     
-    def _can_task_proceed(self, task: Task, task_map: Dict[str, Task]) -> bool:
+    def _can_task_proceed(self, task: Task, task_map: dict[str, Task]) -> bool:
         """
         Check if a task can proceed based on its dependencies.
         
@@ -310,7 +310,7 @@ class DependencyValidationService:
         
         return True
     
-    def get_dependency_chain_status(self, task_id: TaskId) -> Dict[str, Any]:
+    def get_dependency_chain_status(self, task_id: TaskId) -> dict[str, Any]:
         """
         Get detailed status of the entire dependency chain for a task.
         
@@ -351,7 +351,7 @@ class DependencyValidationService:
                     "completion_percentage": (completed_deps / total_deps * 100) if total_deps > 0 else 100
                 },
                 "can_proceed": self._can_task_proceed(task, task_map),
-                "analysis_timestamp": datetime.now(timezone.utc).isoformat()
+                "analysis_timestamp": datetime.now(UTC).isoformat()
             }
             
         except Exception as e:
@@ -359,7 +359,7 @@ class DependencyValidationService:
             return {"error": f"Analysis failed: {str(e)}"}
     
 
-    def _get_dependency_info(self, dependency_id: str, task_map: Dict[str, Task]) -> Dict[str, Any]:
+    def _get_dependency_info(self, dependency_id: str, task_map: dict[str, Task]) -> dict[str, Any]:
         """
         Get detailed information about a single dependency.
 

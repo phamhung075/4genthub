@@ -1,6 +1,7 @@
 """Update Project Use Case"""
 
-from typing import Dict, Any, Optional
+from typing import Any
+
 from ...domain.repositories.project_repository import ProjectRepository
 
 
@@ -10,7 +11,7 @@ class UpdateProjectUseCase:
     def __init__(self, project_repository: ProjectRepository):
         self._project_repository = project_repository
     
-    async def execute(self, project_id: str, name: Optional[str] = None, description: Optional[str] = None) -> Dict[str, Any]:
+    async def execute(self, project_id: str, name: str | None = None, description: str | None = None) -> dict[str, Any]:
         """Execute the update project use case"""
         
         project = await self._project_repository.find_by_id(project_id)
@@ -45,7 +46,9 @@ class UpdateProjectUseCase:
 
         # Broadcast WebSocket notification for real-time frontend updates
         try:
-            from ..services.websocket_notification_service import WebSocketNotificationService
+            from ..services.websocket_notification_service import (
+                WebSocketNotificationService,
+            )
 
             # Get user_id for WebSocket broadcast
             user_id = None

@@ -3,7 +3,6 @@ DTO for subtask creation requests.
 """
 
 from dataclasses import dataclass
-from typing import Optional, List
 
 
 @dataclass
@@ -12,10 +11,10 @@ class CreateSubtaskRequest:
     
     task_id: str
     title: str
-    description: Optional[str] = None
-    status: Optional[str] = "todo"
-    priority: Optional[str] = "medium"
-    assignees: Optional[List[str]] = None
+    description: str | None = None
+    status: str | None = "todo"
+    priority: str | None = "medium"
+    assignees: list[str] | None = None
     
     def validate(self) -> None:
         """Validate the request data."""

@@ -6,10 +6,10 @@ resolution overhead in the hierarchical context system.
 """
 
 import json
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
-from ...infrastructure.logging import TaskManagementLogger, log_operation
+from ...infrastructure.logging import TaskManagementLogger
 
 logger = TaskManagementLogger.get_logger(__name__)
 
@@ -21,7 +21,7 @@ class ContextCacheService:
     invalidation to optimize performance of hierarchical context resolution.
     """
     
-    def __init__(self, repository=None, default_ttl_hours: int = 1, user_id: Optional[str] = None):
+    def __init__(self, repository=None, default_ttl_hours: int = 1, user_id: str | None = None):
         """Initialize cache service"""
         self.repository = repository  # Will be injected
         self.default_ttl_hours = default_ttl_hours
@@ -49,11 +49,11 @@ class ContextCacheService:
     # SYNC WRAPPER METHODS FOR FACADE COMPATIBILITY
     # ===============================================
     
-    async def get(self, level: str, context_id: str) -> Optional[Dict[str, Any]]:
+    async def get(self, level: str, context_id: str) -> dict[str, Any] | None:
         """Simple async get method for cache compatibility"""
         return await self.get_cached_context(level, context_id)
     
-    def get_context(self, level: str, context_id: str) -> Optional[Dict[str, Any]]:
+    def get_context(self, level: str, context_id: str) -> dict[str, Any] | None:
         """Sync wrapper for get_cached_context"""
         try:
             import asyncio
@@ -74,7 +74,7 @@ class ContextCacheService:
             logger.warning(f"Error in sync cache get for {level}:{context_id}: {e}")
             return None
     
-    def set_context(self, level: str, context_id: str, context: Dict[str, Any]) -> None:
+    def set_context(self, level: str, context_id: str, context: dict[str, Any]) -> None:
         """Sync wrapper for cache_resolved_context"""
         try:
             import asyncio
@@ -155,7 +155,7 @@ class ContextCacheService:
     # CACHE RETRIEVAL
     # ===============================================
     
-    async def get_cached_context(self, level: str, context_id: str) -> Optional[Dict[str, Any]]:
+    async def get_cached_context(self, level: str, context_id: str) -> dict[str, Any] | None:
         """
         Get cached resolved context if available and valid.
         
@@ -187,18 +187,18 @@ class ContextCacheService:
                     # Parse ISO string - ensure timezone aware
                     expire_time = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
                     if expire_time.tzinfo is None:
-                        expire_time = expire_time.replace(tzinfo=timezone.utc)
+                        expire_time = expire_time.replace(tzinfo=UTC)
                 else:
                     # Already a datetime object from SQLAlchemy
                     expire_time = expires_at
                     # Ensure it's timezone-aware (SQLAlchemy DateTime fields are timezone-naive by default)
                     if expire_time.tzinfo is None:
-                        expire_time = expire_time.replace(tzinfo=timezone.utc)
+                        expire_time = expire_time.replace(tzinfo=UTC)
                 
                 # Ensure comparison times are both timezone-aware
-                current_time = datetime.now(timezone.utc)
+                current_time = datetime.now(UTC)
                 if expire_time.tzinfo is None:
-                    expire_time = expire_time.replace(tzinfo=timezone.utc)
+                    expire_time = expire_time.replace(tzinfo=UTC)
                 
                 if current_time > expire_time:
                     logger.debug(f"Cache entry expired for {level}:{context_id}")
@@ -220,7 +220,7 @@ class ContextCacheService:
         try:
             await self.repository.update_cache_stats(level, context_id, {
                 "hit_count": "hit_count + 1",  # SQL increment
-                "last_hit": datetime.now(timezone.utc).isoformat()
+                "last_hit": datetime.now(UTC).isoformat()
             })
         except Exception as e:
             logger.warning(f"Error updating cache stats: {e}")
@@ -230,10 +230,10 @@ class ContextCacheService:
     # ===============================================
     
     async def cache_resolved_context(self, level: str, context_id: str,
-                                   resolved_context: Dict[str, Any],
+                                   resolved_context: dict[str, Any],
                                    dependencies_hash: str,
-                                   resolution_path: List[str],
-                                   ttl_hours: Optional[int] = None) -> bool:
+                                   resolution_path: list[str],
+                                   ttl_hours: int | None = None) -> bool:
         """
         Cache a resolved context with dependency tracking.
         
@@ -250,7 +250,7 @@ class ContextCacheService:
         """
         try:
             ttl = ttl_hours or self.default_ttl_hours
-            expires_at = datetime.now(timezone.utc) + timedelta(hours=ttl)
+            expires_at = datetime.now(UTC) + timedelta(hours=ttl)
             
             # Calculate cache entry size
             cache_data = json.dumps(resolved_context, default=str)
@@ -262,10 +262,10 @@ class ContextCacheService:
                 "resolved_context": resolved_context,
                 "dependencies_hash": dependencies_hash,
                 "resolution_path": json.dumps(resolution_path),
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "expires_at": expires_at.isoformat(),
                 "hit_count": 0,
-                "last_hit": datetime.now(timezone.utc).isoformat(),
+                "last_hit": datetime.now(UTC).isoformat(),
                 "cache_size_bytes": cache_size,
                 "invalidated": False,
                 "invalidation_reason": None
@@ -307,7 +307,7 @@ class ContextCacheService:
             return False
     
     async def invalidate_dependent_caches(self, level: str, context_id: str,
-                                        reason: str = "dependency_changed") -> List[str]:
+                                        reason: str = "dependency_changed") -> list[str]:
         """
         Invalidate all caches that depend on the specified context.
         
@@ -352,10 +352,10 @@ class ContextCacheService:
     # CACHE MAINTENANCE
     # ===============================================
     
-    async def cleanup_expired(self) -> Dict[str, Any]:
+    async def cleanup_expired(self) -> dict[str, Any]:
         """Clean up expired cache entries"""
         try:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             
             # Get expired entries
             expired_entries = await self.repository.get_expired_cache_entries(now)
@@ -393,7 +393,7 @@ class ContextCacheService:
                 "size_freed_bytes": 0
             }
     
-    async def cleanup_invalidated(self) -> Dict[str, Any]:
+    async def cleanup_invalidated(self) -> dict[str, Any]:
         """Clean up invalidated cache entries"""
         try:
             # Get invalidated entries
@@ -415,7 +415,7 @@ class ContextCacheService:
                 "success": True,
                 "removed_count": removed_count,
                 "size_freed_bytes": total_size_freed,
-                "cleaned_at": datetime.now(timezone.utc).isoformat()
+                "cleaned_at": datetime.now(UTC).isoformat()
             }
             
             if removed_count > 0:
@@ -432,7 +432,7 @@ class ContextCacheService:
                 "size_freed_bytes": 0
             }
     
-    async def clear_all_cache(self) -> Dict[str, Any]:
+    async def clear_all_cache(self) -> dict[str, Any]:
         """Clear all cache entries (use with caution)"""
         try:
             removed_count = await self.repository.clear_all_cache_entries()
@@ -440,7 +440,7 @@ class ContextCacheService:
             result = {
                 "success": True,
                 "removed_count": removed_count,
-                "cleared_at": datetime.now(timezone.utc).isoformat()
+                "cleared_at": datetime.now(UTC).isoformat()
             }
             
             logger.warning(f"Cleared all cache entries: {removed_count} entries removed")
@@ -458,7 +458,7 @@ class ContextCacheService:
     # CACHE STATISTICS AND MONITORING
     # ===============================================
     
-    async def get_cache_stats(self) -> Dict[str, Any]:
+    async def get_cache_stats(self) -> dict[str, Any]:
         """Get comprehensive cache statistics"""
         try:
             stats = await self.repository.get_cache_statistics()
@@ -488,7 +488,7 @@ class ContextCacheService:
                     "invalidated_entries": stats.get("invalidated_count", 0),
                     "cache_pressure": "high" if total_entries > 1000 else "medium" if total_entries > 100 else "low"
                 },
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             }
             
             return enhanced_stats
@@ -497,10 +497,10 @@ class ContextCacheService:
             logger.error(f"Error getting cache stats: {e}")
             return {
                 "error": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             }
     
-    async def get_top_cached_contexts(self, limit: int = 10) -> List[Dict[str, Any]]:
+    async def get_top_cached_contexts(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get most frequently accessed cached contexts"""
         try:
             top_contexts = await self.repository.get_top_hit_cache_entries(limit)
@@ -525,11 +525,11 @@ class ContextCacheService:
     # CACHE OPTIMIZATION
     # ===============================================
     
-    async def optimize_cache(self) -> Dict[str, Any]:
+    async def optimize_cache(self) -> dict[str, Any]:
         """Optimize cache by removing low-value entries"""
         try:
             optimization_result = {
-                "optimization_started": datetime.now(timezone.utc).isoformat(),
+                "optimization_started": datetime.now(UTC).isoformat(),
                 "actions_taken": [],
                 "space_freed_bytes": 0,
                 "entries_removed": 0
@@ -569,7 +569,7 @@ class ContextCacheService:
                     optimization_result["actions_taken"].append(f"removed_{removed_low_hit}_low_hit_entries")
                     optimization_result["entries_removed"] += removed_low_hit
             
-            optimization_result["optimization_completed"] = datetime.now(timezone.utc).isoformat()
+            optimization_result["optimization_completed"] = datetime.now(UTC).isoformat()
             optimization_result["success"] = True
             
             logger.info(f"Cache optimization completed: {optimization_result}")
@@ -580,7 +580,7 @@ class ContextCacheService:
             return {
                 "success": False,
                 "error": str(e),
-                "optimization_started": datetime.now(timezone.utc).isoformat()
+                "optimization_started": datetime.now(UTC).isoformat()
             }
     
     # ===============================================
@@ -603,7 +603,7 @@ class ContextCacheService:
         except Exception as e:
             logger.warning(f"Error removing invalidated cache entry: {e}")
     
-    async def warm_cache(self, contexts_to_warm: List[Dict[str, str]]) -> Dict[str, Any]:
+    async def warm_cache(self, contexts_to_warm: list[dict[str, str]]) -> dict[str, Any]:
         """Warm cache with frequently accessed contexts"""
         try:
             warmed_count = 0
@@ -637,7 +637,7 @@ class ContextCacheService:
                 "warmed_count": 0
             }
     
-    def get_cache_health(self) -> Dict[str, Any]:
+    def get_cache_health(self) -> dict[str, Any]:
         """
         Get cache health metrics.
         

@@ -1,6 +1,8 @@
 """Project Health Check Use Case"""
 
-from typing import Dict, Any, Optional
+from datetime import UTC
+from typing import Any
+
 from ...domain.repositories.project_repository import ProjectRepository
 
 
@@ -10,7 +12,7 @@ class ProjectHealthCheckUseCase:
     def __init__(self, project_repository: ProjectRepository):
         self._project_repository = project_repository
     
-    async def execute(self, project_id: Optional[str] = None) -> Dict[str, Any]:
+    async def execute(self, project_id: str | None = None) -> dict[str, Any]:
         """Execute the project health check use case"""
         
         if project_id:
@@ -53,9 +55,9 @@ class ProjectHealthCheckUseCase:
                 "message": "Health check completed for all projects"
             }
     
-    def _check_project_health(self, project) -> Dict[str, Any]:
+    def _check_project_health(self, project) -> dict[str, Any]:
         """Check health of a single project"""
-        from datetime import datetime, timezone
+        from datetime import datetime
         
         issues = []
         warnings = []
@@ -99,14 +101,14 @@ class ProjectHealthCheckUseCase:
             "status": status,
             "issues": issues,
             "warnings": warnings,
-            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "checked_at": datetime.now(UTC).isoformat(),
             "registered_agents_count": len(project.registered_agents),
             "active_assignments": len(project.agent_assignments),
             "active_sessions": len(project.active_work_sessions),
             "cross_tree_dependencies": sum(len(deps) for deps in project.cross_tree_dependencies.values())
         }
     
-    def _has_circular_dependencies(self, dependencies: Dict[str, set]) -> bool:
+    def _has_circular_dependencies(self, dependencies: dict[str, set]) -> bool:
         """Check for circular dependencies using DFS"""
         visited = set()
         rec_stack = set()

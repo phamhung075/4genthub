@@ -5,16 +5,16 @@ Handles communication with Supabase for token verification, user authentication,
 and security logging.
 """
 
-import os
-import logging
 import hashlib
+import logging
+import os
 import secrets
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any
-import httpx
 import ssl
-from pydantic import BaseModel
+from datetime import UTC, datetime
+from typing import Any
 
+import httpx
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +24,10 @@ class TokenInfo(BaseModel):
     token_hash: str
     user_id: str
     created_at: datetime
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     is_active: bool = True
     usage_count: int = 0
-    last_used: Optional[datetime] = None
+    last_used: datetime | None = None
 
 
 class SupabaseTokenClient:
@@ -56,7 +56,7 @@ class SupabaseTokenClient:
             else:
                 logger.info("Supabase token client initialized")
     
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         """Get headers for Supabase API requests."""
         return {
             "apikey": self.api_key,
@@ -82,7 +82,7 @@ class SupabaseTokenClient:
             # For cloud Supabase, use default SSL verification
             return httpx.AsyncClient()
     
-    async def validate_token(self, token: str) -> Optional[TokenInfo]:
+    async def validate_token(self, token: str) -> TokenInfo | None:
         """
         Validate a token against Supabase database.
         
@@ -127,7 +127,7 @@ class SupabaseTokenClient:
                 # Check expiration
                 if token_data.get("expires_at"):
                     expires_at = datetime.fromisoformat(token_data["expires_at"].replace("Z", "+00:00"))
-                    if expires_at < datetime.now(timezone.utc):
+                    if expires_at < datetime.now(UTC):
                         logger.debug("Token has expired")
                         return None
                 
@@ -160,7 +160,7 @@ class SupabaseTokenClient:
                     headers=self._get_headers(),
                     params={"token_hash": f"eq.{token_hash}"},
                     json={
-                        "last_used": datetime.now(timezone.utc).isoformat(),
+                        "last_used": datetime.now(UTC).isoformat(),
                         "usage_count": "usage_count + 1"  # PostgreSQL expression
                     }
                 )
@@ -198,7 +198,7 @@ class SupabaseTokenClient:
             logger.error(f"Error revoking token: {e}")
             return False
     
-    async def log_security_event(self, event_type: str, token_hash: str, details: Dict[str, Any]) -> None:
+    async def log_security_event(self, event_type: str, token_hash: str, details: dict[str, Any]) -> None:
         """
         Log security events to Supabase.
         
@@ -220,7 +220,7 @@ class SupabaseTokenClient:
                         "event_type": event_type,
                         "token_hash": token_hash,
                         "details": details,
-                        "timestamp": datetime.now(timezone.utc).isoformat()
+                        "timestamp": datetime.now(UTC).isoformat()
                     }
                 )
         except Exception as e:

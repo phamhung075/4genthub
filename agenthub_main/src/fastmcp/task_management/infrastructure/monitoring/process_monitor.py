@@ -4,16 +4,17 @@ Infrastructure component for monitoring and managing system processes with timeo
 """
 
 import logging
-import time
-import threading
-import subprocess
-import signal
 import os
+import signal
+import subprocess
+import threading
+import time
 import uuid
-from typing import Dict, Any, Optional
 
 # Removed compliance_enums import - simplified
 from enum import Enum
+from typing import Any
+
 
 class ProcessStatus(Enum):
     """Simplified process status"""
@@ -31,8 +32,8 @@ class ProcessMonitor:
     
     def __init__(self, default_timeout: int = 20):
         self.default_timeout = default_timeout
-        self._active_processes: Dict[str, ProcessInfo] = {}
-        self._monitoring_thread: Optional[threading.Thread] = None
+        self._active_processes: dict[str, ProcessInfo] = {}
+        self._monitoring_thread: threading.Thread | None = None
         self._monitoring_active = False
         self._lock = threading.Lock()
         
@@ -53,7 +54,7 @@ class ProcessMonitor:
                 self._monitoring_thread.join(timeout=5)
                 logger.info("Process monitoring stopped")
     
-    def execute_with_timeout(self, command: str, timeout: Optional[int] = None) -> Dict[str, Any]:
+    def execute_with_timeout(self, command: str, timeout: int | None = None) -> dict[str, Any]:
         """Execute command with timeout protection"""
         timeout = timeout or self.default_timeout
         process_id = str(uuid.uuid4())
@@ -154,12 +155,12 @@ class ProcessMonitor:
             # Clean up process record after delay
             threading.Timer(60.0, lambda: self._remove_process(process_id)).start()
     
-    def get_active_processes(self) -> Dict[str, ProcessInfo]:
+    def get_active_processes(self) -> dict[str, ProcessInfo]:
         """Get currently active processes"""
         with self._lock:
             return self._active_processes.copy()
     
-    def get_process_info(self, process_id: str) -> Optional[ProcessInfo]:
+    def get_process_info(self, process_id: str) -> ProcessInfo | None:
         """Get information about a specific process"""
         with self._lock:
             return self._active_processes.get(process_id)

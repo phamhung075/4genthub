@@ -6,11 +6,9 @@ and sets the user context for MCP operations when using HTTP transport.
 """
 
 import logging
-from typing import Optional
-from contextvars import ContextVar
 
-from .jwt_auth_backend import JWTAuthBackend, MCPUserContext, create_jwt_auth_backend
 from ..middleware.request_context_middleware import current_user_context
+from .jwt_auth_backend import JWTAuthBackend, create_jwt_auth_backend
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +21,7 @@ class MCPAuthMiddleware:
     and integrates with the existing user context system.
     """
     
-    def __init__(self, app, jwt_backend: Optional[JWTAuthBackend] = None):
+    def __init__(self, app, jwt_backend: JWTAuthBackend | None = None):
         """
         Initialize the middleware.
         
@@ -98,7 +96,7 @@ class MCPAuthMiddleware:
             current_user_context.reset(token_value)
 
 
-def get_mcp_auth_middleware(app, jwt_backend: Optional[JWTAuthBackend] = None):
+def get_mcp_auth_middleware(app, jwt_backend: JWTAuthBackend | None = None):
     """
     Factory function to create MCPAuthMiddleware.
     

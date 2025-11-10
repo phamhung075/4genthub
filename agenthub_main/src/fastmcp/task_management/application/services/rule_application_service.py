@@ -3,13 +3,17 @@
 DDD application service for rule management operations.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any
+
 from fastmcp.task_management.application.use_cases.create_rule import CreateRuleUseCase
+from fastmcp.task_management.application.use_cases.delete_rule import DeleteRuleUseCase
 from fastmcp.task_management.application.use_cases.get_rule import GetRuleUseCase
 from fastmcp.task_management.application.use_cases.list_rules import ListRulesUseCase
 from fastmcp.task_management.application.use_cases.update_rule import UpdateRuleUseCase
-from fastmcp.task_management.application.use_cases.delete_rule import DeleteRuleUseCase
-from fastmcp.task_management.application.use_cases.validate_rule import ValidateRuleUseCase
+from fastmcp.task_management.application.use_cases.validate_rule import (
+    ValidateRuleUseCase,
+)
+
 from ...domain.repositories.rule_repository import RuleRepository
 from ...domain.value_objects import RuleFormat, RuleType
 
@@ -17,7 +21,7 @@ from ...domain.value_objects import RuleFormat, RuleType
 class RuleApplicationService:
     """Application service for rule management operations"""
     
-    def __init__(self, rule_repository: RuleRepository, user_id: Optional[str] = None):
+    def __init__(self, rule_repository: RuleRepository, user_id: str | None = None):
         self._rule_repository = rule_repository
         self._user_id = user_id  # Store user context
         
@@ -53,8 +57,8 @@ class RuleApplicationService:
         content: str,
         rule_type: RuleType,
         rule_format: RuleFormat,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        metadata: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Create a new rule"""
         return await self._create_rule_use_case.execute(
             rule_path=rule_path,
@@ -64,24 +68,24 @@ class RuleApplicationService:
             metadata=metadata
         )
     
-    async def get_rule(self, rule_path: str) -> Dict[str, Any]:
+    async def get_rule(self, rule_path: str) -> dict[str, Any]:
         """Get a rule by path"""
         return await self._get_rule_use_case.execute(rule_path)
     
     async def list_rules(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         metadata_only: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """List rules with optional filters"""
         return await self._list_rules_use_case.execute(filters, metadata_only)
     
     async def update_rule(
         self,
         rule_path: str,
-        content: Optional[str] = None,
-        metadata_updates: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        content: str | None = None,
+        metadata_updates: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Update an existing rule"""
         return await self._update_rule_use_case.execute(
             rule_path=rule_path,
@@ -89,15 +93,15 @@ class RuleApplicationService:
             metadata_updates=metadata_updates
         )
     
-    async def delete_rule(self, rule_path: str, force: bool = False) -> Dict[str, Any]:
+    async def delete_rule(self, rule_path: str, force: bool = False) -> dict[str, Any]:
         """Delete a rule"""
         return await self._delete_rule_use_case.execute(rule_path, force)
     
-    async def validate_rule(self, rule_path: Optional[str] = None) -> Dict[str, Any]:
+    async def validate_rule(self, rule_path: str | None = None) -> dict[str, Any]:
         """Validate a rule or all rules"""
         return await self._validate_rule_use_case.execute(rule_path)
     
-    async def backup_rules(self, backup_path: str) -> Dict[str, Any]:
+    async def backup_rules(self, backup_path: str) -> dict[str, Any]:
         """Backup all rules"""
         try:
             repo = self._get_user_scoped_repository(self._rule_repository)
@@ -119,7 +123,7 @@ class RuleApplicationService:
                 "error": f"Failed to backup rules: {str(e)}"
             }
     
-    async def restore_rules(self, backup_path: str) -> Dict[str, Any]:
+    async def restore_rules(self, backup_path: str) -> dict[str, Any]:
         """Restore rules from backup"""
         try:
             repo = self._get_user_scoped_repository(self._rule_repository)
@@ -141,7 +145,7 @@ class RuleApplicationService:
                 "error": f"Failed to restore rules: {str(e)}"
             }
     
-    async def cleanup_obsolete_rules(self) -> Dict[str, Any]:
+    async def cleanup_obsolete_rules(self) -> dict[str, Any]:
         """Clean up obsolete rules"""
         try:
             repo = self._get_user_scoped_repository(self._rule_repository)
@@ -157,7 +161,7 @@ class RuleApplicationService:
                 "error": f"Failed to cleanup obsolete rules: {str(e)}"
             }
     
-    async def get_rule_statistics(self) -> Dict[str, Any]:
+    async def get_rule_statistics(self) -> dict[str, Any]:
         """Get statistics about rules"""
         try:
             repo = self._get_user_scoped_repository(self._rule_repository)
@@ -172,7 +176,7 @@ class RuleApplicationService:
                 "error": f"Failed to get rule statistics: {str(e)}"
             }
     
-    async def get_rule_dependencies(self, rule_path: str) -> Dict[str, Any]:
+    async def get_rule_dependencies(self, rule_path: str) -> dict[str, Any]:
         """Get dependencies for a rule"""
         try:
             repo = self._get_user_scoped_repository(self._rule_repository)
@@ -188,7 +192,7 @@ class RuleApplicationService:
                 "error": f"Failed to get rule dependencies: {str(e)}"
             }
     
-    async def get_dependent_rules(self, rule_path: str) -> Dict[str, Any]:
+    async def get_dependent_rules(self, rule_path: str) -> dict[str, Any]:
         """Get rules that depend on the specified rule"""
         try:
             repo = self._get_user_scoped_repository(self._rule_repository)
@@ -204,7 +208,7 @@ class RuleApplicationService:
                 "error": f"Failed to get dependent rules: {str(e)}"
             }
     
-    async def get_rules_by_type(self, rule_type: str) -> Dict[str, Any]:
+    async def get_rules_by_type(self, rule_type: str) -> dict[str, Any]:
         """Get rules by type"""
         try:
             repo = self._get_user_scoped_repository(self._rule_repository)
@@ -229,7 +233,7 @@ class RuleApplicationService:
                 "error": f"Failed to get rules by type: {str(e)}"
             }
     
-    async def get_rules_by_tag(self, tag: str) -> Dict[str, Any]:
+    async def get_rules_by_tag(self, tag: str) -> dict[str, Any]:
         """Get rules by tag"""
         try:
             repo = self._get_user_scoped_repository(self._rule_repository)

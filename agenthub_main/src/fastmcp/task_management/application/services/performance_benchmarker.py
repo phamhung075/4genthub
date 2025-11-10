@@ -4,17 +4,14 @@ This module provides comprehensive performance benchmarking and measurement
 for the MCP response optimization system.
 """
 
-import logging
-import time
-import statistics
-import json
-import sys
-import asyncio
 import csv
 import io
-import random
+import json
+import logging
+import statistics
+import sys
+import time
 import tracemalloc
-import concurrent.futures
 
 # Try to import psutil, but don't fail if not available
 try:
@@ -22,11 +19,12 @@ try:
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
-from typing import Dict, List, Any, Optional, Callable, Tuple, Union
-from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from collections.abc import Callable
 from contextlib import contextmanager
+from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -48,20 +46,20 @@ class BenchmarkResult:
     min_time: float
     max_time: float
     std_dev: float
-    all_times: List[float] = field(default_factory=list)
-    category: Optional[BenchmarkCategory] = None
-    execution_time_ms: Optional[float] = None
-    memory_usage_mb: Optional[float] = None
-    input_size_bytes: Optional[int] = None
-    output_size_bytes: Optional[int] = None
-    success: Optional[bool] = True
-    error_message: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    all_times: list[float] = field(default_factory=list)
+    category: BenchmarkCategory | None = None
+    execution_time_ms: float | None = None
+    memory_usage_mb: float | None = None
+    input_size_bytes: int | None = None
+    output_size_bytes: int | None = None
+    success: bool | None = True
+    error_message: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     is_async: bool = False
     cached: bool = False
-    peak_memory: Optional[float] = None
-    memory_delta: Optional[float] = None
-    confidence_interval: Optional[Tuple[float, float]] = None
+    peak_memory: float | None = None
+    memory_delta: float | None = None
+    confidence_interval: tuple[float, float] | None = None
     
     @property
     def compression_ratio(self) -> float:
@@ -83,11 +81,11 @@ class BenchmarkSuite:
     """Complete benchmark suite results"""
     name: str = ""
     description: str = ""
-    suite_name: Optional[str] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    results: List[BenchmarkResult] = field(default_factory=list)
-    benchmarks: List[Dict[str, Any]] = field(default_factory=list)
+    suite_name: str | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    results: list[BenchmarkResult] = field(default_factory=list)
+    benchmarks: list[dict[str, Any]] = field(default_factory=list)
 
     def __post_init__(self):
         """Initialize after dataclass creation"""
@@ -104,8 +102,8 @@ class BenchmarkSuite:
         self,
         name: str,
         func: Callable,
-        args: Tuple = (),
-        kwargs: Optional[Dict] = None
+        args: tuple = (),
+        kwargs: dict | None = None
     ) -> None:
         """Add a benchmark to the suite"""
         self.benchmarks.append({
@@ -115,7 +113,7 @@ class BenchmarkSuite:
             'kwargs': kwargs or {}
         })
     
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get summary statistics"""
         if not self.results:
             return {"error": "No results available"}
@@ -159,8 +157,8 @@ class PerformanceTarget:
     """Performance target configuration"""
     name: str
     max_time: float
-    max_memory: Optional[float] = None
-    percentile_targets: Dict[int, float] = field(default_factory=dict)
+    max_memory: float | None = None
+    percentile_targets: dict[int, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -168,7 +166,7 @@ class BenchmarkComparison:
     """Comparison between two benchmark results"""
     speedup: float
     winner: str
-    statistical_significance: Optional[float] = None
+    statistical_significance: float | None = None
 
 
 class PerformanceBenchmarker:
@@ -178,10 +176,10 @@ class PerformanceBenchmarker:
         """Initialize benchmarker"""
         self.warmup_runs = warmup_runs
         self.benchmark_runs = benchmark_runs
-        self.results: List[BenchmarkResult] = []
-        self.current_suite: Optional[BenchmarkSuite] = None
-        self.completed_suites: List[BenchmarkSuite] = []
-        self._cache: Dict[str, BenchmarkResult] = {}
+        self.results: list[BenchmarkResult] = []
+        self.current_suite: BenchmarkSuite | None = None
+        self.completed_suites: list[BenchmarkSuite] = []
+        self._cache: dict[str, BenchmarkResult] = {}
         
     def start_suite(self, name: str) -> BenchmarkSuite:
         """Start a new benchmark suite"""
@@ -191,7 +189,7 @@ class PerformanceBenchmarker:
         )
         return self.current_suite
     
-    def complete_suite(self) -> Optional[BenchmarkSuite]:
+    def complete_suite(self) -> BenchmarkSuite | None:
         """Complete current benchmark suite"""
         if self.current_suite:
             self.current_suite.completed_at = datetime.now()
@@ -264,8 +262,8 @@ class PerformanceBenchmarker:
     def benchmark_response_optimization(
         self,
         optimizer: Any,
-        test_responses: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        test_responses: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Benchmark response optimization performance"""
         results = {}
         
@@ -298,11 +296,15 @@ class PerformanceBenchmarker:
         self,
         field_selector: Any,
         template_manager: Any,
-        test_contexts: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        test_contexts: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Benchmark context field selection performance"""
-        from fastmcp.task_management.application.services.context_field_selector import FieldSet
-        from fastmcp.task_management.application.services.context_template_manager import OperationType
+        from fastmcp.task_management.application.services.context_field_selector import (
+            FieldSet,
+        )
+        from fastmcp.task_management.application.services.context_template_manager import (
+            OperationType,
+        )
         
         # Test different field sets
         field_sets = [FieldSet.MINIMAL, FieldSet.SUMMARY, FieldSet.DETAIL]
@@ -343,8 +345,8 @@ class PerformanceBenchmarker:
     def benchmark_cache_performance(
         self,
         cache_optimizer: Any,
-        test_data: List[Tuple[str, Any]]
-    ) -> Dict[str, Any]:
+        test_data: list[tuple[str, Any]]
+    ) -> dict[str, Any]:
         """Benchmark cache performance"""
         
         # Warm up cache
@@ -399,8 +401,8 @@ class PerformanceBenchmarker:
         self,
         optimizer: Any,
         template_manager: Any,
-        test_scenarios: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        test_scenarios: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Benchmark complete end-to-end optimization pipeline"""
         
         for i, scenario in enumerate(test_scenarios):
@@ -413,7 +415,9 @@ class PerformanceBenchmarker:
                 # Step 1: Get template for operation
                 operation = scenario.get('operation', 'task.get')
                 try:
-                    from fastmcp.task_management.application.services.context_template_manager import OperationType
+                    from fastmcp.task_management.application.services.context_template_manager import (
+                        OperationType,
+                    )
                     op_enum = OperationType(operation)
                     template = template_manager.get_template(op_enum)
                 except:
@@ -457,7 +461,7 @@ class PerformanceBenchmarker:
         
         return self._get_category_summary(BenchmarkCategory.END_TO_END)
     
-    def _get_category_summary(self, category: BenchmarkCategory) -> Dict[str, Any]:
+    def _get_category_summary(self, category: BenchmarkCategory) -> dict[str, Any]:
         """Get summary for specific category"""
         if not self.current_suite:
             return {"error": "No active benchmark suite"}
@@ -499,8 +503,8 @@ class PerformanceBenchmarker:
     
     def generate_report(
         self,
-        suite: Optional[BenchmarkSuite] = None
-    ) -> Dict[str, Any]:
+        suite: BenchmarkSuite | None = None
+    ) -> dict[str, Any]:
         """Generate comprehensive benchmark report"""
         target_suite = suite or self.current_suite
         
@@ -524,7 +528,7 @@ class PerformanceBenchmarker:
         
         return report
     
-    def _compare_with_baseline(self) -> Dict[str, Any]:
+    def _compare_with_baseline(self) -> dict[str, Any]:
         """Compare current results with baseline performance"""
         # Define baseline metrics (before optimization)
         baseline = {
@@ -566,7 +570,7 @@ class PerformanceBenchmarker:
     def _generate_recommendations(
         self,
         suite: BenchmarkSuite
-    ) -> List[str]:
+    ) -> list[str]:
         """Generate optimization recommendations based on results"""
         recommendations = []
         
@@ -618,15 +622,15 @@ class PerformanceBenchmarker:
 
     def benchmark(
         self,
-        func: Optional[Callable] = None,
-        args: Tuple = (),
-        kwargs: Optional[Dict] = None,
-        name: Optional[str] = None,
-        setup: Optional[Callable] = None,
-        teardown: Optional[Callable] = None,
-        cache_key: Optional[str] = None,
+        func: Callable | None = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
+        name: str | None = None,
+        setup: Callable | None = None,
+        teardown: Callable | None = None,
+        cache_key: str | None = None,
         use_cache: bool = False,
-        profile_type: Optional[str] = None
+        profile_type: str | None = None
     ) -> BenchmarkResult:
         """Benchmark a function with warmup and multiple runs"""
         if kwargs is None:
@@ -694,9 +698,9 @@ class PerformanceBenchmarker:
     async def benchmark_async(
         self,
         func: Callable,
-        args: Tuple = (),
-        kwargs: Optional[Dict] = None,
-        name: Optional[str] = None
+        args: tuple = (),
+        kwargs: dict | None = None,
+        name: str | None = None
     ) -> BenchmarkResult:
         """Benchmark an async function"""
         if kwargs is None:
@@ -731,7 +735,7 @@ class PerformanceBenchmarker:
         self.results.append(result)
         return result
 
-    def run_suite(self, suite: BenchmarkSuite) -> List[BenchmarkResult]:
+    def run_suite(self, suite: BenchmarkSuite) -> list[BenchmarkResult]:
         """Run a benchmark suite"""
         results = []
         for benchmark_info in suite.benchmarks:
@@ -747,9 +751,9 @@ class PerformanceBenchmarker:
     def benchmark_memory(
         self,
         func: Callable,
-        args: Tuple = (),
-        kwargs: Optional[Dict] = None,
-        name: Optional[str] = None
+        args: tuple = (),
+        kwargs: dict | None = None,
+        name: str | None = None
     ) -> BenchmarkResult:
         """Benchmark memory usage of a function"""
         if kwargs is None:
@@ -863,10 +867,10 @@ class PerformanceBenchmarker:
     def profile(
         self,
         func: Callable,
-        args: Tuple = (),
-        kwargs: Optional[Dict] = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
         profile_type: str = "line"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Profile a function execution"""
         if kwargs is None:
             kwargs = {}
@@ -908,7 +912,7 @@ class PerformanceBenchmarker:
     def detect_regression(
         self,
         current: BenchmarkResult,
-        historical: List[BenchmarkResult],
+        historical: list[BenchmarkResult],
         threshold: float = 0.1
     ) -> bool:
         """Detect performance regression"""
@@ -927,7 +931,7 @@ class PerformanceBenchmarker:
     def calculate_regression_severity(
         self,
         current: BenchmarkResult,
-        historical: List[BenchmarkResult]
+        historical: list[BenchmarkResult]
     ) -> float:
         """Calculate severity of regression (0-1 scale)"""
         if not historical:
@@ -1004,11 +1008,11 @@ class PerformanceBenchmarker:
             self.results.append(result)
             context.result_stored = True
 
-    def get_results(self, name: str) -> List[BenchmarkResult]:
+    def get_results(self, name: str) -> list[BenchmarkResult]:
         """Get results by name"""
         return [r for r in self.results if r.name == name]
 
-    def analyze_statistics(self, result: BenchmarkResult) -> Dict[str, Any]:
+    def analyze_statistics(self, result: BenchmarkResult) -> dict[str, Any]:
         """Analyze statistical properties of a benchmark result"""
         if not result.all_times:
             return {}
@@ -1055,8 +1059,8 @@ class PerformanceBenchmarker:
         min_runs: int = 10,
         max_runs: int = 1000,
         confidence_level: float = 0.95,
-        args: Tuple = (),
-        kwargs: Optional[Dict] = None
+        args: tuple = (),
+        kwargs: dict | None = None
     ) -> BenchmarkResult:
         """Adaptive benchmarking that adjusts runs based on variance"""
         if kwargs is None:
@@ -1110,10 +1114,10 @@ class PerformanceBenchmarker:
 
     def generate_report(
         self,
-        suite: Optional[BenchmarkSuite] = None,
+        suite: BenchmarkSuite | None = None,
         include_charts: bool = False,
         include_recommendations: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate comprehensive benchmark report"""
         report = {
             "summary": {
@@ -1148,7 +1152,7 @@ class PerformanceBenchmarker:
 
         return report
 
-    def _generate_recommendations_for_report(self) -> List[str]:
+    def _generate_recommendations_for_report(self) -> list[str]:
         """Generate recommendations based on all results"""
         if not self.results:
             return ["No results to analyze"]

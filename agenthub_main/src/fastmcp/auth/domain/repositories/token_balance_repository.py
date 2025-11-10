@@ -5,15 +5,14 @@ following the Repository pattern in Domain-Driven Design.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any
-from datetime import datetime
+from typing import Any
 
 
 class ITokenBalanceRepository(ABC):
     """Repository interface for UserTokenBalance aggregate"""
 
     @abstractmethod
-    async def get_balance(self, user_id: str) -> Optional[Dict[str, Any]]:
+    async def get_balance(self, user_id: str) -> dict[str, Any] | None:
         """
         Get token balance for a user
 
@@ -34,7 +33,7 @@ class ITokenBalanceRepository(ABC):
         user_id: str,
         initial_tokens: int = 10000,
         monthly_quota: int = 10000
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create new token balance for a user
 
@@ -108,7 +107,7 @@ class ITokenBalanceRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_usage_stats(self, user_id: str) -> Optional[Dict[str, Any]]:
+    async def get_usage_stats(self, user_id: str) -> dict[str, Any] | None:
         """
         Get detailed usage statistics for a user
 

@@ -3,8 +3,8 @@
 DDD use case for listing rules with filtering and pagination.
 """
 
-from typing import Dict, Any, Optional, List
-from ...domain.entities.rule_entity import RuleContent
+from typing import Any
+
 from ...domain.repositories.rule_repository import RuleRepository
 
 
@@ -16,9 +16,9 @@ class ListRulesUseCase:
     
     async def execute(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         metadata_only: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """List rules with optional filters"""
         try:
             if metadata_only:

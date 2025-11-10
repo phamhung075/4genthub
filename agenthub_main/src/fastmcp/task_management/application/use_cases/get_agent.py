@@ -2,9 +2,10 @@
 
 import logging
 from dataclasses import dataclass
+
 from ...application.dtos.agent import AgentResponse
-from ...domain.repositories.agent_repository import AgentRepository
 from ...domain.exceptions import AgentNotFoundError, ProjectNotFoundError
+from ...domain.repositories.agent_repository import AgentRepository
 
 logger = logging.getLogger(__name__)
 

@@ -1,12 +1,11 @@
 """Agent Domain Entity"""
 
-from typing import Any, Dict, List, Optional, Set
-from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
-from .base.base_timestamp_entity import BaseTimestampEntity
 from ..value_objects.agent_id import AgentId
+from .base.base_timestamp_entity import BaseTimestampEntity
 
 
 class AgentStatus(Enum):
@@ -55,10 +54,10 @@ class Agent(BaseTimestampEntity):
             raise ValueError("Agent must have a name")
 
     # Agent capabilities and preferences
-    capabilities: Set[AgentCapability] = field(default_factory=set)
-    specializations: List[str] = field(default_factory=list)  # More specific specializations
-    preferred_languages: List[str] = field(default_factory=list)  # Programming languages
-    preferred_frameworks: List[str] = field(default_factory=list)  # Frameworks/tools
+    capabilities: set[AgentCapability] = field(default_factory=set)
+    specializations: list[str] = field(default_factory=list)  # More specific specializations
+    preferred_languages: list[str] = field(default_factory=list)  # Programming languages
+    preferred_frameworks: list[str] = field(default_factory=list)  # Frameworks/tools
     
     # Agent status and availability
     status: AgentStatus = AgentStatus.AVAILABLE
@@ -66,19 +65,19 @@ class Agent(BaseTimestampEntity):
     current_workload: int = 0
     
     # Work preferences and constraints
-    work_hours: Optional[Dict[str, str]] = None  # {"start": "09:00", "end": "17:00"}
+    work_hours: dict[str, str] | None = None  # {"start": "09:00", "end": "17:00"}
     timezone: str = "UTC"
     priority_preference: str = "high"  # Prefers high, medium, or low priority tasks
     
     # Performance metrics
     completed_tasks: int = 0
-    average_task_duration: Optional[float] = None  # Hours
+    average_task_duration: float | None = None  # Hours
     success_rate: float = 100.0  # Percentage
     
     # Current assignments
-    assigned_projects: Set[str] = field(default_factory=set)
-    assigned_trees: Set[str] = field(default_factory=set)
-    active_tasks: Set[str] = field(default_factory=set)
+    assigned_projects: set[str] = field(default_factory=set)
+    assigned_trees: set[str] = field(default_factory=set)
+    active_tasks: set[str] = field(default_factory=set)
     
     def __post_init__(self):
         """Initialize entity - timestamps handled by BaseTimestampEntity"""
@@ -105,7 +104,7 @@ class Agent(BaseTimestampEntity):
         """Check if agent has a specific capability"""
         return capability in self.capabilities
     
-    def can_handle_task(self, task_requirements: Dict) -> bool:
+    def can_handle_task(self, task_requirements: dict) -> bool:
         """Check if agent can handle a task based on requirements"""
         # Check capabilities
         required_capabilities = task_requirements.get("capabilities", [])
@@ -224,7 +223,7 @@ class Agent(BaseTimestampEntity):
             return 100.0
         return (self.current_workload / self.max_concurrent_tasks) * 100.0
     
-    def get_agent_profile(self) -> Dict:
+    def get_agent_profile(self) -> dict:
         """Get comprehensive agent profile"""
         return {
             "id": str(self.id) if self.id else "",
@@ -260,7 +259,7 @@ class Agent(BaseTimestampEntity):
             "updated_at": self.updated_at.isoformat()
         }
     
-    def calculate_task_suitability_score(self, task_requirements: Dict) -> float:
+    def calculate_task_suitability_score(self, task_requirements: dict) -> float:
         """Calculate how suitable this agent is for a specific task (0-100)"""
         if not self.can_handle_task(task_requirements):
             return 0.0
@@ -288,7 +287,7 @@ class Agent(BaseTimestampEntity):
 
     # Rich Domain Model Business Methods
 
-    def validate_capability_match(self, task_requirements: List[str]) -> bool:
+    def validate_capability_match(self, task_requirements: list[str]) -> bool:
         """
         Validate that agent's capabilities match task requirements.
 
@@ -371,7 +370,7 @@ class Agent(BaseTimestampEntity):
 
         return workload_score
 
-    def check_availability(self) -> Dict[str, Any]:
+    def check_availability(self) -> dict[str, Any]:
         """
         Check if agent is available for new work with detailed status.
 
@@ -444,9 +443,9 @@ class Agent(BaseTimestampEntity):
         agent_id: str,
         name: str,
         description: str,
-        capabilities: List[AgentCapability] = None,
-        specializations: List[str] = None,
-        preferred_languages: List[str] = None
+        capabilities: list[AgentCapability] = None,
+        specializations: list[str] = None,
+        preferred_languages: list[str] = None
     ) -> 'Agent':
         """Factory method to create a new agent"""
         # Convert string id to AgentId value object

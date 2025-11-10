@@ -6,13 +6,14 @@ Date: 2025-01-27
 This file contains the infrastructure implementation for rule parsing following DDD principles.
 """
 
-import json
-import yaml
-import re
 import hashlib
-from pathlib import Path
-from typing import Dict, Any, List, Tuple, Optional
+import json
+import re
 from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 from ...domain.entities.rule_entity import RuleContent, RuleMetadata
 from ...domain.value_objects import RuleFormat, RuleType
@@ -51,7 +52,7 @@ class RuleParserService(IRuleParserService):
         
         # Read file content
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 raw_content = f.read()
         except Exception as e:
             raise ValueError(f"Failed to read rule file {file_path}: {str(e)}")
@@ -118,7 +119,7 @@ class RuleParserService(IRuleParserService):
             tags=self._extract_tags(content)
         )
     
-    def _extract_dependencies(self, content: str) -> List[str]:
+    def _extract_dependencies(self, content: str) -> list[str]:
         """Extract dependencies from rule content"""
         dependencies = []
         
@@ -194,7 +195,7 @@ class RuleParserService(IRuleParserService):
         
         return ""
     
-    def _extract_tags(self, content: str) -> List[str]:
+    def _extract_tags(self, content: str) -> list[str]:
         """Extract tags from content"""
         tags = []
         
@@ -228,12 +229,12 @@ class RuleParserService(IRuleParserService):
         
         return list(set(tags))  # Remove duplicates
     
-    def _parse_mdc(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_mdc(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse MDC format content"""
         # MDC is essentially markdown with metadata
         return self._parse_markdown(content)
     
-    def _parse_markdown(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_markdown(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse Markdown format content"""
         parsed_content = {}
         sections = {}
@@ -306,7 +307,7 @@ class RuleParserService(IRuleParserService):
         
         return parsed_content, sections, references, variables
     
-    def _parse_json(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_json(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse JSON format content"""
         try:
             parsed_content = json.loads(content)
@@ -334,7 +335,7 @@ class RuleParserService(IRuleParserService):
         
         return parsed_content, sections, references, variables
     
-    def _parse_yaml(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_yaml(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse YAML format content"""
         try:
             parsed_content = yaml.safe_load(content)
@@ -365,7 +366,7 @@ class RuleParserService(IRuleParserService):
         
         return parsed_content, sections, references, variables
     
-    def _parse_text(self, content: str) -> Tuple[Dict[str, Any], Dict[str, str], List[str], Dict[str, Any]]:
+    def _parse_text(self, content: str) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, Any]]:
         """Parse plain text format content"""
         parsed_content = {'content': content}
         sections = {'content': content}

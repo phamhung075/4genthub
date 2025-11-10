@@ -1,7 +1,7 @@
 """Agent Response DTO"""
 
 from dataclasses import dataclass
-from typing import Dict, Any, List
+from typing import Any
 
 
 @dataclass
@@ -11,10 +11,10 @@ class AgentResponse:
     id: str
     name: str
     call_agent: str
-    assignments: List[str]
+    assignments: list[str]
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentResponse":
+    def from_dict(cls, data: dict[str, Any]) -> "AgentResponse":
         """Create AgentResponse from dictionary"""
         return cls(
             id=data.get("id", ""),

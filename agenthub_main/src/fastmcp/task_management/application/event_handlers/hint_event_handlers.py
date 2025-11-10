@@ -6,19 +6,21 @@ and triggers follow-up actions.
 """
 
 import logging
-from typing import Dict, Any, Optional
-from datetime import datetime, timezone, timedelta
 from collections import defaultdict
+from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
-from ...domain.events.hint_events import (
-    HintGenerated, HintAccepted, HintDismissed,
-    HintFeedbackProvided, HintEffectivenessCalculated,
-    HintPatternDetected
-)
 from ...domain.events.base import DomainEvent
+from ...domain.events.hint_events import (
+    HintAccepted,
+    HintDismissed,
+    HintEffectivenessCalculated,
+    HintFeedbackProvided,
+    HintGenerated,
+    HintPatternDetected,
+)
 from ...infrastructure.event_store import EventStore
-
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +36,13 @@ class HintEventHandlers:
     def __init__(
         self,
         event_store: EventStore,
-        hint_repository: Optional[Any] = None
+        hint_repository: Any | None = None
     ):
         self.event_store = event_store
         self.hint_repository = hint_repository
         
         # Statistics tracking
-        self.hint_stats: Dict[str, Dict[str, int]] = defaultdict(
+        self.hint_stats: dict[str, dict[str, int]] = defaultdict(
             lambda: {"generated": 0, "accepted": 0, "dismissed": 0, "feedback": 0}
         )
         
@@ -193,7 +195,7 @@ class HintEventHandlers:
         if self.hint_repository:
             await self.hint_repository.store_effectiveness_score(event)
     
-    async def _get_hint_details(self, hint_id: UUID) -> Optional[Dict[str, Any]]:
+    async def _get_hint_details(self, hint_id: UUID) -> dict[str, Any] | None:
         """Get details of a hint from events or repository."""
         # Try repository first
         if self.hint_repository:
@@ -246,7 +248,7 @@ class HintEventHandlers:
         effectiveness = accepted / total if total > 0 else 0
         
         # Create and publish event with single timestamp calculation
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         event = HintEffectivenessCalculated(
             aggregate_id=UUID(int=0),  # System event
             occurred_at=now,
@@ -266,7 +268,7 @@ class HintEventHandlers:
     
     async def _check_acceptance_patterns(
         self,
-        hint_details: Dict[str, Any]
+        hint_details: dict[str, Any]
     ) -> None:
         """Check for patterns in accepted hints."""
         stat_key = f"{hint_details['source_rule']}:{hint_details['hint_type']}"
@@ -282,7 +284,7 @@ class HintEventHandlers:
         if acceptance_rate > self.pattern_thresholds["acceptance_threshold"]:
             pattern_event = HintPatternDetected(
                 aggregate_id=UUID(int=0),
-                occurred_at=datetime.now(timezone.utc),
+                occurred_at=datetime.now(UTC),
                 user_id="hint_event_handler",
                 pattern_id=UUID(int=hash(stat_key) & 0xFFFFFFFF),
                 pattern_name=f"high_acceptance_{hint_details['source_rule']}",
@@ -301,8 +303,8 @@ class HintEventHandlers:
     
     async def _check_dismissal_patterns(
         self,
-        hint_details: Dict[str, Any],
-        reason: Optional[str]
+        hint_details: dict[str, Any],
+        reason: str | None
     ) -> None:
         """Check for patterns in dismissed hints."""
         stat_key = f"{hint_details['source_rule']}:{hint_details['hint_type']}"
@@ -318,7 +320,7 @@ class HintEventHandlers:
         if dismissal_rate > self.pattern_thresholds["dismissal_threshold"]:
             pattern_event = HintPatternDetected(
                 aggregate_id=UUID(int=0),
-                occurred_at=datetime.now(timezone.utc),
+                occurred_at=datetime.now(UTC),
                 user_id="hint_event_handler",
                 pattern_id=UUID(int=hash(stat_key + "_dismissed") & 0xFFFFFFFF),
                 pattern_name=f"high_dismissal_{hint_details['source_rule']}",
@@ -360,7 +362,7 @@ class HintEventHandlers:
                 suggestions
             )
     
-    async def get_hint_statistics(self) -> Dict[str, Any]:
+    async def get_hint_statistics(self) -> dict[str, Any]:
         """Get current hint statistics."""
         return {
             "statistics": dict(self.hint_stats),

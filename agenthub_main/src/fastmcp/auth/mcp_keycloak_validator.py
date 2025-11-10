@@ -5,14 +5,13 @@ Validates Keycloak tokens for MCP connections.
 Ensures proper authentication and authorization for MCP tools.
 """
 
-import os
 import logging
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+import os
+from datetime import datetime
+from typing import Any
+
 import httpx
-from jose import jwt, JWTError
-import asyncio
-from functools import lru_cache
+from jose import JWTError, jwt
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,7 @@ class MCPKeycloakValidator:
         
         logger.info(f"MCP Keycloak validator initialized for realm: {self.realm}")
     
-    async def validate_mcp_token(self, token: str) -> Optional[Dict[str, Any]]:
+    async def validate_mcp_token(self, token: str) -> dict[str, Any] | None:
         """
         Validate a token for MCP access.
         
@@ -83,7 +82,7 @@ class MCPKeycloakValidator:
             logger.error(f"Token validation error: {e}")
             return None
     
-    async def introspect_token(self, token: str) -> Optional[Dict[str, Any]]:
+    async def introspect_token(self, token: str) -> dict[str, Any] | None:
         """
         Introspect token with Keycloak server for detailed validation.
         
@@ -118,7 +117,7 @@ class MCPKeycloakValidator:
             logger.error(f"Token introspection error: {e}")
             return None
     
-    def extract_user_info(self, claims: Dict[str, Any]) -> Dict[str, Any]:
+    def extract_user_info(self, claims: dict[str, Any]) -> dict[str, Any]:
         """
         Extract user information from token claims.
         
@@ -140,7 +139,7 @@ class MCPKeycloakValidator:
             "mcp_permissions": self._extract_mcp_permissions(claims)
         }
     
-    def _extract_roles(self, claims: Dict[str, Any]) -> List[str]:
+    def _extract_roles(self, claims: dict[str, Any]) -> list[str]:
         """Extract user roles from token claims."""
         roles = []
         
@@ -155,7 +154,7 @@ class MCPKeycloakValidator:
         
         return list(set(roles))
     
-    def _extract_mcp_permissions(self, claims: Dict[str, Any]) -> List[str]:
+    def _extract_mcp_permissions(self, claims: dict[str, Any]) -> list[str]:
         """
         Extract MCP-specific permissions from token.
         
@@ -187,7 +186,7 @@ class MCPKeycloakValidator:
         
         return list(set(permissions))
     
-    def _validate_mcp_requirements(self, claims: Dict[str, Any]) -> bool:
+    def _validate_mcp_requirements(self, claims: dict[str, Any]) -> bool:
         """
         Validate that token meets MCP-specific requirements.
         
@@ -231,7 +230,7 @@ class MCPKeycloakValidator:
         
         return True
     
-    async def _get_jwks(self) -> Optional[Dict[str, Any]]:
+    async def _get_jwks(self) -> dict[str, Any] | None:
         """Get JSON Web Key Set from Keycloak."""
         # Check cache
         if self._jwks_cache and self._jwks_cache_time:
@@ -254,7 +253,7 @@ class MCPKeycloakValidator:
             logger.error(f"Failed to fetch JWKS: {e}")
             return None
     
-    async def _decode_token(self, token: str, jwks: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def _decode_token(self, token: str, jwks: dict[str, Any]) -> dict[str, Any] | None:
         """
         Decode and validate JWT token.
         
@@ -299,7 +298,7 @@ class MCPKeycloakValidator:
             logger.error(f"Token decode error: {e}")
             return None
     
-    def _get_cached_validation(self, token: str) -> Optional[Dict[str, Any]]:
+    def _get_cached_validation(self, token: str) -> dict[str, Any] | None:
         """Get cached validation result."""
         cached = self._token_cache.get(token)
         if cached:
@@ -311,7 +310,7 @@ class MCPKeycloakValidator:
                 del self._token_cache[token]
         return None
     
-    def _cache_validation(self, token: str, claims: Dict[str, Any]) -> None:
+    def _cache_validation(self, token: str, claims: dict[str, Any]) -> None:
         """Cache validation result."""
         self._token_cache[token] = (datetime.now(), claims)
         
@@ -342,7 +341,7 @@ def get_mcp_validator() -> MCPKeycloakValidator:
     return _validator
 
 
-async def validate_mcp_request(authorization: str) -> Optional[Dict[str, Any]]:
+async def validate_mcp_request(authorization: str) -> dict[str, Any] | None:
     """
     Validate an MCP request authorization header.
     

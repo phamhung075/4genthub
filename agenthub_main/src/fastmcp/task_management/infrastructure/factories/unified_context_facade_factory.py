@@ -6,7 +6,9 @@ UnifiedContextFacadeFactory to be in the infrastructure.factories package.
 """
 
 # Import the actual factory from its new location
-from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+from ...application.factories.unified_context_facade_factory import (
+    UnifiedContextFacadeFactory,
+)
 
 # Re-export for backward compatibility
 __all__ = ['UnifiedContextFacadeFactory']

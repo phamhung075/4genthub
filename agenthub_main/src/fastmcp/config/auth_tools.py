@@ -6,9 +6,9 @@ conditionally registered based on configuration.
 """
 
 import logging
-from typing import Dict, Any
-from fastmcp.auth import AuthMiddleware, TokenValidationError, RateLimitError
+from typing import Any
 
+from fastmcp.auth import AuthMiddleware, RateLimitError, TokenValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class AuthenticationTools:
         """
         self.auth_middleware = auth_middleware
 
-    async def validate_token(self, token: str) -> Dict[str, Any]:
+    async def validate_token(self, token: str) -> dict[str, Any]:
         """
         Validate an authentication token.
 
@@ -79,7 +79,7 @@ class AuthenticationTools:
                 "auth_enabled": self.auth_middleware.enabled
             }
 
-    async def get_rate_limit_status(self, token: str) -> Dict[str, Any]:
+    async def get_rate_limit_status(self, token: str) -> dict[str, Any]:
         """
         Get rate limit status for a token.
 
@@ -102,7 +102,7 @@ class AuthenticationTools:
                 "error": str(e)
             }
 
-    async def revoke_token(self, token: str) -> Dict[str, Any]:
+    async def revoke_token(self, token: str) -> dict[str, Any]:
         """
         Revoke an authentication token.
 
@@ -125,7 +125,7 @@ class AuthenticationTools:
                 "error": str(e)
             }
 
-    def get_auth_status(self) -> Dict[str, Any]:
+    def get_auth_status(self) -> dict[str, Any]:
         """
         Get authentication system status.
 
@@ -134,7 +134,7 @@ class AuthenticationTools:
         """
         return self.auth_middleware.get_auth_status()
 
-    def generate_token(self) -> Dict[str, Any]:
+    def generate_token(self) -> dict[str, Any]:
         """
         Generate a new secure authentication token.
 
@@ -160,7 +160,7 @@ class AuthenticationTools:
             }
         }
 
-    def get_tool_functions(self) -> Dict[str, callable]:
+    def get_tool_functions(self) -> dict[str, callable]:
         """
         Get dictionary of tool functions for registration.
 
@@ -176,7 +176,7 @@ class AuthenticationTools:
         }
 
 
-def create_authentication_tools(auth_middleware: AuthMiddleware) -> Dict[str, callable]:
+def create_authentication_tools(auth_middleware: AuthMiddleware) -> dict[str, callable]:
     """
     Create authentication tools for conditional registration.
 

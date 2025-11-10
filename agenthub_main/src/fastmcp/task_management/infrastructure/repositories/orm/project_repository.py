@@ -6,26 +6,27 @@ supporting both SQLite and PostgreSQL databases.
 """
 
 import logging
-from typing import List, Optional, Dict, Any, Union
-from datetime import datetime, timezone
-from sqlalchemy import and_, or_, desc
+from typing import Any
+
+from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm import joinedload
 
-from ..base_orm_repository import BaseORMRepository
+from ....application.services.context_field_selector import (
+    ContextFieldSelector,
+    FieldSet,
+)
+from ....domain.entities.project import Project as ProjectEntity
+from ....domain.exceptions.base_exceptions import (
+    DatabaseException,
+    ResourceNotFoundException,
+)
+from ....domain.repositories.project_repository import ProjectRepository
+from ....domain.value_objects.project_id import ProjectId
+from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
+from ...database.models import Project, ProjectGitBranch
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ..event_publishing_mixin import EventPublishingMixin
-from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
-from ...database.models import Project, ProjectGitBranch
-from ....domain.repositories.project_repository import ProjectRepository
-from ....domain.entities.project import Project as ProjectEntity
-from ....domain.value_objects.project_id import ProjectId
-from ....domain.exceptions.base_exceptions import (
-    ResourceNotFoundException,
-    ValidationException,
-    DatabaseException
-)
-from ....application.services.context_field_selector import ContextFieldSelector, FieldSet
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
     when project entities are persisted.
     """
 
-    def __init__(self, session=None, user_id: Optional[str] = None):
+    def __init__(self, session=None, user_id: str | None = None):
         """Initialize ORM project repository with user isolation.
 
         Args:
@@ -133,7 +134,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
         
         return entity
 
-    def _entity_to_model_dict(self, project: ProjectEntity) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, project: ProjectEntity) -> dict[str, Any]:
         """Convert domain entity to model dictionary for ORM updates
 
         This method follows the DDD pattern by properly converting from domain entities
@@ -256,7 +257,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                 table="projects"
             )
     
-    async def find_by_id(self, project_id: str) -> Optional[ProjectEntity]:
+    async def find_by_id(self, project_id: str) -> ProjectEntity | None:
         """Find a project by its ID with user isolation"""
         with self.get_db_session() as session:
             query = session.query(Project).options(
@@ -273,7 +274,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             
             return self._model_to_entity(project) if project else None
     
-    async def find_all(self) -> List[ProjectEntity]:
+    async def find_all(self) -> list[ProjectEntity]:
         """Find all projects with user isolation"""
         with self.get_db_session() as session:
             query = session.query(Project).options(
@@ -337,7 +338,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                 table="projects"
             )
     
-    async def find_by_name(self, name: str) -> Optional[ProjectEntity]:
+    async def find_by_name(self, name: str) -> ProjectEntity | None:
         """Find a project by its name with user isolation"""
         with self.get_db_session() as session:
             query = session.query(Project)
@@ -357,7 +358,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
         """Count total number of projects"""
         return super().count()
     
-    async def find_projects_with_agent(self, agent_id: str) -> List[ProjectEntity]:
+    async def find_projects_with_agent(self, agent_id: str) -> list[ProjectEntity]:
         """Find projects that have a specific agent registered with user isolation"""
         with self.get_db_session() as session:
             # Find projects with git branches assigned to the agent
@@ -375,7 +376,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             
             return [self._model_to_entity(project) for project in projects]
     
-    async def find_projects_by_status(self, status: str) -> List[ProjectEntity]:
+    async def find_projects_by_status(self, status: str) -> list[ProjectEntity]:
         """Find projects by their status with user isolation"""
         with self.get_db_session() as session:
             query = session.query(Project)
@@ -392,7 +393,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             
             return [self._model_to_entity(project) for project in projects]
     
-    async def get_project_health_summary(self) -> Dict[str, Any]:
+    async def get_project_health_summary(self) -> dict[str, Any]:
         """Get health summary of all projects"""
         with self.get_db_session() as session:
             # Get total projects
@@ -432,7 +433,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                 )
             }
     
-    async def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
         """Unassign an agent from a specific task tree within a project."""
         try:
             with self.transaction() as session:
@@ -475,8 +476,11 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
         try:
             with self.transaction():
                 import uuid
+
                 from ....domain.constants import validate_user_id
-                from ....domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+                from ....domain.exceptions.authentication_exceptions import (
+                    UserAuthenticationRequiredError,
+                )
                 
                 project_id = str(uuid.uuid4())
                 
@@ -518,7 +522,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                 table="projects"
             )
     
-    def get_project(self, project_id: str) -> Optional[ProjectEntity]:
+    def get_project(self, project_id: str) -> ProjectEntity | None:
         """Synchronous version of find_by_id for compatibility"""
         with self.get_db_session() as session:
             project = session.query(Project).options(
@@ -638,7 +642,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
         
         return result
     
-    def list_projects(self, status: Optional[str] = None, limit: int = 100, offset: int = 0) -> List[ProjectEntity]:
+    def list_projects(self, status: str | None = None, limit: int = 100, offset: int = 0) -> list[ProjectEntity]:
         """List projects with filters"""
         with self.get_db_session() as session:
             query = session.query(Project).options(
@@ -654,7 +658,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             projects = query.all()
             return [self._model_to_entity(project) for project in projects]
     
-    def get_project_by_name(self, name: str) -> Optional[ProjectEntity]:
+    def get_project_by_name(self, name: str) -> ProjectEntity | None:
         """Get a project by name"""
         with self.get_db_session() as session:
             project = session.query(Project).filter(
@@ -663,7 +667,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             
             return self._model_to_entity(project) if project else None
     
-    def search_projects(self, query: str, limit: int = 50) -> List[ProjectEntity]:
+    def search_projects(self, query: str, limit: int = 50) -> list[ProjectEntity]:
         """Search projects by name or description"""
         with self.get_db_session() as session:
             search_pattern = f"%{query}%"
@@ -677,7 +681,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             
             return [self._model_to_entity(project) for project in projects]
     
-    def get_project_statistics(self, project_id: str) -> Dict[str, Any]:
+    def get_project_statistics(self, project_id: str) -> dict[str, Any]:
         """Get statistics for a specific project"""
         with self.get_db_session() as session:
             project = session.query(Project).options(
@@ -719,8 +723,8 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
     def get_project_selective_fields(
         self, 
         project_id: str, 
-        fields: Optional[Union[List[str], FieldSet]] = None
-    ) -> Dict[str, Any]:
+        fields: list[str] | FieldSet | None = None
+    ) -> dict[str, Any]:
         """
         Get project with only specified fields for performance optimization
         
@@ -793,11 +797,11 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
     
     def list_projects_selective_fields(
         self,
-        fields: Optional[Union[List[str], FieldSet]] = None,
-        status: Optional[str] = None,
+        fields: list[str] | FieldSet | None = None,
+        status: str | None = None,
         limit: int = 100,
         offset: int = 0
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         List projects with only specified fields for performance optimization
         
@@ -876,7 +880,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             logger.error(f"Failed to list projects with selective fields: {e}")
             return []
     
-    def get_field_selector_metrics(self) -> Dict[str, int]:
+    def get_field_selector_metrics(self) -> dict[str, int]:
         """
         Get performance metrics from the field selector
         
@@ -888,7 +892,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
     def estimate_field_optimization_savings(
         self, 
         field_set: FieldSet
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Estimate performance savings for using selective fields
         
@@ -900,7 +904,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
         """
         return self._field_selector.estimate_savings("project", field_set)
 
-    async def check_name_exists(self, name: str, exclude_project_id: Optional[str] = None) -> bool:
+    async def check_name_exists(self, name: str, exclude_project_id: str | None = None) -> bool:
         """
         Check if a project name already exists for the current user.
 

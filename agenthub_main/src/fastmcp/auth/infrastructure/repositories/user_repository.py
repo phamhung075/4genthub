@@ -5,10 +5,10 @@ This repository handles user persistence using SQLAlchemy.
 """
 
 import logging
-from typing import Optional, List
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
+
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from ...domain.entities.user import User as DomainUser
 from ..database.models import User as UserModel
@@ -109,7 +109,7 @@ class UserRepository:
             logger.error(f"Error saving user: {e}")
             raise
     
-    async def get_by_id(self, user_id: str) -> Optional[DomainUser]:
+    async def get_by_id(self, user_id: str) -> DomainUser | None:
         """
         Get user by ID
         
@@ -126,7 +126,7 @@ class UserRepository:
             logger.error(f"Error getting user by ID: {e}")
             return None
     
-    def find_by_id(self, user_id: str) -> Optional[DomainUser]:
+    def find_by_id(self, user_id: str) -> DomainUser | None:
         """
         Synchronous method to get user by ID (for compatibility with Supabase auth)
         
@@ -142,7 +142,8 @@ class UserRepository:
                 return None
             
             # Create domain object directly to avoid any potential database access
-            from ...domain.entities.user import User as DomainUser, UserStatus, UserRole
+            from ...domain.entities.user import User as DomainUser
+            from ...domain.entities.user import UserRole, UserStatus
             
             return DomainUser(
                 id=str(db_user.id),
@@ -173,7 +174,7 @@ class UserRepository:
             logger.error(f"Error finding user by ID: {e}")
             return None
     
-    async def get_by_email(self, email: str) -> Optional[DomainUser]:
+    async def get_by_email(self, email: str) -> DomainUser | None:
         """
         Get user by email
         
@@ -189,7 +190,8 @@ class UserRepository:
                 return None
             
             # Create domain object directly to avoid any potential database access from to_domain()
-            from ...domain.entities.user import User as DomainUser, UserStatus, UserRole
+            from ...domain.entities.user import User as DomainUser
+            from ...domain.entities.user import UserRole, UserStatus
             
             return DomainUser(
                 id=str(db_user.id),
@@ -220,7 +222,7 @@ class UserRepository:
             logger.error(f"Error getting user by email: {e}")
             return None
     
-    async def get_by_username(self, username: str) -> Optional[DomainUser]:
+    async def get_by_username(self, username: str) -> DomainUser | None:
         """
         Get user by username
         
@@ -236,7 +238,8 @@ class UserRepository:
                 return None
             
             # Create domain object directly to avoid any potential database access from to_domain()
-            from ...domain.entities.user import User as DomainUser, UserStatus, UserRole
+            from ...domain.entities.user import User as DomainUser
+            from ...domain.entities.user import UserRole, UserStatus
             
             return DomainUser(
                 id=str(db_user.id),
@@ -267,7 +270,7 @@ class UserRepository:
             logger.error(f"Error getting user by username: {e}")
             return None
     
-    async def get_by_reset_token(self, reset_token: str) -> Optional[DomainUser]:
+    async def get_by_reset_token(self, reset_token: str) -> DomainUser | None:
         """
         Get user by password reset token
         
@@ -289,7 +292,7 @@ class UserRepository:
     async def list_all(self, 
                        limit: int = 100,
                        offset: int = 0,
-                       status: Optional[str] = None) -> List[DomainUser]:
+                       status: str | None = None) -> list[DomainUser]:
         """
         List all users with optional filtering
         
@@ -373,7 +376,7 @@ class UserRepository:
             logger.error(f"Error checking username existence: {e}")
             return False
     
-    async def search(self, query: str, limit: int = 50) -> List[DomainUser]:
+    async def search(self, query: str, limit: int = 50) -> list[DomainUser]:
         """
         Search users by email or username
         

@@ -1,14 +1,16 @@
 """
 Project Application Facade
 """
-from typing import Dict, Any, Optional
+from typing import Any
 
+from ...infrastructure.repositories.project_repository_factory import (
+    GlobalRepositoryManager,
+)
 from ..services.project_management_service import ProjectManagementService
-from ...domain.interfaces.repository_factory import IProjectRepositoryFactory
-from ...infrastructure.repositories.project_repository_factory import GlobalRepositoryManager
+
 
 class ProjectApplicationFacade:
-    def __init__(self, project_service: Optional[ProjectManagementService] = None, user_id: Optional[str] = None):
+    def __init__(self, project_service: ProjectManagementService | None = None, user_id: str | None = None):
         # Store user_id for use in manage_project
         self._user_id = user_id
         
@@ -30,12 +32,12 @@ class ProjectApplicationFacade:
     async def manage_project(
         self,
         action: str,
-        project_id: Optional[str] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        user_id: Optional[str] = None,
+        project_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        user_id: str | None = None,
         force: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Facade method to route project management actions to the service layer."""
         
         if action == "create":
@@ -49,8 +51,12 @@ class ProjectApplicationFacade:
 
             # Validate project name using domain service
             try:
-                from ...domain.services.project_name_validator import ProjectNameValidator
-                from ...infrastructure.repositories.project_repository_factory import GlobalRepositoryManager
+                from ...domain.services.project_name_validator import (
+                    ProjectNameValidator,
+                )
+                from ...infrastructure.repositories.project_repository_factory import (
+                    GlobalRepositoryManager,
+                )
 
                 # Get user-scoped repository for validation
                 project_repo = GlobalRepositoryManager.get_for_user(effective_user_id)
@@ -108,8 +114,12 @@ class ProjectApplicationFacade:
                     return {"success": False, "error": "User authentication required"}
 
                 try:
-                    from ...domain.services.project_name_validator import ProjectNameValidator
-                    from ...infrastructure.repositories.project_repository_factory import GlobalRepositoryManager
+                    from ...domain.services.project_name_validator import (
+                        ProjectNameValidator,
+                    )
+                    from ...infrastructure.repositories.project_repository_factory import (
+                        GlobalRepositoryManager,
+                    )
 
                     # Get user-scoped repository for validation
                     project_repo = GlobalRepositoryManager.get_for_user(effective_user_id)
@@ -162,7 +172,7 @@ class ProjectApplicationFacade:
         else:
             return {"success": False, "error": f"Invalid action: {action}"}
     
-    async def create_project(self, name: str, description: str = "") -> Dict[str, Any]:
+    async def create_project(self, name: str, description: str = "") -> dict[str, Any]:
         """
         Create a new project with auto-generated UUID.
         
@@ -177,7 +187,7 @@ class ProjectApplicationFacade:
         """
         return await self.manage_project("create", name=name, description=description)
     
-    async def get_project(self, project_id: str) -> Dict[str, Any]:
+    async def get_project(self, project_id: str) -> dict[str, Any]:
         """
         Get project details by ID.
         
@@ -189,7 +199,7 @@ class ProjectApplicationFacade:
         """
         return await self.manage_project("get", project_id=project_id)
     
-    async def get_project_by_name(self, name: str) -> Dict[str, Any]:
+    async def get_project_by_name(self, name: str) -> dict[str, Any]:
         """
         Get project details by name.
         
@@ -201,7 +211,7 @@ class ProjectApplicationFacade:
         """
         return await self.manage_project("get", name=name)
     
-    async def list_projects(self) -> Dict[str, Any]:
+    async def list_projects(self) -> dict[str, Any]:
         """
         List all projects.
         
@@ -210,7 +220,7 @@ class ProjectApplicationFacade:
         """
         return await self.manage_project("list")
     
-    async def update_project(self, project_id: str, name: Optional[str] = None, description: Optional[str] = None) -> Dict[str, Any]:
+    async def update_project(self, project_id: str, name: str | None = None, description: str | None = None) -> dict[str, Any]:
         """
         Update an existing project.
         
@@ -224,7 +234,7 @@ class ProjectApplicationFacade:
         """
         return await self.manage_project("update", project_id=project_id, name=name, description=description)
     
-    async def delete_project(self, project_id: str, force: bool = False) -> Dict[str, Any]:
+    async def delete_project(self, project_id: str, force: bool = False) -> dict[str, Any]:
         """
         Delete a project.
         
@@ -237,7 +247,7 @@ class ProjectApplicationFacade:
         """
         return await self.manage_project("delete", project_id=project_id, force=force)
     
-    async def project_health_check(self, project_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
+    async def project_health_check(self, project_id: str, user_id: str | None = None) -> dict[str, Any]:
         """
         Perform a health check on a project.
         
@@ -250,7 +260,7 @@ class ProjectApplicationFacade:
         """
         return await self.manage_project("project_health_check", project_id=project_id, user_id=user_id)
     
-    async def cleanup_obsolete(self, project_id: str, force: bool = False, user_id: Optional[str] = None) -> Dict[str, Any]:
+    async def cleanup_obsolete(self, project_id: str, force: bool = False, user_id: str | None = None) -> dict[str, Any]:
         """
         Clean up obsolete project data.
         
@@ -264,7 +274,7 @@ class ProjectApplicationFacade:
         """
         return await self.manage_project("cleanup_obsolete", project_id=project_id, force=force, user_id=user_id)
     
-    async def validate_integrity(self, project_id: str, force: bool = False, user_id: Optional[str] = None) -> Dict[str, Any]:
+    async def validate_integrity(self, project_id: str, force: bool = False, user_id: str | None = None) -> dict[str, Any]:
         """
         Validate project data integrity.
         
@@ -278,7 +288,7 @@ class ProjectApplicationFacade:
         """
         return await self.manage_project("validate_integrity", project_id=project_id, force=force, user_id=user_id)
     
-    async def rebalance_agents(self, project_id: str, force: bool = False, user_id: Optional[str] = None) -> Dict[str, Any]:
+    async def rebalance_agents(self, project_id: str, force: bool = False, user_id: str | None = None) -> dict[str, Any]:
         """
         Rebalance agents across the project.
         

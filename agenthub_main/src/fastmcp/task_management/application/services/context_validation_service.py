@@ -4,19 +4,16 @@ This service provides validation logic for context updates,
 ensuring Vision System requirements are met.
 """
 
-from typing import Optional, Tuple, List, Dict, Any
-from datetime import datetime
 import logging
+from typing import Any
 
+from ....utilities.id_validator import IDValidator
 from ...domain.entities.context import TaskContext
 from ...domain.entities.task import Task
-from ...domain.value_objects.context_enums import ContextLevel
 from ...domain.exceptions.vision_exceptions import (
     InvalidContextUpdateError,
-    MissingCompletionSummaryError
 )
-from ....utilities.id_validator import IDValidator, IDValidationError
-
+from ...domain.value_objects.context_enums import ContextLevel
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +21,7 @@ logger = logging.getLogger(__name__)
 class ContextValidationService:
     """Service for validating context updates according to Vision System rules."""
 
-    def __init__(self, user_id: Optional[str] = None, id_validator: Optional[IDValidator] = None):
+    def __init__(self, user_id: str | None = None, id_validator: IDValidator | None = None):
         """Initialize the context validation service."""
         self._user_id = user_id  # Store user context
         self._id_validator = id_validator or IDValidator()
@@ -50,8 +47,8 @@ class ContextValidationService:
                                   task: Task, 
                                   context: TaskContext,
                                   completion_summary: str,
-                                  testing_notes: Optional[str] = None,
-                                  next_recommendations: Optional[str] = None) -> Tuple[bool, List[str]]:
+                                  testing_notes: str | None = None,
+                                  next_recommendations: str | None = None) -> tuple[bool, list[str]]:
         """
         Validate context for task completion.
         
@@ -103,7 +100,7 @@ class ContextValidationService:
     
     def validate_context_update(self,
                               context: TaskContext,
-                              update_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
+                              update_data: dict[str, Any]) -> tuple[bool, list[str]]:
         """
         Validate general context update.
         
@@ -136,8 +133,8 @@ class ContextValidationService:
     def ensure_completion_summary_in_context(self,
                                            context: TaskContext,
                                            completion_summary: str,
-                                           testing_notes: Optional[str] = None,
-                                           next_recommendations: Optional[str] = None) -> None:
+                                           testing_notes: str | None = None,
+                                           next_recommendations: str | None = None) -> None:
         """
         Ensure completion summary is properly set in context.
         
@@ -166,7 +163,7 @@ class ContextValidationService:
     def validate_progress_update(self,
                                progress_type: str,
                                details: str,
-                               percentage: Optional[float] = None) -> Tuple[bool, List[str]]:
+                               percentage: float | None = None) -> tuple[bool, list[str]]:
         """
         Validate progress update parameters.
         
@@ -200,7 +197,7 @@ class ContextValidationService:
     
     def validate_checkpoint(self,
                           checkpoint_name: str,
-                          state_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
+                          state_data: dict[str, Any]) -> tuple[bool, list[str]]:
         """
         Validate checkpoint data.
         
@@ -232,7 +229,7 @@ class ContextValidationService:
     
     def validate_context_data(self, 
                                    level: ContextLevel, 
-                                   data: Dict[str, Any]) -> Dict[str, Any]:
+                                   data: dict[str, Any]) -> dict[str, Any]:
         """
         Validate context data for unified context system.
         

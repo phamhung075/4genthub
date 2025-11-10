@@ -4,22 +4,39 @@ This factory provides access to domain interfaces without violating DDD layer bo
 It delegates to infrastructure adapters through dependency injection.
 """
 
-from typing import Optional
+import logging
+from typing import TYPE_CHECKING, Optional
 
-from fastmcp.task_management.domain.interfaces.database_session import IDatabaseSessionFactory
-from fastmcp.task_management.domain.interfaces.event_store import IEventStore
-from fastmcp.task_management.domain.interfaces.notification_service import INotificationService
+logger = logging.getLogger(__name__)
+
 from fastmcp.task_management.domain.interfaces.cache_service import ICacheService
-from fastmcp.task_management.domain.interfaces.event_bus import IEventBus
-from fastmcp.task_management.domain.interfaces.repository_factory import (
-    IRepositoryFactory, ITaskRepositoryFactory, IProjectRepositoryFactory, 
-    IGitBranchRepositoryFactory
+from fastmcp.task_management.domain.interfaces.database_session import (
+    IDatabaseSessionFactory,
 )
+from fastmcp.task_management.domain.interfaces.event_bus import IEventBus
+from fastmcp.task_management.domain.interfaces.event_store import IEventStore
 from fastmcp.task_management.domain.interfaces.logging_service import ILoggingService
-from fastmcp.task_management.domain.interfaces.monitoring_service import IMonitoringService, IProcessMonitor
-from fastmcp.task_management.domain.interfaces.validation_service import IValidationService, IDocumentValidator
-from fastmcp.task_management.domain.interfaces.utility_service import IPathResolver, IAgentDocGenerator
-from typing import TYPE_CHECKING
+from fastmcp.task_management.domain.interfaces.monitoring_service import (
+    IMonitoringService,
+    IProcessMonitor,
+)
+from fastmcp.task_management.domain.interfaces.notification_service import (
+    INotificationService,
+)
+from fastmcp.task_management.domain.interfaces.repository_factory import (
+    IGitBranchRepositoryFactory,
+    IProjectRepositoryFactory,
+    IRepositoryFactory,
+    ITaskRepositoryFactory,
+)
+from fastmcp.task_management.domain.interfaces.utility_service import (
+    IAgentDocGenerator,
+    IPathResolver,
+)
+from fastmcp.task_management.domain.interfaces.validation_service import (
+    IDocumentValidator,
+    IValidationService,
+)
 
 if TYPE_CHECKING:
     from .hint_manager import HintManager
@@ -31,22 +48,22 @@ class DomainServiceFactory:
     _instance = None
     
     # Service instances (injected by infrastructure)
-    _database_session_factory: Optional[IDatabaseSessionFactory] = None
-    _event_store: Optional[IEventStore] = None
-    _cache_service: Optional[ICacheService] = None
-    _repository_factory: Optional[IRepositoryFactory] = None
-    _task_repository_factory: Optional[ITaskRepositoryFactory] = None
-    _project_repository_factory: Optional[IProjectRepositoryFactory] = None
-    _git_branch_repository_factory: Optional[IGitBranchRepositoryFactory] = None
-    _notification_service: Optional[INotificationService] = None
-    _event_bus: Optional[IEventBus] = None
-    _logging_service: Optional[ILoggingService] = None
-    _monitoring_service: Optional[IMonitoringService] = None
-    _process_monitor: Optional[IProcessMonitor] = None
-    _validation_service: Optional[IValidationService] = None
-    _document_validator: Optional[IDocumentValidator] = None
-    _path_resolver: Optional[IPathResolver] = None
-    _agent_doc_generator: Optional[IAgentDocGenerator] = None
+    _database_session_factory: IDatabaseSessionFactory | None = None
+    _event_store: IEventStore | None = None
+    _cache_service: ICacheService | None = None
+    _repository_factory: IRepositoryFactory | None = None
+    _task_repository_factory: ITaskRepositoryFactory | None = None
+    _project_repository_factory: IProjectRepositoryFactory | None = None
+    _git_branch_repository_factory: IGitBranchRepositoryFactory | None = None
+    _notification_service: INotificationService | None = None
+    _event_bus: IEventBus | None = None
+    _logging_service: ILoggingService | None = None
+    _monitoring_service: IMonitoringService | None = None
+    _process_monitor: IProcessMonitor | None = None
+    _validation_service: IValidationService | None = None
+    _document_validator: IDocumentValidator | None = None
+    _path_resolver: IPathResolver | None = None
+    _agent_doc_generator: IAgentDocGenerator | None = None
     _hint_manager: Optional['HintManager'] = None
     
     def __new__(cls):
@@ -218,7 +235,9 @@ class DomainServiceFactory:
             # Import here to avoid circular dependencies and layer violations
             try:
                 # This is the only allowed infrastructure import - through the factories
-                from ...infrastructure.adapters.service_adapter_factory import ServiceAdapterFactory
+                from ...infrastructure.adapters.service_adapter_factory import (
+                    ServiceAdapterFactory,
+                )
                 
                 # Initialize all services
                 cls._database_session_factory = ServiceAdapterFactory.get_database_session_factory()
@@ -239,7 +258,6 @@ class DomainServiceFactory:
                 cls._agent_doc_generator = ServiceAdapterFactory.get_agent_doc_generator()
             except ImportError:
                 # Fallback to placeholder implementations
-                from fastmcp.task_management.domain.interfaces.logging_service import LogLevel
                 import logging
                 
                 class FallbackLoggingService:

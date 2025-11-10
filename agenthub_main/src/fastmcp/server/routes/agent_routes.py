@@ -7,16 +7,18 @@ Follows the same pattern as project_routes.py
 """
 
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ...auth.interface.fastapi_auth import get_db
 from ...auth.domain.entities.user import User
 
 # Use unified authentication that switches based on AUTH_PROVIDER
-from ...auth.interface.fastapi_auth import get_current_user
-from ...task_management.interface.api_controllers.agent_api_controller import AgentAPIController
+from ...auth.interface.fastapi_auth import get_current_user, get_db
+from ...task_management.interface.api_controllers.agent_api_controller import (
+    AgentAPIController,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +311,7 @@ async def get_project_agent_assignments(
 
 @router.post("/call", response_model=dict)
 async def call_agent(
-    request: Dict[str, Any],
+    request: dict[str, Any],
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -336,10 +338,16 @@ async def call_agent(
             )
 
         # Import the new agent management system
-        from ...agent_management.application.facades.agent_management_facade import AgentManagementFacade
-        from ...agent_management.infrastructure.repositories.orm.agent_template_repository import ORMAgentTemplateRepository
-        from ...agent_management.infrastructure.repositories.orm.user_agent_instance_repository import ORMUserAgentInstanceRepository
+        from ...agent_management.application.facades.agent_management_facade import (
+            AgentManagementFacade,
+        )
         from ...agent_management.domain.value_objects.user_id import UserId
+        from ...agent_management.infrastructure.repositories.orm.agent_template_repository import (
+            ORMAgentTemplateRepository,
+        )
+        from ...agent_management.infrastructure.repositories.orm.user_agent_instance_repository import (
+            ORMUserAgentInstanceRepository,
+        )
 
         # Log the access for audit
         logger.info(f"User {current_user.email} calling agent: {agent_name}")
@@ -373,7 +381,7 @@ async def call_agent(
 
     except HTTPException:
         raise
-    except ValueError as e:
+    except ValueError:
         # Template not found or invalid agent name
         logger.error(f"Agent not found: {agent_name}")
         raise HTTPException(

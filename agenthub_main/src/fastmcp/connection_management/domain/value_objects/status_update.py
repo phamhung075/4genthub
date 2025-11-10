@@ -1,8 +1,8 @@
 """StatusUpdate Value Object"""
 
 from dataclasses import dataclass
-from typing import Dict, Any
 from datetime import datetime
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -11,7 +11,7 @@ class StatusUpdate:
     
     event_type: str
     timestamp: datetime
-    data: Dict[str, Any]
+    data: dict[str, Any]
     session_id: str
     
     def __post_init__(self):
@@ -34,7 +34,7 @@ class StatusUpdate:
         if self.event_type not in valid_event_types:
             raise ValueError(f"Invalid event type: {self.event_type}. Must be one of {valid_event_types}")
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation"""
         return {
             "event_type": self.event_type,
@@ -44,7 +44,7 @@ class StatusUpdate:
         }
     
     @classmethod
-    def create_server_health_update(cls, session_id: str, health_status: str, details: Dict[str, Any]) -> 'StatusUpdate':
+    def create_server_health_update(cls, session_id: str, health_status: str, details: dict[str, Any]) -> 'StatusUpdate':
         """Factory method for server health updates"""
         return cls(
             event_type="server_health_changed",

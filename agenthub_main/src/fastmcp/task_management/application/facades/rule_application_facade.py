@@ -4,10 +4,8 @@ This facade orchestrates rule-related use cases and provides a unified interface
 for rule management operations following DDD principles.
 """
 
-from typing import Dict, Any, TYPE_CHECKING
 from pathlib import Path
-
-from ...domain.interfaces.utility_service import IPathResolver
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...interface.mcp_tools.path_resolver import PathResolver
@@ -33,7 +31,6 @@ class RuleApplicationFacade:
         
         # Import PathResolver here to avoid circular imports
         if path_resolver is None:
-            from ...domain.interfaces.utility_service import IPathResolver
             path_resolver = PathResolver()
         
         self._path_resolver = path_resolver
@@ -42,7 +39,7 @@ class RuleApplicationFacade:
     
     
     
-    def validate_rules(self, target: str = "auto_rule") -> Dict[str, Any]:
+    def validate_rules(self, target: str = "auto_rule") -> dict[str, Any]:
         """
         Validate rule files.
         
@@ -67,7 +64,7 @@ class RuleApplicationFacade:
                 "target": target
             }
     
-    def manage_rule(self, action: str, target: str = "", content: str = "") -> Dict[str, Any]:
+    def manage_rule(self, action: str, target: str = "", content: str = "") -> dict[str, Any]:
         """
         Manage rules - simplified implementation after removing rule orchestration controller.
         
@@ -98,7 +95,7 @@ class RuleApplicationFacade:
             backup_path = file_path.with_suffix(file_path.suffix + '.backup')
             backup_path.write_text(file_path.read_text(encoding='utf-8'), encoding='utf-8')
     
-    def _validate_auto_rule(self) -> Dict[str, Any]:
+    def _validate_auto_rule(self) -> dict[str, Any]:
         """Validate auto rule file"""
         auto_rule_path = self._path_resolver.get_auto_rule_path()
         
@@ -125,7 +122,7 @@ class RuleApplicationFacade:
                 "file_path": str(auto_rule_path)
             }
     
-    def _validate_all_rules(self) -> Dict[str, Any]:
+    def _validate_all_rules(self) -> dict[str, Any]:
         """Validate all rule files"""
         rules_dir = self._path_resolver.get_rules_directory_from_settings()
         
@@ -159,7 +156,7 @@ class RuleApplicationFacade:
             "results": results
         }
     
-    def _validate_specific_rule(self, target: str) -> Dict[str, Any]:
+    def _validate_specific_rule(self, target: str) -> dict[str, Any]:
         """Validate specific rule file"""
         rule_path = Path(target)
         

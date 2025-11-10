@@ -12,15 +12,16 @@ DDD Compliance:
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Any
+
 from sqlalchemy.orm import Session
 
-from ...domain.repositories.task_repository import TaskRepository
-from ...domain.repositories.subtask_repository import SubtaskRepository
-from ...domain.repositories.project_repository import ProjectRepository
 from ...domain.repositories.agent_repository import AgentRepository
 from ...domain.repositories.context_repository import ContextRepository
 from ...domain.repositories.git_branch_repository import GitBranchRepository
+from ...domain.repositories.project_repository import ProjectRepository
+from ...domain.repositories.subtask_repository import SubtaskRepository
+from ...domain.repositories.task_repository import TaskRepository
 from ...domain.repositories.token_repository_interface import ITokenRepository
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class RepositoryProviderService:
     """
     
     _instance = None
-    _repositories: Dict[str, Any] = {}
+    _repositories: dict[str, Any] = {}
     
     @classmethod
     def get_instance(cls):
@@ -45,8 +46,8 @@ class RepositoryProviderService:
             cls._instance = cls()
         return cls._instance
     
-    def get_task_repository(self, project_id: Optional[str] = None, git_branch_name: Optional[str] = None, 
-                           user_id: Optional[str] = None, session: Optional[Session] = None) -> TaskRepository:
+    def get_task_repository(self, project_id: str | None = None, git_branch_name: str | None = None, 
+                           user_id: str | None = None, session: Session | None = None) -> TaskRepository:
         """
         Get a task repository instance.
         
@@ -60,13 +61,17 @@ class RepositoryProviderService:
             TaskRepositoryInterface implementation
         """
         # Import only when needed (lazy loading)
-        from ...infrastructure.repositories.task_repository_factory import TaskRepositoryFactory
+        from ...infrastructure.repositories.task_repository_factory import (
+            TaskRepositoryFactory,
+        )
         
         # For DDD compliance, if project_id is not provided, return a generic repository
         # that can work across projects (for GET operations without project context)
         if project_id is None:
             # Use ORM repository which doesn't require project_id upfront
-            from ...infrastructure.repositories.orm.task_repository import ORMTaskRepository
+            from ...infrastructure.repositories.orm.task_repository import (
+                ORMTaskRepository,
+            )
             return ORMTaskRepository(
                 session=session,
                 git_branch_id=None,
@@ -79,8 +84,8 @@ class RepositoryProviderService:
         factory = TaskRepositoryFactory()
         return factory.create_repository(project_id, git_branch_name or "main", user_id)
     
-    def get_subtask_repository(self, project_id: Optional[str] = None, git_branch_name: Optional[str] = None,
-                              user_id: Optional[str] = None, session: Optional[Session] = None) -> SubtaskRepository:
+    def get_subtask_repository(self, project_id: str | None = None, git_branch_name: str | None = None,
+                              user_id: str | None = None, session: Session | None = None) -> SubtaskRepository:
         """
         Get a subtask repository instance.
         
@@ -93,7 +98,9 @@ class RepositoryProviderService:
         Returns:
             SubtaskRepositoryInterface implementation
         """
-        from ...infrastructure.repositories.subtask_repository_factory import SubtaskRepositoryFactory
+        from ...infrastructure.repositories.subtask_repository_factory import (
+            SubtaskRepositoryFactory,
+        )
         
         factory = SubtaskRepositoryFactory()
         
@@ -105,7 +112,7 @@ class RepositoryProviderService:
         # If project_id is provided, use the standard create method
         return factory.create_subtask_repository(project_id, git_branch_name or "main", user_id)
     
-    def get_project_repository(self, user_id: Optional[str] = None, session: Optional[Session] = None) -> ProjectRepository:
+    def get_project_repository(self, user_id: str | None = None, session: Session | None = None) -> ProjectRepository:
         """
         Get a project repository instance.
         
@@ -117,12 +124,14 @@ class RepositoryProviderService:
             ProjectRepositoryInterface implementation
         """
         # ProjectRepositoryFactory uses static methods, not instance methods
-        from ...infrastructure.repositories.project_repository_factory import ProjectRepositoryFactory
+        from ...infrastructure.repositories.project_repository_factory import (
+            ProjectRepositoryFactory,
+        )
         
         # Use the create method which is a classmethod
         return ProjectRepositoryFactory.create(user_id=user_id)
     
-    def get_agent_repository(self, session: Optional[Session] = None) -> AgentRepository:
+    def get_agent_repository(self, session: Session | None = None) -> AgentRepository:
         """
         Get an agent repository instance.
         
@@ -133,13 +142,15 @@ class RepositoryProviderService:
             AgentRepositoryInterface implementation
         """
         if 'agent' not in self._repositories:
-            from ...infrastructure.repositories.agent_repository_factory import AgentRepositoryFactory
+            from ...infrastructure.repositories.agent_repository_factory import (
+                AgentRepositoryFactory,
+            )
             factory = AgentRepositoryFactory()
             self._repositories['agent'] = factory
         
         return self._repositories['agent'].create_repository(session)
     
-    def get_git_branch_repository(self, session: Optional[Session] = None, user_id: Optional[str] = None) -> GitBranchRepository:
+    def get_git_branch_repository(self, session: Session | None = None, user_id: str | None = None) -> GitBranchRepository:
         """
         Get a git branch repository instance.
         
@@ -151,12 +162,14 @@ class RepositoryProviderService:
             GitBranchRepositoryInterface implementation
         """
         # GitBranchRepositoryFactory uses static methods, not instance methods
-        from ...infrastructure.repositories.git_branch_repository_factory import GitBranchRepositoryFactory
+        from ...infrastructure.repositories.git_branch_repository_factory import (
+            GitBranchRepositoryFactory,
+        )
         
         # Use the create method which is a classmethod
         return GitBranchRepositoryFactory.create(user_id=user_id)
     
-    def get_global_context_repository(self, session: Optional[Session] = None) -> ContextRepository:
+    def get_global_context_repository(self, session: Session | None = None) -> ContextRepository:
         """
         Get a global context repository instance.
         
@@ -167,12 +180,14 @@ class RepositoryProviderService:
             GlobalContextRepositoryInterface implementation
         """
         if 'global_context' not in self._repositories:
-            from ...infrastructure.repositories.global_context_repository import GlobalContextRepository
+            from ...infrastructure.repositories.global_context_repository import (
+                GlobalContextRepository,
+            )
             self._repositories['global_context'] = GlobalContextRepository(session)
         
         return self._repositories['global_context']
     
-    def get_project_context_repository(self, session: Optional[Session] = None) -> ContextRepository:
+    def get_project_context_repository(self, session: Session | None = None) -> ContextRepository:
         """
         Get a project context repository instance.
         
@@ -183,12 +198,14 @@ class RepositoryProviderService:
             ProjectContextRepositoryInterface implementation
         """
         if 'project_context' not in self._repositories:
-            from ...infrastructure.repositories.project_context_repository import ProjectContextRepository
+            from ...infrastructure.repositories.project_context_repository import (
+                ProjectContextRepository,
+            )
             self._repositories['project_context'] = ProjectContextRepository(session)
         
         return self._repositories['project_context']
     
-    def get_branch_context_repository(self, session: Optional[Session] = None) -> ContextRepository:
+    def get_branch_context_repository(self, session: Session | None = None) -> ContextRepository:
         """
         Get a branch context repository instance.
         
@@ -199,12 +216,14 @@ class RepositoryProviderService:
             BranchContextRepositoryInterface implementation
         """
         if 'branch_context' not in self._repositories:
-            from ...infrastructure.repositories.branch_context_repository import BranchContextRepository
+            from ...infrastructure.repositories.branch_context_repository import (
+                BranchContextRepository,
+            )
             self._repositories['branch_context'] = BranchContextRepository(session)
         
         return self._repositories['branch_context']
     
-    def get_task_context_repository(self, session: Optional[Session] = None) -> ContextRepository:
+    def get_task_context_repository(self, session: Session | None = None) -> ContextRepository:
         """
         Get a task context repository instance.
         
@@ -215,12 +234,14 @@ class RepositoryProviderService:
             TaskContextRepositoryInterface implementation
         """
         if 'task_context' not in self._repositories:
-            from ...infrastructure.repositories.task_context_repository import TaskContextRepository
+            from ...infrastructure.repositories.task_context_repository import (
+                TaskContextRepository,
+            )
             self._repositories['task_context'] = TaskContextRepository(session)
         
         return self._repositories['task_context']
     
-    def get_token_repository(self, session: Optional[Session] = None) -> ITokenRepository:
+    def get_token_repository(self, session: Session | None = None) -> ITokenRepository:
         """
         Get a token repository instance.
         

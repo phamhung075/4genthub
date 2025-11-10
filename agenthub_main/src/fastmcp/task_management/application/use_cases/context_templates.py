@@ -5,12 +5,12 @@ Provides reusable context templates for common project patterns,
 enabling quick setup and standardization across projects.
 """
 
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass, field
-from enum import Enum
 import json
 import logging
-from datetime import datetime, timezone
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
 from ...domain.value_objects.context_enums import ContextLevel
 from ..services.unified_context_service import UnifiedContextService
@@ -38,7 +38,7 @@ class TemplateVariable:
     description: str
     default_value: Any
     required: bool = False
-    validation_regex: Optional[str] = None
+    validation_regex: str | None = None
 
 
 @dataclass
@@ -51,34 +51,34 @@ class ContextTemplate:
     level: ContextLevel
     
     # Template data structure
-    data_template: Dict[str, Any]
+    data_template: dict[str, Any]
     
     # Template metadata (required fields first)
     author: str
     
     # Variables that can be customized
-    variables: List[TemplateVariable] = field(default_factory=list)
+    variables: list[TemplateVariable] = field(default_factory=list)
     
     # Template metadata (optional fields)
     version: str = "1.0.0"
-    tags: List[str] = field(default_factory=list)
-    created_at: Optional[datetime] = None  # Template metadata - will be set when template is registered
+    tags: list[str] = field(default_factory=list)
+    created_at: datetime | None = None  # Template metadata - will be set when template is registered
     
     # Usage statistics
     usage_count: int = 0
-    last_used_at: Optional[datetime] = None
+    last_used_at: datetime | None = None
 
     def __post_init__(self):
         """Initialize template metadata timestamps"""
         if self.created_at is None:
-            self.created_at = datetime.now(timezone.utc)
+            self.created_at = datetime.now(UTC)
 
 
 class TemplateRegistry:
     """Registry of available context templates"""
     
     def __init__(self):
-        self.templates: Dict[str, ContextTemplate] = {}
+        self.templates: dict[str, ContextTemplate] = {}
         self._load_builtin_templates()
     
     def _load_builtin_templates(self):
@@ -464,25 +464,25 @@ class TemplateRegistry:
         self.templates[template.id] = template
         logger.info(f"Registered template: {template.id}")
     
-    def get(self, template_id: str) -> Optional[ContextTemplate]:
+    def get(self, template_id: str) -> ContextTemplate | None:
         """Get template by ID"""
         return self.templates.get(template_id)
     
-    def list_by_category(self, category: TemplateCategory) -> List[ContextTemplate]:
+    def list_by_category(self, category: TemplateCategory) -> list[ContextTemplate]:
         """List templates by category"""
         return [
             t for t in self.templates.values() 
             if t.category == category
         ]
     
-    def list_by_level(self, level: ContextLevel) -> List[ContextTemplate]:
+    def list_by_level(self, level: ContextLevel) -> list[ContextTemplate]:
         """List templates by context level"""
         return [
             t for t in self.templates.values() 
             if t.level == level
         ]
     
-    def search_by_tags(self, tags: List[str]) -> List[ContextTemplate]:
+    def search_by_tags(self, tags: list[str]) -> list[ContextTemplate]:
         """Search templates by tags"""
         results = []
         for template in self.templates.values():
@@ -502,10 +502,10 @@ class ContextTemplateService:
     
     def list_templates(
         self,
-        category: Optional[TemplateCategory] = None,
-        level: Optional[ContextLevel] = None,
-        tags: Optional[List[str]] = None
-    ) -> List[Dict[str, Any]]:
+        category: TemplateCategory | None = None,
+        level: ContextLevel | None = None,
+        tags: list[str] | None = None
+    ) -> list[dict[str, Any]]:
         """List available templates"""
         
         templates = list(self.registry.templates.values())
@@ -528,7 +528,7 @@ class ContextTemplateService:
         # Convert to dict format
         return [self._template_to_dict(t) for t in templates]
     
-    def _template_to_dict(self, template: ContextTemplate) -> Dict[str, Any]:
+    def _template_to_dict(self, template: ContextTemplate) -> dict[str, Any]:
         """Convert template to dictionary using dataclass conversion"""
         from dataclasses import asdict
         result = asdict(template)
@@ -546,10 +546,10 @@ class ContextTemplateService:
         template_id: str,
         context_id: str,
         user_id: str,
-        variables: Optional[Dict[str, Any]] = None,
-        project_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        variables: dict[str, Any] | None = None,
+        project_id: str | None = None,
+        git_branch_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Apply a template to create a new context.
         
@@ -577,7 +577,7 @@ class ContextTemplateService:
         )
         
         # Add template metadata
-        applied_at = datetime.now(timezone.utc)
+        applied_at = datetime.now(UTC)
         context_data['_template'] = {
             'id': template.id,
             'name': template.name,
@@ -596,7 +596,7 @@ class ContextTemplateService:
         )
         
         # Update template usage statistics - metadata not entity timestamp
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         template.usage_count += 1
         template.last_used_at = current_time
         
@@ -605,8 +605,8 @@ class ContextTemplateService:
     def _apply_variables(
         self,
         template: ContextTemplate,
-        variables: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        variables: dict[str, Any]
+    ) -> dict[str, Any]:
         """Apply variables to template data"""
         
         # Convert template to JSON string
@@ -636,9 +636,9 @@ class ContextTemplateService:
         name: str,
         description: str,
         level: ContextLevel,
-        data_template: Dict[str, Any],
-        variables: Optional[List[TemplateVariable]] = None,
-        tags: Optional[List[str]] = None
+        data_template: dict[str, Any],
+        variables: list[TemplateVariable] | None = None,
+        tags: list[str] | None = None
     ) -> ContextTemplate:
         """Create a custom template"""
         

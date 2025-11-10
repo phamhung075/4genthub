@@ -1,6 +1,7 @@
-from pathlib import Path
 import inspect
 import os
+from pathlib import Path
+
 
 def find_project_root(start_path: Path = None) -> Path:
     """

@@ -5,10 +5,10 @@ This module provides granular permission checking for MCP resources
 with support for resource-specific CRUD operations.
 """
 
-from typing import List, Dict, Optional, Set, Any
-from enum import Enum
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class ResourcePermission:
 class PermissionChecker:
     """Utility class for checking resource permissions"""
     
-    def __init__(self, token_payload: Dict[str, Any]):
+    def __init__(self, token_payload: dict[str, Any]):
         """
         Initialize permission checker with JWT token payload
         
@@ -94,7 +94,7 @@ class PermissionChecker:
         self.permissions = self._extract_permissions()
         self.roles = self._extract_roles()
         
-    def _extract_scopes(self) -> Set[str]:
+    def _extract_scopes(self) -> set[str]:
         """Extract scopes from token"""
         scopes = set()
         
@@ -112,7 +112,7 @@ class PermissionChecker:
         
         return scopes
     
-    def _extract_permissions(self) -> Dict[str, Dict[str, bool]]:
+    def _extract_permissions(self) -> dict[str, dict[str, bool]]:
         """Extract permissions from token payload"""
         permissions = {}
         
@@ -140,7 +140,7 @@ class PermissionChecker:
         
         return permissions
     
-    def _extract_roles(self) -> Set[str]:
+    def _extract_roles(self) -> set[str]:
         """Extract roles from token"""
         roles = set()
         
@@ -204,15 +204,15 @@ class PermissionChecker:
         """Check if user has specific role"""
         return role in self.roles
     
-    def has_any_permission(self, resource: ResourceType, actions: List[PermissionAction]) -> bool:
+    def has_any_permission(self, resource: ResourceType, actions: list[PermissionAction]) -> bool:
         """Check if user has any of the specified permissions"""
         return any(self.has_permission(resource, action) for action in actions)
     
-    def has_all_permissions(self, resource: ResourceType, actions: List[PermissionAction]) -> bool:
+    def has_all_permissions(self, resource: ResourceType, actions: list[PermissionAction]) -> bool:
         """Check if user has all of the specified permissions"""
         return all(self.has_permission(resource, action) for action in actions)
     
-    def get_allowed_actions(self, resource: ResourceType) -> List[PermissionAction]:
+    def get_allowed_actions(self, resource: ResourceType) -> list[PermissionAction]:
         """Get all allowed actions for a resource"""
         allowed = []
         for action in PermissionAction:
@@ -220,7 +220,7 @@ class PermissionChecker:
                 allowed.append(action)
         return allowed
     
-    def get_allowed_resources(self) -> List[ResourceType]:
+    def get_allowed_resources(self) -> list[ResourceType]:
         """Get all resources user has any permission for"""
         allowed = []
         for resource in ResourceType:
@@ -228,7 +228,7 @@ class PermissionChecker:
                 allowed.append(resource)
         return allowed
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert permissions to dictionary format"""
         return {
             "scopes": list(self.scopes),
@@ -249,6 +249,7 @@ def require_permission(resource: ResourceType, action: PermissionAction):
             ...
     """
     from functools import wraps
+
     from fastapi import HTTPException, Request
     
     def decorator(func):
@@ -283,7 +284,7 @@ def require_permission(resource: ResourceType, action: PermissionAction):
     return decorator
 
 
-def require_any_permission(*permissions: List[tuple[ResourceType, PermissionAction]]):
+def require_any_permission(*permissions: list[tuple[ResourceType, PermissionAction]]):
     """
     Decorator to require any of the specified permissions
     
@@ -294,6 +295,7 @@ def require_any_permission(*permissions: List[tuple[ResourceType, PermissionActi
         )
     """
     from functools import wraps
+
     from fastapi import HTTPException, Request
     
     def decorator(func):
@@ -339,6 +341,7 @@ def require_scope(scope: str):
         @require_scope("mcp-api")
     """
     from functools import wraps
+
     from fastapi import HTTPException, Request
     
     def decorator(func):

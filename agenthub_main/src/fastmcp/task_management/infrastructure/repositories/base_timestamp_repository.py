@@ -18,18 +18,19 @@ NO LEGACY SUPPORT:
 """
 
 import logging
-from typing import TypeVar, Generic, Type, Optional, List, Dict, Any, Union
-from datetime import datetime
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from datetime import UTC, datetime
+from typing import Any, TypeVar
 
-from .base_orm_repository import BaseORMRepository
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
+
 from ...domain.entities.base.base_timestamp_entity import BaseTimestampEntity
 from ...domain.exceptions.base_exceptions import (
     DatabaseException,
     ResourceNotFoundException,
-    ValidationException
+    ValidationException,
 )
+from .base_orm_repository import BaseORMRepository
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
                 super().__init__(TaskModel)  # SQLAlchemy model
     """
 
-    def __init__(self, model_class: Type[TimestampEntityType]):
+    def __init__(self, model_class: type[TimestampEntityType]):
         """Initialize timestamp repository.
 
         Args:
@@ -185,7 +186,7 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
         start_time: datetime,
         end_time: datetime,
         timestamp_field: str = "updated_at"
-    ) -> List[TimestampEntityType]:
+    ) -> list[TimestampEntityType]:
         """Find entities within a timestamp range.
 
         Args:
@@ -222,7 +223,7 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
             logger.error(f"Database error finding entities by timestamp: {e}")
             raise DatabaseException(f"Failed to find entities by timestamp: {str(e)}")
 
-    def find_stale_entities(self, max_staleness_hours: int = 24) -> List[TimestampEntityType]:
+    def find_stale_entities(self, max_staleness_hours: int = 24) -> list[TimestampEntityType]:
         """Find entities that haven't been updated recently.
 
         Args:
@@ -234,9 +235,9 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
         Raises:
             DatabaseException: If database operation fails
         """
-        from datetime import timezone, timedelta
+        from datetime import timedelta
 
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=max_staleness_hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=max_staleness_hours)
 
         try:
             with self.get_db_session() as session:
@@ -304,7 +305,7 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
 
         logger.debug(f"Entity {operation}: {timestamp_info}")
 
-    def get_timestamp_stats(self) -> Dict[str, Any]:
+    def get_timestamp_stats(self) -> dict[str, Any]:
         """Get timestamp statistics for all entities in this repository.
 
         Returns:

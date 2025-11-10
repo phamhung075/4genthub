@@ -5,8 +5,8 @@ Application layer service for managing audit trails and compliance monitoring.
 
 import logging
 import uuid
-from typing import Dict, Any, List, Union, Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
 # Import compliance enums from proper location
 from ...domain.value_objects import ComplianceLevel
@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 class AuditService:
     """Application service for audit trail and compliance monitoring"""
     
-    def __init__(self, user_id: Optional[str] = None):
+    def __init__(self, user_id: str | None = None):
         self._user_id = user_id  # Store user context
-        self._audit_log: List[Dict[str, Any]] = []
+        self._audit_log: list[dict[str, Any]] = []
         self._compliance_metrics = {
             "total_operations": 0,
             "compliant_operations": 0,
@@ -44,7 +44,7 @@ class AuditService:
         """Create a new service instance scoped to a specific user."""
         return AuditService(user_id)
         
-    def log_operation(self, operation: str, result: Dict[str, Any], compliance_level: Union[ComplianceLevel, str]):
+    def log_operation(self, operation: str, result: dict[str, Any], compliance_level: ComplianceLevel | str):
         """Log operation for audit trail
         
         Args:
@@ -67,7 +67,7 @@ class AuditService:
                 compliance_level_value = "low"
         
         audit_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "operation": operation,
             "compliance_level": compliance_level_value,
             "success": result.get("success", False),
@@ -88,7 +88,7 @@ class AuditService:
         
         logger.info(f"Audit logged: {operation} - Success: {result.get('success')}")
     
-    def generate_compliance_report(self) -> Dict[str, Any]:
+    def generate_compliance_report(self) -> dict[str, Any]:
         """Generate comprehensive compliance report"""
         try:
             total_ops = self._compliance_metrics["total_operations"]
@@ -104,7 +104,7 @@ class AuditService:
             
             return {
                 "report_id": str(uuid.uuid4()),
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
                 "overall_compliance_rate": compliance_rate,
                 "total_operations": total_ops,
                 "compliant_operations": compliant_ops,
@@ -118,16 +118,16 @@ class AuditService:
             logger.error(f"Failed to generate compliance report: {e}")
             return {
                 "report_id": str(uuid.uuid4()),
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
                 "error": str(e),
                 "overall_compliance_rate": 0.0
             }
     
-    def get_audit_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent audit log entries"""
         return self._audit_log[-limit:] if limit > 0 else self._audit_log
     
-    def get_compliance_metrics(self) -> Dict[str, Any]:
+    def get_compliance_metrics(self) -> dict[str, Any]:
         """Get current compliance metrics"""
         return self._compliance_metrics.copy()
     
@@ -161,7 +161,7 @@ class AuditService:
         else:
             return "stable"
     
-    def _generate_recommendations(self) -> List[str]:
+    def _generate_recommendations(self) -> list[str]:
         """Generate compliance improvement recommendations"""
         recommendations = []
         

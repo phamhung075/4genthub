@@ -1,7 +1,7 @@
 """Status Broadcasting Service Interface"""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any
 
 from ..value_objects.status_update import StatusUpdate
 
@@ -10,7 +10,7 @@ class StatusBroadcastingService(ABC):
     """Domain service interface for status broadcasting operations"""
     
     @abstractmethod
-    def register_client_for_updates(self, session_id: str, client_info: Dict[str, Any]) -> StatusUpdate:
+    def register_client_for_updates(self, session_id: str, client_info: dict[str, Any]) -> StatusUpdate:
         """Register a client for status updates"""
         pass
     
@@ -30,11 +30,11 @@ class StatusBroadcastingService(ABC):
         pass
     
     @abstractmethod
-    def get_last_broadcast_info(self) -> Dict[str, Any]:
+    def get_last_broadcast_info(self) -> dict[str, Any]:
         """Get information about the last broadcast"""
         pass
     
     @abstractmethod
-    def validate_broadcasting_infrastructure(self) -> Dict[str, Any]:
+    def validate_broadcasting_infrastructure(self) -> dict[str, Any]:
         """Validate status broadcasting infrastructure"""
         pass 

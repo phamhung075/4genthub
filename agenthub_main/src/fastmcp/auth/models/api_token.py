@@ -2,11 +2,11 @@
 Database model for API tokens.
 """
 
-from sqlalchemy import Column, String, Boolean, Integer, DateTime, ARRAY
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.types import JSON
+from datetime import UTC, datetime
+
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import declarative_base
-from datetime import datetime, timezone
+from sqlalchemy.types import JSON
 
 Base = declarative_base()
 
@@ -31,7 +31,7 @@ class ApiToken(Base):
     scopes = Column(ARRAY(String), nullable=False, default=list)
     
     # Timestamps
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
     expires_at = Column(DateTime, nullable=False)
     last_used_at = Column(DateTime, nullable=True)
     

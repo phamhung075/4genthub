@@ -6,21 +6,23 @@ with the MCP server.
 """
 
 import os
-from typing import Optional, List
+
 from starlette.middleware import Middleware
 
-from fastmcp.server.auth.auth import OAuthProvider
 from .jwt_auth_backend import JWTAuthBackend, create_jwt_auth_backend
+
 # UserContextMiddleware has been replaced with RequestContextMiddleware
 try:
-    from ..middleware.request_context_middleware import RequestContextMiddleware as UserContextMiddleware
+    from ..middleware.request_context_middleware import (
+        RequestContextMiddleware as UserContextMiddleware,
+    )
 except ImportError:
     # Fallback if middleware not available
     UserContextMiddleware = None
 
 
 def configure_jwt_auth_for_mcp(
-    required_scopes: Optional[List[str]] = None,
+    required_scopes: list[str] | None = None,
     database_session_factory=None
 ) -> JWTAuthBackend:
     """
@@ -47,8 +49,8 @@ def configure_jwt_auth_for_mcp(
 
 
 def get_jwt_middleware(
-    jwt_backend: Optional[JWTAuthBackend] = None
-) -> List[Middleware]:
+    jwt_backend: JWTAuthBackend | None = None
+) -> list[Middleware]:
     """
     Get middleware list for JWT authentication.
     
@@ -72,7 +74,7 @@ def get_jwt_middleware(
 
 def setup_mcp_with_jwt_auth(
     mcp_server,
-    required_scopes: Optional[List[str]] = None,
+    required_scopes: list[str] | None = None,
     database_session_factory=None
 ) -> None:
     """

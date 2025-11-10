@@ -5,14 +5,15 @@ domain events in the Vision System architecture.
 """
 
 import asyncio
-import logging
-from typing import Any, Callable, Dict, List, Set, Type, Optional
-from dataclasses import dataclass
-from datetime import datetime
-from weakref import WeakSet
 import inspect
+import logging
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+from weakref import WeakSet
 
 from fastmcp.settings import settings
+
 from .events.event_queue import EventQueue
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EventSubscription:
     """Represents a subscription to an event type."""
-    event_type: Type
+    event_type: type
     handler: Callable
     priority: int = 0
     is_async: bool = False
@@ -41,10 +42,10 @@ class EventBus:
     
     def __init__(self):
         """Initialize the event bus."""
-        self._subscriptions: Dict[Type, List[EventSubscription]] = {}
+        self._subscriptions: dict[type, list[EventSubscription]] = {}
         self._active_handlers: WeakSet = WeakSet()
-        self._async_event_queue: Optional[EventQueue] = None
-        self._processing_task: Optional[asyncio.Task] = None
+        self._async_event_queue: EventQueue | None = None
+        self._processing_task: asyncio.Task | None = None
         self._shutdown = False
 
     def set_event_queue(self, queue: EventQueue) -> None:
@@ -58,7 +59,7 @@ class EventBus:
         logger.info("EventBus configured with async event queue")
         
     def subscribe(self, 
-                  event_type: Type,
+                  event_type: type,
                   handler: Callable,
                   priority: int = 0) -> None:
         """
@@ -94,7 +95,7 @@ class EventBus:
                     f"with priority {priority}")
     
     def unsubscribe(self, 
-                    event_type: Type,
+                    event_type: type,
                     handler: Callable) -> bool:
         """
         Unsubscribe a handler from an event type.
@@ -243,7 +244,7 @@ class EventBus:
                     exc_info=True
                 )
     
-    async def publish_batch(self, events: List[Any]) -> None:
+    async def publish_batch(self, events: list[Any]) -> None:
         """
         Publish multiple events in order.
         
@@ -253,7 +254,7 @@ class EventBus:
         for event in events:
             await self.publish(event)
     
-    def clear_subscriptions(self, event_type: Optional[Type] = None) -> None:
+    def clear_subscriptions(self, event_type: type | None = None) -> None:
         """
         Clear subscriptions for a specific event type or all subscriptions.
         
@@ -268,7 +269,7 @@ class EventBus:
             self._subscriptions.clear()
             logger.debug("Cleared all event subscriptions")
     
-    def get_subscriptions(self, event_type: Type) -> List[Callable]:
+    def get_subscriptions(self, event_type: type) -> list[Callable]:
         """
         Get all handlers subscribed to an event type.
         
@@ -283,7 +284,7 @@ class EventBus:
             
         return [sub.handler for sub in self._subscriptions[event_type]]
     
-    def has_subscribers(self, event_type: Type) -> bool:
+    def has_subscribers(self, event_type: type) -> bool:
         """
         Check if an event type has any subscribers.
         
@@ -343,7 +344,7 @@ class EventBus:
 
 
 # Global event bus instance
-_global_event_bus: Optional[EventBus] = None
+_global_event_bus: EventBus | None = None
 
 
 def get_event_bus() -> EventBus:

@@ -7,17 +7,18 @@ Follows the same pattern as project_routes.py
 """
 
 import logging
-from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, Depends, HTTPException, status, Form
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 
-from ...auth.interface.fastapi_auth import get_db
+from fastapi import APIRouter, Depends, Form, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from ...auth.domain.entities.user import User
 
 # Use unified authentication that switches based on AUTH_PROVIDER
-from ...auth.interface.fastapi_auth import get_current_user
-from ...task_management.interface.api_controllers.branch_api_controller import BranchAPIController
+from ...auth.interface.fastapi_auth import get_current_user, get_db
+from ...task_management.interface.api_controllers.branch_api_controller import (
+    BranchAPIController,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ async def create_branch(
 
 @router.get("/", response_model=dict)
 async def list_branches(
-    project_id: Optional[str] = None,
+    project_id: str | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -157,9 +158,9 @@ async def get_branch(
 @router.put("/{branch_id}", response_model=dict)
 async def update_branch(
     branch_id: str,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    status: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    status: str | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -393,7 +394,7 @@ async def get_project_branches_with_task_counts(
 
 # Request model for bulk summaries
 class BulkSummaryRequest(BaseModel):
-    project_ids: Optional[List[str]] = None
+    project_ids: list[str] | None = None
     include_archived: bool = False
 
 

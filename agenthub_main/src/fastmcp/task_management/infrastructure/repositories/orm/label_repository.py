@@ -5,22 +5,21 @@ This module implements the Label repository using SQLAlchemy ORM,
 providing CRUD operations for labels and their relationships with tasks.
 """
 
-from typing import List, Optional, Dict, Any
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
-from ...database.models import Label, TaskLabel, Task
-from ...database.database_adapter import DatabaseAdapter
-from ..base_timestamp_repository import BaseTimestampRepository
+from sqlalchemy.exc import IntegrityError
+
 from ....domain.entities.label import Label as LabelEntity
 from ....domain.entities.task import Task as TaskEntity
 from ....domain.exceptions.base_exceptions import (
-    RepositoryError,
     NotFoundError,
-    ValidationError
+    RepositoryError,
+    ValidationError,
 )
+from ...database.database_adapter import DatabaseAdapter
+from ...database.models import Label, Task, TaskLabel
+from ..base_timestamp_repository import BaseTimestampRepository
 
 
 class ORMLabelRepository(BaseTimestampRepository[Label]):
@@ -65,8 +64,8 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                     color=color,
                     description=description,
                     user_id=effective_user_id,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC)
                 )
                 
                 session.add(label)
@@ -85,7 +84,7 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                     message=(
                         f"Label creation failed due to timestamp constraint violation. "
                         f"Timestamps must be timezone-aware UTC datetime objects. "
-                        f"Use datetime.now(timezone.utc) instead of datetime.now(). "
+                        f"Use datetime.now(UTC) instead of datetime.now(). "
                         f"Technical details: {error_msg}"
                     )
                 )
@@ -109,7 +108,7 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                         f"Technical details: {error_msg}"
                     )
                 )
-        except ValueError as e:
+        except ValueError:
             # Let ValueError from domain validation propagate without wrapping
             # This allows tests to catch validation errors directly
             raise
@@ -122,7 +121,7 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                 )
             )
     
-    def get_label(self, label_id: int) -> Optional[LabelEntity]:
+    def get_label(self, label_id: int) -> LabelEntity | None:
         """
         Get a label by ID.
         
@@ -143,7 +142,7 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
         except Exception as e:
             raise RepositoryError(message=f"Failed to get label: {str(e)}")
     
-    def get_label_by_name(self, name: str) -> Optional[LabelEntity]:
+    def get_label_by_name(self, name: str) -> LabelEntity | None:
         """
         Get a label by name.
         
@@ -164,8 +163,8 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
         except Exception as e:
             raise RepositoryError(message=f"Failed to get label by name: {str(e)}")
     
-    def update_label(self, label_id: int, name: Optional[str] = None,
-                    color: Optional[str] = None, description: Optional[str] = None) -> LabelEntity:
+    def update_label(self, label_id: int, name: str | None = None,
+                    color: str | None = None, description: str | None = None) -> LabelEntity:
         """
         Update a label using DDD-compliant pattern.
 
@@ -253,8 +252,8 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
         except Exception as e:
             raise RepositoryError(message=f"Failed to delete label: {str(e)}")
     
-    def list_labels(self, limit: Optional[int] = None, 
-                   offset: Optional[int] = None) -> List[LabelEntity]:
+    def list_labels(self, limit: int | None = None, 
+                   offset: int | None = None) -> list[LabelEntity]:
         """
         List all labels.
         
@@ -328,7 +327,7 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                     task_id=task_id,
                     label_id=label_id,
                     user_id=effective_user_id,
-                    applied_at=datetime.now(timezone.utc)
+                    applied_at=datetime.now(UTC)
                 )
                 
                 session.add(task_label)
@@ -403,7 +402,7 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
         except Exception as e:
             raise RepositoryError(message=f"Failed to remove label from task: {str(e)}")
     
-    def get_tasks_by_label(self, label_id: int) -> List[TaskEntity]:
+    def get_tasks_by_label(self, label_id: int) -> list[TaskEntity]:
         """
         Get all tasks that have a specific label.
         
@@ -436,7 +435,7 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
         except Exception as e:
             raise RepositoryError(message=f"Failed to get tasks by label: {str(e)}")
     
-    def get_labels_by_task(self, task_id: str) -> List[LabelEntity]:
+    def get_labels_by_task(self, task_id: str) -> list[LabelEntity]:
         """
         Get all labels assigned to a specific task.
         
@@ -480,7 +479,7 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
             updated_at=model.updated_at
         )
 
-    def _entity_to_model_dict(self, entity: LabelEntity) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, entity: LabelEntity) -> dict[str, Any]:
         """
         Convert LabelEntity to model dictionary for database updates.
 

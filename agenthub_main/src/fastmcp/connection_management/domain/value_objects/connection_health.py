@@ -1,7 +1,7 @@
 """ConnectionHealth Value Object"""
 
 from dataclasses import dataclass
-from typing import Dict, Any, List
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -12,9 +12,9 @@ class ConnectionHealth:
     connection_id: str
     idle_time_seconds: float
     duration_seconds: float
-    client_info: Dict[str, Any]
-    issues: List[str]
-    recommendations: List[str]
+    client_info: dict[str, Any]
+    issues: list[str]
+    recommendations: list[str]
     
     def __post_init__(self):
         """Validate connection health values"""
@@ -35,7 +35,7 @@ class ConnectionHealth:
         """Check if connection has any issues"""
         return len(self.issues) > 0
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation"""
         return {
             "success": True,

@@ -2,9 +2,11 @@
 
 import logging
 
-from ..dtos.connection_dtos import ConnectionHealthRequest, ConnectionHealthResponse
 from ...domain.repositories.connection_repository import ConnectionRepository
-from ...domain.services.connection_diagnostics_service import ConnectionDiagnosticsService
+from ...domain.services.connection_diagnostics_service import (
+    ConnectionDiagnosticsService,
+)
+from ..dtos.connection_dtos import ConnectionHealthRequest, ConnectionHealthResponse
 
 logger = logging.getLogger(__name__)
 

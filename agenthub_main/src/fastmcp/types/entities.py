@@ -3,8 +3,9 @@ Entity DTOs - Core domain objects
 Matches frontend types in api.types.ts
 """
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 
 class TaskDTO(BaseModel):
@@ -39,30 +40,30 @@ class TaskDTO(BaseModel):
     """
     id: str
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     status: str
     priority: str
-    assignees: Optional[List[str]] = None
+    assignees: list[str] | None = None
     assignees_count: int
     subtask_count: int
     has_dependencies: bool
-    dependency_count: Optional[int] = None
-    dependencies: Optional[List[str]] = None
+    dependency_count: int | None = None
+    dependencies: list[str] | None = None
     has_context: bool
-    context_id: Optional[str] = None
-    context_data: Optional[Any] = None
-    git_branch_id: Optional[str] = None
-    project_id: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-    due_date: Optional[str] = None
-    estimated_effort: Optional[str] = None
-    labels: Optional[List[str]] = None
-    details: Optional[str] = None
-    progress_percentage: Optional[int] = None
-    progress_history: Optional[Dict[str, Any]] = None
-    progress_count: Optional[int] = None
-    subtasks: Optional[List['SubtaskDTO']] = None
+    context_id: str | None = None
+    context_data: Any | None = None
+    git_branch_id: str | None = None
+    project_id: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    due_date: str | None = None
+    estimated_effort: str | None = None
+    labels: list[str] | None = None
+    details: str | None = None
+    progress_percentage: int | None = None
+    progress_history: dict[str, Any] | None = None
+    progress_count: int | None = None
+    subtasks: list['SubtaskDTO'] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -102,18 +103,18 @@ class SubtaskDTO(BaseModel):
     id: str
     task_id: str  # In frontend this is parent_task_id
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     status: str
     priority: str
-    assignees: Optional[List[str]] = None
+    assignees: list[str] | None = None
     assignees_count: int
-    progress_percentage: Optional[int] = None
-    progress_history: Optional[Dict[str, Any]] = None  # Detailed progress tracking with timestamped entries
-    progress_count: Optional[int] = None  # Number of progress entries
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-    progress_notes: Optional[str] = None
-    completion_summary: Optional[str] = None
+    progress_percentage: int | None = None
+    progress_history: dict[str, Any] | None = None  # Detailed progress tracking with timestamped entries
+    progress_count: int | None = None  # Number of progress entries
+    created_at: str | None = None
+    updated_at: str | None = None
+    progress_notes: str | None = None
+    completion_summary: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -122,15 +123,15 @@ class ProjectDTO(BaseModel):
     """Project model matching frontend Project interface"""
     id: str
     name: str
-    description: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-    owner_id: Optional[str] = None
-    status: Optional[str] = None
-    branch_count: Optional[int] = None
-    task_count: Optional[int] = None
-    git_branchs: Optional[Dict[str, 'BranchDTO']] = None  # API returns Record<string, Branch>
-    branches: Optional[List['BranchDTO']] = None  # Legacy array format
+    description: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    owner_id: str | None = None
+    status: str | None = None
+    branch_count: int | None = None
+    task_count: int | None = None
+    git_branchs: dict[str, 'BranchDTO'] | None = None  # API returns Record<string, Branch>
+    branches: list['BranchDTO'] | None = None  # Legacy array format
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -141,13 +142,13 @@ class BranchDTO(BaseModel):
     project_id: str
     name: str
     git_branch_name: str
-    description: Optional[str] = None
-    status: Optional[str] = None
-    is_active: Optional[bool] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-    task_count: Optional[int] = None
-    completed_tasks: Optional[int] = None
+    description: str | None = None
+    status: str | None = None
+    is_active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    task_count: int | None = None
+    completed_tasks: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -156,12 +157,12 @@ class RuleDTO(BaseModel):
     """Rule model matching frontend Rule interface"""
     id: str
     name: str
-    description: Optional[str] = None
-    category: Optional[str] = None
-    content: Optional[str] = None
-    enabled: Optional[bool] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
+    content: str | None = None
+    enabled: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

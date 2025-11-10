@@ -6,33 +6,32 @@ handoff workflows, and agent performance tracking.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone, timedelta
 from collections import defaultdict
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from ...domain.events.agent_events import (
     AgentAssigned,
-    AgentUnassigned,
-    AgentWorkloadChanged,
-    WorkHandoffRequested,
-    WorkHandoffAccepted,
-    WorkHandoffRejected,
-    WorkHandoffCompleted,
-    ConflictDetected,
-    ConflictResolved,
-    AgentCollaborationStarted,
     AgentCollaborationEnded,
-    AgentStatusBroadcast,
-    AgentWorkloadRebalanced,
+    AgentCollaborationStarted,
+    AgentCommunicationSent,
     AgentEscalationRaised,
     AgentEscalationResolved,
-    AgentCommunicationSent,
     AgentPerformanceEvaluated,
+    AgentStatusBroadcast,
+    AgentUnassigned,
+    AgentWorkloadChanged,
+    AgentWorkloadRebalanced,
+    ConflictDetected,
+    ConflictResolved,
+    WorkHandoffAccepted,
+    WorkHandoffCompleted,
+    WorkHandoffRejected,
+    WorkHandoffRequested,
 )
 from ...domain.events.base import BaseDomainEvent
 from ...infrastructure.event_store import EventStore
-
 
 logger = logging.getLogger(__name__)
 
@@ -48,15 +47,15 @@ class AgentEventHandlers:
     def __init__(
         self,
         event_store: EventStore,
-        agent_repository: Optional[Any] = None,
-        coordination_service: Optional[Any] = None
+        agent_repository: Any | None = None,
+        coordination_service: Any | None = None
     ):
         self.event_store = event_store
         self.agent_repository = agent_repository
         self.coordination_service = coordination_service
 
         # Agent statistics tracking
-        self.agent_stats: Dict[str, Dict[str, int]] = defaultdict(
+        self.agent_stats: dict[str, dict[str, int]] = defaultdict(
             lambda: {
                 "assignments": 0,
                 "unassignments": 0,
@@ -69,13 +68,13 @@ class AgentEventHandlers:
         )
 
         # Workload tracking
-        self.agent_workloads: Dict[str, Dict[str, Any]] = {}
+        self.agent_workloads: dict[str, dict[str, Any]] = {}
 
         # Collaboration tracking
-        self.active_collaborations: Dict[str, List[str]] = defaultdict(list)
+        self.active_collaborations: dict[str, list[str]] = defaultdict(list)
 
         # Performance tracking
-        self.performance_history: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        self.performance_history: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
     async def handle_agent_assigned(self, event: AgentAssigned) -> None:
         """
@@ -96,7 +95,7 @@ class AgentEventHandlers:
             self.agent_workloads[str(event.agent_id)] = {
                 "active_tasks": [],
                 "total_assignments": 0,
-                "last_updated": datetime.now(timezone.utc)
+                "last_updated": datetime.now(UTC)
             }
 
         self.agent_workloads[str(event.agent_id)]["active_tasks"].append(str(event.task_id))
@@ -449,7 +448,7 @@ class AgentEventHandlers:
                 self.performance_history[str(event.agent_id)][-30:]
             )
 
-    async def get_agent_statistics(self, agent_id: Optional[UUID] = None) -> Dict[str, Any]:
+    async def get_agent_statistics(self, agent_id: UUID | None = None) -> dict[str, Any]:
         """
         Get agent statistics for a specific agent or all agents.
 

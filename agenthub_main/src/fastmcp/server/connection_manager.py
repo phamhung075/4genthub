@@ -11,11 +11,9 @@ Purpose: Improve MCP client connection reliability and handle Docker rebuild sce
 
 import asyncio
 import logging
-import time
-import uuid
-from typing import Dict, Any, Optional, Set
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +22,12 @@ logger = logging.getLogger(__name__)
 class ConnectionInfo:
     """Information about an MCP client connection"""
     session_id: str
-    client_info: Dict[str, Any]
+    client_info: dict[str, Any]
     connected_at: datetime
     last_activity: datetime
     health_check_count: int = 0
     is_healthy: bool = True
-    client_capabilities: Dict[str, Any] = None
+    client_capabilities: dict[str, Any] = None
     
     def update_activity(self):
         """Update the last activity timestamp"""
@@ -44,12 +42,12 @@ class ConnectionManager:
     """Manages MCP client connections with health monitoring and reconnection support"""
     
     def __init__(self):
-        self.connections: Dict[str, ConnectionInfo] = {}
+        self.connections: dict[str, ConnectionInfo] = {}
         self.server_start_time = datetime.now()
         self.server_restart_count = 0
         self.health_check_interval = 30  # seconds
         self.connection_timeout = 30  # minutes
-        self._health_task: Optional[asyncio.Task] = None
+        self._health_task: asyncio.Task | None = None
         self._running = False
         
     async def start_monitoring(self):
@@ -72,8 +70,8 @@ class ConnectionManager:
                 pass
         logger.info("Connection manager stopped")
         
-    async def register_connection(self, session_id: str, client_info: Dict[str, Any], 
-                                client_capabilities: Dict[str, Any] = None) -> ConnectionInfo:
+    async def register_connection(self, session_id: str, client_info: dict[str, Any], 
+                                client_capabilities: dict[str, Any] = None) -> ConnectionInfo:
         """Register a new MCP client connection"""
         now = datetime.now()
         
@@ -103,11 +101,11 @@ class ConnectionManager:
             return connection
         return None
         
-    async def get_connection(self, session_id: str) -> Optional[ConnectionInfo]:
+    async def get_connection(self, session_id: str) -> ConnectionInfo | None:
         """Get connection information by session ID"""
         return self.connections.get(session_id)
         
-    async def get_active_connections(self) -> Dict[str, ConnectionInfo]:
+    async def get_active_connections(self) -> dict[str, ConnectionInfo]:
         """Get all active (non-stale) connections"""
         active = {}
         for session_id, conn in self.connections.items():
@@ -131,7 +129,7 @@ class ConnectionManager:
             
         return len(stale_sessions)
         
-    async def get_connection_stats(self) -> Dict[str, Any]:
+    async def get_connection_stats(self) -> dict[str, Any]:
         """Get comprehensive connection statistics"""
         active_connections = await self.get_active_connections()
         
@@ -200,7 +198,7 @@ class ConnectionManager:
             
         logger.info(f"Server restart detected (#{self.server_restart_count}). Existing connections marked for validation.")
         
-    async def get_reconnection_info(self) -> Dict[str, Any]:
+    async def get_reconnection_info(self) -> dict[str, Any]:
         """Get information to help clients reconnect after server restart"""
         return {
             "server_restart_count": self.server_restart_count,
@@ -213,7 +211,7 @@ class ConnectionManager:
 
 
 # Global connection manager instance
-_connection_manager: Optional[ConnectionManager] = None
+_connection_manager: ConnectionManager | None = None
 
 
 async def get_connection_manager() -> ConnectionManager:

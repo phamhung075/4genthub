@@ -2,19 +2,18 @@
 Branch Context Repository for unified context system.
 """
 
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from datetime import datetime, timezone
-from contextlib import contextmanager
 import logging
 import uuid
+from contextlib import contextmanager
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from ...domain.entities.context import BranchContext
 from ...infrastructure.database.models import BranchContext as BranchContextModel
-from .base_orm_repository import BaseORMRepository
 from ..cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
+from .base_orm_repository import BaseORMRepository
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +44,7 @@ def _normalize_uuid(uuid_value: any) -> str:
 class BranchContextRepository(CacheInvalidationMixin, BaseORMRepository):
     """Repository for branch context operations."""
     
-    def __init__(self, session_factory, user_id: Optional[str] = None):
+    def __init__(self, session_factory, user_id: str | None = None):
         super().__init__(BranchContextModel)
         self.session_factory = session_factory
         self.user_id = user_id
@@ -203,7 +202,7 @@ class BranchContextRepository(CacheInvalidationMixin, BaseORMRepository):
                 logger.error(f"Unexpected error creating branch context: {e}")
                 raise
     
-    def get(self, context_id: str) -> Optional[BranchContext]:
+    def get(self, context_id: str) -> BranchContext | None:
         """Get branch context by ID."""
         with self.get_db_session() as session:
             query = session.query(BranchContextModel).filter(BranchContextModel.id == context_id)
@@ -303,7 +302,7 @@ class BranchContextRepository(CacheInvalidationMixin, BaseORMRepository):
             
             return True
     
-    def list(self, filters: Optional[Dict[str, Any]] = None) -> List[BranchContext]:
+    def list(self, filters: dict[str, Any] | None = None) -> list[BranchContext]:
         """List branch contexts."""
         with self.get_db_session() as session:
             stmt = select(BranchContextModel)

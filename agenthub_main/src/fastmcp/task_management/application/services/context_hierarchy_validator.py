@@ -6,7 +6,8 @@ for the 4-tier hierarchy: Global → Project → Branch → Task
 """
 
 import logging
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Any
+
 from ...domain.value_objects.context_enums import ContextLevel
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class ContextHierarchyValidator:
     """Validates context hierarchy requirements and provides guidance."""
     
-    def __init__(self, global_repo, project_repo, branch_repo, task_repo, user_id: Optional[str] = None):
+    def __init__(self, global_repo, project_repo, branch_repo, task_repo, user_id: str | None = None):
         """Initialize with context repositories and optional user_id."""
         self.global_repo = global_repo
         self.project_repo = project_repo
@@ -27,8 +28,8 @@ class ContextHierarchyValidator:
         self, 
         level: ContextLevel, 
         context_id: str,
-        data: Dict[str, Any]
-    ) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]]]:
+        data: dict[str, Any]
+    ) -> tuple[bool, str | None, dict[str, Any] | None]:
         """
         Validate that parent contexts exist before creating a child context.
         
@@ -53,7 +54,7 @@ class ContextHierarchyValidator:
         
         return False, f"Unknown context level: {level}", None
     
-    def _validate_project_requirements(self, project_id: str) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]]]:
+    def _validate_project_requirements(self, project_id: str) -> tuple[bool, str | None, dict[str, Any] | None]:
         """Validate project context requirements - more permissive approach."""
         # Check if global context exists
         try:
@@ -97,7 +98,7 @@ class ContextHierarchyValidator:
                 "auto_creation": True
             }
     
-    def _validate_branch_requirements(self, branch_id: str, data: Dict[str, Any]) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]]]:
+    def _validate_branch_requirements(self, branch_id: str, data: dict[str, Any]) -> tuple[bool, str | None, dict[str, Any] | None]:
         """Validate branch context requirements."""
         # Handle None data gracefully
         if data is None:
@@ -181,10 +182,10 @@ class ContextHierarchyValidator:
             logger.debug(f"Project context check error: {e}")
             return False, "Project context must exist first", {
                 "error": f"Cannot verify project context: {project_id}",
-                "suggestion": f"Create the project context first, then retry creating the branch context"
+                "suggestion": "Create the project context first, then retry creating the branch context"
             }
     
-    def _validate_task_requirements(self, task_id: str, data: Dict[str, Any]) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]]]:
+    def _validate_task_requirements(self, task_id: str, data: dict[str, Any]) -> tuple[bool, str | None, dict[str, Any] | None]:
         """Validate task context requirements."""
         # Task needs branch_id (check common field names)
         branch_id = (data.get("branch_id") or 
@@ -245,7 +246,7 @@ class ContextHierarchyValidator:
                         },
                         {
                             "description": "Alternative: Create git branch first",
-                            "command": f'manage_git_branch(action="create", project_id="your-project-id", git_branch_name="feature/branch")'
+                            "command": 'manage_git_branch(action="create", project_id="your-project-id", git_branch_name="feature/branch")'
                         }
                     ],
                     "alternative": "If you're unsure of the branch_id, list available branches using manage_git_branch"
@@ -261,7 +262,7 @@ class ContextHierarchyValidator:
                 "error_details": str(e)
             }
     
-    def get_hierarchy_status(self) -> Dict[str, Any]:
+    def get_hierarchy_status(self) -> dict[str, Any]:
         """Get the current status of the context hierarchy."""
         status = {
             "hierarchy_levels": ["global", "project", "branch", "task"],

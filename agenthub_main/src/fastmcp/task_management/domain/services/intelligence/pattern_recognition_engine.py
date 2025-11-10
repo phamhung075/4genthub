@@ -6,7 +6,6 @@ for new tasks using machine learning techniques.
 """
 
 import logging
-import json
 
 # Optional numpy import with fallback
 try:
@@ -21,11 +20,11 @@ except ImportError:
     
     np = MockNumpy()
     NUMPY_AVAILABLE = False
-from typing import List, Dict, Optional, Any, Tuple, Set
+from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from collections import defaultdict, Counter
+from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -45,15 +44,15 @@ class PatternType(Enum):
 class TaskVector:
     """Vector representation of a task for ML processing"""
     task_id: str
-    title_tokens: List[str]
-    description_tokens: List[str]
-    agents: List[str]
+    title_tokens: list[str]
+    description_tokens: list[str]
+    agents: list[str]
     priority: str
     estimated_effort: str
-    file_references: List[str]
-    technical_entities: List[str]
+    file_references: list[str]
+    technical_entities: list[str]
     creation_time: datetime
-    completion_time: Optional[datetime] = None
+    completion_time: datetime | None = None
 
 
 @dataclass
@@ -61,14 +60,14 @@ class DependencyPattern:
     """Represents a learned dependency pattern"""
     pattern_id: str
     pattern_type: PatternType
-    source_features: Dict[str, Any]
-    target_features: Dict[str, Any]
+    source_features: dict[str, Any]
+    target_features: dict[str, Any]
     confidence: float
     support_count: int  # How many times we've seen this pattern
     success_rate: float  # How often this pattern led to successful dependencies
     created_at: datetime
     last_updated: datetime
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -76,11 +75,11 @@ class PatternPrediction:
     """A predicted dependency based on learned patterns"""
     source_task_id: str
     target_task_id: str
-    pattern_ids: List[str]
+    pattern_ids: list[str]
     confidence: float
     reasoning: str
-    features_matched: List[str]
-    pattern_evidence: Dict[str, Any] = field(default_factory=dict)
+    features_matched: list[str]
+    pattern_evidence: dict[str, Any] = field(default_factory=dict)
 
 
 class FeatureExtractor:
@@ -125,7 +124,7 @@ class FeatureExtractor:
                 estimated_effort=getattr(task, 'estimated_effort', None) or "unknown",
                 file_references=file_references,
                 technical_entities=technical_entities,
-                creation_time=getattr(task, 'created_at', datetime.now(timezone.utc)),
+                creation_time=getattr(task, 'created_at', datetime.now(UTC)),
                 completion_time=getattr(task, 'completed_at', None)
             )
             
@@ -141,10 +140,10 @@ class FeatureExtractor:
                 estimated_effort="unknown",
                 file_references=[],
                 technical_entities=[],
-                creation_time=datetime.now(timezone.utc)
+                creation_time=datetime.now(UTC)
             )
     
-    def _tokenize_text(self, text: str) -> List[str]:
+    def _tokenize_text(self, text: str) -> list[str]:
         """Tokenize text into meaningful words"""
         import re
         
@@ -162,7 +161,7 @@ class FeatureExtractor:
         
         return filtered_tokens[:50]  # Limit to prevent huge vectors
     
-    def _extract_file_references(self, text: str) -> List[str]:
+    def _extract_file_references(self, text: str) -> list[str]:
         """Extract file paths from text"""
         import re
         
@@ -178,7 +177,7 @@ class FeatureExtractor:
         
         return list(set(file_refs))[:20]  # Limit and deduplicate
     
-    def _extract_technical_entities(self, text: str) -> List[str]:
+    def _extract_technical_entities(self, text: str) -> list[str]:
         """Extract technical entities from text"""
         import re
         
@@ -206,10 +205,10 @@ class PatternLearner:
     def __init__(self):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.feature_extractor = FeatureExtractor()
-        self.patterns: Dict[str, DependencyPattern] = {}
+        self.patterns: dict[str, DependencyPattern] = {}
         self.pattern_counter = 0
     
-    def learn_from_project_history(self, project_data: List[Dict[str, Any]]) -> List[DependencyPattern]:
+    def learn_from_project_history(self, project_data: list[dict[str, Any]]) -> list[DependencyPattern]:
         """
         Learn patterns from historical project data
         
@@ -235,7 +234,7 @@ class PatternLearner:
         self.logger.info(f"Learned {len(new_patterns)} new patterns from {len(project_data)} projects")
         return new_patterns
     
-    def _analyze_project_patterns(self, project: Dict[str, Any]) -> List[DependencyPattern]:
+    def _analyze_project_patterns(self, project: dict[str, Any]) -> list[DependencyPattern]:
         """Analyze patterns within a single project"""
         patterns = []
         tasks = project.get('tasks', [])
@@ -292,8 +291,8 @@ class PatternLearner:
         self,
         source: TaskVector,
         target: TaskVector,
-        all_vectors: Dict[str, TaskVector],
-        all_deps: List[str]
+        all_vectors: dict[str, TaskVector],
+        all_deps: list[str]
     ) -> PatternType:
         """Identify the type of pattern this dependency represents"""
 
@@ -326,8 +325,8 @@ class PatternLearner:
         source: TaskVector, 
         target: TaskVector, 
         pattern_type: PatternType,
-        project_context: Dict[str, Any]
-    ) -> Optional[DependencyPattern]:
+        project_context: dict[str, Any]
+    ) -> DependencyPattern | None:
         """Extract a dependency pattern from two related tasks"""
         
         try:
@@ -352,8 +351,8 @@ class PatternLearner:
                 confidence=confidence,
                 support_count=1,
                 success_rate=1.0,  # Assume historical dependencies were successful
-                created_at=datetime.now(timezone.utc),
-                last_updated=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                last_updated=datetime.now(UTC),
                 metadata={
                     'project_id': project_context.get('id', ''),
                     'project_domain': project_context.get('domain', 'unknown'),
@@ -368,7 +367,7 @@ class PatternLearner:
             self.logger.error(f"Error extracting pattern: {e}")
             return None
     
-    def _extract_pattern_features(self, vector: TaskVector) -> Dict[str, Any]:
+    def _extract_pattern_features(self, vector: TaskVector) -> dict[str, Any]:
         """Extract features that characterize a task for pattern matching"""
         
         # Get most common tokens (keywords that define the task)
@@ -392,7 +391,7 @@ class PatternLearner:
         
         return features
     
-    def _categorize_entities(self, entities: List[str]) -> List[str]:
+    def _categorize_entities(self, entities: list[str]) -> list[str]:
         """Categorize technical entities by type"""
         categories = []
         
@@ -416,8 +415,8 @@ class PatternLearner:
     
     def _calculate_pattern_confidence(
         self, 
-        source_features: Dict[str, Any], 
-        target_features: Dict[str, Any]
+        source_features: dict[str, Any], 
+        target_features: dict[str, Any]
     ) -> float:
         """Calculate confidence that this represents a meaningful pattern"""
         
@@ -476,10 +475,10 @@ class PatternRecognitionEngine:
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.feature_extractor = FeatureExtractor()
         self.pattern_learner = PatternLearner()
-        self.patterns: Dict[str, DependencyPattern] = {}
+        self.patterns: dict[str, DependencyPattern] = {}
         self.trained = False
     
-    def train_from_historical_data(self, project_history: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def train_from_historical_data(self, project_history: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Train the engine from historical project data
         
@@ -509,13 +508,13 @@ class PatternRecognitionEngine:
             'patterns_learned': len(learned_patterns),
             'pattern_types': dict(pattern_types),
             'average_confidence': float(avg_confidence),
-            'training_completed_at': datetime.now(timezone.utc).isoformat()
+            'training_completed_at': datetime.now(UTC).isoformat()
         }
         
         self.logger.info(f"Training completed: {summary}")
         return summary
     
-    def predict_dependencies(self, task, available_tasks: List) -> List[PatternPrediction]:
+    def predict_dependencies(self, task, available_tasks: list) -> list[PatternPrediction]:
         """
         Predict dependencies for a task based on learned patterns
         
@@ -566,9 +565,9 @@ class PatternRecognitionEngine:
     
     def _find_matching_patterns(
         self, 
-        source_features: Dict[str, Any], 
-        target_features: Dict[str, Any]
-    ) -> List[DependencyPattern]:
+        source_features: dict[str, Any], 
+        target_features: dict[str, Any]
+    ) -> list[DependencyPattern]:
         """Find patterns that match the given feature combination"""
         
         matching_patterns = []
@@ -593,8 +592,8 @@ class PatternRecognitionEngine:
     
     def _calculate_pattern_match_score(
         self, 
-        source_features: Dict[str, Any], 
-        target_features: Dict[str, Any],
+        source_features: dict[str, Any], 
+        target_features: dict[str, Any],
         pattern: DependencyPattern
     ) -> float:
         """Calculate how well the current feature pair matches a learned pattern"""
@@ -620,7 +619,7 @@ class PatternRecognitionEngine:
         
         return min(final_score, 1.0)  # Cap at 1.0
     
-    def _match_features(self, features1: Dict[str, Any], features2: Dict[str, Any]) -> float:
+    def _match_features(self, features1: dict[str, Any], features2: dict[str, Any]) -> float:
         """Calculate feature similarity between two feature sets"""
         
         similarity_scores = []
@@ -671,7 +670,7 @@ class PatternRecognitionEngine:
         self, 
         source_task_id: str, 
         target_task_id: str, 
-        matching_patterns: List[DependencyPattern]
+        matching_patterns: list[DependencyPattern]
     ) -> PatternPrediction:
         """Create a prediction from matching patterns"""
         
@@ -708,7 +707,7 @@ class PatternRecognitionEngine:
             }
         )
     
-    def get_engine_stats(self) -> Dict[str, Any]:
+    def get_engine_stats(self) -> dict[str, Any]:
         """Get statistics about the pattern recognition engine"""
         if not self.patterns:
             return {'status': 'not_trained', 'patterns': 0}

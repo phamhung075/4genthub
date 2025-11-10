@@ -16,14 +16,13 @@ NO LEGACY COMPATIBILITY - Clean validation implementation only.
 """
 
 import re
-from datetime import datetime, timezone, timezone
-from typing import Optional, Tuple
+from datetime import UTC, datetime
 
 
 class LabelValidationError(ValueError):
     """Custom exception for label validation errors with detailed context."""
 
-    def __init__(self, field: str, message: str, hint: Optional[str] = None):
+    def __init__(self, field: str, message: str, hint: str | None = None):
         """Initialize validation error with field context.
 
         Args:
@@ -70,10 +69,10 @@ class LabelValidator:
 
     @staticmethod
     def validate_timestamp(
-        timestamp: Optional[datetime],
+        timestamp: datetime | None,
         field_name: str = "timestamp"
     ) -> None:
-        """Validate timestamp is not None and is timezone.utc-aware.
+        """Validate timestamp is not None and is UTC-aware.
 
         Args:
             timestamp: The datetime to validate
@@ -84,7 +83,7 @@ class LabelValidator:
 
         Examples:
             >>> validator = LabelValidator()
-            >>> validator.validate_timestamp(datetime.now(timezone.utc), "created_at")
+            >>> validator.validate_timestamp(datetime.now(UTC), "created_at")
             >>> validator.validate_timestamp(datetime.now(), "created_at")  # Raises error
             LabelValidationError: Label validation error (created_at): Timestamp must be timezone-aware
         """
@@ -92,17 +91,17 @@ class LabelValidator:
             raise LabelValidationError(
                 field=field_name,
                 message=f"{field_name} cannot be None",
-                hint="Use datetime.now(timezone.utc) to create UTC timestamps"
+                hint="Use datetime.now(UTC) to create UTC timestamps"
             )
 
         if timestamp.tzinfo is None:
             raise LabelValidationError(
                 field=field_name,
                 message="Timestamp must be timezone-aware",
-                hint="Use datetime.now(timezone.utc) instead of datetime.now()"
+                hint="Use datetime.now(UTC) instead of datetime.now()"
             )
 
-        if timestamp.tzinfo != timezone.utc:
+        if timestamp.tzinfo != UTC:
             raise LabelValidationError(
                 field=field_name,
                 message="Timestamp must be in UTC timezone",
@@ -161,7 +160,7 @@ class LabelValidator:
             )
 
     @classmethod
-    def validate_color(cls, color: Optional[str]) -> None:
+    def validate_color(cls, color: str | None) -> None:
         """Validate label color format (hex color).
 
         Business Rules:
@@ -207,7 +206,7 @@ class LabelValidator:
             )
 
     @classmethod
-    def validate_description(cls, description: Optional[str]) -> None:
+    def validate_description(cls, description: str | None) -> None:
         """Validate label description constraints.
 
         Business Rules:
@@ -248,11 +247,11 @@ class LabelValidator:
     def validate_label_creation(
         cls,
         name: str,
-        color: Optional[str] = None,
-        description: Optional[str] = None,
-        created_at: Optional[datetime] = None,
-        updated_at: Optional[datetime] = None
-    ) -> Tuple[bool, Optional[str]]:
+        color: str | None = None,
+        description: str | None = None,
+        created_at: datetime | None = None,
+        updated_at: datetime | None = None
+    ) -> tuple[bool, str | None]:
         """Validate all requirements for label creation.
 
         This method performs comprehensive validation of all label fields
@@ -276,8 +275,8 @@ class LabelValidator:
             ...     name="backend",
             ...     color="#ff0000",
             ...     description="Backend tasks",
-            ...     created_at=datetime.now(timezone.utc),
-            ...     updated_at=datetime.now(timezone.utc)
+            ...     created_at=datetime.now(UTC),
+            ...     updated_at=datetime.now(UTC)
             ... )
             >>> assert success is True
             >>> assert error is None
@@ -318,10 +317,10 @@ class LabelValidator:
     @classmethod
     def validate_label_update(
         cls,
-        name: Optional[str] = None,
-        color: Optional[str] = None,
-        description: Optional[str] = None
-    ) -> Tuple[bool, Optional[str]]:
+        name: str | None = None,
+        color: str | None = None,
+        description: str | None = None
+    ) -> tuple[bool, str | None]:
         """Validate requirements for label update.
 
         Update validation is more permissive than creation validation since
@@ -377,7 +376,7 @@ class LabelValidator:
 
         Examples:
             >>> validator = LabelValidator()
-            >>> created = datetime.now(timezone.utc)
+            >>> created = datetime.now(UTC)
             >>> updated = created + timedelta(seconds=1)
             >>> validator.validate_timestamps_consistency(created, updated)  # Valid
         """

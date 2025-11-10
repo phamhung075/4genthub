@@ -6,25 +6,25 @@ Date: 2025-01-27
 This file contains the core business logic for rule composition following DDD principles.
 """
 
-from typing import Dict, Any, List, Optional, Tuple
 from abc import ABC, abstractmethod
+from typing import Any
 
 from ..entities.rule_entity import RuleContent, RuleInheritance
+from ..value_objects import ConflictResolution, InheritanceType, RuleFormat
 from ..value_objects.rule_value_objects import CompositionResult
-from ..value_objects import RuleFormat, ConflictResolution, InheritanceType
 
 
 class IRuleCompositionService(ABC):
     """Interface for rule composition domain service"""
     
     @abstractmethod
-    def compose_rules(self, rules: List[RuleContent], output_format: RuleFormat, 
+    def compose_rules(self, rules: list[RuleContent], output_format: RuleFormat, 
                      composition_strategy: str) -> CompositionResult:
         """Compose multiple rules into a single result"""
         pass
     
     @abstractmethod
-    def resolve_conflicts(self, rules: List[RuleContent]) -> Dict[str, Any]:
+    def resolve_conflicts(self, rules: list[RuleContent]) -> dict[str, Any]:
         """Resolve conflicts between rules"""
         pass
     
@@ -45,7 +45,7 @@ class RuleCompositionService(IRuleCompositionService):
             "priority_merge": self._priority_merge_composition
         }
     
-    def compose_rules(self, rules: List[RuleContent], output_format: RuleFormat = RuleFormat.MDC, 
+    def compose_rules(self, rules: list[RuleContent], output_format: RuleFormat = RuleFormat.MDC, 
                      composition_strategy: str = "intelligent") -> CompositionResult:
         """Compose multiple rules into a single result"""
         if not rules:
@@ -107,7 +107,7 @@ class RuleCompositionService(IRuleCompositionService):
                 warnings=[f"Composition failed: {str(e)}"]
             )
     
-    def resolve_conflicts(self, rules: List[RuleContent]) -> Dict[str, Any]:
+    def resolve_conflicts(self, rules: list[RuleContent]) -> dict[str, Any]:
         """Resolve conflicts between rules"""
         conflicts = []
         resolution_log = []
@@ -151,7 +151,7 @@ class RuleCompositionService(IRuleCompositionService):
         
         return '\n'.join(merged_lines)
     
-    def _sort_rules_by_priority(self, rules: List[RuleContent]) -> List[RuleContent]:
+    def _sort_rules_by_priority(self, rules: list[RuleContent]) -> list[RuleContent]:
         """Sort rules by priority score"""
         def get_priority_score(rule: RuleContent) -> int:
             score = 0
@@ -173,7 +173,7 @@ class RuleCompositionService(IRuleCompositionService):
 
         return sorted(rules, key=get_priority_score, reverse=True)
     
-    def _intelligent_composition(self, rules: List[RuleContent], output_format: RuleFormat) -> Tuple[str, List[str], List[str]]:
+    def _intelligent_composition(self, rules: list[RuleContent], output_format: RuleFormat) -> tuple[str, list[str], list[str]]:
         """Intelligent composition strategy"""
         merged_sections = {}
         merged_variables = {}
@@ -225,7 +225,7 @@ class RuleCompositionService(IRuleCompositionService):
         
         return composed_content, conflicts_resolved, warnings
     
-    def _sequential_composition(self, rules: List[RuleContent], output_format: RuleFormat) -> Tuple[str, List[str], List[str]]:
+    def _sequential_composition(self, rules: list[RuleContent], output_format: RuleFormat) -> tuple[str, list[str], list[str]]:
         """Sequential composition strategy - append content in order"""
         all_content = []
         conflicts_resolved = []
@@ -239,7 +239,7 @@ class RuleCompositionService(IRuleCompositionService):
         composed_content = '\n'.join(all_content)
         return composed_content, conflicts_resolved, warnings
     
-    def _priority_merge_composition(self, rules: List[RuleContent], output_format: RuleFormat) -> Tuple[str, List[str], List[str]]:
+    def _priority_merge_composition(self, rules: list[RuleContent], output_format: RuleFormat) -> tuple[str, list[str], list[str]]:
         """Priority-based merge composition"""
         # Use the highest priority rule as base
         if not rules:
@@ -270,7 +270,7 @@ class RuleCompositionService(IRuleCompositionService):
         
         return composed_content, conflicts_resolved, warnings
     
-    def _detect_rule_conflicts(self, rule1: RuleContent, rule2: RuleContent) -> List[Dict[str, Any]]:
+    def _detect_rule_conflicts(self, rule1: RuleContent, rule2: RuleContent) -> list[dict[str, Any]]:
         """Detect conflicts between two rules"""
         conflicts = []
         
@@ -302,7 +302,7 @@ class RuleCompositionService(IRuleCompositionService):
         
         return conflicts
     
-    def _resolve_single_rule_conflict(self, conflict: Dict[str, Any]) -> Dict[str, Any]:
+    def _resolve_single_rule_conflict(self, conflict: dict[str, Any]) -> dict[str, Any]:
         """Resolve a single rule conflict"""
         resolution = {
             "conflict": conflict,
@@ -330,7 +330,7 @@ class RuleCompositionService(IRuleCompositionService):
         
         return resolution
     
-    def _build_inheritance_chain(self, rules: List[RuleContent]) -> List[RuleInheritance]:
+    def _build_inheritance_chain(self, rules: list[RuleContent]) -> list[RuleInheritance]:
         """Build inheritance chain from rules"""
         inheritance_chain = []
         
@@ -350,8 +350,8 @@ class RuleCompositionService(IRuleCompositionService):
         
         return inheritance_chain
     
-    def _generate_composed_content(self, sections: Dict[str, str], variables: Dict[str, Any], 
-                                 metadata: Dict[str, Any], output_format: RuleFormat) -> str:
+    def _generate_composed_content(self, sections: dict[str, str], variables: dict[str, Any], 
+                                 metadata: dict[str, Any], output_format: RuleFormat) -> str:
         """Generate composed content in the specified format"""
         if output_format == RuleFormat.MDC:
             return self._generate_mdc_content(sections, variables, metadata)
@@ -363,7 +363,7 @@ class RuleCompositionService(IRuleCompositionService):
             # Default to markdown
             return self._generate_markdown_content(sections, variables, metadata)
     
-    def _generate_mdc_content(self, sections: Dict[str, str], variables: Dict[str, Any], metadata: Dict[str, Any]) -> str:
+    def _generate_mdc_content(self, sections: dict[str, str], variables: dict[str, Any], metadata: dict[str, Any]) -> str:
         """Generate MDC format content"""
         content_parts = []
         
@@ -391,7 +391,7 @@ class RuleCompositionService(IRuleCompositionService):
         
         return '\n'.join(content_parts)
     
-    def _generate_markdown_content(self, sections: Dict[str, str], variables: Dict[str, Any], metadata: Dict[str, Any]) -> str:
+    def _generate_markdown_content(self, sections: dict[str, str], variables: dict[str, Any], metadata: dict[str, Any]) -> str:
         """Generate Markdown format content"""
         content_parts = []
         
@@ -415,7 +415,7 @@ class RuleCompositionService(IRuleCompositionService):
         
         return '\n'.join(content_parts)
     
-    def _generate_json_content(self, sections: Dict[str, str], variables: Dict[str, Any], metadata: Dict[str, Any]) -> str:
+    def _generate_json_content(self, sections: dict[str, str], variables: dict[str, Any], metadata: dict[str, Any]) -> str:
         """Generate JSON format content"""
         import json
         

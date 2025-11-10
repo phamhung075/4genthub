@@ -10,7 +10,7 @@ DDD Pattern:
 """
 
 import logging
-from typing import Any, List
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +174,7 @@ class EventPublishingMixin:
 
         return published_count
 
-    def publish_events_batch(self, entities: List[Any]) -> int:
+    def publish_events_batch(self, entities: list[Any]) -> int:
         """
         Publish events from multiple entities in batch.
 

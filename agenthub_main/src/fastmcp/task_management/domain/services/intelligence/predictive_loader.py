@@ -11,13 +11,11 @@ Key Features:
 """
 
 import logging
-from typing import List, Dict, Any, Optional, Set, Tuple, Pattern
+from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from collections import defaultdict, Counter
-import json
-import re
+from datetime import UTC, datetime, timedelta
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -37,22 +35,22 @@ class UsagePattern:
     pattern_id: str
     pattern_type: str
     trigger: PredictionTrigger
-    sequence: List[str]  # Sequence of actions/contexts
+    sequence: list[str]  # Sequence of actions/contexts
     confidence: float    # Confidence in pattern (0.0 to 1.0)
     frequency: int       # How often pattern occurs
     last_seen: datetime
     success_rate: float = 0.0  # How often prediction was correct
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class PredictionResult:
     """Result of context prediction."""
-    predicted_contexts: List[str]
-    confidence_scores: Dict[str, float]
-    patterns_used: List[str]
-    prediction_reasons: List[str]
-    preload_priority: Dict[str, float]
+    predicted_contexts: list[str]
+    confidence_scores: dict[str, float]
+    patterns_used: list[str]
+    prediction_reasons: list[str]
+    preload_priority: dict[str, float]
 
 
 @dataclass
@@ -60,10 +58,10 @@ class SessionContext:
     """Context for current session analysis."""
     session_id: str
     start_time: datetime
-    tool_sequence: List[str] = field(default_factory=list)
-    context_sequence: List[str] = field(default_factory=list)
-    current_task_type: Optional[str] = None
-    user_id: Optional[str] = None
+    tool_sequence: list[str] = field(default_factory=list)
+    context_sequence: list[str] = field(default_factory=list)
+    current_task_type: str | None = None
+    user_id: str | None = None
 
 
 class PredictiveLoader:
@@ -99,22 +97,22 @@ class PredictiveLoader:
         self.max_preload_contexts = max_preload_contexts
         
         # Pattern storage
-        self.usage_patterns: Dict[str, UsagePattern] = {}
-        self.session_history: List[Dict[str, Any]] = []
-        self.current_session: Optional[SessionContext] = None
+        self.usage_patterns: dict[str, UsagePattern] = {}
+        self.session_history: list[dict[str, Any]] = []
+        self.current_session: SessionContext | None = None
         
         # Pattern recognition
-        self.tool_sequences: Dict[Tuple[str, ...], int] = defaultdict(int)
-        self.context_transitions: Dict[Tuple[str, str], int] = defaultdict(int)
-        self.time_based_patterns: Dict[str, List[datetime]] = defaultdict(list)
+        self.tool_sequences: dict[tuple[str, ...], int] = defaultdict(int)
+        self.context_transitions: dict[tuple[str, str], int] = defaultdict(int)
+        self.time_based_patterns: dict[str, list[datetime]] = defaultdict(list)
         
         # Prediction accuracy tracking
-        self.prediction_accuracy: Dict[str, Dict[str, float]] = {}
+        self.prediction_accuracy: dict[str, dict[str, float]] = {}
         
         logger.info("PredictiveLoader initialized")
     
     
-    def start_session(self, session_id: str, user_id: Optional[str] = None) -> None:
+    def start_session(self, session_id: str, user_id: str | None = None) -> None:
         """
         Start tracking a new session.
         
@@ -124,13 +122,13 @@ class PredictiveLoader:
         """
         self.current_session = SessionContext(
             session_id=session_id,
-            start_time=datetime.now(timezone.utc),
+            start_time=datetime.now(UTC),
             user_id=user_id
         )
         logger.info(f"Started session tracking: {session_id}")
     
     
-    def record_tool_usage(self, tool_name: str, context_id: Optional[str] = None) -> None:
+    def record_tool_usage(self, tool_name: str, context_id: str | None = None) -> None:
         """
         Record tool usage for pattern analysis.
         
@@ -179,14 +177,14 @@ class PredictiveLoader:
         self.current_session.context_sequence.append(context_id)
         
         # Record time-based patterns
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         time_key = f"{context_type}_{current_time.hour}"  # Hour-based pattern
         self.time_based_patterns[time_key].append(current_time)
         
         logger.debug(f"Recorded context access: {context_id} ({context_type})")
     
     
-    def end_session(self) -> Dict[str, Any]:
+    def end_session(self) -> dict[str, Any]:
         """
         End current session and analyze patterns.
         
@@ -202,17 +200,17 @@ class PredictiveLoader:
             'session_id': self.current_session.session_id,
             'user_id': self.current_session.user_id,
             'start_time': self.current_session.start_time,
-            'end_time': datetime.now(timezone.utc),
+            'end_time': datetime.now(UTC),
             'tool_sequence': self.current_session.tool_sequence.copy(),
             'context_sequence': self.current_session.context_sequence.copy(),
-            'duration_minutes': (datetime.now(timezone.utc) - self.current_session.start_time).total_seconds() / 60
+            'duration_minutes': (datetime.now(UTC) - self.current_session.start_time).total_seconds() / 60
         }
         
         # Add to session history
         self.session_history.append(session_data)
         
         # Cleanup old sessions
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.session_history_days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=self.session_history_days)
         self.session_history = [
             session for session in self.session_history 
             if session['end_time'] > cutoff_date
@@ -229,9 +227,9 @@ class PredictiveLoader:
     
     def predict_next_contexts(
         self,
-        current_context: Dict[str, Any],
-        recent_tools: List[str],
-        session_context: Optional[Dict[str, Any]] = None
+        current_context: dict[str, Any],
+        recent_tools: list[str],
+        session_context: dict[str, Any] | None = None
     ) -> PredictionResult:
         """
         Predict next likely contexts based on patterns.
@@ -319,7 +317,7 @@ class PredictiveLoader:
         return result
     
     
-    def _predict_from_tool_sequence(self, recent_tools: List[str]) -> Dict[str, float]:
+    def _predict_from_tool_sequence(self, recent_tools: list[str]) -> dict[str, float]:
         """Predict contexts based on recent tool usage sequence."""
         predictions = {}
         
@@ -350,7 +348,7 @@ class PredictiveLoader:
         return predictions
     
     
-    def _predict_from_context_transitions(self, current_context_id: str) -> Dict[str, float]:
+    def _predict_from_context_transitions(self, current_context_id: str) -> dict[str, float]:
         """Predict contexts based on context transition patterns."""
         predictions = {}
         
@@ -365,10 +363,10 @@ class PredictiveLoader:
         return predictions
     
     
-    def _predict_from_time_patterns(self) -> Dict[str, float]:
+    def _predict_from_time_patterns(self) -> dict[str, float]:
         """Predict contexts based on time-based usage patterns."""
         predictions = {}
-        current_hour = datetime.now(timezone.utc).hour
+        current_hour = datetime.now(UTC).hour
         
         for time_key, access_times in self.time_based_patterns.items():
             if len(access_times) < self.pattern_min_frequency:
@@ -389,7 +387,7 @@ class PredictiveLoader:
         return predictions
     
     
-    def _predict_from_session_history(self, session_context: Dict[str, Any]) -> Dict[str, float]:
+    def _predict_from_session_history(self, session_context: dict[str, Any]) -> dict[str, float]:
         """Predict contexts based on historical session patterns."""
         predictions = {}
         
@@ -420,7 +418,7 @@ class PredictiveLoader:
         return predictions
     
     
-    def _calculate_sequence_similarity(self, seq1: List[str], seq2: List[str]) -> float:
+    def _calculate_sequence_similarity(self, seq1: list[str], seq2: list[str]) -> float:
         """Calculate similarity between two sequences."""
         if not seq1 or not seq2:
             return 0.0
@@ -435,7 +433,7 @@ class PredictiveLoader:
         return intersection / union if union > 0 else 0.0
     
     
-    def _get_tool_context_mapping(self) -> Dict[str, str]:
+    def _get_tool_context_mapping(self) -> dict[str, str]:
         """Get mapping from tools to likely context types."""
         # This could be learned from data, but starting with heuristics
         return {
@@ -477,12 +475,12 @@ class PredictiveLoader:
                             sequence=list(sequence),
                             confidence=0.5,
                             frequency=1,
-                            last_seen=datetime.now(timezone.utc)
+                            last_seen=datetime.now(UTC)
                         )
                     else:
                         pattern = self.usage_patterns[pattern_id]
                         pattern.frequency += 1
-                        pattern.last_seen = datetime.now(timezone.utc)
+                        pattern.last_seen = datetime.now(UTC)
                         pattern.confidence = min(0.9, pattern.frequency / 10.0)
         
         logger.debug(f"Updated {len(self.usage_patterns)} usage patterns")
@@ -490,10 +488,10 @@ class PredictiveLoader:
     
     def validate_predictions(
         self,
-        predictions: List[str],
-        actual_contexts: List[str],
-        pattern_ids: List[str]
-    ) -> Dict[str, float]:
+        predictions: list[str],
+        actual_contexts: list[str],
+        pattern_ids: list[str]
+    ) -> dict[str, float]:
         """
         Validate prediction accuracy and update pattern success rates.
         
@@ -530,7 +528,7 @@ class PredictiveLoader:
         return accuracy_by_pattern
     
     
-    def get_prediction_stats(self) -> Dict[str, Any]:
+    def get_prediction_stats(self) -> dict[str, Any]:
         """Get statistics about prediction performance."""
         if not self.usage_patterns:
             return {}

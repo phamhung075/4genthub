@@ -5,22 +5,31 @@ This module defines the User model for authentication,
 supporting both SQLite and PostgreSQL databases.
 """
 
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
-from sqlalchemy import (
-    Column, String, Text, DateTime, Integer, Boolean, ForeignKey,
-    UniqueConstraint, CheckConstraint, Index, JSON, Enum as SQLEnum
-)
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 # Import from task management for database base and potential relationships
 from fastmcp.task_management.infrastructure.database.database_config import Base
 
 # Import domain enums
-from ...domain.entities.user import UserStatus, UserRole
+from ...domain.entities.user import UserRole, UserStatus
 
 
 class User(Base):
@@ -36,7 +45,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     
     # Profile fields
-    full_name: Mapped[Optional[str]] = mapped_column(String(255))
+    full_name: Mapped[str | None] = mapped_column(String(255))
     
     # Status and roles
     status: Mapped[str] = mapped_column(
@@ -44,37 +53,37 @@ class User(Base):
         nullable=False,
         default=UserStatus.PENDING_VERIFICATION
     )
-    roles: Mapped[List[str]] = mapped_column(JSON, default=list)  # Store as JSON array
+    roles: Mapped[list[str]] = mapped_column(JSON, default=list)  # Store as JSON array
     
     # Email verification
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    email_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime)
     
     # Login tracking
-    last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime)
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime)
     
     # Password management
-    password_changed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    password_reset_token: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
-    password_reset_expires: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    password_reset_token: Mapped[str | None] = mapped_column(String(255), unique=True)
+    password_reset_expires: Mapped[datetime | None] = mapped_column(DateTime)
     
     # Refresh token management
-    refresh_token_family: Mapped[Optional[str]] = mapped_column(String(255))
+    refresh_token_family: Mapped[str | None] = mapped_column(String(255))
     refresh_token_version: Mapped[int] = mapped_column(Integer, default=0)
     
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
-    created_by: Mapped[Optional[str]] = mapped_column(String(255))
+    created_by: Mapped[str | None] = mapped_column(String(255))
     
     # Project associations (stored as JSON for flexibility)
-    project_ids: Mapped[List[str]] = mapped_column(JSON, default=list)
-    default_project_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    project_ids: Mapped[list[str]] = mapped_column(JSON, default=list)
+    default_project_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
     
     # Additional metadata
-    metadata_json: Mapped[Dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
     
     # Indexes for performance
     __table_args__ = (
@@ -89,7 +98,8 @@ class User(Base):
     
     def to_domain(self) -> "User":
         """Convert SQLAlchemy model to domain entity"""
-        from ...domain.entities.user import User as DomainUser, UserStatus, UserRole
+        from ...domain.entities.user import User as DomainUser
+        from ...domain.entities.user import UserStatus
         
         return DomainUser(
             id=self.id,
@@ -156,8 +166,8 @@ class User(Base):
             password_reset_expires=domain_user.password_reset_expires,
             refresh_token_family=domain_user.refresh_token_family,
             refresh_token_version=domain_user.refresh_token_version,
-            created_at=domain_user.created_at or datetime.now(timezone.utc),
-            updated_at=domain_user.updated_at or datetime.now(timezone.utc),
+            created_at=domain_user.created_at or datetime.now(UTC),
+            updated_at=domain_user.updated_at or datetime.now(UTC),
             created_by=domain_user.created_by,
             project_ids=domain_user.project_ids,
             default_project_id=domain_user.default_project_id,
@@ -173,18 +183,18 @@ class UserSession(Base):
     
     # Session details
     session_token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    refresh_token: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
+    refresh_token: Mapped[str | None] = mapped_column(String(255), unique=True)
     
     # Session metadata
-    ip_address: Mapped[Optional[str]] = mapped_column(String(45))  # Supports IPv6
-    user_agent: Mapped[Optional[str]] = mapped_column(Text)
-    device_info: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    ip_address: Mapped[str | None] = mapped_column(String(45))  # Supports IPv6
+    user_agent: Mapped[str | None] = mapped_column(Text)
+    device_info: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     
     # Session lifecycle
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     last_activity: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     
     # Indexes
@@ -216,8 +226,8 @@ class UserTokenBalance(Base):
     monthly_quota: Mapped[int] = mapped_column(Integer, default=10000, nullable=False)
 
     # Reset tracking
-    last_reset_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    next_reset_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_reset_at: Mapped[datetime | None] = mapped_column(DateTime)
+    next_reset_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Usage statistics
     tokens_consumed_today: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

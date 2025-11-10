@@ -5,14 +5,15 @@ It automatically invalidates cache on all mutation operations.
 """
 
 import json
-import os
 import logging
-from typing import Optional, List, Any, Dict
+import os
+from typing import Any
+
 import redis
 from redis.exceptions import RedisError
 
-from ....domain.repositories.agent_repository import AgentRepository
 from ....domain.entities.agent import Agent
+from ....domain.repositories.agent_repository import AgentRepository
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class CachedAgentRepository:
         self.ttl = int(os.getenv('CACHE_TTL', '300'))  # 5 minutes default
         self.enabled = self.redis_client is not None
     
-    def _init_redis(self) -> Optional[redis.Redis]:
+    def _init_redis(self) -> redis.Redis | None:
         """Initialize Redis connection with fallback"""
         try:
             client = redis.Redis(
@@ -81,7 +82,7 @@ class CachedAgentRepository:
             except RedisError as e:
                 logger.warning(f"[Cache] Failed to invalidate pattern {pattern}: {e}")
     
-    def _get_cached(self, key: str) -> Optional[Any]:
+    def _get_cached(self, key: str) -> Any | None:
         """Get value from cache"""
         if not self.enabled:
             return None
@@ -111,7 +112,7 @@ class CachedAgentRepository:
     
     # === Delegated Methods with Caching ===
     
-    def get_by_id(self, agent_id: str) -> Optional[Agent]:
+    def get_by_id(self, agent_id: str) -> Agent | None:
         """Get agent by ID with caching"""
         cache_key = f"id:{agent_id}"
         
@@ -129,7 +130,7 @@ class CachedAgentRepository:
         
         return result
     
-    def get_by_project_id(self, project_id: str) -> List[Agent]:
+    def get_by_project_id(self, project_id: str) -> list[Agent]:
         """Get all agents for a project with caching"""
         cache_key = f"project:{project_id}"
         
@@ -156,7 +157,7 @@ class CachedAgentRepository:
             self._invalidate_pattern(f"project:{agent.project_id}:*")
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated agent caches after register")
+            logger.info("[Cache] Invalidated agent caches after register")
         
         return result
     
@@ -170,7 +171,7 @@ class CachedAgentRepository:
             self._invalidate_pattern(f"project:{agent.project_id}:*")
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated agent caches after update")
+            logger.info("[Cache] Invalidated agent caches after update")
         
         return result
     
@@ -188,7 +189,7 @@ class CachedAgentRepository:
                 self._invalidate_pattern(f"project:{agent.project_id}:*")
             self._invalidate_pattern("list:*")
             self._invalidate_pattern("search:*")
-            logger.info(f"[Cache] Invalidated agent caches after unregister")
+            logger.info("[Cache] Invalidated agent caches after unregister")
         
         return result
     
@@ -206,7 +207,7 @@ class CachedAgentRepository:
                 self._invalidate_pattern(f"project:{agent.project_id}:*")
             self._invalidate_pattern(f"branch:{git_branch_id}:*")
             self._invalidate_pattern("assignments:*")
-            logger.info(f"[Cache] Invalidated agent caches after assign")
+            logger.info("[Cache] Invalidated agent caches after assign")
         
         return result
     
@@ -224,11 +225,11 @@ class CachedAgentRepository:
                 self._invalidate_pattern(f"project:{agent.project_id}:*")
             self._invalidate_pattern(f"branch:{git_branch_id}:*")
             self._invalidate_pattern("assignments:*")
-            logger.info(f"[Cache] Invalidated agent caches after unassign")
+            logger.info("[Cache] Invalidated agent caches after unassign")
         
         return result
     
-    def rebalance_agents(self, project_id: str) -> Dict[str, Any]:
+    def rebalance_agents(self, project_id: str) -> dict[str, Any]:
         """Rebalance agents for project with cache invalidation"""
         result = self.base_repo.rebalance_agents(project_id)
         
@@ -237,7 +238,7 @@ class CachedAgentRepository:
             self._invalidate_pattern(f"project:{project_id}:*")
             self._invalidate_pattern("agent:*")  # Nuclear option for safety
             self._invalidate_pattern("assignments:*")
-            logger.info(f"[Cache] Invalidated all agent caches after rebalance")
+            logger.info("[Cache] Invalidated all agent caches after rebalance")
         
         return result
     

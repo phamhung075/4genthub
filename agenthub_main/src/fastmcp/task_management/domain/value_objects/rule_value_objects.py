@@ -7,12 +7,16 @@ This file contains value objects and DTOs for rule management following DDD prin
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
-from ..value_objects import (
-    ClientAuthMethod, SyncOperation, SyncStatus, 
-    ConflictResolution, RuleType, RuleFormat
-)
+from typing import Any
+
 from ..entities.rule_entity import RuleContent, RuleInheritance
+from ..value_objects import (
+    ClientAuthMethod,
+    ConflictResolution,
+    RuleType,
+    SyncOperation,
+    SyncStatus,
+)
 
 
 @dataclass
@@ -21,15 +25,15 @@ class ClientConfig:
     client_id: str
     client_name: str
     auth_method: ClientAuthMethod
-    auth_credentials: Dict[str, Any]
-    sync_permissions: List[str]
+    auth_credentials: dict[str, Any]
+    sync_permissions: list[str]
     rate_limit: int = 100  # requests per minute
     sync_frequency: int = 300  # seconds
-    allowed_rule_types: List[RuleType] = field(default_factory=lambda: list(RuleType))
+    allowed_rule_types: list[RuleType] = field(default_factory=lambda: list(RuleType))
     auto_sync: bool = True
     conflict_resolution: ConflictResolution = ConflictResolution.MERGE
-    last_sync: Optional[float] = None
-    sync_history: List[str] = field(default_factory=list)
+    last_sync: float | None = None
+    sync_history: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         """Validate client configuration"""
@@ -74,8 +78,8 @@ class SyncRequest:
     request_id: str
     client_id: str
     operation: SyncOperation
-    rules: Dict[str, Any]
-    metadata: Dict[str, Any]
+    rules: dict[str, Any]
+    metadata: dict[str, Any]
     timestamp: float
     priority: int = 1
 
@@ -101,10 +105,10 @@ class SyncResult:
     client_id: str
     status: SyncStatus
     operation: SyncOperation
-    processed_rules: List[str]
-    conflicts: List[Dict[str, Any]]
-    errors: List[str]
-    warnings: List[str]
+    processed_rules: list[str]
+    conflicts: list[dict[str, Any]]
+    errors: list[str]
+    warnings: list[str]
     sync_duration: float
     timestamp: float
     changes_applied: int = 0
@@ -143,7 +147,7 @@ class SyncResult:
         if warning not in self.warnings:
             self.warnings.append(warning)
 
-    def add_conflict(self, conflict: Dict[str, Any]) -> None:
+    def add_conflict(self, conflict: dict[str, Any]) -> None:
         """Add a conflict to the result"""
         self.conflicts.append(conflict)
 
@@ -177,12 +181,12 @@ class RuleConflict:
 class CompositionResult:
     """Result of rule composition operation - Value Object"""
     composed_content: str
-    source_rules: List[str]
-    inheritance_chain: List[RuleInheritance]
-    conflicts_resolved: List[str]
-    composition_metadata: Dict[str, Any]
+    source_rules: list[str]
+    inheritance_chain: list[RuleInheritance]
+    conflicts_resolved: list[str]
+    composition_metadata: dict[str, Any]
     success: bool = True
-    warnings: List[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         """Validate composition result"""
@@ -242,9 +246,9 @@ class RuleHierarchyInfo:
     total_rules: int
     max_depth: int
     inheritance_relationships: int
-    circular_dependencies: List[List[str]]
-    rule_types_distribution: Dict[str, int]
-    format_distribution: Dict[str, int]
+    circular_dependencies: list[list[str]]
+    rule_types_distribution: dict[str, int]
+    format_distribution: dict[str, int]
 
     def __post_init__(self):
         """Validate hierarchy info"""

@@ -14,13 +14,10 @@ Purpose: Fix agenthub_http session persistence issues
 import asyncio
 import json
 import logging
-import time
-from typing import Any, Dict, List, Optional, Union
-from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict
 import pickle
-import hashlib
-import uuid
+import time
+from dataclasses import asdict, dataclass
+from typing import Any
 
 try:
     import redis.asyncio as redis
@@ -28,9 +25,10 @@ try:
 except ImportError:
     REDIS_AVAILABLE = False
 
-from mcp.server.streamable_http import EventStore, EventMessage
+from collections.abc import Awaitable, Callable
+
+from mcp.server.streamable_http import EventMessage, EventStore
 from mcp.types import JSONRPCMessage
-from collections.abc import Callable, Awaitable
 
 logger = logging.getLogger(__name__)
 
@@ -42,16 +40,16 @@ class SessionEvent:
     stream_id: str  # Add stream_id for proper stream management
     event_id: str   # Unique event ID for Last-Event-ID support
     event_type: str
-    event_data: Dict[str, Any]
+    event_data: dict[str, Any]
     timestamp: float
-    ttl: Optional[float] = None
+    ttl: float | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for storage"""
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'SessionEvent':
+    def from_dict(cls, data: dict[str, Any]) -> 'SessionEvent':
         """Create from dictionary"""
         return cls(**data)
     
@@ -107,11 +105,11 @@ class RedisEventStore(EventStore):
         self._event_sequence = event_id_sequence
         
         # Redis connection
-        self._redis: Optional[redis.Redis] = None
+        self._redis: redis.Redis | None = None
         self._connection_healthy = False
         
         # Memory fallback
-        self._memory_store: Dict[str, List[SessionEvent]] = {}
+        self._memory_store: dict[str, list[SessionEvent]] = {}
         self._using_fallback = False
         
         logger.info(f"RedisEventStore initialized with URL: {redis_url}")
@@ -149,7 +147,7 @@ class RedisEventStore(EventStore):
             logger.info("Successfully connected to Redis for session storage")
             return True
             
-        except (ConnectionError, asyncio.TimeoutError, OSError) as e:
+        except (TimeoutError, ConnectionError, OSError) as e:
             logger.warning(f"Redis not available ({type(e).__name__}): {e}")
             self._connection_healthy = False
             
@@ -187,7 +185,7 @@ class RedisEventStore(EventStore):
             return f"{self.key_prefix}{session_id}:stream:{stream_id}"
         return f"{self.key_prefix}{session_id}"
     
-    def _serialize_message(self, message: Any) -> Dict[str, Any]:
+    def _serialize_message(self, message: Any) -> dict[str, Any]:
         """Safely serialize message objects to prevent JSON serialization errors"""
         try:
             # Handle FastAPI JSONResponse objects
@@ -251,7 +249,7 @@ class RedisEventStore(EventStore):
             # Fallback to pickle
             return pickle.dumps(event)
     
-    def _deserialize_event(self, data: bytes) -> Optional[SessionEvent]:
+    def _deserialize_event(self, data: bytes) -> SessionEvent | None:
         """Deserialize event from storage"""
         try:
             if self.compression_enabled:
@@ -376,9 +374,9 @@ class RedisEventStore(EventStore):
         self,
         session_id: str,
         stream_id: str = None,
-        event_type: Optional[str] = None,
+        event_type: str | None = None,
         limit: int = 100
-    ) -> List[SessionEvent]:
+    ) -> list[SessionEvent]:
         """Get events for a session/stream"""
         if self._using_fallback:
             return await self._get_events_memory(session_id, stream_id, event_type, limit)
@@ -389,9 +387,9 @@ class RedisEventStore(EventStore):
         self,
         session_id: str,
         stream_id: str = None,
-        event_type: Optional[str] = None,
+        event_type: str | None = None,
         limit: int = 100
-    ) -> List[SessionEvent]:
+    ) -> list[SessionEvent]:
         """Get events from Redis"""
         if not self._connection_healthy or not self._redis:
             if self.fallback_to_memory:
@@ -427,9 +425,9 @@ class RedisEventStore(EventStore):
         self,
         session_id: str,
         stream_id: str = None,
-        event_type: Optional[str] = None,
+        event_type: str | None = None,
         limit: int = 100
-    ) -> List[SessionEvent]:
+    ) -> list[SessionEvent]:
         """Get events from memory fallback"""
         try:
             key = self._get_session_key(session_id, stream_id)
@@ -526,7 +524,7 @@ class RedisEventStore(EventStore):
         
         return count
     
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """Get health status of the event store"""
         health = {
             "redis_available": REDIS_AVAILABLE,
@@ -626,7 +624,7 @@ class MemoryEventStore(EventStore):
     def __init__(self, default_ttl: int = 3600, max_events_per_session: int = 1000):
         self.default_ttl = default_ttl
         self.max_events_per_session = max_events_per_session
-        self._store: Dict[str, List[SessionEvent]] = {}
+        self._store: dict[str, list[SessionEvent]] = {}
         self._event_sequence = 0
         logger.info("MemoryEventStore initialized (fallback mode)")
     
@@ -636,7 +634,7 @@ class MemoryEventStore(EventStore):
         self._event_sequence += 1
         return f"{stream_id}:{timestamp_ms}:{self._event_sequence:06d}"
     
-    def _serialize_message(self, message: Any) -> Dict[str, Any]:
+    def _serialize_message(self, message: Any) -> dict[str, Any]:
         """Safely serialize message objects to prevent JSON serialization errors"""
         try:
             # Handle FastAPI JSONResponse objects
@@ -744,9 +742,9 @@ class MemoryEventStore(EventStore):
         self,
         session_id: str,
         stream_id: str = None,
-        event_type: Optional[str] = None,
+        event_type: str | None = None,
         limit: int = 100
-    ) -> List[SessionEvent]:
+    ) -> list[SessionEvent]:
         """Get events for a session/stream"""
         key = f"mcp:session:{session_id}:stream:{stream_id}" if stream_id else f"mcp:session:{session_id}"
         
@@ -836,7 +834,7 @@ class MemoryEventStore(EventStore):
 
 
 def create_event_store(
-    redis_url: Optional[str] = None,
+    redis_url: str | None = None,
     fallback_to_memory: bool = True,
     **kwargs
 ) -> EventStore:
@@ -870,7 +868,7 @@ def create_event_store(
 
 
 # Global event store instance
-_global_event_store: Optional[EventStore] = None
+_global_event_store: EventStore | None = None
 
 
 async def get_global_event_store() -> EventStore:

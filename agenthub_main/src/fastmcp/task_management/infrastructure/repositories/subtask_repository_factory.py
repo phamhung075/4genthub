@@ -1,13 +1,11 @@
 """Subtask Repository Factory for Hierarchical Storage with User Support"""
 
-from typing import Optional
-from pathlib import Path
+import logging
 import os
+from pathlib import Path
 
 from ...domain.repositories.subtask_repository import SubtaskRepository
 from .orm.subtask_repository import ORMSubtaskRepository
-from .mock_repository_factory import MockSubtaskRepository
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +55,8 @@ def _find_project_root() -> Path:
 class SubtaskRepositoryFactory:
     """Factory for creating subtask repositories with hierarchical user/project/tree structure"""
     
-    def __init__(self, base_path: Optional[str] = None, default_user_id: Optional[str] = None, 
-                 project_root: Optional[Path] = None):
+    def __init__(self, base_path: str | None = None, default_user_id: str | None = None, 
+                 project_root: Path | None = None):
         """
         Initialize subtask repository factory
         
@@ -88,7 +86,7 @@ class SubtaskRepositoryFactory:
         factory = cls()
         return factory.create_subtask_repository(project_id, git_branch_name, user_id)
     
-    def create_subtask_repository(self, project_id: str, git_branch_name: str = "main", user_id: Optional[str] = None) -> SubtaskRepository:
+    def create_subtask_repository(self, project_id: str, git_branch_name: str = "main", user_id: str | None = None) -> SubtaskRepository:
         """
         Create a subtask repository for specific user/project/task tree
         
@@ -114,7 +112,7 @@ class SubtaskRepositoryFactory:
         return RepositoryFactory.get_subtask_repository(user_id=user_id)
     
     def create_sqlite_subtask_repository(self, project_id: str, git_branch_name: str = "main", 
-                                        user_id: Optional[str] = None, db_path: Optional[str] = None) -> SubtaskRepository:
+                                        user_id: str | None = None, db_path: str | None = None) -> SubtaskRepository:
         """
         Create a subtask repository (now always uses ORM)
         
@@ -140,7 +138,7 @@ class SubtaskRepositoryFactory:
         from .repository_factory import RepositoryFactory
         return RepositoryFactory.get_subtask_repository(user_id=user_id)
     
-    def create_orm_subtask_repository(self, user_id: Optional[str] = None) -> SubtaskRepository:
+    def create_orm_subtask_repository(self, user_id: str | None = None) -> SubtaskRepository:
         """
         Create an ORM subtask repository
         
@@ -154,7 +152,7 @@ class SubtaskRepositoryFactory:
             user_id = self.default_user_id
         return ORMSubtaskRepository(user_id=user_id)
     
-    def validate_user_project_tree(self, project_id: str, git_branch_name: str, user_id: Optional[str] = None) -> bool:
+    def validate_user_project_tree(self, project_id: str, git_branch_name: str, user_id: str | None = None) -> bool:
         """
         Validate if user/project/task tree combination exists
         
@@ -172,7 +170,7 @@ class SubtaskRepositoryFactory:
         # Always return True for ORM repositories
         return True
     
-    def get_subtask_db_path(self, project_id: str, git_branch_name: str = "main", user_id: Optional[str] = None) -> str:
+    def get_subtask_db_path(self, project_id: str, git_branch_name: str = "main", user_id: str | None = None) -> str:
         """
         Get the database path for a specific user/project/tree combination
         

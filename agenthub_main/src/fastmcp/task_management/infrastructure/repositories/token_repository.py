@@ -6,14 +6,17 @@ This implementation handles all database operations for tokens using SQLAlchemy.
 """
 
 import logging
-from typing import Optional, List, Dict, Any
-from datetime import datetime, timezone
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from datetime import UTC, datetime
+from typing import Any
 
-from fastmcp.task_management.domain.repositories.token_repository_interface import ITokenRepository
-from fastmcp.task_management.infrastructure.database.models import APIToken
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
+
 from fastmcp.auth.models.api_token import ApiToken
+from fastmcp.task_management.domain.repositories.token_repository_interface import (
+    ITokenRepository,
+)
+from fastmcp.task_management.infrastructure.database.models import APIToken
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,7 @@ class TokenRepository(ITokenRepository):
         """
         self.session = session
     
-    async def create_token(self, token_data: Dict[str, Any]) -> Optional[APIToken]:
+    async def create_token(self, token_data: dict[str, Any]) -> APIToken | None:
         """
         Create a new token in the database.
         
@@ -70,7 +73,7 @@ class TokenRepository(ITokenRepository):
             self.session.rollback()
             return None
     
-    async def get_token(self, token_id: str, user_id: str) -> Optional[APIToken]:
+    async def get_token(self, token_id: str, user_id: str) -> APIToken | None:
         """
         Get a specific token for a user.
         
@@ -91,7 +94,7 @@ class TokenRepository(ITokenRepository):
             logger.error(f"Error getting token: {e}")
             return None
     
-    async def get_token_by_id(self, token_id: str) -> Optional[APIToken]:
+    async def get_token_by_id(self, token_id: str) -> APIToken | None:
         """
         Get a token by ID regardless of user.
         
@@ -121,7 +124,7 @@ class TokenRepository(ITokenRepository):
             logger.error(f"Error getting token by ID: {e}")
             return None
     
-    async def get_user_tokens(self, user_id: str, skip: int = 0, limit: int = 100) -> List[APIToken]:
+    async def get_user_tokens(self, user_id: str, skip: int = 0, limit: int = 100) -> list[APIToken]:
         """
         Get all tokens for a user with pagination.
         
@@ -263,7 +266,7 @@ class TokenRepository(ITokenRepository):
             self.session.rollback()
             return False
     
-    async def update_token_usage(self, token_id: str, operation: Optional[str] = None) -> bool:
+    async def update_token_usage(self, token_id: str, operation: str | None = None) -> bool:
         """
         Update token usage statistics (last used, usage count, and operation-specific tracking).
 
@@ -289,7 +292,7 @@ class TokenRepository(ITokenRepository):
             if not token:
                 return False
 
-            token.last_used_at = datetime.now(timezone.utc)
+            token.last_used_at = datetime.now(UTC)
             token.usage_count = (token.usage_count or 0) + 1
 
             # Track operation-specific usage

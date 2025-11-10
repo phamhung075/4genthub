@@ -2,11 +2,13 @@
 
 import logging
 
-from ..dtos.connection_dtos import ServerStatusRequest, ServerStatusResponse
-from ...domain.repositories.server_repository import ServerRepository
 from ...domain.repositories.connection_repository import ConnectionRepository
+from ...domain.repositories.server_repository import ServerRepository
+from ...domain.services.connection_diagnostics_service import (
+    ConnectionDiagnosticsService,
+)
 from ...domain.services.server_health_service import ServerHealthService
-from ...domain.services.connection_diagnostics_service import ConnectionDiagnosticsService
+from ..dtos.connection_dtos import ServerStatusRequest, ServerStatusResponse
 
 logger = logging.getLogger(__name__)
 

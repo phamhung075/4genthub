@@ -1,11 +1,9 @@
 """Agent Converter Service"""
 
-from typing import Dict, List, Optional, Set
-from datetime import datetime, timezone
 import logging
+from datetime import UTC, datetime
 
 from ...domain.entities.agent import Agent, AgentCapability, AgentStatus
-from ...domain.value_objects import AgentRole
 
 
 class AgentConverter:
@@ -14,7 +12,7 @@ class AgentConverter:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
     
-    def convert_simplified_agent_to_entity(self, agent_data: Dict, project_id: str) -> Agent:
+    def convert_simplified_agent_to_entity(self, agent_data: dict, project_id: str) -> Agent:
         """Convert simplified agent data from projects.json to full Agent entity"""
         agent_id = agent_data.get("id")
         name = agent_data.get("name")
@@ -28,8 +26,8 @@ class AgentConverter:
             id=agent_id,
             name=name,
             description=f"Agent {name} - {call_agent}",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             capabilities=capabilities,
             specializations=specializations,
             preferred_languages=preferred_languages,
@@ -42,7 +40,7 @@ class AgentConverter:
         
         return agent
     
-    def _extract_agent_details(self, call_agent: str) -> tuple[Set[AgentCapability], List[str], List[str]]:
+    def _extract_agent_details(self, call_agent: str) -> tuple[set[AgentCapability], list[str], list[str]]:
         """Extract agent capabilities and details from call_agent reference"""
         capabilities = set()
         specializations = []
@@ -98,7 +96,7 @@ class AgentConverter:
         
         return capabilities, specializations, preferred_languages
     
-    def convert_project_agents_to_entities(self, project_data: Dict) -> Dict[str, Agent]:
+    def convert_project_agents_to_entities(self, project_data: dict) -> dict[str, Agent]:
         """Convert all agents in a project to Agent entities"""
         project_id = project_data.get("id")
         registered_agents_data = project_data.get("registered_agents", {})
@@ -115,14 +113,14 @@ class AgentConverter:
         
         return agent_entities
     
-    def _create_fallback_agent(self, agent_id: str, agent_data: Dict, project_id: str) -> Agent:
+    def _create_fallback_agent(self, agent_id: str, agent_data: dict, project_id: str) -> Agent:
         """Create a minimal fallback agent when conversion fails"""
         return Agent(
             id=agent_id,
             name=agent_data.get("name", agent_id),
             description=f"Fallback agent for {agent_id}",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             capabilities={AgentCapability.BACKEND_DEVELOPMENT},
             specializations=["general_development"],
             preferred_languages=["python"],
@@ -132,7 +130,7 @@ class AgentConverter:
             assigned_projects={project_id}
         )
     
-    def update_agent_assignments(self, agent_entities: Dict[str, Agent], agent_assignments: Dict[str, str]) -> None:
+    def update_agent_assignments(self, agent_entities: dict[str, Agent], agent_assignments: dict[str, str]) -> None:
         """Update agent entities with their tree assignments"""
         for git_branch_name, agent_id in agent_assignments.items():
             if agent_id in agent_entities:

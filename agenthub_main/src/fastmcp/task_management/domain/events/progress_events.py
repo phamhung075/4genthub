@@ -5,12 +5,13 @@ enabling event-driven architectures and maintaining audit trails.
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any, List, Union
+from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
-from ..value_objects.progress import ProgressType, ProgressStatus, ProgressSnapshot
+from ..value_objects.progress import ProgressSnapshot, ProgressStatus, ProgressType
 from ..value_objects.task_id import TaskId
 
 
@@ -18,11 +19,11 @@ from ..value_objects.task_id import TaskId
 class ProgressEvent:
     """Base class for all progress-related events."""
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    task_id: Union[str, TaskId] = ""
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    agent_id: Optional[str] = None
+    task_id: str | TaskId = ""
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    agent_id: str | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         # Handle TaskId objects by converting to string
         task_id_str = str(self.task_id) if isinstance(self.task_id, TaskId) else self.task_id
@@ -43,10 +44,10 @@ class ProgressUpdated(ProgressEvent):
     old_percentage: float = 0.0
     new_percentage: float = 0.0
     status: ProgressStatus = ProgressStatus.IN_PROGRESS
-    description: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    description: str | None = None
+    metadata: dict[str, Any] | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         base_dict = super().to_dict()
         base_dict.update({
@@ -72,7 +73,7 @@ class ProgressMilestoneReached(ProgressEvent):
     milestone_percentage: float = 0.0
     current_progress: float = 0.0
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         base_dict = super().to_dict()
         base_dict.update({
@@ -86,12 +87,12 @@ class ProgressMilestoneReached(ProgressEvent):
 @dataclass(frozen=True)
 class ProgressStalled(ProgressEvent):
     """Event emitted when progress has not changed for a significant period."""
-    last_update_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_update_timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     stall_duration_hours: float = 0.0
     current_percentage: float = 0.0
-    blockers: List[str] = field(default_factory=list)
+    blockers: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         base_dict = super().to_dict()
         base_dict.update({
@@ -111,9 +112,9 @@ class SubtaskProgressAggregated(ProgressEvent):
     old_parent_progress: float = 0.0
     new_parent_progress: float = 0.0
     aggregation_method: str = "weighted_average"
-    subtask_progress_details: List[Dict[str, Any]] = field(default_factory=list)
+    subtask_progress_details: list[dict[str, Any]] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         base_dict = super().to_dict()
         base_dict.update({
@@ -132,7 +133,7 @@ class ProgressSnapshotCreated(ProgressEvent):
     """Event emitted when a progress snapshot is created."""
     snapshot: ProgressSnapshot = field(default_factory=ProgressSnapshot)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         base_dict = super().to_dict()
         base_dict.update({
@@ -145,9 +146,9 @@ class ProgressSnapshotCreated(ProgressEvent):
 class ProgressTypeCompleted(ProgressEvent):
     """Event emitted when a specific progress type reaches 100%."""
     progress_type: ProgressType = ProgressType.GENERAL
-    completion_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    completion_timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         base_dict = super().to_dict()
         base_dict.update({
@@ -162,11 +163,11 @@ class ProgressBlocked(ProgressEvent):
     """Event emitted when progress is blocked."""
     progress_type: ProgressType = ProgressType.GENERAL
     current_percentage: float = 0.0
-    blockers: List[str] = field(default_factory=list)
-    dependencies: List[str] = field(default_factory=list)
-    estimated_unblock_time: Optional[datetime] = None
+    blockers: list[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    estimated_unblock_time: datetime | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         base_dict = super().to_dict()
         base_dict.update({
@@ -185,9 +186,9 @@ class ProgressUnblocked(ProgressEvent):
     """Event emitted when progress is unblocked."""
     progress_type: ProgressType = ProgressType.GENERAL
     blocked_duration_hours: float = 0.0
-    resolution: Optional[str] = None
+    resolution: str | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         base_dict = super().to_dict()
         base_dict.update({
@@ -206,7 +207,7 @@ class ProgressRolledBack(ProgressEvent):
     to_percentage: float = 0.0
     reason: str = ""
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
         base_dict = super().to_dict()
         base_dict.update({

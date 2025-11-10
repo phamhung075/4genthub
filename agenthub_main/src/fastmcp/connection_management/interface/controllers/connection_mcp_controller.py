@@ -5,13 +5,16 @@ Simplified from the original complex controller to focus only on essential healt
 """
 
 import logging
-from typing import Dict, Any, Optional, TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any
+
 from pydantic import Field
 
 if TYPE_CHECKING:
     from fastmcp.server.server import FastMCP
 
-from ...application.facades.connection_application_facade import ConnectionApplicationFacade
+from ...application.facades.connection_application_facade import (
+    ConnectionApplicationFacade,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,14 +43,14 @@ class ConnectionMCPController:
         @mcp.tool(description="Basic health check endpoint for system monitoring")
         def manage_connection(
             include_details: Annotated[bool, Field(description="Whether to include detailed information in health response")] = True,
-            user_id: Annotated[Optional[str], Field(description="User identifier for authentication and audit trails")] = None
-        ) -> Dict[str, Any]:
+            user_id: Annotated[str | None, Field(description="User identifier for authentication and audit trails")] = None
+        ) -> dict[str, Any]:
             return self.health_check(
                 include_details=include_details,
                 user_id=user_id
             )
     
-    def health_check(self, include_details: bool = True, user_id: Optional[str] = None) -> Dict[str, Any]:
+    def health_check(self, include_details: bool = True, user_id: str | None = None) -> dict[str, Any]:
         """
         Simplified health check method - the only function this controller provides.
         
@@ -72,7 +75,7 @@ class ConnectionMCPController:
             }
     
     
-    def _format_health_check_response(self, response) -> Dict[str, Any]:
+    def _format_health_check_response(self, response) -> dict[str, Any]:
         """Format health check response for MCP protocol (sanitized for security)"""
         if response.success:
             # Sanitize the response to ensure no sensitive data is exposed

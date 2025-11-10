@@ -1,6 +1,7 @@
 """Create Git Branch Use Case"""
 
-from typing import Dict, Any
+from typing import Any
+
 from ...domain.repositories.project_repository import ProjectRepository
 
 
@@ -10,7 +11,7 @@ class CreateGitBranchUseCase:
     def __init__(self, project_repository: ProjectRepository):
         self._project_repository = project_repository
     
-    async def execute(self, project_id: str, git_branch_name: str, branch_name: str, branch_description: str = "") -> Dict[str, Any]:
+    async def execute(self, project_id: str, git_branch_name: str, branch_name: str, branch_description: str = "") -> dict[str, Any]:
         """Execute the create git branch use case"""
         
         project = await self._project_repository.find_by_id(project_id)
@@ -35,10 +36,14 @@ class CreateGitBranchUseCase:
             # Auto-create branch context for hierarchical context inheritance
             try:
                 # Use unified context facade for branch context creation
-                from ..factories.unified_context_facade_factory import UnifiedContextFacadeFactory
-                from ...domain.constants import validate_user_id
-                from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
                 from ....config.auth_config import AuthConfig
+                from ...domain.constants import validate_user_id
+                from ...domain.exceptions.authentication_exceptions import (
+                    UserAuthenticationRequiredError,
+                )
+                from ..factories.unified_context_facade_factory import (
+                    UnifiedContextFacadeFactory,
+                )
                 
                 # Get user_id from request context or handle authentication
                 user_id = None

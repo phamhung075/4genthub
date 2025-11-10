@@ -12,8 +12,6 @@ DDD Compliance:
 """
 
 import logging
-from typing import Optional
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +40,9 @@ class FacadeService:
         return cls._instance
     
     def get_task_facade(self, 
-                       project_id: Optional[str] = None,
-                       git_branch_id: Optional[str] = None,
-                       user_id: Optional[str] = None):
+                       project_id: str | None = None,
+                       git_branch_id: str | None = None,
+                       user_id: str | None = None):
         """
         Get a task facade with proper context.
         
@@ -66,9 +64,9 @@ class FacadeService:
         )
     
     def get_subtask_facade(self,
-                          project_id: Optional[str] = None,
-                          git_branch_id: Optional[str] = None,
-                          user_id: Optional[str] = None):
+                          project_id: str | None = None,
+                          git_branch_id: str | None = None,
+                          user_id: str | None = None):
         """
         Get a subtask facade with proper context.
         
@@ -90,7 +88,7 @@ class FacadeService:
         )
     
     def get_project_facade(self,
-                          user_id: Optional[str] = None):
+                          user_id: str | None = None):
         """
         Get a project facade with proper context.
         
@@ -106,8 +104,8 @@ class FacadeService:
         return factory.create_project_facade(user_id=user_id)
     
     def get_branch_facade(self,
-                         project_id: Optional[str] = None,
-                         user_id: Optional[str] = None):
+                         project_id: str | None = None,
+                         user_id: str | None = None):
         """
         Get a git branch facade with proper context.
         
@@ -127,8 +125,8 @@ class FacadeService:
         )
     
     def get_agent_facade(self,
-                        project_id: Optional[str] = None,
-                        user_id: Optional[str] = None):
+                        project_id: str | None = None,
+                        user_id: str | None = None):
         """
         Get an agent facade with proper context.
         
@@ -148,9 +146,9 @@ class FacadeService:
         )
     
     def get_context_facade(self,
-                          user_id: Optional[str] = None,
-                          project_id: Optional[str] = None,
-                          git_branch_id: Optional[str] = None):
+                          user_id: str | None = None,
+                          project_id: str | None = None,
+                          git_branch_id: str | None = None):
         """
         Get a unified context facade with proper context.
         
@@ -162,7 +160,9 @@ class FacadeService:
         Returns:
             UnifiedContextFacade configured for the given context
         """
-        from ..factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+        from ..factories.unified_context_facade_factory import (
+            UnifiedContextFacadeFactory,
+        )
         
         factory = UnifiedContextFacadeFactory.get_instance()
         return factory.create_facade(
@@ -172,7 +172,7 @@ class FacadeService:
         )
     
     def get_token_facade(self,
-                        user_id: Optional[str] = None):
+                        user_id: str | None = None):
         """
         Get a token facade with proper context.
         
@@ -201,9 +201,9 @@ class FacadeService:
     
     @classmethod
     def get_unified_context_facade(cls,
-                                  user_id: Optional[str] = None,
-                                  project_id: Optional[str] = None,
-                                  git_branch_id: Optional[str] = None):
+                                  user_id: str | None = None,
+                                  project_id: str | None = None,
+                                  git_branch_id: str | None = None):
         """
         Static method to get a unified context facade.
         

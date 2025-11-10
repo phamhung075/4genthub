@@ -6,18 +6,23 @@ using JWT authentication and user-scoped repositories.
 """
 
 import logging
-from typing import Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+
+from fastapi import APIRouter, Depends, Form, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ...auth.interface.fastapi_auth import get_db
 from ...auth.domain.entities.user import User
 
 # Use unified authentication that switches based on AUTH_PROVIDER
-from ...auth.interface.fastapi_auth import get_current_user
-from ...task_management.interface.api_controllers.project_api_controller import ProjectAPIController
-from ...task_management.application.dtos.project.create_project_request import CreateProjectRequest
-from ...task_management.application.dtos.project.update_project_request import UpdateProjectRequest
+from ...auth.interface.fastapi_auth import get_current_user, get_db
+from ...task_management.application.dtos.project.create_project_request import (
+    CreateProjectRequest,
+)
+from ...task_management.application.dtos.project.update_project_request import (
+    UpdateProjectRequest,
+)
+from ...task_management.interface.api_controllers.project_api_controller import (
+    ProjectAPIController,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +145,8 @@ async def get_project(
 @router.put("/{project_id}", response_model=dict)
 async def update_project(
     project_id: str,
-    name: Optional[str] = Form(None),
-    description: Optional[str] = Form(None),
+    name: str | None = Form(None),
+    description: str | None = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

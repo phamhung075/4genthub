@@ -2,13 +2,13 @@
 Provides safe migration capabilities with instant rollback support.
 """
 
-import os
 import json
-from typing import Dict, Any, Optional
-from pathlib import Path
-from dataclasses import dataclass, asdict
-from datetime import datetime
 import logging
+import os
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class FeatureFlag:
     description: str
     created_at: str
     updated_at: str
-    metadata: Dict[str, Any] = None
+    metadata: dict[str, Any] = None
     
     def __post_init__(self):
         if self.metadata is None:
@@ -39,7 +39,7 @@ class FeatureFlagService:
     - Audit logging
     """
     
-    def __init__(self, config_path: Optional[str] = None, user_id: Optional[str] = None):
+    def __init__(self, config_path: str | None = None, user_id: str | None = None):
         """Initialize feature flag service
         
         Args:
@@ -48,7 +48,7 @@ class FeatureFlagService:
         """
         self._user_id = user_id  # Store user context
         self._config_path = config_path or self._get_default_config_path()
-        self._flags: Dict[str, FeatureFlag] = {}
+        self._flags: dict[str, FeatureFlag] = {}
         self._load_flags()
         
         # Migration-specific flags
@@ -81,7 +81,7 @@ class FeatureFlagService:
         """Load feature flags from configuration file"""
         try:
             if os.path.exists(self._config_path):
-                with open(self._config_path, 'r') as f:
+                with open(self._config_path) as f:
                     data = json.load(f)
                     
                 for flag_name, flag_data in data.items():
@@ -203,7 +203,7 @@ class FeatureFlagService:
             
         return flag.enabled
     
-    def enable_flag(self, flag_name: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
+    def enable_flag(self, flag_name: str, metadata: dict[str, Any] | None = None) -> bool:
         """Enable a feature flag
         
         Args:
@@ -215,7 +215,7 @@ class FeatureFlagService:
         """
         return self._update_flag(flag_name, True, metadata)
     
-    def disable_flag(self, flag_name: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
+    def disable_flag(self, flag_name: str, metadata: dict[str, Any] | None = None) -> bool:
         """Disable a feature flag
         
         Args:
@@ -227,7 +227,7 @@ class FeatureFlagService:
         """
         return self._update_flag(flag_name, False, metadata)
     
-    def _update_flag(self, flag_name: str, enabled: bool, metadata: Optional[Dict[str, Any]] = None) -> bool:
+    def _update_flag(self, flag_name: str, enabled: bool, metadata: dict[str, Any] | None = None) -> bool:
         """Update a feature flag
         
         Args:
@@ -261,7 +261,7 @@ class FeatureFlagService:
             logger.error(f"Failed to update feature flag '{flag_name}': {e}")
             return False
     
-    def get_flag_status(self, flag_name: str) -> Optional[Dict[str, Any]]:
+    def get_flag_status(self, flag_name: str) -> dict[str, Any] | None:
         """Get detailed status of a feature flag
         
         Args:
@@ -284,7 +284,7 @@ class FeatureFlagService:
             "environment_override": os.getenv(f"FEATURE_{flag_name.upper()}")
         }
     
-    def list_flags(self) -> Dict[str, Dict[str, Any]]:
+    def list_flags(self) -> dict[str, dict[str, Any]]:
         """List all feature flags with their status
         
         Returns:
@@ -292,7 +292,7 @@ class FeatureFlagService:
         """
         return {name: self.get_flag_status(name) for name in self._flags.keys()}
     
-    def get_migration_status(self) -> Dict[str, Any]:
+    def get_migration_status(self) -> dict[str, Any]:
         """Get overall migration status based on feature flags
         
         Returns:
@@ -390,7 +390,7 @@ class FeatureFlagService:
 
 
 # Global instance for easy access
-_feature_flag_service: Optional[FeatureFlagService] = None
+_feature_flag_service: FeatureFlagService | None = None
 
 
 def get_feature_flag_service() -> FeatureFlagService:

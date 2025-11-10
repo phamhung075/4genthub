@@ -1,9 +1,9 @@
 """Cache Service Adapter - Infrastructure Layer"""
 
-from typing import Any, Optional, Dict, List, Union
 from datetime import timedelta
+from typing import Any
 
-from ...domain.interfaces.cache_service import ICacheService, ICacheKeyBuilder
+from ...domain.interfaces.cache_service import ICacheKeyBuilder, ICacheService
 from ..cache.context_cache import ContextCache
 
 
@@ -13,11 +13,11 @@ class CacheServiceAdapter(ICacheService):
     def __init__(self):
         self._cache = ContextCache()
     
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Get a value from cache"""
         return await self._cache.get(key)
     
-    async def set(self, key: str, value: Any, ttl: Optional[Union[int, timedelta]] = None) -> bool:
+    async def set(self, key: str, value: Any, ttl: int | timedelta | None = None) -> bool:
         """Set a value in cache with optional TTL"""
         ttl_seconds = None
         if ttl:
@@ -41,7 +41,7 @@ class CacheServiceAdapter(ICacheService):
         """Clear all cache entries"""
         return await self._cache.clear()
     
-    async def get_many(self, keys: List[str]) -> Dict[str, Any]:
+    async def get_many(self, keys: list[str]) -> dict[str, Any]:
         """Get multiple values from cache"""
         result = {}
         for key in keys:
@@ -50,7 +50,7 @@ class CacheServiceAdapter(ICacheService):
                 result[key] = value
         return result
     
-    async def set_many(self, mapping: Dict[str, Any], ttl: Optional[Union[int, timedelta]] = None) -> bool:
+    async def set_many(self, mapping: dict[str, Any], ttl: int | timedelta | None = None) -> bool:
         """Set multiple values in cache"""
         ttl_seconds = None
         if ttl:
@@ -67,7 +67,7 @@ class CacheServiceAdapter(ICacheService):
         
         return success_count == len(mapping)
     
-    async def delete_many(self, keys: List[str]) -> int:
+    async def delete_many(self, keys: list[str]) -> int:
         """Delete multiple keys from cache"""
         deleted_count = 0
         for key in keys:
@@ -87,12 +87,12 @@ class CacheServiceAdapter(ICacheService):
         """Decrement a numeric value in cache"""
         return await self.increment(key, -delta)
     
-    async def expire(self, key: str, ttl: Union[int, timedelta]) -> bool:
+    async def expire(self, key: str, ttl: int | timedelta) -> bool:
         """Set expiration time for a key"""
         ttl_seconds = ttl.total_seconds() if isinstance(ttl, timedelta) else ttl
         return await self._cache.expire(key, int(ttl_seconds))
     
-    async def get_ttl(self, key: str) -> Optional[int]:
+    async def get_ttl(self, key: str) -> int | None:
         """Get time-to-live for a key in seconds"""
         return await self._cache.get_ttl(key)
 

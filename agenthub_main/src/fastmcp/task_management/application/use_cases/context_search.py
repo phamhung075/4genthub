@@ -5,17 +5,16 @@ Provides powerful search capabilities across the context hierarchy
 with support for full-text search, filtering, and relevance ranking.
 """
 
-from typing import List, Dict, Any, Optional, Set
-from dataclasses import dataclass
-from enum import Enum
 import logging
-from datetime import datetime, timezone, timedelta
 import re
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from enum import Enum
+from typing import Any
 
 from ...domain.value_objects.context_enums import ContextLevel
-from ..services.unified_context_service import UnifiedContextService
-from ...domain.interfaces.cache_service import ICacheService
 from ...infrastructure.cache.context_cache import get_context_cache
+from ..services.unified_context_service import UnifiedContextService
 
 logger = logging.getLogger(__name__)
 
@@ -41,18 +40,18 @@ class SearchMode(Enum):
 class SearchQuery:
     """Search query parameters"""
     query: str                      # Search query string
-    levels: List[ContextLevel]      # Levels to search
+    levels: list[ContextLevel]      # Levels to search
     scope: SearchScope = SearchScope.CURRENT_LEVEL
     mode: SearchMode = SearchMode.CONTAINS
-    user_id: Optional[str] = None
-    project_id: Optional[str] = None
-    git_branch_id: Optional[str] = None
+    user_id: str | None = None
+    project_id: str | None = None
+    git_branch_id: str | None = None
     
     # Filters
-    created_after: Optional[datetime] = None
-    created_before: Optional[datetime] = None
-    updated_after: Optional[datetime] = None
-    updated_before: Optional[datetime] = None
+    created_after: datetime | None = None
+    created_before: datetime | None = None
+    updated_after: datetime | None = None
+    updated_before: datetime | None = None
     
     # Result options
     limit: int = 50
@@ -67,10 +66,10 @@ class SearchResult:
     """Single search result"""
     level: ContextLevel
     context_id: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     score: float                    # Relevance score (0-1)
-    matches: List[Dict[str, Any]]   # Match details
-    metadata: Dict[str, Any]        # Additional metadata
+    matches: list[dict[str, Any]]   # Match details
+    metadata: dict[str, Any]        # Additional metadata
 
 
 class ContextSearchEngine:
@@ -82,7 +81,7 @@ class ContextSearchEngine:
         self.context_service = context_service
         self.cache = get_context_cache()
     
-    async def search(self, query: SearchQuery) -> List[SearchResult]:
+    async def search(self, query: SearchQuery) -> list[SearchResult]:
         """
         Execute search across context hierarchy.
         
@@ -127,9 +126,9 @@ class ContextSearchEngine:
     
     def _expand_search_levels(
         self, 
-        levels: List[ContextLevel], 
+        levels: list[ContextLevel], 
         scope: SearchScope
-    ) -> Set[ContextLevel]:
+    ) -> set[ContextLevel]:
         """Expand search levels based on scope"""
         
         search_levels = set(levels)
@@ -178,7 +177,7 @@ class ContextSearchEngine:
         self, 
         level: ContextLevel, 
         query: SearchQuery
-    ) -> List[SearchResult]:
+    ) -> list[SearchResult]:
         """Search within a specific level"""
         
         # Get all contexts at this level
@@ -219,7 +218,7 @@ class ContextSearchEngine:
         
         return results
     
-    def _passes_filters(self, context_data: Dict, query: SearchQuery) -> bool:
+    def _passes_filters(self, context_data: dict, query: SearchQuery) -> bool:
         """Check if context passes date filters"""
         
         if query.created_after:
@@ -246,10 +245,10 @@ class ContextSearchEngine:
     
     def _calculate_relevance(
         self, 
-        data: Dict[str, Any], 
+        data: dict[str, Any], 
         query: str, 
         mode: SearchMode
-    ) -> tuple[float, List[Dict]]:
+    ) -> tuple[float, list[dict]]:
         """Calculate relevance score and find matches"""
         
         score = 0.0
@@ -338,7 +337,7 @@ class ContextSearchEngine:
         
         return score, matches
     
-    def _extract_text(self, data: Dict) -> str:
+    def _extract_text(self, data: dict) -> str:
         """Extract searchable text from context data"""
         
         def extract_recursive(obj, parts=[]):
@@ -421,7 +420,7 @@ class ContextSearchEngine:
     
     def _apply_field_boosts(
         self, 
-        data: Dict, 
+        data: dict, 
         query: str, 
         base_score: float
     ) -> float:
@@ -444,7 +443,7 @@ class ContextSearchEngine:
             if isinstance(updated, str):
                 updated = datetime.fromisoformat(updated)
             
-            age = datetime.now(timezone.utc) - updated
+            age = datetime.now(UTC) - updated
             if age < timedelta(days=1):
                 boost *= 1.3
             elif age < timedelta(days=7):
@@ -454,9 +453,9 @@ class ContextSearchEngine:
     
     def _highlight_matches(
         self, 
-        results: List[SearchResult], 
+        results: list[SearchResult], 
         query: str
-    ) -> List[SearchResult]:
+    ) -> list[SearchResult]:
         """Add highlighting to matched text"""
         
         for result in results:
@@ -471,9 +470,9 @@ class ContextSearchEngine:
         self,
         level: ContextLevel,
         user_id: str,
-        project_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None
-    ) -> List[tuple[str, Dict]]:
+        project_id: str | None = None,
+        git_branch_id: str | None = None
+    ) -> list[tuple[str, dict]]:
         """Get all contexts at a specific level"""
         
         # This would need to be implemented in the repository layer
@@ -495,9 +494,9 @@ class ContextSearchEngine:
     async def search_by_pattern(
         self,
         pattern: str,
-        levels: List[ContextLevel],
+        levels: list[ContextLevel],
         user_id: str
-    ) -> List[SearchResult]:
+    ) -> list[SearchResult]:
         """Search for contexts matching a specific pattern"""
         
         query = SearchQuery(
@@ -512,11 +511,11 @@ class ContextSearchEngine:
     
     async def search_recent(
         self,
-        levels: List[ContextLevel],
+        levels: list[ContextLevel],
         user_id: str,
         days: int = 7,
         limit: int = 20
-    ) -> List[SearchResult]:
+    ) -> list[SearchResult]:
         """Search for recently updated contexts"""
         
         query = SearchQuery(
@@ -524,7 +523,7 @@ class ContextSearchEngine:
             levels=levels,
             mode=SearchMode.REGEX,
             user_id=user_id,
-            updated_after=datetime.now(timezone.utc) - timedelta(days=days),
+            updated_after=datetime.now(UTC) - timedelta(days=days),
             limit=limit
         )
         
@@ -532,10 +531,10 @@ class ContextSearchEngine:
     
     async def search_by_tags(
         self,
-        tags: List[str],
-        levels: List[ContextLevel],
+        tags: list[str],
+        levels: list[ContextLevel],
         user_id: str
-    ) -> List[SearchResult]:
+    ) -> list[SearchResult]:
         """Search for contexts with specific tags"""
         
         # Build query for tags

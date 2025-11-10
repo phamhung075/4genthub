@@ -1,10 +1,6 @@
 """Search Tasks Use Case"""
 
-from ...application.dtos.task import (
-    SearchTasksRequest,
-    TaskListResponse
-)
-
+from ...application.dtos.task import SearchTasksRequest, TaskListResponse
 from ...domain import TaskRepository
 
 

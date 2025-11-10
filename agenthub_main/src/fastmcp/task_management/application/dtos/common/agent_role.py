@@ -1,7 +1,7 @@
 """Definition of an agent role with specific rules and context"""
 
 from dataclasses import dataclass
-from typing import List, Optional
+
 
 @dataclass
 class AgentRole:
@@ -9,8 +9,8 @@ class AgentRole:
     name: str
     persona: str
     primary_focus: str
-    rules: List[str]
-    context_instructions: List[str]
-    tools_guidance: List[str]
+    rules: list[str]
+    context_instructions: list[str]
+    tools_guidance: list[str]
     output_format: str
-    persona_icon: Optional[str] = None 
+    persona_icon: str | None = None 

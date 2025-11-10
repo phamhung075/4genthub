@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 
 @dataclass
@@ -10,7 +10,7 @@ class ConnectionEvent:
     """Base class for all connection-related domain events"""
     timestamp: datetime
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary"""
         return {
             "event_type": self.__class__.__name__,
@@ -63,9 +63,9 @@ class StatusUpdateRequested(ConnectionEvent):
 class ClientRegisteredForUpdates(ConnectionEvent):
     """Event raised when a client registers for status updates"""
     session_id: str
-    client_info: Dict[str, Any]
+    client_info: dict[str, Any]
     
-    def __init__(self, session_id: str, client_info: Dict[str, Any], timestamp: datetime):
+    def __init__(self, session_id: str, client_info: dict[str, Any], timestamp: datetime):
         super().__init__(timestamp)
         self.session_id = session_id
         self.client_info = client_info
@@ -86,9 +86,9 @@ class StatusUpdateBroadcasted(ConnectionEvent):
     """Event raised when a status update is broadcasted"""
     event_type: str
     session_id: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     
-    def __init__(self, event_type: str, session_id: str, data: Dict[str, Any], timestamp: datetime):
+    def __init__(self, event_type: str, session_id: str, data: dict[str, Any], timestamp: datetime):
         super().__init__(timestamp)
         self.event_type = event_type
         self.session_id = session_id
@@ -99,9 +99,9 @@ class StatusUpdateBroadcasted(ConnectionEvent):
 class ClientRegistered(ConnectionEvent):
     """Event raised when a client is registered"""
     session_id: str
-    client_info: Dict[str, Any]
+    client_info: dict[str, Any]
     
-    def __init__(self, session_id: str, client_info: Dict[str, Any], timestamp: datetime):
+    def __init__(self, session_id: str, client_info: dict[str, Any], timestamp: datetime):
         super().__init__(timestamp)
         self.session_id = session_id
         self.client_info = client_info

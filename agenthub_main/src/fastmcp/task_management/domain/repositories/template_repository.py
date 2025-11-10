@@ -1,7 +1,7 @@
 """Template Repository Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Any
 
 from ..entities.template import Template, TemplateUsage
 from ..value_objects.template_id import TemplateId
@@ -16,20 +16,20 @@ class TemplateRepositoryInterface(ABC):
         pass
     
     @abstractmethod
-    async def get_by_id(self, template_id: TemplateId) -> Optional[Template]:
+    async def get_by_id(self, template_id: TemplateId) -> Template | None:
         """Get template by ID"""
         pass
     
     @abstractmethod
     async def list_templates(
         self,
-        template_type: Optional[str] = None,
-        category: Optional[str] = None,
-        agent_compatible: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        template_type: str | None = None,
+        category: str | None = None,
+        agent_compatible: str | None = None,
+        is_active: bool | None = None,
         limit: int = 50,
         offset: int = 0
-    ) -> Tuple[List[Template], int]:
+    ) -> tuple[list[Template], int]:
         """List templates with filtering and pagination"""
         pass
     
@@ -44,11 +44,11 @@ class TemplateRepositoryInterface(ABC):
         pass
     
     @abstractmethod
-    async def get_usage_stats(self, template_id: TemplateId) -> Dict[str, Any]:
+    async def get_usage_stats(self, template_id: TemplateId) -> dict[str, Any]:
         """Get usage statistics for template"""
         pass
     
     @abstractmethod
-    async def get_analytics(self, template_id: Optional[str] = None) -> Dict[str, Any]:
+    async def get_analytics(self, template_id: str | None = None) -> dict[str, Any]:
         """Get template analytics"""
         pass 

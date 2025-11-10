@@ -3,34 +3,36 @@
 Factory for creating project management services with proper dependency injection following DDD patterns.
 """
 
-from typing import Optional
+
+from ...application.services.project_application_service import (
+    ProjectApplicationService,
+)
 from ...application.services.project_management_service import ProjectManagementService
-from ...application.services.project_application_service import ProjectApplicationService
-from ...infrastructure.utilities.path_resolver import PathResolver
 from ...domain.repositories.project_repository import ProjectRepository
 from ...infrastructure.repositories.project_repository_factory import (
-    ProjectRepositoryFactory, 
+    ProjectRepositoryFactory,
     RepositoryConfig,
     get_default_repository,
-    get_sqlite_repository
+    get_sqlite_repository,
 )
+from ...infrastructure.utilities.path_resolver import PathResolver
 
 
 class ProjectServiceFactory:
     """Factory for creating project management services with proper DDD dependency injection"""
     
-    def __init__(self, path_resolver: PathResolver, project_repository: Optional[ProjectRepository] = None):
+    def __init__(self, path_resolver: PathResolver, project_repository: ProjectRepository | None = None):
         self._path_resolver = path_resolver
         self._project_repository = project_repository
     
-    def create_project_service(self, projects_file_path: Optional[str] = None) -> ProjectManagementService:
+    def create_project_service(self, projects_file_path: str | None = None) -> ProjectManagementService:
         """Create a legacy project management service with proper dependencies (projects_file_path is ignored)"""
         repository = self._project_repository or self._get_default_repository()
         return ProjectManagementService(
             project_repo=repository
         )
     
-    def create_project_application_service(self, user_id: Optional[str] = None) -> ProjectApplicationService:
+    def create_project_application_service(self, user_id: str | None = None) -> ProjectApplicationService:
         """Create a DDD-compliant project application service"""
         repository = self._project_repository or self._get_repository_for_user(user_id)
         return ProjectApplicationService(
@@ -49,7 +51,7 @@ class ProjectServiceFactory:
             return self._project_repository
         return ProjectRepositoryFactory.create(user_id=user_id)
     
-    def create_sqlite_service(self, user_id: Optional[str] = None, db_path: Optional[str] = None) -> ProjectApplicationService:
+    def create_sqlite_service(self, user_id: str | None = None, db_path: str | None = None) -> ProjectApplicationService:
         """Create service with SQLite repository (legacy support)"""
         repository = get_sqlite_repository(user_id=user_id, db_path=db_path)
         return ProjectApplicationService(project_repository=repository)
@@ -59,7 +61,7 @@ class ProjectServiceFactory:
         repository = config.create_repository()
         return ProjectApplicationService(project_repository=repository)
     
-    def create_service_from_environment(self, user_id: Optional[str] = None) -> ProjectApplicationService:
+    def create_service_from_environment(self, user_id: str | None = None) -> ProjectApplicationService:
         """Create service using environment configuration"""
         config = RepositoryConfig.from_environment()
         config.user_id = user_id
@@ -69,7 +71,7 @@ class ProjectServiceFactory:
         """Set the project repository for dependency injection"""
         self._project_repository = repository
     
-    def get_project_repository(self) -> Optional[ProjectRepository]:
+    def get_project_repository(self) -> ProjectRepository | None:
         """Get the current project repository"""
         return self._project_repository
 
@@ -77,8 +79,8 @@ class ProjectServiceFactory:
 # Convenience factory functions
 
 def create_project_service_factory(
-    path_resolver: Optional[PathResolver] = None,
-    project_repository: Optional[ProjectRepository] = None
+    path_resolver: PathResolver | None = None,
+    project_repository: ProjectRepository | None = None
 ) -> ProjectServiceFactory:
     """Create a project service factory with optional dependencies"""
     if not path_resolver:
@@ -103,8 +105,8 @@ def create_project_service_for_user(user_id: str) -> ProjectApplicationService:
 
 
 def create_sqlite_project_service(
-    user_id: Optional[str] = None, 
-    db_path: Optional[str] = None
+    user_id: str | None = None, 
+    db_path: str | None = None
 ) -> ProjectApplicationService:
     """Create a project service with SQLite repository (legacy support)"""
     factory = create_project_service_factory()

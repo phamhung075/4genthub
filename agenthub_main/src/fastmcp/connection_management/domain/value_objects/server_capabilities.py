@@ -1,15 +1,15 @@
 """ServerCapabilities Value Object"""
 
 from dataclasses import dataclass
-from typing import Dict, Any, List
+from typing import Any
 
 
 @dataclass(frozen=True)
 class ServerCapabilities:
     """Immutable value object representing server capabilities"""
     
-    core_features: List[str]
-    available_actions: Dict[str, List[str]]
+    core_features: list[str]
+    available_actions: dict[str, list[str]]
     authentication_enabled: bool
     mvp_mode: bool
     version: str
@@ -37,7 +37,7 @@ class ServerCapabilities:
         """Check if server supports a specific action category"""
         return category in self.available_actions
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation"""
         return {
             "success": True,

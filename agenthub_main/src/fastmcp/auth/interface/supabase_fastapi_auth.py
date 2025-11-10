@@ -6,16 +6,15 @@ that validate Supabase JWT tokens instead of local JWT tokens.
 """
 
 import logging
-from typing import Optional
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from ..infrastructure.supabase_auth import SupabaseAuthService
 from ..domain.entities.user import User
 from ..infrastructure.repositories.user_repository import UserRepository
+from ..infrastructure.supabase_auth import SupabaseAuthService
 from .fastapi_auth import get_db
-from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +77,9 @@ async def get_current_user_from_middleware(
             if email:
                 logger.info(f"Creating new user record for authenticated user: {user_id}")
 
-                from ..domain.entities.user import UserStatus, UserRole
                 from sqlalchemy.exc import IntegrityError
+
+                from ..domain.entities.user import UserRole, UserStatus
 
                 try:
                     # Create domain user
@@ -191,9 +191,10 @@ async def get_current_user_supabase(
             email = supabase_user.email if hasattr(supabase_user, 'email') else supabase_user.get('email')
             user_metadata = supabase_user.user_metadata if hasattr(supabase_user, 'user_metadata') else supabase_user.get('user_metadata', {})
 
-            from ..domain.entities.user import UserStatus, UserRole
-            from ..infrastructure.database.models import User as UserModel
             from sqlalchemy.exc import IntegrityError
+
+            from ..domain.entities.user import UserRole, UserStatus
+            from ..infrastructure.database.models import User as UserModel
 
             try:
                 # Create domain user

@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 """Analytics API Routes - Business intelligence and usage pattern analysis"""
 
-import os
 import logging
-from typing import Dict, Any, List, Optional, Tuple
+from collections import defaultdict
 from datetime import datetime, timedelta
-from collections import defaultdict, Counter
-from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import text
 from sqlalchemy.orm import Session
-from sqlalchemy import text, func, distinct
 
 from ...auth.interface.fastapi_auth import get_authenticated_user
-from ...task_management.infrastructure.database.database_config import get_database_session
+from ...task_management.infrastructure.database.database_config import (
+    get_database_session,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics & Intelligence"])
@@ -19,10 +21,10 @@ router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics & Intelligence"]
 
 @router.get("/context-usage")
 async def get_context_usage_analytics(
-    user: Dict[str, Any] = Depends(get_authenticated_user),
+    user: dict[str, Any] = Depends(get_authenticated_user),
     days: int = Query(30, ge=1, le=365, description="Days of data to analyze"),
     include_patterns: bool = Query(True, description="Include usage patterns")
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analyze context usage patterns across the system.
     
@@ -185,9 +187,9 @@ async def get_context_usage_analytics(
 
 @router.get("/agent-performance")
 async def get_agent_performance_analytics(
-    user: Dict[str, Any] = Depends(get_authenticated_user),
+    user: dict[str, Any] = Depends(get_authenticated_user),
     days: int = Query(30, ge=1, le=365, description="Days of data to analyze")
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analyze agent performance and coordination patterns.
     
@@ -350,9 +352,9 @@ async def get_agent_performance_analytics(
 
 @router.get("/system-insights")
 async def get_system_insights(
-    user: Dict[str, Any] = Depends(get_authenticated_user),
+    user: dict[str, Any] = Depends(get_authenticated_user),
     days: int = Query(7, ge=1, le=30, description="Days for trend analysis")
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generate high-level system insights and recommendations.
     
@@ -484,7 +486,7 @@ async def get_system_insights(
         raise HTTPException(status_code=500, detail="Failed to generate system insights")
 
 
-def _analyze_context_lifecycle(session: Session, user_id: str, since_date: datetime) -> Dict[str, Any]:
+def _analyze_context_lifecycle(session: Session, user_id: str, since_date: datetime) -> dict[str, Any]:
     """Analyze context creation, usage, and completion patterns."""
     
     lifecycle_query = text("""
@@ -534,7 +536,7 @@ def _calculate_agent_efficiency(completion_rate: float, avg_hours: float, blocke
     return completion_score + speed_score + reliability_score
 
 
-def _generate_specialization_recommendations(agent_metrics: List[Dict]) -> List[str]:
+def _generate_specialization_recommendations(agent_metrics: list[dict]) -> list[str]:
     """Generate agent specialization recommendations based on performance patterns."""
     
     recommendations = []
@@ -560,7 +562,7 @@ def _generate_specialization_recommendations(agent_metrics: List[Dict]) -> List[
     return recommendations
 
 
-def _calculate_trend(values: List[float]) -> str:
+def _calculate_trend(values: list[float]) -> str:
     """Calculate trend direction from a list of values."""
     
     if len(values) < 2:
@@ -578,7 +580,7 @@ def _calculate_trend(values: List[float]) -> str:
         return "stable"
 
 
-def _calculate_completion_trend(daily_metrics: List[Dict]) -> str:
+def _calculate_completion_trend(daily_metrics: list[dict]) -> str:
     """Calculate completion rate trend from daily metrics."""
     
     completion_rates = [

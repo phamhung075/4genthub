@@ -5,20 +5,18 @@ This module provides service account authentication for MCP hooks and automated 
 It handles client credentials flow, token caching, and automatic refresh.
 """
 
-import os
-import logging
 import asyncio
-import json
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass, asdict
-from datetime import datetime, timezone, timedelta
-from functools import lru_cache
+import logging
+import os
+import threading
+import time
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 import httpx
 import jwt
 from jwt import PyJWKClient
-import hashlib
-import threading
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +27,7 @@ class ServiceAccountConfig:
     realm: str
     client_id: str
     client_secret: str
-    scopes: List[str] = None
+    scopes: list[str] = None
     
     def __post_init__(self):
         if not self.scopes:
@@ -39,7 +37,7 @@ class ServiceAccountConfig:
 class ServiceToken:
     """Service account token data"""
     access_token: str
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
     token_type: str = "Bearer"
     expires_in: int = 300
     scope: str = ""
@@ -47,7 +45,7 @@ class ServiceToken:
     
     def __post_init__(self):
         if not self.created_at:
-            self.created_at = datetime.now(timezone.utc)
+            self.created_at = datetime.now(UTC)
     
     @property
     def expires_at(self) -> datetime:
@@ -59,12 +57,12 @@ class ServiceToken:
         """Check if token has expired (with 30 second buffer)"""
         buffer_seconds = 30
         expiry_with_buffer = self.expires_at - timedelta(seconds=buffer_seconds)
-        return datetime.now(timezone.utc) >= expiry_with_buffer
+        return datetime.now(UTC) >= expiry_with_buffer
     
     @property
     def seconds_until_expiry(self) -> int:
         """Get seconds until token expires"""
-        delta = self.expires_at - datetime.now(timezone.utc)
+        delta = self.expires_at - datetime.now(UTC)
         return max(0, int(delta.total_seconds()))
 
 class ServiceAccountAuth:
@@ -75,7 +73,7 @@ class ServiceAccountAuth:
     token caching, automatic refresh, and secure credential management.
     """
     
-    def __init__(self, config: Optional[ServiceAccountConfig] = None):
+    def __init__(self, config: ServiceAccountConfig | None = None):
         """Initialize service account authentication"""
         self.config = config or self._load_config_from_env()
         self._validate_config()
@@ -94,12 +92,12 @@ class ServiceAccountAuth:
         )
         
         # Token management
-        self._current_token: Optional[ServiceToken] = None
+        self._current_token: ServiceToken | None = None
         self._token_lock = threading.RLock()
-        self._refresh_task: Optional[asyncio.Task] = None
+        self._refresh_task: asyncio.Task | None = None
         
         # JWKS client for token validation
-        self._jwks_client: Optional[PyJWKClient] = None
+        self._jwks_client: PyJWKClient | None = None
         
         # Rate limiting
         self._last_request_time = 0
@@ -154,7 +152,7 @@ class ServiceAccountAuth:
         
         self._last_request_time = time.time()
     
-    async def authenticate(self, force_refresh: bool = False) -> Optional[ServiceToken]:
+    async def authenticate(self, force_refresh: bool = False) -> ServiceToken | None:
         """
         Authenticate service account and get access token.
         
@@ -200,7 +198,7 @@ class ServiceAccountAuth:
                         token_type=token_data.get("token_type", "Bearer"),
                         expires_in=token_data.get("expires_in", 300),
                         scope=token_data.get("scope", ""),
-                        created_at=datetime.now(timezone.utc)
+                        created_at=datetime.now(UTC)
                     )
                     
                     logger.info(f"✅ Service account authenticated successfully. Token expires in {self._current_token.expires_in}s")
@@ -244,7 +242,7 @@ class ServiceAccountAuth:
         except Exception as e:
             logger.error(f"Error in token refresh loop: {e}")
     
-    async def get_valid_token(self) -> Optional[str]:
+    async def get_valid_token(self) -> str | None:
         """
         Get a valid access token, refreshing if necessary.
         
@@ -254,7 +252,7 @@ class ServiceAccountAuth:
         token = await self.authenticate()
         return token.access_token if token else None
     
-    async def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
+    async def validate_token(self, token: str) -> dict[str, Any] | None:
         """
         Validate a service account token.
         
@@ -298,7 +296,7 @@ class ServiceAccountAuth:
             logger.error(f"Token validation error: {e}")
             return None
     
-    async def get_service_info(self) -> Optional[Dict[str, Any]]:
+    async def get_service_info(self) -> dict[str, Any] | None:
         """
         Get service account information from Keycloak.
         
@@ -325,7 +323,7 @@ class ServiceAccountAuth:
             logger.error(f"Failed to get service info: {e}")
             return None
     
-    def get_auth_headers(self) -> Dict[str, str]:
+    def get_auth_headers(self) -> dict[str, str]:
         """
         Get authorization headers for authenticated requests.
         
@@ -339,7 +337,7 @@ class ServiceAccountAuth:
             return {"Authorization": f"Bearer {self._current_token.access_token}"}
         return {}
     
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """
         Check service account authentication health.
         
@@ -402,7 +400,7 @@ class ServiceAccountAuth:
 
 
 # Singleton instance for easy access
-_service_auth_instance: Optional[ServiceAccountAuth] = None
+_service_auth_instance: ServiceAccountAuth | None = None
 
 def get_service_account_auth() -> ServiceAccountAuth:
     """
@@ -416,7 +414,7 @@ def get_service_account_auth() -> ServiceAccountAuth:
         _service_auth_instance = ServiceAccountAuth()
     return _service_auth_instance
 
-async def authenticate_service_request(authorization_header: Optional[str] = None) -> Optional[Dict[str, Any]]:
+async def authenticate_service_request(authorization_header: str | None = None) -> dict[str, Any] | None:
     """
     Authenticate a service request using service account token.
     

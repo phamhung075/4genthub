@@ -6,10 +6,9 @@ including checking for duplicates within the user's scope.
 """
 
 import logging
-from typing import Optional
 
-from ..repositories.project_repository import ProjectRepository
 from ..exceptions.base_exceptions import ValidationException
+from ..repositories.project_repository import ProjectRepository
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ class ProjectNameValidator:
         """
         self._project_repository = project_repository
 
-    async def validate_unique_name(self, name: str, user_id: str, exclude_project_id: Optional[str] = None) -> None:
+    async def validate_unique_name(self, name: str, user_id: str, exclude_project_id: str | None = None) -> None:
         """
         Validate that a project name is unique within the user's scope.
 
@@ -107,7 +106,7 @@ class ProjectNameValidator:
 
         logger.debug(f"Project name format '{name}' validated successfully")
 
-    async def validate_project_name(self, name: str, user_id: str, exclude_project_id: Optional[str] = None) -> None:
+    async def validate_project_name(self, name: str, user_id: str, exclude_project_id: str | None = None) -> None:
         """
         Comprehensive project name validation including format and uniqueness.
 

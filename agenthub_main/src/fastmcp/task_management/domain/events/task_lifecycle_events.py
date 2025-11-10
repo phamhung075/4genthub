@@ -6,7 +6,8 @@ All task-related events follow consistent patterns with immutable frozen datacla
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List
+from typing import Any
+
 from .base import BaseDomainEvent
 
 
@@ -18,8 +19,8 @@ class TaskCreatedEvent(BaseDomainEvent):
     title: str = ""
     status: str = ""
     priority: str = ""
-    assignees: List[str] = field(default_factory=list)
-    user_id: Optional[str] = None
+    assignees: list[str] = field(default_factory=list)
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -27,12 +28,12 @@ class TaskUpdatedEvent(BaseDomainEvent):
     """Event raised when a task is updated"""
     task_id: str = ""
     branch_id: str = ""
-    old_status: Optional[str] = None
-    new_status: Optional[str] = None
-    old_branch_id: Optional[str] = None
-    new_branch_id: Optional[str] = None
-    changes: Dict[str, Any] = field(default_factory=dict)
-    user_id: Optional[str] = None
+    old_status: str | None = None
+    new_status: str | None = None
+    old_branch_id: str | None = None
+    new_branch_id: str | None = None
+    changes: dict[str, Any] = field(default_factory=dict)
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -42,7 +43,7 @@ class TaskDeletedEvent(BaseDomainEvent):
     branch_id: str = ""
     status: str = ""
     title: str = ""
-    user_id: Optional[str] = None
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -52,7 +53,7 @@ class TaskStatusChangedEvent(BaseDomainEvent):
     branch_id: str = ""
     old_status: str = ""
     new_status: str = ""
-    user_id: Optional[str] = None
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -67,18 +68,18 @@ class TaskCompletedEvent(BaseDomainEvent):
     branch_id: str = ""
     title: str = ""
     completion_summary: str = ""
-    testing_notes: Optional[str] = None
-    completed_by: Optional[str] = None
-    time_spent_minutes: Optional[int] = None
-    insights_found: List[str] = field(default_factory=list)
+    testing_notes: str | None = None
+    completed_by: str | None = None
+    time_spent_minutes: int | None = None
+    insights_found: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
 class TaskRetrievedEvent(BaseDomainEvent):
     """Event raised when a task is retrieved from repository"""
     task_id: str = ""
-    branch_id: Optional[str] = None
-    user_id: Optional[str] = None
+    branch_id: str | None = None
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -87,7 +88,7 @@ class TaskMovedToBranchEvent(BaseDomainEvent):
     task_id: str = ""
     old_branch_id: str = ""
     new_branch_id: str = ""
-    user_id: Optional[str] = None
+    user_id: str | None = None
 
 
 __all__ = [

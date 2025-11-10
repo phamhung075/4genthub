@@ -7,9 +7,9 @@ to automatically detect potential dependency relationships.
 
 import logging
 import re
-from typing import List, Dict, Set, Tuple, Optional, Any
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class ContentFeature:
     confidence: float
     position: int = 0
     context: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -42,7 +42,7 @@ class EntityMatch:
     target_task_id: str
     match_type: str
     confidence: float
-    evidence: List[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
 
 
 class ContentAnalyzer:
@@ -108,7 +108,7 @@ class ContentAnalyzer:
     def __init__(self):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
     
-    def extract_features(self, task_content: str) -> List[ContentFeature]:
+    def extract_features(self, task_content: str) -> list[ContentFeature]:
         """
         Extract all features from task content
         
@@ -134,7 +134,7 @@ class ContentAnalyzer:
         
         return features
     
-    def find_content_matches(self, source_features: List[ContentFeature], target_content: str) -> List[EntityMatch]:
+    def find_content_matches(self, source_features: list[ContentFeature], target_content: str) -> list[EntityMatch]:
         """
         Find matches between source features and target content
         
@@ -156,7 +156,7 @@ class ContentAnalyzer:
         
         return matches
     
-    def _extract_keyword_features(self, content: str) -> List[ContentFeature]:
+    def _extract_keyword_features(self, content: str) -> list[ContentFeature]:
         """Extract dependency keywords from content"""
         features = []
         content_lower = content.lower()
@@ -183,7 +183,7 @@ class ContentAnalyzer:
         
         return features
     
-    def _extract_file_features(self, content: str) -> List[ContentFeature]:
+    def _extract_file_features(self, content: str) -> list[ContentFeature]:
         """Extract file references from content"""
         features = []
         
@@ -214,7 +214,7 @@ class ContentAnalyzer:
         
         return features
     
-    def _extract_entity_features(self, content: str) -> List[ContentFeature]:
+    def _extract_entity_features(self, content: str) -> list[ContentFeature]:
         """Extract technical entities from content"""
         features = []
 
@@ -254,7 +254,7 @@ class ContentAnalyzer:
         
         return features
     
-    def _extract_temporal_features(self, content: str) -> List[ContentFeature]:
+    def _extract_temporal_features(self, content: str) -> list[ContentFeature]:
         """Extract temporal/sequential patterns from content"""
         features = []
         
@@ -287,7 +287,7 @@ class ContentAnalyzer:
         
         return features
     
-    def _calculate_feature_match(self, source_feature: ContentFeature, target_feature: ContentFeature) -> Optional[EntityMatch]:
+    def _calculate_feature_match(self, source_feature: ContentFeature, target_feature: ContentFeature) -> EntityMatch | None:
         """Calculate match between two content features"""
         
         # Features must be compatible types
@@ -383,7 +383,7 @@ class ContentAnalyzer:
         
         return common_chars / max_len
     
-    def analyze_task_relationships(self, task_contents: Dict[str, str]) -> Dict[str, List[EntityMatch]]:
+    def analyze_task_relationships(self, task_contents: dict[str, str]) -> dict[str, list[EntityMatch]]:
         """
         Analyze relationships between multiple tasks
         
@@ -420,7 +420,7 @@ class ContentAnalyzer:
         
         return relationships
     
-    def get_analysis_summary(self, features: List[ContentFeature]) -> Dict[str, Any]:
+    def get_analysis_summary(self, features: list[ContentFeature]) -> dict[str, Any]:
         """Generate summary statistics for content analysis"""
         summary = {
             'total_features': len(features),

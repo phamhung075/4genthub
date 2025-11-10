@@ -1,8 +1,7 @@
 from collections.abc import Sequence
-from typing import Annotated, Any, TypeVar
+from typing import Annotated, Any, Self, TypeVar
 
 from pydantic import BeforeValidator, Field, PrivateAttr
-from typing_extensions import Self
 
 from fastmcp.utilities.types import FastMCPBaseModel
 

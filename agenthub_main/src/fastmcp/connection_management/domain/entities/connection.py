@@ -1,11 +1,11 @@
 """Connection Domain Entity"""
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
+from typing import Any
 
-from ..value_objects.connection_health import ConnectionHealth
 from ..events.connection_events import ConnectionHealthChecked
+from ..value_objects.connection_health import ConnectionHealth
 
 
 @dataclass
@@ -13,17 +13,17 @@ class Connection:
     """Connection domain entity representing a client connection"""
     
     connection_id: str
-    client_info: Dict[str, Any]
+    client_info: dict[str, Any]
     established_at: datetime
     last_activity: datetime
     status: str = "active"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
     # Domain events
-    _events: List[Any] = field(default_factory=list, init=False)
+    _events: list[Any] = field(default_factory=list, init=False)
     
     @classmethod
-    def create(cls, connection_id: str, client_info: Dict[str, Any]) -> 'Connection':
+    def create(cls, connection_id: str, client_info: dict[str, Any]) -> 'Connection':
         """Factory method to create a new connection"""
         now = datetime.now()
         return cls(
@@ -102,7 +102,7 @@ class Connection:
         self.status = "disconnected"
         self.update_activity()
     
-    def get_events(self) -> List[Any]:
+    def get_events(self) -> list[Any]:
         """Get domain events"""
         return self._events.copy()
     

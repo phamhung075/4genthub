@@ -1,7 +1,7 @@
 """Enhanced progress tracking for tasks"""
 
-from dataclasses import dataclass, asdict
-from typing import Optional, Dict
+from dataclasses import asdict, dataclass
+
 
 @dataclass
 class TaskProgressInfo:
@@ -9,7 +9,7 @@ class TaskProgressInfo:
     current_phase_index: int
     total_phases: int
     completion_percentage: float
-    estimated_completion: Optional[str]
+    estimated_completion: str | None
     
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return asdict(self) 

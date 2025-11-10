@@ -6,13 +6,11 @@ login, password management, and token handling.
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any, Tuple
 from dataclasses import dataclass
 
 from ...domain.entities.user import User, UserStatus
-from ...domain.services.password_service import PasswordService
 from ...domain.services.jwt_service import JWTService
+from ...domain.services.password_service import PasswordService
 from ...domain.value_objects.email import Email
 from ...domain.value_objects.user_id import UserId
 
@@ -23,10 +21,10 @@ logger = logging.getLogger(__name__)
 class LoginResult:
     """Result of a login attempt"""
     success: bool
-    user: Optional[User] = None
-    access_token: Optional[str] = None
-    refresh_token: Optional[str] = None
-    error_message: Optional[str] = None
+    user: User | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
+    error_message: str | None = None
     requires_email_verification: bool = False
 
 
@@ -34,9 +32,9 @@ class LoginResult:
 class RegistrationResult:
     """Result of a registration attempt"""
     success: bool
-    user: Optional[User] = None
-    verification_token: Optional[str] = None
-    error_message: Optional[str] = None
+    user: User | None = None
+    verification_token: str | None = None
+    error_message: str | None = None
 
 
 class AuthService:
@@ -50,7 +48,7 @@ class AuthService:
     def __init__(self,
                  user_repository,  # Will be implemented next
                  jwt_service: JWTService,
-                 password_service: Optional[PasswordService] = None):
+                 password_service: PasswordService | None = None):
         """
         Initialize authentication service
         
@@ -67,7 +65,7 @@ class AuthService:
                           email: str,
                           username: str,
                           password: str,
-                          full_name: Optional[str] = None) -> RegistrationResult:
+                          full_name: str | None = None) -> RegistrationResult:
         """
         Register a new user
         
@@ -151,7 +149,7 @@ class AuthService:
     async def login(self,
                    email_or_username: str,
                    password: str,
-                   ip_address: Optional[str] = None) -> LoginResult:
+                   ip_address: str | None = None) -> LoginResult:
         """
         Authenticate user and generate tokens
         
@@ -257,7 +255,7 @@ class AuthService:
                 error_message="Login failed"
             )
     
-    async def verify_email(self, token: str) -> Tuple[bool, Optional[str]]:
+    async def verify_email(self, token: str) -> tuple[bool, str | None]:
         """
         Verify user's email with token
         
@@ -292,7 +290,7 @@ class AuthService:
             logger.error(f"Email verification failed: {e}")
             return False, "Email verification failed"
     
-    async def request_password_reset(self, email: str) -> Tuple[bool, Optional[str], Optional[str]]:
+    async def request_password_reset(self, email: str) -> tuple[bool, str | None, str | None]:
         """
         Request password reset
         
@@ -325,7 +323,7 @@ class AuthService:
             logger.error(f"Password reset request failed: {e}")
             return False, None, "Password reset request failed"
     
-    async def reset_password(self, token: str, new_password: str) -> Tuple[bool, Optional[str]]:
+    async def reset_password(self, token: str, new_password: str) -> tuple[bool, str | None]:
         """
         Reset user password with token
         
@@ -368,7 +366,7 @@ class AuthService:
             logger.error(f"Password reset failed: {e}")
             return False, "Password reset failed"
     
-    async def refresh_tokens(self, refresh_token: str) -> Optional[Tuple[str, str]]:
+    async def refresh_tokens(self, refresh_token: str) -> tuple[str, str] | None:
         """
         Refresh access and refresh tokens
         
@@ -451,7 +449,7 @@ class AuthService:
             logger.error(f"Logout failed: {e}")
             return False
     
-    async def get_current_user(self, access_token: str) -> Optional[User]:
+    async def get_current_user(self, access_token: str) -> User | None:
         """
         Get current user from access token
         

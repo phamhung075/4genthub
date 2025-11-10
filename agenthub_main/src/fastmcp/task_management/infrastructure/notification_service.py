@@ -6,13 +6,13 @@ supporting multiple notification channels and delivery mechanisms.
 
 import asyncio
 import inspect
-import logging
-from typing import Any, Dict, List, Optional, Protocol, Set
-from datetime import datetime, timezone
-from dataclasses import dataclass, asdict
-from enum import Enum
 import json
+import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +47,11 @@ class Notification:
     type: str
     title: str
     message: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     priority: NotificationPriority
     timestamp: datetime
-    recipients: Optional[List[str]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    recipients: list[str] | None = None
+    metadata: dict[str, Any] | None = None
     retry_count: int = 0
     max_retries: int = 3
 
@@ -91,8 +91,8 @@ class InMemoryNotificationChannel(NotificationChannel):
     
     def __init__(self):
         """Initialize the in-memory channel."""
-        self.notifications: List[Notification] = []
-        self.callbacks: List[Any] = []
+        self.notifications: list[Notification] = []
+        self.callbacks: list[Any] = []
         
     async def send(self, notification: Notification) -> bool:
         """Send notification to in-memory storage."""
@@ -120,8 +120,8 @@ class InMemoryNotificationChannel(NotificationChannel):
         self.callbacks.append(callback)
     
     def get_notifications(self, 
-                         notification_type: Optional[str] = None,
-                         priority: Optional[NotificationPriority] = None) -> List[Notification]:
+                         notification_type: str | None = None,
+                         priority: NotificationPriority | None = None) -> list[Notification]:
         """Get stored notifications with optional filtering."""
         notifications = self.notifications
         
@@ -223,9 +223,9 @@ class NotificationService:
     
     def __init__(self):
         """Initialize the notification service."""
-        self.channels: List[NotificationChannel] = []
+        self.channels: list[NotificationChannel] = []
         self._notification_queue: asyncio.Queue = asyncio.Queue()
-        self._processing_task: Optional[asyncio.Task] = None
+        self._processing_task: asyncio.Task | None = None
         self._shutdown = False
         
         # Add default channels
@@ -261,11 +261,11 @@ class NotificationService:
     
     async def notify(self, 
                     type: str,
-                    data: Dict[str, Any],
-                    title: Optional[str] = None,
-                    message: Optional[str] = None,
+                    data: dict[str, Any],
+                    title: str | None = None,
+                    message: str | None = None,
                     priority: str = "medium",
-                    recipients: Optional[List[str]] = None) -> str:
+                    recipients: list[str] | None = None) -> str:
         """
         Send a notification.
         
@@ -299,7 +299,7 @@ class NotificationService:
             message=message,
             data=data,
             priority=NotificationPriority(priority),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             recipients=recipients,
             metadata={'source': 'notification_service'}
         )
@@ -334,7 +334,7 @@ class NotificationService:
         else:
             logger.debug(f"Notification {notification.id} sent through {sent_count} channel(s)")
     
-    def _generate_title(self, type: str, data: Dict[str, Any]) -> str:
+    def _generate_title(self, type: str, data: dict[str, Any]) -> str:
         """Generate a title based on notification type."""
         titles = {
             "milestone_reached": "Milestone Reached",
@@ -348,7 +348,7 @@ class NotificationService:
         
         return titles.get(type, f"Notification: {type}")
     
-    def _generate_message(self, type: str, data: Dict[str, Any]) -> str:
+    def _generate_message(self, type: str, data: dict[str, Any]) -> str:
         """Generate a message based on notification type and data."""
         if type == "milestone_reached":
             return f"Milestone '{data.get('milestone', 'Unknown')}' reached at {data.get('progress', 0)}%"
@@ -368,7 +368,7 @@ class NotificationService:
         else:
             return json.dumps(data)[:200]  # Truncate if too long
     
-    async def notify_batch(self, notifications: List[Dict[str, Any]]) -> List[str]:
+    async def notify_batch(self, notifications: list[dict[str, Any]]) -> list[str]:
         """
         Send multiple notifications.
         
@@ -421,7 +421,7 @@ class NotificationService:
         """
         await self._notification_queue.put(notification)
     
-    def get_in_memory_notifications(self) -> List[Notification]:
+    def get_in_memory_notifications(self) -> list[Notification]:
         """Get notifications from in-memory channel if available."""
         for channel in self.channels:
             if isinstance(channel, InMemoryNotificationChannel):
@@ -440,7 +440,7 @@ class NotificationService:
 
 
 # Global notification service instance
-_global_notification_service: Optional[NotificationService] = None
+_global_notification_service: NotificationService | None = None
 
 
 def get_notification_service() -> NotificationService:

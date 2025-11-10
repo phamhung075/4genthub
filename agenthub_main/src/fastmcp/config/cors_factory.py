@@ -4,9 +4,9 @@ Centralized CORS configuration for all FastAPI applications.
 Ensures consistent CORS settings across all endpoints.
 """
 
-import os
 import logging
-from typing import List, Optional
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,7 +17,7 @@ class CORSFactory:
     """Factory for creating consistent CORS configurations."""
 
     @staticmethod
-    def get_allowed_origins() -> List[str]:
+    def get_allowed_origins() -> list[str]:
         """
         Get allowed origins from environment variable.
         Returns a list of allowed origins. Allows wildcard for MCP compatibility.
@@ -44,7 +44,7 @@ class CORSFactory:
     @staticmethod
     def configure_cors(app: FastAPI,
                       allow_credentials: bool = True,
-                      custom_origins: Optional[List[str]] = None) -> None:
+                      custom_origins: list[str] | None = None) -> None:
         """
         Configure CORS middleware for a FastAPI application.
 

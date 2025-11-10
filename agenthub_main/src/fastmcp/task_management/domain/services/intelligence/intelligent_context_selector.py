@@ -14,14 +14,14 @@ Key Features:
 
 import logging
 import time
-from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
-from .semantic_matcher import SemanticMatcher, ContextItem, SimilarityResult
-from .progressive_expander import ProgressiveExpander, ExpansionResult, UserPreferences
-from .predictive_loader import PredictiveLoader, PredictionResult
-from .context_prioritizer import ContextPrioritizer, ContextScore, ScoringWeights
+from .context_prioritizer import ContextPrioritizer
+from .predictive_loader import PredictiveLoader
+from .progressive_expander import ProgressiveExpander, UserPreferences
+from .semantic_matcher import ContextItem, SemanticMatcher
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +29,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SelectionResult:
     """Result from intelligent context selection."""
-    selected_contexts: List[Dict[str, Any]]
+    selected_contexts: list[dict[str, Any]]
     total_tokens_used: int
     selection_time_ms: float
     hit_rate_estimate: float
     size_reduction_percent: float
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -130,16 +130,16 @@ class IntelligentContextSelector:
         self.enable_metrics = enable_metrics
         
         # Performance optimization
-        self.result_cache: Dict[str, Tuple[SelectionResult, datetime]] = {}
-        self.context_cache: Dict[str, ContextItem] = {}
+        self.result_cache: dict[str, tuple[SelectionResult, datetime]] = {}
+        self.context_cache: dict[str, ContextItem] = {}
         
         # Metrics tracking
         self.metrics = SelectionMetrics()
-        self.performance_history: List[Dict[str, Any]] = []
+        self.performance_history: list[dict[str, Any]] = []
         
         # Context state
-        self.available_contexts: List[Dict[str, Any]] = []
-        self.current_session_id: Optional[str] = None
+        self.available_contexts: list[dict[str, Any]] = []
+        self.current_session_id: str | None = None
         
         logger.info(
             f"IntelligentContextSelector initialized "
@@ -151,9 +151,9 @@ class IntelligentContextSelector:
         self, 
         query: str, 
         max_tokens: int = 2000,
-        user_preferences: Optional[UserPreferences] = None,
-        current_task: Optional[Dict[str, Any]] = None,
-        project_context: Optional[Dict[str, Any]] = None,
+        user_preferences: UserPreferences | None = None,
+        current_task: dict[str, Any] | None = None,
+        project_context: dict[str, Any] | None = None,
         aggressive_expansion: bool = False
     ) -> SelectionResult:
         """
@@ -222,7 +222,11 @@ class IntelligentContextSelector:
             # Step 4: Progressive expansion based on scores and token budget
             if context_scores:
                 # Convert scores to expansion candidates
-                from .progressive_expander import ExpansionCandidate, ContextLevel, ExpansionTrigger
+                from .progressive_expander import (
+                    ContextLevel,
+                    ExpansionCandidate,
+                    ExpansionTrigger,
+                )
                 
                 expansion_candidates = []
                 for score in context_scores[:15]:  # Top 15 candidates for expansion
@@ -343,7 +347,7 @@ class IntelligentContextSelector:
             return self._fallback_selection(query, max_tokens)
     
     
-    def load_available_contexts(self, contexts: List[Dict[str, Any]]) -> None:
+    def load_available_contexts(self, contexts: list[dict[str, Any]]) -> None:
         """
         Load available contexts into the selector.
         
@@ -375,14 +379,14 @@ class IntelligentContextSelector:
         logger.info(f"Loaded {len(contexts)} contexts for intelligent selection")
     
     
-    def start_session(self, session_id: str, user_id: Optional[str] = None) -> None:
+    def start_session(self, session_id: str, user_id: str | None = None) -> None:
         """Start a new session for predictive loading."""
         self.current_session_id = session_id
         self.predictive_loader.start_session(session_id, user_id)
         logger.info(f"Started intelligence session: {session_id}")
     
     
-    def record_tool_usage(self, tool_name: str, context_id: Optional[str] = None) -> None:
+    def record_tool_usage(self, tool_name: str, context_id: str | None = None) -> None:
         """Record tool usage for pattern learning."""
         self.predictive_loader.record_tool_usage(tool_name, context_id)
         
@@ -391,7 +395,7 @@ class IntelligentContextSelector:
             self.context_prioritizer.record_context_access(context_id)
     
     
-    def end_session(self) -> Dict[str, Any]:
+    def end_session(self) -> dict[str, Any]:
         """End current session and return analytics."""
         session_analytics = {}
         
@@ -402,7 +406,7 @@ class IntelligentContextSelector:
         return session_analytics
     
     
-    def _extract_context_content(self, context_data: Dict[str, Any]) -> str:
+    def _extract_context_content(self, context_data: dict[str, Any]) -> str:
         """Extract searchable content from context data."""
         content_parts = []
         
@@ -420,7 +424,7 @@ class IntelligentContextSelector:
         return ' '.join(content_parts)
     
     
-    def _find_context_by_id(self, context_id: str) -> Optional[Dict[str, Any]]:
+    def _find_context_by_id(self, context_id: str) -> dict[str, Any] | None:
         """Find context data by ID."""
         for context in self.available_contexts:
             if context.get('id') == context_id or str(context.get('context_id')) == context_id:
@@ -428,7 +432,7 @@ class IntelligentContextSelector:
         return None
     
     
-    def _estimate_hit_rate(self, selected_contexts: List[Dict[str, Any]], query: str) -> float:
+    def _estimate_hit_rate(self, selected_contexts: list[dict[str, Any]], query: str) -> float:
         """Estimate how likely the selected contexts are to be relevant."""
         if not selected_contexts:
             return 0.0
@@ -453,8 +457,8 @@ class IntelligentContextSelector:
     
     def _estimate_size_reduction(
         self, 
-        selected_contexts: List[Dict[str, Any]], 
-        all_contexts: List[Dict[str, Any]]
+        selected_contexts: list[dict[str, Any]], 
+        all_contexts: list[dict[str, Any]]
     ) -> float:
         """Estimate size reduction compared to loading all contexts."""
         if not all_contexts:
@@ -477,7 +481,7 @@ class IntelligentContextSelector:
         return max(0.0, reduction)
     
     
-    def _get_cached_result(self, query: str, max_tokens: int) -> Optional[SelectionResult]:
+    def _get_cached_result(self, query: str, max_tokens: int) -> SelectionResult | None:
         """Get cached result if available and fresh."""
         cache_key = f"{hash(query)}_{max_tokens}"
         
@@ -485,7 +489,7 @@ class IntelligentContextSelector:
             result, timestamp = self.result_cache[cache_key]
             
             # Check if cache is still fresh
-            age_seconds = (datetime.now(timezone.utc) - timestamp).total_seconds()
+            age_seconds = (datetime.now(UTC) - timestamp).total_seconds()
             if age_seconds < self.cache_ttl_seconds:
                 return result
             else:
@@ -498,7 +502,7 @@ class IntelligentContextSelector:
     def _cache_result(self, query: str, max_tokens: int, result: SelectionResult) -> None:
         """Cache selection result."""
         cache_key = f"{hash(query)}_{max_tokens}"
-        self.result_cache[cache_key] = (result, datetime.now(timezone.utc))
+        self.result_cache[cache_key] = (result, datetime.now(UTC))
         
         # Limit cache size
         if len(self.result_cache) > 100:
@@ -538,7 +542,7 @@ class IntelligentContextSelector:
         
         # Store detailed performance history
         performance_entry = {
-            'timestamp': datetime.now(timezone.utc),
+            'timestamp': datetime.now(UTC),
             'selection_time_ms': result.selection_time_ms,
             'hit_rate_estimate': result.hit_rate_estimate,
             'size_reduction_percent': result.size_reduction_percent,
@@ -577,7 +581,7 @@ class IntelligentContextSelector:
         )
     
     
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get comprehensive performance statistics."""
         # Component stats
         semantic_stats = self.semantic_matcher.get_stats()
@@ -616,7 +620,7 @@ class IntelligentContextSelector:
         return performance_stats
     
     
-    def optimize_performance(self) -> Dict[str, Any]:
+    def optimize_performance(self) -> dict[str, Any]:
         """Optimize performance based on collected metrics."""
         optimization_actions = []
         

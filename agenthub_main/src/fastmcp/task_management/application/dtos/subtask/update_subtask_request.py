@@ -1,19 +1,19 @@
 """Request DTO for updating a subtask"""
 
 from dataclasses import dataclass
-from typing import Union, Optional
+
 
 @dataclass
 class UpdateSubtaskRequest:
-    task_id: Union[str, int]
-    id: Union[str, int]
-    title: Optional[str] = None
-    description: Optional[str] = None
-    status: Optional[str] = None
-    priority: Optional[str] = None
-    assignees: Optional[list] = None
-    progress_percentage: Optional[int] = None  # Progress tracking (0-100)
-    progress_notes: Optional[str] = None  # Progress notes to append to history
+    task_id: str | int
+    id: str | int
+    title: str | None = None
+    description: str | None = None
+    status: str | None = None
+    priority: str | None = None
+    assignees: list | None = None
+    progress_percentage: int | None = None  # Progress tracking (0-100)
+    progress_notes: str | None = None  # Progress notes to append to history
 
     def __init__(self, task_id: str, id: str, title: str = None, description: str = None,
                  status: str = None, priority: str = None, assignees: list = None,

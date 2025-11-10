@@ -6,11 +6,16 @@ Integrates the AI planning engine with the existing MCP server.
 
 import json
 import uuid
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any
 
-from ...domain.entities.planning_request import PlanningRequest, RequirementItem, PlanningContext
 from ...application.services.ai_planning_service import AITaskPlanningService
+from ...domain.entities.planning_request import (
+    PlanningContext,
+    PlanningRequest,
+    RequirementItem,
+)
+
 
 class AITaskPlanningMCPController:
     """MCP controller for AI task planning operations"""
@@ -18,7 +23,7 @@ class AITaskPlanningMCPController:
     def __init__(self):
         self.planning_service = AITaskPlanningService()
     
-    async def create_ai_plan(self, **kwargs) -> Dict[str, Any]:
+    async def create_ai_plan(self, **kwargs) -> dict[str, Any]:
         """
         Create an AI-generated task plan from requirements.
         
@@ -167,7 +172,7 @@ class AITaskPlanningMCPController:
                 'error_type': type(e).__name__
             }
     
-    async def get_plan_status(self, **kwargs) -> Dict[str, Any]:
+    async def get_plan_status(self, **kwargs) -> dict[str, Any]:
         """
         Get status of an AI-generated plan.
         
@@ -189,7 +194,7 @@ class AITaskPlanningMCPController:
             ]
         }
     
-    async def analyze_requirements(self, **kwargs) -> Dict[str, Any]:
+    async def analyze_requirements(self, **kwargs) -> dict[str, Any]:
         """
         Analyze requirements without creating a full plan.
         
@@ -283,7 +288,7 @@ class AITaskPlanningMCPController:
                 'error_type': type(e).__name__
             }
     
-    async def estimate_effort(self, **kwargs) -> Dict[str, Any]:
+    async def estimate_effort(self, **kwargs) -> dict[str, Any]:
         """
         Estimate effort for a set of requirements.
         
@@ -324,7 +329,7 @@ class AITaskPlanningMCPController:
                 'error': f'Effort estimation failed: {str(e)}'
             }
     
-    async def suggest_agents(self, **kwargs) -> Dict[str, Any]:
+    async def suggest_agents(self, **kwargs) -> dict[str, Any]:
         """
         Suggest optimal agents for requirements.
         
@@ -373,7 +378,7 @@ class AITaskPlanningMCPController:
                 'error': f'Agent suggestion failed: {str(e)}'
             }
     
-    async def validate_plan(self, **kwargs) -> Dict[str, Any]:
+    async def validate_plan(self, **kwargs) -> dict[str, Any]:
         """
         Validate a task plan for consistency.
         
@@ -394,7 +399,7 @@ class AITaskPlanningMCPController:
             ]
         }
     
-    def _generate_recommendations(self, task_plan) -> List[str]:
+    def _generate_recommendations(self, task_plan) -> list[str]:
         """Generate recommendations based on the task plan"""
         recommendations = []
         
@@ -417,7 +422,7 @@ class AITaskPlanningMCPController:
         
         return recommendations
     
-    def _calculate_estimation_confidence(self, analysis: Dict[str, Any]) -> str:
+    def _calculate_estimation_confidence(self, analysis: dict[str, Any]) -> str:
         """Calculate confidence level for effort estimation"""
         
         pattern_count = len(analysis['pattern_distribution'])
@@ -430,8 +435,8 @@ class AITaskPlanningMCPController:
         else:
             return 'low'
     
-    def _estimate_agent_workload(self, agent_recommendations: Dict[str, int], 
-                                total_hours: float) -> Dict[str, float]:
+    def _estimate_agent_workload(self, agent_recommendations: dict[str, int], 
+                                total_hours: float) -> dict[str, float]:
         """Estimate workload distribution among agents"""
         
         total_weight = sum(agent_recommendations.values())
@@ -443,7 +448,7 @@ class AITaskPlanningMCPController:
             for agent, count in agent_recommendations.items()
         }
     
-    def _identify_specialization_needs(self, pattern_distribution: Dict[str, int]) -> List[str]:
+    def _identify_specialization_needs(self, pattern_distribution: dict[str, int]) -> list[str]:
         """Identify required specializations based on patterns"""
         
         specialization_map = {

@@ -4,12 +4,13 @@ This module defines standardized context templates that specify exactly what con
 is needed for each operation type, reducing unnecessary context fetching by 60-80%.
 """
 
-import logging
-from typing import Dict, List, Any, Optional, Set
-from enum import Enum
-import yaml
 import json
+import logging
+from enum import Enum
 from pathlib import Path
+from typing import Any
+
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -80,15 +81,15 @@ class TemplateVariable:
 class ContextTemplate:
     """Represents a context template with variables and requirements"""
     
-    def __init__(self, name: str, operation_type: OperationType, variables: List[TemplateVariable] = None,
-                 context_requirements: List[str] = None, description: str = ""):
+    def __init__(self, name: str, operation_type: OperationType, variables: list[TemplateVariable] = None,
+                 context_requirements: list[str] = None, description: str = ""):
         self.name = name
         self.operation_type = operation_type
         self.variables = variables or []
         self.context_requirements = context_requirements or []
         self.description = description
     
-    def validate(self, context: Dict[str, Any]) -> bool:
+    def validate(self, context: dict[str, Any]) -> bool:
         """Validate that context meets template requirements"""
         for variable in self.variables:
             if variable.required and variable.name not in context:
@@ -240,7 +241,7 @@ class ContextTemplateManager:
         }
     }
     
-    def __init__(self, templates_path: Optional[str] = None):
+    def __init__(self, templates_path: str | None = None):
         """
         Initialize the template manager
         
@@ -268,8 +269,8 @@ class ContextTemplateManager:
     def get_template(
         self,
         operation: OperationType,
-        override_fields: Optional[Dict[str, List[str]]] = None
-    ) -> Dict[str, List[str]]:
+        override_fields: dict[str, list[str]] | None = None
+    ) -> dict[str, list[str]]:
         """
         Get context template for an operation
         
@@ -310,7 +311,7 @@ class ContextTemplateManager:
         
         return template
     
-    def _build_inheritance_map(self) -> Dict[OperationType, List[OperationType]]:
+    def _build_inheritance_map(self) -> dict[OperationType, list[OperationType]]:
         """
         Build inheritance relationships between similar operations
         
@@ -335,8 +336,8 @@ class ContextTemplateManager:
     def _apply_inheritance(
         self,
         operation: OperationType,
-        template: Dict[str, List[str]]
-    ) -> Dict[str, List[str]]:
+        template: dict[str, list[str]]
+    ) -> dict[str, list[str]]:
         """
         Apply template inheritance for similar operations
         
@@ -375,7 +376,7 @@ class ContextTemplateManager:
         try:
             path = Path(templates_path)
             if path.exists():
-                with open(path, 'r') as f:
+                with open(path) as f:
                     custom_data = yaml.safe_load(f)
                 
                 # Validate and merge custom templates
@@ -426,7 +427,7 @@ class ContextTemplateManager:
     def validate_template(
         self,
         operation: OperationType,
-        required_contexts: List[str]
+        required_contexts: list[str]
     ) -> bool:
         """
         Validate that a template provides required context types
@@ -450,8 +451,8 @@ class ContextTemplateManager:
     def get_minimal_context(
         self,
         operation: OperationType,
-        available_data: Dict[str, Dict[str, Any]]
-    ) -> Dict[str, Dict[str, Any]]:
+        available_data: dict[str, dict[str, Any]]
+    ) -> dict[str, dict[str, Any]]:
         """
         Extract minimal required context from available data
         
@@ -490,8 +491,8 @@ class ContextTemplateManager:
     def suggest_template_improvements(
         self,
         operation: OperationType,
-        actual_usage: Dict[str, List[str]]
-    ) -> Dict[str, Any]:
+        actual_usage: dict[str, list[str]]
+    ) -> dict[str, Any]:
         """
         Suggest template improvements based on actual field usage
         
@@ -536,7 +537,7 @@ class ContextTemplateManager:
         
         return suggestions
     
-    def get_metrics(self) -> Dict[str, int]:
+    def get_metrics(self) -> dict[str, int]:
         """
         Get template usage metrics
         
@@ -554,7 +555,7 @@ class ContextTemplateManager:
             "cache_hits": 0
         }
     
-    def get_all_operations(self) -> List[str]:
+    def get_all_operations(self) -> list[str]:
         """
         Get list of all supported operations
         
@@ -563,7 +564,7 @@ class ContextTemplateManager:
         """
         return [op.value for op in OperationType]
     
-    def estimate_savings(self) -> Dict[str, float]:
+    def estimate_savings(self) -> dict[str, float]:
         """
         Estimate savings from using templates
         

@@ -1,7 +1,6 @@
 """Request DTO for updating a project"""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -11,5 +10,5 @@ class UpdateProjectRequest:
     project_id: str
     
     # Optional fields with defaults
-    name: Optional[str] = None
-    description: Optional[str] = None 
+    name: str | None = None
+    description: str | None = None 

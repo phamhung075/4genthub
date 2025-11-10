@@ -6,20 +6,16 @@ Comprehensive metrics collection system for tracking response optimization,
 performance benchmarks, and AI comprehension effectiveness.
 """
 
-import time
-import json
 import logging
-import asyncio
-from datetime import datetime, timezone, timedelta
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Union, Tuple
-from dataclasses import dataclass, asdict, field
-from collections import defaultdict, deque
 import threading
-import psutil
-from concurrent.futures import ThreadPoolExecutor
+import time
+from collections import defaultdict, deque
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
 
-from .metrics_collector import MetricsCollector, MetricPoint, MetricSummary
+from .metrics_collector import MetricsCollector
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +29,9 @@ class OptimizationMetric:
     timestamp: datetime
     optimization_type: str  # MINIMAL, STANDARD, DETAILED, DEBUG
     operation: str  # response_format, context_injection, cache_operation, etc.
-    original_size: Optional[int] = None
-    optimized_size: Optional[int] = None
-    tags: Dict[str, str] = field(default_factory=dict)
+    original_size: int | None = None
+    optimized_size: int | None = None
+    tags: dict[str, str] = field(default_factory=dict)
     
     @property
     def compression_ratio(self) -> float:
@@ -62,7 +58,7 @@ class OptimizationMetricsCollector(MetricsCollector):
     def __init__(self, 
                  buffer_size: int = 15000,
                  flush_interval_seconds: int = 30,
-                 output_directory: Optional[Path] = None,
+                 output_directory: Path | None = None,
                  enable_prometheus: bool = True):
         """Initialize optimization metrics collector."""
         super().__init__(buffer_size, flush_interval_seconds, output_directory)
@@ -97,7 +93,7 @@ class OptimizationMetricsCollector(MetricsCollector):
                                    processing_time_ms: float,
                                    optimization_type: str,
                                    operation: str = "response_format",
-                                   tags: Optional[Dict[str, str]] = None) -> None:
+                                   tags: dict[str, str] | None = None) -> None:
         """Record response optimization metrics."""
         
         compression_ratio = ((original_size - optimized_size) / original_size) * 100
@@ -107,7 +103,7 @@ class OptimizationMetricsCollector(MetricsCollector):
             name="response_optimization",
             value=compression_ratio,
             unit="percent",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             optimization_type=optimization_type,
             operation=operation,
             original_size=original_size,
@@ -140,7 +136,7 @@ class OptimizationMetricsCollector(MetricsCollector):
                                         query_time_ms: float,
                                         cache_hit: bool,
                                         tier: str = "unknown",
-                                        tags: Optional[Dict[str, str]] = None) -> None:
+                                        tags: dict[str, str] | None = None) -> None:
         """Record context injection performance metrics."""
         
         field_reduction_ratio = ((fields_requested - fields_returned) / max(fields_requested, 1)) * 100
@@ -170,8 +166,8 @@ class OptimizationMetricsCollector(MetricsCollector):
                                     extraction_time_ms: float,
                                     response_format: str,
                                     agent_operation: str,
-                                    error_type: Optional[str] = None,
-                                    tags: Optional[Dict[str, str]] = None) -> None:
+                                    error_type: str | None = None,
+                                    tags: dict[str, str] | None = None) -> None:
         """Record AI performance and comprehension metrics."""
         
         ai_tags = {
@@ -204,7 +200,7 @@ class OptimizationMetricsCollector(MetricsCollector):
                                    network_bandwidth_kbps: float,
                                    db_query_count: int,
                                    db_query_time_ms: float,
-                                   tags: Optional[Dict[str, str]] = None) -> None:
+                                   tags: dict[str, str] | None = None) -> None:
         """Record system health and resource utilization metrics."""
         
         system_tags = {**(tags or {}), "source": "optimization_system"}
@@ -316,13 +312,13 @@ class OptimizationMetricsCollector(MetricsCollector):
                 {"processing_time": processing_time, "optimization_type": opt_type}
             )
     
-    def _trigger_alert(self, alert_type: str, message: str, context: Dict[str, Any]) -> None:
+    def _trigger_alert(self, alert_type: str, message: str, context: dict[str, Any]) -> None:
         """Trigger and log an alert."""
         alert = {
             "type": alert_type,
             "message": message,
             "context": context,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "severity": self._get_alert_severity(alert_type)
         }
         
@@ -347,10 +343,10 @@ class OptimizationMetricsCollector(MetricsCollector):
         else:
             return "info"
     
-    def get_optimization_summary(self, time_window_hours: float = 1) -> Dict[str, Any]:
+    def get_optimization_summary(self, time_window_hours: float = 1) -> dict[str, Any]:
         """Get comprehensive optimization performance summary."""
         
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=time_window_hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=time_window_hours)
         
         # Filter recent optimization metrics
         with self._optimization_lock:
@@ -421,8 +417,8 @@ class OptimizationMetricsCollector(MetricsCollector):
         }
     
     def _generate_optimization_recommendations(self, 
-                                            optimizations: List[OptimizationMetric], 
-                                            alerts: List[Dict]) -> List[str]:
+                                            optimizations: list[OptimizationMetric], 
+                                            alerts: list[dict]) -> list[str]:
         """Generate actionable optimization recommendations."""
         
         recommendations = []
@@ -456,7 +452,7 @@ class OptimizationMetricsCollector(MetricsCollector):
         
         return recommendations
     
-    def export_optimization_dashboard_data(self, time_window_hours: float = 24) -> Dict[str, Any]:
+    def export_optimization_dashboard_data(self, time_window_hours: float = 24) -> dict[str, Any]:
         """Export data in format suitable for Grafana dashboard."""
         
         summary = self.get_optimization_summary(time_window_hours)
@@ -533,7 +529,7 @@ class OptimizationMetricsCollector(MetricsCollector):
         
         return dashboard_data
     
-    async def generate_optimization_report(self, time_window_hours: float = 24) -> Dict[str, Any]:
+    async def generate_optimization_report(self, time_window_hours: float = 24) -> dict[str, Any]:
         """Generate comprehensive optimization performance report."""
         
         summary = self.get_optimization_summary(time_window_hours)
@@ -541,7 +537,7 @@ class OptimizationMetricsCollector(MetricsCollector):
         
         report = {
             "report_metadata": {
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
                 "time_window_hours": time_window_hours,
                 "report_type": "optimization_performance"
             },
@@ -566,7 +562,7 @@ class OptimizationMetricsCollector(MetricsCollector):
 
 
 # Global optimization metrics collector instance
-_global_optimization_collector: Optional[OptimizationMetricsCollector] = None
+_global_optimization_collector: OptimizationMetricsCollector | None = None
 
 
 def get_global_optimization_collector() -> OptimizationMetricsCollector:

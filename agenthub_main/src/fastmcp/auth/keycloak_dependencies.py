@@ -5,14 +5,13 @@ This module provides authentication dependencies that can handle both
 Keycloak JWT tokens (RS256) and local JWT tokens (HS256).
 """
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional
-import jwt
-import os
 import logging
-from datetime import datetime, timezone
-import httpx
+import os
+from datetime import UTC, datetime
+
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from fastmcp.auth.domain.entities.user import User
 
@@ -45,9 +44,10 @@ def get_keycloak_jwks_client():
         return None
 
     if _keycloak_jwks_client is None:
-        from jwt import PyJWKClient
         import ssl
         import urllib.request
+
+        from jwt import PyJWKClient
 
         # Create SSL context that doesn't verify certificates (for self-signed certs)
         ssl_context = ssl.create_default_context()
@@ -160,7 +160,7 @@ async def validate_keycloak_token(token: str) -> User:
         
         # Check token expiration
         exp = payload.get("exp")
-        if exp and datetime.now(timezone.utc).timestamp() > exp:
+        if exp and datetime.now(UTC).timestamp() > exp:
             logger.error("Keycloak token expired")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -236,7 +236,7 @@ def validate_local_token(token: str) -> User:
         
         # Check token expiration
         exp = payload.get("exp")
-        if exp and datetime.now(timezone.utc).timestamp() > exp:
+        if exp and datetime.now(UTC).timestamp() > exp:
             logger.error("Local token expired")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -293,7 +293,7 @@ async def get_current_user_from_ws(websocket, token: str) -> dict:
             }
 
     # Fall back to local JWT validation
-    user = await validate_local_jwt(token)
+    user = validate_local_token(token)
     return {
         "sub": user.id,
         "email": user.email,

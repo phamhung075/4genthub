@@ -6,10 +6,10 @@ with self-signed certificates. It must be imported before any Supabase
 or httpx clients are created.
 """
 
+import logging
 import os
 import re
 import ssl
-import logging
 
 logger = logging.getLogger(__name__)
 

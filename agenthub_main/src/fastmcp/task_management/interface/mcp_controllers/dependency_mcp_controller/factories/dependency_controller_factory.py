@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .....application.facades.task_application_facade import TaskApplicationFacade
+    from ..dependency_mcp_controller import DependencyMCPController
 
 from ..handlers import DependencyOperationHandler
 from ..services import DescriptionService

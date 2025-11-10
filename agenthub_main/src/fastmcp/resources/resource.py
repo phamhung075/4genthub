@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 import inspect
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, Self
 
 import pydantic_core
 from mcp.types import Resource as MCPResource
@@ -17,7 +17,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from typing_extensions import Self
 
 from fastmcp.utilities.components import FastMCPComponent
 from fastmcp.utilities.types import (

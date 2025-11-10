@@ -1,10 +1,12 @@
 """MCP Connection Diagnostics Service Implementation"""
 
 import logging
-from typing import Dict, Any, List
+from typing import Any
 
-from ...domain.services.connection_diagnostics_service import ConnectionDiagnosticsService
 from ...domain.entities.connection import Connection
+from ...domain.services.connection_diagnostics_service import (
+    ConnectionDiagnosticsService,
+)
 from ...domain.value_objects.connection_health import ConnectionHealth
 
 logger = logging.getLogger(__name__)
@@ -18,11 +20,10 @@ class MCPConnectionDiagnosticsService(ConnectionDiagnosticsService):
         # Delegate to the connection entity for the actual diagnosis logic
         return connection.diagnose_health()
     
-    def get_connection_statistics(self) -> Dict[str, Any]:
+    def get_connection_statistics(self) -> dict[str, Any]:
         """Get overall connection statistics"""
         try:
             # Try to get stats from the existing connection manager
-            from ....server.connection_manager import get_connection_manager
             
             # For now, return basic stats
             # In a real async implementation, this would await the connection manager
@@ -42,11 +43,10 @@ class MCPConnectionDiagnosticsService(ConnectionDiagnosticsService):
                 "error": str(e)
             }
     
-    def get_reconnection_recommendations(self) -> Dict[str, Any]:
+    def get_reconnection_recommendations(self) -> dict[str, Any]:
         """Get recommendations for connection issues"""
         try:
             # Try to get recommendations from the existing connection manager
-            from ....server.connection_manager import get_connection_manager
             
             # For now, return basic recommendations
             # In a real async implementation, this would await the connection manager
@@ -71,7 +71,7 @@ class MCPConnectionDiagnosticsService(ConnectionDiagnosticsService):
                 "error": str(e)
             }
     
-    def analyze_connection_patterns(self, connections: List[Connection]) -> Dict[str, Any]:
+    def analyze_connection_patterns(self, connections: list[Connection]) -> dict[str, Any]:
         """Analyze connection patterns and identify issues"""
         if not connections:
             return {
@@ -104,7 +104,7 @@ class MCPConnectionDiagnosticsService(ConnectionDiagnosticsService):
             "recommendations": recommendations
         }
     
-    def validate_connection_infrastructure(self) -> Dict[str, Any]:
+    def validate_connection_infrastructure(self) -> dict[str, Any]:
         """Validate connection infrastructure health"""
         try:
             # Check if connection manager and status broadcaster are available

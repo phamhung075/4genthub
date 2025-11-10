@@ -2,9 +2,9 @@
 
 import logging
 
-from ..dtos.connection_dtos import ServerCapabilitiesRequest, ServerCapabilitiesResponse
 from ...domain.repositories.server_repository import ServerRepository
 from ...domain.services.server_health_service import ServerHealthService
+from ..dtos.connection_dtos import ServerCapabilitiesRequest, ServerCapabilitiesResponse
 
 logger = logging.getLogger(__name__)
 

@@ -7,9 +7,9 @@ This file contains the core domain entities for rule management following DDD pr
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
-from pathlib import Path
-from ..value_objects import RuleFormat, RuleType, InheritanceType
+from typing import Any
+
+from ..value_objects import InheritanceType, RuleFormat, RuleType
 
 
 @dataclass
@@ -21,11 +21,11 @@ class RuleMetadata:
     size: int
     modified: float
     checksum: str
-    dependencies: List[str]
+    dependencies: list[str]
     author: str = "system"
     version: str = "1.0"
     description: str = ""
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     
     def __post_init__(self):
         """Ensure tags is always a list"""
@@ -66,12 +66,12 @@ class RuleContent:
     """Structured rule content - Domain Entity"""
     metadata: RuleMetadata
     raw_content: str
-    parsed_content: Dict[str, Any]
-    sections: Dict[str, str]
-    references: List[str]
-    variables: Dict[str, Any]
+    parsed_content: dict[str, Any]
+    sections: dict[str, str]
+    references: list[str]
+    variables: dict[str, Any]
 
-    def get_section(self, section_name: str) -> Optional[str]:
+    def get_section(self, section_name: str) -> str | None:
         """Get content of a specific section"""
         return self.sections.get(section_name)
 
@@ -131,11 +131,11 @@ class RuleInheritance:
     parent_path: str
     child_path: str
     inheritance_type: InheritanceType
-    inherited_sections: List[str] = field(default_factory=list)
-    overridden_sections: List[str] = field(default_factory=list)
-    merged_variables: Dict[str, Any] = field(default_factory=dict)
+    inherited_sections: list[str] = field(default_factory=list)
+    overridden_sections: list[str] = field(default_factory=list)
+    merged_variables: dict[str, Any] = field(default_factory=dict)
     inheritance_depth: int = 0
-    conflicts: List[str] = field(default_factory=list)
+    conflicts: list[str] = field(default_factory=list)
 
     def add_inherited_section(self, section: str) -> None:
         """Add an inherited section"""
@@ -177,8 +177,8 @@ class RuleInheritance:
 class Rule:
     """Main Rule aggregate - Domain Entity"""
     metadata: RuleMetadata
-    content: Optional[RuleContent] = None
-    inheritance: Optional[RuleInheritance] = None
+    content: RuleContent | None = None
+    inheritance: RuleInheritance | None = None
 
     def __post_init__(self):
         """Initialize content if not provided"""

@@ -1,7 +1,5 @@
 """Label Domain Entity"""
 
-from typing import Optional
-from datetime import datetime
 from dataclasses import dataclass
 
 from .base.base_timestamp_entity import BaseTimestampEntity

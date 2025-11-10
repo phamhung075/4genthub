@@ -1,15 +1,15 @@
 """Add Subtask Use Case"""
 
-from typing import Union
-from ...application.dtos.subtask.add_subtask_request import AddSubtaskRequest
-from ...application.dtos.subtask.subtask_response import SubtaskResponse
-
-from ...domain import TaskRepository, TaskId, TaskNotFoundError
-from ...domain.repositories.subtask_repository import SubtaskRepository
-from ...domain.entities.subtask import Subtask
-from ...domain.value_objects.priority import Priority
 import logging
 import time
+
+from ...application.dtos.subtask.add_subtask_request import AddSubtaskRequest
+from ...application.dtos.subtask.subtask_response import SubtaskResponse
+from ...domain import TaskId, TaskNotFoundError, TaskRepository
+from ...domain.entities.subtask import Subtask
+from ...domain.repositories.subtask_repository import SubtaskRepository
+from ...domain.value_objects.priority import Priority
+
 
 class AddSubtaskUseCase:
     def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository = None):
@@ -165,8 +165,8 @@ class AddSubtaskUseCase:
             # Dispatch domain event for subtask creation
             # This will trigger branch statistics update
             try:
-                from ...domain.services.event_dispatcher import dispatch_domain_event
                 from ...domain.events.task_lifecycle_events import TaskCreatedEvent
+                from ...domain.services.event_dispatcher import dispatch_domain_event
 
                 # Subtasks affect the same branch as their parent task
                 event = TaskCreatedEvent.create(
@@ -224,7 +224,7 @@ class AddSubtaskUseCase:
         
         return response
 
-    def _convert_to_task_id(self, task_id: Union[str, int]) -> TaskId:
+    def _convert_to_task_id(self, task_id: str | int) -> TaskId:
         if isinstance(task_id, int):
             return TaskId.from_int(task_id)
         else:

@@ -1,14 +1,10 @@
 """Task Priority Service - Domain Service for Task Priority Business Rules"""
 
 import logging
-from typing import List, Dict, Any, Optional, Protocol
-from datetime import datetime, timezone
-from decimal import Decimal, ROUND_HALF_UP
+from datetime import UTC, datetime
+from typing import Any, Protocol
 
 from ..entities.task import Task
-from ..value_objects.priority import Priority
-from ..value_objects.task_status import TaskStatus
-from ..value_objects.task_id import TaskId
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +12,11 @@ logger = logging.getLogger(__name__)
 class TaskRepositoryProtocol(Protocol):
     """Protocol for task repository to avoid infrastructure dependency."""
     
-    def find_all(self) -> List[Task]:
+    def find_all(self) -> list[Task]:
         """Find all tasks."""
         pass
     
-    def find_by_git_branch_id(self, git_branch_id: str) -> List[Task]:
+    def find_by_git_branch_id(self, git_branch_id: str) -> list[Task]:
         """Find tasks by git branch ID."""
         pass
 
@@ -43,7 +39,7 @@ class TaskPriorityService:
     - Progress status
     """
     
-    def __init__(self, task_repository: Optional[TaskRepositoryProtocol] = None):
+    def __init__(self, task_repository: TaskRepositoryProtocol | None = None):
         """
         Initialize the task priority service.
         
@@ -52,7 +48,7 @@ class TaskPriorityService:
         """
         self._task_repository = task_repository
     
-    def calculate_priority_score(self, task: Task, context_factors: Optional[Dict[str, Any]] = None) -> float:
+    def calculate_priority_score(self, task: Task, context_factors: dict[str, Any] | None = None) -> float:
         """
         Calculate a comprehensive priority score for a task.
         
@@ -90,7 +86,7 @@ class TaskPriorityService:
             logger.error(f"Error calculating priority score for task {task.id}: {e}")
             return 0.0
     
-    def order_tasks_by_priority(self, tasks: List[Task], context_factors: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def order_tasks_by_priority(self, tasks: list[Task], context_factors: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         """
         Order tasks by priority score in descending order (highest priority first).
         
@@ -125,7 +121,7 @@ class TaskPriorityService:
             logger.error(f"Error ordering tasks by priority: {e}")
             return [{"task": task, "priority_score": 0.0, "error": str(e)} for task in tasks]
     
-    def get_next_task_recommendation(self, git_branch_id: str, exclude_statuses: Optional[List[str]] = None) -> Optional[Dict[str, Any]]:
+    def get_next_task_recommendation(self, git_branch_id: str, exclude_statuses: list[str] | None = None) -> dict[str, Any] | None:
         """
         Get the highest priority task recommendation for work.
         
@@ -187,7 +183,7 @@ class TaskPriorityService:
             logger.error(f"Error getting next task recommendation for branch {git_branch_id}: {e}")
             return None
     
-    def adjust_priority_for_dependencies(self, task: Task, all_tasks: Optional[List[Task]] = None) -> float:
+    def adjust_priority_for_dependencies(self, task: Task, all_tasks: list[Task] | None = None) -> float:
         """
         Adjust task priority based on dependency relationships.
         
@@ -241,12 +237,12 @@ class TaskPriorityService:
             return 30.0  # Medium urgency for tasks without due dates
         
         try:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             due_date = task.due_date
             
             # Ensure due_date is timezone-aware
             if due_date.tzinfo is None:
-                due_date = due_date.replace(tzinfo=timezone.utc)
+                due_date = due_date.replace(tzinfo=UTC)
             
             days_until_due = (due_date - now).days
             
@@ -269,7 +265,7 @@ class TaskPriorityService:
             logger.warning(f"Error calculating urgency for task {task.id}: {e}")
             return 30.0
     
-    def _calculate_blocking_score(self, task: Task, context_factors: Dict[str, Any]) -> float:
+    def _calculate_blocking_score(self, task: Task, context_factors: dict[str, Any]) -> float:
         """Calculate score based on how much this task blocks others."""
         # If we have information about dependent tasks, factor that in
         dependent_count = context_factors.get('dependent_task_count', 0)
@@ -288,12 +284,12 @@ class TaskPriorityService:
     def _calculate_age_score(self, task: Task) -> float:
         """Calculate score based on task age (older tasks get higher priority)."""
         try:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             created_at = task.created_at
             
             # Ensure created_at is timezone-aware
             if created_at.tzinfo is None:
-                created_at = created_at.replace(tzinfo=timezone.utc)
+                created_at = created_at.replace(tzinfo=UTC)
             
             age_days = (now - created_at).days
             
@@ -330,7 +326,7 @@ class TaskPriorityService:
         
         return progress_scores.get(status_str, 50.0)
     
-    def _get_priority_factors(self, task: Task, context_factors: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _get_priority_factors(self, task: Task, context_factors: dict[str, Any] | None) -> dict[str, Any]:
         """Get detailed breakdown of priority factors for a task."""
         context_factors = context_factors or {}
         
@@ -357,7 +353,7 @@ class TaskPriorityService:
             }
         }
     
-    def _generate_recommendation_reason(self, recommended_task: Dict[str, Any]) -> str:
+    def _generate_recommendation_reason(self, recommended_task: dict[str, Any]) -> str:
         """Generate human-readable reason for task recommendation."""
         task = recommended_task["task"]
         score = recommended_task["priority_score"]
@@ -369,7 +365,7 @@ class TaskPriorityService:
             reasons.append("high priority score")
         
         if hasattr(task, 'due_date') and task.due_date:
-            days_until_due = (task.due_date - datetime.now(timezone.utc)).days
+            days_until_due = (task.due_date - datetime.now(UTC)).days
             if days_until_due <= 1:
                 reasons.append("due soon" if days_until_due >= 0 else "overdue")
         
@@ -384,7 +380,7 @@ class TaskPriorityService:
         
         return f"Recommended because: {', '.join(reasons)}"
     
-    def _count_incomplete_dependencies(self, task: Task, all_tasks: List[Task]) -> int:
+    def _count_incomplete_dependencies(self, task: Task, all_tasks: list[Task]) -> int:
         """Count how many dependencies are incomplete."""
         if not hasattr(task, 'dependencies') or not task.dependencies:
             return 0
@@ -400,7 +396,7 @@ class TaskPriorityService:
         
         return incomplete_count
     
-    def _count_tasks_depending_on(self, task: Task, all_tasks: List[Task]) -> int:
+    def _count_tasks_depending_on(self, task: Task, all_tasks: list[Task]) -> int:
         """Count how many tasks depend on this task."""
         dependent_count = 0
         task_id_str = str(task.id)

@@ -20,8 +20,9 @@ import json
 import logging
 import os
 import random
-from typing import Dict, Any, Optional, List, Set
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
@@ -52,7 +53,7 @@ class ValidationIssue:
         self.expected = expected
         self.actual = actual
         self.message = message
-        self.timestamp = datetime.now(timezone.utc).isoformat()
+        self.timestamp = datetime.now(UTC).isoformat()
 
 
 class ResponseValidator:
@@ -105,8 +106,8 @@ class ResponseValidator:
     def validate_field(
         field_path: str,
         value: Any,
-        schema_def: Dict[str, Any],
-        issues: List[ValidationIssue]
+        schema_def: dict[str, Any],
+        issues: list[ValidationIssue]
     ) -> None:
         """Validate a single field against its schema definition"""
 
@@ -150,10 +151,10 @@ class ResponseValidator:
     @classmethod
     def validate_object(
         cls,
-        obj: Dict[str, Any],
-        schema: Dict[str, Dict[str, Any]],
+        obj: dict[str, Any],
+        schema: dict[str, dict[str, Any]],
         parent_path: str = ""
-    ) -> List[ValidationIssue]:
+    ) -> list[ValidationIssue]:
         """Validate an object against a schema"""
         issues = []
 
@@ -182,22 +183,22 @@ class ResponseValidator:
         return issues
 
     @classmethod
-    def validate_task_response(cls, task_data: Dict[str, Any]) -> List[ValidationIssue]:
+    def validate_task_response(cls, task_data: dict[str, Any]) -> list[ValidationIssue]:
         """Validate a task response"""
         return cls.validate_object(task_data, cls.TASK_SCHEMA, "task")
 
     @classmethod
-    def validate_subtask_response(cls, subtask_data: Dict[str, Any]) -> List[ValidationIssue]:
+    def validate_subtask_response(cls, subtask_data: dict[str, Any]) -> list[ValidationIssue]:
         """Validate a subtask response"""
         return cls.validate_object(subtask_data, cls.SUBTASK_SCHEMA, "subtask")
 
     @classmethod
     def validate_list_response(
         cls,
-        items: List[Dict[str, Any]],
-        item_schema: Dict[str, Dict[str, Any]],
+        items: list[dict[str, Any]],
+        item_schema: dict[str, dict[str, Any]],
         item_type: str = "item"
-    ) -> List[ValidationIssue]:
+    ) -> list[ValidationIssue]:
         """Validate a list of items"""
         all_issues = []
 
@@ -310,7 +311,7 @@ class ResponseValidatorMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.error(f"Error validating response: {e}", exc_info=True)
 
-    def _validate_task_endpoint(self, data: Dict[str, Any], path: str) -> List[ValidationIssue]:
+    def _validate_task_endpoint(self, data: dict[str, Any], path: str) -> list[ValidationIssue]:
         """Validate task-related endpoint responses"""
         issues = []
 
@@ -337,7 +338,7 @@ class ResponseValidatorMiddleware(BaseHTTPMiddleware):
 
         return issues
 
-    def _validate_subtask_endpoint(self, data: Dict[str, Any], path: str) -> List[ValidationIssue]:
+    def _validate_subtask_endpoint(self, data: dict[str, Any], path: str) -> list[ValidationIssue]:
         """Validate subtask-related endpoint responses"""
         issues = []
 
@@ -353,7 +354,7 @@ class ResponseValidatorMiddleware(BaseHTTPMiddleware):
 
         return issues
 
-    def _log_validation_issues(self, request: Request, issues: List[ValidationIssue]) -> None:
+    def _log_validation_issues(self, request: Request, issues: list[ValidationIssue]) -> None:
         """Log validation issues with appropriate severity"""
 
         error_issues = [i for i in issues if i.severity == "error"]
@@ -378,7 +379,7 @@ class ResponseValidatorMiddleware(BaseHTTPMiddleware):
                 "\n".join([f"  - {issue.message}" for issue in info_issues])
             )
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get validation statistics"""
         return {
             **self.validation_stats,

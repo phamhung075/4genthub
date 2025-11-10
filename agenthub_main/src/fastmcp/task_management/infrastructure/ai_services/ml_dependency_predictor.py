@@ -5,19 +5,19 @@ This service provides the infrastructure layer for ML-based dependency predictio
 including model persistence, training data management, and prediction serving.
 """
 
-import logging
 import json
-import pickle
-import os
-from typing import List, Dict, Optional, Any, Tuple
-from datetime import datetime, timezone
+import logging
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
-from fastmcp.task_management.domain.services.intelligence.pattern_recognition_engine import (
-    PatternRecognitionEngine, PatternPrediction, DependencyPattern
-)
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
+from fastmcp.task_management.domain.services.intelligence.pattern_recognition_engine import (
+    DependencyPattern,
+    PatternPrediction,
+    PatternRecognitionEngine,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class MLModelPersistence:
         self.model_dir.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
     
-    def save_patterns(self, patterns: Dict[str, DependencyPattern], model_version: str = "latest") -> str:
+    def save_patterns(self, patterns: dict[str, DependencyPattern], model_version: str = "latest") -> str:
         """Save learned patterns to disk"""
         try:
             patterns_file = self.model_dir / f"patterns_{model_version}.json"
@@ -53,7 +53,7 @@ class MLModelPersistence:
             metadata = {
                 'model_version': model_version,
                 'pattern_count': len(patterns),
-                'saved_at': datetime.now(timezone.utc).isoformat(),
+                'saved_at': datetime.now(UTC).isoformat(),
                 'file_size': patterns_file.stat().st_size
             }
             
@@ -68,7 +68,7 @@ class MLModelPersistence:
             self.logger.error(f"Error saving patterns: {e}")
             raise
     
-    def load_patterns(self, model_version: str = "latest") -> Dict[str, DependencyPattern]:
+    def load_patterns(self, model_version: str = "latest") -> dict[str, DependencyPattern]:
         """Load learned patterns from disk"""
         try:
             patterns_file = self.model_dir / f"patterns_{model_version}.json"
@@ -77,7 +77,7 @@ class MLModelPersistence:
                 self.logger.warning(f"Pattern file {patterns_file} does not exist")
                 return {}
             
-            with open(patterns_file, 'r') as f:
+            with open(patterns_file) as f:
                 pattern_data = json.load(f)
             
             # Convert back to DependencyPattern objects
@@ -88,7 +88,9 @@ class MLModelPersistence:
                 pattern_dict['last_updated'] = datetime.fromisoformat(pattern_dict['last_updated'])
                 
                 # Convert pattern type back to enum
-                from fastmcp.task_management.domain.services.intelligence.pattern_recognition_engine import PatternType
+                from fastmcp.task_management.domain.services.intelligence.pattern_recognition_engine import (
+                    PatternType,
+                )
                 pattern_dict['pattern_type'] = PatternType(pattern_dict['pattern_type'])
                 
                 pattern = DependencyPattern(**pattern_dict)
@@ -101,7 +103,7 @@ class MLModelPersistence:
             self.logger.error(f"Error loading patterns: {e}")
             return {}
     
-    def get_available_versions(self) -> List[str]:
+    def get_available_versions(self) -> list[str]:
         """Get list of available model versions"""
         try:
             versions = []
@@ -149,7 +151,7 @@ class TrainingDataCollector:
         self.task_repository = task_repository
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
     
-    def collect_project_history(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    def collect_project_history(self, limit: int | None = None) -> list[dict[str, Any]]:
         """
         Collect historical project data for training
         
@@ -196,7 +198,7 @@ class TrainingDataCollector:
             self.logger.error(f"Error collecting training data: {e}")
             return []
     
-    def _create_project_data(self, branch_id: str, tasks: List) -> Optional[Dict[str, Any]]:
+    def _create_project_data(self, branch_id: str, tasks: list) -> dict[str, Any] | None:
         """Create project data structure from tasks"""
         try:
             task_data = []
@@ -229,7 +231,7 @@ class TrainingDataCollector:
                 'task_count': len(task_data),
                 'dependency_count': total_deps,
                 'tasks': task_data,
-                'collected_at': datetime.now(timezone.utc).isoformat()
+                'collected_at': datetime.now(UTC).isoformat()
             }
             
             return project_data
@@ -238,7 +240,7 @@ class TrainingDataCollector:
             self.logger.error(f"Error creating project data for branch {branch_id}: {e}")
             return None
     
-    def _infer_project_domain(self, task_data: List[Dict[str, Any]]) -> str:
+    def _infer_project_domain(self, task_data: list[dict[str, Any]]) -> str:
         """Infer project domain from task content"""
         domain_indicators = {
             'web': ['frontend', 'backend', 'api', 'html', 'css', 'javascript', 'react', 'vue'],
@@ -295,7 +297,7 @@ class MLDependencyPredictor:
         except Exception as e:
             self.logger.error(f"Error loading latest model: {e}")
     
-    def train_model(self, project_limit: Optional[int] = None, save_model: bool = True) -> Dict[str, Any]:
+    def train_model(self, project_limit: int | None = None, save_model: bool = True) -> dict[str, Any]:
         """
         Train the dependency prediction model
         
@@ -316,7 +318,7 @@ class MLDependencyPredictor:
                 return {
                     'status': 'failed',
                     'error': 'No training data available',
-                    'timestamp': datetime.now(timezone.utc).isoformat()
+                    'timestamp': datetime.now(UTC).isoformat()
                 }
             
             # Train the pattern recognition engine
@@ -324,7 +326,7 @@ class MLDependencyPredictor:
             
             # Save model if requested
             if save_model and self.pattern_engine.patterns:
-                model_version = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+                model_version = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
                 model_path = self.persistence.save_patterns(
                     self.pattern_engine.patterns, 
                     model_version
@@ -347,10 +349,10 @@ class MLDependencyPredictor:
             return {
                 'status': 'failed',
                 'error': error_msg,
-                'timestamp': datetime.now(timezone.utc).isoformat()
+                'timestamp': datetime.now(UTC).isoformat()
             }
     
-    def predict_dependencies(self, task, candidate_tasks: List) -> List[PatternPrediction]:
+    def predict_dependencies(self, task, candidate_tasks: list) -> list[PatternPrediction]:
         """
         Predict dependencies for a task using trained ML models
         
@@ -379,7 +381,7 @@ class MLDependencyPredictor:
             self.logger.error(f"Error predicting dependencies: {e}")
             return []
     
-    def get_model_info(self) -> Dict[str, Any]:
+    def get_model_info(self) -> dict[str, Any]:
         """Get information about the current model"""
         try:
             info = {
@@ -395,7 +397,7 @@ class MLDependencyPredictor:
                 latest_version = versions[0]
                 metadata_file = self.persistence.model_dir / f"metadata_{latest_version}.json"
                 if metadata_file.exists():
-                    with open(metadata_file, 'r') as f:
+                    with open(metadata_file) as f:
                         info['latest_version_metadata'] = json.load(f)
             
             return info
@@ -404,7 +406,7 @@ class MLDependencyPredictor:
             self.logger.error(f"Error getting model info: {e}")
             return {'error': str(e)}
     
-    def retrain_model(self) -> Dict[str, Any]:
+    def retrain_model(self) -> dict[str, Any]:
         """Retrain the model with latest data"""
         self.logger.info("Retraining model with latest data")
         return self.train_model(save_model=True)
@@ -431,7 +433,7 @@ class MLDependencyPredictor:
                     pattern.success_rate = (pattern.success_rate * pattern.support_count) / (pattern.support_count + 1)
                 
                 pattern.support_count += 1
-                pattern.last_updated = datetime.now(timezone.utc)
+                pattern.last_updated = datetime.now(UTC)
                 
                 self.logger.info(f"Updated pattern {pattern_id} with feedback: {'accepted' if accepted else 'rejected'}")
                 return True

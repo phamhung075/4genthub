@@ -18,17 +18,20 @@ NO LEGACY SUPPORT:
 """
 
 import logging
-from typing import TypeVar, Generic, Type, Optional, List, Dict, Any, Callable
-from datetime import datetime, timezone, timedelta
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any, Generic, TypeVar
 
 from ...domain.entities.base.base_timestamp_entity import BaseTimestampEntity
-from ...infrastructure.repositories.base_timestamp_repository import BaseTimestampRepository
 from ...domain.exceptions.base_exceptions import (
+    BusinessLogicException,
     DatabaseException,
     ResourceNotFoundException,
     ValidationException,
-    BusinessLogicException
+)
+from ...infrastructure.repositories.base_timestamp_repository import (
+    BaseTimestampRepository,
 )
 
 logger = logging.getLogger(__name__)
@@ -96,8 +99,8 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
 
     def create_entity(
         self,
-        entity_data: Dict[str, Any],
-        validation_callback: Optional[Callable[[TimestampEntityType], None]] = None
+        entity_data: dict[str, Any],
+        validation_callback: Callable[[TimestampEntityType], None] | None = None
     ) -> TimestampEntityType:
         """Create a new entity with automatic timestamp management.
 
@@ -142,7 +145,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
     def update_entity(
         self,
         entity_id: str,
-        updates: Dict[str, Any],
+        updates: dict[str, Any],
         touch_reason: str = None
     ) -> TimestampEntityType:
         """Update entity with automatic timestamp management.
@@ -192,7 +195,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             logger.error(f"Unexpected error updating {self._entity_type} {entity_id}: {e}")
             raise DatabaseException(f"Failed to update {self._entity_type}: {str(e)}")
 
-    def get_entity(self, entity_id: str) -> Optional[TimestampEntityType]:
+    def get_entity(self, entity_id: str) -> TimestampEntityType | None:
         """Get entity by ID.
 
         Args:
@@ -277,7 +280,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
         start_time: datetime,
         end_time: datetime,
         timestamp_field: str = "updated_at"
-    ) -> List[TimestampEntityType]:
+    ) -> list[TimestampEntityType]:
         """Find entities within a timestamp range.
 
         Args:
@@ -304,7 +307,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             logger.error(f"Error finding {self._entity_type} by timestamp range: {e}")
             raise
 
-    def find_stale_entities(self, max_staleness_hours: int = 24) -> List[TimestampEntityType]:
+    def find_stale_entities(self, max_staleness_hours: int = 24) -> list[TimestampEntityType]:
         """Find entities that haven't been updated recently.
 
         Args:
@@ -328,7 +331,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             logger.error(f"Error finding stale {self._entity_type} entities: {e}")
             raise
 
-    def get_timestamp_statistics(self) -> Dict[str, Any]:
+    def get_timestamp_statistics(self) -> dict[str, Any]:
         """Get timestamp statistics for all entities.
 
         Returns:
@@ -349,7 +352,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
         self,
         max_staleness_days: int = 30,
         dry_run: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Clean up very stale entities.
 
         Args:
@@ -405,7 +408,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
 
     # Abstract methods for subclasses to implement
     @abstractmethod
-    def _create_entity_from_data(self, entity_data: Dict[str, Any]) -> TimestampEntityType:
+    def _create_entity_from_data(self, entity_data: dict[str, Any]) -> TimestampEntityType:
         """Create entity instance from data dictionary.
 
         Args:
@@ -416,7 +419,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
         """
         pass
 
-    def _apply_updates_to_entity(self, entity: TimestampEntityType, updates: Dict[str, Any]) -> None:
+    def _apply_updates_to_entity(self, entity: TimestampEntityType, updates: dict[str, Any]) -> None:
         """Apply updates to entity instance.
 
         Default implementation sets attributes directly.

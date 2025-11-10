@@ -3,17 +3,16 @@ Bulk Operation Models
 Handles bulk API operations matching frontend api.types.ts
 """
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
 
-from .summaries import BranchSummaryDTO, ProjectSummaryDTO
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BulkSummaryRequest(BaseModel):
     """Bulk summary request matching frontend BulkSummaryRequest interface"""
-    projectIds: Optional[List[str]] = Field(None, alias="projectIds")
-    userId: Optional[str] = Field(None, alias="userId")
-    includeArchived: Optional[bool] = Field(False, alias="includeArchived")
+    projectIds: list[str] | None = Field(None, alias="projectIds")
+    userId: str | None = Field(None, alias="userId")
+    includeArchived: bool | None = Field(False, alias="includeArchived")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -34,8 +33,8 @@ class BulkSummaryResponse(BaseModel):
     to allow flexibility in response construction while still serializing correctly.
     """
     success: bool = True
-    summaries: Dict[str, Any] = {}
-    projects: Dict[str, Any] = {}
+    summaries: dict[str, Any] = {}
+    projects: dict[str, Any] = {}
     metadata: BulkSummaryMetadata
     timestamp: str
-    message: Optional[str] = None
+    message: str | None = None

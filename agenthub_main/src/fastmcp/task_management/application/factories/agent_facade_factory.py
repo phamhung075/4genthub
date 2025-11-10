@@ -7,11 +7,10 @@ The default_id fallback has been removed to enforce security requirements.
 """
 
 import logging
-from typing import Optional, Dict
+
 from ...application.facades.agent_application_facade import AgentApplicationFacade
 from ...infrastructure.repositories.agent_repository_factory import (
-    get_default_agent_repository,
-    AgentRepositoryFactory
+    AgentRepositoryFactory,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,7 +26,7 @@ class AgentFacadeFactory:
     - Supports caching for performance optimization
     """
     
-    def __init__(self, agent_repository_factory: Optional[AgentRepositoryFactory] = None):
+    def __init__(self, agent_repository_factory: AgentRepositoryFactory | None = None):
         """
         Initialize the agent facade factory.
         
@@ -35,12 +34,12 @@ class AgentFacadeFactory:
             agent_repository_factory: Optional factory for creating agent repositories
         """
         self._agent_repository_factory = agent_repository_factory
-        self._facades_cache: Dict[str, AgentApplicationFacade] = {}
+        self._facades_cache: dict[str, AgentApplicationFacade] = {}
         logger.info("AgentFacadeFactory initialized")
     
     def create_agent_facade(self, 
                            project_id: str,
-                           user_id: Optional[str] = None) -> AgentApplicationFacade:
+                           user_id: str | None = None) -> AgentApplicationFacade:
         """
         Create an agent application facade with proper dependency injection.
         
@@ -67,13 +66,17 @@ class AgentFacadeFactory:
             # Create repository with user_id using the static create method
             if self._agent_repository_factory:
                 # Use the static create method of AgentRepositoryFactory
-                from ...infrastructure.repositories.agent_repository_factory import AgentRepositoryFactory
+                from ...infrastructure.repositories.agent_repository_factory import (
+                    AgentRepositoryFactory,
+                )
                 agent_repository = AgentRepositoryFactory.create(
                     user_id=user_id
                 )
             else:
                 # Always use user-specific repository - no default without user_id
-                from ...infrastructure.repositories.agent_repository_factory import AgentRepositoryFactory
+                from ...infrastructure.repositories.agent_repository_factory import (
+                    AgentRepositoryFactory,
+                )
                 agent_repository = AgentRepositoryFactory.create(
                     user_id=user_id
                 )
@@ -99,7 +102,7 @@ class AgentFacadeFactory:
         self._facades_cache.clear()
         logger.info("Agent facades cache cleared")
     
-    def get_cached_facade(self, project_id: str) -> Optional[AgentApplicationFacade]:
+    def get_cached_facade(self, project_id: str) -> AgentApplicationFacade | None:
         """
         Get a cached facade if available.
         

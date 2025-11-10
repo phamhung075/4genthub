@@ -1,17 +1,16 @@
 """Branch Statistics Integration Service - Wires domain events to statistics updates"""
 
 import logging
-from typing import Optional
 
-from ...domain.services.branch_statistics_service import BranchStatisticsService
-from ...domain.services.event_dispatcher import get_event_dispatcher
 from ...domain.events.task_lifecycle_events import (
     TaskCreatedEvent,
-    TaskUpdatedEvent,
     TaskDeletedEvent,
+    TaskMovedToBranchEvent,
     TaskStatusChangedEvent,
-    TaskMovedToBranchEvent
+    TaskUpdatedEvent,
 )
+from ...domain.services.branch_statistics_service import BranchStatisticsService
+from ...domain.services.event_dispatcher import get_event_dispatcher
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +150,7 @@ class BranchStatisticsIntegrationService:
         except Exception as e:
             logger.error(f"Failed to handle task moved to branch event: {e}")
 
-    def recalculate_all_branches(self, project_id: Optional[str] = None) -> dict:
+    def recalculate_all_branches(self, project_id: str | None = None) -> dict:
         """
         Recalculate statistics for all branches.
 

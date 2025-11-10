@@ -7,120 +7,120 @@ This file contains the use case interface for rule orchestration following DDD p
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
 from pathlib import Path
+from typing import Any
 
 
 class IRuleOrchestrationUseCase(ABC):
     """Interface for rule orchestration use cases"""
     
     @abstractmethod
-    def get_enhanced_rule_info(self) -> Dict[str, Any]:
+    def get_enhanced_rule_info(self) -> dict[str, Any]:
         """Get enhanced information about the rule system"""
         pass
     
     @abstractmethod
-    def compose_nested_rules(self, rule_path: str) -> Dict[str, Any]:
+    def compose_nested_rules(self, rule_path: str) -> dict[str, Any]:
         """Compose nested rules with inheritance"""
         pass
     
     @abstractmethod
-    def register_client(self, client_config: Dict[str, Any]) -> Dict[str, Any]:
+    def register_client(self, client_config: dict[str, Any]) -> dict[str, Any]:
         """Register a client for synchronization"""
         pass
     
     @abstractmethod
-    def sync_with_client(self, client_id: str, operation: str, client_rules: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def sync_with_client(self, client_id: str, operation: str, client_rules: dict[str, Any] | None = None) -> dict[str, Any]:
         """Synchronize rules with a client"""
         pass
     
     @abstractmethod
-    def list_rules(self, target: str) -> Dict[str, Any]:
+    def list_rules(self, target: str) -> dict[str, Any]:
         """List available rules"""
         pass
     
     @abstractmethod
-    def backup_rules(self, target: str) -> Dict[str, Any]:
+    def backup_rules(self, target: str) -> dict[str, Any]:
         """Backup rules"""
         pass
     
     @abstractmethod
-    def restore_rules(self, target: str) -> Dict[str, Any]:
+    def restore_rules(self, target: str) -> dict[str, Any]:
         """Restore rules from backup"""
         pass
     
     @abstractmethod
-    def clean_rules(self, target: str) -> Dict[str, Any]:
+    def clean_rules(self, target: str) -> dict[str, Any]:
         """Clean up rules"""
         pass
     
     @abstractmethod
-    def get_rule_info(self, target: str) -> Dict[str, Any]:
+    def get_rule_info(self, target: str) -> dict[str, Any]:
         """Get information about a specific rule"""
         pass
     
     @abstractmethod
-    def load_core_rules(self, target: str = "") -> Dict[str, Any]:
+    def load_core_rules(self, target: str = "") -> dict[str, Any]:
         """Load core rules and return their content"""
         pass
     
     @abstractmethod
-    def analyze_rule_hierarchy(self) -> Dict[str, Any]:
+    def analyze_rule_hierarchy(self) -> dict[str, Any]:
         """Analyze rule hierarchy"""
         pass
     
     @abstractmethod
-    def get_rule_dependencies(self, rule_path: str) -> Dict[str, Any]:
+    def get_rule_dependencies(self, rule_path: str) -> dict[str, Any]:
         """Get dependencies for a rule"""
         pass
     
     @abstractmethod
-    def resolve_rule_inheritance(self, rule_path: str) -> Dict[str, Any]:
+    def resolve_rule_inheritance(self, rule_path: str) -> dict[str, Any]:
         """Resolve rule inheritance"""
         pass
     
     @abstractmethod
-    def validate_rule_hierarchy(self) -> Dict[str, Any]:
+    def validate_rule_hierarchy(self) -> dict[str, Any]:
         """Validate rule hierarchy"""
         pass
     
     @abstractmethod
-    def build_rule_hierarchy(self) -> Dict[str, Any]:
+    def build_rule_hierarchy(self) -> dict[str, Any]:
         """Build rule hierarchy"""
         pass
     
     @abstractmethod
-    def load_nested_rules(self, root_path: Path) -> Dict[str, Any]:
+    def load_nested_rules(self, root_path: Path) -> dict[str, Any]:
         """Load nested rules"""
         pass
     
     @abstractmethod
-    def get_cache_status(self) -> Dict[str, Any]:
+    def get_cache_status(self) -> dict[str, Any]:
         """Get cache status"""
         pass
     
     @abstractmethod
-    def authenticate_client(self, client_id: str, credentials: Dict[str, Any]) -> Dict[str, Any]:
+    def authenticate_client(self, client_id: str, credentials: dict[str, Any]) -> dict[str, Any]:
         """Authenticate a client"""
         pass
     
     @abstractmethod
-    def get_client_diff(self, client_id: str) -> Dict[str, Any]:
+    def get_client_diff(self, client_id: str) -> dict[str, Any]:
         """Get differences for a client"""
         pass
     
     @abstractmethod
-    def resolve_client_conflicts(self, client_id: str, conflict_data: Dict[str, Any]) -> Dict[str, Any]:
+    def resolve_client_conflicts(self, client_id: str, conflict_data: dict[str, Any]) -> dict[str, Any]:
         """Resolve client conflicts"""
         pass
     
     @abstractmethod
-    def get_client_status(self, client_id: str) -> Dict[str, Any]:
+    def get_client_status(self, client_id: str) -> dict[str, Any]:
         """Get client status"""
         pass
     
     @abstractmethod
-    def get_client_analytics(self, client_id: str) -> Dict[str, Any]:
+    def get_client_analytics(self, client_id: str) -> dict[str, Any]:
         """Get client analytics"""
         pass
 
@@ -132,7 +132,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
         """Initialize the rule orchestration use case"""
         pass
     
-    def get_enhanced_rule_info(self) -> Dict[str, Any]:
+    def get_enhanced_rule_info(self) -> dict[str, Any]:
         """Get enhanced information about the rule system"""
         return {
             "success": True,
@@ -146,7 +146,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "performance_features_enabled": True
         }
     
-    def compose_nested_rules(self, rule_path: str) -> Dict[str, Any]:
+    def compose_nested_rules(self, rule_path: str) -> dict[str, Any]:
         """Compose nested rules with inheritance"""
         return {
             "success": True,
@@ -155,7 +155,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "composed_rules": []
         }
     
-    def register_client(self, client_config: Dict[str, Any]) -> Dict[str, Any]:
+    def register_client(self, client_config: dict[str, Any]) -> dict[str, Any]:
         """Register a client for synchronization"""
         return {
             "success": True,
@@ -163,7 +163,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "client_id": client_config.get("client_id", "test_client")
         }
     
-    def sync_with_client(self, client_id: str, operation: str, client_rules: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def sync_with_client(self, client_id: str, operation: str, client_rules: dict[str, Any] | None = None) -> dict[str, Any]:
         """Synchronize rules with a client"""
         return {
             "success": True,
@@ -172,7 +172,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "operation": operation
         }
     
-    def list_rules(self, target: str) -> Dict[str, Any]:
+    def list_rules(self, target: str) -> dict[str, Any]:
         """List available rules"""
         return {
             "success": True,
@@ -181,7 +181,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "rules": []
         }
     
-    def backup_rules(self, target: str) -> Dict[str, Any]:
+    def backup_rules(self, target: str) -> dict[str, Any]:
         """Backup rules"""
         return {
             "success": True,
@@ -189,7 +189,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "target": target
         }
     
-    def restore_rules(self, target: str) -> Dict[str, Any]:
+    def restore_rules(self, target: str) -> dict[str, Any]:
         """Restore rules from backup"""
         return {
             "success": True,
@@ -197,7 +197,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "target": target
         }
     
-    def clean_rules(self, target: str) -> Dict[str, Any]:
+    def clean_rules(self, target: str) -> dict[str, Any]:
         """Clean up rules"""
         return {
             "success": True,
@@ -205,7 +205,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "target": target
         }
     
-    def get_rule_info(self, target: str) -> Dict[str, Any]:
+    def get_rule_info(self, target: str) -> dict[str, Any]:
         """Get information about a specific rule"""
         return {
             "success": True,
@@ -214,7 +214,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "rule_info": {}
         }
     
-    def load_core_rules(self, target: str = "") -> Dict[str, Any]:
+    def load_core_rules(self, target: str = "") -> dict[str, Any]:
         """Load core rules and return their content"""
         try:
             from fastmcp.dual_mode_config import get_rules_directory, is_http_mode
@@ -296,7 +296,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
                 "error": f"Failed to load core rules: {str(e)}"
             }
     
-    def analyze_rule_hierarchy(self) -> Dict[str, Any]:
+    def analyze_rule_hierarchy(self) -> dict[str, Any]:
         """Analyze rule hierarchy"""
         return {
             "success": True,
@@ -304,7 +304,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "hierarchy": {}
         }
     
-    def get_rule_dependencies(self, rule_path: str) -> Dict[str, Any]:
+    def get_rule_dependencies(self, rule_path: str) -> dict[str, Any]:
         """Get dependencies for a rule"""
         return {
             "success": True,
@@ -313,7 +313,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "dependencies": []
         }
     
-    def resolve_rule_inheritance(self, rule_path: str) -> Dict[str, Any]:
+    def resolve_rule_inheritance(self, rule_path: str) -> dict[str, Any]:
         """Resolve rule inheritance"""
         return {
             "success": True,
@@ -322,7 +322,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "inheritance": {}
         }
     
-    def validate_rule_hierarchy(self) -> Dict[str, Any]:
+    def validate_rule_hierarchy(self) -> dict[str, Any]:
         """Validate rule hierarchy"""
         return {
             "success": True,
@@ -330,7 +330,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "validation_passed": True
         }
     
-    def build_rule_hierarchy(self) -> Dict[str, Any]:
+    def build_rule_hierarchy(self) -> dict[str, Any]:
         """Build rule hierarchy"""
         return {
             "success": True,
@@ -338,7 +338,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "hierarchy_built": True
         }
     
-    def load_nested_rules(self, root_path: Path) -> Dict[str, Any]:
+    def load_nested_rules(self, root_path: Path) -> dict[str, Any]:
         """Load nested rules"""
         return {
             "success": True,
@@ -347,7 +347,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "nested_rules_loaded": True
         }
     
-    def get_cache_status(self) -> Dict[str, Any]:
+    def get_cache_status(self) -> dict[str, Any]:
         """Get cache status"""
         return {
             "success": True,
@@ -361,7 +361,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             }
         }
     
-    def authenticate_client(self, client_id: str, credentials: Dict[str, Any]) -> Dict[str, Any]:
+    def authenticate_client(self, client_id: str, credentials: dict[str, Any]) -> dict[str, Any]:
         """Authenticate a client"""
         return {
             "success": True,
@@ -370,7 +370,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "authenticated": True
         }
     
-    def get_client_diff(self, client_id: str) -> Dict[str, Any]:
+    def get_client_diff(self, client_id: str) -> dict[str, Any]:
         """Get differences for a client"""
         return {
             "success": True,
@@ -379,7 +379,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "differences": []
         }
     
-    def resolve_client_conflicts(self, client_id: str, conflict_data: Dict[str, Any]) -> Dict[str, Any]:
+    def resolve_client_conflicts(self, client_id: str, conflict_data: dict[str, Any]) -> dict[str, Any]:
         """Resolve client conflicts"""
         return {
             "success": True,
@@ -388,7 +388,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "conflicts_resolved": True
         }
     
-    def get_client_status(self, client_id: str) -> Dict[str, Any]:
+    def get_client_status(self, client_id: str) -> dict[str, Any]:
         """Get client status"""
         return {
             "success": True,
@@ -397,7 +397,7 @@ class RuleOrchestrationUseCase(IRuleOrchestrationUseCase):
             "status": "active"
         }
     
-    def get_client_analytics(self, client_id: str) -> Dict[str, Any]:
+    def get_client_analytics(self, client_id: str) -> dict[str, Any]:
         """Get client analytics"""
         return {
             "success": True,

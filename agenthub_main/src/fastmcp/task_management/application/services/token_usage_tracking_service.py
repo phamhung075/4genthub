@@ -11,14 +11,14 @@ Usage Example:
 """
 
 import logging
-from typing import Optional
+
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
 
 async def track_token_operation(
-    token_id: Optional[str],
+    token_id: str | None,
     operation: str,
     session: Session
 ) -> bool:

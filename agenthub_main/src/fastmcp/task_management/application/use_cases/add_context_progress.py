@@ -1,11 +1,8 @@
 """Add Context Progress Use Case"""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from ...application.dtos.context import (
-    AddProgressRequest,
-    AddProgressResponse
-)
+from ...application.dtos.context import AddProgressRequest, AddProgressResponse
 from ...domain.entities.context import ContextProgressAction
 from ...domain.repositories.context_repository import ContextRepository
 
@@ -27,7 +24,7 @@ class AddContextProgressUseCase:
             
             # Create progress action
             progress = ContextProgressAction(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 action=request.content,
                 agent=request.agent,
                 details="",

@@ -2,10 +2,9 @@
 
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
-from ...domain.repositories.agent_repository import AgentRepository
+
 from ...domain.exceptions import AgentNotFoundError, ProjectNotFoundError
-from ...domain.interfaces.repository_factory import IRepositoryFactory
+from ...domain.repositories.agent_repository import AgentRepository
 from ...infrastructure.repositories.repository_factory import RepositoryFactory
 
 logger = logging.getLogger(__name__)
@@ -16,7 +15,7 @@ class UnassignAgentRequest:
     """Request DTO for unassigning an agent"""
     project_id: str
     agent_id: str
-    git_branch_id: Optional[str] = None
+    git_branch_id: str | None = None
 
 
 @dataclass
@@ -24,8 +23,8 @@ class UnassignAgentResponse:
     """Response DTO for agent unassignment"""
     success: bool
     agent_id: str
-    removed_assignments: List[str] = None
-    remaining_assignments: List[str] = None
+    removed_assignments: list[str] = None
+    remaining_assignments: list[str] = None
     message: str = None
     error: str = None
     

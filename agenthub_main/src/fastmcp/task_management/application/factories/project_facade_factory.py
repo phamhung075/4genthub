@@ -7,15 +7,10 @@ The default_id parameter has been removed to enforce security requirements.
 """
 
 import logging
-from typing import Optional, Dict
-from ...domain.constants import validate_user_id
-from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+
 from ...application.facades.project_application_facade import ProjectApplicationFacade
 from ...application.services.project_management_service import ProjectManagementService
-from ...infrastructure.repositories.project_repository_factory import (
-    ProjectRepositoryFactory, 
-    GlobalRepositoryManager
-)
+from ...domain.constants import validate_user_id
 from ..services.repository_provider_service import RepositoryProviderService
 
 logger = logging.getLogger(__name__)
@@ -60,7 +55,7 @@ class ProjectFacadeFactory:
             cls._instance = cls(repository_provider)
         return cls._instance
     
-    def __init__(self, repository_provider: Optional[RepositoryProviderService] = None):
+    def __init__(self, repository_provider: RepositoryProviderService | None = None):
         """
         Initialize the project facade factory.
         
@@ -72,7 +67,7 @@ class ProjectFacadeFactory:
             return
             
         self._repository_provider = repository_provider
-        self._facades_cache: Dict[str, ProjectApplicationFacade] = {}
+        self._facades_cache: dict[str, ProjectApplicationFacade] = {}
         self._initialized = True
         logger.info("ProjectFacadeFactory initialized")
     
@@ -123,7 +118,7 @@ class ProjectFacadeFactory:
         self._facades_cache.clear()
         logger.info("Project facades cache cleared")
     
-    def get_cached_facade(self, user_id: str) -> Optional[ProjectApplicationFacade]:
+    def get_cached_facade(self, user_id: str) -> ProjectApplicationFacade | None:
         """
         Get a cached facade if available.
         

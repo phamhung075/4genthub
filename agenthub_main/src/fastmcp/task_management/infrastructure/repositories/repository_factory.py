@@ -4,9 +4,8 @@ This factory properly checks environment variables to determine which repository
 It supports SQLite for tests, Supabase for production, and Redis caching when enabled.
 """
 
-import os
 import logging
-from typing import Optional, Any
+
 from .utils import get_repository_config
 
 logger = logging.getLogger(__name__)
@@ -21,9 +20,9 @@ class RepositoryFactory:
         return get_repository_config()
     
     @staticmethod
-    def get_task_repository(project_id: Optional[str] = None, 
-                           git_branch_name: Optional[str] = None,
-                           user_id: Optional[str] = None):
+    def get_task_repository(project_id: str | None = None, 
+                           git_branch_name: str | None = None,
+                           user_id: str | None = None):
         """Get task repository based on environment configuration"""
         config = RepositoryFactory.get_environment_config()
         
@@ -151,7 +150,7 @@ class RepositoryFactory:
         return base_repository
     
     @staticmethod
-    def get_git_branch_repository(user_id: Optional[str] = None):
+    def get_git_branch_repository(user_id: str | None = None):
         """Get git branch repository based on environment configuration"""
         config = RepositoryFactory.get_environment_config()
 
@@ -193,7 +192,9 @@ class RepositoryFactory:
         # Wrap with cache if enabled and not in test environment
         if config['redis_enabled'] and config['use_cache'] and config['environment'] != 'test':
             try:
-                from .cached.cached_git_branch_repository import CachedGitBranchRepository
+                from .cached.cached_git_branch_repository import (
+                    CachedGitBranchRepository,
+                )
                 logger.info("[RepositoryFactory] Wrapping with CachedGitBranchRepository")
                 return CachedGitBranchRepository(base_repository)
             except ImportError:
@@ -202,7 +203,7 @@ class RepositoryFactory:
         return base_repository
     
     @staticmethod
-    def get_subtask_repository(user_id: Optional[str] = None):
+    def get_subtask_repository(user_id: str | None = None):
         """Get subtask repository based on environment configuration
         
         Args:
@@ -329,16 +330,16 @@ class RepositoryFactory:
         
         if config['database_type'] == 'sqlite':
             # SQLite uses TaskContextRepository directly
-            from .task_context_repository import TaskContextRepository
             from ..database.database_config import get_db_config
+            from .task_context_repository import TaskContextRepository
             db_config = get_db_config()
             base_repository = TaskContextRepository(db_config.SessionLocal)
             logger.info("[RepositoryFactory] SQLite configured, using TaskContextRepository")
         
         elif config['database_type'] == 'supabase':
             # Supabase uses TaskContextRepository directly
-            from .task_context_repository import TaskContextRepository
             from ..database.database_config import get_db_config
+            from .task_context_repository import TaskContextRepository
             db_config = get_db_config()
             base_repository = TaskContextRepository(db_config.SessionLocal)
             logger.info("[RepositoryFactory] Supabase configured, using TaskContextRepository")
@@ -349,8 +350,8 @@ class RepositoryFactory:
         
         # Fallback to TaskContextRepository (context is part of task system)
         if not base_repository:
-            from .task_context_repository import TaskContextRepository
             from ..database.database_config import get_db_config
+            from .task_context_repository import TaskContextRepository
             
             db_config = get_db_config()
             base_repository = TaskContextRepository(db_config.SessionLocal)

@@ -5,19 +5,19 @@ CRITICAL: Global contexts are NOT truly global - they are user-scoped.
 Each user has their own "global" context space.
 """
 
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import select, and_
-from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime, timezone
-from contextlib import contextmanager
 import logging
+from contextlib import contextmanager
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy import and_
+from sqlalchemy.exc import SQLAlchemyError
 
 from ...domain.entities.context import GlobalContext
 from ...domain.entities.global_context_schema import GlobalContextNestedData
 from ...infrastructure.database.models import GlobalContext as GlobalContextModel
-from .base_user_scoped_repository import BaseUserScopedRepository
 from ..cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
+from .base_user_scoped_repository import BaseUserScopedRepository
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
     Each user has their own set of global contexts that don't affect other users.
     """
     
-    def __init__(self, session_factory, user_id: Optional[str] = None):
+    def __init__(self, session_factory, user_id: str | None = None):
         """
         Initialize with session factory and user context.
         
@@ -77,8 +77,11 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
 
         For other IDs, return as-is.
         """
-        from fastmcp.task_management.infrastructure.database.models import GLOBAL_SINGLETON_UUID
         import uuid
+
+        from fastmcp.task_management.infrastructure.database.models import (
+            GLOBAL_SINGLETON_UUID,
+        )
 
         # If not global_singleton, return as-is
         if context_id != "global_singleton":
@@ -129,7 +132,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 existing = None
             
             if existing:
-                raise ValueError(f"Global context already exists for user. Use update instead.")
+                raise ValueError("Global context already exists for user. Use update instead.")
             
             # Ensure user_id is set unless in system mode
             if not self.user_id and not self._is_system_mode:
@@ -149,7 +152,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             combined_preferences = nested_structure_dict.get("preferences", {})
             
             # Create database model with both structures
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             db_model = GlobalContextModel(
                 id=normalized_id,
                 organization_id=entity.organization_name,
@@ -192,7 +195,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             
             return self._to_entity(db_model)
     
-    def get(self, context_id: str) -> Optional[GlobalContext]:
+    def get(self, context_id: str) -> GlobalContext | None:
         """Get global context by ID, filtered by user."""
         
         with self.get_db_session() as session:
@@ -378,7 +381,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             
             return True
     
-    def list(self, filters: Optional[Dict[str, Any]] = None) -> List[GlobalContext]:
+    def list(self, filters: dict[str, Any] | None = None) -> list[GlobalContext]:
         """List all global contexts for the current user."""
         with self.get_db_session() as session:
             # Start with base query

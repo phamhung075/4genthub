@@ -9,24 +9,19 @@ This service provides comprehensive progress tracking capabilities including:
 """
 
 import logging
-from datetime import datetime
-from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Optional, Any, Tuple
-from uuid import UUID
+from datetime import UTC, datetime
+from typing import Any
 
 from ...domain.entities.task import Task
-from ...domain.entities.context import TaskContext
-from ...domain.value_objects.task_id import TaskId
-from ...domain.value_objects.progress import (
-    ProgressType, ProgressStatus, ProgressSnapshot, 
-    ProgressTimeline, ProgressCalculationStrategy, ProgressMetadata
-)
-from ...domain.events.progress_events import (
-    ProgressUpdated, ProgressMilestoneReached, ProgressStalled,
-    SubtaskProgressAggregated, ProgressBlocked, ProgressUnblocked
-)
-from ...domain.repositories.task_repository import TaskRepository
+from ...domain.events.progress_events import ProgressStalled, SubtaskProgressAggregated
 from ...domain.repositories.context_repository import ContextRepository
+from ...domain.repositories.task_repository import TaskRepository
+from ...domain.value_objects.progress import (
+    ProgressCalculationStrategy,
+    ProgressSnapshot,
+    ProgressType,
+)
+from ...domain.value_objects.task_id import TaskId
 from ...infrastructure.event_bus import EventBus, get_event_bus
 
 logger = logging.getLogger(__name__)
@@ -38,8 +33,8 @@ class ProgressTrackingService:
     def __init__(self, 
                  task_repository: TaskRepository,
                  context_repository: ContextRepository,
-                 event_bus: Optional[EventBus] = None,
-                 user_id: Optional[str] = None):
+                 event_bus: EventBus | None = None,
+                 user_id: str | None = None):
         """Initialize progress tracking service."""
         self.task_repository = task_repository
         self.context_repository = context_repository
@@ -76,9 +71,9 @@ class ProgressTrackingService:
                             task_id: str,
                             progress_type: ProgressType,
                             percentage: float,
-                            description: Optional[str] = None,
-                            metadata: Optional[Dict[str, Any]] = None,
-                            agent_id: Optional[str] = None) -> Task:
+                            description: str | None = None,
+                            metadata: dict[str, Any] | None = None,
+                            agent_id: str | None = None) -> Task:
         """
         Update progress for a specific task and progress type.
         
@@ -128,7 +123,7 @@ class ProgressTrackingService:
         return task
     
     async def batch_update_progress(self,
-                                  updates: List[Dict[str, Any]]) -> List[Task]:
+                                  updates: list[dict[str, Any]]) -> list[Task]:
         """
         Update progress for multiple tasks in batch.
         
@@ -158,7 +153,7 @@ class ProgressTrackingService:
     async def calculate_overall_progress(self,
                                        task_id: str,
                                        include_subtasks: bool = True,
-                                       weights: Optional[Dict[str, float]] = None) -> float:
+                                       weights: dict[str, float] | None = None) -> float:
         """
         Calculate overall progress for a task.
         
@@ -200,7 +195,7 @@ class ProgressTrackingService:
     async def get_progress_timeline(self,
                                   task_id: str,
                                   hours: int = 24,
-                                  progress_type: Optional[ProgressType] = None) -> List[ProgressSnapshot]:
+                                  progress_type: ProgressType | None = None) -> list[ProgressSnapshot]:
         """
         Get progress timeline for a task.
         
@@ -223,7 +218,7 @@ class ProgressTrackingService:
         if progress_type:
             snapshots = task.progress_timeline.get_snapshots_by_type(progress_type)
             # Filter by time
-            cutoff = datetime.now(timezone.utc).timestamp() - (hours * 3600)
+            cutoff = datetime.now(UTC).timestamp() - (hours * 3600)
             return [s for s in snapshots if s.timestamp.timestamp() > cutoff]
         else:
             return task.progress_timeline.get_progress_trend(hours)
@@ -255,7 +250,7 @@ class ProgressTrackingService:
         
         return task
     
-    async def check_milestones(self, task_id: str) -> List[str]:
+    async def check_milestones(self, task_id: str) -> list[str]:
         """
         Check which milestones have been reached for a task.
         
@@ -279,7 +274,7 @@ class ProgressTrackingService:
         
         return reached_milestones
     
-    async def get_progress_summary(self, task_id: str) -> Dict[str, Any]:
+    async def get_progress_summary(self, task_id: str) -> dict[str, Any]:
         """
         Get comprehensive progress summary for a task.
         
@@ -325,7 +320,7 @@ class ProgressTrackingService:
             # Check if stalled
             if recent_snapshots:
                 last_update = recent_snapshots[-1].timestamp
-                hours_since_update = (datetime.now(timezone.utc) - last_update).total_seconds() / 3600
+                hours_since_update = (datetime.now(UTC) - last_update).total_seconds() / 3600
                 summary["is_stalled"] = hours_since_update > self.stall_threshold_hours
             
             # Get blockers from latest snapshot
@@ -335,7 +330,7 @@ class ProgressTrackingService:
         
         return summary
     
-    async def infer_progress_from_context(self, task_id: str) -> Optional[float]:
+    async def infer_progress_from_context(self, task_id: str) -> float | None:
         """
         Infer progress based on context updates and insights.
         
@@ -386,7 +381,7 @@ class ProgressTrackingService:
         
         return None
     
-    async def suggest_progress_update(self, task_id: str) -> Dict[str, Any]:
+    async def suggest_progress_update(self, task_id: str) -> dict[str, Any]:
         """
         Suggest a progress update based on task analysis.
         
@@ -456,7 +451,7 @@ class ProgressTrackingService:
                                      task: Task,
                                      progress_type: ProgressType,
                                      percentage: float,
-                                     description: Optional[str]) -> None:
+                                     description: str | None) -> None:
         """Update context with progress information."""
         if not task.context_id:
             return
@@ -466,7 +461,7 @@ class ProgressTrackingService:
             if context:
                 # Add progress entry
                 progress_entry = {
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "type": progress_type.value,
                     "percentage": percentage,
                     "description": description or f"Updated {progress_type.value} progress to {percentage}%"
@@ -497,9 +492,9 @@ class ProgressTrackingService:
         timestamp = latest.timestamp
         if timestamp.tzinfo is None:
             # If naive, assume it's UTC
-            timestamp = timestamp.replace(tzinfo=timezone.utc)
+            timestamp = timestamp.replace(tzinfo=UTC)
         
-        hours_since_update = (datetime.now(timezone.utc) - timestamp).total_seconds() / 3600
+        hours_since_update = (datetime.now(UTC) - timestamp).total_seconds() / 3600
         
         if hours_since_update > self.stall_threshold_hours and latest.percentage < 100:
             # Emit stalled event

@@ -1,13 +1,13 @@
 """Project Repository Factory - Clean DDD Implementation"""
 
-import os
 import logging
-from typing import Optional, Dict, Any, Type
+import os
 from enum import Enum
+from typing import Any
 
 from ...domain.repositories.project_repository import ProjectRepository
-from .orm.project_repository import ORMProjectRepository
 from .mock_repository_factory import MockProjectRepository
+from .orm.project_repository import ORMProjectRepository
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +22,8 @@ class RepositoryType(Enum):
 class ProjectRepositoryFactory:
     """Factory for creating project repository instances following DDD principles"""
     
-    _instances: Dict[str, ProjectRepository] = {}
-    _repository_types: Dict[RepositoryType, Type[ProjectRepository]] = {
+    _instances: dict[str, ProjectRepository] = {}
+    _repository_types: dict[RepositoryType, type[ProjectRepository]] = {
         RepositoryType.ORM: ORMProjectRepository,
         RepositoryType.MOCK: MockProjectRepository,
     }
@@ -31,9 +31,9 @@ class ProjectRepositoryFactory:
     @classmethod
     def create(
         cls,
-        repository_type: Optional[RepositoryType] = None,
-        user_id: Optional[str] = None,
-        db_path: Optional[str] = None,
+        repository_type: RepositoryType | None = None,
+        user_id: str | None = None,
+        db_path: str | None = None,
         **kwargs
     ) -> ProjectRepository:
         """
@@ -50,15 +50,16 @@ class ProjectRepositoryFactory:
         """
         # Validate user authentication
         from ...domain.constants import validate_user_id
-        from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-        from ....config.auth_config import AuthConfig
+        from ...domain.exceptions.authentication_exceptions import (
+            UserAuthenticationRequiredError,
+        )
         
         logger.info(f"🔍 Project Repository Factory: Creating repository with user_id: {user_id}")
         logger.info(f"🔧 Repository type: {repository_type}, db_path: {db_path}")
         print(f"DEBUG: ProjectRepositoryFactory.create called with user_id={user_id}")
         
         if user_id is None:
-            logger.error(f"❌ Project Repository Factory: No user_id provided - authentication is required")
+            logger.error("❌ Project Repository Factory: No user_id provided - authentication is required")
             raise UserAuthenticationRequiredError("Project repository creation")
         else:
             logger.info(f"✅ Project Repository Factory: Using provided user_id: {user_id}")
@@ -132,7 +133,7 @@ class ProjectRepositoryFactory:
         cls, 
         repository_type: RepositoryType, 
         user_id: str, 
-        db_path: Optional[str]
+        db_path: str | None
     ) -> str:
         """Generate cache key for repository instance"""
         type_value = repository_type.value if hasattr(repository_type, 'value') else str(repository_type)
@@ -143,7 +144,7 @@ class ProjectRepositoryFactory:
         cls,
         repository_type: RepositoryType,
         user_id: str,
-        db_path: Optional[str],
+        db_path: str | None,
         **kwargs
     ) -> ProjectRepository:
         """Create repository instance of specified type"""
@@ -197,7 +198,7 @@ class ProjectRepositoryFactory:
     def register_type(
         cls,
         repository_type: RepositoryType,
-        repository_class: Type[ProjectRepository]
+        repository_class: type[ProjectRepository]
     ) -> None:
         """Register a new repository type"""
         cls._repository_types[repository_type] = repository_class
@@ -210,7 +211,7 @@ class ProjectRepositoryFactory:
         logger.info("Repository cache cleared")
     
     @classmethod
-    def get_info(cls) -> Dict[str, Any]:
+    def get_info(cls) -> dict[str, Any]:
         """Get factory information"""
         return {
             "available_types": [rt.value for rt in cls._repository_types.keys()],
@@ -228,9 +229,9 @@ class RepositoryConfig:
     
     def __init__(
         self,
-        repository_type: Optional[str] = None,
-        user_id: Optional[str] = None,
-        db_path: Optional[str] = None,
+        repository_type: str | None = None,
+        user_id: str | None = None,
+        db_path: str | None = None,
         **kwargs
     ):
         self.repository_type = self._validate_type(repository_type)
@@ -238,7 +239,7 @@ class RepositoryConfig:
         self.db_path = db_path
         self.kwargs = kwargs
     
-    def _validate_type(self, repository_type: Optional[str]) -> RepositoryType:
+    def _validate_type(self, repository_type: str | None) -> RepositoryType:
         """Validate and convert repository type"""
         if repository_type is None:
             return RepositoryType.ORM
@@ -271,8 +272,8 @@ class RepositoryConfig:
 class GlobalRepositoryManager:
     """Global repository instance manager"""
     
-    _default_repository: Optional[ProjectRepository] = None
-    _user_repositories: Dict[str, ProjectRepository] = {}
+    _default_repository: ProjectRepository | None = None
+    _user_repositories: dict[str, ProjectRepository] = {}
     
     @classmethod
     def get_default(cls) -> ProjectRepository:
@@ -297,7 +298,7 @@ class GlobalRepositoryManager:
         ProjectRepositoryFactory.clear_cache()
     
     @classmethod
-    def get_status(cls) -> Dict[str, Any]:
+    def get_status(cls) -> dict[str, Any]:
         """Get manager status"""
         return {
             "has_default": cls._default_repository is not None,
@@ -309,9 +310,9 @@ class GlobalRepositoryManager:
 # Convenience functions for clean API
 
 def create_project_repository(
-    user_id: Optional[str] = None,
-    repository_type: Optional[str] = None,
-    db_path: Optional[str] = None
+    user_id: str | None = None,
+    repository_type: str | None = None,
+    db_path: str | None = None
 ) -> ProjectRepository:
     """Create a project repository instance"""
     repo_type = RepositoryType(repository_type) if repository_type else None
@@ -323,8 +324,8 @@ def create_project_repository(
 
 
 def get_sqlite_repository(
-    user_id: Optional[str] = None,
-    db_path: Optional[str] = None
+    user_id: str | None = None,
+    db_path: str | None = None
 ) -> ORMProjectRepository:
     """Get ORM project repository (legacy compatibility method)"""
     return ProjectRepositoryFactory.create(

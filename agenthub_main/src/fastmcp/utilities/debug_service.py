@@ -5,12 +5,12 @@ This service provides environment-based debugging controls that can be easily
 enabled/disabled via .env configuration for troubleshooting production issues.
 """
 
-import os
-import logging
-import time
 import json
-from typing import Dict, Any, Optional, Union
+import logging
+import os
+import time
 from functools import wraps
+from typing import Any
 
 
 class DebugService:
@@ -66,8 +66,8 @@ class DebugService:
         
         return category_flags.get(category, False)
     
-    def log_request(self, method: str, url: str, headers: Dict[str, str], 
-                   body: Optional[str] = None, client_ip: str = "unknown"):
+    def log_request(self, method: str, url: str, headers: dict[str, str], 
+                   body: str | None = None, client_ip: str = "unknown"):
         """Log HTTP request details if debugging is enabled."""
         if not self.is_enabled("http"):
             return
@@ -97,8 +97,8 @@ class DebugService:
             except Exception as e:
                 self.http_logger.debug(f"📦 Request Body (raw): {body[:200]}... [Parse error: {e}]")
     
-    def log_response(self, status_code: int, headers: Dict[str, str], 
-                    body: Optional[str] = None, duration: float = 0.0):
+    def log_response(self, status_code: int, headers: dict[str, str], 
+                    body: str | None = None, duration: float = 0.0):
         """Log HTTP response details if debugging is enabled."""
         if not self.is_enabled("http"):
             return
@@ -119,8 +119,8 @@ class DebugService:
         
         self.http_logger.debug("=" * 80)
     
-    def log_api_v2_request(self, endpoint: str, user_id: Optional[str], 
-                          method: str, params: Dict[str, Any]):
+    def log_api_v2_request(self, endpoint: str, user_id: str | None, 
+                          method: str, params: dict[str, Any]):
         """Log API V2 request details if debugging is enabled."""
         if not self.is_enabled("api_v2"):
             return
@@ -131,7 +131,7 @@ class DebugService:
         self.api_logger.debug(f"📋 Parameters: {json.dumps(params, indent=2) if params else 'None'}")
     
     def log_api_v2_response(self, endpoint: str, success: bool, 
-                           data: Optional[Dict[str, Any]], error: Optional[str] = None):
+                           data: dict[str, Any] | None, error: str | None = None):
         """Log API V2 response details if debugging is enabled."""
         if not self.is_enabled("api_v2"):
             return
@@ -154,9 +154,9 @@ class DebugService:
         
         self.api_logger.debug("=" * 80)
     
-    def log_auth_event(self, event: str, user_id: Optional[str] = None, 
-                      token_info: Optional[Dict[str, Any]] = None, 
-                      error: Optional[str] = None):
+    def log_auth_event(self, event: str, user_id: str | None = None, 
+                      token_info: dict[str, Any] | None = None, 
+                      error: str | None = None):
         """Log authentication events if debugging is enabled."""
         if not self.is_enabled("auth"):
             return
@@ -184,10 +184,10 @@ class DebugService:
         
         self.auth_logger.debug("=" * 80)
     
-    def log_database_event(self, operation: str, table: Optional[str] = None, 
-                          query_info: Optional[Dict[str, Any]] = None,
-                          result_count: Optional[int] = None,
-                          error: Optional[str] = None):
+    def log_database_event(self, operation: str, table: str | None = None, 
+                          query_info: dict[str, Any] | None = None,
+                          result_count: int | None = None,
+                          error: str | None = None):
         """Log database operations if debugging is enabled."""
         if not self.is_enabled("database"):
             return
@@ -214,8 +214,8 @@ class DebugService:
         
         self.db_logger.debug("=" * 80)
     
-    def log_frontend_issue(self, issue_type: str, details: Dict[str, Any], 
-                          user_context: Optional[Dict[str, Any]] = None):
+    def log_frontend_issue(self, issue_type: str, details: dict[str, Any], 
+                          user_context: dict[str, Any] | None = None):
         """Log frontend-specific issues if debugging is enabled."""
         if not self.is_enabled("frontend"):
             return
@@ -257,7 +257,7 @@ class DebugService:
             return wrapper
         return decorator
     
-    def get_debug_status(self) -> Dict[str, Any]:
+    def get_debug_status(self) -> dict[str, Any]:
         """Get current debug configuration status."""
         return {
             "debug_enabled": self.debug_enabled,
@@ -307,5 +307,5 @@ def debug_decorator(category: str = "general"):
 def is_debug_enabled(category: str = "general") -> bool:
     return debug_service.is_enabled(category)
 
-def get_debug_status() -> Dict[str, Any]:
+def get_debug_status() -> dict[str, Any]:
     return debug_service.get_debug_status()

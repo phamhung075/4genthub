@@ -1,6 +1,7 @@
 """Template Domain Enums"""
 
 from enum import Enum
+
 from ..value_objects.priority import PriorityLevel
 
 

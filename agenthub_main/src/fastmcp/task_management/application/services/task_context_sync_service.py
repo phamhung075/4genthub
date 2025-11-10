@@ -1,14 +1,15 @@
-from typing import Optional, Any
 import logging
+from typing import Any
 
-from .unified_context_service import UnifiedContextService
-from .facade_service import FacadeService
+from fastmcp.task_management.application.use_cases.get_task import GetTaskUseCase
+
+from ...domain.constants import validate_user_id
+from ...domain.exceptions.authentication_exceptions import (
+    UserAuthenticationRequiredError,
+)
 from ...domain.repositories.task_repository import TaskRepository
 from ...domain.value_objects.task_id import TaskId
-from fastmcp.task_management.application.use_cases.get_task import GetTaskUseCase
-from ...domain.constants import validate_user_id
-from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-from fastmcp.config.auth_config import AuthConfig
+from .facade_service import FacadeService
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class TaskContextSyncService:
     out of the Domain layer while remaining easily testable.
     """
 
-    def __init__(self, task_repository: TaskRepository, context_service: Optional[Any] = None, user_id: Optional[str] = None):
+    def __init__(self, task_repository: TaskRepository, context_service: Any | None = None, user_id: str | None = None):
         self._user_id = user_id  # Store user context
         self._task_repository = task_repository
         # Initialize hierarchical context service using FacadeService
@@ -42,7 +43,9 @@ class TaskContextSyncService:
             RepositoryProviderError: When repository provider fails or returns None
         """
         try:
-            from ...application.services.repository_provider_service import RepositoryProviderService
+            from ...application.services.repository_provider_service import (
+                RepositoryProviderService,
+            )
             from ..exceptions import RepositoryProviderError
 
             provider = RepositoryProviderService.get_instance()
@@ -86,10 +89,10 @@ class TaskContextSyncService:
         self,
         task_id: str,
         *,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         project_id: str = "",
         git_branch_name: str = "main",
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """Ensure context exists for *task_id* and return TaskResponse with context.
 
         Returns None if the task cannot be found or any step fails. The caller

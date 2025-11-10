@@ -19,24 +19,17 @@ NO LEGACY SUPPORT:
 """
 
 import logging
-import os
+from collections.abc import Generator
 from contextlib import contextmanager
-from datetime import datetime, timezone, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union, Generator
-from pathlib import Path
+from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy import create_engine, text, inspect, Engine, MetaData, Table
-from sqlalchemy.exc import SQLAlchemyError, OperationalError, DatabaseError
+from sqlalchemy import Engine, inspect, text
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from .database_config import DatabaseConfig, Base
-from .timestamp_events import setup_timestamp_events, cleanup_timestamp_events
-from ...domain.exceptions.base_exceptions import (
-    DatabaseException,
-    ValidationException,
-    ConfigurationException
-)
+from ...domain.exceptions.base_exceptions import DatabaseException, ValidationException
+from .database_config import DatabaseConfig
+from .timestamp_events import cleanup_timestamp_events, setup_timestamp_events
 
 logger = logging.getLogger(__name__)
 
@@ -57,15 +50,15 @@ class DatabaseUtils:
     - Clean architecture compliance checks
     """
 
-    def __init__(self, db_config: Optional[DatabaseConfig] = None):
+    def __init__(self, db_config: DatabaseConfig | None = None):
         """Initialize database utilities.
 
         Args:
             db_config: Optional database configuration. Uses singleton if not provided.
         """
         self.db_config = db_config or DatabaseConfig.get_instance()
-        self._engine: Optional[Engine] = None
-        self._session_factory: Optional[sessionmaker] = None
+        self._engine: Engine | None = None
+        self._session_factory: sessionmaker | None = None
 
     @property
     def engine(self) -> Engine:
@@ -102,7 +95,7 @@ class DatabaseUtils:
         finally:
             session.close()
 
-    def check_database_health(self) -> Dict[str, Any]:
+    def check_database_health(self) -> dict[str, Any]:
         """Check database health and connectivity.
 
         Returns:
@@ -112,7 +105,7 @@ class DatabaseUtils:
             DatabaseException: If health check fails
         """
         try:
-            start_time = datetime.now(timezone.utc)
+            start_time = datetime.now(UTC)
 
             with self.get_session() as session:
                 # Basic connectivity test
@@ -137,7 +130,7 @@ class DatabaseUtils:
                 table_count = len(table_names)
 
                 # Performance check
-                end_time = datetime.now(timezone.utc)
+                end_time = datetime.now(UTC)
                 response_time_ms = (end_time - start_time).total_seconds() * 1000
 
                 return {
@@ -155,10 +148,10 @@ class DatabaseUtils:
             return {
                 "status": "unhealthy",
                 "error": str(e),
-                "checked_at": datetime.now(timezone.utc).isoformat()
+                "checked_at": datetime.now(UTC).isoformat()
             }
 
-    def validate_schema_integrity(self) -> Dict[str, Any]:
+    def validate_schema_integrity(self) -> dict[str, Any]:
         """Validate database schema integrity and timestamp compliance.
 
         Returns:
@@ -236,7 +229,7 @@ class DatabaseUtils:
             logger.error(f"Schema validation failed: {e}")
             raise DatabaseException(f"Schema validation error: {str(e)}")
 
-    def normalize_timestamp(self, timestamp: Union[datetime, str, None]) -> Optional[datetime]:
+    def normalize_timestamp(self, timestamp: datetime | str | None) -> datetime | None:
         """Normalize timestamp to UTC datetime.
 
         Args:
@@ -264,10 +257,10 @@ class DatabaseUtils:
 
             # Ensure timezone info
             if dt.tzinfo is None:
-                # Assume naive datetime is timezone.utc
-                dt = dt.replace(tzinfo=timezone.utc)
-                logger.debug("Assumed naive datetime is timezone.utc")
-            elif dt.tzinfo != timezone.utc:
+                # Assume naive datetime is UTC
+                dt = dt.replace(tzinfo=UTC)
+                logger.debug("Assumed naive datetime is UTC")
+            elif dt.tzinfo != UTC:
                 # Convert to UTC
                 dt = dt.astimezone(UTC)
                 logger.debug("Converted timestamp to UTC")
@@ -280,9 +273,9 @@ class DatabaseUtils:
 
     def validate_timestamp_range(
         self,
-        start_time: Optional[datetime],
-        end_time: Optional[datetime]
-    ) -> Tuple[datetime, datetime]:
+        start_time: datetime | None,
+        end_time: datetime | None
+    ) -> tuple[datetime, datetime]:
         """Validate and normalize timestamp range.
 
         Args:
@@ -311,7 +304,7 @@ class DatabaseUtils:
 
         return norm_start, norm_end
 
-    def optimize_database_performance(self) -> Dict[str, Any]:
+    def optimize_database_performance(self) -> dict[str, Any]:
         """Run database optimization tasks.
 
         Returns:
@@ -395,7 +388,7 @@ class DatabaseUtils:
             logger.error(f"Database optimization failed: {e}")
             raise DatabaseException(f"Database optimization error: {str(e)}")
 
-    def setup_clean_timestamp_infrastructure(self) -> Dict[str, Any]:
+    def setup_clean_timestamp_infrastructure(self) -> dict[str, Any]:
         """Set up clean timestamp event infrastructure.
 
         Returns:
@@ -426,7 +419,7 @@ class DatabaseUtils:
                 "supported_entities": [
                     "Project", "GitBranch", "Task", "Subtask", "Agent", "Label", "Template"
                 ],
-                "setup_at": datetime.now(timezone.utc).isoformat()
+                "setup_at": datetime.now(UTC).isoformat()
             }
 
             logger.info("Clean timestamp infrastructure setup completed successfully")
@@ -436,7 +429,7 @@ class DatabaseUtils:
             logger.error(f"Timestamp infrastructure setup failed: {e}")
             raise DatabaseException(f"Timestamp setup error: {str(e)}")
 
-    def get_database_metrics(self) -> Dict[str, Any]:
+    def get_database_metrics(self) -> dict[str, Any]:
         """Get comprehensive database metrics and statistics.
 
         Returns:
@@ -456,7 +449,7 @@ class DatabaseUtils:
                     "timestamp_tables": 0,
                     "total_records": 0,
                     "performance": {},
-                    "collected_at": datetime.now(timezone.utc).isoformat()
+                    "collected_at": datetime.now(UTC).isoformat()
                 }
 
                 # Collect table-specific metrics
@@ -481,9 +474,9 @@ class DatabaseUtils:
                         logger.warning(f"Could not get count for table {table_name}: {e}")
 
                 # Performance metrics
-                start_time = datetime.now(timezone.utc)
+                start_time = datetime.now(UTC)
                 session.execute(text("SELECT 1"))
-                end_time = datetime.now(timezone.utc)
+                end_time = datetime.now(UTC)
 
                 metrics["performance"] = {
                     "query_response_time_ms": round((end_time - start_time).total_seconds() * 1000, 2),
@@ -497,7 +490,7 @@ class DatabaseUtils:
             logger.error(f"Database metrics collection failed: {e}")
             raise DatabaseException(f"Metrics collection error: {str(e)}")
 
-    def create_performance_indexes(self) -> Dict[str, Any]:
+    def create_performance_indexes(self) -> dict[str, Any]:
         """Create performance-optimized indexes for timestamp queries.
 
         Returns:
@@ -593,7 +586,7 @@ class DatabaseUtils:
 
 
 # Singleton instance for easy access
-_database_utils: Optional[DatabaseUtils] = None
+_database_utils: DatabaseUtils | None = None
 
 
 def get_database_utils() -> DatabaseUtils:
@@ -608,7 +601,7 @@ def get_database_utils() -> DatabaseUtils:
     return _database_utils
 
 
-def check_database_health() -> Dict[str, Any]:
+def check_database_health() -> dict[str, Any]:
     """Convenience function to check database health.
 
     Returns:
@@ -617,7 +610,7 @@ def check_database_health() -> Dict[str, Any]:
     return get_database_utils().check_database_health()
 
 
-def validate_schema_integrity() -> Dict[str, Any]:
+def validate_schema_integrity() -> dict[str, Any]:
     """Convenience function to validate schema integrity.
 
     Returns:
@@ -626,7 +619,7 @@ def validate_schema_integrity() -> Dict[str, Any]:
     return get_database_utils().validate_schema_integrity()
 
 
-def setup_clean_timestamp_infrastructure() -> Dict[str, Any]:
+def setup_clean_timestamp_infrastructure() -> dict[str, Any]:
     """Convenience function to set up clean timestamp infrastructure.
 
     Returns:
@@ -635,7 +628,7 @@ def setup_clean_timestamp_infrastructure() -> Dict[str, Any]:
     return get_database_utils().setup_clean_timestamp_infrastructure()
 
 
-def optimize_database_performance() -> Dict[str, Any]:
+def optimize_database_performance() -> dict[str, Any]:
     """Convenience function to optimize database performance.
 
     Returns:

@@ -10,17 +10,24 @@ This module provides comprehensive project deletion with cascade deletion of all
 """
 
 import logging
-import asyncio
-from typing import Dict, Any, List, Optional
-from datetime import datetime
+from typing import Any
 
 from ...domain.entities.project import Project
 from ...domain.exceptions.base_exceptions import (
+    DatabaseException,
     ResourceNotFoundException,
     ValidationException,
-    DatabaseException
 )
 from ...domain.services.cascade_deletion_service import CascadeDeletionService
+from ...infrastructure.repositories.git_branch_repository_factory import (
+    GitBranchRepositoryFactory,
+)
+from ...infrastructure.repositories.project_repository_factory import (
+    GlobalRepositoryManager,
+)
+from ...infrastructure.repositories.task_repository_factory import (
+    TaskRepositoryFactory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +49,6 @@ class DeleteProjectUseCase:
         """Initialize the delete project use case with required repositories."""
         # Use provided repositories or get defaults
         if project_repo is None or git_branch_repo is None or task_repo is None:
-            from ...domain.interfaces.repository_factory import IProjectRepositoryFactory
-            from ...domain.interfaces.repository_factory import IGitBranchRepositoryFactory
-            from ...domain.interfaces.repository_factory import ITaskRepositoryFactory
             
             self.project_repo = project_repo or GlobalRepositoryManager.get_default()
             self.git_branch_repo = git_branch_repo or GitBranchRepositoryFactory.create()
@@ -59,14 +63,16 @@ class DeleteProjectUseCase:
         
         # Initialize unified context repositories for hierarchical deletion
         try:
-            from ..services.unified_context_facade_factory import UnifiedContextFacadeFactory
+            from ..services.unified_context_facade_factory import (
+                UnifiedContextFacadeFactory,
+            )
             factory = UnifiedContextFacadeFactory()
             self.unified_context_repo = factory.create_hierarchical_context_repository()
         except Exception as e:
             logger.warning(f"Could not initialize unified context repository: {e}")
             self.unified_context_repo = None
     
-    async def execute(self, project_id: str, force: bool = False) -> Dict[str, Any]:
+    async def execute(self, project_id: str, force: bool = False) -> dict[str, Any]:
         """
         Execute project deletion with cascade deletion.
 
@@ -202,7 +208,7 @@ class DeleteProjectUseCase:
                 raise
             logger.warning(f"Error checking deletion safety: {e}")
     
-    async def _delete_contexts(self, project_id: str, stats: Dict[str, Any]) -> None:
+    async def _delete_contexts(self, project_id: str, stats: dict[str, Any]) -> None:
         """
         Delete all contexts related to the project (hierarchical).
         
@@ -270,7 +276,7 @@ class DeleteProjectUseCase:
             logger.error(f"Error during context deletion: {e}")
             stats["errors"].append(f"Context deletion: {str(e)}")
     
-    async def _delete_tasks(self, project_id: str, stats: Dict[str, Any]) -> None:
+    async def _delete_tasks(self, project_id: str, stats: dict[str, Any]) -> None:
         """
         Delete all tasks and subtasks in the project.
         
@@ -302,7 +308,7 @@ class DeleteProjectUseCase:
             logger.error(f"Error during task deletion: {e}")
             stats["errors"].append(f"Task deletion: {str(e)}")
     
-    async def _delete_git_branches(self, project_id: str, stats: Dict[str, Any]) -> None:
+    async def _delete_git_branches(self, project_id: str, stats: dict[str, Any]) -> None:
         """
         Delete all git branches in the project.
         
@@ -332,7 +338,7 @@ class DeleteProjectUseCase:
             stats["errors"].append(f"Git branch deletion: {str(e)}")
 
     async def _send_websocket_notification(self, project_id: str, name: str,
-                                          user_id: Optional[str], stats: Dict[str, Any]) -> None:
+                                          user_id: str | None, stats: dict[str, Any]) -> None:
         """Send WebSocket notification for project deletion."""
         try:
             # Import WebSocket service

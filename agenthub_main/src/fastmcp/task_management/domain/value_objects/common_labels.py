@@ -1,7 +1,6 @@
 """Common Labels Enum for Task Management"""
 
 from enum import Enum
-from typing import List, Set
 
 
 class CommonLabel(Enum):
@@ -78,7 +77,7 @@ class CommonLabel(Enum):
     PROJECT = "project"
     SUBTASK = "subtask"
     
-    def get_keywords(self) -> List[str]:
+    def get_keywords(self) -> list[str]:
         """Get keywords associated with this label for suggestion matching"""
         keyword_map = {
             # Priority/Urgency Labels
@@ -156,37 +155,37 @@ class CommonLabel(Enum):
         return keyword_map.get(self, [self.value])
     
     @classmethod
-    def get_all_labels(cls) -> List[str]:
+    def get_all_labels(cls) -> list[str]:
         """Get list of all available labels"""
         return [label.value for label in cls]
     
     @classmethod
-    def get_priority_labels(cls) -> List[str]:
+    def get_priority_labels(cls) -> list[str]:
         """Get priority/urgency related labels"""
         return [cls.URGENT.value, cls.CRITICAL.value, cls.HOT_FIX.value, cls.BLOCKER.value]
     
     @classmethod
-    def get_type_labels(cls) -> List[str]:
+    def get_type_labels(cls) -> list[str]:
         """Get task type related labels"""
         return [cls.BUG.value, cls.FEATURE.value, cls.ENHANCEMENT.value, 
                 cls.REFACTOR.value, cls.DOCUMENTATION.value, cls.TESTING.value,
                 cls.RESEARCH.value, cls.SPIKE.value]
     
     @classmethod
-    def get_component_labels(cls) -> List[str]:
+    def get_component_labels(cls) -> list[str]:
         """Get component/area related labels"""
         return [cls.FRONTEND.value, cls.BACKEND.value, cls.API.value,
                 cls.DATABASE.value, cls.UI_UX.value, cls.INFRASTRUCTURE.value,
                 cls.DEVOPS.value, cls.SECURITY.value]
     
     @classmethod
-    def get_ai_labels(cls) -> List[str]:
+    def get_ai_labels(cls) -> list[str]:
         """Get AI/ML specific labels"""
         return [cls.AI_AGENT.value, cls.MCP.value, cls.agenthub.value,
                 cls.AUTO_GENERATION.value, cls.RULE_GENERATION.value]
     
     @classmethod
-    def get_testing_labels(cls) -> List[str]:
+    def get_testing_labels(cls) -> list[str]:
         """Get testing specific labels"""
         return [cls.TESTING.value, cls.UNIT_TEST.value, cls.INTEGRATION_TEST.value,
                 cls.E2E_TEST.value, cls.DOMAIN.value, cls.ENTITY.value, 
@@ -200,7 +199,7 @@ class CommonLabel(Enum):
         return label in cls.get_all_labels()
     
     @classmethod
-    def suggest_labels(cls, text: str) -> List[str]:
+    def suggest_labels(cls, text: str) -> list[str]:
         """Suggest relevant labels based on text content"""
         # Handle None or non-string input
         if not text or not isinstance(text, str):
@@ -258,7 +257,7 @@ class LabelValidator:
         return True
     
     @staticmethod
-    def validate_labels(labels: List[str]) -> List[str]:
+    def validate_labels(labels: list[str]) -> list[str]:
         """Validate and normalize labels"""
         if not labels:
             return []
@@ -285,7 +284,7 @@ class LabelValidator:
         return normalized
     
     @staticmethod
-    def get_label_suggestions(existing_labels: List[str], text_content: str = "") -> List[str]:
+    def get_label_suggestions(existing_labels: list[str], text_content: str = "") -> list[str]:
         """Get label suggestions based on existing labels and text content"""
         suggestions = CommonLabel.suggest_labels(text_content)
         

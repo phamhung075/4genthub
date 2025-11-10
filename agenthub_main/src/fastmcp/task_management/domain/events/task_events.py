@@ -1,8 +1,8 @@
 """Task Domain Events"""
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Dict
+from datetime import UTC, datetime
+from typing import Any
 
 from ..value_objects import TaskId
 
@@ -14,7 +14,7 @@ class DomainEvent:
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
+            object.__setattr__(self, 'occurred_at', datetime.now(UTC))
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,7 @@ class TaskCreated:
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
+            object.__setattr__(self, 'occurred_at', datetime.now(UTC))
 
 
 @dataclass(frozen=True)
@@ -39,11 +39,11 @@ class TaskUpdated:
     new_value: Any
     updated_at: datetime
     occurred_at: datetime = None
-    metadata: Dict[str, Any] = None
+    metadata: dict[str, Any] = None
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
+            object.__setattr__(self, 'occurred_at', datetime.now(UTC))
         if self.metadata is None:
             object.__setattr__(self, 'metadata', {})
 
@@ -52,13 +52,13 @@ class TaskUpdated:
 class TaskRetrieved:
     """Event raised when a task is retrieved (triggers auto rule generation)"""
     task_id: TaskId
-    task_data: Dict[str, Any]
+    task_data: dict[str, Any]
     retrieved_at: datetime
     occurred_at: datetime = None
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
+            object.__setattr__(self, 'occurred_at', datetime.now(UTC))
 
 
 @dataclass(frozen=True)
@@ -71,4 +71,4 @@ class TaskDeleted:
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc)) 
+            object.__setattr__(self, 'occurred_at', datetime.now(UTC)) 

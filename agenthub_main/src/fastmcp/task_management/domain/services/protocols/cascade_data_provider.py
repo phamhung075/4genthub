@@ -10,7 +10,8 @@ data access logic using specific technologies.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Protocol, Set
+from typing import Protocol
+
 from ..cascade_calculator import EntityType
 
 
@@ -21,7 +22,7 @@ class TaskCascadeData:
     id: str
     git_branch_id: str
     project_id: str
-    context_id: Optional[str] = None
+    context_id: str | None = None
 
 
 @dataclass
@@ -32,7 +33,7 @@ class SubtaskCascadeData:
     task_id: str
     git_branch_id: str
     project_id: str
-    context_id: Optional[str] = None
+    context_id: str | None = None
 
 
 @dataclass
@@ -41,8 +42,8 @@ class BranchCascadeData:
 
     id: str
     project_id: str
-    task_ids: Set[str]
-    subtask_ids: Set[str]
+    task_ids: set[str]
+    subtask_ids: set[str]
 
 
 @dataclass
@@ -50,9 +51,9 @@ class ProjectCascadeData:
     """Data transfer object for project cascade information"""
 
     id: str
-    branch_ids: Set[str]
-    task_ids: Set[str]
-    subtask_ids: Set[str]
+    branch_ids: set[str]
+    task_ids: set[str]
+    subtask_ids: set[str]
 
 
 @dataclass
@@ -60,10 +61,10 @@ class ContextCascadeData:
     """Data transfer object for context cascade information"""
 
     id: str
-    task_ids: Set[str]
-    branch_ids: Set[str]
-    project_ids: Set[str]
-    subtask_ids: Set[str]
+    task_ids: set[str]
+    branch_ids: set[str]
+    project_ids: set[str]
+    subtask_ids: set[str]
 
 
 class CascadeDataProvider(Protocol):
@@ -77,7 +78,7 @@ class CascadeDataProvider(Protocol):
     All methods return domain DTOs, never infrastructure-specific types.
     """
 
-    async def get_task_cascade_data(self, task_id: str) -> Optional[TaskCascadeData]:
+    async def get_task_cascade_data(self, task_id: str) -> TaskCascadeData | None:
         """
         Get cascade-relevant data for a task.
 
@@ -89,7 +90,7 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_task_subtask_ids(self, task_id: str) -> Set[str]:
+    async def get_task_subtask_ids(self, task_id: str) -> set[str]:
         """
         Get all subtask IDs for a task.
 
@@ -101,7 +102,7 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_task_parent_task_ids(self, task_id: str) -> Set[str]:
+    async def get_task_parent_task_ids(self, task_id: str) -> set[str]:
         """
         Get IDs of tasks that depend on this task.
 
@@ -113,7 +114,7 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_subtask_cascade_data(self, subtask_id: str) -> Optional[SubtaskCascadeData]:
+    async def get_subtask_cascade_data(self, subtask_id: str) -> SubtaskCascadeData | None:
         """
         Get cascade-relevant data for a subtask.
 
@@ -125,7 +126,7 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_branch_cascade_data(self, branch_id: str) -> Optional[BranchCascadeData]:
+    async def get_branch_cascade_data(self, branch_id: str) -> BranchCascadeData | None:
         """
         Get cascade-relevant data for a branch.
 
@@ -137,7 +138,7 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_project_cascade_data(self, project_id: str) -> Optional[ProjectCascadeData]:
+    async def get_project_cascade_data(self, project_id: str) -> ProjectCascadeData | None:
         """
         Get cascade-relevant data for a project.
 
@@ -149,7 +150,7 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_context_cascade_data(self, context_id: str) -> Optional[ContextCascadeData]:
+    async def get_context_cascade_data(self, context_id: str) -> ContextCascadeData | None:
         """
         Get cascade-relevant data for a context.
 
@@ -161,7 +162,7 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_related_context_ids(self, branch_id: str, project_id: str) -> Set[str]:
+    async def get_related_context_ids(self, branch_id: str, project_id: str) -> set[str]:
         """
         Get context IDs related to a branch and project.
 
@@ -174,7 +175,7 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def detect_entity_type(self, entity_id: str) -> Optional[EntityType]:
+    async def detect_entity_type(self, entity_id: str) -> EntityType | None:
         """
         Auto-detect the type of an entity by its ID.
 

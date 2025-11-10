@@ -1,14 +1,16 @@
 """
 Use Case: Validate Project Integrity
 """
-from typing import Dict, Any
+from typing import Any
+
 from ...domain.repositories.project_repository import ProjectRepository
+
 
 class ValidateIntegrityUseCase:
     def __init__(self, project_repo: ProjectRepository):
         self._project_repo = project_repo
 
-    async def execute(self, project_id: str = None) -> Dict[str, Any]:
+    async def execute(self, project_id: str = None) -> dict[str, Any]:
         """Validate integrity of project data"""
         try:
             if project_id:
@@ -46,7 +48,7 @@ class ValidateIntegrityUseCase:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    def _validate_project_integrity(self, project) -> Dict[str, Any]:
+    def _validate_project_integrity(self, project) -> dict[str, Any]:
         """Validate integrity of a single project entity"""
         errors = []
         warnings = []

@@ -10,14 +10,14 @@ Purpose: Monitor and diagnose session persistence health
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Any
 
 from fastmcp.server.context import Context
 
 logger = logging.getLogger(__name__)
 
 
-async def session_health_check(ctx: Context) -> Dict[str, Any]:
+async def session_health_check(ctx: Context) -> dict[str, Any]:
     """
     Check the health status of the MCP session persistence system
     
@@ -187,7 +187,7 @@ def register_session_health_tool(server):
         
         # Redis information
         if 'redis_available' in health_info:
-            response += f"\n**Redis Information:**\n"
+            response += "\n**Redis Information:**\n"
             response += f"- Redis Available: {health_info.get('redis_available', False)}\n"
             response += f"- Redis Connected: {health_info.get('redis_connected', False)}\n"
             response += f"- Using Fallback: {health_info.get('using_fallback', False)}\n"
@@ -204,19 +204,19 @@ def register_session_health_tool(server):
         
         # Recent events
         if health_info.get('recent_events'):
-            response += f"\n**Recent Session Events:**\n"
+            response += "\n**Recent Session Events:**\n"
             for event in health_info['recent_events']:
                 response += f"- {event.get('type', 'unknown')} (age: {event.get('age_seconds', 0):.1f}s)\n"
         
         # Warnings
         if health_info.get('warnings'):
-            response += f"\n**⚠️ Warnings:**\n"
+            response += "\n**⚠️ Warnings:**\n"
             for warning in health_info['warnings']:
                 response += f"- {warning}\n"
         
         # Recommendations
         if health_info.get('recommendations'):
-            response += f"\n**💡 Recommendations:**\n"
+            response += "\n**💡 Recommendations:**\n"
             for rec in health_info['recommendations']:
                 response += f"- {rec}\n"
         

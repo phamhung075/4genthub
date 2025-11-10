@@ -4,10 +4,9 @@ WebSocket Notification Service for broadcasting data changes to connected client
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional
-from datetime import datetime, timezone
-import hashlib
 import time
+from datetime import UTC, datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class WebSocketNotificationService:
     """
 
     @staticmethod
-    def _get_task_context(task_id: str, user_id: str = None) -> Dict[str, Any]:
+    def _get_task_context(task_id: str, user_id: str = None) -> dict[str, Any]:
         """
         Fetch task context including task title and parent branch information.
 
@@ -65,7 +64,7 @@ class WebSocketNotificationService:
         """
         try:
             from ...infrastructure.database.database_config import get_session
-            from ...infrastructure.database.models import Task, ProjectGitBranch
+            from ...infrastructure.database.models import ProjectGitBranch, Task
 
             with get_session() as session:
                 # Query with proper relationships
@@ -106,7 +105,7 @@ class WebSocketNotificationService:
             }
 
     @staticmethod
-    def _get_subtask_context(subtask_id: str, task_id: str, user_id: str = None) -> Dict[str, Any]:
+    def _get_subtask_context(subtask_id: str, task_id: str, user_id: str = None) -> dict[str, Any]:
         """
         Fetch subtask context including subtask title and parent task information.
 
@@ -161,7 +160,7 @@ class WebSocketNotificationService:
             }
 
     @staticmethod
-    def _get_branch_context(branch_id: str, user_id: str = None) -> Dict[str, Any]:
+    def _get_branch_context(branch_id: str, user_id: str = None) -> dict[str, Any]:
         """
         Fetch branch context including branch title.
 
@@ -202,7 +201,7 @@ class WebSocketNotificationService:
             }
 
     @staticmethod
-    def _get_branch_cascade_data(branch_id: str, user_id: str = None) -> Dict[str, Any]:
+    def _get_branch_cascade_data(branch_id: str, user_id: str = None) -> dict[str, Any]:
         """
         Fetch branch cascade data with current task counts for WebSocket updates.
         Uses the same trigger-maintained counts as the bulk API for consistency.
@@ -215,8 +214,9 @@ class WebSocketNotificationService:
             Dict containing branch cascade data with task_count, completed_tasks, etc.
         """
         try:
-            from ...infrastructure.database.database_config import get_session
             from sqlalchemy import text
+
+            from ...infrastructure.database.database_config import get_session
 
             with get_session() as session:
                 # Use the same query approach as bulk API for consistency
@@ -301,9 +301,9 @@ class WebSocketNotificationService:
         event_type: str,
         task_id: str,
         user_id: str,
-        task_data: Optional[Dict[str, Any]] = None,
-        git_branch_id: Optional[str] = None,
-        project_id: Optional[str] = None
+        task_data: dict[str, Any] | None = None,
+        git_branch_id: str | None = None,
+        project_id: str | None = None
     ):
         """
         Broadcast task-related events to WebSocket clients.
@@ -320,14 +320,14 @@ class WebSocketNotificationService:
 
         # Special detailed logging for DELETE operations
         if event_type.lower() in ['delete', 'deleted']:
-            logger.warning(f"🗑️ BACKEND DELETE EVENT BROADCAST:")
+            logger.warning("🗑️ BACKEND DELETE EVENT BROADCAST:")
             logger.warning(f"   Event Type: {event_type}")
             logger.warning(f"   Task ID: {task_id}")
             logger.warning(f"   User ID: {user_id}")
             logger.warning(f"   Task Data: {task_data}")
             logger.warning(f"   Git Branch ID: {git_branch_id}")
             logger.warning(f"   Project ID: {project_id}")
-            logger.warning(f"   About to check for duplicate notification...")
+            logger.warning("   About to check for duplicate notification...")
 
         # DUPLICATE DETECTION: Check if this is a duplicate notification
         if _is_duplicate_notification(event_type, "task", task_id, user_id):
@@ -339,7 +339,7 @@ class WebSocketNotificationService:
 
         # Special logging for DELETE continuing after duplicate check
         if event_type.lower() in ['delete', 'deleted']:
-            logger.warning(f"✅ DELETE NOT DUPLICATE - proceeding with broadcast")
+            logger.warning("✅ DELETE NOT DUPLICATE - proceeding with broadcast")
 
         try:
             # Try direct import first (for when running in same process)
@@ -355,7 +355,7 @@ class WebSocketNotificationService:
                 metadata["git_branch_id"] = git_branch_id
             if project_id:
                 metadata["project_id"] = project_id
-            metadata["timestamp"] = datetime.now(timezone.utc).isoformat()
+            metadata["timestamp"] = datetime.now(UTC).isoformat()
 
             # Enhanced payload with titles and parent context
             metadata["task_title"] = task_context["task_title"]
@@ -379,12 +379,13 @@ class WebSocketNotificationService:
             else:
                 logger.info(f"✅ Successfully broadcasted task {event_type} event for {task_id}")
 
-        except (ImportError, RuntimeError) as e:
+        except (ImportError, RuntimeError):
             # Fallback to HTTP broadcast for cross-process communication
             logger.info("📡 Using HTTP broadcast (cross-process)")
             try:
-                import aiohttp
                 import os
+
+                import aiohttp
 
                 # Get API server URL from environment
                 api_url = os.getenv("AUTH_API_URL", "http://localhost:8001")
@@ -399,7 +400,7 @@ class WebSocketNotificationService:
                     metadata["git_branch_id"] = git_branch_id
                 if project_id:
                     metadata["project_id"] = project_id
-                metadata["timestamp"] = datetime.now(timezone.utc).isoformat()
+                metadata["timestamp"] = datetime.now(UTC).isoformat()
 
                 # Enhanced payload with titles and parent context
                 metadata["task_title"] = task_context["task_title"]
@@ -435,7 +436,7 @@ class WebSocketNotificationService:
         subtask_id: str,
         task_id: str,
         user_id: str,
-        subtask_data: Optional[Dict[str, Any]] = None
+        subtask_data: dict[str, Any] | None = None
     ):
         """
         Broadcast subtask-related events to WebSocket clients.
@@ -455,7 +456,7 @@ class WebSocketNotificationService:
 
             metadata = {
                 "parent_task_id": task_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 # Enhanced payload with titles and parent context
                 "subtask_title": subtask_context["subtask_title"],
                 "parent_task_title": subtask_context["parent_task_title"]
@@ -482,7 +483,7 @@ class WebSocketNotificationService:
         event_type: str,
         project_id: str,
         user_id: str,
-        project_data: Optional[Dict[str, Any]] = None
+        project_data: dict[str, Any] | None = None
     ):
         """
         Broadcast project-related events to WebSocket clients.
@@ -497,7 +498,7 @@ class WebSocketNotificationService:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
 
             metadata = {
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             }
 
             await broadcast_data_change(
@@ -522,7 +523,7 @@ class WebSocketNotificationService:
         branch_id: str,
         project_id: str,
         user_id: str,
-        branch_data: Optional[Dict[str, Any]] = None
+        branch_data: dict[str, Any] | None = None
     ):
         """
         Broadcast branch-related events to WebSocket clients.
@@ -542,7 +543,7 @@ class WebSocketNotificationService:
 
             metadata = {
                 "project_id": project_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 # Enhanced payload with branch title
                 "branch_title": branch_context["branch_title"]
             }
@@ -569,8 +570,8 @@ class WebSocketNotificationService:
         context_id: str,
         level: str,
         user_id: str,
-        context_data: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        context_data: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None
     ):
         """
         Broadcast context-related events to WebSocket clients.
@@ -589,7 +590,7 @@ class WebSocketNotificationService:
             if metadata is None:
                 metadata = {}
             metadata["context_level"] = level
-            metadata["timestamp"] = datetime.now(timezone.utc).isoformat()
+            metadata["timestamp"] = datetime.now(UTC).isoformat()
 
             await broadcast_data_change(
                 event_type=event_type,
@@ -613,7 +614,7 @@ class WebSocketNotificationService:
         agent_id: str,
         project_id: str,
         user_id: str,
-        agent_data: Optional[Dict[str, Any]] = None
+        agent_data: dict[str, Any] | None = None
     ):
         """
         Broadcast agent-related events to WebSocket clients.
@@ -630,7 +631,7 @@ class WebSocketNotificationService:
 
             metadata = {
                 "project_id": project_id,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat()
             }
 
             # Add agent name to metadata if available
@@ -656,7 +657,7 @@ class WebSocketNotificationService:
     @staticmethod
     def sync_broadcast_agent_event(*args, **kwargs):
         """Synchronous wrapper for broadcast_agent_event - tries direct WebSocket first, then HTTP fallback"""
-        logger.info(f"🔔 sync_broadcast_agent_event called from MCP server")
+        logger.info("🔔 sync_broadcast_agent_event called from MCP server")
 
         # Extract arguments
         event_type = kwargs.get('event_type', args[0] if args else 'unknown')
@@ -673,7 +674,7 @@ class WebSocketNotificationService:
         # Prepare metadata
         metadata = {
             "project_id": project_id,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat()
         }
 
         # Add agent name to metadata if available
@@ -737,8 +738,9 @@ class WebSocketNotificationService:
 
         # Fallback to HTTP broadcast for cross-process communication
         try:
-            import requests
             import os
+
+            import requests
 
             # MCP server runs on port 8000
             api_url = os.getenv("AUTH_API_URL", "http://localhost:8000")
@@ -770,8 +772,8 @@ class WebSocketNotificationService:
     @staticmethod
     def sync_broadcast_task_event(*args, **kwargs):
         """Synchronous wrapper for broadcast_task_event - tries direct WebSocket first, then HTTP fallback"""
-        logger.warning(f"🔔 🎯 WEBSOCKET SERVICE: sync_broadcast_task_event called from MCP server")
-        print(f"🚀 🎯 WEBSOCKET SERVICE: sync_broadcast_task_event called")
+        logger.warning("🔔 🎯 WEBSOCKET SERVICE: sync_broadcast_task_event called from MCP server")
+        print("🚀 🎯 WEBSOCKET SERVICE: sync_broadcast_task_event called")
 
         # Extract arguments for debugging
         event_type = kwargs.get('event_type', args[0] if args else 'unknown')
@@ -782,14 +784,14 @@ class WebSocketNotificationService:
 
         # Enhanced logging for CREATE events
         if event_type.lower() == 'created':
-            logger.warning(f"✨ CREATE EVENT DETECTED: Processing task creation notification")
+            logger.warning("✨ CREATE EVENT DETECTED: Processing task creation notification")
             logger.warning(f"✨ CREATE EVENT: Task ID = {task_id}")
             logger.warning(f"✨ CREATE EVENT: User ID = {user_id}")
             logger.warning(f"✨ CREATE EVENT: Args = {args}")
             logger.warning(f"✨ CREATE EVENT: Kwargs = {kwargs}")
 
-        print(f"🚀 BACKEND DELETE DEBUG: sync_broadcast_task_event called")
-        print(f"🚀 BACKEND DELETE DEBUG: This is EVENT 1 of 2 - TASK DELETION")
+        print("🚀 BACKEND DELETE DEBUG: sync_broadcast_task_event called")
+        print("🚀 BACKEND DELETE DEBUG: This is EVENT 1 of 2 - TASK DELETION")
 
         # Extract arguments
         event_type = kwargs.get('event_type', args[0] if args else 'unknown')
@@ -822,7 +824,7 @@ class WebSocketNotificationService:
             metadata["git_branch_id"] = git_branch_id
         if project_id:
             metadata["project_id"] = project_id
-        metadata["timestamp"] = datetime.now(timezone.utc).isoformat()
+        metadata["timestamp"] = datetime.now(UTC).isoformat()
 
         # Enhanced payload with titles and parent context
         metadata["task_title"] = task_context["task_title"]
@@ -933,8 +935,9 @@ class WebSocketNotificationService:
 
         # Fallback to HTTP broadcast for cross-process communication
         try:
-            import requests
             import os
+
+            import requests
 
             # MCP server runs on port 8000
             api_url = os.getenv("AUTH_API_URL", "http://localhost:8000")
@@ -982,9 +985,9 @@ class WebSocketNotificationService:
     @staticmethod
     def sync_broadcast_branch_event(*args, **kwargs):
         """Synchronous wrapper for broadcast_branch_event - tries direct WebSocket first, then HTTP fallback"""
-        logger.info(f"🔔 sync_broadcast_branch_event called from MCP server")
-        print(f"🚀 BACKEND DELETE DEBUG: sync_broadcast_branch_event called")
-        print(f"🚀 BACKEND DELETE DEBUG: This is EVENT 2 of 2 - BRANCH UPDATE")
+        logger.info("🔔 sync_broadcast_branch_event called from MCP server")
+        print("🚀 BACKEND DELETE DEBUG: sync_broadcast_branch_event called")
+        print("🚀 BACKEND DELETE DEBUG: This is EVENT 2 of 2 - BRANCH UPDATE")
 
         # Extract arguments
         event_type = kwargs.get('event_type', args[0] if args else 'unknown')
@@ -999,7 +1002,7 @@ class WebSocketNotificationService:
         # Prepare enhanced metadata with branch title
         metadata = {
             "project_id": project_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             # Enhanced payload with branch title
             "branch_title": branch_context["branch_title"]
         }
@@ -1061,8 +1064,9 @@ class WebSocketNotificationService:
 
         # Fallback to HTTP broadcast for cross-process communication
         try:
-            import requests
             import os
+
+            import requests
 
             # MCP server runs on port 8000
             api_url = os.getenv("AUTH_API_URL", "http://localhost:8000")
@@ -1094,7 +1098,7 @@ class WebSocketNotificationService:
     @staticmethod
     def sync_broadcast_subtask_event(*args, **kwargs):
         """Synchronous wrapper for broadcast_subtask_event - tries direct WebSocket first, then HTTP fallback"""
-        logger.info(f"🔔 sync_broadcast_subtask_event called from MCP server")
+        logger.info("🔔 sync_broadcast_subtask_event called from MCP server")
 
         # Extract arguments
         event_type = kwargs.get('event_type', args[0] if args else 'unknown')
@@ -1109,7 +1113,7 @@ class WebSocketNotificationService:
         # Prepare enhanced metadata with titles and parent context
         metadata = {
             "parent_task_id": task_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             # Enhanced payload with titles and parent context
             "subtask_title": subtask_context["subtask_title"],
             "parent_task_title": subtask_context["parent_task_title"]
@@ -1205,8 +1209,9 @@ class WebSocketNotificationService:
 
         # Fallback to HTTP broadcast for cross-process communication
         try:
-            import requests
             import os
+
+            import requests
 
             # MCP server runs on port 8000
             api_url = os.getenv("AUTH_API_URL", "http://localhost:8000")

@@ -17,15 +17,19 @@ Date: 2025-01-30
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any
 
 from .context import Context
-from .secure_health_check import secure_health_check, client_health_check, admin_health_check
+from .secure_health_check import (
+    admin_health_check,
+    client_health_check,
+    secure_health_check,
+)
 
 logger = logging.getLogger(__name__)
 
 
-async def secure_connection_check(ctx: Context, access_level: str = "client", **kwargs) -> Dict[str, Any]:
+async def secure_connection_check(ctx: Context, access_level: str = "client", **kwargs) -> dict[str, Any]:
     """
     Secure connection health check with access level control
     
@@ -114,10 +118,10 @@ Example Usage:
                 
         except Exception as e:
             logger.error(f"Secure health check tool error: {e}")
-            return f"❌ Health Check Error\n\nService temporarily unavailable"
+            return "❌ Health Check Error\n\nService temporarily unavailable"
 
 
-def _format_secure_health_response(result: Dict[str, Any], access_level: str) -> str:
+def _format_secure_health_response(result: dict[str, Any], access_level: str) -> str:
     """Format secure health check response for display"""
     
     if access_level == "client":

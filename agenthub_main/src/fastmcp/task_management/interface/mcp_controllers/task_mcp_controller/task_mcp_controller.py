@@ -15,15 +15,9 @@ if TYPE_CHECKING:
 
 # Import modular components
 # Import permission system for resource-specific CRUD authorization
-from .....auth.domain.permissions import (
-    PermissionAction,
-    PermissionChecker,
-    ResourceType,
-)
 from ....application.facades.task_application_facade import TaskApplicationFacade
 from ....application.factories.task_facade_factory import TaskFacadeFactory
 from ....application.services.facade_service import FacadeService
-from ....infrastructure.configuration.tool_config import ToolConfig
 
 # Services are created by factories with their required dependencies
 from ....application.services.parameter_enforcement_service import (
@@ -42,6 +36,7 @@ from ....application.services.task_authorization_service import (
 from ....domain.exceptions.authentication_exceptions import (
     UserAuthenticationRequiredError,
 )
+from ....infrastructure.configuration.tool_config import ToolConfig
 from ...utils import description_loader
 from ...utils.error_handler import UserFriendlyErrorHandler
 from ...utils.response_formatter import (

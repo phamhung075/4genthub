@@ -5,9 +5,9 @@ which tracks alignment between tasks and organizational objectives.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Any
 from uuid import UUID, uuid4
 
 
@@ -48,7 +48,7 @@ class VisionMetric:
     unit: str
     metric_type: MetricType = MetricType.CUSTOM
     baseline_value: float = 0.0
-    last_updated: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     @property
     def progress_percentage(self) -> float:
@@ -64,7 +64,7 @@ class VisionMetric:
         """Check if the metric has reached its target."""
         return self.current_value >= self.target_value
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "name": self.name,
@@ -86,15 +86,15 @@ class VisionObjective:
     title: str = ""
     description: str = ""
     level: VisionHierarchyLevel = VisionHierarchyLevel.PROJECT
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
     owner: str = ""
     priority: int = 1  # 1-5, where 5 is highest priority
     status: str = "active"  # active, completed, paused, cancelled
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    due_date: Optional[datetime] = None
-    metrics: List[VisionMetric] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    due_date: datetime | None = None
+    metrics: list[VisionMetric] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
     @property
     def overall_progress(self) -> float:
@@ -113,15 +113,15 @@ class VisionObjective:
         return all(metric.is_achieved for metric in self.metrics)
     
     @property
-    def days_remaining(self) -> Optional[int]:
+    def days_remaining(self) -> int | None:
         """Calculate days remaining until due date."""
         if not self.due_date:
             return None
         
-        remaining = (self.due_date - datetime.now(timezone.utc)).days
+        remaining = (self.due_date - datetime.now(UTC)).days
         return max(remaining, 0)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "id": str(self.id),
@@ -152,8 +152,8 @@ class VisionAlignment:
     contribution_type: ContributionType
     confidence: float = 0.8  # Confidence in the alignment assessment
     rationale: str = ""
-    calculated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    factors: Dict[str, float] = field(default_factory=dict)  # Contributing factors to score
+    calculated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    factors: dict[str, float] = field(default_factory=dict)  # Contributing factors to score
     
     @property
     def is_strong_alignment(self) -> bool:
@@ -165,7 +165,7 @@ class VisionAlignment:
         """Check if alignment is weak (< 0.3)."""
         return self.alignment_score < 0.3
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "task_id": str(self.task_id),
@@ -189,19 +189,19 @@ class VisionInsight:
     title: str = ""
     description: str = ""
     impact: str = "medium"  # low, medium, high, critical
-    affected_objectives: List[UUID] = field(default_factory=list)
-    affected_tasks: List[UUID] = field(default_factory=list)
-    suggested_actions: List[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    expires_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    affected_objectives: list[UUID] = field(default_factory=list)
+    affected_tasks: list[UUID] = field(default_factory=list)
+    suggested_actions: list[str] = field(default_factory=list)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    expires_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
     @property
     def is_expired(self) -> bool:
         """Check if the insight has expired."""
         if not self.expires_at:
             return False
-        return datetime.now(timezone.utc) > self.expires_at
+        return datetime.now(UTC) > self.expires_at
     
     @property
     def urgency_score(self) -> float:
@@ -210,7 +210,7 @@ class VisionInsight:
         base_score = impact_scores.get(self.impact, 0.5)
         
         if self.expires_at:
-            days_until_expiry = (self.expires_at - datetime.now(timezone.utc)).days
+            days_until_expiry = (self.expires_at - datetime.now(UTC)).days
             if days_until_expiry <= 1:
                 return min(base_score * 1.5, 1.0)
             elif days_until_expiry <= 7:
@@ -218,7 +218,7 @@ class VisionInsight:
         
         return base_score
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "id": str(self.id),
@@ -240,20 +240,20 @@ class VisionInsight:
 @dataclass(frozen=True)
 class VisionDashboard:
     """Aggregated vision metrics and insights for executive view."""
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     total_objectives: int = 0
     active_objectives: int = 0
     completed_objectives: int = 0
     overall_progress: float = 0.0
-    objectives_by_level: Dict[str, int] = field(default_factory=dict)
-    objectives_by_status: Dict[str, int] = field(default_factory=dict)
-    top_performing_objectives: List[Dict[str, Any]] = field(default_factory=list)
-    at_risk_objectives: List[Dict[str, Any]] = field(default_factory=list)
-    recent_completions: List[Dict[str, Any]] = field(default_factory=list)
-    active_insights: List[VisionInsight] = field(default_factory=list)
-    alignment_summary: Dict[str, Any] = field(default_factory=dict)
+    objectives_by_level: dict[str, int] = field(default_factory=dict)
+    objectives_by_status: dict[str, int] = field(default_factory=dict)
+    top_performing_objectives: list[dict[str, Any]] = field(default_factory=list)
+    at_risk_objectives: list[dict[str, Any]] = field(default_factory=list)
+    recent_completions: list[dict[str, Any]] = field(default_factory=list)
+    active_insights: list[VisionInsight] = field(default_factory=list)
+    alignment_summary: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "timestamp": self.timestamp.isoformat(),

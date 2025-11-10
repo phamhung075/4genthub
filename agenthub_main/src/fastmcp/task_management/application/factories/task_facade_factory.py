@@ -10,7 +10,9 @@ maintaining proper layer separation by not importing from infrastructure.
 """
 
 from ..services.repository_provider_service import RepositoryProviderService
-from .unified_context_facade_factory import UnifiedContextFacadeFactory as ContextServiceFactory
+from .unified_context_facade_factory import (
+    UnifiedContextFacadeFactory as ContextServiceFactory,
+)
 
 
 class TaskFacadeFactory:
@@ -79,7 +81,9 @@ class TaskFacadeFactory:
     
     from typing import TYPE_CHECKING, Any
     if TYPE_CHECKING:
-        from ...application.facades.task_application_facade import TaskApplicationFacade as _TaskApplicationFacade
+        from ...application.facades.task_application_facade import (
+            TaskApplicationFacade as _TaskApplicationFacade,
+        )
 
     def create_task_facade(self, project_id: str = None, git_branch_id: str = None, user_id: str = None) -> object:
         """
@@ -98,8 +102,6 @@ class TaskFacadeFactory:
         """
         # Import validation and auth config
         from ...domain.constants import validate_user_id
-        from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-        from ....config.auth_config import AuthConfig
         
         # Validate user authentication (MVP mode will provide default if needed)
         user_id = validate_user_id(user_id, "Task facade creation")
@@ -168,8 +170,6 @@ class TaskFacadeFactory:
         """
         # Import validation and auth config
         from ...domain.constants import validate_user_id
-        from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-        from ....config.auth_config import AuthConfig
         
         # Validate user authentication (MVP mode will provide default if needed)
         user_id = validate_user_id(user_id, "Task facade with git_branch_id creation")

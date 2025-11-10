@@ -1,8 +1,8 @@
 """Minimal response DTO for task list operations"""
 
 from dataclasses import dataclass
-from typing import Optional, List
 from datetime import datetime
+
 
 @dataclass
 class TaskListItemResponse:
@@ -12,9 +12,9 @@ class TaskListItemResponse:
     status: str
     priority: str
     progress_percentage: int = 0
-    labels: List[str] = None
-    due_date: Optional[str] = None
-    updated_at: Optional[datetime] = None
+    labels: list[str] = None
+    due_date: str | None = None
+    updated_at: datetime | None = None
     has_dependencies: bool = False
     is_blocked: bool = False
     
@@ -25,11 +25,11 @@ class TaskListItemResponse:
         status: str,
         priority: str,
         progress_percentage: int = 0,
-        assignees: List[str] = None,
-        labels: List[str] = None,
-        due_date: Optional[str] = None,
-        updated_at: Optional[datetime] = None,
-        dependencies: List[str] = None
+        assignees: list[str] = None,
+        labels: list[str] = None,
+        due_date: str | None = None,
+        updated_at: datetime | None = None,
+        dependencies: list[str] = None
     ):
         """Initialize minimal task list item"""
         self.id = id

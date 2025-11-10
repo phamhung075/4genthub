@@ -7,17 +7,16 @@ email verification.
 """
 
 import logging
-from typing import Optional, Dict, Any
-from datetime import datetime
 from dataclasses import dataclass
+from typing import Any
 
-from .supabase_auth import SupabaseAuthService
-from .email_service import SMTPEmailService, EmailResult, get_email_service
+from .email_service import SMTPEmailService, get_email_service
 from .repositories.email_token_repository import (
-    EmailTokenRepository, 
-    EmailToken, 
-    get_email_token_repository
+    EmailToken,
+    EmailTokenRepository,
+    get_email_token_repository,
 )
+from .supabase_auth import SupabaseAuthService
 
 logger = logging.getLogger(__name__)
 
@@ -26,22 +25,22 @@ logger = logging.getLogger(__name__)
 class EnhancedAuthResult:
     """Enhanced authentication result with email status"""
     success: bool
-    user: Optional[Dict[str, Any]] = None
-    session: Optional[Dict[str, Any]] = None
-    error_message: Optional[str] = None
+    user: dict[str, Any] | None = None
+    session: dict[str, Any] | None = None
+    error_message: str | None = None
     requires_email_verification: bool = False
     email_sent: bool = False
-    email_error: Optional[str] = None
-    token_data: Optional[Dict[str, Any]] = None
+    email_error: str | None = None
+    token_data: dict[str, Any] | None = None
 
 
 class EnhancedAuthService:
     """Enhanced authentication service with email integration"""
     
     def __init__(self, 
-                 supabase_service: Optional[SupabaseAuthService] = None,
-                 email_service: Optional[SMTPEmailService] = None,
-                 token_repository: Optional[EmailTokenRepository] = None):
+                 supabase_service: SupabaseAuthService | None = None,
+                 email_service: SMTPEmailService | None = None,
+                 token_repository: EmailTokenRepository | None = None):
         """Initialize enhanced auth service"""
         self.supabase = supabase_service or SupabaseAuthService()
         self.email_service = email_service or get_email_service()
@@ -52,7 +51,7 @@ class EnhancedAuthService:
     async def register_user(self, 
                            email: str, 
                            password: str, 
-                           metadata: Optional[Dict] = None,
+                           metadata: dict | None = None,
                            send_custom_email: bool = True) -> EnhancedAuthResult:
         """
         Register new user with custom email verification
@@ -293,8 +292,8 @@ class EnhancedAuthService:
                                       token: str, 
                                       email: str, 
                                       new_password: str,
-                                      ip_address: Optional[str] = None,
-                                      user_agent: Optional[str] = None) -> EnhancedAuthResult:
+                                      ip_address: str | None = None,
+                                      user_agent: str | None = None) -> EnhancedAuthResult:
         """
         Reset password using token
         
@@ -425,7 +424,7 @@ class EnhancedAuthService:
                 error_message=f"Failed to resend verification email: {str(e)}"
             )
     
-    async def cleanup_expired_tokens(self, older_than_days: int = 7) -> Dict[str, Any]:
+    async def cleanup_expired_tokens(self, older_than_days: int = 7) -> dict[str, Any]:
         """Clean up expired email tokens"""
         try:
             deleted_count = self.token_repository.cleanup_expired_tokens(older_than_days)
@@ -441,7 +440,7 @@ class EnhancedAuthService:
                 "error_message": str(e)
             }
     
-    async def get_email_stats(self) -> Dict[str, Any]:
+    async def get_email_stats(self) -> dict[str, Any]:
         """Get email token statistics"""
         try:
             stats = self.token_repository.get_token_stats()
@@ -456,7 +455,7 @@ class EnhancedAuthService:
                 "error_message": str(e)
             }
     
-    async def test_email_service(self) -> Dict[str, Any]:
+    async def test_email_service(self) -> dict[str, Any]:
         """Test email service connection"""
         try:
             result = await self.email_service.test_connection()
@@ -474,7 +473,7 @@ class EnhancedAuthService:
 
 
 # Global enhanced auth service instance
-_enhanced_auth_service: Optional[EnhancedAuthService] = None
+_enhanced_auth_service: EnhancedAuthService | None = None
 
 
 def get_enhanced_auth_service() -> EnhancedAuthService:

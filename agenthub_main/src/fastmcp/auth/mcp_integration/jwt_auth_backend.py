@@ -7,15 +7,13 @@ and the MCP server infrastructure.
 
 import os
 import time
-from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
+from typing import Any
 
 from mcp.server.auth.provider import AccessToken, TokenVerifier
-from starlette.authentication import AuthCredentials
-from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
 
-from ..domain.services.jwt_service import JWTService
 from ..application.services.auth_service import AuthService
+from ..domain.services.jwt_service import JWTService
 from ..infrastructure.repositories.user_repository import UserRepository
 
 
@@ -25,8 +23,8 @@ class MCPUserContext:
     user_id: str
     email: str
     username: str
-    roles: List[str]
-    scopes: List[str]
+    roles: list[str]
+    scopes: list[str]
 
 
 class JWTAuthBackend(TokenVerifier):
@@ -42,10 +40,10 @@ class JWTAuthBackend(TokenVerifier):
     
     def __init__(
         self,
-        jwt_service: Optional[JWTService] = None,
-        auth_service: Optional[AuthService] = None,
-        user_repository: Optional[UserRepository] = None,
-        required_scopes: Optional[List[str]] = None
+        jwt_service: JWTService | None = None,
+        auth_service: AuthService | None = None,
+        user_repository: UserRepository | None = None,
+        required_scopes: list[str] | None = None
     ):
         """
         Initialize the JWT auth backend.
@@ -70,9 +68,9 @@ class JWTAuthBackend(TokenVerifier):
         self._required_scopes = required_scopes or ["mcp:access"]
         
         # Cache for user contexts
-        self._user_context_cache: Dict[str, MCPUserContext] = {}
+        self._user_context_cache: dict[str, MCPUserContext] = {}
         self._cache_ttl = 300  # 5 minutes
-        self._cache_timestamps: Dict[str, float] = {}
+        self._cache_timestamps: dict[str, float] = {}
     
     @property
     def secret_key(self) -> str:
@@ -84,7 +82,7 @@ class JWTAuthBackend(TokenVerifier):
         """Get the JWT algorithm from the internal JWT service."""
         return self._jwt_service.ALGORITHM
     
-    async def _validate_token_dual_auth(self, token: str) -> Optional[Dict[str, Any]]:
+    async def _validate_token_dual_auth(self, token: str) -> dict[str, Any] | None:
         """
         Try to validate token with both local JWT secret and Supabase JWT secret.
         Handles audience validation properly for both token types.
@@ -96,8 +94,9 @@ class JWTAuthBackend(TokenVerifier):
             Decoded token payload if valid with either secret, None otherwise
         """
         import logging
+
         import jwt as pyjwt
-        from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
+        from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
         
         logger = logging.getLogger(__name__)
         
@@ -125,7 +124,7 @@ class JWTAuthBackend(TokenVerifier):
         if supabase_jwt_secret:
             logger.info(f"✅ SUPABASE_JWT_SECRET found, length: {len(supabase_jwt_secret)}")
             try:
-                logger.info(f"🔍 Attempting to decode token with Supabase secret and 'authenticated' audience...")
+                logger.info("🔍 Attempting to decode token with Supabase secret and 'authenticated' audience...")
                 logger.info(f"🔍 Token header (first 50 chars): {token[:50]}...")
                 
                 # Try to validate with Supabase secret and proper audience validation
@@ -169,7 +168,7 @@ class JWTAuthBackend(TokenVerifier):
         logger.debug("❌ Token validation failed with both JWT secrets")
         return None
 
-    async def verify_token(self, token: str) -> Optional[AccessToken]:
+    async def verify_token(self, token: str) -> AccessToken | None:
         """
         Validate JWT token and return AccessToken for MCP.
         
@@ -183,7 +182,7 @@ class JWTAuthBackend(TokenVerifier):
         logger = logging.getLogger(__name__)
         
         try:
-            logger.info(f"🔍 JWT Auth Backend: Verifying token for MCP access")
+            logger.info("🔍 JWT Auth Backend: Verifying token for MCP access")
             logger.debug(f"Token (first 20 chars): {token[:20]}...")
             
             # Try dual JWT validation - first local, then Supabase
@@ -246,7 +245,7 @@ class JWTAuthBackend(TokenVerifier):
             return None
     
     
-    async def _get_user_context(self, user_id: str, payload: Dict[str, Any] = None) -> Optional[MCPUserContext]:
+    async def _get_user_context(self, user_id: str, payload: dict[str, Any] = None) -> MCPUserContext | None:
         """
         Get user context, using cache if available.
         
@@ -319,7 +318,7 @@ class JWTAuthBackend(TokenVerifier):
             scopes=[]
         )
     
-    def _map_roles_to_scopes(self, roles: List[str]) -> List[str]:
+    def _map_roles_to_scopes(self, roles: list[str]) -> list[str]:
         """
         Map user roles to resource-specific CRUD scopes.
         
@@ -329,7 +328,7 @@ class JWTAuthBackend(TokenVerifier):
         Returns:
             List of resource-specific CRUD scopes
         """
-        from ..domain.permissions import ResourceType, PermissionAction
+        from ..domain.permissions import PermissionAction, ResourceType
         
         # Define role-based resource permissions
         role_permissions = {
@@ -388,11 +387,11 @@ class JWTAuthBackend(TokenVerifier):
         return list(set(scopes))  # Remove duplicates
     
     @property
-    def required_scopes(self) -> List[str]:
+    def required_scopes(self) -> list[str]:
         """Get the required scopes for this auth backend."""
         return self._required_scopes
     
-    def get_current_user_id(self, token: str) -> Optional[str]:
+    def get_current_user_id(self, token: str) -> str | None:
         """
         Extract user ID from token without full validation.
         Useful for filtering operations by user.
@@ -415,7 +414,7 @@ class JWTAuthBackend(TokenVerifier):
 
 def create_jwt_auth_backend(
     database_session_factory=None,
-    required_scopes: Optional[List[str]] = None
+    required_scopes: list[str] | None = None
 ) -> JWTAuthBackend:
     """
     Factory function to create JWT auth backend with dependencies.

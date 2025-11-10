@@ -1,8 +1,7 @@
 """Context Response DTOs"""
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List
-from datetime import datetime
+from typing import Any
 
 from ....domain.entities.context import TaskContext
 
@@ -12,12 +11,12 @@ class ContextResponse:
     """Response DTO for context operations"""
     success: bool
     message: str
-    data: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    context: Optional[TaskContext] = None
+    data: dict[str, Any] | None = None
+    error: str | None = None
+    context: TaskContext | None = None
     
     @classmethod
-    def success_response(cls, context: TaskContext = None, data: Dict[str, Any] = None, 
+    def success_response(cls, context: TaskContext = None, data: dict[str, Any] = None, 
                         message: str = "Operation successful") -> 'ContextResponse':
         """Create a success response"""
         return cls(
@@ -36,7 +35,7 @@ class ContextResponse:
             error=error
         )
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         result = {
             'success': self.success,
@@ -76,10 +75,10 @@ class DeleteContextResponse(ContextResponse):
 @dataclass
 class ListContextsResponse(ContextResponse):
     """Response DTO for listing contexts"""
-    contexts: List[TaskContext] = field(default_factory=list)
+    contexts: list[TaskContext] = field(default_factory=list)
     
     @classmethod
-    def success_response(cls, contexts: List[TaskContext], 
+    def success_response(cls, contexts: list[TaskContext], 
                         message: str = "Contexts retrieved successfully") -> 'ListContextsResponse':
         """Create a success response with contexts"""
         return cls(
@@ -88,7 +87,7 @@ class ListContextsResponse(ContextResponse):
             contexts=contexts
         )
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         result = super().to_dict()
         result['contexts'] = [context.to_dict() for context in self.contexts]
@@ -110,7 +109,7 @@ class GetPropertyResponse(ContextResponse):
             value=value
         )
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         result = super().to_dict()
         result['value'] = self.value

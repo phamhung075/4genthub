@@ -6,17 +6,15 @@ proper DDD boundaries and providing a clean interface for the Interface layer.
 """
 
 import logging
-import asyncio
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone
+from typing import Any
 
-from ..services.unified_context_service import UnifiedContextService
 from ...domain.exceptions.base_exceptions import (
-    ValidationException,
-    ResourceNotFoundException,
+    DatabaseException,
     RepositoryError,
-    DatabaseException
+    ResourceNotFoundException,
+    ValidationException,
 )
+from ..services.unified_context_service import UnifiedContextService
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +31,9 @@ class UnifiedContextFacade:
     def __init__(
         self,
         unified_service: UnifiedContextService,
-        user_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None
+        user_id: str | None = None,
+        project_id: str | None = None,
+        git_branch_id: str | None = None
     ):
         """
         Initialize facade with unified context service and scope.
@@ -57,7 +55,7 @@ class UnifiedContextFacade:
         """Execute a sync function call directly."""
         return func_call
     
-    def _add_scope_to_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _add_scope_to_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Add scope information to context data if not already present."""
         if not data:
             data = {}
@@ -79,9 +77,9 @@ class UnifiedContextFacade:
         self,
         level: str,
         context_id: str,
-        data: Optional[Dict[str, Any]] = None,
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        data: dict[str, Any] | None = None,
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Create a new context at the specified level.
         
@@ -147,8 +145,8 @@ class UnifiedContextFacade:
         context_id: str,
         include_inherited: bool = False,
         force_refresh: bool = False,
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Get context with optional inheritance.
         
@@ -198,7 +196,7 @@ class UnifiedContextFacade:
                 "error_type": "unexpected"
             }
     
-    def get_context_summary(self, context_id: str) -> Dict[str, Any]:
+    def get_context_summary(self, context_id: str) -> dict[str, Any]:
         """
         Get lightweight context summary for a task.
         
@@ -248,7 +246,7 @@ class UnifiedContextFacade:
                 "error": str(e),
                 "error_type": "validation"
             }
-        except ResourceNotFoundException as e:
+        except ResourceNotFoundException:
             # Context not found is expected and not an error for summary
             return {
                 "success": True,
@@ -277,9 +275,9 @@ class UnifiedContextFacade:
         self,
         level: str,
         context_id: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         propagate_changes: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Update existing context.
         
@@ -335,7 +333,7 @@ class UnifiedContextFacade:
         self,
         level: str,
         context_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Delete context.
         
@@ -385,7 +383,7 @@ class UnifiedContextFacade:
         level: str,
         context_id: str,
         force_refresh: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Resolve context with full inheritance chain.
         
@@ -436,9 +434,9 @@ class UnifiedContextFacade:
         level: str,
         context_id: str,
         delegate_to: str,
-        data: Dict[str, Any],
-        delegation_reason: Optional[str] = None
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        delegation_reason: str | None = None
+    ) -> dict[str, Any]:
         """
         Delegate context data to a higher level.
         
@@ -493,10 +491,10 @@ class UnifiedContextFacade:
         level: str,
         context_id: str,
         content: str,
-        category: Optional[str] = None,
-        importance: Optional[str] = None,
-        agent: Optional[str] = None
-    ) -> Dict[str, Any]:
+        category: str | None = None,
+        importance: str | None = None,
+        agent: str | None = None
+    ) -> dict[str, Any]:
         """
         Add an insight to context.
         
@@ -552,8 +550,8 @@ class UnifiedContextFacade:
         level: str,
         context_id: str,
         content: str,
-        agent: Optional[str] = None
-    ) -> Dict[str, Any]:
+        agent: str | None = None
+    ) -> dict[str, Any]:
         """
         Add progress update to context.
         
@@ -605,8 +603,8 @@ class UnifiedContextFacade:
     def list_contexts(
         self,
         level: str,
-        filters: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        filters: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         List contexts at the specified level.
         
@@ -660,9 +658,9 @@ class UnifiedContextFacade:
     
     def bootstrap_context_hierarchy(
         self,
-        project_id: Optional[str] = None,
-        branch_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        project_id: str | None = None,
+        branch_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Bootstrap the complete context hierarchy.
         
@@ -726,9 +724,9 @@ class UnifiedContextFacade:
         self,
         level: str,
         context_id: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
         auto_create_parents: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create a context with flexible parent creation options.
         

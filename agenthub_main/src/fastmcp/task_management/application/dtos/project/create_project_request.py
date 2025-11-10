@@ -1,7 +1,6 @@
 """Request DTO for creating a project"""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -11,4 +10,4 @@ class CreateProjectRequest:
     name: str
     
     # Optional fields with defaults
-    description: Optional[str] = None 
+    description: str | None = None 

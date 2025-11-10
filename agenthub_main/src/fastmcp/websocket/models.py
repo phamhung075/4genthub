@@ -6,12 +6,12 @@ NO backward compatibility - clean v2.0 implementation only.
 """
 
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from datetime import UTC, datetime
+from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from .types import MessageType, EntityType, ActionType, SourceType, ProtocolVersion
+from .types import ActionType, EntityType, MessageType, ProtocolVersion, SourceType
 
 
 class CascadeData(BaseModel):
@@ -22,27 +22,27 @@ class CascadeData(BaseModel):
     all related entity data in the WebSocket message.
     """
 
-    branches: List[Dict[str, Any]] = Field(
+    branches: list[dict[str, Any]] = Field(
         default_factory=list,
         description="All affected branch entities with full data"
     )
 
-    tasks: List[Dict[str, Any]] = Field(
+    tasks: list[dict[str, Any]] = Field(
         default_factory=list,
         description="All affected task entities with full data"
     )
 
-    projects: List[Dict[str, Any]] = Field(
+    projects: list[dict[str, Any]] = Field(
         default_factory=list,
         description="All affected project entities with full data"
     )
 
-    subtasks: List[Dict[str, Any]] = Field(
+    subtasks: list[dict[str, Any]] = Field(
         default_factory=list,
         description="All affected subtask entities with full data"
     )
 
-    contexts: List[Dict[str, Any]] = Field(
+    contexts: list[dict[str, Any]] = Field(
         default_factory=list,
         description="All affected context entities with full data"
     )
@@ -70,16 +70,16 @@ class WSData(BaseModel):
     for efficient real-time updates.
     """
 
-    primary: Union[Dict[str, Any], List[Dict[str, Any]]] = Field(
+    primary: dict[str, Any] | list[dict[str, Any]] = Field(
         description="Primary entity or entities being updated"
     )
 
-    cascade: Optional[CascadeData] = Field(
+    cascade: CascadeData | None = Field(
         default=None,
         description="All affected entities (eliminates secondary API calls)"
     )
 
-    delta: Optional[Dict[str, Any]] = Field(
+    delta: dict[str, Any] | None = Field(
         default=None,
         description="Delta patch for efficient large updates"
     )
@@ -115,22 +115,22 @@ class WSMetadata(BaseModel):
         description="Source of the message (mcp-ai, user, system)"
     )
 
-    user_id: Optional[str] = Field(
+    user_id: str | None = Field(
         default=None,
         description="User ID for authentication and tracking"
     )
 
-    session_id: Optional[str] = Field(
+    session_id: str | None = Field(
         default=None,
         description="Session ID for connection management"
     )
 
-    correlation_id: Optional[str] = Field(
+    correlation_id: str | None = Field(
         default=None,
         description="Correlation ID for request tracking"
     )
 
-    batch_id: Optional[str] = Field(
+    batch_id: str | None = Field(
         default=None,
         description="Batch ID for AI batched updates (500ms interval)"
     )
@@ -164,7 +164,7 @@ class WSMessage(BaseModel):
     )
 
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Message creation timestamp (UTC)"
     )
 

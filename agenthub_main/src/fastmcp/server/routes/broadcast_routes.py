@@ -3,10 +3,11 @@ HTTP routes for triggering WebSocket broadcasts from external processes.
 This allows MCP server to notify API server about data changes.
 """
 
-from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, Optional
-from pydantic import BaseModel
 import logging
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 # Import the broadcast function
 from .websocket_routes import broadcast_data_change
@@ -25,8 +26,8 @@ class BroadcastRequest(BaseModel):
     entity_type: str
     entity_id: str
     user_id: str
-    data: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 @router.post("/notify")

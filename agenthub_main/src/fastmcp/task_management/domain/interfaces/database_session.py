@@ -1,15 +1,15 @@
 """Database Session Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type, List
 from contextlib import contextmanager
+from typing import Any
 
 
 class IDatabaseSession(ABC):
     """Domain interface for database session operations"""
     
     @abstractmethod
-    def query(self, model_class: Type[Any]) -> 'IQuery':
+    def query(self, model_class: type[Any]) -> 'IQuery':
         """Create a query for the given model class"""
         pass
     
@@ -58,12 +58,12 @@ class IQuery(ABC):
         pass
     
     @abstractmethod
-    def first(self) -> Optional[Any]:
+    def first(self) -> Any | None:
         """Return the first result or None"""
         pass
     
     @abstractmethod
-    def all(self) -> List[Any]:
+    def all(self) -> list[Any]:
         """Return all results"""
         pass
     

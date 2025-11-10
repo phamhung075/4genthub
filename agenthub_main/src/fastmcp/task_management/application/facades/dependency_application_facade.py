@@ -4,12 +4,12 @@ Handles dependency-related application boundary concerns, orchestrating dependen
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any
 
+from ...domain.exceptions import TaskNotFoundError
+from ...domain.repositories.task_repository import TaskRepository
 from ..dtos.dependency.add_dependency_request import AddDependencyRequest
 from ..services.dependencie_application_service import DependencieApplicationService
-from ...domain.repositories.task_repository import TaskRepository
-from ...domain.exceptions import TaskNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class DependencyApplicationFacade:
         self._task_repository = task_repository
         self._dependency_app_service = DependencieApplicationService(task_repository)
 
-    def manage_dependencies(self, action: str, task_id: str, dependency_data: Dict[str, Any] = None) -> Dict[str, Any]:
+    def manage_dependencies(self, action: str, task_id: str, dependency_data: dict[str, Any] = None) -> dict[str, Any]:
         """Manage task dependencies"""
         try:
             if not task_id or not task_id.strip():

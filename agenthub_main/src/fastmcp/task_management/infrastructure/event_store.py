@@ -6,14 +6,11 @@ and audit logging in the Vision System architecture.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Type
-from datetime import datetime, timezone
-from dataclasses import dataclass, asdict
-import asyncio
-from pathlib import Path
-import pickle
 import sqlite3
 from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +20,12 @@ class StoredEvent:
     """Represents a stored event with metadata."""
     event_id: str
     event_type: str
-    event_data: Dict[str, Any]
-    aggregate_id: Optional[str]
-    aggregate_type: Optional[str]
+    event_data: dict[str, Any]
+    aggregate_id: str | None
+    aggregate_type: str | None
     timestamp: datetime
     version: int = 1
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class EventStore:
@@ -38,7 +35,7 @@ class EventStore:
     Supports multiple storage backends and provides event sourcing capabilities.
     """
     
-    def __init__(self, storage_path: Optional[str] = None):
+    def __init__(self, storage_path: str | None = None):
         """
         Initialize the event store.
         
@@ -47,7 +44,7 @@ class EventStore:
         """
         self.storage_path = storage_path or ":memory:"
         self._initialize_storage()
-        self._event_handlers: List[Any] = []
+        self._event_handlers: list[Any] = []
         
     def _initialize_storage(self) -> None:
         """Initialize the storage backend."""
@@ -143,7 +140,7 @@ class EventStore:
             event_data=event_data,
             aggregate_id=aggregate_id,
             aggregate_type=aggregate_type,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             version=1,
             metadata={
                 'source': 'event_store',
@@ -178,7 +175,7 @@ class EventStore:
             ))
             conn.commit()
     
-    def _serialize_event(self, event: Any) -> Dict[str, Any]:
+    def _serialize_event(self, event: Any) -> dict[str, Any]:
         """Serialize an event to a dictionary."""
         if hasattr(event, 'to_dict'):
             return event.to_dict()
@@ -198,11 +195,11 @@ class EventStore:
             return {'data': str(event)}
     
     async def get_events(self,
-                         aggregate_id: Optional[str] = None,
-                         event_type: Optional[str] = None,
-                         from_timestamp: Optional[datetime] = None,
-                         to_timestamp: Optional[datetime] = None,
-                         limit: int = 100) -> List[StoredEvent]:
+                         aggregate_id: str | None = None,
+                         event_type: str | None = None,
+                         from_timestamp: datetime | None = None,
+                         to_timestamp: datetime | None = None,
+                         limit: int = 100) -> list[StoredEvent]:
         """
         Get events from the store with optional filtering.
         
@@ -257,7 +254,7 @@ class EventStore:
     
     async def get_aggregate_events(self, 
                                    aggregate_id: str,
-                                   from_version: Optional[int] = None) -> List[StoredEvent]:
+                                   from_version: int | None = None) -> list[StoredEvent]:
         """
         Get all events for an aggregate.
         
@@ -294,7 +291,7 @@ class EventStore:
         
         return events
     
-    async def get_event_by_id(self, event_id: str) -> Optional[StoredEvent]:
+    async def get_event_by_id(self, event_id: str) -> StoredEvent | None:
         """
         Get a specific event by ID.
         
@@ -326,8 +323,8 @@ class EventStore:
         return None
     
     async def get_event_count(self,
-                              aggregate_id: Optional[str] = None,
-                              event_type: Optional[str] = None) -> int:
+                              aggregate_id: str | None = None,
+                              event_type: str | None = None) -> int:
         """
         Get count of events with optional filtering.
         
@@ -357,7 +354,7 @@ class EventStore:
     async def create_snapshot(self, 
                              aggregate_id: str,
                              aggregate_type: str,
-                             snapshot_data: Dict[str, Any],
+                             snapshot_data: dict[str, Any],
                              version: int) -> str:
         """
         Create a snapshot of an aggregate's current state.
@@ -379,7 +376,7 @@ class EventStore:
             'event_data': snapshot_data,
             'aggregate_id': aggregate_id,
             'aggregate_type': aggregate_type,
-            'timestamp': datetime.now(timezone.utc),
+            'timestamp': datetime.now(UTC),
             'version': version,
             'metadata': {'is_snapshot': True}
         }
@@ -392,7 +389,7 @@ class EventStore:
         return snapshot_event['event_id']
     
     async def get_latest_snapshot(self, 
-                                  aggregate_id: str) -> Optional[StoredEvent]:
+                                  aggregate_id: str) -> StoredEvent | None:
         """
         Get the latest snapshot for an aggregate.
         
@@ -446,10 +443,10 @@ class EventStore:
 
 
 # Global event store instance
-_global_event_store: Optional[EventStore] = None
+_global_event_store: EventStore | None = None
 
 
-def get_event_store(storage_path: Optional[str] = None) -> EventStore:
+def get_event_store(storage_path: str | None = None) -> EventStore:
     """Get the global event store instance."""
     global _global_event_store
     if _global_event_store is None:

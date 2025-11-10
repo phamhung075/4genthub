@@ -3,12 +3,13 @@ FastAPI authentication interface supporting multiple providers.
 This file provides authentication functions that work with both Keycloak and Supabase.
 """
 
-import os
 import logging
-from typing import Optional, Generator
-from sqlalchemy.orm import Session
+import os
+from collections.abc import Generator
+
 from fastapi import Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
 
 from fastmcp.auth.domain.entities.user import User
 from fastmcp.task_management.infrastructure.database.database_config import get_session
@@ -76,7 +77,6 @@ async def require_admin(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     """Require admin role - validates token and checks admin role"""
-    from fastmcp.auth.domain.entities.user import UserRole
     user = await get_current_user(credentials)
     # In a real implementation, you'd check roles from the token
     # For now, just return the authenticated user
@@ -93,8 +93,8 @@ async def require_roles(
     return user
 
 async def get_optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> Optional[User]:
+    credentials: HTTPAuthorizationCredentials | None = Depends(security)
+) -> User | None:
     """Get optional user - returns user if authenticated, None otherwise"""
     if credentials:
         try:

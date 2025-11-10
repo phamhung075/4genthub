@@ -5,30 +5,38 @@ These provide basic functionality to allow the application to run without infras
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 
-from ...domain.interfaces.notification_service import (
-    INotificationService, INotification, NotificationType
-)
-from ...domain.interfaces.event_bus import IEventBus, IEventHandler, IEventDispatcher
+from ...domain.interfaces.event_bus import IEventBus, IEventHandler
 from ...domain.interfaces.event_store import IEvent
-from ...domain.interfaces.logging_service import ILoggingService, ILogger, LogLevel
+from ...domain.interfaces.logging_service import ILogger, ILoggingService, LogLevel
 from ...domain.interfaces.monitoring_service import (
-    IMonitoringService, IProcessMonitor, IMetric, MetricType
+    IMetric,
+    IMonitoringService,
+    IProcessMonitor,
+    MetricType,
 )
+from ...domain.interfaces.notification_service import (
+    INotification,
+    INotificationService,
+    NotificationType,
+)
+from ...domain.interfaces.utility_service import IAgentDocGenerator, IPathResolver
 from ...domain.interfaces.validation_service import (
-    IValidationService, IValidationResult, IValidator, IDocumentValidator, ValidationSeverity
+    IDocumentValidator,
+    IValidationResult,
+    IValidationService,
+    IValidator,
 )
-from ...domain.interfaces.utility_service import IPathResolver, IAgentDocGenerator
 
 
 class PlaceholderNotification(INotification):
     """Placeholder notification implementation"""
     
     def __init__(self, notification_type: NotificationType, recipient: str, 
-                 message: str, metadata: Dict[str, Any] = None):
+                 message: str, metadata: dict[str, Any] = None):
         self._type = notification_type
         self._recipient = recipient
         self._message = message
@@ -47,7 +55,7 @@ class PlaceholderNotification(INotification):
         return self._message
     
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return self._metadata
 
 
@@ -59,7 +67,7 @@ class PlaceholderNotificationService(INotificationService):
         print(f"[NOTIFICATION] {notification.notification_type.value}: {notification.message}")
         return True
     
-    async def send_bulk_notifications(self, notifications: List[INotification]) -> List[bool]:
+    async def send_bulk_notifications(self, notifications: list[INotification]) -> list[bool]:
         results = []
         for notification in notifications:
             result = await self.send_notification(notification)
@@ -74,7 +82,7 @@ class PlaceholderNotificationService(INotificationService):
         return True
     
     def create_notification(self, notification_type: NotificationType, recipient: str, 
-                          message: str, metadata: Optional[Dict[str, Any]] = None) -> INotification:
+                          message: str, metadata: dict[str, Any] | None = None) -> INotification:
         return PlaceholderNotification(notification_type, recipient, message, metadata)
 
 
@@ -82,7 +90,7 @@ class PlaceholderEventBus(IEventBus):
     """Placeholder event bus implementation"""
     
     def __init__(self):
-        self._handlers: Dict[str, List[IEventHandler]] = {}
+        self._handlers: dict[str, list[IEventHandler]] = {}
         self._running = False
     
     async def publish(self, event: IEvent) -> None:
@@ -93,7 +101,7 @@ class PlaceholderEventBus(IEventBus):
             except Exception as e:
                 print(f"[EVENT_BUS] Error handling event: {e}")
     
-    async def publish_many(self, events: List[IEvent]) -> None:
+    async def publish_many(self, events: list[IEvent]) -> None:
         for event in events:
             await self.publish(event)
     
@@ -114,7 +122,7 @@ class PlaceholderEventBus(IEventBus):
         for event_type in handler.event_types:
             self.subscribe(event_type, handler)
     
-    def get_handlers(self, event_type: str) -> List[IEventHandler]:
+    def get_handlers(self, event_type: str) -> list[IEventHandler]:
         return self._handlers.get(event_type, [])
     
     async def start(self) -> None:
@@ -166,7 +174,7 @@ class PlaceholderLoggingService(ILoggingService):
     def get_logger(self, name: str) -> ILogger:
         return PlaceholderLogger(name)
     
-    def configure(self, config: Dict[str, Any]) -> None:
+    def configure(self, config: dict[str, Any]) -> None:
         logging.basicConfig(**config)
     
     def set_level(self, level: LogLevel) -> None:
@@ -179,7 +187,7 @@ class PlaceholderLoggingService(ILoggingService):
         }
         logging.getLogger().setLevel(level_map[level])
     
-    def add_handler(self, handler_config: Dict[str, Any]) -> None:
+    def add_handler(self, handler_config: dict[str, Any]) -> None:
         pass  # Placeholder
     
     def remove_handler(self, handler_name: str) -> None:
@@ -189,7 +197,7 @@ class PlaceholderLoggingService(ILoggingService):
 class PlaceholderMetric(IMetric):
     """Placeholder metric implementation"""
     
-    def __init__(self, name: str, value: Union[int, float], labels: Dict[str, str] = None):
+    def __init__(self, name: str, value: int | float, labels: dict[str, str] = None):
         self._name = name
         self._value = value
         self._timestamp = datetime.now()
@@ -200,7 +208,7 @@ class PlaceholderMetric(IMetric):
         return self._name
     
     @property
-    def value(self) -> Union[int, float]:
+    def value(self) -> int | float:
         return self._value
     
     @property
@@ -208,32 +216,32 @@ class PlaceholderMetric(IMetric):
         return self._timestamp
     
     @property
-    def labels(self) -> Dict[str, str]:
+    def labels(self) -> dict[str, str]:
         return self._labels
 
 
 class PlaceholderMonitoringService(IMonitoringService):
     """Placeholder monitoring service"""
     
-    def record_metric(self, name: str, value: Union[int, float], 
+    def record_metric(self, name: str, value: int | float, 
                      metric_type: MetricType = MetricType.GAUGE,
-                     labels: Optional[Dict[str, str]] = None) -> None:
+                     labels: dict[str, str] | None = None) -> None:
         print(f"[METRIC] {name}: {value} ({metric_type.value})")
     
-    def increment_counter(self, name: str, labels: Optional[Dict[str, str]] = None) -> None:
+    def increment_counter(self, name: str, labels: dict[str, str] | None = None) -> None:
         print(f"[COUNTER] {name}++")
     
     def record_timer(self, name: str, duration: timedelta, 
-                    labels: Optional[Dict[str, str]] = None) -> None:
+                    labels: dict[str, str] | None = None) -> None:
         print(f"[TIMER] {name}: {duration.total_seconds()}s")
     
-    def get_metrics(self, name_pattern: Optional[str] = None) -> List[IMetric]:
+    def get_metrics(self, name_pattern: str | None = None) -> list[IMetric]:
         return []  # Placeholder
     
-    def get_health_status(self) -> Dict[str, Any]:
+    def get_health_status(self) -> dict[str, Any]:
         return {"status": "healthy", "timestamp": datetime.now().isoformat()}
     
-    def create_alert(self, name: str, condition: str, threshold: Union[int, float]) -> str:
+    def create_alert(self, name: str, condition: str, threshold: int | float) -> str:
         return f"alert_{datetime.now().timestamp()}"
     
     def remove_alert(self, alert_id: str) -> bool:
@@ -249,20 +257,20 @@ class PlaceholderProcessMonitor(IProcessMonitor):
     def stop_monitoring(self, monitor_id: str) -> bool:
         return True
     
-    def get_process_metrics(self, process_name: str) -> Dict[str, Any]:
+    def get_process_metrics(self, process_name: str) -> dict[str, Any]:
         return {"cpu": 0.0, "memory": 0.0, "threads": 1}
     
     def is_process_running(self, process_name: str) -> bool:
         return True
     
-    def get_resource_usage(self, process_name: str) -> Dict[str, Union[int, float]]:
+    def get_resource_usage(self, process_name: str) -> dict[str, int | float]:
         return {"cpu_percent": 0.0, "memory_mb": 0.0}
 
 
 class PlaceholderValidationResult(IValidationResult):
     """Placeholder validation result"""
     
-    def __init__(self, is_valid: bool = True, errors: List[str] = None, warnings: List[str] = None):
+    def __init__(self, is_valid: bool = True, errors: list[str] = None, warnings: list[str] = None):
         self._is_valid = is_valid
         self._errors = errors or []
         self._warnings = warnings or []
@@ -272,15 +280,15 @@ class PlaceholderValidationResult(IValidationResult):
         return self._is_valid
     
     @property
-    def errors(self) -> List[str]:
+    def errors(self) -> list[str]:
         return self._errors
     
     @property
-    def warnings(self) -> List[str]:
+    def warnings(self) -> list[str]:
         return self._warnings
     
     @property
-    def details(self) -> Dict[str, Any]:
+    def details(self) -> dict[str, Any]:
         return {
             "valid": self._is_valid,
             "error_count": len(self._errors),
@@ -306,57 +314,57 @@ class PlaceholderValidationService(IValidationService):
             return validator.validate(data)
         return PlaceholderValidationResult(True)
     
-    def validate_all(self, data: Dict[str, Any]) -> Dict[str, IValidationResult]:
+    def validate_all(self, data: dict[str, Any]) -> dict[str, IValidationResult]:
         results = {}
         for key, value in data.items():
             results[key] = self.validate(key, value)
         return results
     
-    def get_validator(self, data_type: str) -> Optional[IValidator]:
+    def get_validator(self, data_type: str) -> IValidator | None:
         return self._validators.get(data_type)
     
-    def list_validators(self) -> List[str]:
+    def list_validators(self) -> list[str]:
         return list(self._validators.keys())
 
 
 class PlaceholderDocumentValidator(IDocumentValidator):
     """Placeholder document validator"""
     
-    def validate_document(self, document: Dict[str, Any]) -> IValidationResult:
+    def validate_document(self, document: dict[str, Any]) -> IValidationResult:
         return PlaceholderValidationResult(True)
     
-    def validate_schema(self, document: Dict[str, Any], schema: Dict[str, Any]) -> IValidationResult:
+    def validate_schema(self, document: dict[str, Any], schema: dict[str, Any]) -> IValidationResult:
         return PlaceholderValidationResult(True)
     
-    def get_schema(self, document_type: str) -> Optional[Dict[str, Any]]:
+    def get_schema(self, document_type: str) -> dict[str, Any] | None:
         return None
 
 
 class PlaceholderPathResolver(IPathResolver):
     """Placeholder path resolver"""
     
-    def resolve_path(self, path: Union[str, Path]) -> Path:
+    def resolve_path(self, path: str | Path) -> Path:
         return Path(path).resolve()
     
-    def resolve_relative(self, path: Union[str, Path], base: Union[str, Path]) -> Path:
+    def resolve_relative(self, path: str | Path, base: str | Path) -> Path:
         return (Path(base) / path).resolve()
     
-    def normalize_path(self, path: Union[str, Path]) -> str:
+    def normalize_path(self, path: str | Path) -> str:
         return str(Path(path).resolve())
     
-    def path_exists(self, path: Union[str, Path]) -> bool:
+    def path_exists(self, path: str | Path) -> bool:
         return Path(path).exists()
     
-    def is_directory(self, path: Union[str, Path]) -> bool:
+    def is_directory(self, path: str | Path) -> bool:
         return Path(path).is_dir()
     
-    def is_file(self, path: Union[str, Path]) -> bool:
+    def is_file(self, path: str | Path) -> bool:
         return Path(path).is_file()
     
-    def get_parent_directory(self, path: Union[str, Path]) -> Path:
+    def get_parent_directory(self, path: str | Path) -> Path:
         return Path(path).parent
     
-    def join_paths(self, *paths: Union[str, Path]) -> Path:
+    def join_paths(self, *paths: str | Path) -> Path:
         result = Path(paths[0])
         for path in paths[1:]:
             result = result / path
@@ -366,17 +374,17 @@ class PlaceholderPathResolver(IPathResolver):
 class PlaceholderAgentDocGenerator(IAgentDocGenerator):
     """Placeholder agent doc generator"""
     
-    def generate_documentation(self, agent_id: str, agent_config: Dict[str, Any]) -> str:
+    def generate_documentation(self, agent_id: str, agent_config: dict[str, Any]) -> str:
         return f"Documentation for agent {agent_id}"
     
-    def generate_api_docs(self, agent_id: str) -> Dict[str, Any]:
+    def generate_api_docs(self, agent_id: str) -> dict[str, Any]:
         return {"agent_id": agent_id, "api_version": "1.0", "endpoints": []}
     
-    def validate_agent_config(self, config: Dict[str, Any]) -> bool:
+    def validate_agent_config(self, config: dict[str, Any]) -> bool:
         return True
     
-    def get_agent_capabilities(self, agent_id: str) -> List[str]:
+    def get_agent_capabilities(self, agent_id: str) -> list[str]:
         return ["basic_capability"]
     
-    def format_agent_response(self, response: Dict[str, Any]) -> str:
+    def format_agent_response(self, response: dict[str, Any]) -> str:
         return str(response)

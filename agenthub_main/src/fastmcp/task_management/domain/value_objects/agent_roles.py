@@ -7,9 +7,10 @@ This file contains all available agent roles from agenthub_main/agent-library/ag
 Manually updated to match actual agent directories.
 """
 
-from enum import Enum
-from typing import List, Dict, Optional
 import os
+from enum import Enum
+from typing import Optional
+
 import yaml
 
 
@@ -76,7 +77,7 @@ class AgentRole(Enum):
 
 
     @classmethod
-    def get_all_roles(cls) -> List[str]:
+    def get_all_roles(cls) -> list[str]:
         """Get list of all available role slugs"""
         return [role.value for role in cls]
     
@@ -117,7 +118,7 @@ class AgentRole(Enum):
         return metadata.get("when_to_use", "") if metadata else ""
     
     @property
-    def groups(self) -> List[str]:
+    def groups(self) -> list[str]:
         """Get role groups"""
         metadata = get_role_metadata_from_yaml(self)
         return metadata.get("groups", []) if metadata else []
@@ -127,17 +128,17 @@ class AgentRole(Enum):
 
 
 # Convenience functions for backward compatibility
-def get_supported_roles() -> List[str]:
+def get_supported_roles() -> list[str]:
     """Get list of supported roles for rule generation"""
     return AgentRole.get_all_roles()
 
 
-def get_role_metadata(role_slug: str) -> Optional[Dict[str, any]]:
+def get_role_metadata(role_slug: str) -> dict[str, any] | None:
     """Get metadata for a specific role"""
     return get_role_metadata_from_yaml(role_slug)
 
 
-def get_role_folder_name(role_slug: str) -> Optional[str]:
+def get_role_folder_name(role_slug: str) -> str | None:
     """Get folder name for a role slug"""
     role = AgentRole.get_role_by_slug(role_slug)
     if role:
@@ -145,7 +146,7 @@ def get_role_folder_name(role_slug: str) -> Optional[str]:
     return None
 
 
-def get_yaml_lib_path(role_input) -> Optional[str]:
+def get_yaml_lib_path(role_input) -> str | None:
     """Get relative path to agent-library directory for a role
     
     Args:
@@ -167,7 +168,7 @@ def get_yaml_lib_path(role_input) -> Optional[str]:
     return None
 
 
-def get_role_metadata_from_yaml(role_input) -> Optional[Dict[str, any]]:
+def get_role_metadata_from_yaml(role_input) -> dict[str, any] | None:
     """Get role metadata by reading from YAML files
     
     Args:
@@ -193,7 +194,7 @@ def get_role_metadata_from_yaml(role_input) -> Optional[Dict[str, any]]:
     yaml_path = os.path.join("cursor_agent", "agent-library", folder_name, "job_desc.yaml")
     
     try:
-        with open(yaml_path, 'r', encoding='utf-8') as file:
+        with open(yaml_path, encoding='utf-8') as file:
             yaml_data = yaml.safe_load(file)
             
         if yaml_data:
@@ -202,7 +203,7 @@ def get_role_metadata_from_yaml(role_input) -> Optional[Dict[str, any]]:
             yaml_data['slug'] = role.value
             return yaml_data
             
-    except (FileNotFoundError, yaml.YAMLError, IOError):
+    except (OSError, FileNotFoundError, yaml.YAMLError):
         # Return None if file doesn't exist or can't be parsed
         pass
     
@@ -226,7 +227,7 @@ LEGACY_ROLE_MAPPINGS = {
 }
 
 
-def resolve_legacy_role(legacy_role: str) -> Optional[str]:
+def resolve_legacy_role(legacy_role: str) -> str | None:
     """Resolve legacy role names to current slugs"""
     if not legacy_role:
         return None
@@ -259,7 +260,7 @@ def resolve_legacy_role(legacy_role: str) -> Optional[str]:
     return None
 
 
-def get_all_role_slugs_with_legacy() -> List[str]:
+def get_all_role_slugs_with_legacy() -> list[str]:
     """Get all role slugs including legacy mappings"""
     current_roles = AgentRole.get_all_roles()
     legacy_roles = list(LEGACY_ROLE_MAPPINGS.keys())

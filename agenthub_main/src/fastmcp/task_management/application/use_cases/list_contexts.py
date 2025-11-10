@@ -1,9 +1,6 @@
 """List Contexts Use Case"""
 
-from ...application.dtos.context import (
-    ListContextsRequest,
-    ListContextsResponse
-)
+from ...application.dtos.context import ListContextsRequest, ListContextsResponse
 from ...domain.repositories.context_repository import ContextRepository
 
 

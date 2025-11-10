@@ -1,15 +1,13 @@
 """Task Validation Service - Domain Service for Complex Task Business Validation"""
 
 import logging
-from typing import List, Dict, Any, Optional, Protocol, Tuple
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any, Protocol
 
+from ....utilities.id_validator import (
+    IDValidator,
+)
 from ..entities.task import Task
-from ..value_objects.task_id import TaskId
-from ..value_objects.task_status import TaskStatus
-from ..value_objects.priority import Priority
-from ..exceptions.task_exceptions import TaskValidationError
-from ....utilities.id_validator import IDValidator, IDValidationError, prevent_id_confusion
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +19,7 @@ class GitBranchRepositoryProtocol(Protocol):
         """Check if git branch exists."""
         pass
     
-    def get_branch_info(self, branch_id: str) -> Optional[Dict[str, Any]]:
+    def get_branch_info(self, branch_id: str) -> dict[str, Any] | None:
         """Get git branch information."""
         pass
 
@@ -49,9 +47,9 @@ class TaskValidationService:
     """
     
     def __init__(self,
-                 git_branch_repository: Optional[GitBranchRepositoryProtocol] = None,
-                 project_repository: Optional[ProjectRepositoryProtocol] = None,
-                 id_validator: Optional[IDValidator] = None):
+                 git_branch_repository: GitBranchRepositoryProtocol | None = None,
+                 project_repository: ProjectRepositoryProtocol | None = None,
+                 id_validator: IDValidator | None = None):
         """
         Initialize the task validation service.
 
@@ -64,7 +62,7 @@ class TaskValidationService:
         self._project_repository = project_repository
         self._id_validator = id_validator or IDValidator()
     
-    def validate_task_creation(self, task: Task, additional_context: Optional[Dict[str, Any]] = None) -> List[str]:
+    def validate_task_creation(self, task: Task, additional_context: dict[str, Any] | None = None) -> list[str]:
         """
         Perform comprehensive validation for task creation.
         
@@ -100,7 +98,7 @@ class TaskValidationService:
             logger.error(f"Error during task creation validation: {e}")
             return [f"Validation system error: {str(e)}"]
     
-    def validate_task_update(self, current_task: Task, updated_task: Task, additional_context: Optional[Dict[str, Any]] = None) -> List[str]:
+    def validate_task_update(self, current_task: Task, updated_task: Task, additional_context: dict[str, Any] | None = None) -> list[str]:
         """
         Perform comprehensive validation for task updates.
         
@@ -137,7 +135,7 @@ class TaskValidationService:
             logger.error(f"Error during task update validation: {e}")
             return [f"Validation system error: {str(e)}"]
     
-    def validate_task_relationships(self, task: Task) -> Tuple[bool, List[str]]:
+    def validate_task_relationships(self, task: Task) -> tuple[bool, list[str]]:
         """
         Validate task relationships (git branch, project, dependencies).
         
@@ -180,7 +178,7 @@ class TaskValidationService:
             logger.error(f"Error validating task relationships for task {task.id}: {e}")
             return False, [f"Relationship validation error: {str(e)}"]
     
-    def validate_business_constraints(self, task: Task, operation_type: str = 'general') -> List[str]:
+    def validate_business_constraints(self, task: Task, operation_type: str = 'general') -> list[str]:
         """
         Validate business-specific constraints.
         
@@ -232,12 +230,12 @@ class TaskValidationService:
             
             # Due date constraints
             if hasattr(task, 'due_date') and task.due_date:
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 due_date = task.due_date
                 
                 # Ensure due_date is timezone-aware
                 if due_date.tzinfo is None:
-                    due_date = due_date.replace(tzinfo=timezone.utc)
+                    due_date = due_date.replace(tzinfo=UTC)
                 
                 # Business rule: due date cannot be more than 2 years in the future
                 max_future_date = now.replace(year=now.year + 2)
@@ -254,7 +252,7 @@ class TaskValidationService:
             logger.error(f"Error validating business constraints for task {task.id}: {e}")
             return [f"Business constraint validation error: {str(e)}"]
     
-    def validate_content_appropriateness(self, task: Task) -> List[str]:
+    def validate_content_appropriateness(self, task: Task) -> list[str]:
         """
         Validate content appropriateness and quality.
         
@@ -310,7 +308,7 @@ class TaskValidationService:
             logger.error(f"Error validating content appropriateness for task {task.id}: {e}")
             return [f"Content validation error: {str(e)}"]
     
-    def _validate_core_fields(self, task: Task) -> List[str]:
+    def _validate_core_fields(self, task: Task) -> list[str]:
         """Validate core required fields."""
         errors = []
 
@@ -341,7 +339,7 @@ class TaskValidationService:
 
         return errors
     
-    def _validate_relationships(self, task: Task) -> List[str]:
+    def _validate_relationships(self, task: Task) -> list[str]:
         """Validate task relationships."""
         errors = []
 
@@ -376,15 +374,15 @@ class TaskValidationService:
 
         return errors
     
-    def _validate_business_rules(self, task: Task, operation_type: str) -> List[str]:
+    def _validate_business_rules(self, task: Task, operation_type: str) -> list[str]:
         """Validate business-specific rules."""
         return self.validate_business_constraints(task, operation_type)
     
-    def _validate_content(self, task: Task) -> List[str]:
+    def _validate_content(self, task: Task) -> list[str]:
         """Validate content quality."""
         return self.validate_content_appropriateness(task)
     
-    def _validate_creation_context(self, task: Task, context: Dict[str, Any]) -> List[str]:
+    def _validate_creation_context(self, task: Task, context: dict[str, Any]) -> list[str]:
         """Validate creation-specific context."""
         errors = []
         
@@ -398,7 +396,7 @@ class TaskValidationService:
         
         return errors
     
-    def _validate_update_constraints(self, current_task: Task, updated_task: Task) -> List[str]:
+    def _validate_update_constraints(self, current_task: Task, updated_task: Task) -> list[str]:
         """Validate update-specific constraints."""
         errors = []
         
@@ -414,7 +412,7 @@ class TaskValidationService:
         
         return errors
     
-    def _validate_status_transition(self, current_task: Task, updated_task: Task) -> List[str]:
+    def _validate_status_transition(self, current_task: Task, updated_task: Task) -> list[str]:
         """Validate status transition rules."""
         errors = []
         
@@ -439,10 +437,10 @@ class TaskValidationService:
         
         return errors
 
-    def validate_id_parameters(self, task_id: Optional[str] = None,
-                              git_branch_id: Optional[str] = None,
-                              project_id: Optional[str] = None,
-                              user_id: Optional[str] = None) -> List[str]:
+    def validate_id_parameters(self, task_id: str | None = None,
+                              git_branch_id: str | None = None,
+                              project_id: str | None = None,
+                              user_id: str | None = None) -> list[str]:
         """
         Validate ID parameters to prevent confusion between MCP task IDs and application IDs.
 
@@ -481,7 +479,7 @@ class TaskValidationService:
             logger.error(f"Error during ID parameter validation: {e}")
             return [f"ID parameter validation error: {str(e)}"]
 
-    def validate_task_context_integrity(self, task_id: str, expected_git_branch_id: Optional[str] = None) -> List[str]:
+    def validate_task_context_integrity(self, task_id: str, expected_git_branch_id: str | None = None) -> list[str]:
         """
         Validate task context to ensure proper ID relationships.
 
@@ -513,7 +511,7 @@ class TaskValidationService:
             logger.error(f"Error during task context validation: {e}")
             return [f"Task context validation error: {str(e)}"]
 
-    def _validate_priority_status_combination(self, task: Task) -> List[str]:
+    def _validate_priority_status_combination(self, task: Task) -> list[str]:
         """Validate priority and status combinations."""
         errors = []
         

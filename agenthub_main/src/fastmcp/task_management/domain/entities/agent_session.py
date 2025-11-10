@@ -4,15 +4,14 @@ This entity manages active agent sessions, tracking their state, resource usage,
 and communication channels for real-time coordination.
 """
 
-from typing import Dict, List, Optional, Set, Any
-from datetime import datetime, timezone, timedelta
-from dataclasses import dataclass, field
-from enum import Enum
 import uuid
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any
 
-from ..value_objects.agents import AgentStatus
-from ..value_objects.coordination import CoordinationMessage
 from ..exceptions.base import DomainException
+from ..value_objects.coordination import CoordinationMessage
 from .base.base_timestamp_entity import BaseTimestampEntity
 
 
@@ -42,7 +41,7 @@ class ResourceUsage:
     allocated_amount: float
     used_amount: float
     allocation_time: datetime
-    resource_id: Optional[str] = None
+    resource_id: str | None = None
     
     @property
     def usage_percentage(self) -> float:
@@ -61,15 +60,15 @@ class CommunicationChannel:
     """Communication channel for agent-to-agent messaging"""
     channel_id: str
     channel_type: str  # websocket, message_queue, direct
-    participants: List[str]  # agent_ids
-    created_at: Optional[datetime] = None  # Will be set by domain logic when needed
+    participants: list[str]  # agent_ids
+    created_at: datetime | None = None  # Will be set by domain logic when needed
     is_active: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Initialize timestamps using UTC timezone if not provided"""
         if self.created_at is None:
-            self.created_at = datetime.now(timezone.utc)
+            self.created_at = datetime.now(UTC)
 
 
 class AgentSession(BaseTimestampEntity):
@@ -90,14 +89,14 @@ class AgentSession(BaseTimestampEntity):
 
     def __init__(
         self,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
         agent_id: str = None,
-        user_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        started_at: Optional[datetime] = None,
+        user_id: str | None = None,
+        project_id: str | None = None,
+        started_at: datetime | None = None,
         heartbeat_interval: int = 30,  # seconds
         max_idle_time: int = 300,  # 5 minutes
-        max_session_duration: Optional[int] = None  # seconds
+        max_session_duration: int | None = None  # seconds
     ):
         """Initialize agent session"""
         self.session_id = session_id or str(uuid.uuid4())
@@ -106,7 +105,7 @@ class AgentSession(BaseTimestampEntity):
         self.project_id = project_id
 
         # Use provided time or current UTC (domain logic decides when needed)
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self.started_at = started_at or current_time
         self.state = SessionState.INITIALIZING
         self.last_heartbeat = current_time
@@ -118,18 +117,18 @@ class AgentSession(BaseTimestampEntity):
         super().__init__()
         
         # Session tracking
-        self.active_tasks: Set[str] = set()
-        self.completed_tasks: Set[str] = set()
-        self.failed_tasks: Set[str] = set()
+        self.active_tasks: set[str] = set()
+        self.completed_tasks: set[str] = set()
+        self.failed_tasks: set[str] = set()
         
         # Resource management
-        self.resources: Dict[str, ResourceUsage] = {}
-        self.resource_locks: Set[str] = set()
+        self.resources: dict[str, ResourceUsage] = {}
+        self.resource_locks: set[str] = set()
         
         # Communication
-        self.channels: Dict[str, CommunicationChannel] = {}
-        self.pending_messages: List[CoordinationMessage] = []
-        self.message_history: List[CoordinationMessage] = []
+        self.channels: dict[str, CommunicationChannel] = {}
+        self.pending_messages: list[CoordinationMessage] = []
+        self.message_history: list[CoordinationMessage] = []
         
         # Performance metrics
         self.metrics = {
@@ -144,7 +143,7 @@ class AgentSession(BaseTimestampEntity):
         }
         
         # Session metadata
-        self.metadata: Dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
 
     def _validate_entity(self) -> None:
         """Ensure session invariants hold."""
@@ -169,7 +168,7 @@ class AgentSession(BaseTimestampEntity):
     
     def update_heartbeat(self) -> None:
         """Update session heartbeat"""
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self.last_heartbeat = current_time
         self.touch("heartbeat_updated")
         if self.state == SessionState.IDLE:
@@ -180,7 +179,7 @@ class AgentSession(BaseTimestampEntity):
         if self.state in [SessionState.DISCONNECTED, SessionState.TERMINATED]:
             return False
         
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         time_since_heartbeat = (current_time - self.last_heartbeat).total_seconds()
         return time_since_heartbeat < self.heartbeat_interval * 2  # Allow 2x interval
     
@@ -189,14 +188,14 @@ class AgentSession(BaseTimestampEntity):
         if not self.max_session_duration:
             return False
         
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         session_duration = (current_time - self.started_at).total_seconds()
         return session_duration > self.max_session_duration
     
     def is_idle(self) -> bool:
         """Check if session is idle"""
         if not self.active_tasks:
-            current_time = datetime.now(timezone.utc)
+            current_time = datetime.now(UTC)
             time_since_heartbeat = (current_time - self.last_heartbeat).total_seconds()
             return time_since_heartbeat > self.max_idle_time
         return False
@@ -221,7 +220,7 @@ class AgentSession(BaseTimestampEntity):
             self.metrics["tasks_failed"] += 1
 
         # Update heartbeat first
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self.last_heartbeat = current_time
         self.touch("task_completed")
 
@@ -235,10 +234,10 @@ class AgentSession(BaseTimestampEntity):
         self,
         resource_type: ResourceType,
         amount: float,
-        resource_id: Optional[str] = None
+        resource_id: str | None = None
     ) -> ResourceUsage:
         """Allocate resource to session"""
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         resource = ResourceUsage(
             resource_type=resource_type,
             allocated_amount=amount,
@@ -259,7 +258,7 @@ class AgentSession(BaseTimestampEntity):
         self,
         resource_type: ResourceType,
         used_amount: float,
-        resource_id: Optional[str] = None
+        resource_id: str | None = None
     ) -> None:
         """Update resource usage"""
         key = f"{resource_type.value}_{resource_id or 'default'}"
@@ -269,7 +268,7 @@ class AgentSession(BaseTimestampEntity):
     def release_resource(
         self,
         resource_type: ResourceType,
-        resource_id: Optional[str] = None
+        resource_id: str | None = None
     ) -> None:
         """Release allocated resource"""
         key = f"{resource_type.value}_{resource_id or 'default'}"
@@ -279,7 +278,7 @@ class AgentSession(BaseTimestampEntity):
         if resource_id and resource_id in self.resource_locks:
             self.resource_locks.remove(resource_id)
     
-    def get_resource_usage_summary(self) -> Dict[str, float]:
+    def get_resource_usage_summary(self) -> dict[str, float]:
         """Get summary of resource usage"""
         summary = {}
         for resource_type in ResourceType:
@@ -300,7 +299,7 @@ class AgentSession(BaseTimestampEntity):
         self,
         channel_id: str,
         channel_type: str,
-        participants: List[str]
+        participants: list[str]
     ) -> CommunicationChannel:
         """Open a communication channel"""
         channel = CommunicationChannel(
@@ -329,7 +328,7 @@ class AgentSession(BaseTimestampEntity):
         if len(self.message_history) > 500:
             self.message_history = self.message_history[-500:]  # Keep last 500
     
-    def get_active_channels(self) -> List[CommunicationChannel]:
+    def get_active_channels(self) -> list[CommunicationChannel]:
         """Get list of active channels"""
         return [
             channel for channel in self.channels.values()
@@ -377,7 +376,7 @@ class AgentSession(BaseTimestampEntity):
         
         # Session duration impact (max -20 points)
         if self.max_session_duration:
-            current_time = datetime.now(timezone.utc)
+            current_time = datetime.now(UTC)
             duration_percentage = (
                 (current_time - self.started_at).total_seconds() /
                 self.max_session_duration
@@ -427,11 +426,11 @@ class AgentSession(BaseTimestampEntity):
         
         self.resources.clear()
         self.metadata["termination_reason"] = reason
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self.metadata["terminated_at"] = current_time.isoformat()
         self.touch("session_terminated")
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert session to dictionary"""
         return {
             "session_id": self.session_id,

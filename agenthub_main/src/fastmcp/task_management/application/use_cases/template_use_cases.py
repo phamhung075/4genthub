@@ -1,18 +1,33 @@
 """Template Use Cases - Application Layer Business Logic"""
 
-from typing import Dict, Any, List, Optional
 import logging
 
-from ...domain.entities.template import Template, TemplateResult, TemplateRenderRequest, TemplateUsage
-from ...domain.value_objects.template_id import TemplateId
-from ...domain.value_objects import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
+from ...domain.entities.template import Template, TemplateRenderRequest
+from ...domain.exceptions.template_exceptions import (
+    TemplateNotFoundError,
+    TemplateRenderError,
+    TemplateValidationError,
+)
 from ...domain.services.template_domain_service import TemplateDomainService
-from ...domain.exceptions.template_exceptions import TemplateNotFoundError, TemplateValidationError, TemplateRenderError
+from ...domain.value_objects import (
+    TemplateCategory,
+    TemplatePriority,
+    TemplateStatus,
+    TemplateType,
+)
+from ...domain.value_objects.template_id import TemplateId
 from ..dtos.template_dtos import (
-    TemplateCreateDTO, TemplateUpdateDTO, TemplateResponseDTO, TemplateListDTO,
-    TemplateRenderRequestDTO, TemplateRenderResponseDTO, TemplateSuggestionDTO,
-    TemplateSuggestionRequestDTO, TemplateUsageDTO, TemplateAnalyticsDTO,
-    TemplateSearchDTO, TemplateValidationDTO
+    TemplateAnalyticsDTO,
+    TemplateCreateDTO,
+    TemplateListDTO,
+    TemplateRenderRequestDTO,
+    TemplateRenderResponseDTO,
+    TemplateResponseDTO,
+    TemplateSearchDTO,
+    TemplateSuggestionDTO,
+    TemplateSuggestionRequestDTO,
+    TemplateUpdateDTO,
+    TemplateValidationDTO,
 )
 
 logger = logging.getLogger(__name__)
@@ -236,7 +251,7 @@ class TemplateUseCases:
             logger.error(f"Failed to render template {render_dto.template_id}: {e}")
             raise
     
-    async def suggest_templates(self, suggestion_dto: TemplateSuggestionRequestDTO) -> List[TemplateSuggestionDTO]:
+    async def suggest_templates(self, suggestion_dto: TemplateSuggestionRequestDTO) -> list[TemplateSuggestionDTO]:
         """Suggest templates based on context"""
         try:
             # Get all active templates
@@ -318,7 +333,7 @@ class TemplateUseCases:
             logger.error(f"Failed to validate template {template_id}: {e}")
             raise
     
-    async def get_template_analytics(self, template_id: Optional[str] = None) -> TemplateAnalyticsDTO:
+    async def get_template_analytics(self, template_id: str | None = None) -> TemplateAnalyticsDTO:
         """Get template analytics"""
         try:
             analytics_data = await self.template_repository.get_analytics(template_id)

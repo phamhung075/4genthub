@@ -1,12 +1,11 @@
 """Enhanced logging configuration for unified log management."""
 
+import datetime
 import logging
 import sys
-import os
-from pathlib import Path
-from typing import Optional
 from logging.handlers import RotatingFileHandler
-import datetime
+from pathlib import Path
+
 
 def get_project_root() -> Path:
     """Get the project root directory."""
@@ -20,7 +19,7 @@ def get_project_root() -> Path:
     return project_root
 
 def init_logging(
-    backend_log_path: Optional[str] = None,
+    backend_log_path: str | None = None,
     log_level: str = "INFO",
     max_bytes: int = 10 * 1024 * 1024,  # 10MB
     backup_count: int = 5

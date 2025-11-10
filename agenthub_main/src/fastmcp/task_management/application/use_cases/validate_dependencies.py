@@ -1,12 +1,12 @@
 """Validate Dependencies Use Case"""
 
-from typing import Union, Dict, Any
 import logging
+from typing import Any
 
-from ...domain.repositories.task_repository import TaskRepository
-from ...domain.value_objects.task_id import TaskId
-from ...domain.services.dependency_validation_service import DependencyValidationService
 from ...domain.exceptions import TaskNotFoundError
+from ...domain.repositories.task_repository import TaskRepository
+from ...domain.services.dependency_validation_service import DependencyValidationService
+from ...domain.value_objects.task_id import TaskId
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class ValidateDependenciesUseCase:
         self._task_repository = task_repository
         self._validation_service = DependencyValidationService(task_repository)
     
-    def validate_task_dependencies(self, task_id: Union[str, int]) -> Dict[str, Any]:
+    def validate_task_dependencies(self, task_id: str | int) -> dict[str, Any]:
         """
         Validate all dependencies for a specific task.
         
@@ -61,7 +61,7 @@ class ValidateDependenciesUseCase:
                 "task_id": str(task_id)
             }
     
-    def get_dependency_chain_analysis(self, task_id: Union[str, int]) -> Dict[str, Any]:
+    def get_dependency_chain_analysis(self, task_id: str | int) -> dict[str, Any]:
         """
         Get comprehensive dependency chain analysis for a task.
         
@@ -92,7 +92,7 @@ class ValidateDependenciesUseCase:
                 "task_id": str(task_id)
             }
     
-    def validate_multiple_tasks(self, task_ids: list) -> Dict[str, Any]:
+    def validate_multiple_tasks(self, task_ids: list) -> dict[str, Any]:
         """
         Validate dependencies for multiple tasks.
         
@@ -133,7 +133,7 @@ class ValidateDependenciesUseCase:
         
         return results
     
-    def _generate_recommendations(self, validation_result: Dict[str, Any]) -> list:
+    def _generate_recommendations(self, validation_result: dict[str, Any]) -> list:
         """
         Generate actionable recommendations based on validation results.
         
@@ -190,7 +190,7 @@ class ValidateDependenciesUseCase:
         
         return recommendations
     
-    def _generate_chain_insights(self, chain_status: Dict[str, Any]) -> list:
+    def _generate_chain_insights(self, chain_status: dict[str, Any]) -> list:
         """
         Generate insights about the dependency chain.
         
@@ -235,7 +235,7 @@ class ValidateDependenciesUseCase:
         
         return insights
     
-    def _suggest_next_actions(self, chain_status: Dict[str, Any]) -> list:
+    def _suggest_next_actions(self, chain_status: dict[str, Any]) -> list:
         """
         Suggest next actions based on dependency chain status.
         
@@ -269,7 +269,7 @@ class ValidateDependenciesUseCase:
         
         return actions
     
-    def _generate_overall_recommendations(self, results: Dict[str, Any]) -> list:
+    def _generate_overall_recommendations(self, results: dict[str, Any]) -> list:
         """
         Generate overall recommendations for multiple task validation.
         

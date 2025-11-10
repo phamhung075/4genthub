@@ -5,11 +5,12 @@ Factory pattern for creating authentication providers based on environment confi
 Supports Supabase, Keycloak, and Local auth providers.
 """
 
-import os
 import logging
+import os
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, Tuple
 from enum import Enum
+from typing import Any
+
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,10 @@ class AuthProvider(Enum):
 class AuthResult(BaseModel):
     """Unified authentication result"""
     success: bool
-    error_message: Optional[str] = None
-    user: Optional[Dict[str, Any]] = None
-    access_token: Optional[str] = None
-    refresh_token: Optional[str] = None
+    error_message: str | None = None
+    user: dict[str, Any] | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
     requires_email_verification: bool = False
     expires_in: int = 900  # 15 minutes default
 
@@ -37,8 +38,8 @@ class AuthServiceInterface(ABC):
     """Abstract interface for authentication services"""
     
     @abstractmethod
-    async def sign_up(self, email: str, password: str, username: Optional[str] = None, 
-                     full_name: Optional[str] = None, **kwargs) -> AuthResult:
+    async def sign_up(self, email: str, password: str, username: str | None = None, 
+                     full_name: str | None = None, **kwargs) -> AuthResult:
         """Register a new user"""
         pass
     
@@ -80,8 +81,8 @@ class SupabaseAuthAdapter(AuthServiceInterface):
         from ..infrastructure.supabase_auth import SupabaseAuthService
         self.service = SupabaseAuthService()
     
-    async def sign_up(self, email: str, password: str, username: Optional[str] = None, 
-                     full_name: Optional[str] = None, **kwargs) -> AuthResult:
+    async def sign_up(self, email: str, password: str, username: str | None = None, 
+                     full_name: str | None = None, **kwargs) -> AuthResult:
         """Register with Supabase"""
         try:
             metadata = {}
@@ -187,7 +188,7 @@ class SupabaseAuthAdapter(AuthServiceInterface):
             logger.error(f"Supabase password reset confirm error: {e}")
             return AuthResult(success=False, error_message="Password reset failed")
     
-    def _format_user(self, user) -> Optional[Dict[str, Any]]:
+    def _format_user(self, user) -> dict[str, Any] | None:
         """Format Supabase user for unified response"""
         if not user:
             return None
@@ -216,8 +217,8 @@ class KeycloakAuthAdapter(AuthServiceInterface):
             logger.error(f"Failed to initialize KeycloakAuth: {e}")
             self.keycloak = None
     
-    async def sign_up(self, email: str, password: str, username: Optional[str] = None, 
-                     full_name: Optional[str] = None, **kwargs) -> AuthResult:
+    async def sign_up(self, email: str, password: str, username: str | None = None, 
+                     full_name: str | None = None, **kwargs) -> AuthResult:
         """Register with Keycloak"""
         # TODO: Implement Keycloak user creation
         logger.warning("Keycloak signup not implemented yet")
@@ -300,22 +301,22 @@ class LocalAuthAdapter(AuthServiceInterface):
 
     def __init__(self):
         # Import local auth service
-        from ..application.services.auth_service import AuthService
         from ..domain.services.jwt_service import JWTService
-        from ..infrastructure.repositories.user_repository import UserRepository
 
         # Initialize dependencies
         JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
         self.jwt_service = JWTService(JWT_SECRET_KEY)
 
         # Get database session
-        from ...task_management.infrastructure.database.database_config import DatabaseConfig
+        from ...task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         self.db_config = DatabaseConfig()
 
     def _get_auth_service(self):
         """Get auth service with fresh DB session"""
-        from ..infrastructure.repositories.user_repository import UserRepository
         from ..application.services.auth_service import AuthService
+        from ..infrastructure.repositories.user_repository import UserRepository
 
         db = self.db_config.SessionLocal()
         try:
@@ -325,7 +326,7 @@ class LocalAuthAdapter(AuthServiceInterface):
             db.close()
             raise
 
-    def _format_user(self, user) -> Optional[Dict[str, Any]]:
+    def _format_user(self, user) -> dict[str, Any] | None:
         """Format User entity for unified AuthResult response"""
         if not user:
             return None
@@ -341,8 +342,8 @@ class LocalAuthAdapter(AuthServiceInterface):
             "roles": [role.value if hasattr(role, 'value') else str(role) for role in user.roles] if user.roles else ["user"]
         }
     
-    async def sign_up(self, email: str, password: str, username: Optional[str] = None,
-                     full_name: Optional[str] = None, **kwargs) -> AuthResult:
+    async def sign_up(self, email: str, password: str, username: str | None = None,
+                     full_name: str | None = None, **kwargs) -> AuthResult:
         """Register with local auth"""
         try:
             auth_service, db = self._get_auth_service()
@@ -478,10 +479,10 @@ class LocalAuthAdapter(AuthServiceInterface):
 class AuthFactory:
     """Factory for creating authentication providers"""
     
-    _instances: Dict[AuthProvider, AuthServiceInterface] = {}
+    _instances: dict[AuthProvider, AuthServiceInterface] = {}
     
     @classmethod
-    def create_auth_service(cls, provider: Optional[AuthProvider] = None) -> AuthServiceInterface:
+    def create_auth_service(cls, provider: AuthProvider | None = None) -> AuthServiceInterface:
         """
         Create authentication service based on provider or environment configuration
         

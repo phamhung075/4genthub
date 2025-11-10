@@ -3,7 +3,8 @@
 DDD use case for deleting rules with proper validation and dependency checks.
 """
 
-from typing import Dict, Any
+from typing import Any
+
 from ...domain.repositories.rule_repository import RuleRepository
 
 
@@ -13,7 +14,7 @@ class DeleteRuleUseCase:
     def __init__(self, rule_repository: RuleRepository):
         self._rule_repository = rule_repository
     
-    async def execute(self, rule_path: str, force: bool = False) -> Dict[str, Any]:
+    async def execute(self, rule_path: str, force: bool = False) -> dict[str, Any]:
         """Delete a rule with dependency checks"""
         try:
             # Check if rule exists

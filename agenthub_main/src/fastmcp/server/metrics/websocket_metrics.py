@@ -14,10 +14,10 @@ Metrics exposed:
 """
 
 import logging
-from prometheus_client import Counter, Gauge, Histogram
-from typing import Optional
 import time
 from contextlib import contextmanager
+
+from prometheus_client import Counter, Gauge, Histogram
 
 logger = logging.getLogger(__name__)
 

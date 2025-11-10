@@ -3,11 +3,11 @@ Domain to DTO Converters
 Helper functions to convert domain entities to API DTOs
 """
 
-from typing import Any
 from datetime import datetime
+from typing import Any
 
-from .entities import TaskDTO, SubtaskDTO
-from .summaries import TaskSummaryDTO, SubtaskSummaryDTO
+from .entities import SubtaskDTO, TaskDTO
+from .summaries import SubtaskSummaryDTO, TaskSummaryDTO
 
 
 def _get_value(obj: Any, key: str, default: Any = None) -> Any:

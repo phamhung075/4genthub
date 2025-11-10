@@ -5,7 +5,7 @@ Handles both stdio (local Python) and HTTP (Docker) modes transparently
 
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any
 
 
 class DualModeConfig:
@@ -103,7 +103,7 @@ class DualModeConfig:
         else:
             return self.project_root / "logs"
     
-    def get_environment_config(self) -> Dict[str, Any]:
+    def get_environment_config(self) -> dict[str, Any]:
         """Get environment-specific configuration"""
         base_config = {
             "runtime_mode": self.runtime_mode,

@@ -7,7 +7,6 @@ This file contains all enums related to rule management following DDD principles
 """
 
 from enum import Enum
-from typing import List
 
 
 class RuleFormat(Enum):
@@ -19,7 +18,7 @@ class RuleFormat(Enum):
     TXT = "txt"
 
     @classmethod
-    def get_all_formats(cls) -> List[str]:
+    def get_all_formats(cls) -> list[str]:
         """Get list of all supported formats"""
         return [format_type.value for format_type in cls]
 
@@ -39,7 +38,7 @@ class RuleType(Enum):
     CUSTOM = "custom"         # User-defined rules
 
     @classmethod
-    def get_all_types(cls) -> List[str]:
+    def get_all_types(cls) -> list[str]:
         """Get list of all rule types"""
         return [rule_type.value for rule_type in cls]
 
@@ -57,7 +56,7 @@ class ConflictResolution(Enum):
     MANUAL = "manual"         # Require manual resolution
 
     @classmethod
-    def get_all_strategies(cls) -> List[str]:
+    def get_all_strategies(cls) -> list[str]:
         """Get list of all resolution strategies"""
         return [strategy.value for strategy in cls]
 
@@ -76,7 +75,7 @@ class InheritanceType(Enum):
     SELECTIVE = "selective"   # Inherit specific sections
 
     @classmethod
-    def get_all_inheritance_types(cls) -> List[str]:
+    def get_all_inheritance_types(cls) -> list[str]:
         """Get list of all inheritance types"""
         return [inheritance_type.value for inheritance_type in cls]
 
@@ -94,7 +93,7 @@ class SyncOperation(Enum):
     MERGE = "merge"           # Intelligent merge
 
     @classmethod
-    def get_all_operations(cls) -> List[str]:
+    def get_all_operations(cls) -> list[str]:
         """Get list of all sync operations"""
         return [operation.value for operation in cls]
 
@@ -112,7 +111,7 @@ class ClientAuthMethod(Enum):
     CERTIFICATE = "certificate"
 
     @classmethod
-    def get_all_auth_methods(cls) -> List[str]:
+    def get_all_auth_methods(cls) -> list[str]:
         """Get list of all authentication methods"""
         return [method.value for method in cls]
 
@@ -131,7 +130,7 @@ class SyncStatus(Enum):
     CONFLICT = "conflict"
 
     @classmethod
-    def get_all_statuses(cls) -> List[str]:
+    def get_all_statuses(cls) -> list[str]:
         """Get list of all sync statuses"""
         return [status.value for status in cls]
 

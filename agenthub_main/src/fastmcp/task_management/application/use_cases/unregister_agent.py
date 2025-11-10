@@ -2,9 +2,10 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, Any, List
-from ...domain.repositories.agent_repository import AgentRepository
+from typing import Any
+
 from ...domain.exceptions import AgentNotFoundError, ProjectNotFoundError
+from ...domain.repositories.agent_repository import AgentRepository
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +22,8 @@ class UnregisterAgentResponse:
     """Response DTO for agent unregistration"""
     success: bool
     agent_id: str
-    agent_data: Dict[str, Any] = None
-    removed_assignments: List[str] = None
+    agent_data: dict[str, Any] = None
+    removed_assignments: list[str] = None
     message: str = None
     error: str = None
 

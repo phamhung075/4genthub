@@ -4,11 +4,8 @@ This module provides configuration options for authentication behavior.
 All operations require proper user authentication - no fallbacks allowed.
 """
 
-import os
 import logging
-from ..task_management.domain.exceptions.authentication_exceptions import (
-    UserAuthenticationRequiredError
-)
+import os
 
 logger = logging.getLogger(__name__)
 

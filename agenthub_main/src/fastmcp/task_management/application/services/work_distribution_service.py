@@ -1,24 +1,24 @@
 """Work Distribution Service for Intelligent Task Assignment"""
 
-from typing import Dict, List, Optional, Set, Tuple, Any
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from uuid import uuid4
 import logging
 from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Any
+from uuid import uuid4
 
-from ...domain.entities.agent import Agent, AgentStatus, AgentCapability
+from ...domain.entities.agent import Agent, AgentCapability
 from ...domain.entities.task import Task
-from ...domain.value_objects.task_status import TaskStatus, TaskStatusEnum
-from ...domain.value_objects.priority import Priority, PriorityLevel
-from ...domain.value_objects.agents import (
-    AgentRole, AgentExpertise, AgentProfile, AgentCapabilities
-)
-from ...domain.value_objects.coordination import WorkAssignment
-from ...domain.events.agent_events import AgentAssigned
 from ...domain.exceptions import DomainException
 from ...domain.repositories.task_repository import TaskRepository
+from ...domain.value_objects.agents import (
+    AgentExpertise,
+    AgentRole,
+)
+from ...domain.value_objects.priority import PriorityLevel
+from ...domain.value_objects.task_status import TaskStatusEnum
+
 # from ...infrastructure.repositories.agent_repository import AgentRepository  # TODO: Not implemented yet
 # from ..event_bus import EventBus  # TODO: Not implemented yet
 from .agent_coordination_service import AgentCoordinationService
@@ -44,14 +44,14 @@ class WorkDistributionException(DomainException):
 class TaskRequirements:
     """Requirements for a task"""
     task_id: str
-    required_role: Optional[AgentRole] = None
-    required_expertise: Set[AgentExpertise] = field(default_factory=set)
-    required_skills: Dict[str, float] = field(default_factory=dict)
-    preferred_agents: List[str] = field(default_factory=list)
-    excluded_agents: List[str] = field(default_factory=list)
+    required_role: AgentRole | None = None
+    required_expertise: set[AgentExpertise] = field(default_factory=set)
+    required_skills: dict[str, float] = field(default_factory=dict)
+    preferred_agents: list[str] = field(default_factory=list)
+    excluded_agents: list[str] = field(default_factory=list)
     collaboration_needed: bool = False
     estimated_hours: float = 0.0
-    deadline: Optional[datetime] = None
+    deadline: datetime | None = None
     
     @classmethod
     def from_task(cls, task: Task) -> 'TaskRequirements':
@@ -92,9 +92,9 @@ class DistributionPlan:
     """Plan for distributing work"""
     plan_id: str = field(default_factory=lambda: str(uuid4()))
     created_at: datetime = field(default_factory=datetime.now)
-    assignments: List[Tuple[str, str, str]] = field(default_factory=list)  # (task_id, agent_id, role)
-    unassignable_tasks: List[str] = field(default_factory=list)
-    recommendations: Dict[str, str] = field(default_factory=dict)
+    assignments: list[tuple[str, str, str]] = field(default_factory=list)  # (task_id, agent_id, role)
+    unassignable_tasks: list[str] = field(default_factory=list)
+    recommendations: dict[str, str] = field(default_factory=dict)
     
     def add_assignment(self, task_id: str, agent_id: str, role: str = "assignee") -> None:
         """Add an assignment to the plan"""
@@ -112,10 +112,10 @@ class WorkDistributionService:
     def __init__(
         self,
         task_repository: TaskRepository,
-        agent_repository: Optional[Any] = None,  # AgentRepository not implemented yet
-        coordination_service: Optional[AgentCoordinationService] = None,
-        event_bus: Optional[Any] = None,  # EventBus not implemented yet
-        user_id: Optional[str] = None
+        agent_repository: Any | None = None,  # AgentRepository not implemented yet
+        coordination_service: AgentCoordinationService | None = None,
+        event_bus: Any | None = None,  # EventBus not implemented yet
+        user_id: str | None = None
     ):
         self.task_repository = task_repository
         self.agent_repository = agent_repository
@@ -124,8 +124,8 @@ class WorkDistributionService:
         self._user_id = user_id  # Store user context
         
         # Track distribution history for learning
-        self.distribution_history: List[Dict[str, Any]] = []
-        self.agent_performance_cache: Dict[str, float] = {}
+        self.distribution_history: list[dict[str, Any]] = []
+        self.agent_performance_cache: dict[str, float] = {}
 
     def _get_user_scoped_repository(self, repository: Any) -> Any:
         """Get a user-scoped version of the repository if it supports user context."""
@@ -152,9 +152,9 @@ class WorkDistributionService:
     
     async def distribute_tasks(
         self,
-        task_ids: List[str],
+        task_ids: list[str],
         strategy: DistributionStrategy = DistributionStrategy.HYBRID,
-        project_id: Optional[str] = None
+        project_id: str | None = None
     ) -> DistributionPlan:
         """Distribute multiple tasks to agents"""
         plan = DistributionPlan()
@@ -207,8 +207,8 @@ class WorkDistributionService:
     
     async def _distribute_round_robin(
         self,
-        tasks: List[Task],
-        agents: List[Agent],
+        tasks: list[Task],
+        agents: list[Agent],
         plan: DistributionPlan
     ) -> None:
         """Simple round-robin distribution"""
@@ -224,8 +224,8 @@ class WorkDistributionService:
     
     async def _distribute_load_balanced(
         self,
-        tasks: List[Task],
-        agents: List[Agent],
+        tasks: list[Task],
+        agents: list[Agent],
         plan: DistributionPlan
     ) -> None:
         """Distribute based on current workload"""
@@ -248,8 +248,8 @@ class WorkDistributionService:
     
     async def _distribute_skill_matched(
         self,
-        tasks: List[Task],
-        agents: List[Agent],
+        tasks: list[Task],
+        agents: list[Agent],
         plan: DistributionPlan
     ) -> None:
         """Distribute based on skill matching"""
@@ -275,8 +275,8 @@ class WorkDistributionService:
     
     async def _distribute_priority_based(
         self,
-        tasks: List[Task],
-        agents: List[Agent],
+        tasks: list[Task],
+        agents: list[Agent],
         plan: DistributionPlan
     ) -> None:
         """Distribute high-priority tasks first to best agents"""
@@ -320,8 +320,8 @@ class WorkDistributionService:
     
     async def _distribute_hybrid(
         self,
-        tasks: List[Task],
-        agents: List[Agent],
+        tasks: list[Task],
+        agents: list[Agent],
         plan: DistributionPlan
     ) -> None:
         """Hybrid approach combining multiple strategies"""
@@ -467,7 +467,7 @@ class WorkDistributionService:
         if len(self.distribution_history) > 100:
             self.distribution_history = self.distribution_history[-100:]
     
-    async def get_distribution_analytics(self) -> Dict[str, Any]:
+    async def get_distribution_analytics(self) -> dict[str, Any]:
         """Get analytics about work distribution patterns"""
         if not self.distribution_history:
             return {"message": "No distribution history available"}

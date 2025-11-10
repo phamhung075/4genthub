@@ -1,22 +1,22 @@
 """In-Memory Connection Repository Implementation"""
 
-from typing import List, Optional, Dict, Any
+from typing import Any
 
-from ...domain.repositories.connection_repository import ConnectionRepository
 from ...domain.entities.connection import Connection
+from ...domain.repositories.connection_repository import ConnectionRepository
 
 
 class InMemoryConnectionRepository(ConnectionRepository):
     """In-memory implementation of ConnectionRepository for connection management"""
     
     def __init__(self):
-        self._connections: Dict[str, Connection] = {}
+        self._connections: dict[str, Connection] = {}
     
-    def find_by_id(self, connection_id: str) -> Optional[Connection]:
+    def find_by_id(self, connection_id: str) -> Connection | None:
         """Find connection by ID"""
         return self._connections.get(connection_id)
     
-    def find_all_active(self) -> List[Connection]:
+    def find_all_active(self) -> list[Connection]:
         """Find all active connections"""
         return [conn for conn in self._connections.values() if conn.status == "active"]
     
@@ -24,7 +24,7 @@ class InMemoryConnectionRepository(ConnectionRepository):
         """Save connection state"""
         self._connections[connection.connection_id] = connection
     
-    def create_connection(self, connection_id: str, client_info: Dict[str, Any]) -> Connection:
+    def create_connection(self, connection_id: str, client_info: dict[str, Any]) -> Connection:
         """Create a new connection"""
         connection = Connection.create(connection_id, client_info)
         self._connections[connection_id] = connection
@@ -41,7 +41,7 @@ class InMemoryConnectionRepository(ConnectionRepository):
         """Get total number of active connections"""
         return len(self.find_all_active())
     
-    def get_connection_statistics(self) -> Dict[str, Any]:
+    def get_connection_statistics(self) -> dict[str, Any]:
         """Get connection statistics"""
         all_connections = list(self._connections.values())
         active_connections = self.find_all_active()

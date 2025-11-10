@@ -2,14 +2,16 @@
 
 import logging
 import logging.handlers
-import os
-from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 from rich.console import Console
 from rich.logging import RichHandler
 
-from .environment import detect_environment, ensure_log_directory_exists, get_log_file_path
+from .environment import (
+    detect_environment,
+    ensure_log_directory_exists,
+    get_log_file_path,
+)
 
 
 def get_logger(name: str) -> logging.Logger:

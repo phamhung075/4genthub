@@ -7,28 +7,21 @@ providing decorators, context managers, and middleware for automatic
 metrics collection across all system operations.
 """
 
-import time
-import asyncio
+import functools
 import inspect
 import logging
-import functools
+import time
 from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Callable, Union
-from datetime import datetime, timedelta
+from typing import Any
 
+from ..workers.metrics_reporter import (
+    ReportConfig,
+    get_global_metrics_reporter,
+)
 from .optimization_metrics import (
     OptimizationMetricsCollector,
     get_global_optimization_collector,
-    record_response_optimization,
-    record_context_metrics,
-    record_ai_metrics
-)
-from ..workers.metrics_reporter import (
-    MetricsReporter,
-    ReportConfig,
-    get_global_metrics_reporter,
-    start_automated_reporting
 )
 
 logger = logging.getLogger(__name__)
@@ -37,7 +30,7 @@ logger = logging.getLogger(__name__)
 class MetricsMiddleware:
     """FastAPI middleware for automatic metrics collection."""
     
-    def __init__(self, app, collector: Optional[OptimizationMetricsCollector] = None):
+    def __init__(self, app, collector: OptimizationMetricsCollector | None = None):
         """Initialize metrics middleware."""
         self.app = app
         self.collector = collector or get_global_optimization_collector()
@@ -117,7 +110,7 @@ def metrics_track(
     track_timing: bool = True,
     track_errors: bool = True,
     track_success_rate: bool = True,
-    custom_tags: Optional[Dict[str, str]] = None
+    custom_tags: dict[str, str] | None = None
 ):
     """Decorator for automatic metrics tracking on functions."""
     
@@ -225,7 +218,7 @@ def metrics_track(
 async def optimization_context(
     optimization_type: str,
     operation: str = "generic",
-    tags: Optional[Dict[str, str]] = None
+    tags: dict[str, str] | None = None
 ):
     """Async context manager for optimization tracking."""
     
@@ -293,7 +286,7 @@ def response_optimization_tracker(
     optimization_type: str,
     original_size: int,
     operation: str = "response_format",
-    tags: Optional[Dict[str, str]] = None
+    tags: dict[str, str] | None = None
 ):
     """Context manager for tracking response optimization."""
     
@@ -342,7 +335,7 @@ class MetricsCollectionService:
     async def start_metrics_collection(
         self,
         enable_reporting: bool = True,
-        report_config: Optional[ReportConfig] = None
+        report_config: ReportConfig | None = None
     ):
         """Start metrics collection and optional reporting."""
         
@@ -386,15 +379,15 @@ class MetricsCollectionService:
         self._started = False
         logger.info("Metrics collection service stopped")
     
-    def get_real_time_metrics(self, time_window_hours: float = 1) -> Dict[str, Any]:
+    def get_real_time_metrics(self, time_window_hours: float = 1) -> dict[str, Any]:
         """Get real-time metrics summary."""
         return self.collector.get_optimization_summary(time_window_hours)
     
-    def get_dashboard_data(self, time_window_hours: float = 24) -> Dict[str, Any]:
+    def get_dashboard_data(self, time_window_hours: float = 24) -> dict[str, Any]:
         """Get dashboard data for visualization."""
         return self.collector.export_optimization_dashboard_data(time_window_hours)
     
-    async def generate_on_demand_report(self, report_type: str = "daily") -> Dict[str, Any]:
+    async def generate_on_demand_report(self, report_type: str = "daily") -> dict[str, Any]:
         """Generate on-demand report."""
         if not self.reporter:
             raise RuntimeError("Reporting not enabled - start metrics collection with enable_reporting=True")
@@ -413,20 +406,20 @@ class MetricsCollectionService:
         name: str,
         value: float,
         unit: str = "count",
-        tags: Optional[Dict[str, str]] = None,
+        tags: dict[str, str] | None = None,
         category: str = "custom"
     ):
         """Add custom metric to collection."""
         self.collector.record_metric(name, value, unit, tags, category)
     
-    def set_alert_thresholds(self, thresholds: Dict[str, float]):
+    def set_alert_thresholds(self, thresholds: dict[str, float]):
         """Update alert thresholds."""
         self.collector.performance_baselines.update(thresholds)
         logger.info(f"Updated alert thresholds: {thresholds}")
 
 
 # Global metrics service instance
-_global_metrics_service: Optional[MetricsCollectionService] = None
+_global_metrics_service: MetricsCollectionService | None = None
 
 
 def get_metrics_service() -> MetricsCollectionService:
@@ -440,8 +433,8 @@ def get_metrics_service() -> MetricsCollectionService:
 # Convenience functions for common operations
 async def initialize_metrics_system(
     enable_reporting: bool = True,
-    output_directory: Optional[str] = None,
-    email_config: Optional[Dict[str, Any]] = None
+    output_directory: str | None = None,
+    email_config: dict[str, Any] | None = None
 ) -> MetricsCollectionService:
     """Initialize the complete metrics system."""
     

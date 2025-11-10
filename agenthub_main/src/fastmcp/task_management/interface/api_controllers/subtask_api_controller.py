@@ -6,7 +6,7 @@ It serves as the interface layer, delegating business logic to application facad
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastmcp.types import (
@@ -148,7 +148,7 @@ class SubtaskAPIController:
                 success=True,
                 subtask=subtask_to_dto(subtask_obj),
                 message="Subtask created successfully",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -158,7 +158,7 @@ class SubtaskAPIController:
                 subtask=None,
                 error=str(e),
                 message="Failed to create subtask",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def list_subtasks(self, task_id: str, user_id: str, session) -> SubtasksResponse:
@@ -177,7 +177,7 @@ class SubtaskAPIController:
 
         try:
             # DDD Compliance: No hardcoded project IDs - derive from parent task
-            logger.info(f"🟢 [CONTROLLER] Getting task facade to lookup parent task")
+            logger.info("🟢 [CONTROLLER] Getting task facade to lookup parent task")
             temp_facade = self.facade_service.get_task_facade(
                 project_id=None, git_branch_id=None, user_id=user_id
             )
@@ -202,7 +202,7 @@ class SubtaskAPIController:
             )
 
             # Delegate to SUBTASK facade
-            logger.info(f"🟢 [CONTROLLER] Calling subtask_facade.handle_manage_subtask(action='list')")
+            logger.info("🟢 [CONTROLLER] Calling subtask_facade.handle_manage_subtask(action='list')")
             result = subtask_facade.handle_manage_subtask(
                 action="list", task_id=task_id
             )
@@ -235,7 +235,7 @@ class SubtaskAPIController:
                 subtasks=subtask_dtos,
                 total=len(subtask_dtos),
                 message=f"Retrieved {len(subtask_dtos)} subtasks",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -248,7 +248,7 @@ class SubtaskAPIController:
                 subtasks=[],
                 error=str(e),
                 message="Failed to list subtasks",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def get_subtask(self, subtask_id: str, user_id: str, session) -> SubtaskResponse:
@@ -272,7 +272,7 @@ class SubtaskAPIController:
                     subtask=None,
                     error="Subtask not found",
                     message="Subtask not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # DDD Compliance: No hardcoded project IDs - derive from parent task
@@ -303,7 +303,7 @@ class SubtaskAPIController:
                     subtask=None,
                     error="Subtask not found",
                     message="Subtask not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             logger.info(f"Retrieved subtask {subtask_id} for user {user_id}")
@@ -319,7 +319,7 @@ class SubtaskAPIController:
             return SubtaskResponse(
                 success=True,
                 subtask=subtask_to_dto(SubtaskObj(subtask_dict)),
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -329,7 +329,7 @@ class SubtaskAPIController:
                 subtask=None,
                 error=str(e),
                 message="Failed to get subtask",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def update_subtask(
@@ -356,7 +356,7 @@ class SubtaskAPIController:
                     subtask=None,
                     error="Subtask not found",
                     message="Subtask not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # DDD Compliance: No hardcoded project IDs - derive from parent task
@@ -393,7 +393,7 @@ class SubtaskAPIController:
                     subtask=None,
                     error="Subtask not found",
                     message="Subtask not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             logger.info(f"Updated subtask {subtask_id} for user {user_id}")
@@ -410,7 +410,7 @@ class SubtaskAPIController:
                 success=True,
                 subtask=subtask_to_dto(SubtaskObj(subtask_dict)),
                 message="Subtask updated successfully",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -420,7 +420,7 @@ class SubtaskAPIController:
                 subtask=None,
                 error=str(e),
                 message="Failed to update subtask",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def delete_subtask(self, subtask_id: str, user_id: str, session) -> DeleteResponse:
@@ -444,7 +444,7 @@ class SubtaskAPIController:
                     deleted=False,
                     error="Subtask not found",
                     message="Subtask not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # DDD Compliance: No hardcoded project IDs - derive from parent task
@@ -475,7 +475,7 @@ class SubtaskAPIController:
                     deleted=False,
                     error="Subtask not found",
                     message="Subtask not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             logger.info(f"Deleted subtask {subtask_id} for user {user_id}")
@@ -485,7 +485,7 @@ class SubtaskAPIController:
                 deleted=True,
                 id=subtask_id,
                 message="Subtask deleted successfully",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -495,7 +495,7 @@ class SubtaskAPIController:
                 deleted=False,
                 error=str(e),
                 message="Failed to delete subtask",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def complete_subtask(
@@ -522,7 +522,7 @@ class SubtaskAPIController:
                     subtask=None,
                     error="Subtask not found",
                     message="Subtask not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             # DDD Compliance: No hardcoded project IDs - derive from parent task
@@ -562,7 +562,7 @@ class SubtaskAPIController:
                     subtask=None,
                     error="Subtask not found",
                     message="Subtask not found or access denied",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
 
             logger.info(f"Completed subtask {subtask_id} for user {user_id}")
@@ -579,7 +579,7 @@ class SubtaskAPIController:
                 success=True,
                 subtask=subtask_to_dto(SubtaskObj(subtask_dict)),
                 message="Subtask completed successfully",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -591,7 +591,7 @@ class SubtaskAPIController:
                 subtask=None,
                 error=str(e),
                 message="Failed to complete subtask",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
     def list_subtasks_summary(
@@ -654,7 +654,7 @@ class SubtaskAPIController:
                 subtasks=subtask_dtos,
                 total=len(subtask_dtos),
                 message=f"Retrieved {len(subtask_dtos)} subtask summaries",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )
 
         except Exception as e:
@@ -666,5 +666,5 @@ class SubtaskAPIController:
                 subtasks=[],
                 error=str(e),
                 message="Failed to list subtask summaries",
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
             )

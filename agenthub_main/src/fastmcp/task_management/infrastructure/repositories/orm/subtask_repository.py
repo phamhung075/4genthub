@@ -5,30 +5,22 @@ This module provides the ORM implementation of the SubtaskRepository
 interface using SQLAlchemy for database abstraction.
 """
 
-import json
 import logging
-from datetime import datetime, timezone
-from typing import List, Optional, Dict, Any, Union
+from typing import Any
+
 from sqlalchemy import and_, func
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
+from ....domain.entities.subtask import Subtask as SubtaskEntity
+from ....domain.exceptions.base_exceptions import DatabaseException
+from ....domain.repositories.subtask_repository import SubtaskRepository
+from ....domain.value_objects.priority import Priority
+from ....domain.value_objects.task_id import TaskId
+from ....domain.value_objects.task_status import TaskStatus
 from ...database.models import Subtask as SubtaskModel
-from ...database.database_config import get_session
-from ..base_orm_repository import BaseORMRepository
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ..event_publishing_mixin import EventPublishingMixin
-from ....domain.entities.subtask import Subtask as SubtaskEntity
-from ....domain.repositories.subtask_repository import SubtaskRepository
-from ....domain.value_objects.task_id import TaskId
-from ....domain.value_objects.task_status import TaskStatus
-from ....domain.value_objects.priority import Priority
-from ....domain.exceptions.base_exceptions import (
-    DatabaseException,
-    ResourceNotFoundException,
-    ValidationException
-)
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +36,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
     when subtask entities are persisted.
     """
 
-    def __init__(self, session=None, user_id: Optional[str] = None):
+    def __init__(self, session=None, user_id: str | None = None):
         """Initialize the ORM subtask repository with user isolation."""
         # CRITICAL FIX: Initialize BaseTimestampRepository explicitly to provide model_class
         # This prevents "BaseTimestampRepository.__init__() missing 1 required positional argument" error
@@ -128,7 +120,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                         new_subtask = session.query(SubtaskModel).filter(SubtaskModel.id == new_subtask.id).first()
                         if not new_subtask:
                             raise DatabaseException(
-                                message=f"Subtask not found after successful save",
+                                message="Subtask not found after successful save",
                                 operation="save_subtask",
                                 table="subtasks"
                             )
@@ -189,7 +181,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         logger.error(f"Failed to save subtask after {max_retries} attempts")
         return False
     
-    def find_by_id(self, id: str) -> Optional[SubtaskEntity]:
+    def find_by_id(self, id: str) -> SubtaskEntity | None:
         """
         Find a subtask by its ID with user filtering for multi-tenancy.
         Includes retry logic for concurrent access scenarios.
@@ -218,7 +210,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                         query = query.filter(SubtaskModel.user_id == self.user_id)
                         logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter for user_id={self.user_id}")
                     else:
-                        logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering - this could cause data leakage")
+                        logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering - this could cause data leakage")
 
                     model = query.first()
 
@@ -260,7 +252,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         # Should never reach here
         return None
     
-    def find_by_parent_task_id(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
+    def find_by_parent_task_id(self, parent_task_id: TaskId) -> list[SubtaskEntity]:
         """
         Find all subtasks for a parent task.
         
@@ -287,7 +279,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                     query = query.filter(SubtaskModel.user_id == self.user_id)
                     logger.info(f"🐛 SUBTASK_DEBUG: Applied user filter directly: user_id={self.user_id}")
                 else:
-                    logger.warning(f"🐛 SUBTASK_DEBUG: No user_id available for filtering - this could cause data leakage")
+                    logger.warning("🐛 SUBTASK_DEBUG: No user_id available for filtering - this could cause data leakage")
                 
                 # query = self.apply_user_filter(query)  # Replaced with direct filter above
                 
@@ -314,7 +306,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 table="subtasks"
             )
     
-    def find_by_assignee(self, assignee: str) -> List[SubtaskEntity]:
+    def find_by_assignee(self, assignee: str) -> list[SubtaskEntity]:
         """
         Find subtasks by assignee.
 
@@ -346,7 +338,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 table="subtasks"
             )
     
-    def find_by_status(self, status: str) -> List[SubtaskEntity]:
+    def find_by_status(self, status: str) -> list[SubtaskEntity]:
         """
         Find subtasks by status.
 
@@ -377,7 +369,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 table="subtasks"
             )
     
-    def find_completed(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
+    def find_completed(self, parent_task_id: TaskId) -> list[SubtaskEntity]:
         """
         Find completed subtasks for a parent task.
 
@@ -411,7 +403,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 table="subtasks"
             )
     
-    def find_pending(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
+    def find_pending(self, parent_task_id: TaskId) -> list[SubtaskEntity]:
         """
         Find pending subtasks for a parent task.
 
@@ -467,7 +459,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                     query = query.filter(SubtaskModel.user_id == self.user_id)
                     logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in delete() for user_id={self.user_id}")
                 else:
-                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering in delete() - this could allow unauthorized deletion")
+                    logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering in delete() - this could allow unauthorized deletion")
 
                 result = query.delete()
                 logger.info(f"🗑️ SUBTASK_DELETE: Deleted {result} subtask(s) with id={id} for user_id={self.user_id}")
@@ -530,7 +522,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                     query = query.filter(SubtaskModel.user_id == self.user_id)
                     logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in exists() for user_id={self.user_id}")
                 else:
-                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering in exists() - this could cause data leakage")
+                    logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering in exists() - this could cause data leakage")
 
                 result = query.first() is not None
                 logger.info(f"🔍 SUBTASK_EXISTS: Subtask id={id} exists={result} for user_id={self.user_id}")
@@ -607,7 +599,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         """
         return TaskId.generate_new()
     
-    def get_subtask_progress(self, parent_task_id: TaskId) -> Dict[str, Any]:
+    def get_subtask_progress(self, parent_task_id: TaskId) -> dict[str, Any]:
         """
         Get subtask progress statistics for a parent task.
         
@@ -780,7 +772,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                     query = query.filter(SubtaskModel.user_id == self.user_id)
                     logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in update_progress() for user_id={self.user_id}")
                 else:
-                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering in update_progress() - this could allow unauthorized updates")
+                    logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering in update_progress() - this could allow unauthorized updates")
 
                 result = query.update({
                     SubtaskModel.progress_percentage: max(0, min(100, progress_percentage)),
@@ -800,7 +792,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             )
     
     def complete_subtask(self, subtask_id: str, completion_summary: str = "",
-                        impact_on_parent: str = "", insights_found: List[str] = None) -> bool:
+                        impact_on_parent: str = "", insights_found: list[str] = None) -> bool:
         """
         Complete a subtask with additional metadata and user filtering for multi-tenancy.
 
@@ -825,7 +817,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                     query = query.filter(SubtaskModel.user_id == self.user_id)
                     logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in complete_subtask() for user_id={self.user_id}")
                 else:
-                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering in complete_subtask() - this could allow unauthorized completion")
+                    logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering in complete_subtask() - this could allow unauthorized completion")
 
                 update_data = {
                     SubtaskModel.status: 'done',
@@ -851,7 +843,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 table="subtasks"
             )
     
-    def get_subtasks_by_assignee(self, assignee: str, limit: Optional[int] = None) -> List[SubtaskEntity]:
+    def get_subtasks_by_assignee(self, assignee: str, limit: int | None = None) -> list[SubtaskEntity]:
         """
         Get subtasks assigned to a specific assignee.
 
@@ -884,7 +876,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
     
     # Private helper methods
     
-    def _entity_to_model_dict(self, subtask: SubtaskEntity) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, subtask: SubtaskEntity) -> dict[str, Any]:
         """Convert domain entity to model dictionary"""
         # Ensure assignees is a proper list of strings - use getattr for safety
         assignees = []
@@ -914,7 +906,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         
         # CRITICAL FIX: Explicit user_id handling - no complex fallbacks
         if not self.user_id:
-            logger.error(f"🚨 SUBTASK_PERSISTENCE: No user_id available in repository")
+            logger.error("🚨 SUBTASK_PERSISTENCE: No user_id available in repository")
             raise ValueError("User authentication required. No user ID provided for subtask creation.")
         
         # Explicit user_id assignment - this is the critical fix

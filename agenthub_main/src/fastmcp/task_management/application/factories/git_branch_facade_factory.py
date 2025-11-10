@@ -4,10 +4,13 @@ Factory for creating git branch application facades with proper dependency injec
 """
 
 import logging
-from typing import Optional, Dict
-from ...application.facades.git_branch_application_facade import GitBranchApplicationFacade
-from ...domain.repositories.git_branch_repository import GitBranchRepository
-from ...infrastructure.repositories.git_branch_repository_factory import GitBranchRepositoryFactory
+
+from ...application.facades.git_branch_application_facade import (
+    GitBranchApplicationFacade,
+)
+from ...infrastructure.repositories.git_branch_repository_factory import (
+    GitBranchRepositoryFactory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +50,7 @@ class GitBranchFacadeFactory:
             cls._instance = cls()
         return cls._instance
     
-    def __init__(self, git_branch_repository_factory: Optional[GitBranchRepositoryFactory] = None):
+    def __init__(self, git_branch_repository_factory: GitBranchRepositoryFactory | None = None):
         """
         Initialize the git branch facade factory.
         
@@ -59,15 +62,15 @@ class GitBranchFacadeFactory:
             return
             
         self._git_branch_repository_factory = git_branch_repository_factory
-        self._facades_cache: Dict[str, GitBranchApplicationFacade] = {}
+        self._facades_cache: dict[str, GitBranchApplicationFacade] = {}
         
         # Mark as initialized for singleton pattern
         GitBranchFacadeFactory._initialized = True
         logger.info("GitBranchFacadeFactory initialized")
     
     def create_facade(self, 
-                     project_id: Optional[str] = None,
-                     user_id: Optional[str] = None) -> GitBranchApplicationFacade:
+                     project_id: str | None = None,
+                     user_id: str | None = None) -> GitBranchApplicationFacade:
         """
         Create a git branch application facade with proper dependency injection.
         
@@ -88,7 +91,7 @@ class GitBranchFacadeFactory:
     
     def create_git_branch_facade(self, 
                                 project_id: str = None,
-                                user_id: Optional[str] = None) -> GitBranchApplicationFacade:
+                                user_id: str | None = None) -> GitBranchApplicationFacade:
         """
         Create a git branch application facade with proper dependency injection.
         
@@ -145,7 +148,7 @@ class GitBranchFacadeFactory:
     
     def get_branch_facade(self, 
                          project_id: str,
-                         user_id: Optional[str] = None) -> GitBranchApplicationFacade:
+                         user_id: str | None = None) -> GitBranchApplicationFacade:
         """
         Get a git branch application facade (alias for create_facade).
         
@@ -165,7 +168,7 @@ class GitBranchFacadeFactory:
         self._facades_cache.clear()
         logger.info("Git branch facades cache cleared")
     
-    def get_cached_facade(self, project_id: str, user_id: Optional[str] = None) -> Optional[GitBranchApplicationFacade]:
+    def get_cached_facade(self, project_id: str, user_id: str | None = None) -> GitBranchApplicationFacade | None:
         """
         Get a cached facade if available.
         

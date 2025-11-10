@@ -1,14 +1,21 @@
 """Repository Factory Adapter - Infrastructure Layer"""
 
 from ...domain.interfaces.repository_factory import (
-    IRepositoryFactory, ITaskRepository, IProjectRepository, IGitBranchRepository,
-    IAgentRepository, IContextRepository, ISubtaskRepository,
-    ITaskRepositoryFactory, IProjectRepositoryFactory, IGitBranchRepositoryFactory
+    IAgentRepository,
+    IContextRepository,
+    IGitBranchRepository,
+    IGitBranchRepositoryFactory,
+    IProjectRepository,
+    IProjectRepositoryFactory,
+    IRepositoryFactory,
+    ISubtaskRepository,
+    ITaskRepository,
+    ITaskRepositoryFactory,
 )
+from ..repositories.git_branch_repository_factory import GitBranchRepositoryFactory
+from ..repositories.project_repository_factory import ProjectRepositoryFactory
 from ..repositories.repository_factory import RepositoryFactory
 from ..repositories.task_repository_factory import TaskRepositoryFactory
-from ..repositories.project_repository_factory import ProjectRepositoryFactory
-from ..repositories.git_branch_repository_factory import GitBranchRepositoryFactory
 
 
 class TaskRepositoryAdapter(ITaskRepository):

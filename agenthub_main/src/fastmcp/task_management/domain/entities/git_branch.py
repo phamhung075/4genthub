@@ -1,16 +1,12 @@
 """GitBranch Domain Entity"""
 
-import uuid
-from typing import Dict, List, Optional
-from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
+from ..value_objects.git_branch_id import GitBranchId
+from ..value_objects.priority import Priority
+from ..value_objects.task_status import TaskStatus
 from .base.base_timestamp_entity import BaseTimestampEntity
 from .task import Task
-from ..value_objects.task_id import TaskId
-from ..value_objects.git_branch_id import GitBranchId
-from ..value_objects.task_status import TaskStatus
-from ..value_objects.priority import Priority
 
 
 @dataclass
@@ -21,7 +17,7 @@ class GitBranch(BaseTimestampEntity):
     name: str = ""
     description: str = ""
     project_id: str = ""
-    git_branch_name: Optional[str] = None  # The actual git branch name (e.g., "feature/auth")
+    git_branch_name: str | None = None  # The actual git branch name (e.g., "feature/auth")
 
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
@@ -31,12 +27,12 @@ class GitBranch(BaseTimestampEntity):
         return str(self.id.value if hasattr(self.id, 'value') else self.id)
     
     # Task hierarchy
-    root_tasks: Dict[str, Task] = field(default_factory=dict)  # task_id -> Task
-    all_tasks: Dict[str, Task] = field(default_factory=dict)   # Flattened view for quick lookup
+    root_tasks: dict[str, Task] = field(default_factory=dict)  # task_id -> Task
+    all_tasks: dict[str, Task] = field(default_factory=dict)   # Flattened view for quick lookup
     
     # Branch metadata
-    assigned_agent_id: Optional[str] = None
-    assigned_agents: List[str] = field(default_factory=list)  # Support multiple agents
+    assigned_agent_id: str | None = None
+    assigned_agents: list[str] = field(default_factory=list)  # Support multiple agents
     priority: Priority = field(default_factory=Priority.medium)  # Branch-level priority
     status: TaskStatus = field(default_factory=TaskStatus.todo)    # todo, in_progress, blocked, review, testing, done, cancelled, archived
     archived: bool = False  # Support for archiving branches
@@ -108,7 +104,7 @@ class GitBranch(BaseTimestampEntity):
         self.touch("task_removed")
         return True
     
-    def get_task(self, task_id: str) -> Optional[Task]:
+    def get_task(self, task_id: str) -> Task | None:
         """Get a task by ID"""
         return self.all_tasks.get(task_id)
     
@@ -116,11 +112,11 @@ class GitBranch(BaseTimestampEntity):
         """Check if a task exists in the branch"""
         return task_id in self.all_tasks
     
-    def get_all_tasks(self) -> Dict[str, Task]:
+    def get_all_tasks(self) -> dict[str, Task]:
         """Get all tasks in the branch"""
         return self.all_tasks.copy()
     
-    def get_root_tasks(self) -> Dict[str, Task]:
+    def get_root_tasks(self) -> dict[str, Task]:
         """Get all root-level tasks"""
         return self.root_tasks.copy()
     
@@ -162,7 +158,7 @@ class GitBranch(BaseTimestampEntity):
         completed = self.get_completed_task_count()
         return (completed / total) * 100.0
     
-    def get_tree_status(self) -> Dict:
+    def get_tree_status(self) -> dict:
         """Get comprehensive tree status"""
         status_counts = {}
         priority_counts = {}
@@ -185,7 +181,7 @@ class GitBranch(BaseTimestampEntity):
             "priority_breakdown": priority_counts
         }
     
-    def get_available_tasks(self) -> List[Task]:
+    def get_available_tasks(self) -> list[Task]:
         """Get tasks that are available for work"""
         available = []
         for task in self.all_tasks.values():
@@ -193,7 +189,7 @@ class GitBranch(BaseTimestampEntity):
                 available.append(task)
         return available
     
-    def get_next_task(self) -> Optional[Task]:
+    def get_next_task(self) -> Task | None:
         """Get the next highest priority task"""
         available_tasks = self.get_available_tasks()
         if not available_tasks:
@@ -257,7 +253,7 @@ class GitBranch(BaseTimestampEntity):
         """Check if branch is assigned to specific agent"""
         return self.assigned_agent_id == agent_id
     
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary representation"""
         return {
             'id': str(self.id.value if hasattr(self.id, 'value') else self.id) if self.id else "",

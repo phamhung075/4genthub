@@ -19,9 +19,9 @@ Environment Variables:
 import json
 import logging
 import os
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class WebSocketMessageValidator:
     }
 
     @classmethod
-    def validate_message(cls, message: Dict[str, Any]) -> List[str]:
+    def validate_message(cls, message: dict[str, Any]) -> list[str]:
         """
         Validate a WebSocket message structure.
 
@@ -131,7 +131,7 @@ class WebSocketMessageValidator:
         return errors
 
     @classmethod
-    def _validate_task_event_data(cls, data: Dict[str, Any], event: str) -> List[str]:
+    def _validate_task_event_data(cls, data: dict[str, Any], event: str) -> list[str]:
         """Validate task event data"""
         errors = []
 
@@ -174,7 +174,7 @@ class WebSocketMessageValidator:
         return errors
 
     @classmethod
-    def _validate_subtask_event_data(cls, data: Dict[str, Any], event: str) -> List[str]:
+    def _validate_subtask_event_data(cls, data: dict[str, Any], event: str) -> list[str]:
         """Validate subtask event data"""
         errors = []
 
@@ -214,10 +214,10 @@ class WebSocketMessageLogger:
     def log_message(
         self,
         event: str,
-        data: Dict[str, Any],
-        user_id: Optional[str] = None,
+        data: dict[str, Any],
+        user_id: str | None = None,
         validate: bool = True
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Log and optionally validate a WebSocket message.
 
@@ -235,7 +235,7 @@ class WebSocketMessageLogger:
         message = {
             "event": event,
             "data": data,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         # Log the message
@@ -266,7 +266,7 @@ class WebSocketMessageLogger:
 
         return validation_errors
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get logging statistics"""
         return {
             "total_messages": self.message_count,
@@ -282,10 +282,10 @@ _global_logger = WebSocketMessageLogger()
 
 def log_websocket_message(
     event: str,
-    data: Dict[str, Any],
-    user_id: Optional[str] = None,
+    data: dict[str, Any],
+    user_id: str | None = None,
     validate: bool = True
-) -> List[str]:
+) -> list[str]:
     """
     Log a WebSocket message using the global logger.
 
@@ -308,6 +308,6 @@ def get_websocket_logger() -> WebSocketMessageLogger:
     return _global_logger
 
 
-def get_websocket_stats() -> Dict[str, Any]:
+def get_websocket_stats() -> dict[str, Any]:
     """Get WebSocket logging statistics"""
     return _global_logger.get_stats()

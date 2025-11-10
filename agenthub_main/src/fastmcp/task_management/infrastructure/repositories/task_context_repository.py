@@ -2,18 +2,17 @@
 Task Context Repository for unified context system.
 """
 
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
+import logging
+from contextlib import contextmanager
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime, timezone
-from contextlib import contextmanager
-import logging
 
 from ...domain.entities.context import TaskContextUnified as TaskContext
 from ...infrastructure.database.models import TaskContext as TaskContextModel
-from .base_orm_repository import BaseORMRepository
 from ..cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
+from .base_orm_repository import BaseORMRepository
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 class TaskContextRepository(CacheInvalidationMixin, BaseORMRepository):
     """Repository for task context operations."""
     
-    def __init__(self, session_factory, user_id: Optional[str] = None):
+    def __init__(self, session_factory, user_id: str | None = None):
         super().__init__(TaskContextModel)
         self.session_factory = session_factory
         self.user_id = user_id
@@ -106,7 +105,7 @@ class TaskContextRepository(CacheInvalidationMixin, BaseORMRepository):
             
             return self._to_entity(db_model)
     
-    def get(self, context_id: str) -> Optional[TaskContext]:
+    def get(self, context_id: str) -> TaskContext | None:
         """Get task context by ID."""
         with self.get_db_session() as session:
             query = session.query(TaskContextModel).filter(TaskContextModel.id == context_id)
@@ -182,7 +181,7 @@ class TaskContextRepository(CacheInvalidationMixin, BaseORMRepository):
             
             return True
     
-    def list(self, filters: Optional[Dict[str, Any]] = None) -> List[TaskContext]:
+    def list(self, filters: dict[str, Any] | None = None) -> list[TaskContext]:
         """List task contexts."""
         with self.get_db_session() as session:
             stmt = select(TaskContextModel)

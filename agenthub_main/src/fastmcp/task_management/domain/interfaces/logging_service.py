@@ -1,8 +1,8 @@
 """Logging Service Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
 from enum import Enum
+from typing import Any
 
 
 class LogLevel(Enum):
@@ -57,7 +57,7 @@ class ILoggingService(ABC):
         pass
     
     @abstractmethod
-    def configure(self, config: Dict[str, Any]) -> None:
+    def configure(self, config: dict[str, Any]) -> None:
         """Configure logging service"""
         pass
     
@@ -67,7 +67,7 @@ class ILoggingService(ABC):
         pass
     
     @abstractmethod
-    def add_handler(self, handler_config: Dict[str, Any]) -> None:
+    def add_handler(self, handler_config: dict[str, Any]) -> None:
         """Add a log handler"""
         pass
     

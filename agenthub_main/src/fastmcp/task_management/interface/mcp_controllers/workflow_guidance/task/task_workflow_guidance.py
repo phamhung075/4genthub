@@ -1,6 +1,6 @@
 """Enhanced Task workflow guidance implementation with autonomous AI capabilities."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from ...workflow_hint_enhancer import WorkflowHintEnhancer
@@ -565,7 +565,7 @@ class TaskWorkflowGuidance(WorkflowGuidanceInterface):
                     last_update = datetime.fromisoformat(
                         updated_at.replace("Z", "+00:00")
                     )
-                    days_old = (datetime.now(timezone.utc) - last_update).days
+                    days_old = (datetime.now(UTC) - last_update).days
                     if days_old > 7:
                         warnings.append(
                             f"⚠️ Task hasn't been updated in {days_old} days"

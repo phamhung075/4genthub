@@ -1,19 +1,21 @@
 """Complete Subtask Use Case"""
 
-from typing import Union, Any, Dict
-from ...domain import TaskRepository, TaskId, TaskNotFoundError
-from ...domain.repositories.subtask_repository import SubtaskRepository
 import logging
 import time
+from typing import Any
+
+from ...domain import TaskId, TaskNotFoundError, TaskRepository
+from ...domain.repositories.subtask_repository import SubtaskRepository
+
 
 class CompleteSubtaskUseCase:
     def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository = None):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
 
-    def execute(self, task_id: Union[str, int], id: Union[str, int],
+    def execute(self, task_id: str | int, id: str | int,
                 user_id: str = None, completion_summary: str = None,
-                insights_found: list = None, testing_notes: str = None) -> Dict[str, Any]:
+                insights_found: list = None, testing_notes: str = None) -> dict[str, Any]:
         task_id_obj = self._convert_to_task_id(task_id)
 
         # Retry task lookup on concurrent access conflicts
@@ -101,8 +103,10 @@ class CompleteSubtaskUseCase:
             # Dispatch domain event for subtask status change
             # This will trigger branch statistics update
             try:
+                from ...domain.events.task_lifecycle_events import (
+                    TaskStatusChangedEvent,
+                )
                 from ...domain.services.event_dispatcher import dispatch_domain_event
-                from ...domain.events.task_lifecycle_events import TaskStatusChangedEvent
 
                 branch_id = task.git_branch_id if hasattr(task, 'git_branch_id') else None
                 if branch_id:
@@ -238,7 +242,7 @@ class CompleteSubtaskUseCase:
         except Exception as e:
             logging.error(f"Failed to update parent task context: {e}")
 
-    def _convert_to_task_id(self, task_id: Union[str, int]) -> TaskId:
+    def _convert_to_task_id(self, task_id: str | int) -> TaskId:
         if isinstance(task_id, int):
             return TaskId.from_int(task_id)
         else:

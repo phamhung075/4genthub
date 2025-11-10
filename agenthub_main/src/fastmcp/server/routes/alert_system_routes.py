@@ -1,18 +1,15 @@
 #!/usr/bin/env python
 """Alert System API Routes - Configurable performance alerting with webhook notifications"""
 
-import os
-import json
-import asyncio
 import logging
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import Any
+
 import httpx
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from ...auth.interface.fastapi_auth import get_authenticated_user
-from ...task_management.infrastructure.performance.task_performance_optimizer import get_performance_optimizer
 from ...task_management.infrastructure.cache.cache_manager import get_cache
 
 logger = logging.getLogger(__name__)
@@ -28,7 +25,7 @@ class AlertRule:
     condition: str  # 'greater_than', 'less_than', 'equals'
     threshold: float
     enabled: bool = True
-    webhook_url: Optional[str] = None
+    webhook_url: str | None = None
     cooldown_minutes: int = 30
     severity: str = "warning"  # 'info', 'warning', 'error', 'critical'
     description: str = ""
@@ -50,15 +47,15 @@ class AlertEvent:
 
 
 # In-memory storage for demo (in production, use database)
-_alert_rules: Dict[str, AlertRule] = {}
-_alert_events: List[AlertEvent] = []
+_alert_rules: dict[str, AlertRule] = {}
+_alert_events: list[AlertEvent] = []
 _alert_cache = get_cache("alerts")
 
 
 @router.get("/rules")
 async def list_alert_rules(
-    user: Dict[str, Any] = Depends(get_authenticated_user)
-) -> Dict[str, Any]:
+    user: dict[str, Any] = Depends(get_authenticated_user)
+) -> dict[str, Any]:
     """List all configured alert rules."""
     
     return {
@@ -70,9 +67,9 @@ async def list_alert_rules(
 
 @router.post("/rules")
 async def create_alert_rule(
-    rule_data: Dict[str, Any],
-    user: Dict[str, Any] = Depends(get_authenticated_user)
-) -> Dict[str, Any]:
+    rule_data: dict[str, Any],
+    user: dict[str, Any] = Depends(get_authenticated_user)
+) -> dict[str, Any]:
     """
     Create a new alert rule.
     
@@ -139,9 +136,9 @@ async def create_alert_rule(
 @router.put("/rules/{rule_id}")
 async def update_alert_rule(
     rule_id: str,
-    rule_data: Dict[str, Any],
-    user: Dict[str, Any] = Depends(get_authenticated_user)
-) -> Dict[str, Any]:
+    rule_data: dict[str, Any],
+    user: dict[str, Any] = Depends(get_authenticated_user)
+) -> dict[str, Any]:
     """Update an existing alert rule."""
     
     if rule_id not in _alert_rules:
@@ -183,8 +180,8 @@ async def update_alert_rule(
 @router.delete("/rules/{rule_id}")
 async def delete_alert_rule(
     rule_id: str,
-    user: Dict[str, Any] = Depends(get_authenticated_user)
-) -> Dict[str, Any]:
+    user: dict[str, Any] = Depends(get_authenticated_user)
+) -> dict[str, Any]:
     """Delete an alert rule."""
     
     if rule_id not in _alert_rules:
@@ -197,11 +194,11 @@ async def delete_alert_rule(
 
 @router.get("/events")
 async def list_alert_events(
-    user: Dict[str, Any] = Depends(get_authenticated_user),
+    user: dict[str, Any] = Depends(get_authenticated_user),
     limit: int = 50,
-    severity: Optional[str] = None,
-    acknowledged: Optional[bool] = None
-) -> Dict[str, Any]:
+    severity: str | None = None,
+    acknowledged: bool | None = None
+) -> dict[str, Any]:
     """List recent alert events with optional filtering."""
     
     events = _alert_events
@@ -233,8 +230,8 @@ async def list_alert_events(
 @router.post("/events/{event_index}/acknowledge")
 async def acknowledge_alert(
     event_index: int,
-    user: Dict[str, Any] = Depends(get_authenticated_user)
-) -> Dict[str, Any]:
+    user: dict[str, Any] = Depends(get_authenticated_user)
+) -> dict[str, Any]:
     """Acknowledge an alert event."""
     
     if event_index >= len(_alert_events) or event_index < 0:
@@ -248,8 +245,8 @@ async def acknowledge_alert(
 @router.post("/check-rules")
 async def check_alert_rules(
     background_tasks: BackgroundTasks,
-    user: Dict[str, Any] = Depends(get_authenticated_user)
-) -> Dict[str, Any]:
+    user: dict[str, Any] = Depends(get_authenticated_user)
+) -> dict[str, Any]:
     """
     Manually trigger alert rule checking.
     Normally this would run on a schedule.
@@ -265,9 +262,9 @@ async def check_alert_rules(
 
 @router.post("/test-webhook")
 async def test_webhook(
-    webhook_data: Dict[str, Any],
-    user: Dict[str, Any] = Depends(get_authenticated_user)
-) -> Dict[str, Any]:
+    webhook_data: dict[str, Any],
+    user: dict[str, Any] = Depends(get_authenticated_user)
+) -> dict[str, Any]:
     """Test a webhook URL with sample alert data."""
     
     webhook_url = webhook_data.get('webhook_url')
@@ -413,7 +410,7 @@ async def _trigger_alert(rule: AlertRule, current_value: float):
             logger.error(f"Failed to send webhook for alert '{rule.name}': {e}")
 
 
-def _get_last_trigger_time(rule_id: str) -> Optional[datetime]:
+def _get_last_trigger_time(rule_id: str) -> datetime | None:
     """Get the timestamp of the last trigger for a rule."""
     
     for event in reversed(_alert_events):
@@ -423,7 +420,7 @@ def _get_last_trigger_time(rule_id: str) -> Optional[datetime]:
     return None
 
 
-def _extract_metric_value(metrics_data: Dict, metric_name: str) -> Optional[float]:
+def _extract_metric_value(metrics_data: dict, metric_name: str) -> float | None:
     """Extract a specific metric value from the performance data."""
     
     try:

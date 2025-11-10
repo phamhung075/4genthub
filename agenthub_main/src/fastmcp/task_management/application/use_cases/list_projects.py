@@ -1,6 +1,7 @@
 """List Projects Use Case"""
 
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 from ...domain.repositories.project_repository import ProjectRepository
 
 
@@ -10,7 +11,7 @@ class ListProjectsUseCase:
     def __init__(self, project_repository: ProjectRepository):
         self._project_repository = project_repository
     
-    async def execute(self, include_branches: bool = True) -> Dict[str, Any]:
+    async def execute(self, include_branches: bool = True) -> dict[str, Any]:
         """
         Execute the list projects use case
         

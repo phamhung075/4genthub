@@ -5,10 +5,9 @@ Defines token costs for all MCP operations.
 Token costs are based on operation complexity and resource usage.
 """
 
-from typing import Dict, Optional
 
 # Token costs for each MCP operation
-TOKEN_COSTS: Dict[str, int] = {
+TOKEN_COSTS: dict[str, int] = {
     # Project operations
     "create_project": 10,  # Create new project with context initialization
     "update_project": 5,   # Update project metadata
@@ -110,7 +109,7 @@ def get_operation_cost(operation: str, default: int = 1) -> int:
     return TOKEN_COSTS.get(operation, default)
 
 
-def get_all_costs() -> Dict[str, int]:
+def get_all_costs() -> dict[str, int]:
     """
     Get all token costs
 
@@ -130,7 +129,7 @@ def get_free_operations() -> list[str]:
     return [op for op, cost in TOKEN_COSTS.items() if cost == 0]
 
 
-def get_expensive_operations(threshold: int = 10) -> Dict[str, int]:
+def get_expensive_operations(threshold: int = 10) -> dict[str, int]:
     """
     Get operations that cost more than threshold
 

@@ -1,8 +1,8 @@
 """Validation Service Interface - Domain Layer"""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
 from enum import Enum
+from typing import Any
 
 
 class ValidationSeverity(Enum):
@@ -24,19 +24,19 @@ class IValidationResult(ABC):
     
     @property
     @abstractmethod
-    def errors(self) -> List[str]:
+    def errors(self) -> list[str]:
         """Get validation errors"""
         pass
     
     @property
     @abstractmethod
-    def warnings(self) -> List[str]:
+    def warnings(self) -> list[str]:
         """Get validation warnings"""
         pass
     
     @property
     @abstractmethod
-    def details(self) -> Dict[str, Any]:
+    def details(self) -> dict[str, Any]:
         """Get detailed validation information"""
         pass
 
@@ -51,7 +51,7 @@ class IValidator(ABC):
     
     @property
     @abstractmethod
-    def validation_rules(self) -> List[str]:
+    def validation_rules(self) -> list[str]:
         """Get the validation rules"""
         pass
 
@@ -60,17 +60,17 @@ class IDocumentValidator(ABC):
     """Domain interface for document validation"""
     
     @abstractmethod
-    def validate_document(self, document: Dict[str, Any]) -> IValidationResult:
+    def validate_document(self, document: dict[str, Any]) -> IValidationResult:
         """Validate a document"""
         pass
     
     @abstractmethod
-    def validate_schema(self, document: Dict[str, Any], schema: Dict[str, Any]) -> IValidationResult:
+    def validate_schema(self, document: dict[str, Any], schema: dict[str, Any]) -> IValidationResult:
         """Validate document against schema"""
         pass
     
     @abstractmethod
-    def get_schema(self, document_type: str) -> Optional[Dict[str, Any]]:
+    def get_schema(self, document_type: str) -> dict[str, Any] | None:
         """Get schema for document type"""
         pass
 
@@ -94,16 +94,16 @@ class IValidationService(ABC):
         pass
     
     @abstractmethod
-    def validate_all(self, data: Dict[str, Any]) -> Dict[str, IValidationResult]:
+    def validate_all(self, data: dict[str, Any]) -> dict[str, IValidationResult]:
         """Validate multiple data items"""
         pass
     
     @abstractmethod
-    def get_validator(self, data_type: str) -> Optional[IValidator]:
+    def get_validator(self, data_type: str) -> IValidator | None:
         """Get validator for data type"""
         pass
     
     @abstractmethod
-    def list_validators(self) -> List[str]:
+    def list_validators(self) -> list[str]:
         """List all registered validators"""
         pass

@@ -1,7 +1,7 @@
 """ServerStatus Value Object"""
 
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -13,7 +13,7 @@ class ServerStatus:
     version: str
     uptime_seconds: float
     restart_count: int
-    details: Dict[str, Any]
+    details: dict[str, Any]
     
     def __post_init__(self):
         """Validate server status values"""
@@ -30,7 +30,7 @@ class ServerStatus:
         """Check if server is healthy"""
         return self.status == "healthy"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation"""
         return {
             "success": True,

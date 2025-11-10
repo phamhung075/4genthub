@@ -5,12 +5,12 @@ This repository handles token balance persistence using SQLAlchemy.
 """
 
 import logging
-from typing import Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select
 import uuid
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from ...domain.repositories.token_balance_repository import ITokenBalanceRepository
 from ..database.models import UserTokenBalance
@@ -30,7 +30,7 @@ class TokenBalanceRepository(ITokenBalanceRepository):
         """
         self.session = session
 
-    async def get_balance(self, user_id: str) -> Optional[Dict[str, Any]]:
+    async def get_balance(self, user_id: str) -> dict[str, Any] | None:
         """Get token balance for a user"""
         try:
             balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
@@ -60,16 +60,16 @@ class TokenBalanceRepository(ITokenBalanceRepository):
         user_id: str,
         initial_tokens: int = 10000,
         monthly_quota: int = 10000
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create new token balance for a user"""
         try:
             # Calculate next reset date (first day of next month)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             # First day of next month
             if now.month == 12:
-                next_reset = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
+                next_reset = datetime(now.year + 1, 1, 1, tzinfo=UTC)
             else:
-                next_reset = datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
+                next_reset = datetime(now.year, now.month + 1, 1, tzinfo=UTC)
 
             balance = UserTokenBalance(
                 id=str(uuid.uuid4()),
@@ -192,7 +192,7 @@ class TokenBalanceRepository(ITokenBalanceRepository):
             logger.error(f"Error updating quota for user {user_id}: {e}")
             raise
 
-    async def get_usage_stats(self, user_id: str) -> Optional[Dict[str, Any]]:
+    async def get_usage_stats(self, user_id: str) -> dict[str, Any] | None:
         """Get detailed usage statistics for a user"""
         try:
             balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
@@ -209,7 +209,7 @@ class TokenBalanceRepository(ITokenBalanceRepository):
             # Calculate days until reset
             days_until_reset = 0
             if balance.next_reset_at:
-                delta = balance.next_reset_at - datetime.now(timezone.utc)
+                delta = balance.next_reset_at - datetime.now(UTC)
                 days_until_reset = max(0, delta.days)
 
             return {
@@ -240,14 +240,14 @@ class TokenBalanceRepository(ITokenBalanceRepository):
             # Reset tokens and counters
             balance.available_tokens = balance.monthly_quota
             balance.tokens_consumed_this_month = 0
-            balance.last_reset_at = datetime.now(timezone.utc)
+            balance.last_reset_at = datetime.now(UTC)
 
             # Calculate next reset date
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             if now.month == 12:
-                balance.next_reset_at = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
+                balance.next_reset_at = datetime(now.year + 1, 1, 1, tzinfo=UTC)
             else:
-                balance.next_reset_at = datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
+                balance.next_reset_at = datetime(now.year, now.month + 1, 1, tzinfo=UTC)
 
             self.session.flush()
             logger.info(f"Reset monthly quota for user {user_id}, new balance: {balance.available_tokens}")
@@ -284,7 +284,7 @@ class TokenBalanceRepository(ITokenBalanceRepository):
             if not balance or not balance.next_reset_at:
                 return False
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             # Check if it's time to reset
             if now >= balance.next_reset_at:

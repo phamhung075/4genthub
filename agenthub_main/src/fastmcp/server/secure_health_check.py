@@ -15,12 +15,12 @@ Author: Security Enhancement
 Date: 2025-01-30
 """
 
+import logging
 import os
 import time
-import logging
-from typing import Dict, Any, Optional
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class AccessLevel(Enum):
 class SecurityContext:
     """Security context for health check requests"""
     access_level: AccessLevel
-    user_id: Optional[str] = None
+    user_id: str | None = None
     is_internal: bool = False
     environment: str = "production"  # production, development, testing
     
@@ -70,7 +70,7 @@ class SecureHealthChecker:
         self.server_name = "agenthub Server"
         self.version = "2.1.0"
         
-    async def check_health(self, security_context: SecurityContext) -> Dict[str, Any]:
+    async def check_health(self, security_context: SecurityContext) -> dict[str, Any]:
         """
         Perform health check with security-filtered response
         
@@ -96,7 +96,7 @@ class SecureHealthChecker:
             logger.error(f"Health check failed: {e}")
             return self._get_error_response(str(e), security_context)
     
-    async def _get_basic_status(self) -> Dict[str, Any]:
+    async def _get_basic_status(self) -> dict[str, Any]:
         """Get basic server status (internal method)"""
         try:
             # Import here to avoid circular imports
@@ -136,7 +136,7 @@ class SecureHealthChecker:
                 "status_error": str(e)
             }
     
-    def _get_client_response(self, basic_status: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_client_response(self, basic_status: dict[str, Any]) -> dict[str, Any]:
         """Get client-safe response (minimal information)"""
         return {
             "success": True,
@@ -144,8 +144,8 @@ class SecureHealthChecker:
             "timestamp": time.time()
         }
     
-    def _get_authenticated_response(self, basic_status: Dict[str, Any], 
-                                  security_context: SecurityContext) -> Dict[str, Any]:
+    def _get_authenticated_response(self, basic_status: dict[str, Any], 
+                                  security_context: SecurityContext) -> dict[str, Any]:
         """Get authenticated user response (limited details)"""
         response = {
             "success": True,
@@ -164,8 +164,8 @@ class SecureHealthChecker:
         
         return response
     
-    def _get_admin_response(self, basic_status: Dict[str, Any], 
-                           security_context: SecurityContext) -> Dict[str, Any]:
+    def _get_admin_response(self, basic_status: dict[str, Any], 
+                           security_context: SecurityContext) -> dict[str, Any]:
         """Get full administrative response (all details)"""
         # Get full environment information (admin only)
         environment = self._get_environment_info()
@@ -190,7 +190,7 @@ class SecureHealthChecker:
             "timestamp": time.time()
         }
     
-    def _get_environment_info(self) -> Dict[str, Any]:
+    def _get_environment_info(self) -> dict[str, Any]:
         """Get environment information (admin only)"""
         return {
             "pythonpath": os.environ.get("PYTHONPATH", "not set"),
@@ -203,14 +203,14 @@ class SecureHealthChecker:
             "supabase_configured": bool(os.environ.get("SUPABASE_URL"))
         }
     
-    def _get_authentication_info(self) -> Dict[str, Any]:
+    def _get_authentication_info(self) -> dict[str, Any]:
         """Get authentication information"""
         return {
             "enabled": os.environ.get("AUTH_ENABLED", "true").lower() == "true",
             "mvp_mode": os.environ.get("PRODUCTION", "false").lower() == "true"
         }
     
-    def _get_task_management_info(self) -> Dict[str, Any]:
+    def _get_task_management_info(self) -> dict[str, Any]:
         """Get task management information"""
         return {
             "task_management_enabled": True,
@@ -219,7 +219,7 @@ class SecureHealthChecker:
             "enabled_tools": []
         }
     
-    def _get_connections_info(self, basic_status: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_connections_info(self, basic_status: dict[str, Any]) -> dict[str, Any]:
         """Get connections information"""
         return {
             "active_connections": basic_status["active_connections"],
@@ -234,7 +234,7 @@ class SecureHealthChecker:
             }
         }
     
-    def _get_error_response(self, error: str, security_context: SecurityContext) -> Dict[str, Any]:
+    def _get_error_response(self, error: str, security_context: SecurityContext) -> dict[str, Any]:
         """Get error response filtered by access level"""
         if security_context.access_level == AccessLevel.CLIENT:
             return {
@@ -256,7 +256,7 @@ _secure_health_checker = SecureHealthChecker()
 
 
 async def secure_health_check(user_id: str = None, is_admin: bool = False, 
-                             is_internal: bool = False, environment: str = None) -> Dict[str, Any]:
+                             is_internal: bool = False, environment: str = None) -> dict[str, Any]:
     """
     Perform secure health check with automatic access level determination
     
@@ -279,12 +279,12 @@ async def secure_health_check(user_id: str = None, is_admin: bool = False,
     return await _secure_health_checker.check_health(security_context)
 
 
-async def client_health_check() -> Dict[str, Any]:
+async def client_health_check() -> dict[str, Any]:
     """Get client-safe health check (minimal information)"""
     return await secure_health_check()
 
 
-async def admin_health_check(user_id: str = "admin") -> Dict[str, Any]:
+async def admin_health_check(user_id: str = "admin") -> dict[str, Any]:
     """Get full admin health check (all details)"""
     return await secure_health_check(
         user_id=user_id,

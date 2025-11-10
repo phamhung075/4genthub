@@ -1,21 +1,20 @@
 """
 Service for managing Git Branches
 """
-from typing import Dict, Any, Optional
 import logging
+from typing import Any
 
-from ...domain.repositories.project_repository import ProjectRepository
 from ...domain.repositories.git_branch_repository import GitBranchRepository
-from ...domain.entities.git_branch import GitBranch
+from ...domain.repositories.project_repository import ProjectRepository
 from .unified_context_service import UnifiedContextService
 
 logger = logging.getLogger(__name__)
 
 class GitBranchService:
-    def __init__(self, project_repo: Optional[ProjectRepository] = None,
-                 git_branch_repo: Optional[GitBranchRepository] = None,
-                 hierarchical_context_service: Optional[UnifiedContextService] = None,
-                 user_id: Optional[str] = None):
+    def __init__(self, project_repo: ProjectRepository | None = None,
+                 git_branch_repo: GitBranchRepository | None = None,
+                 hierarchical_context_service: UnifiedContextService | None = None,
+                 user_id: str | None = None):
         self._user_id = user_id  # Store user context
         
         # Repositories should be injected, not created here
@@ -48,7 +47,7 @@ class GitBranchService:
             return repository.with_user(self._user_id)
         return repository
 
-    async def create_git_branch(self, project_id: str, branch_name: str, description: str = "") -> Dict[str, Any]:
+    async def create_git_branch(self, project_id: str, branch_name: str, description: str = "") -> dict[str, Any]:
         try:
             project_repo = self._get_user_scoped_repository(self._project_repo)
             project = await project_repo.find_by_id(project_id)
@@ -123,7 +122,7 @@ class GitBranchService:
             logger.error(f"Failed to create git branch: {e}")
             return {"success": False, "error": str(e)}
 
-    async def get_git_branch(self, project_id: str, branch_name: str) -> Dict[str, Any]:
+    async def get_git_branch(self, project_id: str, branch_name: str) -> dict[str, Any]:
         project_repo = self._get_user_scoped_repository(self._project_repo)
         project = await project_repo.find_by_id(project_id)
         if not project:
@@ -135,7 +134,7 @@ class GitBranchService:
             
         return {"success": True, "git_branch": git_branch.to_dict()}
 
-    async def list_git_branchs(self, project_id: str) -> Dict[str, Any]:
+    async def list_git_branchs(self, project_id: str) -> dict[str, Any]:
         try:
             project_repo = self._get_user_scoped_repository(self._project_repo)
             project = await project_repo.find_by_id(project_id)
@@ -153,7 +152,7 @@ class GitBranchService:
             logger.error(f"Failed to list git branches: {e}")
             return {"success": False, "error": str(e)}
 
-    async def delete_git_branch(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def delete_git_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Delete a git branch and its associated data."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
@@ -202,8 +201,10 @@ class GitBranchService:
             # TYPE-SAFE PAYLOAD: Using Pydantic model for compile-time + runtime validation
             # This prevents "missing ID" bugs by enforcing required fields
             try:
-                from ..services.websocket_notification_service import WebSocketNotificationService
                 from ...domain.websocket_protocol import BranchDeletePayload
+                from ..services.websocket_notification_service import (
+                    WebSocketNotificationService,
+                )
 
                 # ✅ NEW: Type-safe payload construction with Pydantic validation
                 # Pydantic will raise ValidationError if required fields are missing
@@ -242,7 +243,7 @@ class GitBranchService:
             logger.error(f"Failed to delete git branch {git_branch_id}: {e}")
             return {"success": False, "error": str(e), "error_code": "DELETE_FAILED"}
 
-    async def create_missing_branch_context(self, branch_id: str, project_id: str = None, branch_name: str = "", description: str = "") -> Dict[str, Any]:
+    async def create_missing_branch_context(self, branch_id: str, project_id: str = None, branch_name: str = "", description: str = "") -> dict[str, Any]:
         """
         Create branch context for existing git branch that doesn't have one.
         This is a helper method to fix existing branches without contexts.
@@ -306,7 +307,7 @@ class GitBranchService:
             logger.error(f"Failed to create branch context for branch {branch_id}: {e}")
             return {"success": False, "error": f"Failed to create branch context: {str(e)}"}
 
-    async def get_git_branch_by_id(self, git_branch_id: str) -> Dict[str, Any]:
+    async def get_git_branch_by_id(self, git_branch_id: str) -> dict[str, Any]:
         """Get a git branch by its ID."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
@@ -332,7 +333,7 @@ class GitBranchService:
             logger.error(f"Failed to get git branch by id: {e}")
             return {"success": False, "error": str(e)}
 
-    async def update_git_branch(self, git_branch_id: str, branch_name: Optional[str] = None, description: Optional[str] = None) -> Dict[str, Any]:
+    async def update_git_branch(self, git_branch_id: str, branch_name: str | None = None, description: str | None = None) -> dict[str, Any]:
         """Update a git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
@@ -372,7 +373,7 @@ class GitBranchService:
             logger.error(f"Failed to update git branch: {e}")
             return {"success": False, "error": str(e)}
 
-    async def assign_agent_to_branch(self, project_id: str, agent_id: str, branch_name: str) -> Dict[str, Any]:
+    async def assign_agent_to_branch(self, project_id: str, agent_id: str, branch_name: str) -> dict[str, Any]:
         """Assign an agent to a git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
@@ -401,7 +402,7 @@ class GitBranchService:
             logger.error(f"Failed to assign agent to branch: {e}")
             return {"success": False, "error": str(e)}
 
-    async def unassign_agent_from_branch(self, project_id: str, agent_id: str, branch_name: str) -> Dict[str, Any]:
+    async def unassign_agent_from_branch(self, project_id: str, agent_id: str, branch_name: str) -> dict[str, Any]:
         """Unassign an agent from a git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
@@ -427,7 +428,7 @@ class GitBranchService:
             logger.error(f"Failed to unassign agent from branch: {e}")
             return {"success": False, "error": str(e)}
 
-    async def get_branch_statistics(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def get_branch_statistics(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Get statistics for a git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
@@ -443,7 +444,7 @@ class GitBranchService:
             logger.error(f"Failed to get branch statistics: {e}")
             return {"success": False, "error": str(e)}
 
-    async def archive_branch(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def archive_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Archive a git branch by marking it as archived."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
@@ -458,7 +459,7 @@ class GitBranchService:
             logger.error(f"Failed to archive branch: {e}")
             return {"success": False, "error": str(e)}
 
-    async def restore_branch(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def restore_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
         """Restore an archived git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)

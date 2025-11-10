@@ -6,17 +6,17 @@ NO backward compatibility, NO legacy code.
 """
 
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
 class BranchEvent:
     """Base class for branch domain events"""
     branch_id: str = ""
-    project_id: Optional[str]
+    project_id: str | None
     timestamp: datetime
-    user_id: Optional[str] = None
+    user_id: str | None = None
 
     @classmethod
     def create(cls, **kwargs):
@@ -25,7 +25,7 @@ class BranchEvent:
             kwargs['timestamp'] = datetime.utcnow()
         return cls(**kwargs)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary for serialization"""
         return {
             'branch_id': self.branch_id,
@@ -40,10 +40,10 @@ class BranchEvent:
 class BranchCreatedEvent(BranchEvent):
     """Event raised when a branch is created"""
     name: str = ""
-    description: Optional[str] = None
+    description: str | None = None
     status: str = 'active'
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()
         data.update({
             'name': self.name,
@@ -56,14 +56,14 @@ class BranchCreatedEvent(BranchEvent):
 @dataclass
 class BranchUpdatedEvent(BranchEvent):
     """Event raised when a branch is updated"""
-    old_name: Optional[str] = None
-    new_name: Optional[str] = None
-    old_status: Optional[str] = None
-    new_status: Optional[str] = None
-    old_task_count: Optional[int] = None
-    new_task_count: Optional[int] = None
+    old_name: str | None = None
+    new_name: str | None = None
+    old_status: str | None = None
+    new_status: str | None = None
+    old_task_count: int | None = None
+    new_task_count: int | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()
         data.update({
             'old_name': self.old_name,
@@ -84,7 +84,7 @@ class BranchDeletedEvent(BranchEvent):
     subtasks_deleted: int = 0
     contexts_deleted: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()
         data.update({
             'name': self.name,
@@ -104,7 +104,7 @@ class BranchStatisticsUpdatedEvent(BranchEvent):
     todo_task_count: int = 0
     progress_percentage: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()
         data.update({
             'task_count': self.task_count,

@@ -6,10 +6,12 @@ based on configuration settings.
 """
 
 import logging
-from typing import Dict, Any, Set, Callable, Optional
-from fastmcp.server.server import FastMCP
-from .tool_config_loader import ToolConfigLoader, ToolConfigError
+from collections.abc import Callable
+from typing import Any
 
+from fastmcp.server.server import FastMCP
+
+from .tool_config_loader import ToolConfigError, ToolConfigLoader
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ToolRegistry:
     """Registry for managing conditional tool mounting."""
 
-    def __init__(self, config_loader: Optional[ToolConfigLoader] = None):
+    def __init__(self, config_loader: ToolConfigLoader | None = None):
         """
         Initialize the tool registry.
 
@@ -26,8 +28,8 @@ class ToolRegistry:
                           If None, creates a new one.
         """
         self.config_loader = config_loader or ToolConfigLoader()
-        self.registered_tools: Dict[str, Dict[str, Callable]] = {}
-        self.available_dependencies: Set[str] = set()
+        self.registered_tools: dict[str, dict[str, Callable]] = {}
+        self.available_dependencies: set[str] = set()
 
     def load_configuration(self) -> None:
         """Load tool configuration from file."""
@@ -38,7 +40,7 @@ class ToolRegistry:
             logger.error(f"Failed to load tool configuration: {e}")
             logger.warning("Falling back to default configuration")
 
-    def register_tool_group(self, group_name: str, tools: Dict[str, Callable]) -> None:
+    def register_tool_group(self, group_name: str, tools: dict[str, Callable]) -> None:
         """
         Register a group of tools.
 
@@ -59,7 +61,7 @@ class ToolRegistry:
         self.available_dependencies.add(dependency_name)
         logger.debug(f"Added dependency: {dependency_name}")
 
-    def mount_tools_to_server(self, server: FastMCP) -> Dict[str, Any]:
+    def mount_tools_to_server(self, server: FastMCP) -> dict[str, Any]:
         """
         Mount enabled tools to the FastMCP server.
 
@@ -157,7 +159,7 @@ class ToolRegistry:
         # The tool is now registered with the server through the decorator
         logger.debug(f"Successfully mounted tool: {tool_name} with description: {description}")
 
-    def _log_mounting_summary(self, stats: Dict[str, Any]) -> None:
+    def _log_mounting_summary(self, stats: dict[str, Any]) -> None:
         """Log a summary of tool mounting results."""
         logger.info("=== Tool Mounting Summary ===")
         logger.info(f"Total groups processed: {stats['total_groups']}")
@@ -183,7 +185,7 @@ class ToolRegistry:
                 if group_results["skipped"]:
                     logger.info(f"  Skipped: {', '.join(group_results['skipped'])}")
 
-    def get_enabled_tools_summary(self) -> Dict[str, Any]:
+    def get_enabled_tools_summary(self) -> dict[str, Any]:
         """
         Get a summary of enabled tools without mounting them.
 
@@ -215,7 +217,7 @@ class ToolRegistry:
         enabled_tools = self.config_loader.get_enabled_tools(group_name)
         return len(enabled_tools) > 0
 
-    def get_tool_info(self, group_name: str, tool_name: str) -> Dict[str, Any]:
+    def get_tool_info(self, group_name: str, tool_name: str) -> dict[str, Any]:
         """
         Get detailed information about a specific tool.
 

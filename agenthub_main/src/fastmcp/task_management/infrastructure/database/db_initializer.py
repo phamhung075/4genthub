@@ -5,17 +5,15 @@ This module provides automatic database initialization and verification
 on server startup. It checks if tables exist and creates them if needed.
 """
 
-import os
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any
-from sqlalchemy import inspect, text
-from sqlalchemy.exc import SQLAlchemyError, OperationalError, ProgrammingError
-from sqlalchemy.orm import Session
 
-from .database_config import DatabaseConfig, Base
+from sqlalchemy import inspect, text
+from sqlalchemy.exc import OperationalError
+
+from .database_config import Base, DatabaseConfig
+
 # Import all models to ensure they're registered with Base
-from . import models
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +30,7 @@ class DatabaseInitializer:
     - Provides migration support
     """
 
-    def __init__(self, db_config: Optional[DatabaseConfig] = None):
+    def __init__(self, db_config: DatabaseConfig | None = None):
         """
         Initialize the database initializer.
 
@@ -171,7 +169,7 @@ class DatabaseInitializer:
                 return False
 
             # Read the SQL file
-            with open(sql_file_path, 'r', encoding='utf-8') as f:
+            with open(sql_file_path, encoding='utf-8') as f:
                 sql_content = f.read()
 
             logger.info(f"Executing init SQL file: {filename}")
@@ -318,7 +316,7 @@ class DatabaseInitializer:
 
 
 # Singleton instance for easy access
-_db_initializer: Optional[DatabaseInitializer] = None
+_db_initializer: DatabaseInitializer | None = None
 
 
 def get_db_initializer() -> DatabaseInitializer:

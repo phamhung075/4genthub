@@ -7,14 +7,14 @@ This module provides optimizations for task loading performance including:
 - Index recommendations
 """
 
-import logging
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
 import hashlib
 import json
-from functools import lru_cache
-from sqlalchemy import text, Index
-from sqlalchemy.orm import Session, selectinload, joinedload, subqueryload
+import logging
+from datetime import datetime, timedelta
+from typing import Any
+
+from sqlalchemy import text
+from sqlalchemy.orm import Session, selectinload
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +29,10 @@ class TaskPerformanceOptimizer:
             cache_ttl_seconds: Cache time-to-live in seconds (default 5 minutes)
         """
         self.cache_ttl = cache_ttl_seconds
-        self._cache: Dict[str, tuple[Any, datetime]] = {}
-        self._query_stats: Dict[str, Dict] = {}
+        self._cache: dict[str, tuple[Any, datetime]] = {}
+        self._query_stats: dict[str, dict] = {}
     
-    def optimize_task_query(self, session: Session, base_query, filters: Dict[str, Any]) -> Any:
+    def optimize_task_query(self, session: Session, base_query, filters: dict[str, Any]) -> Any:
         """Optimize task query with proper loading strategies
         
         Args:
@@ -77,7 +77,7 @@ class TaskPerformanceOptimizer:
         key_str = json.dumps(key_data, sort_keys=True)
         return hashlib.md5(key_str.encode()).hexdigest()
     
-    def get_from_cache(self, cache_key: str) -> Optional[Any]:
+    def get_from_cache(self, cache_key: str) -> Any | None:
         """Get value from cache if not expired
         
         Args:
@@ -122,7 +122,7 @@ class TaskPerformanceOptimizer:
             del self._cache[key]
         logger.debug(f"Cleaned {len(expired_keys)} expired cache entries")
     
-    def analyze_query_performance(self, session: Session) -> Dict[str, Any]:
+    def analyze_query_performance(self, session: Session) -> dict[str, Any]:
         """Analyze query performance and provide recommendations
         
         Args:
@@ -205,7 +205,7 @@ class TaskPerformanceOptimizer:
         
         return analysis
     
-    def create_optimized_indexes(self, session: Session) -> List[str]:
+    def create_optimized_indexes(self, session: Session) -> list[str]:
         """Create optimized indexes for task queries
         
         Args:
@@ -239,7 +239,7 @@ class TaskPerformanceOptimizer:
         
         return created_indexes
     
-    def optimize_response_payload(self, tasks: List[Dict]) -> List[Dict]:
+    def optimize_response_payload(self, tasks: list[dict]) -> list[dict]:
         """Optimize response payload size
         
         Args:
@@ -277,7 +277,7 @@ class TaskPerformanceOptimizer:
         
         return optimized_tasks
     
-    def get_pagination_metadata(self, total_count: int, limit: int, offset: int) -> Dict:
+    def get_pagination_metadata(self, total_count: int, limit: int, offset: int) -> dict:
         """Generate pagination metadata
         
         Args:

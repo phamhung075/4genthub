@@ -5,9 +5,9 @@ Standardized response formatting for MCP controllers to ensure consistent
 response structure across all endpoints.
 """
 
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, Optional, List
-from datetime import datetime, timezone
+from typing import Any
 
 
 class ResponseStatus(Enum):
@@ -36,13 +36,13 @@ class StandardResponseFormatter:
     """Standard response formatter for MCP controllers"""
     
     @staticmethod
-    def success(data: Any = None, message: str = "Operation completed successfully") -> Dict[str, Any]:
+    def success(data: Any = None, message: str = "Operation completed successfully") -> dict[str, Any]:
         """Format a successful response"""
         return {
             "status": ResponseStatus.SUCCESS.value,
             "message": message,
             "data": data,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "success": True
         }
     
@@ -50,15 +50,15 @@ class StandardResponseFormatter:
     def error(
         error_code: ErrorCodes, 
         message: str, 
-        details: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        details: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Format an error response"""
         return {
             "status": ResponseStatus.ERROR.value,
             "error_code": error_code.value,
             "message": message,
             "details": details or {},
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "success": False
         }
     
@@ -66,15 +66,15 @@ class StandardResponseFormatter:
     def warning(
         data: Any = None, 
         message: str = "Operation completed with warnings",
-        warnings: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        warnings: list[str] | None = None
+    ) -> dict[str, Any]:
         """Format a warning response"""
         return {
             "status": ResponseStatus.WARNING.value,
             "message": message,
             "data": data,
             "warnings": warnings or [],
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "success": True
         }
     
@@ -84,7 +84,7 @@ class StandardResponseFormatter:
         message: str = "Operation partially completed", 
         completed: int = 0,
         total: int = 0
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Format a partial success response"""
         return {
             "status": ResponseStatus.PARTIAL.value,
@@ -95,12 +95,12 @@ class StandardResponseFormatter:
                 "total": total,
                 "percentage": (completed / total * 100) if total > 0 else 0
             },
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "success": True
         }
     
     @staticmethod
-    def validation_error(errors: Dict[str, List[str]]) -> Dict[str, Any]:
+    def validation_error(errors: dict[str, list[str]]) -> dict[str, Any]:
         """Format a validation error response"""
         return StandardResponseFormatter.error(
             ErrorCodes.VALIDATION_ERROR,
@@ -109,7 +109,7 @@ class StandardResponseFormatter:
         )
     
     @staticmethod
-    def not_found(resource: str, identifier: str = "") -> Dict[str, Any]:
+    def not_found(resource: str, identifier: str = "") -> dict[str, Any]:
         """Format a not found error response"""
         message = f"{resource} not found"
         if identifier:
@@ -122,7 +122,7 @@ class StandardResponseFormatter:
         )
     
     @staticmethod
-    def unauthorized(message: str = "Authentication required") -> Dict[str, Any]:
+    def unauthorized(message: str = "Authentication required") -> dict[str, Any]:
         """Format an unauthorized error response"""
         return StandardResponseFormatter.error(
             ErrorCodes.UNAUTHORIZED,
@@ -130,7 +130,7 @@ class StandardResponseFormatter:
         )
     
     @staticmethod
-    def forbidden(message: str = "Access forbidden") -> Dict[str, Any]:
+    def forbidden(message: str = "Access forbidden") -> dict[str, Any]:
         """Format a forbidden error response"""
         return StandardResponseFormatter.error(
             ErrorCodes.FORBIDDEN,

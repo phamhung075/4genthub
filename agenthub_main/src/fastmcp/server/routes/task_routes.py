@@ -6,20 +6,31 @@ frontend loading performance. Now includes Redis caching with 5-minute TTL
 for improved response times on repeat requests.
 """
 
+import json
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
-import logging
-import json
-from typing import Optional
 
-from fastmcp.task_management.interface.api_controllers.task_api_controller import TaskAPIController
-from fastmcp.task_management.interface.api_controllers.context_api_controller import ContextAPIController
-from fastmcp.task_management.interface.api_controllers.subtask_api_controller import SubtaskAPIController
-from fastmcp.task_management.interface.api_controllers.auth_api_controller import AuthAPIController
-from fastmcp.auth.interface.fastapi_auth import get_db
 from fastmcp.auth.domain.entities.user import User
+from fastmcp.auth.interface.fastapi_auth import get_db
+from fastmcp.task_management.interface.api_controllers.auth_api_controller import (
+    AuthAPIController,
+)
+from fastmcp.task_management.interface.api_controllers.context_api_controller import (
+    ContextAPIController,
+)
+from fastmcp.task_management.interface.api_controllers.subtask_api_controller import (
+    SubtaskAPIController,
+)
+from fastmcp.task_management.interface.api_controllers.task_api_controller import (
+    TaskAPIController,
+)
+
+# Initialize logger first (needed by error handlers below)
+logger = logging.getLogger(__name__)
 
 # Use Supabase authentication
 try:
@@ -33,7 +44,11 @@ from fastmcp.auth.middleware.dual_auth_middleware import DualAuthMiddleware
 
 # Import Redis caching decorator
 try:
-    from fastmcp.server.cache.redis_cache_decorator import redis_cache, CacheInvalidator, cache_metrics
+    from fastmcp.server.cache.redis_cache_decorator import (
+        CacheInvalidator,
+        cache_metrics,
+        redis_cache,
+    )
     REDIS_CACHE_ENABLED = True
 except ImportError:
     logger.warning("Redis cache module not available, running without caching")
@@ -44,15 +59,13 @@ except ImportError:
             return func
         return decorator
 
-logger = logging.getLogger(__name__)
-
 # Create dual auth handler
 dual_auth = DualAuthMiddleware(None)
 
 async def get_current_user_dual(
     request: Request,
     db: Session = Depends(get_db)
-) -> Optional[User]:
+) -> User | None:
     """
     Get current user using dual authentication.
     Supports both Supabase JWT (frontend) and local JWT (MCP).

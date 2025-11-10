@@ -8,10 +8,8 @@ NO backward compatibility - clean v2.0 implementation only.
 """
 
 import logging
-from typing import Optional
 
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..task_management.infrastructure.database.database_config import get_db_config
 from .server import WebSocketServer, initialize_websocket_server
@@ -150,7 +148,7 @@ def add_websocket_routes_to_existing_app(app: FastAPI) -> None:
 
 
 # Convenience function for FastMCP server integration
-def integrate_websocket_with_fastmcp(fastmcp_server) -> Optional[WebSocketServer]:
+def integrate_websocket_with_fastmcp(fastmcp_server) -> WebSocketServer | None:
     """
     Integrate WebSocket v2.0 server with FastMCP server.
 
@@ -185,7 +183,7 @@ def integrate_websocket_with_fastmcp(fastmcp_server) -> Optional[WebSocketServer
 
 
 # Health check integration
-def add_websocket_health_to_main_health(main_health_response: dict, websocket_server: Optional[WebSocketServer]) -> dict:
+def add_websocket_health_to_main_health(main_health_response: dict, websocket_server: WebSocketServer | None) -> dict:
     """
     Add WebSocket health information to main server health response.
 

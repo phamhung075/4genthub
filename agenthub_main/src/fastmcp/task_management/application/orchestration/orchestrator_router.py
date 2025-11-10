@@ -9,11 +9,10 @@ aggregates and implements workflow logic, which belongs in the application layer
 according to DDD principles.
 """
 
-from typing import Dict, Any
 import logging
+from typing import Any
 
 from ...domain.entities.project import Project
-
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +74,7 @@ class OrchestratorRouter:
 
 
 # Convenience function for quick orchestration
-def orchestrate_project(project: Project, strategy=None) -> Dict[str, Any]:
+def orchestrate_project(project: Project, strategy=None) -> dict[str, Any]:
     """
     Convenience function to orchestrate a project.
 

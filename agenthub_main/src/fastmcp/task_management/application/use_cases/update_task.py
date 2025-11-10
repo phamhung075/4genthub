@@ -1,15 +1,9 @@
 """Update Task Use Case"""
 
-from typing import Optional, Union
 import logging
 
-from ...application.dtos.task import (
-    UpdateTaskRequest,
-    UpdateTaskResponse,
-    TaskResponse
-)
-
-from ...domain import TaskRepository, TaskId, TaskStatus, Priority, TaskNotFoundError
+from ...application.dtos.task import TaskResponse, UpdateTaskRequest, UpdateTaskResponse
+from ...domain import Priority, TaskId, TaskNotFoundError, TaskRepository, TaskStatus
 from ...domain.events import TaskUpdated
 
 logger = logging.getLogger(__name__)
@@ -96,8 +90,8 @@ class UpdateTaskUseCase:
         # Dispatch domain event for task update
         # Branch statistics will be updated automatically by event handlers
         try:
-            from ...domain.services.event_dispatcher import dispatch_domain_event
             from ...domain.events.task_lifecycle_events import TaskUpdatedEvent
+            from ...domain.services.event_dispatcher import dispatch_domain_event
 
             new_status = str(task.status.value) if hasattr(task.status, 'value') else str(task.status)
             new_branch_id = task.git_branch_id if hasattr(task, 'git_branch_id') else None
@@ -125,7 +119,9 @@ class UpdateTaskUseCase:
 
         # Send WebSocket notification for frontend real-time updates
         try:
-            from ..services.websocket_notification_service import WebSocketNotificationService
+            from ..services.websocket_notification_service import (
+                WebSocketNotificationService,
+            )
             from ..services.websocket_payload_builder import WebSocketPayloadBuilder
 
             # Build complete WebSocket payload using WebSocketPayloadBuilder (DRY principle)
@@ -162,7 +158,7 @@ class UpdateTaskUseCase:
         # Return response (task_response already created above before WebSocket notification)
         return UpdateTaskResponse.success_response(task_response)
     
-    def _convert_to_task_id(self, task_id: Union[str, int, TaskId]) -> TaskId:
+    def _convert_to_task_id(self, task_id: str | int | TaskId) -> TaskId:
         """Convert task_id to TaskId domain object"""
         if isinstance(task_id, TaskId):
             return task_id
@@ -221,7 +217,7 @@ class UpdateTaskUseCase:
                 loop = asyncio.get_running_loop()
                 # We're in an async context, but this is a sync method
                 # We'll use run_in_executor to avoid blocking
-                logger.debug(f"[UpdateTaskUseCase] Running in async context, using task creation for context sync")
+                logger.debug("[UpdateTaskUseCase] Running in async context, using task creation for context sync")
 
                 # Since we can't await in a sync method, we'll just trigger context update
                 # The context will be updated on next access or through background task
@@ -231,11 +227,11 @@ class UpdateTaskUseCase:
                 
             except RuntimeError:
                 # No event loop, we can create one
-                logger.debug(f"[UpdateTaskUseCase] No async context, creating new event loop for context sync")
+                logger.debug("[UpdateTaskUseCase] No async context, creating new event loop for context sync")
                 
                 async def sync_context():
                     if not project_id:
-                        raise ValueError(f"project_id is required for context sync")
+                        raise ValueError("project_id is required for context sync")
                     return await self._context_sync_service.sync_context_and_get_task(
                         task_id=task_id_str,
                         user_id="system_update",
@@ -254,4 +250,4 @@ class UpdateTaskUseCase:
         except Exception as e:
             # Don't fail the update operation if context sync fails
             logger.warning(f"[UpdateTaskUseCase] Failed to sync context for task {task.id} after update: {e}")
-            logger.debug(f"[UpdateTaskUseCase] Context sync error details", exc_info=True) 
+            logger.debug("[UpdateTaskUseCase] Context sync error details", exc_info=True) 

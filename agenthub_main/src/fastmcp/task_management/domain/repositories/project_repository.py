@@ -1,7 +1,8 @@
 """Project Repository Interface"""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict, Any
+from typing import Any
+
 from ..entities.project import Project
 
 
@@ -14,12 +15,12 @@ class ProjectRepository(ABC):
         pass
     
     @abstractmethod
-    async def find_by_id(self, project_id: str) -> Optional[Project]:
+    async def find_by_id(self, project_id: str) -> Project | None:
         """Find a project by its ID"""
         pass
     
     @abstractmethod
-    async def find_all(self) -> List[Project]:
+    async def find_all(self) -> list[Project]:
         """Find all projects"""
         pass
     
@@ -39,7 +40,7 @@ class ProjectRepository(ABC):
         pass
     
     @abstractmethod
-    async def find_by_name(self, name: str) -> Optional[Project]:
+    async def find_by_name(self, name: str) -> Project | None:
         """Find a project by its name"""
         pass
     
@@ -49,21 +50,21 @@ class ProjectRepository(ABC):
         pass
     
     @abstractmethod
-    async def find_projects_with_agent(self, agent_id: str) -> List[Project]:
+    async def find_projects_with_agent(self, agent_id: str) -> list[Project]:
         """Find projects that have a specific agent registered"""
         pass
     
     @abstractmethod
-    async def find_projects_by_status(self, status: str) -> List[Project]:
+    async def find_projects_by_status(self, status: str) -> list[Project]:
         """Find projects by their status"""
         pass
     
     @abstractmethod
-    async def get_project_health_summary(self) -> Dict[str, Any]:
+    async def get_project_health_summary(self) -> dict[str, Any]:
         """Get health summary of all projects"""
         pass
 
     @abstractmethod
-    async def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
         """Unassign an agent from a specific task tree within a project."""
         pass

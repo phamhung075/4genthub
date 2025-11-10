@@ -1,14 +1,13 @@
 """Centralized logging configuration for the task management system."""
 
+import inspect
+import json
 import logging
 import logging.handlers
 import os
 import sys
-import inspect
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
-import json
 
 
 class JSONFormatter(logging.Formatter):
@@ -17,7 +16,7 @@ class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_data = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -49,13 +48,13 @@ class TaskManagementLogger:
     """Centralized logger configuration for task management system."""
     
     _configured = False
-    _loggers: Dict[str, logging.Logger] = {}
+    _loggers: dict[str, logging.Logger] = {}
     
     @classmethod
     def configure(
         cls,
         log_level: str = "INFO",
-        log_dir: Optional[str] = None,
+        log_dir: str | None = None,
         enable_console: bool = True,
         enable_file: bool = True,
         enable_json: bool = False,
@@ -201,10 +200,10 @@ class TaskManagementLogger:
     def add_context(
         cls,
         logger: logging.Logger,
-        user_id: Optional[str] = None,
-        task_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        operation: Optional[str] = None
+        user_id: str | None = None,
+        task_id: str | None = None,
+        project_id: str | None = None,
+        operation: str | None = None
     ) -> logging.LoggerAdapter:
         """
         Add contextual information to logger.
@@ -244,7 +243,7 @@ def log_operation(operation: str):
     def decorator(func):
         async def async_wrapper(*args, **kwargs):
             logger = TaskManagementLogger.get_logger(func.__module__)
-            start_time = datetime.now(timezone.utc)
+            start_time = datetime.now(UTC)
             
             # Extract context from arguments if available
             context = {}
@@ -259,11 +258,11 @@ def log_operation(operation: str):
             
             try:
                 result = await func(*args, **kwargs)
-                duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+                duration = (datetime.now(UTC) - start_time).total_seconds()
                 ctx_logger.info(f"Completed {operation} in {duration:.3f}s")
                 return result
             except Exception as e:
-                duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+                duration = (datetime.now(UTC) - start_time).total_seconds()
                 ctx_logger.error(
                     f"Failed {operation} after {duration:.3f}s: {str(e)}",
                     exc_info=True,
@@ -273,7 +272,7 @@ def log_operation(operation: str):
                 
         def sync_wrapper(*args, **kwargs):
             logger = TaskManagementLogger.get_logger(func.__module__)
-            start_time = datetime.now(timezone.utc)
+            start_time = datetime.now(UTC)
             
             # Extract context from arguments if available
             context = {}
@@ -288,11 +287,11 @@ def log_operation(operation: str):
             
             try:
                 result = func(*args, **kwargs)
-                duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+                duration = (datetime.now(UTC) - start_time).total_seconds()
                 ctx_logger.info(f"Completed {operation} in {duration:.3f}s")
                 return result
             except Exception as e:
-                duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+                duration = (datetime.now(UTC) - start_time).total_seconds()
                 ctx_logger.error(
                     f"Failed {operation} after {duration:.3f}s: {str(e)}",
                     exc_info=True,

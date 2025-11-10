@@ -1,9 +1,9 @@
 """Agent Repository Factory - Clean DDD Implementation"""
 
-import os
 import logging
-from typing import Optional, Dict, Any, Type
+import os
 from enum import Enum
+from typing import Any
 
 from ...domain.repositories.agent_repository import AgentRepository
 from .orm.agent_repository import ORMAgentRepository
@@ -21,17 +21,17 @@ class AgentRepositoryType(Enum):
 class AgentRepositoryFactory:
     """Factory for creating agent repository instances following DDD principles"""
     
-    _instances: Dict[str, AgentRepository] = {}
-    _repository_types: Dict[AgentRepositoryType, Type[AgentRepository]] = {
+    _instances: dict[str, AgentRepository] = {}
+    _repository_types: dict[AgentRepositoryType, type[AgentRepository]] = {
         AgentRepositoryType.ORM: ORMAgentRepository,
     }
     
     @classmethod
     def create(
         cls,
-        repository_type: Optional[AgentRepositoryType] = None,
-        user_id: Optional[str] = None,
-        db_path: Optional[str] = None,
+        repository_type: AgentRepositoryType | None = None,
+        user_id: str | None = None,
+        db_path: str | None = None,
         **kwargs
     ) -> AgentRepository:
         """
@@ -48,8 +48,9 @@ class AgentRepositoryFactory:
         """
         # Import validation and auth config
         from ...domain.constants import validate_user_id
-        from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-        from ....config.auth_config import AuthConfig
+        from ...domain.exceptions.authentication_exceptions import (
+            UserAuthenticationRequiredError,
+        )
         
         # Validate user authentication is provided - NO FALLBACKS ALLOWED
         if user_id is None:
@@ -104,7 +105,7 @@ class AgentRepositoryFactory:
         cls, 
         repository_type: AgentRepositoryType, 
         user_id: str, 
-        db_path: Optional[str]
+        db_path: str | None
     ) -> str:
         """Generate cache key for repository instance"""
         return f"agent:{repository_type.value}:{user_id}:{db_path if db_path else 'memory'}"
@@ -114,7 +115,7 @@ class AgentRepositoryFactory:
         cls,
         repository_type: AgentRepositoryType,
         user_id: str,
-        db_path: Optional[str],
+        db_path: str | None,
         **kwargs
     ) -> AgentRepository:
         """Create repository instance of specified type"""
@@ -139,7 +140,7 @@ class AgentRepositoryFactory:
     def register_type(
         cls,
         repository_type: AgentRepositoryType,
-        repository_class: Type[AgentRepository]
+        repository_class: type[AgentRepository]
     ) -> None:
         """Register a new repository type"""
         cls._repository_types[repository_type] = repository_class
@@ -152,7 +153,7 @@ class AgentRepositoryFactory:
         logger.info("Agent repository cache cleared")
     
     @classmethod
-    def get_info(cls) -> Dict[str, Any]:
+    def get_info(cls) -> dict[str, Any]:
         """Get factory information"""
         return {
             "available_types": [rt.value for rt in cls._repository_types.keys()],
@@ -170,9 +171,9 @@ class AgentRepositoryConfig:
     
     def __init__(
         self,
-        repository_type: Optional[str] = None,
-        user_id: Optional[str] = None,
-        db_path: Optional[str] = None,
+        repository_type: str | None = None,
+        user_id: str | None = None,
+        db_path: str | None = None,
         **kwargs
     ):
         self.repository_type = self._validate_type(repository_type)
@@ -180,7 +181,7 @@ class AgentRepositoryConfig:
         self.db_path = db_path
         self.kwargs = kwargs
     
-    def _validate_type(self, repository_type: Optional[str]) -> AgentRepositoryType:
+    def _validate_type(self, repository_type: str | None) -> AgentRepositoryType:
         """Validate and convert repository type"""
         if repository_type is None:
             return AgentRepositoryType.ORM
@@ -213,8 +214,8 @@ class AgentRepositoryConfig:
 class GlobalAgentRepositoryManager:
     """Global agent repository instance manager"""
     
-    _default_repository: Optional[AgentRepository] = None
-    _user_repositories: Dict[str, AgentRepository] = {}
+    _default_repository: AgentRepository | None = None
+    _user_repositories: dict[str, AgentRepository] = {}
     
     @classmethod
     def get_default(cls) -> AgentRepository:
@@ -238,7 +239,7 @@ class GlobalAgentRepositoryManager:
         AgentRepositoryFactory.clear_cache()
     
     @classmethod
-    def get_status(cls) -> Dict[str, Any]:
+    def get_status(cls) -> dict[str, Any]:
         """Get manager status"""
         return {
             "default_repository": cls._default_repository is not None,
@@ -250,9 +251,9 @@ class GlobalAgentRepositoryManager:
 
 # Convenience functions for easy repository creation
 def create_agent_repository(
-    user_id: Optional[str] = None,
-    repository_type: Optional[str] = None,
-    db_path: Optional[str] = None
+    user_id: str | None = None,
+    repository_type: str | None = None,
+    db_path: str | None = None
 ) -> AgentRepository:
     """Create an agent repository with specified parameters"""
     repo_type = AgentRepositoryType(repository_type.lower()) if repository_type else None
@@ -263,8 +264,8 @@ def create_agent_repository(
 
 
 def get_sqlite_agent_repository(
-    user_id: Optional[str] = None,
-    db_path: Optional[str] = None
+    user_id: str | None = None,
+    db_path: str | None = None
 ) -> ORMAgentRepository:
     """Get ORM agent repository instance (legacy compatibility method)"""
     return AgentRepositoryFactory.create(
@@ -274,8 +275,8 @@ def get_sqlite_agent_repository(
 
 
 def get_orm_agent_repository(
-    user_id: Optional[str] = None,
-    project_id: Optional[str] = None
+    user_id: str | None = None,
+    project_id: str | None = None
 ) -> ORMAgentRepository:
     """Get ORM agent repository instance"""
     return AgentRepositoryFactory.create(

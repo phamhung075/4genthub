@@ -11,15 +11,15 @@ Task: Phase 5: Performance Optimization & Caching
 """
 
 import asyncio
-import time
-import threading
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Callable
-import logging
-from datetime import datetime, timedelta
-from collections import deque, defaultdict
 import json
+import logging
+import time
+from collections import deque
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class BenchmarkResult:
     timeout_count: int = 0
     
     # Recommendations
-    recommendations: List[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
 
 class PerformanceMonitor:
@@ -108,8 +108,8 @@ class PerformanceMonitor:
         
         # Monitoring state
         self.monitoring_active = False
-        self.monitor_task: Optional[asyncio.Task] = None
-        self.alert_callbacks: List[Callable] = []
+        self.monitor_task: asyncio.Task | None = None
+        self.alert_callbacks: list[Callable] = []
         
         # Performance tracking
         self.operation_times: deque[float] = deque(maxlen=1000)
@@ -204,7 +204,7 @@ class PerformanceMonitor:
         """Add alert callback function"""
         self.alert_callbacks.append(callback)
     
-    def get_performance_summary(self, time_window_minutes: int = 60) -> Dict[str, Any]:
+    def get_performance_summary(self, time_window_minutes: int = 60) -> dict[str, Any]:
         """Get performance summary for specified time window"""
         cutoff_time = time.time() - (time_window_minutes * 60)
         recent_snapshots = [s for s in self.performance_history if s.timestamp >= cutoff_time]
@@ -284,9 +284,9 @@ class CacheBenchmark:
     
     def __init__(self, cache_manager):
         self.cache_manager = cache_manager
-        self.response_times: List[float] = []
+        self.response_times: list[float] = []
         
-    async def run_basic_benchmark(self, num_operations: int = 1000) -> Dict[str, Any]:
+    async def run_basic_benchmark(self, num_operations: int = 1000) -> dict[str, Any]:
         """Run basic performance benchmark"""
         logger.info(f"Starting basic benchmark with {num_operations} operations")
         
@@ -319,7 +319,7 @@ class CacheBenchmark:
         benchmark_results = {
             "configuration": {
                 "num_operations": num_operations,
-                "data_size_per_item": 100 * len(f"test_content_0")
+                "data_size_per_item": 100 * len("test_content_0")
             },
             "performance": {
                 "total_operations": num_operations * 2,

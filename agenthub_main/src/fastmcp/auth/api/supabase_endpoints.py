@@ -6,11 +6,12 @@ for user registration, login, password reset, and email verification.
 """
 
 import logging
-from typing import Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Depends, Header, Body
+from typing import Any
+
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 
-from ..infrastructure.supabase_auth import SupabaseAuthService, SupabaseAuthResult
+from ..infrastructure.supabase_auth import SupabaseAuthResult, SupabaseAuthService
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,8 @@ class SignUpRequest(BaseModel):
     """Sign up request model"""
     email: EmailStr
     password: str = Field(..., min_length=6)
-    username: Optional[str] = None
-    full_name: Optional[str] = None
+    username: str | None = None
+    full_name: str | None = None
 
 
 class SignInRequest(BaseModel):
@@ -55,14 +56,14 @@ class AuthResponse(BaseModel):
     """Standard auth response"""
     success: bool
     message: str
-    user: Optional[Dict[str, Any]] = None
-    access_token: Optional[str] = None
-    refresh_token: Optional[str] = None
+    user: dict[str, Any] | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
     requires_email_verification: bool = False
 
 
 # Helper functions
-def get_bearer_token(authorization: Optional[str] = Header(None)) -> str:
+def get_bearer_token(authorization: str | None = Header(None)) -> str:
     """Extract bearer token from authorization header"""
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header missing")

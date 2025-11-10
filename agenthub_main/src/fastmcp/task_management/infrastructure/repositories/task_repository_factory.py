@@ -1,13 +1,12 @@
 """Task Repository Factory for Hierarchical Storage with User Support"""
 
-from typing import Optional
-from pathlib import Path
+import logging
 import os
+from pathlib import Path
 
 from ...domain.repositories.task_repository import TaskRepository
-from .orm.task_repository import ORMTaskRepository
 from .mock_repository_factory import MockTaskRepository
-import logging
+from .orm.task_repository import ORMTaskRepository
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +56,8 @@ def _find_project_root() -> Path:
 class TaskRepositoryFactory:
     """Factory for creating task repositories with hierarchical user/project/tree structure"""
     
-    def __init__(self, base_path: Optional[str] = None, default_user_id: str = None, 
-                 project_root: Optional[Path] = None):
+    def __init__(self, base_path: str | None = None, default_user_id: str = None, 
+                 project_root: Path | None = None):
         """
         Initialize task repository factory
         
@@ -68,8 +67,6 @@ class TaskRepositoryFactory:
             project_root: Injected project root for testing or custom environments
         """
         from ...domain.constants import validate_user_id
-        from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-        from ....config.auth_config import AuthConfig
         
         self.project_root = project_root or _find_project_root()
         self.base_path = base_path or str(self.project_root / ".cursor" / "rules" / "tasks")
@@ -98,7 +95,7 @@ class TaskRepositoryFactory:
         factory = cls()
         return factory.create_repository(project_id, git_branch_name, user_id)
     
-    def create_repository(self, project_id: str, git_branch_name: str = "main", user_id: Optional[str] = None) -> TaskRepository:
+    def create_repository(self, project_id: str, git_branch_name: str = "main", user_id: str | None = None) -> TaskRepository:
         """
         Create a task repository for specific user/project/task tree
         
@@ -144,7 +141,7 @@ class TaskRepositoryFactory:
         return RepositoryFactory.get_task_repository(project_id, git_branch_name, user_id)
     
     def create_sqlite_task_repository(self, project_id: str, git_branch_name: str = "main", 
-                                     user_id: Optional[str] = None, db_path: Optional[str] = None) -> TaskRepository:
+                                     user_id: str | None = None, db_path: str | None = None) -> TaskRepository:
         """
         Create a task repository (now always uses ORM)
         

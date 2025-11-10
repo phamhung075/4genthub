@@ -1,6 +1,7 @@
 """Task Domain Exceptions"""
 
-from typing import Optional, Dict, Any, List
+from typing import Any
+
 from ..value_objects import ErrorSeverity
 
 
@@ -10,9 +11,9 @@ class TaskDomainError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
         recoverable: bool = True
     ):
         """Initialize base task domain error."""
@@ -92,7 +93,7 @@ class ProjectNotFoundError(TaskDomainError):
 class TaskValidationError(TaskDomainError):
     """Raised when task validation fails"""
     
-    def __init__(self, message: str, validation_errors: Optional[List[str]] = None):
+    def __init__(self, message: str, validation_errors: list[str] | None = None):
         self.validation_errors = validation_errors or []
         super().__init__(
             message=message,
@@ -106,7 +107,7 @@ class TaskValidationError(TaskDomainError):
 class TaskCompletionError(TaskDomainError):
     """Raised when a task cannot be completed due to business rule violations"""
 
-    def __init__(self, message: str, incomplete_subtasks: Optional[List[Dict[str, Any]]] = None):
+    def __init__(self, message: str, incomplete_subtasks: list[dict[str, Any]] | None = None):
         self.incomplete_subtasks = incomplete_subtasks or []
         context = {}
         if incomplete_subtasks:

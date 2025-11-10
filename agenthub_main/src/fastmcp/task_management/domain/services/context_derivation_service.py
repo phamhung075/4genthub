@@ -6,11 +6,11 @@ scattered across application facades.
 """
 
 import logging
-from typing import Dict, Optional, Any
-from ..entities.task import Task
-from ..value_objects.task_id import TaskId
-from ..repositories.task_repository import TaskRepository
+from typing import Any
+
 from ..repositories.git_branch_repository import GitBranchRepository
+from ..repositories.task_repository import TaskRepository
+from ..value_objects.task_id import TaskId
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,8 @@ class ContextDerivationService:
     
     def __init__(
         self,
-        task_repository: Optional[TaskRepository] = None,
-        git_branch_repository: Optional[GitBranchRepository] = None
+        task_repository: TaskRepository | None = None,
+        git_branch_repository: GitBranchRepository | None = None
     ):
         """Initialize the context derivation service with repositories"""
         self._task_repository = task_repository
@@ -38,8 +38,8 @@ class ContextDerivationService:
     async def derive_context_from_task(
         self,
         task_id: str,
-        default_user_id: Optional[str] = None
-    ) -> Dict[str, str]:
+        default_user_id: str | None = None
+    ) -> dict[str, str]:
         """
         Derive context parameters from a task.
 
@@ -81,8 +81,8 @@ class ContextDerivationService:
     async def derive_context_from_git_branch(
         self,
         git_branch_id: str,
-        default_user_id: Optional[str] = None
-    ) -> Dict[str, str]:
+        default_user_id: str | None = None
+    ) -> dict[str, str]:
         """
         Derive context parameters from a git branch.
 
@@ -135,11 +135,11 @@ class ContextDerivationService:
     
     async def derive_context_hierarchy(
         self,
-        task_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None,
-        project_id: Optional[str] = None,
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        task_id: str | None = None,
+        git_branch_id: str | None = None,
+        project_id: str | None = None,
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Derive complete context hierarchy from available identifiers.
 
@@ -197,7 +197,7 @@ class ContextDerivationService:
 
         return context_hierarchy
     
-    def _get_default_context(self, default_user_id: Optional[str] = None) -> Dict[str, str]:
+    def _get_default_context(self, default_user_id: str | None = None) -> dict[str, str]:
         """
         Get default context when derivation fails.
 
@@ -218,7 +218,7 @@ class ContextDerivationService:
             "user_id": self._resolve_user_id(default_user_id)
         }
     
-    def _resolve_user_id(self, default_user_id: Optional[str] = None) -> str:
+    def _resolve_user_id(self, default_user_id: str | None = None) -> str:
         """
         Resolve user ID with authentication requirements.
         
@@ -245,9 +245,9 @@ class ContextDerivationService:
     
     def determine_context_level(
         self,
-        task_id: Optional[str] = None,
-        git_branch_id: Optional[str] = None,
-        project_id: Optional[str] = None
+        task_id: str | None = None,
+        git_branch_id: str | None = None,
+        project_id: str | None = None
     ) -> str:
         """
         Determine the appropriate context level based on available identifiers.

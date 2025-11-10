@@ -6,18 +6,16 @@ source of truth, these mocks are simplified and focused on core functionality.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
-from datetime import datetime
-import uuid
+from typing import Any
 
-from ...domain.repositories.project_repository import ProjectRepository
-from ...domain.repositories.git_branch_repository import GitBranchRepository
-from ...domain.repositories.task_repository import TaskRepository
-from ...domain.repositories.subtask_repository import SubtaskRepository
-from ...domain.entities.project import Project
 from ...domain.entities.git_branch import GitBranch
-from ...domain.entities.task import Task
+from ...domain.entities.project import Project
 from ...domain.entities.subtask import Subtask
+from ...domain.entities.task import Task
+from ...domain.repositories.git_branch_repository import GitBranchRepository
+from ...domain.repositories.project_repository import ProjectRepository
+from ...domain.repositories.subtask_repository import SubtaskRepository
+from ...domain.repositories.task_repository import TaskRepository
 
 logger = logging.getLogger(__name__)
 
@@ -32,16 +30,16 @@ class MockProjectRepository(ProjectRepository):
         self._projects[project.id] = project
         return project
     
-    async def find_by_id(self, project_id: str) -> Optional[Project]:
+    async def find_by_id(self, project_id: str) -> Project | None:
         return self._projects.get(project_id)
     
-    async def find_by_name(self, name: str) -> Optional[Project]:
+    async def find_by_name(self, name: str) -> Project | None:
         for project in self._projects.values():
             if project.name == name:
                 return project
         return None
     
-    async def find_all(self) -> List[Project]:
+    async def find_all(self) -> list[Project]:
         return list(self._projects.values())
     
     async def delete(self, project_id: str) -> bool:
@@ -56,17 +54,17 @@ class MockProjectRepository(ProjectRepository):
     async def exists(self, project_id: str) -> bool:
         return project_id in self._projects
     
-    async def find_projects_with_agent(self, agent_id: str) -> List[Project]:
+    async def find_projects_with_agent(self, agent_id: str) -> list[Project]:
         return []
     
-    async def find_projects_by_status(self, status: str) -> List[Project]:
+    async def find_projects_by_status(self, status: str) -> list[Project]:
         results = []
         for project in self._projects.values():
             if hasattr(project, 'status') and project.status == status:
                 results.append(project)
         return results
     
-    async def get_project_health_summary(self, project_id: str) -> Dict[str, Any]:
+    async def get_project_health_summary(self, project_id: str) -> dict[str, Any]:
         return {"health": "good", "project_id": project_id}
     
     async def unassign_agent_from_tree(self, project_id: str) -> bool:
@@ -90,10 +88,10 @@ class MockGitBranchRepository(GitBranchRepository):
         self._branches[branch.id] = branch
         return branch
     
-    async def find_by_id(self, branch_id: str) -> Optional[GitBranch]:
+    async def find_by_id(self, branch_id: str) -> GitBranch | None:
         return self._branches.get(branch_id)
     
-    async def find_all(self) -> List[GitBranch]:
+    async def find_all(self) -> list[GitBranch]:
         return list(self._branches.values())
     
     async def delete(self, branch_id: str) -> bool:
@@ -102,14 +100,14 @@ class MockGitBranchRepository(GitBranchRepository):
             return True
         return False
     
-    async def find_by_project_id(self, project_id: str) -> List[GitBranch]:
+    async def find_by_project_id(self, project_id: str) -> list[GitBranch]:
         results = []
         for branch in self._branches.values():
             if branch.project_id == project_id:
                 results.append(branch)
         return results
     
-    async def find_by_name_and_project(self, name: str, project_id: str) -> Optional[GitBranch]:
+    async def find_by_name_and_project(self, name: str, project_id: str) -> GitBranch | None:
         for branch in self._branches.values():
             if branch.name == name and branch.project_id == project_id:
                 return branch
@@ -142,12 +140,12 @@ class MockTaskRepository(TaskRepository):
         self._tasks[task_id_str] = task
         return task
     
-    def find_by_id(self, task_id) -> Optional[Task]:
+    def find_by_id(self, task_id) -> Task | None:
         if hasattr(task_id, 'value'):
             task_id = task_id.value
         return self._tasks.get(str(task_id))
     
-    def find_all(self) -> List[Task]:
+    def find_all(self) -> list[Task]:
         return list(self._tasks.values())
     
     def delete(self, task_id) -> bool:
@@ -159,10 +157,10 @@ class MockTaskRepository(TaskRepository):
             return True
         return False
     
-    def find_by_status(self, status: str) -> List[Task]:
+    def find_by_status(self, status: str) -> list[Task]:
         return [t for t in self._tasks.values() if t.status == status]
     
-    def find_by_git_branch_id(self, git_branch_id: str) -> List[Task]:
+    def find_by_git_branch_id(self, git_branch_id: str) -> list[Task]:
         return [t for t in self._tasks.values() if t.git_branch_id == git_branch_id]
     
     def count(self) -> int:
@@ -173,7 +171,7 @@ class MockTaskRepository(TaskRepository):
             task_id = task_id.value
         return str(task_id) in self._tasks
     
-    def search(self, query: str) -> List[Task]:
+    def search(self, query: str) -> list[Task]:
         results = []
         query_lower = query.lower()
         for task in self._tasks.values():
@@ -190,15 +188,15 @@ class MockTaskRepository(TaskRepository):
             return task
         raise ValueError(f"Task with id {task.id} not found")
     
-    def find_by_assignee(self, assignee: str) -> List[Task]:
+    def find_by_assignee(self, assignee: str) -> list[Task]:
         """Find tasks by assignee"""
         return [t for t in self._tasks.values() if hasattr(t, 'assignee') and t.assignee == assignee]
     
-    def find_by_priority(self, priority) -> List[Task]:
+    def find_by_priority(self, priority) -> list[Task]:
         """Find tasks by priority"""
         return [t for t in self._tasks.values() if hasattr(t, 'priority') and t.priority == priority]
     
-    def find_by_labels(self, labels: List[str]) -> List[Task]:
+    def find_by_labels(self, labels: list[str]) -> list[Task]:
         """Find tasks containing any of the specified labels"""
         results = []
         for task in self._tasks.values():
@@ -213,7 +211,7 @@ class MockTaskRepository(TaskRepository):
         next_id = len(self._tasks) + 1
         return TaskId(f"task-{next_id}")
     
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get task statistics"""
         total = len(self._tasks)
         pending = len([t for t in self._tasks.values() if hasattr(t, 'status') and t.status == 'pending'])
@@ -226,7 +224,7 @@ class MockTaskRepository(TaskRepository):
             "completed": completed
         }
     
-    def find_by_criteria(self, filters: Dict[str, Any], limit: Optional[int] = None) -> List[Task]:
+    def find_by_criteria(self, filters: dict[str, Any], limit: int | None = None) -> list[Task]:
         """Find tasks by multiple criteria"""
         results = []
         for task in self._tasks.values():
@@ -241,7 +239,7 @@ class MockTaskRepository(TaskRepository):
                     break
         return results
     
-    def find_by_id_all_states(self, task_id) -> Optional[Task]:
+    def find_by_id_all_states(self, task_id) -> Task | None:
         """Find task by ID across all states (active, completed, archived)"""
         return self.find_by_id(task_id)
 
@@ -282,12 +280,12 @@ class MockSubtaskRepository(SubtaskRepository):
         self._subtasks[subtask_id_str] = subtask
         return subtask
     
-    def find_by_id(self, subtask_id) -> Optional[Subtask]:
+    def find_by_id(self, subtask_id) -> Subtask | None:
         if hasattr(subtask_id, 'value'):
             subtask_id = subtask_id.value
         return self._subtasks.get(str(subtask_id))
     
-    def find_by_task_id(self, task_id: str) -> List[Subtask]:
+    def find_by_task_id(self, task_id: str) -> list[Subtask]:
         return [s for s in self._subtasks.values() if s.task_id == task_id]
     
     def delete(self, subtask_id) -> bool:
@@ -317,26 +315,26 @@ class MockSubtaskRepository(SubtaskRepository):
             return subtask
         raise ValueError(f"Subtask with id {subtask.id} not found")
     
-    def find_by_parent_task_id(self, parent_task_id) -> List[Subtask]:
+    def find_by_parent_task_id(self, parent_task_id) -> list[Subtask]:
         """Find all subtasks for a parent task"""
         task_id_str = str(parent_task_id)
         return [s for s in self._subtasks.values() if str(s.parent_task_id) == task_id_str]
     
-    def find_by_assignee(self, assignee: str) -> List[Subtask]:
+    def find_by_assignee(self, assignee: str) -> list[Subtask]:
         """Find subtasks by assignee"""
         return [s for s in self._subtasks.values() if hasattr(s, 'assignee') and s.assignee == assignee]
     
-    def find_by_status(self, status: str) -> List[Subtask]:
+    def find_by_status(self, status: str) -> list[Subtask]:
         """Find subtasks by status"""
         return [s for s in self._subtasks.values() if hasattr(s, 'status') and s.status == status]
     
-    def find_completed(self, parent_task_id) -> List[Subtask]:
+    def find_completed(self, parent_task_id) -> list[Subtask]:
         """Find completed subtasks for a parent task"""
         task_id_str = str(parent_task_id)
         return [s for s in self._subtasks.values() 
                 if str(s.task_id) == task_id_str and hasattr(s, 'status') and s.status == 'completed']
     
-    def find_pending(self, parent_task_id) -> List[Subtask]:
+    def find_pending(self, parent_task_id) -> list[Subtask]:
         """Find pending subtasks for a parent task"""
         task_id_str = str(parent_task_id)
         return [s for s in self._subtasks.values() 
@@ -365,7 +363,7 @@ class MockSubtaskRepository(SubtaskRepository):
         next_id = len(self._subtasks) + 1
         return TaskId(f"subtask-{next_id}")
     
-    def get_subtask_progress(self, parent_task_id) -> Dict[str, Any]:
+    def get_subtask_progress(self, parent_task_id) -> dict[str, Any]:
         """Get subtask progress statistics for a parent task"""
         subtasks = self.find_by_parent_task_id(parent_task_id)
         completed = len([s for s in subtasks if hasattr(s, 'status') and s.status == 'completed'])

@@ -1,17 +1,14 @@
 """Context Domain Entities"""
 
+import builtins
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional, Union
-from datetime import datetime, timezone
-import json
-from pathlib import Path
+from datetime import UTC, datetime
+from typing import Any
+
 from ..value_objects.priority import Priority, PriorityLevel
 from ..value_objects.task_status import TaskStatus, TaskStatusEnum
-from ..value_objects.task_id import TaskId
-from .global_context_schema import GlobalContextNestedData
 from .base.base_timestamp_entity import BaseTimestampEntity
-import uuid
-
+from .global_context_schema import GlobalContextNestedData
 
 # Unified Context System Entities
 
@@ -24,11 +21,11 @@ class GlobalContext:
     """
     id: str  # User-scoped global context ID
     organization_name: str
-    global_settings: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    global_settings: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
     # Nested structure support (v2.0)
-    _nested_data: Optional[GlobalContextNestedData] = field(default=None, init=False)
+    _nested_data: GlobalContextNestedData | None = field(default=None, init=False)
     
     def __post_init__(self):
         """Initialize nested structure if not already present."""
@@ -88,7 +85,7 @@ class GlobalContext:
         if self._nested_data:
             self.global_settings = self._nested_data.to_dict()
     
-    def update_global_settings(self, settings: Dict[str, Any], use_nested: bool = True) -> None:
+    def update_global_settings(self, settings: dict[str, Any], use_nested: bool = True) -> None:
         """
         Update global settings with support for both flat and nested structures.
         
@@ -130,11 +127,11 @@ class GlobalContext:
                 any(key in self.global_settings for key in ["organization", "development", "security", "operations", "preferences"])):
                 self._nested_data = GlobalContextNestedData.from_dict(self.global_settings)
     
-    def get_organization_standards(self) -> Dict[str, Any]:
+    def get_organization_standards(self) -> dict[str, Any]:
         """Get organization standards from nested structure."""
         return self.get_nested_value("organization.standards", {})
     
-    def get_security_policies(self) -> Dict[str, Any]:
+    def get_security_policies(self) -> dict[str, Any]:
         """Get security policies from nested structure."""
         security_data = self.get_nested_data().security
         return {
@@ -143,11 +140,11 @@ class GlobalContext:
             "access_control": security_data.get("access_control", {})
         }
     
-    def get_development_patterns(self) -> Dict[str, Any]:
+    def get_development_patterns(self) -> dict[str, Any]:
         """Get development patterns from nested structure."""
         return self.get_nested_value("development.patterns", {})
     
-    def get_user_preferences(self) -> Dict[str, Any]:
+    def get_user_preferences(self) -> dict[str, Any]:
         """Get user preferences from nested structure."""
         preferences = self.get_nested_data().preferences
         return {
@@ -156,7 +153,7 @@ class GlobalContext:
             "workflow": preferences.get("workflow", {})
         }
     
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> dict[str, Any]:
         """Convert to dictionary with support for both structures."""
         self._ensure_nested_structure()
 
@@ -197,7 +194,7 @@ class GlobalContext:
         return result
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'GlobalContext':
+    def from_dict(cls, data: builtins.dict[str, Any]) -> 'GlobalContext':
         """Create GlobalContext from dictionary with nested structure support."""
         instance = cls(
             id=data.get("id", ""),
@@ -222,16 +219,16 @@ class ProjectContext:
     """Project context entity for project-specific settings."""
     id: str  # Project UUID
     project_name: str
-    project_info: Dict[str, Any] = field(default_factory=dict)  # Name, description, version, status
-    team_preferences: Dict[str, Any] = field(default_factory=dict)  # Review requirements, merge strategy
-    technology_stack: Dict[str, Any] = field(default_factory=dict)  # Frontend, backend, database, infrastructure
-    project_workflow: Dict[str, Any] = field(default_factory=dict)  # Phases, gates, approval processes
-    local_standards: Dict[str, Any] = field(default_factory=dict)  # Project-specific standards
-    project_settings: Dict[str, Any] = field(default_factory=dict)  # Build configs, deployment settings
-    technical_specifications: Dict[str, Any] = field(default_factory=dict)  # API specs, schemas, architecture
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    project_info: dict[str, Any] = field(default_factory=dict)  # Name, description, version, status
+    team_preferences: dict[str, Any] = field(default_factory=dict)  # Review requirements, merge strategy
+    technology_stack: dict[str, Any] = field(default_factory=dict)  # Frontend, backend, database, infrastructure
+    project_workflow: dict[str, Any] = field(default_factory=dict)  # Phases, gates, approval processes
+    local_standards: dict[str, Any] = field(default_factory=dict)  # Project-specific standards
+    project_settings: dict[str, Any] = field(default_factory=dict)  # Build configs, deployment settings
+    technical_specifications: dict[str, Any] = field(default_factory=dict)  # API specs, schemas, architecture
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "id": self.id,
@@ -253,15 +250,15 @@ class BranchContext:
     id: str  # Git branch UUID
     project_id: str
     git_branch_name: str
-    branch_info: Dict[str, Any] = field(default_factory=dict)  # Feature name, type, status, parent
-    branch_workflow: Dict[str, Any] = field(default_factory=dict)  # Implementation status, dependencies
-    feature_flags: Dict[str, Any] = field(default_factory=dict)  # Feature toggles
-    discovered_patterns: Dict[str, Any] = field(default_factory=dict)  # Patterns discovered
-    branch_decisions: Dict[str, Any] = field(default_factory=dict)  # Technical decisions
-    branch_settings: Dict[str, Any] = field(default_factory=dict)  # Legacy/general settings
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    branch_info: dict[str, Any] = field(default_factory=dict)  # Feature name, type, status, parent
+    branch_workflow: dict[str, Any] = field(default_factory=dict)  # Implementation status, dependencies
+    feature_flags: dict[str, Any] = field(default_factory=dict)  # Feature toggles
+    discovered_patterns: dict[str, Any] = field(default_factory=dict)  # Patterns discovered
+    branch_decisions: dict[str, Any] = field(default_factory=dict)  # Technical decisions
+    branch_settings: dict[str, Any] = field(default_factory=dict)  # Legacy/general settings
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "id": self.id,
@@ -286,18 +283,18 @@ class TaskContextUnified:
     """
     id: str  # Task UUID
     branch_id: str
-    task_data: Dict[str, Any] = field(default_factory=dict)  # Title, status, progress, assignees
-    execution_context: Dict[str, Any] = field(default_factory=dict)  # Files modified, tests added
-    discovered_patterns: Dict[str, Any] = field(default_factory=dict)  # Patterns found
-    implementation_notes: Dict[str, Any] = field(default_factory=dict)  # Challenges, solutions
-    test_results: Dict[str, Any] = field(default_factory=dict)  # Test outcomes, coverage
-    blockers: Dict[str, Any] = field(default_factory=dict)  # Current impediments
+    task_data: dict[str, Any] = field(default_factory=dict)  # Title, status, progress, assignees
+    execution_context: dict[str, Any] = field(default_factory=dict)  # Files modified, tests added
+    discovered_patterns: dict[str, Any] = field(default_factory=dict)  # Patterns found
+    implementation_notes: dict[str, Any] = field(default_factory=dict)  # Challenges, solutions
+    test_results: dict[str, Any] = field(default_factory=dict)  # Test outcomes, coverage
+    blockers: dict[str, Any] = field(default_factory=dict)  # Current impediments
     progress: int = 0
-    insights: List[Dict[str, Any]] = field(default_factory=list)
-    next_steps: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    insights: list[dict[str, Any]] = field(default_factory=list)
+    next_steps: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def validate_context_data(self) -> tuple[bool, List[str]]:
+    def validate_context_data(self) -> tuple[bool, list[str]]:
         """
         Validate context data for business rules compliance.
 
@@ -344,7 +341,7 @@ class TaskContextUnified:
 
         return len(errors) == 0, errors
 
-    def merge_context_updates(self, updates: Dict[str, Any]) -> None:
+    def merge_context_updates(self, updates: dict[str, Any]) -> None:
         """
         Merge context updates with business rules.
 
@@ -437,7 +434,7 @@ class TaskContextUnified:
 
         # Add insight with timestamp
         insight = {
-            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'category': category,
             'content': content.strip(),
             'agent': agent,
@@ -446,7 +443,7 @@ class TaskContextUnified:
 
         self.insights.append(insight)
 
-    def update_progress(self, new_progress: int, notes: Optional[str] = None,
+    def update_progress(self, new_progress: int, notes: str | None = None,
                        allow_decrease: bool = False) -> None:
         """
         Update progress with validation and tracking.
@@ -479,7 +476,7 @@ class TaskContextUnified:
             self.metadata['progress_history'] = []
 
         self.metadata['progress_history'].append({
-            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'old_progress': old_progress,
             'new_progress': new_progress,
             'notes': notes
@@ -490,12 +487,12 @@ class TaskContextUnified:
             if 'progress_updates' not in self.implementation_notes:
                 self.implementation_notes['progress_updates'] = []
             self.implementation_notes['progress_updates'].append({
-                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'timestamp': datetime.now(UTC).isoformat(),
                 'progress': new_progress,
                 'notes': notes
             })
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "id": self.id,
@@ -522,8 +519,8 @@ class ContextMetadata(BaseTimestampEntity):
     task_id: str = ""  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     status: TaskStatus = field(default_factory=TaskStatus.todo)
     priority: Priority = field(default_factory=Priority.medium)
-    assignees: List[str] = field(default_factory=list)
-    labels: List[str] = field(default_factory=list)
+    assignees: list[str] = field(default_factory=list)
+    labels: list[str] = field(default_factory=list)
     version: int = 1
 
     def _get_entity_id(self) -> str:
@@ -541,8 +538,8 @@ class ContextObjective:
     """Task objective and description"""
     title: str
     description: str = ""
-    estimated_effort: Optional[str] = None
-    due_date: Optional[datetime] = None
+    estimated_effort: str | None = None
+    due_date: datetime | None = None
 
 
 @dataclass
@@ -558,21 +555,21 @@ class ContextRequirement:
 @dataclass
 class ContextRequirements:
     """Requirements section"""
-    checklist: List[ContextRequirement] = field(default_factory=list)
-    custom_requirements: List[str] = field(default_factory=list)
-    completion_criteria: List[str] = field(default_factory=list)
+    checklist: list[ContextRequirement] = field(default_factory=list)
+    custom_requirements: list[str] = field(default_factory=list)
+    completion_criteria: list[str] = field(default_factory=list)
 
 
 @dataclass
 class ContextTechnical:
     """Technical details section"""
-    technologies: List[str] = field(default_factory=list)
-    frameworks: List[str] = field(default_factory=list)
+    technologies: list[str] = field(default_factory=list)
+    frameworks: list[str] = field(default_factory=list)
     database: str = ""
-    key_files: List[str] = field(default_factory=list)
-    key_directories: List[str] = field(default_factory=list)
+    key_files: list[str] = field(default_factory=list)
+    key_directories: list[str] = field(default_factory=list)
     architecture_notes: str = ""
-    patterns_used: List[str] = field(default_factory=list)
+    patterns_used: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -587,9 +584,9 @@ class ContextDependency:
 @dataclass
 class ContextDependencies:
     """Dependencies section"""
-    task_dependencies: List[ContextDependency] = field(default_factory=list)
-    external_dependencies: List[str] = field(default_factory=list)
-    blocked_by: List[str] = field(default_factory=list)
+    task_dependencies: list[ContextDependency] = field(default_factory=list)
+    external_dependencies: list[str] = field(default_factory=list)
+    blocked_by: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -605,16 +602,16 @@ class ContextProgressAction:
 @dataclass
 class ContextProgress:
     """Progress tracking section"""
-    completed_actions: List[ContextProgressAction] = field(default_factory=list)
+    completed_actions: list[ContextProgressAction] = field(default_factory=list)
     current_session_summary: str = ""
-    next_steps: List[str] = field(default_factory=list)
+    next_steps: list[str] = field(default_factory=list)
     completion_percentage: float = 0.0
     time_spent_minutes: int = 0
     # Vision System mandatory fields
-    completion_summary: Optional[str] = None  # REQUIRED when task is completed
-    testing_notes: Optional[str] = None  # Optional but recommended
-    next_recommendations: Optional[str] = None  # Optional but recommended
-    vision_alignment_score: Optional[float] = None  # Vision alignment score
+    completion_summary: str | None = None  # REQUIRED when task is completed
+    testing_notes: str | None = None  # Optional but recommended
+    next_recommendations: str | None = None  # Optional but recommended
+    vision_alignment_score: float | None = None  # Vision alignment score
 
 
 @dataclass
@@ -630,10 +627,10 @@ class ContextInsight:
 @dataclass
 class ContextNotes:
     """Context notes and insights"""
-    agent_insights: List[ContextInsight] = field(default_factory=list)
-    challenges_encountered: List[ContextInsight] = field(default_factory=list)
-    solutions_applied: List[ContextInsight] = field(default_factory=list)
-    decisions_made: List[ContextInsight] = field(default_factory=list)
+    agent_insights: list[ContextInsight] = field(default_factory=list)
+    challenges_encountered: list[ContextInsight] = field(default_factory=list)
+    solutions_applied: list[ContextInsight] = field(default_factory=list)
+    decisions_made: list[ContextInsight] = field(default_factory=list)
     general_notes: str = ""
 
 
@@ -644,7 +641,7 @@ class ContextSubtask:
     title: str
     description: str = ""
     status: TaskStatus = field(default_factory=TaskStatus.todo)
-    assignees: List[str] = field(default_factory=list)
+    assignees: list[str] = field(default_factory=list)
     completed: bool = False
     progress_notes: str = ""
 
@@ -652,7 +649,7 @@ class ContextSubtask:
 @dataclass
 class ContextSubtasks:
     """Subtasks section"""
-    items: List[ContextSubtask] = field(default_factory=list)
+    items: list[ContextSubtask] = field(default_factory=list)
     total_count: int = 0
     completed_count: int = 0
     progress_percentage: float = 0.0
@@ -662,7 +659,7 @@ class ContextSubtasks:
 class ContextCustomSection:
     """Custom extensible section"""
     name: str
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     schema_version: str = "1.0"
 
 
@@ -677,16 +674,16 @@ class TaskContext:
     progress: ContextProgress = field(default_factory=ContextProgress)
     subtasks: ContextSubtasks = field(default_factory=ContextSubtasks)
     notes: ContextNotes = field(default_factory=ContextNotes)
-    custom_sections: List[ContextCustomSection] = field(default_factory=list)
+    custom_sections: list[ContextCustomSection] = field(default_factory=list)
     
     # Phase 2: Progress tracking fields
-    progress_timeline: Optional[List[Dict[str, Any]]] = None  # Snapshot history
-    progress_milestones: Optional[Dict[str, float]] = None  # Milestone definitions
-    progress_by_type: Optional[Dict[str, float]] = None  # Current progress per type
+    progress_timeline: list[dict[str, Any]] | None = None  # Snapshot history
+    progress_milestones: dict[str, float] | None = None  # Milestone definitions
+    progress_by_type: dict[str, float] | None = None  # Current progress per type
     
     def update_completion_summary(self, completion_summary: str, 
-                                testing_notes: Optional[str] = None,
-                                next_recommendations: Optional[str] = None) -> None:
+                                testing_notes: str | None = None,
+                                next_recommendations: str | None = None) -> None:
         """Update context with completion information (Vision System requirement)"""
         if not completion_summary or not completion_summary.strip():
             raise ValueError("completion_summary cannot be empty")
@@ -704,7 +701,7 @@ class TaskContext:
         """Check if context has a completion summary"""
         return bool(self.progress.completion_summary and self.progress.completion_summary.strip())
     
-    def validate_for_task_completion(self) -> tuple[bool, List[str]]:
+    def validate_for_task_completion(self) -> tuple[bool, list[str]]:
         """Validate context is ready for task completion"""
         errors = []
         
@@ -715,7 +712,7 @@ class TaskContext:
         
         return len(errors) == 0, errors
     
-    def to_dict(self, embedded: bool = False) -> Dict[str, Any]:
+    def to_dict(self, embedded: bool = False) -> dict[str, Any]:
         """Convert context to dictionary for JSON serialization
 
         Args:
@@ -773,7 +770,7 @@ class TaskContext:
         return result
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'TaskContext':
+    def from_dict(cls, data: dict[str, Any]) -> 'TaskContext':
         """Create TaskContext from dictionary"""
         # Handle nested format
         if 'metadata' in data:
@@ -940,7 +937,7 @@ class ContextSchema:
     SCHEMA_VERSION = "1.0"
     
     @staticmethod
-    def get_default_schema() -> Dict[str, Any]:
+    def get_default_schema() -> dict[str, Any]:
         """Get the default context JSON schema"""
         return {
             "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1113,7 +1110,7 @@ class ContextSchema:
         }
     
     @staticmethod
-    def validate_context(context_data: Dict[str, Any]) -> tuple[bool, List[str]]:
+    def validate_context(context_data: dict[str, Any]) -> tuple[bool, list[str]]:
         """Validate context data against schema"""
         errors = []
         

@@ -1,10 +1,10 @@
-import os
-import yaml
-from pathlib import Path
-import shutil
 import argparse
-import subprocess
-from typing import Optional, List
+import os
+from pathlib import Path
+
+import yaml
+
+
 # Local path resolution function
 def _find_project_root() -> Path:
     """Find project root by looking for agenthub_main directory"""
@@ -57,7 +57,7 @@ class AgentDocGenerator:
     3. Defaults to agent-library and .cursor/rules/agents under the project root
     """
     
-    def __init__(self, agent_yaml_lib: Optional[Path] = None, agents_output_dir: Optional[Path] = None):
+    def __init__(self, agent_yaml_lib: Path | None = None, agents_output_dir: Path | None = None):
         project_root = _find_project_root()
 
         def resolve_path(path):
@@ -99,13 +99,13 @@ class AgentDocGenerator:
     def convert_yaml_to_mdc(self, yaml_file: Path) -> str:
         """Convert a YAML file to MDC format by loading and dumping it."""
         try:
-            with open(yaml_file, 'r', encoding='utf-8') as f:
+            with open(yaml_file, encoding='utf-8') as f:
                 data = yaml.safe_load(f)
             return yaml.dump(data)
         except Exception as e:
             return f"(Error converting {yaml_file.name} to MDC: {e})"
     
-    def generate_agent_docs(self, agent_name: Optional[str] = None, clear_all: bool = False):
+    def generate_agent_docs(self, agent_name: str | None = None, clear_all: bool = False):
         """Generate agent documentation for specified agent or all agents"""
         self.agents_output_dir.mkdir(parents=True, exist_ok=True)
         
@@ -133,9 +133,9 @@ class AgentDocGenerator:
             return
         
         try:
-            with open(job_desc_file, 'r', encoding='utf-8') as f:
+            with open(job_desc_file, encoding='utf-8') as f:
                 job_desc = yaml.safe_load(f)
-        except Exception as e:
+        except Exception:
             return
         
         # Compose markdown
@@ -168,7 +168,7 @@ class AgentDocGenerator:
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write('\n'.join(md_lines))
     
-    def generate_docs_for_assignees(self, assignees: Optional[List[str]], clear_all: bool = False):
+    def generate_docs_for_assignees(self, assignees: list[str] | None, clear_all: bool = False):
         """Generate agent ai_docs for all unique assignees in the list."""
         if not assignees:
             return

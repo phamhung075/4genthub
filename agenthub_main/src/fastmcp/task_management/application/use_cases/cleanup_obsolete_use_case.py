@@ -1,15 +1,16 @@
 """
 Use Case: Cleanup Obsolete Project Data
 """
-from typing import Dict, Any
+from typing import Any
+
 from ...domain.repositories.project_repository import ProjectRepository
-from datetime import datetime
+
 
 class CleanupObsoleteUseCase:
     def __init__(self, project_repo: ProjectRepository):
         self._project_repo = project_repo
 
-    async def execute(self, project_id: str = None) -> Dict[str, Any]:
+    async def execute(self, project_id: str = None) -> dict[str, Any]:
         """Clean up obsolete project data"""
         try:
             if project_id:

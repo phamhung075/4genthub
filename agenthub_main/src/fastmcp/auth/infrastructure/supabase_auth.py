@@ -5,14 +5,14 @@ This module integrates Supabase's built-in authentication system,
 providing email verification, password reset, and OAuth capabilities.
 """
 
-import os
 import logging
-from typing import Optional, Dict, Any
-from dataclasses import dataclass
-from dotenv import load_dotenv
+import os
 import re
-import httpx
 import ssl
+from dataclasses import dataclass
+from typing import Any
+
+from dotenv import load_dotenv
 
 # Set environment variables to disable SSL verification for self-hosted instances
 # This needs to be done before importing the supabase client
@@ -24,7 +24,7 @@ if os.getenv("SUPABASE_URL") and re.search(r'\d+\.\d+\.\d+\.\d+', os.getenv("SUP
     ssl._create_default_https_context = ssl._create_unverified_context
 
 try:
-    from supabase import create_client, Client
+    from supabase import Client, create_client
     from supabase.lib.client_options import ClientOptions
     SUPABASE_AVAILABLE = True
     # Disable SSL warnings for self-hosted instances in development
@@ -50,9 +50,9 @@ logger = logging.getLogger(__name__)
 class SupabaseAuthResult:
     """Result from Supabase authentication operations"""
     success: bool
-    user: Optional[Dict[str, Any]] = None
-    session: Optional[Dict[str, Any]] = None
-    error_message: Optional[str] = None
+    user: dict[str, Any] | None = None
+    session: dict[str, Any] | None = None
+    error_message: str | None = None
     requires_email_verification: bool = False
 
 
@@ -169,7 +169,7 @@ class SupabaseAuthService:
         
         logger.info("Supabase Auth Service initialized")
     
-    async def sign_up(self, email: str, password: str, metadata: Optional[Dict] = None) -> SupabaseAuthResult:
+    async def sign_up(self, email: str, password: str, metadata: dict | None = None) -> SupabaseAuthResult:
         """
         Sign up a new user with Supabase Auth
         
@@ -577,7 +577,7 @@ class SupabaseAuthService:
                     error_message="Failed to resend verification email. Please try again later."
                 )
     
-    async def sign_in_with_provider(self, provider: str) -> Dict[str, Any]:
+    async def sign_in_with_provider(self, provider: str) -> dict[str, Any]:
         """
         Get OAuth URL for third-party provider
         

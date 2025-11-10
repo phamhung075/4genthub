@@ -6,9 +6,9 @@ Events are immutable, self-contained records of state changes in aggregates.
 """
 
 from abc import ABC
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 
@@ -29,10 +29,10 @@ class BaseDomainEvent(ABC):
 
     # Event metadata (common to all events)
     event_id: UUID = field(default_factory=uuid4)
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    aggregate_id: Optional[str] = None
-    aggregate_type: Optional[str] = None
-    user_id: Optional[str] = None
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    aggregate_id: str | None = None
+    aggregate_type: str | None = None
+    user_id: str | None = None
 
     @property
     def event_type(self) -> str:
@@ -43,7 +43,7 @@ class BaseDomainEvent(ABC):
         """
         return self.__class__.__name__
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert event to dictionary for serialization.
 
@@ -71,7 +71,7 @@ DomainEvent = BaseDomainEvent
 
 
 # Helper function to create event metadata dictionary
-def create_event_metadata() -> Dict[str, Any]:
+def create_event_metadata() -> dict[str, Any]:
     """
     Factory function to create event metadata dictionary.
 
@@ -86,9 +86,9 @@ def create_event_metadata() -> Dict[str, Any]:
 # Helper function to create event with metadata
 def create_domain_event(
     event_class: type,
-    aggregate_id: Optional[str] = None,
-    aggregate_type: Optional[str] = None,
-    user_id: Optional[str] = None,
+    aggregate_id: str | None = None,
+    aggregate_type: str | None = None,
+    user_id: str | None = None,
     **kwargs
 ) -> BaseDomainEvent:
     """

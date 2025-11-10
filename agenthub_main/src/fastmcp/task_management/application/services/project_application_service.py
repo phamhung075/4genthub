@@ -1,19 +1,31 @@
 """Project Application Service following DDD patterns"""
 
-from typing import Dict, Any, Optional
-from fastmcp.task_management.application.use_cases.create_project import CreateProjectUseCase
+from typing import Any
+
+from fastmcp.task_management.application.use_cases.create_git_branch import (
+    CreateGitBranchUseCase,
+)
+from fastmcp.task_management.application.use_cases.create_project import (
+    CreateProjectUseCase,
+)
 from fastmcp.task_management.application.use_cases.get_project import GetProjectUseCase
-from fastmcp.task_management.application.use_cases.list_projects import ListProjectsUseCase
-from fastmcp.task_management.application.use_cases.update_project import UpdateProjectUseCase
-from fastmcp.task_management.application.use_cases.create_git_branch import CreateGitBranchUseCase
-from fastmcp.task_management.application.use_cases.project_health_check import ProjectHealthCheckUseCase
+from fastmcp.task_management.application.use_cases.list_projects import (
+    ListProjectsUseCase,
+)
+from fastmcp.task_management.application.use_cases.project_health_check import (
+    ProjectHealthCheckUseCase,
+)
+from fastmcp.task_management.application.use_cases.update_project import (
+    UpdateProjectUseCase,
+)
+
 from ...domain.repositories.project_repository import ProjectRepository
 
 
 class ProjectApplicationService:
     """Application service for project management following DDD patterns"""
     
-    def __init__(self, project_repository: ProjectRepository, user_id: Optional[str] = None):
+    def __init__(self, project_repository: ProjectRepository, user_id: str | None = None):
         self._project_repository = project_repository
         self._user_id = user_id  # Store user context
         
@@ -43,35 +55,35 @@ class ProjectApplicationService:
         """Create a new service instance scoped to a specific user."""
         return ProjectApplicationService(self._project_repository, user_id)
     
-    async def create_project(self, project_id: str, name: str, description: str = "") -> Dict[str, Any]:
+    async def create_project(self, project_id: str, name: str, description: str = "") -> dict[str, Any]:
         """Create a new project"""
         return await self._create_project_use_case.execute(project_id, name, description)
     
-    async def get_project(self, project_id: str) -> Dict[str, Any]:
+    async def get_project(self, project_id: str) -> dict[str, Any]:
         """Get project details"""
         return await self._get_project_use_case.execute(project_id)
     
-    async def list_projects(self) -> Dict[str, Any]:
+    async def list_projects(self) -> dict[str, Any]:
         """List all projects"""
         return await self._list_projects_use_case.execute()
     
-    async def update_project(self, project_id: str, name: Optional[str] = None, description: Optional[str] = None) -> Dict[str, Any]:
+    async def update_project(self, project_id: str, name: str | None = None, description: str | None = None) -> dict[str, Any]:
         """Update an existing project"""
         return await self._update_project_use_case.execute(project_id, name, description)
     
-    async def create_git_branch(self, project_id: str, git_branch_name: str, tree_name: str, tree_description: str = "") -> Dict[str, Any]:
+    async def create_git_branch(self, project_id: str, git_branch_name: str, tree_name: str, tree_description: str = "") -> dict[str, Any]:
         """Create a new task tree within a project"""
         return await self._create_git_branch_use_case.execute(project_id, git_branch_name, tree_name, tree_description)
     
-    async def project_health_check(self, project_id: Optional[str] = None) -> Dict[str, Any]:
+    async def project_health_check(self, project_id: str | None = None) -> dict[str, Any]:
         """Perform health check on project(s)"""
         return await self._project_health_check_use_case.execute(project_id)
     
-    async def register_agent(self, project_id: str, agent_id: str, name: str, capabilities: Optional[list] = None) -> Dict[str, Any]:
+    async def register_agent(self, project_id: str, agent_id: str, name: str, capabilities: list | None = None) -> dict[str, Any]:
         """Register an agent to a project"""
+
         from ...domain.entities.agent import Agent
         from ...domain.value_objects import AgentRole
-        from datetime import datetime, timezone
         
         project = await self._get_user_scoped_repository().find_by_id(project_id)
         
@@ -120,7 +132,7 @@ class ProjectApplicationService:
                 "error": str(e)
             }
     
-    async def assign_agent_to_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
+    async def assign_agent_to_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
         """Assign an agent to a task tree"""
         project = await self._get_user_scoped_repository().find_by_id(project_id)
 
@@ -145,7 +157,7 @@ class ProjectApplicationService:
                 "error": str(e)
             }
     
-    async def unregister_agent(self, project_id: str, agent_id: str) -> Dict[str, Any]:
+    async def unregister_agent(self, project_id: str, agent_id: str) -> dict[str, Any]:
         """Unregister an agent from a project"""
         project = await self._get_user_scoped_repository().find_by_id(project_id)
         
@@ -208,7 +220,7 @@ class ProjectApplicationService:
             "message": f"Agent '{agent_id}' unregistered successfully"
         }
     
-    async def cleanup_obsolete(self, project_id: Optional[str] = None) -> Dict[str, Any]:
+    async def cleanup_obsolete(self, project_id: str | None = None) -> dict[str, Any]:
         """Clean up obsolete project data"""
         if project_id:
             project = await self._get_user_scoped_repository().find_by_id(project_id)

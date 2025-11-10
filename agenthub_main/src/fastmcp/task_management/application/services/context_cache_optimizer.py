@@ -4,17 +4,16 @@ This module implements intelligent caching strategies for context data to minimi
 database queries and improve response times by 80-90%.
 """
 
-import logging
-import time
+import fnmatch
 import hashlib
 import json
-import fnmatch
-from typing import Dict, Any, Optional, List, Set, Tuple
+import logging
+import weakref
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from dataclasses import dataclass, field
 from threading import RLock
-import weakref
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class CacheEntry:
     created_at: datetime
     last_accessed: datetime
     access_count: int = 0
-    ttl_seconds: Optional[int] = None
+    ttl_seconds: int | None = None
     size_bytes: int = 0
     context_type: str = ""
     operation_type: str = ""
@@ -100,12 +99,12 @@ class ContextCacheOptimizer:
         self.adaptive_ttl = adaptive_ttl
         
         # Cache storage
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
         self._lock = RLock()
         
         # Access tracking for adaptive strategy
-        self._access_patterns: Dict[str, List[datetime]] = {}
-        self._context_stats: Dict[str, Dict[str, int]] = {}
+        self._access_patterns: dict[str, list[datetime]] = {}
+        self._context_stats: dict[str, dict[str, int]] = {}
         
         # Performance metrics
         self._metrics = {
@@ -125,7 +124,7 @@ class ContextCacheOptimizer:
         self,
         key: str,
         context_type: str = "unknown"
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Get cached data
         
@@ -170,7 +169,7 @@ class ContextCacheOptimizer:
             
             return data
     
-    def _generate_key(self, operation: str, params: Dict[str, Any]) -> str:
+    def _generate_key(self, operation: str, params: dict[str, Any]) -> str:
         """
         Generate a consistent cache key from operation and parameters
         
@@ -194,7 +193,7 @@ class ContextCacheOptimizer:
         data: Any,
         context_type: str = "unknown",
         operation_type: str = "unknown",
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
         optimize: bool = False,
         compress: bool = False
     ) -> bool:
@@ -277,9 +276,9 @@ class ContextCacheOptimizer:
     
     def invalidate(
         self,
-        key: Optional[str] = None,
-        context_type: Optional[str] = None,
-        pattern: Optional[str] = None
+        key: str | None = None,
+        context_type: str | None = None,
+        pattern: str | None = None
     ) -> int:
         """
         Invalidate cache entries
@@ -525,7 +524,7 @@ class ContextCacheOptimizer:
             
             return len(expired_keys)
     
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """
         Get comprehensive cache statistics
         
@@ -585,7 +584,7 @@ class ContextCacheOptimizer:
             
             return stats
     
-    def optimize_cache(self) -> Dict[str, Any]:
+    def optimize_cache(self) -> dict[str, Any]:
         """
         Perform cache optimization
         
@@ -618,7 +617,7 @@ class ContextCacheOptimizer:
     
     def warm_cache(
         self,
-        common_data: Dict[str, Any],
+        common_data: dict[str, Any],
         context_type: str = "warmup"
     ) -> int:
         """
@@ -677,7 +676,6 @@ class ContextCacheOptimizer:
             True if saved successfully
         """
         try:
-            import pickle
             
             with self._lock:
                 cache_data = {
@@ -724,7 +722,7 @@ class ContextCacheOptimizer:
             True if loaded successfully
         """
         try:
-            with open(file_path, 'r') as f:
+            with open(file_path) as f:
                 cache_data = json.load(f)
             
             with self._lock:

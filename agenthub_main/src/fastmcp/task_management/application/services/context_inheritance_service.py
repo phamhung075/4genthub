@@ -6,8 +6,9 @@ Global → Project → Task with proper override and precedence rules.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
 from copy import deepcopy
+from datetime import UTC
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class ContextInheritanceService:
     - Local overrides always take precedence
     """
     
-    def __init__(self, repository=None, user_id: Optional[str] = None):
+    def __init__(self, repository=None, user_id: str | None = None):
         """Initialize context inheritance service"""
         self.repository = repository  # Will be injected if needed
         self._user_id = user_id  # Store user context
@@ -45,7 +46,7 @@ class ContextInheritanceService:
         """Create a new service instance scoped to a specific user."""
         return ContextInheritanceService(self.repository, user_id)
     
-    def get_inherited_context(self, level: str, context_id: str) -> Optional[Dict[str, Any]]:
+    def get_inherited_context(self, level: str, context_id: str) -> dict[str, Any] | None:
         """
         Get inherited context for a given level and ID.
         
@@ -60,8 +61,8 @@ class ContextInheritanceService:
     # PROJECT INHERITANCE FROM GLOBAL
     # ===============================================
     
-    def inherit_project_from_global(self, global_context: Dict[str, Any], 
-                                        project_context: Dict[str, Any]) -> Dict[str, Any]:
+    def inherit_project_from_global(self, global_context: dict[str, Any], 
+                                        project_context: dict[str, Any]) -> dict[str, Any]:
         """
         Inherit project context from global context with project overrides.
         
@@ -130,8 +131,8 @@ class ContextInheritanceService:
     # BRANCH INHERITANCE FROM PROJECT
     # ===============================================
     
-    def inherit_branch_from_project(self, project_context: Dict[str, Any], 
-                                        branch_context: Dict[str, Any]) -> Dict[str, Any]:
+    def inherit_branch_from_project(self, project_context: dict[str, Any], 
+                                        branch_context: dict[str, Any]) -> dict[str, Any]:
         """
         Inherit branch context from project context with branch-specific overrides.
         
@@ -200,8 +201,8 @@ class ContextInheritanceService:
     # TASK INHERITANCE FROM BRANCH
     # ===============================================
     
-    def inherit_task_from_branch(self, branch_context: Dict[str, Any], 
-                                     task_context: Dict[str, Any]) -> Dict[str, Any]:
+    def inherit_task_from_branch(self, branch_context: dict[str, Any], 
+                                     task_context: dict[str, Any]) -> dict[str, Any]:
         """
         Inherit task context from branch context with task-specific data.
         
@@ -272,7 +273,7 @@ class ContextInheritanceService:
     # CORE INHERITANCE UTILITIES
     # ===============================================
     
-    def _deep_merge(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    def _deep_merge(self, base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
         """
         Deep merge two dictionaries with override precedence.
         
@@ -302,7 +303,7 @@ class ContextInheritanceService:
         
         return result
     
-    def _merge_lists(self, base_list: List, override_list: List, key: str) -> List:
+    def _merge_lists(self, base_list: list, override_list: list, key: str) -> list:
         """
         Merge lists based on context-specific strategies.
         
@@ -328,7 +329,7 @@ class ContextInheritanceService:
             # Default: override completely
             return deepcopy(override_list)
     
-    def _apply_overrides(self, context: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_overrides(self, context: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
         """
         Apply explicit overrides to context.
         
@@ -363,8 +364,8 @@ class ContextInheritanceService:
         
         return result
     
-    def _merge_delegation_rules(self, base_rules: Dict[str, Any], 
-                              project_rules: Dict[str, Any]) -> Dict[str, Any]:
+    def _merge_delegation_rules(self, base_rules: dict[str, Any], 
+                              project_rules: dict[str, Any]) -> dict[str, Any]:
         """
         Merge delegation rules with project-specific additions.
         
@@ -396,8 +397,8 @@ class ContextInheritanceService:
         
         return merged
     
-    def _apply_custom_inheritance_rules(self, context: Dict[str, Any], 
-                                      custom_rules: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_custom_inheritance_rules(self, context: dict[str, Any], 
+                                      custom_rules: dict[str, Any]) -> dict[str, Any]:
         """
         Apply custom inheritance rules for specific task requirements.
         
@@ -426,8 +427,8 @@ class ContextInheritanceService:
         
         return result
     
-    def _process_exclude_keys(self, context: Dict[str, Any], 
-                            exclude_config: List[str]) -> Dict[str, Any]:
+    def _process_exclude_keys(self, context: dict[str, Any], 
+                            exclude_config: list[str]) -> dict[str, Any]:
         """Remove specified keys from inherited context"""
         result = deepcopy(context)
         
@@ -450,13 +451,13 @@ class ContextInheritanceService:
         
         return result
     
-    def _process_force_values(self, context: Dict[str, Any], 
-                            force_config: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_force_values(self, context: dict[str, Any], 
+                            force_config: dict[str, Any]) -> dict[str, Any]:
         """Force specific values regardless of inheritance"""
         return self._apply_overrides(context, force_config)
     
-    def _process_conditional_overrides(self, context: Dict[str, Any], 
-                                     conditional_config: List[Dict]) -> Dict[str, Any]:
+    def _process_conditional_overrides(self, context: dict[str, Any], 
+                                     conditional_config: list[dict]) -> dict[str, Any]:
         """Apply overrides based on conditions"""
         result = deepcopy(context)
         
@@ -468,14 +469,14 @@ class ContextInheritanceService:
         
         return result
     
-    def _process_merge_strategies(self, context: Dict[str, Any], 
-                                strategy_config: Dict[str, str]) -> Dict[str, Any]:
+    def _process_merge_strategies(self, context: dict[str, Any], 
+                                strategy_config: dict[str, str]) -> dict[str, Any]:
         """Apply custom merge strategies for specific keys"""
         # This would implement custom merging logic for specific keys
         # For now, return as-is
         return context
     
-    def _evaluate_condition(self, context: Dict[str, Any], condition: Dict[str, Any]) -> bool:
+    def _evaluate_condition(self, context: dict[str, Any], condition: dict[str, Any]) -> bool:
         """
         Evaluate a condition against the current context.
         
@@ -507,7 +508,7 @@ class ContextInheritanceService:
         # Default: condition not met
         return False
     
-    def _key_exists(self, context: Dict[str, Any], key_path: str) -> bool:
+    def _key_exists(self, context: dict[str, Any], key_path: str) -> bool:
         """Check if a nested key exists in context"""
         try:
             self._get_nested_value(context, key_path)
@@ -515,7 +516,7 @@ class ContextInheritanceService:
         except (KeyError, TypeError):
             return False
     
-    def _get_nested_value(self, context: Dict[str, Any], key_path: str) -> Any:
+    def _get_nested_value(self, context: dict[str, Any], key_path: str) -> Any:
         """Get value from nested key path"""
         current = context
         for part in key_path.split('.'):
@@ -524,15 +525,15 @@ class ContextInheritanceService:
     
     def _get_timestamp(self) -> str:
         """Get current timestamp in ISO format"""
-        from datetime import datetime, timezone
-        return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        from datetime import datetime
+        return datetime.now(UTC).isoformat().replace('+00:00', 'Z')
     
     # ===============================================
     # INHERITANCE VALIDATION
     # ===============================================
     
     def validate_inheritance_chain(self, context_level: str, context_id: str, 
-                                       resolved_context: Dict[str, Any]) -> Dict[str, Any]:
+                                       resolved_context: dict[str, Any]) -> dict[str, Any]:
         """
         Validate that inheritance was applied correctly.
         

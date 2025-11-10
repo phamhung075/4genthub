@@ -6,18 +6,22 @@ It provides a clean interface between the API controllers and the domain/infrast
 ensuring proper separation of concerns and no direct database access from controllers.
 """
 
+import hashlib
 import logging
 import os
 import secrets
-import hashlib
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 import jwt
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 
 from fastmcp.auth.domain.services.jwt_service import JWTService
 from fastmcp.auth.services.mcp_token_service import mcp_token_service
-from fastmcp.task_management.domain.repositories.token_repository_interface import ITokenRepository
+from fastmcp.task_management.domain.repositories.token_repository_interface import (
+    ITokenRepository,
+)
+
 # Repository is injected via factory - no direct infrastructure import
 
 logger = logging.getLogger(__name__)
@@ -31,7 +35,7 @@ class TokenApplicationFacade:
     ensuring proper DDD layering and no direct database access from upper layers.
     """
     
-    def __init__(self, token_repository: Optional[ITokenRepository] = None):
+    def __init__(self, token_repository: ITokenRepository | None = None):
         """
         Initialize the token facade with required services and repositories.
         
@@ -67,9 +71,9 @@ class TokenApplicationFacade:
         user_id: str,
         email: str,
         expires_in_hours: int,
-        metadata: Optional[Dict[str, Any]] = None,
-        session: Optional[Session] = None
-    ) -> Dict[str, Any]:
+        metadata: dict[str, Any] | None = None,
+        session: Session | None = None
+    ) -> dict[str, Any]:
         """
         Generate an MCP token for a user.
         
@@ -98,7 +102,7 @@ class TokenApplicationFacade:
                 "error": str(e)
             }
     
-    async def revoke_user_tokens(self, user_id: str) -> Dict[str, Any]:
+    async def revoke_user_tokens(self, user_id: str) -> dict[str, Any]:
         """
         Revoke all tokens for a user.
         
@@ -120,7 +124,7 @@ class TokenApplicationFacade:
                 "error": str(e)
             }
     
-    def get_token_stats(self) -> Dict[str, Any]:
+    def get_token_stats(self) -> dict[str, Any]:
         """
         Get token statistics.
         
@@ -142,7 +146,7 @@ class TokenApplicationFacade:
                 "stats": {}
             }
     
-    async def cleanup_expired_tokens(self) -> Dict[str, Any]:
+    async def cleanup_expired_tokens(self) -> dict[str, Any]:
         """
         Clean up expired tokens.
         
@@ -169,12 +173,12 @@ class TokenApplicationFacade:
         self,
         user_id: str,
         name: str,
-        scopes: List[str],
+        scopes: list[str],
         expires_in_days: int,
-        rate_limit: Optional[int],
-        metadata: Optional[Dict[str, Any]],
+        rate_limit: int | None,
+        metadata: dict[str, Any] | None,
         session: Session
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create an API token with database persistence.
 
@@ -203,7 +207,7 @@ class TokenApplicationFacade:
             )
             
             # Calculate expiration
-            expires_at = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
+            expires_at = datetime.now(UTC) + timedelta(days=expires_in_days)
             
             # Hash token for secure storage
             token_hash = hashlib.sha256(jwt_token.encode()).hexdigest()
@@ -255,7 +259,7 @@ class TokenApplicationFacade:
         session: Session,
         skip: int = 0,
         limit: int = 100
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         List tokens for a user.
         
@@ -304,7 +308,7 @@ class TokenApplicationFacade:
         token_id: str,
         user_id: str,
         session: Session
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get details for a specific token.
         
@@ -350,7 +354,7 @@ class TokenApplicationFacade:
         token_id: str,
         user_id: str,
         session: Session
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Revoke a specific token.
         
@@ -384,7 +388,7 @@ class TokenApplicationFacade:
         token_id: str,
         user_id: str,
         session: Session
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Delete a specific token.
         
@@ -418,7 +422,7 @@ class TokenApplicationFacade:
         token_id: str,
         user_id: str,
         session: Session
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Reactivate a revoked token.
         
@@ -452,7 +456,7 @@ class TokenApplicationFacade:
         token_id: str,
         user_id: str,
         session: Session
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Rotate a token (revoke old, create new).
         
@@ -503,7 +507,7 @@ class TokenApplicationFacade:
         self,
         token: str,
         session: Session
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate a token and return its claims.
         

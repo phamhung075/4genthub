@@ -144,14 +144,14 @@ class FunctionTool(Tool):
 
     async def run(self, arguments: dict[str, Any]) -> list[MCPContent]:
         """Run the tool with arguments."""
-        from fastmcp.server.dependencies import get_context
         from fastmcp.server.context import Context
+        from fastmcp.server.dependencies import get_context
         
         # Import user context middleware for authentication context propagation
         try:
             from fastmcp.auth.middleware.request_context_middleware import (
-                current_user_context, 
-                get_current_user_id
+                current_user_context,
+                get_current_user_id,
             )
             # Ensure user context propagates to tool execution
             user_id = get_current_user_id()

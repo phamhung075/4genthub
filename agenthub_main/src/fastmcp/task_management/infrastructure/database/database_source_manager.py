@@ -13,12 +13,12 @@ SUPPORTED CONFIGURATIONS:
 USE database_config.py for database operations.
 """
 
+import logging
 import os
 import sys
+from enum import Enum
 from pathlib import Path
 from typing import Optional
-from enum import Enum
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +49,8 @@ class DatabaseSourceManager:
     """
     
     _instance: Optional['DatabaseSourceManager'] = None
-    _current_mode: Optional[DatabaseMode] = None
-    _database_path: Optional[str] = None
+    _current_mode: DatabaseMode | None = None
+    _database_path: str | None = None
     
     def __new__(cls) -> 'DatabaseSourceManager':
         """Singleton pattern to ensure single database source"""
@@ -222,7 +222,7 @@ class DatabaseSourceManager:
             test_recent = (current_time - test_mtime) < recent_threshold
             
             if main_recent and test_recent and self._current_mode != DatabaseMode.TEST:
-                logger.warning(f"Multiple active databases detected:")
+                logger.warning("Multiple active databases detected:")
                 logger.warning(f"  Main DB: {main_db} (modified {current_time - main_mtime:.0f}s ago)")
                 logger.warning(f"  Test DB: {test_db} (modified {current_time - test_mtime:.0f}s ago)")
                 logger.warning("This is common during development - using mode-appropriate database")

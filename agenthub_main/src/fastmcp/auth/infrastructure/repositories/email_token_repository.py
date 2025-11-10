@@ -4,16 +4,16 @@ Email Token Repository
 Handles storage and retrieval of email verification and password reset tokens.
 """
 
-import logging
-from datetime import datetime, timezone, timedelta
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass
-from sqlalchemy import Column, String, DateTime, Boolean, Text, Integer, create_engine
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.exc import SQLAlchemyError
-import os
 import json
+import logging
+import os
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+from sqlalchemy import Boolean, Column, DateTime, String, Text, create_engine
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class EmailTokenModel(Base):
     token_type = Column(String(50), nullable=False)  # 'verification', 'password_reset'
     token_hash = Column(String(255), nullable=False)
     expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     used_at = Column(DateTime, nullable=True)
     is_used = Column(Boolean, default=False)
     token_metadata = Column(Text, nullable=True)  # JSON string for additional data
@@ -47,18 +47,18 @@ class EmailToken:
     token_hash: str
     expires_at: datetime
     created_at: datetime
-    used_at: Optional[datetime] = None
+    used_at: datetime | None = None
     is_used: bool = False
-    metadata: Optional[Dict[str, Any]] = None
-    user_id: Optional[str] = None
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
+    metadata: dict[str, Any] | None = None
+    user_id: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
 
 
 class EmailTokenRepository:
     """Repository for managing email tokens"""
     
-    def __init__(self, database_url: Optional[str] = None):
+    def __init__(self, database_url: str | None = None):
         """Initialize repository with database connection"""
         if database_url is None:
             # Use database URL from environment or default to SQLite
@@ -136,7 +136,7 @@ class EmailTokenRepository:
             logger.error(f"Failed to save email token: {e}")
             return False
     
-    def get_token(self, token: str) -> Optional[EmailToken]:
+    def get_token(self, token: str) -> EmailToken | None:
         """Get email token by token string"""
         try:
             with self.SessionLocal() as session:
@@ -151,9 +151,9 @@ class EmailTokenRepository:
     def get_tokens_by_email(
         self, 
         email: str, 
-        token_type: Optional[str] = None,
+        token_type: str | None = None,
         include_used: bool = False
-    ) -> List[EmailToken]:
+    ) -> list[EmailToken]:
         """Get email tokens by email address"""
         try:
             with self.SessionLocal() as session:
@@ -171,10 +171,10 @@ class EmailTokenRepository:
             logger.error(f"Failed to get email tokens: {e}")
             return []
     
-    def mark_token_used(self, token: str, used_at: Optional[datetime] = None) -> bool:
+    def mark_token_used(self, token: str, used_at: datetime | None = None) -> bool:
         """Mark token as used"""
         if used_at is None:
-            used_at = datetime.now(timezone.utc)
+            used_at = datetime.now(UTC)
         
         try:
             with self.SessionLocal() as session:
@@ -204,13 +204,13 @@ class EmailTokenRepository:
     
     def cleanup_expired_tokens(self, older_than_days: int = 7) -> int:
         """Clean up expired and old tokens"""
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=older_than_days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=older_than_days)
         
         try:
             with self.SessionLocal() as session:
                 # Delete tokens that are either expired or older than cutoff
                 deleted = session.query(EmailTokenModel).filter(
-                    (EmailTokenModel.expires_at < datetime.now(timezone.utc)) |
+                    (EmailTokenModel.expires_at < datetime.now(UTC)) |
                     (EmailTokenModel.created_at < cutoff_date)
                 ).delete(synchronize_session=False)
                 
@@ -227,7 +227,7 @@ class EmailTokenRepository:
         email: str, 
         token_type: str,
         mark_used: bool = True
-    ) -> Optional[EmailToken]:
+    ) -> EmailToken | None:
         """Validate email token and optionally mark as used"""
         try:
             with self.SessionLocal() as session:
@@ -253,15 +253,15 @@ class EmailTokenRepository:
                 expires_at = token_obj.expires_at
                 if expires_at.tzinfo is None:
                     # If naive, assume UTC
-                    expires_at = expires_at.replace(tzinfo=timezone.utc)
-                if expires_at < datetime.now(timezone.utc):
+                    expires_at = expires_at.replace(tzinfo=UTC)
+                if expires_at < datetime.now(UTC):
                     logger.warning(f"Token expired: {token}")
                     return None
                 
                 # Mark as used if requested
                 if mark_used:
                     model.is_used = True
-                    model.used_at = datetime.now(timezone.utc)
+                    model.used_at = datetime.now(UTC)
                     session.commit()
                     token_obj.is_used = True
                     token_obj.used_at = model.used_at
@@ -273,14 +273,14 @@ class EmailTokenRepository:
             logger.error(f"Failed to validate token: {e}")
             return None
     
-    def get_token_stats(self) -> Dict[str, Any]:
+    def get_token_stats(self) -> dict[str, Any]:
         """Get token usage statistics"""
         try:
             with self.SessionLocal() as session:
                 total_tokens = session.query(EmailTokenModel).count()
                 used_tokens = session.query(EmailTokenModel).filter_by(is_used=True).count()
                 expired_tokens = session.query(EmailTokenModel).filter(
-                    EmailTokenModel.expires_at < datetime.now(timezone.utc)
+                    EmailTokenModel.expires_at < datetime.now(UTC)
                 ).count()
                 
                 # Token counts by type
@@ -306,7 +306,7 @@ class EmailTokenRepository:
 
 
 # Global repository instance
-_token_repository: Optional[EmailTokenRepository] = None
+_token_repository: EmailTokenRepository | None = None
 
 
 def get_email_token_repository() -> EmailTokenRepository:

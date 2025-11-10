@@ -3,14 +3,14 @@ Keycloak Authentication Service for MCP
 Clean implementation with no backward compatibility
 """
 
-import os
-import logging
 import asyncio
-from typing import Optional, Dict, Any, List
+import logging
+import os
 from dataclasses import dataclass
+from typing import Any
+
 import httpx
 from jose import jwt
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -18,23 +18,23 @@ logger = logging.getLogger(__name__)
 class AuthResult:
     """Authentication result data class"""
     success: bool
-    access_token: Optional[str] = None
-    refresh_token: Optional[str] = None
-    expires_in: Optional[int] = None
-    user: Optional[Dict[str, Any]] = None
-    roles: Optional[List[str]] = None
-    mcp_permissions: Optional[List[str]] = None
-    error: Optional[str] = None
+    access_token: str | None = None
+    refresh_token: str | None = None
+    expires_in: int | None = None
+    user: dict[str, Any] | None = None
+    roles: list[str] | None = None
+    mcp_permissions: list[str] | None = None
+    error: str | None = None
 
 @dataclass
 class TokenValidation:
     """Token validation result"""
     valid: bool
-    user_id: Optional[str] = None
-    email: Optional[str] = None
-    roles: Optional[List[str]] = None
-    mcp_permissions: Optional[List[str]] = None
-    error: Optional[str] = None
+    user_id: str | None = None
+    email: str | None = None
+    roles: list[str] | None = None
+    mcp_permissions: list[str] | None = None
+    error: str | None = None
 
 class KeycloakAuth:
     """
@@ -277,7 +277,7 @@ class KeycloakAuth:
             logger.error(f"Logout error: {e}")
             return False
 
-    def _parse_id_token(self, id_token: str) -> Dict[str, Any]:
+    def _parse_id_token(self, id_token: str) -> dict[str, Any]:
         """Parse user info from ID token"""
         try:
             # Decode without verification for user info (already validated by Keycloak)
@@ -296,7 +296,7 @@ class KeycloakAuth:
             logger.error(f"Failed to parse ID token: {e}")
             return {}
 
-    def _parse_access_token(self, access_token: str) -> Dict[str, Any]:
+    def _parse_access_token(self, access_token: str) -> dict[str, Any]:
         """Parse roles and permissions from access token"""
         try:
             # Decode without verification for parsing
@@ -339,7 +339,7 @@ class KeycloakAuth:
             logger.error(f"Failed to parse access token: {e}")
             return {"roles": [], "mcp_permissions": []}
 
-    async def get_user_info(self, access_token: str) -> Optional[Dict[str, Any]]:
+    async def get_user_info(self, access_token: str) -> dict[str, Any] | None:
         """
         Get user info from Keycloak userinfo endpoint.
 

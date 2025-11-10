@@ -1,9 +1,8 @@
 """Context Domain Events"""
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
-from uuid import UUID, uuid4
+from datetime import UTC, datetime
+from typing import Any
 
 from .base import DomainEvent
 
@@ -14,13 +13,13 @@ class ContextCreated(DomainEvent):
     context_id: str = ""
     level: str = ""  # global, project, branch, task
     created_by: str = ""
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     @property
     def event_type(self) -> str:
         return "ContextCreated"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_type": self.event_type,
             "event_id": str(self.event_id),
@@ -38,14 +37,14 @@ class ContextUpdated(DomainEvent):
     context_id: str = ""
     level: str = ""
     updated_by: str = ""
-    changes: Dict[str, Any] = field(default_factory=dict)
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    changes: dict[str, Any] = field(default_factory=dict)
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     @property
     def event_type(self) -> str:
         return "ContextUpdated"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_type": self.event_type,
             "event_id": str(self.event_id),
@@ -64,16 +63,16 @@ class ContextDelegated(DomainEvent):
     source_context_id: str = ""
     source_level: str = ""
     target_level: str = ""
-    delegated_data: Dict[str, Any] = field(default_factory=dict)
+    delegated_data: dict[str, Any] = field(default_factory=dict)
     delegation_reason: str = ""
     delegated_by: str = ""
-    delegated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    delegated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     @property
     def event_type(self) -> str:
         return "ContextDelegated"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_type": self.event_type,
             "event_id": str(self.event_id),
@@ -97,13 +96,13 @@ class ContextInsightAdded(DomainEvent):
     insight_category: str = ""
     importance: str = ""
     added_by: str = ""
-    added_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    added_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     @property
     def event_type(self) -> str:
         return "ContextInsightAdded"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_type": self.event_type,
             "event_id": str(self.event_id),
@@ -125,13 +124,13 @@ class ContextProgressAdded(DomainEvent):
     level: str = ""
     progress_content: str = ""
     added_by: str = ""
-    added_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    added_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     @property
     def event_type(self) -> str:
         return "ContextProgressAdded"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_type": self.event_type,
             "event_id": str(self.event_id),
@@ -151,13 +150,13 @@ class ContextInheritanceResolved(DomainEvent):
     level: str = ""
     inheritance_chain: list[str] = field(default_factory=list)
     resolved_by: str = ""
-    resolved_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    resolved_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     @property
     def event_type(self) -> str:
         return "ContextInheritanceResolved"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_type": self.event_type,
             "event_id": str(self.event_id),

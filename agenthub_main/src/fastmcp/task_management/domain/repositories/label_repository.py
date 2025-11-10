@@ -1,35 +1,34 @@
 """Label Repository Interface for Dynamic Label Management"""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Set
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 class ILabelRepository(ABC):
     """Abstract repository interface for label management"""
     
     @abstractmethod
-    async def create_label(self, label: str, category: Optional[str] = None) -> str:
+    async def create_label(self, label: str, category: str | None = None) -> str:
         """Create a new label if it doesn't exist, return normalized label"""
         pass
     
     @abstractmethod
-    async def find_label(self, label: str) -> Optional[str]:
+    async def find_label(self, label: str) -> str | None:
         """Find an existing label (case-insensitive), return normalized version"""
         pass
     
     @abstractmethod
-    async def get_all_labels(self) -> List[str]:
+    async def get_all_labels(self) -> list[str]:
         """Get all existing labels"""
         pass
     
     @abstractmethod
-    async def get_labels_by_category(self, category: str) -> List[str]:
+    async def get_labels_by_category(self, category: str) -> list[str]:
         """Get labels by category"""
         pass
     
     @abstractmethod
-    async def search_labels(self, query: str, limit: int = 10) -> List[str]:
+    async def search_labels(self, query: str, limit: int = 10) -> list[str]:
         """Search for labels matching query"""
         pass
     
@@ -49,7 +48,7 @@ class ILabelRepository(ABC):
         pass
     
     @abstractmethod
-    async def validate_and_create_labels(self, labels: List[str]) -> List[str]:
+    async def validate_and_create_labels(self, labels: list[str]) -> list[str]:
         """Validate and create multiple labels, return normalized list"""
         pass
 
@@ -57,12 +56,12 @@ class ILabelRepository(ABC):
 class LabelInfo:
     """Label information entity"""
     
-    def __init__(self, label: str, category: Optional[str] = None, 
-                 usage_count: int = 0, created_at: Optional[datetime] = None):
+    def __init__(self, label: str, category: str | None = None, 
+                 usage_count: int = 0, created_at: datetime | None = None):
         self.label = label
         self.category = category
         self.usage_count = usage_count
-        self.created_at = created_at or datetime.now(timezone.utc)
+        self.created_at = created_at or datetime.now(UTC)
         self.normalized = self._normalize(label)
     
     def _normalize(self, label: str) -> str:

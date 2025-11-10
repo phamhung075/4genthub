@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Awaitable
 from dataclasses import dataclass, field, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import partial
 from typing import (
     TYPE_CHECKING,
@@ -97,7 +97,7 @@ class MiddlewareContext(Generic[T]):
     source: Literal["client", "server"] = "client"
     type: Literal["request", "notification"] = "request"
     method: str | None = None
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def copy(self, **kwargs: Any) -> MiddlewareContext[T]:
         return replace(self, **kwargs)

@@ -1,12 +1,12 @@
 """Delete Branch Use Case"""
 
-from typing import Optional, Dict, Any
-import logging
 import asyncio
+import logging
+from typing import Any
 
-from ...domain.services.cascade_deletion_service import CascadeDeletionService
 from ...domain.interfaces.database_session import IDatabaseSessionFactory
 from ...domain.interfaces.logging_service import ILoggingService
+from ...domain.services.cascade_deletion_service import CascadeDeletionService
 
 
 class DeleteBranchUseCase:
@@ -18,8 +18,8 @@ class DeleteBranchUseCase:
                  branch_repository,
                  project_repository,
                  context_repository=None,
-                 db_session_factory: Optional[IDatabaseSessionFactory] = None,
-                 logging_service: Optional[ILoggingService] = None):
+                 db_session_factory: IDatabaseSessionFactory | None = None,
+                 logging_service: ILoggingService | None = None):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
         self._branch_repository = branch_repository
@@ -37,7 +37,7 @@ class DeleteBranchUseCase:
             context_repository=context_repository
         )
 
-    def execute(self, branch_id: str) -> Dict[str, Any]:
+    def execute(self, branch_id: str) -> dict[str, Any]:
         """
         Execute the delete branch use case with cascade deletion.
 
@@ -88,8 +88,8 @@ class DeleteBranchUseCase:
             **stats
         }
 
-    def _send_websocket_notification(self, branch_id: str, project_id: Optional[str],
-                                    name: str, stats: Dict[str, Any]) -> None:
+    def _send_websocket_notification(self, branch_id: str, project_id: str | None,
+                                    name: str, stats: dict[str, Any]) -> None:
         """Send WebSocket notification for branch deletion."""
         try:
             # Import WebSocket service
@@ -120,8 +120,10 @@ class DeleteBranchUseCase:
     def _update_project_statistics(self, project_id: str) -> None:
         """Update project statistics after branch deletion."""
         try:
+            from ...domain.events.project_lifecycle_events import (
+                ProjectStatisticsUpdatedEvent,
+            )
             from ...domain.services.event_dispatcher import dispatch_domain_event
-            from ...domain.events.project_lifecycle_events import ProjectStatisticsUpdatedEvent
 
             # Calculate new project statistics
             branches = self._branch_repository.find_by_project_id(project_id)

@@ -6,18 +6,22 @@ providing template management with full database capabilities.
 """
 
 import logging
-import json
-from typing import Dict, Any, List, Optional, Tuple
-from datetime import datetime, timezone
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, text
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy import func, or_, text
 
 from ....domain.entities.template import Template, TemplateUsage
-from ....domain.value_objects.template_id import TemplateId
-from ....domain.value_objects import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
 from ....domain.repositories.template_repository import TemplateRepositoryInterface
-from ..base_timestamp_repository import BaseTimestampRepository
+from ....domain.value_objects import (
+    TemplateCategory,
+    TemplatePriority,
+    TemplateStatus,
+    TemplateType,
+)
+from ....domain.value_objects.template_id import TemplateId
 from ...database.models import Template as ORMTemplate
+from ..base_timestamp_repository import BaseTimestampRepository
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +91,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
             logger.error(f"Error saving template {template.id}: {e}")
             return False
     
-    def get_by_id(self, template_id: TemplateId) -> Optional[Template]:
+    def get_by_id(self, template_id: TemplateId) -> Template | None:
         """
         Get a template by its ID
         
@@ -113,13 +117,13 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
     
     def list_templates(
         self, 
-        template_type: Optional[TemplateType] = None,
-        category: Optional[TemplateCategory] = None,
-        status: Optional[TemplateStatus] = None,
-        priority: Optional[TemplatePriority] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None
-    ) -> List[Template]:
+        template_type: TemplateType | None = None,
+        category: TemplateCategory | None = None,
+        status: TemplateStatus | None = None,
+        priority: TemplatePriority | None = None,
+        limit: int | None = None,
+        offset: int | None = None
+    ) -> list[Template]:
         """
         List templates with optional filtering and pagination
         
@@ -187,7 +191,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
             logger.error(f"Error deleting template {template_id}: {e}")
             return False
     
-    def get_templates_by_type(self, template_type: TemplateType) -> List[Template]:
+    def get_templates_by_type(self, template_type: TemplateType) -> list[Template]:
         """
         Get all templates of a specific type
         
@@ -199,7 +203,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
         """
         return self.list_templates(template_type=template_type)
     
-    def get_templates_by_category(self, category: TemplateCategory) -> List[Template]:
+    def get_templates_by_category(self, category: TemplateCategory) -> list[Template]:
         """
         Get all templates in a specific category
         
@@ -211,7 +215,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
         """
         return self.list_templates(category=category)
     
-    def search_templates_by_tags(self, tags: List[str]) -> List[Template]:
+    def search_templates_by_tags(self, tags: list[str]) -> list[Template]:
         """
         Search templates by tags
         
@@ -283,7 +287,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
         # TODO: Implement full usage tracking with separate table
         return self.increment_usage_count(usage.template_id)
     
-    def get_usage_stats(self, template_id: TemplateId) -> Dict[str, Any]:
+    def get_usage_stats(self, template_id: TemplateId) -> dict[str, Any]:
         """
         Get usage statistics for a template
         
@@ -312,7 +316,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
             logger.error(f"Error getting usage stats for template {template_id}: {e}")
             return {}
     
-    def get_analytics(self) -> Dict[str, Any]:
+    def get_analytics(self) -> dict[str, Any]:
         """
         Get template analytics and insights
         
@@ -363,14 +367,14 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
                     'templates_by_type': type_stats,
                     'templates_by_category': category_stats,
                     'most_used_templates': most_used_templates,
-                    'generated_at': datetime.now(timezone.utc).isoformat()
+                    'generated_at': datetime.now(UTC).isoformat()
                 }
                 
         except Exception as e:
             logger.error(f"Error getting template analytics: {e}")
             return {}
     
-    def _extract_tags_from_template(self, template: Template) -> List[str]:
+    def _extract_tags_from_template(self, template: Template) -> list[str]:
         """
         Extract tags from template for search indexing
         
@@ -432,7 +436,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
             logger.error(f"Error converting template model to entity: {e}")
             raise
 
-    def _entity_to_model_dict(self, template: Template) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, template: Template) -> dict[str, Any]:
         """
         Convert domain entity to model dictionary (DDD-compliant)
 
