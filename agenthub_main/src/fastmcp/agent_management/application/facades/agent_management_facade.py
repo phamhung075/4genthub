@@ -8,7 +8,7 @@ high-level API for agent instantiation and retrieval.
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from ...domain.entities.agent_template import AgentTemplate
@@ -685,7 +685,7 @@ class AgentManagementFacade:
                     importer_user_id=str(importer_user_id.value),
                     source_instance_id=str(source_instance.id.value),
                     imported_instance_id=str(imported_instance.id.value),
-                    imported_at=datetime.now(timezone.utc),
+                    imported_at=datetime.now(UTC),
                     share_token=share_token
                 )
                 session.add(history_record)

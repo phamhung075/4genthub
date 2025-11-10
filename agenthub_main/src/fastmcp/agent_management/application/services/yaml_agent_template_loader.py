@@ -6,7 +6,7 @@ and converts them into AgentTemplate domain entities.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -131,8 +131,8 @@ class YAMLAgentTemplateLoader:
                 "author": agent_info.get("author", "agenthub"),
                 **metadata_data
             },
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
         )
 
         return template

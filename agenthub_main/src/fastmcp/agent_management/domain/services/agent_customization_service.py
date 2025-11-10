@@ -1,13 +1,13 @@
 """AgentCustomizationService - Domain service for customizing agent configurations"""
 
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Any
 
 from ..entities.user_agent_instance import UserAgentInstance
+from ..repositories.user_agent_instance_repository import UserAgentInstanceRepository
+from ..value_objects.agent_configuration import AgentConfiguration
 from ..value_objects.user_agent_instance_id import UserAgentInstanceId
 from ..value_objects.user_id import UserId
-from ..value_objects.agent_configuration import AgentConfiguration
-from ..repositories.user_agent_instance_repository import UserAgentInstanceRepository
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +45,8 @@ class AgentCustomizationService:
         instance_id: UserAgentInstanceId,
         user_id: UserId,
         new_system_prompt: str,
-        customization_notes: Optional[str] = None
-    ) -> Optional[UserAgentInstance]:
+        customization_notes: str | None = None
+    ) -> UserAgentInstance | None:
         """Update the system prompt (instructions) for an agent instance.
 
         Args:
@@ -95,9 +95,9 @@ class AgentCustomizationService:
         self,
         instance_id: UserAgentInstanceId,
         user_id: UserId,
-        new_rules: List[str],
-        customization_notes: Optional[str] = None
-    ) -> Optional[UserAgentInstance]:
+        new_rules: list[str],
+        customization_notes: str | None = None
+    ) -> UserAgentInstance | None:
         """Update the rules for an agent instance.
 
         Args:
@@ -140,9 +140,9 @@ class AgentCustomizationService:
         self,
         instance_id: UserAgentInstanceId,
         user_id: UserId,
-        new_capabilities: Dict[str, Any],
-        customization_notes: Optional[str] = None
-    ) -> Optional[UserAgentInstance]:
+        new_capabilities: dict[str, Any],
+        customization_notes: str | None = None
+    ) -> UserAgentInstance | None:
         """Update the capabilities for an agent instance.
 
         Args:
@@ -185,9 +185,9 @@ class AgentCustomizationService:
         self,
         instance_id: UserAgentInstanceId,
         user_id: UserId,
-        new_output_format: Dict[str, Any],
-        customization_notes: Optional[str] = None
-    ) -> Optional[UserAgentInstance]:
+        new_output_format: dict[str, Any],
+        customization_notes: str | None = None
+    ) -> UserAgentInstance | None:
         """Update the output format for an agent instance.
 
         Args:
@@ -231,8 +231,8 @@ class AgentCustomizationService:
         instance_id: UserAgentInstanceId,
         user_id: UserId,
         new_configuration: AgentConfiguration,
-        customization_notes: Optional[str] = None
-    ) -> Optional[UserAgentInstance]:
+        customization_notes: str | None = None
+    ) -> UserAgentInstance | None:
         """Update the entire configuration for an agent instance.
 
         Used when making multiple changes at once (e.g., from markdown editor).
@@ -268,7 +268,7 @@ class AgentCustomizationService:
         instance_id: UserAgentInstanceId,
         user_id: UserId,
         template_configuration: AgentConfiguration
-    ) -> Optional[UserAgentInstance]:
+    ) -> UserAgentInstance | None:
         """Reset an instance to its template's default configuration.
 
         Args:
@@ -307,7 +307,7 @@ class AgentCustomizationService:
         self,
         instance_id: UserAgentInstanceId,
         user_id: UserId
-    ) -> Optional[UserAgentInstance]:
+    ) -> UserAgentInstance | None:
         """Get instance and verify the user owns it.
 
         Private helper method for authorization.
