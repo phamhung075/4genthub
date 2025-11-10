@@ -88,9 +88,6 @@ export function SubtaskListContent({
           <TableHead className="hidden md:table-cell text-xs text-blue-700 dark:text-blue-300 font-semibold">
             Priority
           </TableHead>
-          <TableHead className="hidden lg:table-cell text-xs text-blue-700 dark:text-blue-300 font-semibold">
-            Dependencies
-          </TableHead>
           <TableHead className="hidden md:table-cell text-xs text-blue-700 dark:text-blue-300 font-semibold">
             Assignees
           </TableHead>

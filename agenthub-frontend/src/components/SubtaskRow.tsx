@@ -174,11 +174,6 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
           <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
         </TableCell>
 
-        {/* Dependencies column - empty for subtasks to maintain alignment */}
-        <TableCell className="hidden lg:table-cell">
-          <span className="text-xs text-muted-foreground">-</span>
-        </TableCell>
-
         {/* Assignees column - align with parent */}
         <TableCell className="hidden md:table-cell max-w-[200px] p-2 align-top">
           {summary.assignees && summary.assignees.length > 0 ? (
