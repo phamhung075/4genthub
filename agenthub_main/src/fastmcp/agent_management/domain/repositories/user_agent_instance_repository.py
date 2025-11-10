@@ -1,12 +1,14 @@
 """UserAgentInstanceRepository - Repository interface for UserAgentInstance aggregate"""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Optional, List
+
 from ..entities.user_agent_instance import UserAgentInstance
+from ..enums.ordering import InstanceOrdering
+from ..value_objects.agent_template_id import AgentTemplateId
 from ..value_objects.user_agent_instance_id import UserAgentInstanceId
 from ..value_objects.user_id import UserId
-from ..value_objects.agent_template_id import AgentTemplateId
-from ..enums.ordering import InstanceOrdering
 
 
 class UserAgentInstanceRepository(ABC):
@@ -29,7 +31,7 @@ class UserAgentInstanceRepository(ABC):
         pass
 
     @abstractmethod
-    def find_by_id(self, instance_id: UserAgentInstanceId) -> Optional[UserAgentInstance]:
+    def find_by_id(self, instance_id: UserAgentInstanceId) -> UserAgentInstance | None:
         """Find an instance by its ID.
 
         Args:
@@ -45,7 +47,7 @@ class UserAgentInstanceRepository(ABC):
         self,
         user_id: UserId,
         template_id: AgentTemplateId
-    ) -> Optional[UserAgentInstance]:
+    ) -> UserAgentInstance | None:
         """Find an instance by user ID and template ID.
 
         Enforces UNIQUE(user_id, template_id) constraint.
@@ -60,7 +62,7 @@ class UserAgentInstanceRepository(ABC):
         pass
 
     @abstractmethod
-    def find_by_user(self, user_id: UserId) -> List[UserAgentInstance]:
+    def find_by_user(self, user_id: UserId) -> list[UserAgentInstance]:
         """Find all instances for a user.
 
         Args:
@@ -72,7 +74,7 @@ class UserAgentInstanceRepository(ABC):
         pass
 
     @abstractmethod
-    def find_enabled_by_user(self, user_id: UserId) -> List[UserAgentInstance]:
+    def find_enabled_by_user(self, user_id: UserId) -> list[UserAgentInstance]:
         """Find all enabled instances for a user.
 
         Used when populating call_agent tool options - only shows enabled agents.
@@ -86,7 +88,7 @@ class UserAgentInstanceRepository(ABC):
         pass
 
     @abstractmethod
-    def find_by_share_token(self, share_token: str) -> Optional[UserAgentInstance]:
+    def find_by_share_token(self, share_token: str) -> UserAgentInstance | None:
         """Find an instance by its share token.
 
         Args:
@@ -103,7 +105,7 @@ class UserAgentInstanceRepository(ABC):
         limit: int = 50,
         offset: int = 0,
         order_by: InstanceOrdering = InstanceOrdering.CREATED_DESC
-    ) -> List[UserAgentInstance]:
+    ) -> list[UserAgentInstance]:
         """Find all publicly shared instances.
 
         Args:
