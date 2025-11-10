@@ -886,10 +886,11 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
     
     def _entity_to_model_dict(self, subtask: SubtaskEntity) -> Dict[str, Any]:
         """Convert domain entity to model dictionary"""
-        # Ensure assignees is a proper list of strings
+        # Ensure assignees is a proper list of strings - use getattr for safety
         assignees = []
-        if subtask.assignees:
-            for assignee in subtask.assignees:
+        subtask_assignees = getattr(subtask, 'assignees', [])
+        if subtask_assignees:
+            for assignee in subtask_assignees:
                 if hasattr(assignee, 'value'):
                     # Handle AgentRole enum
                     assignees.append(f"@{assignee.value}")

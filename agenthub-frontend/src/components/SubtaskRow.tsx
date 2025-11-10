@@ -19,7 +19,7 @@ interface SubtaskRowProps {
   showDetails: boolean;
 
   // Other callbacks
-  onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void;
+  onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void | Promise<void>;
   onAgentInfoClick: (agentName: string) => void;
   onDeleteSubtask: (subtaskId: string) => void;
 

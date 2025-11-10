@@ -82,23 +82,32 @@ export function LazySubtaskListRefactored({
 
   // Load full subtask on demand
   const loadSubtaskById = useCallback(async (subtaskId: string): Promise<any | null> => {
+    // Check if already loaded in fullSubtasksMap
     if (fullSubtasksMap.current.has(subtaskId)) {
       return fullSubtasksMap.current.get(subtaskId);
     }
 
     try {
-      // Subtasks are already loaded with full data from useSubtasks
-      const subtask = subtasks.find(s => s.id === subtaskId);
-      if (subtask) {
-        fullSubtasksMap.current.set(subtaskId, subtask);
+      // Import getSubtask dynamically to avoid circular dependency
+      const { getSubtask } = await import('../../api');
+
+      // Fetch full subtask data from API (includes description and all fields)
+      const fullSubtask = await getSubtask(parentTaskId, subtaskId, { includeContext: false });
+
+      if (fullSubtask) {
+        fullSubtasksMap.current.set(subtaskId, fullSubtask);
         setLoadedSubtaskIds(prev => new Set([...prev, subtaskId]));
+        logger.debug('[LazySubtaskList] Loaded full subtask:', { subtaskId, hasDescription: !!fullSubtask.description });
       }
-      return subtask || null;
+
+      return fullSubtask || null;
     } catch (e) {
       logger.error('Error loading subtask', { subtaskId, error: e });
-      return null;
+      // Fallback to summary data if API call fails
+      const summaryFallback = subtasks.find(s => s.id === subtaskId);
+      return summaryFallback || null;
     }
-  }, [subtasks]);
+  }, [subtasks, parentTaskId]);
 
   // Filtering and sorting hook
   const { filteredSubtasks } = useSubtaskFilters(subtasks);
@@ -178,8 +187,19 @@ export function LazySubtaskListRefactored({
   }, [filteredSubtasks]);
 
   // Handle subtask actions
-  const handleSubtaskAction = (action: 'details' | 'edit' | 'complete', subtaskId: string) => {
-    const subtask = fullSubtasksMap.current.get(subtaskId) || subtasks.find(s => s.id === subtaskId);
+  const handleSubtaskAction = async (action: 'details' | 'edit' | 'complete', subtaskId: string) => {
+    // For edit and complete actions, ensure we have full subtask data (not just summary)
+    let subtask = fullSubtasksMap.current.get(subtaskId);
+
+    if (!subtask && (action === 'edit' || action === 'complete')) {
+      // Load full subtask data if not already loaded
+      subtask = await loadSubtaskById(subtaskId);
+    }
+
+    // Fallback to summary if full data not available (shouldn't happen but defensive)
+    if (!subtask) {
+      subtask = subtasks.find(s => s.id === subtaskId);
+    }
 
     switch (action) {
       case 'details':

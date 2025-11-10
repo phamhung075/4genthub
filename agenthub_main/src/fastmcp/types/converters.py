@@ -72,17 +72,17 @@ def task_to_dto(task: Any, include_subtasks: bool = False) -> TaskDTO:
         )
 
     # Handle entity object input (standard ORM mode)
-    assignees = task.assignees if task.assignees else []
-    dependencies = task.dependencies if hasattr(task, 'dependencies') and task.dependencies else []
-    labels = task.labels if hasattr(task, 'labels') and task.labels else []
-    subtasks = task.subtasks if hasattr(task, 'subtasks') and task.subtasks else []
+    assignees = getattr(task, 'assignees', None) or []
+    dependencies = getattr(task, 'dependencies', None) or []
+    labels = getattr(task, 'labels', None) or []
+    subtasks = getattr(task, 'subtasks', None) or []
 
     return TaskDTO(
-        id=str(task.id),
-        title=task.title,
-        description=task.description,
-        status=str(task.status),
-        priority=str(task.priority),
+        id=str(getattr(task, 'id', '')),
+        title=getattr(task, 'title', ''),
+        description=getattr(task, 'description', None),
+        status=str(getattr(task, 'status', 'todo')),
+        priority=str(getattr(task, 'priority', 'medium')),
         assignees=assignees,
         assignees_count=len(assignees),
         subtask_count=getattr(task, 'subtask_count', 0),
@@ -92,7 +92,7 @@ def task_to_dto(task: Any, include_subtasks: bool = False) -> TaskDTO:
         has_context=bool(getattr(task, 'context_id', None)),
         context_id=str(getattr(task, 'context_id', None)) if getattr(task, 'context_id', None) else None,
         context_data=getattr(task, 'context_data', None),
-        git_branch_id=str(task.git_branch_id),
+        git_branch_id=str(getattr(task, 'git_branch_id', '')),
         project_id=str(getattr(task, 'project_id', '')) if getattr(task, 'project_id', '') else '',
         created_at=_format_datetime(getattr(task, 'created_at', None)),
         updated_at=_format_datetime(getattr(task, 'updated_at', None)),
@@ -136,14 +136,17 @@ def subtask_to_dto(subtask: Any) -> SubtaskDTO:
         )
 
     # Handle entity object input (standard ORM mode)
-    assignees = subtask.assignees if subtask.assignees else []
+    assignees = getattr(subtask, 'assignees', None) or []
+    # Use same fallback pattern as dict mode: parent_task_id or task_id
+    parent_task_id = getattr(subtask, 'parent_task_id', None) or getattr(subtask, 'task_id', '')
+
     return SubtaskDTO(
-        id=str(subtask.id),
-        task_id=str(subtask.parent_task_id),  # Frontend expects task_id
-        title=subtask.title,
-        description=subtask.description,
-        status=str(subtask.status),
-        priority=str(subtask.priority),
+        id=str(getattr(subtask, 'id', '')),
+        task_id=str(parent_task_id),  # Frontend expects task_id
+        title=getattr(subtask, 'title', ''),
+        description=getattr(subtask, 'description', None),
+        status=str(getattr(subtask, 'status', 'todo')),
+        priority=str(getattr(subtask, 'priority', 'medium')),
         assignees=assignees,
         assignees_count=len(assignees),
         progress_percentage=getattr(subtask, 'progress_percentage', None),
@@ -195,20 +198,21 @@ def task_summary_to_dto(task: Any) -> TaskSummaryDTO:
         return dto
 
     # Handle entity object input (standard ORM mode)
-    logger.info(f"🔍 CONVERTER (entity mode) - Task {str(task.id)[:8]}")
+    task_id = str(getattr(task, 'id', ''))
+    logger.info(f"🔍 CONVERTER (entity mode) - Task {task_id[:8]}")
     logger.info(f"  - hasattr subtask_count: {hasattr(task, 'subtask_count')}")
     if hasattr(task, 'subtask_count'):
-        logger.info(f"  - subtask_count value: {task.subtask_count}")
+        logger.info(f"  - subtask_count value: {getattr(task, 'subtask_count', 0)}")
     logger.info(f"  - hasattr project_id: {hasattr(task, 'project_id')}")
     logger.info(f"  - hasattr git_branch_id: {hasattr(task, 'git_branch_id')}")
 
-    assignees = task.assignees if task.assignees else []
-    dependencies = task.dependencies if hasattr(task, 'dependencies') and task.dependencies else []
+    assignees = getattr(task, 'assignees', None) or []
+    dependencies = getattr(task, 'dependencies', None) or []
     dto = TaskSummaryDTO(
-        id=str(task.id),
-        title=task.title,
-        status=str(task.status),
-        priority=str(task.priority),
+        id=task_id,
+        title=getattr(task, 'title', ''),
+        status=str(getattr(task, 'status', 'todo')),
+        priority=str(getattr(task, 'priority', 'medium')),
         subtask_count=getattr(task, 'subtask_count', 0),
         assignees_count=len(assignees),
         assignees=assignees,
@@ -248,13 +252,16 @@ def subtask_summary_to_dto(subtask: Any) -> SubtaskSummaryDTO:
         )
 
     # Handle entity object input (standard ORM mode)
-    assignees = subtask.assignees if subtask.assignees else []
+    assignees = getattr(subtask, 'assignees', None) or []
+    # Use same fallback pattern as dict mode: parent_task_id or task_id
+    parent_task_id = getattr(subtask, 'parent_task_id', None) or getattr(subtask, 'task_id', '')
+
     return SubtaskSummaryDTO(
-        id=str(subtask.id),
-        task_id=str(subtask.parent_task_id),  # Frontend expects task_id
-        title=subtask.title,
-        status=str(subtask.status),
-        priority=str(subtask.priority),
+        id=str(getattr(subtask, 'id', '')),
+        task_id=str(parent_task_id),  # Frontend expects task_id
+        title=getattr(subtask, 'title', ''),
+        status=str(getattr(subtask, 'status', 'todo')),
+        priority=str(getattr(subtask, 'priority', 'medium')),
         assignees_count=len(assignees),
         assignees=assignees,
         progress_percentage=getattr(subtask, 'progress_percentage', None),
