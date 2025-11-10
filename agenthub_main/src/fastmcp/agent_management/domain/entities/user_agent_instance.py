@@ -1,10 +1,9 @@
 """UserAgentInstance Domain Entity - User-specific customizable agent instance"""
 
-from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from ..value_objects.agent_configuration import AgentConfiguration
@@ -157,7 +156,7 @@ class UserAgentInstance(BaseTimestampEntity):
         if customization_notes:
             metadata_copy = self.metadata.copy()
             metadata_copy['last_customization'] = {
-                'timestamp': datetime.now(datetime.UTC).isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'notes': customization_notes
             }
             object.__setattr__(self, 'metadata', metadata_copy)
@@ -177,7 +176,7 @@ class UserAgentInstance(BaseTimestampEntity):
         object.__setattr__(self, 'usage_count', self.usage_count + 1)
 
         # Update last used timestamp
-        object.__setattr__(self, 'last_used_at', datetime.now(datetime.UTC))
+        object.__setattr__(self, 'last_used_at', datetime.now(timezone.utc))
 
         logger.debug(
             f"Tracked usage for instance {self.id}: count={self.usage_count}, "
@@ -254,7 +253,7 @@ class UserAgentInstance(BaseTimestampEntity):
         return self.original_creator_id is not None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> UserAgentInstance:
+    def from_dict(cls, data: dict[str, Any]) -> "UserAgentInstance":
         """Create UserAgentInstance from dictionary (e.g., from database).
 
         Args:
