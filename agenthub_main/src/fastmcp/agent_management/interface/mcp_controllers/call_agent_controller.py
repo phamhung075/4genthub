@@ -5,7 +5,7 @@ Provides a controller class that follows the existing DDD pattern for MCP tool r
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from .call_agent import call_agent_mcp_tool
 
@@ -42,7 +42,7 @@ class CallAgentMCPController:
             "user agent instance system. Returns agent configuration including "
             "system_prompt, tools, and capabilities."
         ))
-        def call_agent(name_agent: str, user_id: str = None) -> Dict[str, Any]:
+        def call_agent(name_agent: str, user_id: str = None) -> dict[str, Any]:
             """
             Load and invoke a specialized agent.
 

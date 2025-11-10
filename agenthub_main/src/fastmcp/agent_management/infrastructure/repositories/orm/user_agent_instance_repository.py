@@ -5,19 +5,26 @@ This module implements the UserAgentInstance Repository using SQLAlchemy ORM,
 providing per-user agent instance management with full database capabilities.
 """
 
-import logging
 import json
-from typing import Dict, Any, List, Optional
+import logging
 from datetime import UTC, datetime
-from sqlalchemy import and_, or_, func
+from typing import Any
+
+from sqlalchemy import and_, func, or_
+
+from fastmcp.task_management.infrastructure.repositories.base_timestamp_repository import (
+    BaseTimestampRepository,
+)
 
 from ....domain.entities.user_agent_instance import UserAgentInstance
-from ....domain.value_objects.user_agent_instance_id import UserAgentInstanceId
-from ....domain.value_objects.agent_template_id import AgentTemplateId
-from ....domain.value_objects.user_id import UserId
+from ....domain.enums.ordering import InstanceOrdering
+from ....domain.repositories.user_agent_instance_repository import (
+    UserAgentInstanceRepository as UserAgentInstanceRepositoryInterface,
+)
 from ....domain.value_objects.agent_configuration import AgentConfiguration
-from ....domain.repositories.user_agent_instance_repository import UserAgentInstanceRepository as UserAgentInstanceRepositoryInterface
-from fastmcp.task_management.infrastructure.repositories.base_timestamp_repository import BaseTimestampRepository
+from ....domain.value_objects.agent_template_id import AgentTemplateId
+from ....domain.value_objects.user_agent_instance_id import UserAgentInstanceId
+from ....domain.value_objects.user_id import UserId
 from ...database.models import UserAgentInstanceORM
 
 logger = logging.getLogger(__name__)
@@ -120,7 +127,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             logger.error(f"Error saving user agent instance {instance.agent_name}: {e}")
             raise
 
-    def find_by_id(self, instance_id: UserAgentInstanceId) -> Optional[UserAgentInstance]:
+    def find_by_id(self, instance_id: UserAgentInstanceId) -> UserAgentInstance | None:
         """
         Find an instance by its ID
 
@@ -148,7 +155,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
         self,
         user_id: UserId,
         template_id: AgentTemplateId
-    ) -> Optional[UserAgentInstance]:
+    ) -> UserAgentInstance | None:
         """
         Find an instance by user ID and template ID
 
@@ -180,7 +187,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
         self,
         user_id: UserId,
         template_slug: str
-    ) -> Optional[UserAgentInstance]:
+    ) -> UserAgentInstance | None:
         """
         Find an instance by user ID and template slug.
 
@@ -254,7 +261,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             logger.error(f"Error checking if user agent instance exists for user {user_id} and template {template_id}: {e}")
             return False
 
-    def find_by_user(self, user_id: UserId) -> List[UserAgentInstance]:
+    def find_by_user(self, user_id: UserId) -> list[UserAgentInstance]:
         """
         Find all instances for a user
 
@@ -276,7 +283,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             logger.error(f"Error finding user agent instances for user {user_id}: {e}")
             return []
 
-    def find_enabled_by_user(self, user_id: UserId) -> List[UserAgentInstance]:
+    def find_enabled_by_user(self, user_id: UserId) -> list[UserAgentInstance]:
         """
         Find all enabled instances for a user
 
@@ -293,7 +300,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
                 orm_instances = session.query(UserAgentInstanceORM).filter(
                     and_(
                         UserAgentInstanceORM.user_id == str(user_id),
-                        UserAgentInstanceORM.is_enabled == True
+                        UserAgentInstanceORM.is_enabled
                     )
                 ).order_by(UserAgentInstanceORM.agent_name).all()
 
@@ -303,7 +310,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             logger.error(f"Error finding enabled user agent instances for user {user_id}: {e}")
             return []
 
-    def find_by_share_token(self, share_token: str) -> Optional[UserAgentInstance]:
+    def find_by_share_token(self, share_token: str) -> UserAgentInstance | None:
         """
         Find an instance by its share token
 
@@ -332,7 +339,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
         limit: int = 50,
         offset: int = 0,
         order_by: 'InstanceOrdering' = None
-    ) -> List[UserAgentInstance]:
+    ) -> list[UserAgentInstance]:
         """Find public instances (for browsing shared agents).
 
         Following DDD: Domain defines WHAT ordering options exist,
@@ -351,8 +358,9 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
         Returns:
             List of public UserAgentInstance entities ordered as specified
         """
-        from ....domain.enums.ordering import InstanceOrdering
         from sqlalchemy import exists, select
+
+        from ....domain.enums.ordering import InstanceOrdering
 
         # Default ordering if none specified
         if order_by is None:
@@ -541,8 +549,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             if hasattr(orm_instance, 'last_used_at') and orm_instance.last_used_at:
                 if orm_instance.last_used_at.tzinfo is None:
                     # Assume UTC if no timezone info (SQLite behavior)
-                    from datetime import timezone as dt_timezone
-                    last_used_at = orm_instance.last_used_at.replace(tzinfo=dt_UTC)
+                    last_used_at = orm_instance.last_used_at.replace(tzinfo=UTC)
                 else:
                     last_used_at = orm_instance.last_used_at
 
@@ -568,7 +575,7 @@ class ORMUserAgentInstanceRepository(BaseTimestampRepository[UserAgentInstanceOR
             logger.error(f"Error converting user agent instance model to entity: {e}")
             raise
 
-    def _entity_to_model_dict(self, instance: UserAgentInstance) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, instance: UserAgentInstance) -> dict[str, Any]:
         """
         Convert domain entity to model dictionary (DDD-compliant)
 

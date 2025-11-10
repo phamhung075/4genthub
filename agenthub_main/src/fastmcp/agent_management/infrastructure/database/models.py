@@ -7,13 +7,15 @@ This module defines the database schema for:
 """
 
 from datetime import datetime
-from typing import Optional
-from sqlalchemy import String, Text, Boolean, DateTime, Integer, Index, UniqueConstraint
+
+from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from fastmcp.task_management.infrastructure.database.database_config import Base
+from fastmcp.task_management.infrastructure.database.timestamp_events import (
+    setup_timestamp_events,
+)
 from fastmcp.task_management.infrastructure.database.uuid_column_type import UnifiedUUID
-from fastmcp.task_management.infrastructure.database.timestamp_events import setup_timestamp_events
 
 
 class AgentTemplateORM(Base):
@@ -92,19 +94,19 @@ class AgentTemplateORM(Base):
         doc="JSON object describing agent capabilities"
     )
 
-    rules: Mapped[Optional[str]] = mapped_column(
+    rules: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         doc="JSON array of rules and constraints"
     )
 
-    output_format: Mapped[Optional[str]] = mapped_column(
+    output_format: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         doc="JSON object for output formatting preferences"
     )
 
-    metadata_json: Mapped[Optional[str]] = mapped_column(
+    metadata_json: Mapped[str | None] = mapped_column(
         "metadata",  # Column name in DB
         Text,
         nullable=True,
@@ -191,7 +193,7 @@ class UserAgentInstanceORM(Base):
         doc="Whether this agent instance is enabled for use in call_agent tools"
     )
 
-    customization_notes: Mapped[Optional[str]] = mapped_column(
+    customization_notes: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         doc="User notes about customizations made"
@@ -216,19 +218,19 @@ class UserAgentInstanceORM(Base):
         doc="JSON object of capabilities"
     )
 
-    rules: Mapped[Optional[str]] = mapped_column(
+    rules: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         doc="JSON array of rules"
     )
 
-    output_format: Mapped[Optional[str]] = mapped_column(
+    output_format: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         doc="JSON object for output format"
     )
 
-    metadata_json: Mapped[Optional[str]] = mapped_column(
+    metadata_json: Mapped[str | None] = mapped_column(
         "metadata",  # Column name in DB
         Text,
         nullable=True,
@@ -244,7 +246,7 @@ class UserAgentInstanceORM(Base):
         doc="Visibility: 'private' or 'public'"
     )
 
-    share_token: Mapped[Optional[str]] = mapped_column(
+    share_token: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
         unique=True,
@@ -252,20 +254,20 @@ class UserAgentInstanceORM(Base):
         doc="Unique token for sharing (64 characters)"
     )
 
-    share_created_at: Mapped[Optional[datetime]] = mapped_column(
+    share_created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         doc="When the share token was generated"
     )
 
     # Import tracking
-    original_creator_id: Mapped[Optional[str]] = mapped_column(
+    original_creator_id: Mapped[str | None] = mapped_column(
         UnifiedUUID,
         nullable=True,
         doc="User ID of the original creator if this was imported"
     )
 
-    imported_at: Mapped[Optional[datetime]] = mapped_column(
+    imported_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         doc="When this instance was imported"
@@ -284,7 +286,7 @@ class UserAgentInstanceORM(Base):
         doc="Last update timestamp"
     )
 
-    last_used_at: Mapped[Optional[datetime]] = mapped_column(
+    last_used_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         doc="Last time this agent instance was used"
@@ -368,7 +370,7 @@ class AgentImportHistoryORM(Base):
     )
 
     # Share token used for import
-    share_token: Mapped[Optional[str]] = mapped_column(
+    share_token: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
         doc="Share token that was used for the import"

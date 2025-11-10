@@ -11,7 +11,7 @@ dependencies = [
     "openapi-pydantic>=0.5.1",
     "rich>=13.9.4",
     "typer>=0.15.2",
-    "authlib>=1.5.2",
+    "authlib>=1.6.5",  # Updated to fix CVE-2025-59420 and CVE-2025-61920
     # Task management dependencies (migrated from cursor_agent)
     "PyYAML>=6.0.1",
     "jsonschema>=4.17.0",
@@ -20,6 +20,8 @@ dependencies = [
     # Authentication and security dependencies
     "httpx>=0.28.1", # Already included above for HTTP requests to Supabase
     "cryptography>=42.0.0", # For secure token generation and hashing
+    # NOTE: ecdsa@0.19.1 has CVE-2024-23342 (Minerva attack) but no fix is available yet
+    # We rely on python-jose/cryptography for production JWT operations which doesn't use ecdsa
     # Session persistence dependencies
     "redis>=5.0.0", # Redis client for session persistence
     "pytest-asyncio>=1.0.0",
@@ -33,6 +35,7 @@ dependencies = [
     "PyJWT>=2.8.0", # JWT token management
     "python-jose[cryptography]>=3.5.0", # JWT with cryptography support for Keycloak
     "fastapi>=0.115.12",
+    "starlette>=0.49.1", # Updated to fix CVE-2025-62727 (DoS via Range header)
     "uvicorn>=0.34.3",
     "python-multipart>=0.0.20",
     "supabase>=2.18.1",

@@ -1,8 +1,8 @@
 """AgentConfiguration Value Object"""
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
 import json
+from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -23,10 +23,10 @@ class AgentConfiguration:
 
     system_prompt: str
     tools: tuple[str, ...] = field(default_factory=tuple)
-    capabilities: Dict[str, Any] = field(default_factory=dict)
+    capabilities: dict[str, Any] = field(default_factory=dict)
     rules: tuple[str, ...] = field(default_factory=tuple)
-    output_format: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    output_format: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Validate configuration after initialization."""
@@ -40,7 +40,7 @@ class AgentConfiguration:
             object.__setattr__(self, 'rules', tuple(self.rules))
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentConfiguration":
+    def from_dict(cls, data: dict[str, Any]) -> "AgentConfiguration":
         """Create AgentConfiguration from dictionary.
 
         Args:
@@ -61,7 +61,7 @@ class AgentConfiguration:
             metadata=data.get("metadata", {})
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary for storage.
 
         Returns:
@@ -102,7 +102,7 @@ class AgentConfiguration:
             metadata=self.metadata
         )
 
-    def with_tools(self, tools: List[str]) -> "AgentConfiguration":
+    def with_tools(self, tools: list[str]) -> "AgentConfiguration":
         """Create a new configuration with updated tools list.
 
         Args:
@@ -120,7 +120,7 @@ class AgentConfiguration:
             metadata=self.metadata
         )
 
-    def merge_capabilities(self, new_capabilities: Dict[str, Any]) -> "AgentConfiguration":
+    def merge_capabilities(self, new_capabilities: dict[str, Any]) -> "AgentConfiguration":
         """Create a new configuration with merged capabilities.
 
         Args:

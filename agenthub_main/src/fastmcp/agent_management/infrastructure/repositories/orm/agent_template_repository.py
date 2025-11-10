@@ -5,17 +5,23 @@ This module implements the AgentTemplate Repository using SQLAlchemy ORM,
 providing agent template management with full database capabilities.
 """
 
-import logging
 import json
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
+import logging
+from datetime import UTC, datetime
+from typing import Any
+
 from sqlalchemy import func
 
+from fastmcp.task_management.infrastructure.repositories.base_timestamp_repository import (
+    BaseTimestampRepository,
+)
+
 from ....domain.entities.agent_template import AgentTemplate
-from ....domain.value_objects.agent_template_id import AgentTemplateId
+from ....domain.repositories.agent_template_repository import (
+    AgentTemplateRepository as AgentTemplateRepositoryInterface,
+)
 from ....domain.value_objects.agent_configuration import AgentConfiguration
-from ....domain.repositories.agent_template_repository import AgentTemplateRepository as AgentTemplateRepositoryInterface
-from fastmcp.task_management.infrastructure.repositories.base_timestamp_repository import BaseTimestampRepository
+from ....domain.value_objects.agent_template_id import AgentTemplateId
 from ...database.models import AgentTemplateORM
 
 logger = logging.getLogger(__name__)
@@ -65,7 +71,7 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
                     existing.rules = model_dict.get("rules")
                     existing.output_format = model_dict.get("output_format")
                     existing.metadata_json = model_dict.get("metadata_json")
-                    existing.updated_at = datetime.now(timezone.utc)
+                    existing.updated_at = datetime.now(UTC)
 
                     logger.info(f"Updated agent template: {template.slug}")
                 else:
@@ -106,7 +112,7 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
             logger.error(f"Error saving agent template {template.slug}: {e}")
             raise
 
-    def find_by_id(self, template_id: AgentTemplateId) -> Optional[AgentTemplate]:
+    def find_by_id(self, template_id: AgentTemplateId) -> AgentTemplate | None:
         """
         Find a template by its ID
 
@@ -130,7 +136,7 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
             logger.error(f"Error finding agent template by id {template_id}: {e}")
             return None
 
-    def find_by_slug(self, slug: str) -> Optional[AgentTemplate]:
+    def find_by_slug(self, slug: str) -> AgentTemplate | None:
         """
         Find a template by its slug
 
@@ -154,7 +160,7 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
             logger.error(f"Error finding agent template by slug {slug}: {e}")
             return None
 
-    def find_all(self) -> List[AgentTemplate]:
+    def find_all(self) -> list[AgentTemplate]:
         """
         Get all agent templates
 
@@ -174,7 +180,7 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
             logger.error(f"Error finding all agent templates: {e}")
             return []
 
-    def find_by_category(self, category: str) -> List[AgentTemplate]:
+    def find_by_category(self, category: str) -> list[AgentTemplate]:
         """
         Find templates by category
 
@@ -291,7 +297,7 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
             logger.error(f"Error converting agent template model to entity: {e}")
             raise
 
-    def _entity_to_model_dict(self, template: AgentTemplate) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, template: AgentTemplate) -> dict[str, Any]:
         """
         Convert domain entity to model dictionary (DDD-compliant)
 

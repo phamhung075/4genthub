@@ -6,18 +6,18 @@ database-backed user agent instance system.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any
 
+from ....task_management.interface.mcp_controllers.auth_helper.services.authentication_service import (
+    AuthenticationService,
+)
 from ...application.facades import AgentManagementFacade
 from ...domain.value_objects.user_id import UserId
-from ....task_management.interface.mcp_controllers.auth_helper.services.authentication_service import (
-    AuthenticationService
-)
 
 logger = logging.getLogger(__name__)
 
 
-def call_agent_mcp_tool(name_agent: str, user_id: str = None) -> Dict[str, Any]:
+def call_agent_mcp_tool(name_agent: str, user_id: str = None) -> dict[str, Any]:
     """
     Load and invoke a specialized agent by name.
 
