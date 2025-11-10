@@ -1,14 +1,13 @@
 """AgentInstantiationService - Domain service for creating agent instances"""
 
 import logging
-from typing import Optional
 
-from ..entities.user_agent_instance import UserAgentInstance
 from ..entities.agent_template import AgentTemplate
-from ..value_objects.user_id import UserId
-from ..value_objects.user_agent_instance_id import UserAgentInstanceId
+from ..entities.user_agent_instance import UserAgentInstance
 from ..repositories.agent_template_repository import AgentTemplateRepository
 from ..repositories.user_agent_instance_repository import UserAgentInstanceRepository
+from ..value_objects.user_agent_instance_id import UserAgentInstanceId
+from ..value_objects.user_id import UserId
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ class AgentInstantiationService:
         self,
         user_id: UserId,
         template_slug: str
-    ) -> Optional[UserAgentInstance]:
+    ) -> UserAgentInstance | None:
         """Get existing instance or create new one for user and template.
 
         This is the primary method called by call_agent MCP tool.
@@ -152,7 +151,7 @@ class AgentInstantiationService:
     def get_instance_by_id(
         self,
         instance_id: UserAgentInstanceId
-    ) -> Optional[UserAgentInstance]:
+    ) -> UserAgentInstance | None:
         """Get an agent instance by its ID.
 
         Args:

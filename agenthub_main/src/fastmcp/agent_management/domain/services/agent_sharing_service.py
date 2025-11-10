@@ -2,13 +2,13 @@
 
 import logging
 import secrets
-from typing import Optional
 
 from ..entities.user_agent_instance import UserAgentInstance
+from ..enums.ordering import InstanceOrdering
+from ..repositories.agent_template_repository import AgentTemplateRepository
+from ..repositories.user_agent_instance_repository import UserAgentInstanceRepository
 from ..value_objects.user_agent_instance_id import UserAgentInstanceId
 from ..value_objects.user_id import UserId
-from ..repositories.user_agent_instance_repository import UserAgentInstanceRepository
-from ..repositories.agent_template_repository import AgentTemplateRepository
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class AgentSharingService:
         self,
         instance_id: UserAgentInstanceId,
         user_id: UserId
-    ) -> Optional[str]:
+    ) -> str | None:
         """Generate a share token and make the instance public.
 
         Business Rules:
@@ -123,8 +123,8 @@ class AgentSharingService:
         self,
         share_token: str,
         importer_user_id: UserId,
-        creator_email: Optional[str] = None
-    ) -> Optional[UserAgentInstance]:
+        creator_email: str | None = None
+    ) -> UserAgentInstance | None:
         """Import a shared agent into the importer's account.
 
         This creates a COPY of the shared instance for the importer.
@@ -228,7 +228,7 @@ class AgentSharingService:
         self,
         base_name: str,
         importer_user_id: UserId,
-        creator_email: Optional[str] = None
+        creator_email: str | None = None
     ) -> str:
         """Resolve name collision by appending creator attribution.
 
@@ -300,8 +300,6 @@ class AgentSharingService:
         Returns:
             List of public instances ordered and validated
         """
-        from ..enums.ordering import InstanceOrdering
-
         # Business policy: marketplace defaults to newest first
         if order_by is None:
             order_by = InstanceOrdering.CREATED_DESC
@@ -328,7 +326,7 @@ class AgentSharingService:
         self,
         instance_id: UserAgentInstanceId,
         user_id: UserId
-    ) -> Optional[UserAgentInstance]:
+    ) -> UserAgentInstance | None:
         """Get instance and verify the user owns it.
 
         Private helper method for authorization.
