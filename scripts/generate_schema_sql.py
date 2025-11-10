@@ -11,8 +11,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "agenthub_main" / "src"))
 
-from sqlalchemy import create_engine, inspect, MetaData, text
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, inspect
 
 load_dotenv()
 
@@ -226,7 +226,7 @@ def main():
     with open(output_file, 'w') as f:
         f.write(schema_sql)
 
-    print(f"\nSchema SQL generated and saved to:")
+    print("\nSchema SQL generated and saved to:")
     print(f"  {output_file}")
     print(f"\nTotal size: {len(schema_sql)} bytes")
     print(f"Total lines: {len(schema_sql.splitlines())}")

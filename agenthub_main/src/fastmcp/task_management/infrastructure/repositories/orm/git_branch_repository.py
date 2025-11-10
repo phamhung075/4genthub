@@ -544,9 +544,9 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 operation="exists",
                 table="project_git_branchs"
             )
-    
-    async def update(self, git_branch: GitBranch) -> None:
-        """Update an existing git branch"""
+
+    async def update_domain(self, git_branch: GitBranch) -> None:
+        """Update an existing git branch (domain model version)"""
         git_branch.touch("git_branch_manual_update")
         await self.save(git_branch)
 

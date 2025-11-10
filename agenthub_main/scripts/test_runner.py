@@ -4,19 +4,20 @@ Enhanced Test Runner with Coverage and CI Integration
 Part of subtask: 4fabc4f5-5750-4790-8055-68b443c7aafc
 """
 
-import os
-import sys
-import subprocess
 import argparse
 import json
-from pathlib import Path
-from typing import List, Dict, Any, Optional
+import os
+import subprocess
+import sys
 import time
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 
 class TestRunner:
     """Enhanced test runner with coverage reporting and CI integration."""
 
-    def __init__(self, base_dir: Optional[Path] = None):
+    def __init__(self, base_dir: Path | None = None):
         self.base_dir = base_dir or Path(__file__).parent.parent
         self.src_dir = self.base_dir / "src"
         self.tests_dir = self.src_dir / "tests"
@@ -42,7 +43,7 @@ class TestRunner:
         print(f"🐍 PYTHONPATH: {pythonpath}")
         print(f"📊 Reports directory: {self.reports_dir}")
 
-    def run_command(self, cmd: List[str], description: str) -> Dict[str, Any]:
+    def run_command(self, cmd: list[str], description: str) -> dict[str, Any]:
         """Run a command and capture its output."""
         print(f"🔧 {description}")
         print(f"▶️  Command: {' '.join(cmd)}")
@@ -77,7 +78,7 @@ class TestRunner:
                 "command": " ".join(cmd)
             }
 
-    def run_unit_tests(self) -> Dict[str, Any]:
+    def run_unit_tests(self) -> dict[str, Any]:
         """Run unit tests with coverage."""
         cmd = [
             "python", "-m", "pytest",
@@ -92,7 +93,7 @@ class TestRunner:
         ]
         return self.run_command(cmd, "Running unit tests with coverage")
 
-    def run_integration_tests(self) -> Dict[str, Any]:
+    def run_integration_tests(self) -> dict[str, Any]:
         """Run integration tests."""
         cmd = [
             "python", "-m", "pytest",
@@ -102,7 +103,7 @@ class TestRunner:
         ]
         return self.run_command(cmd, "Running integration tests")
 
-    def run_e2e_tests(self) -> Dict[str, Any]:
+    def run_e2e_tests(self) -> dict[str, Any]:
         """Run end-to-end tests."""
         cmd = [
             "python", "-m", "pytest",
@@ -112,7 +113,7 @@ class TestRunner:
         ]
         return self.run_command(cmd, "Running end-to-end tests")
 
-    def run_all_tests(self) -> Dict[str, Any]:
+    def run_all_tests(self) -> dict[str, Any]:
         """Run all tests with comprehensive coverage."""
         cmd = [
             "python", "-m", "pytest",
@@ -127,7 +128,7 @@ class TestRunner:
         ]
         return self.run_command(cmd, "Running all tests with coverage")
 
-    def run_performance_tests(self) -> Dict[str, Any]:
+    def run_performance_tests(self) -> dict[str, Any]:
         """Run performance tests."""
         cmd = [
             "python", "-m", "pytest",
@@ -137,7 +138,7 @@ class TestRunner:
         ]
         return self.run_command(cmd, "Running performance tests")
 
-    def run_parallel_tests(self) -> Dict[str, Any]:
+    def run_parallel_tests(self) -> dict[str, Any]:
         """Run tests in parallel for faster execution."""
         cmd = [
             "python", "-m", "pytest",
@@ -151,12 +152,12 @@ class TestRunner:
         ]
         return self.run_command(cmd, "Running tests in parallel")
 
-    def generate_coverage_report(self) -> Dict[str, Any]:
+    def generate_coverage_report(self) -> dict[str, Any]:
         """Generate detailed coverage report."""
         cmd = ["python", "-m", "coverage", "report", "--show-missing"]
         return self.run_command(cmd, "Generating coverage report")
 
-    def generate_coverage_json(self) -> Dict[str, Any]:
+    def generate_coverage_json(self) -> dict[str, Any]:
         """Generate JSON coverage report for CI."""
         cmd = ["python", "-m", "coverage", "json", "-o", "test_reports/coverage.json"]
         return self.run_command(cmd, "Generating JSON coverage report")
@@ -176,7 +177,7 @@ class TestRunner:
             print(f"❌ Error checking coverage: {e}")
             return False
 
-    def save_test_results(self, results: Dict[str, Any], output_file: str):
+    def save_test_results(self, results: dict[str, Any], output_file: str):
         """Save test results to JSON file."""
         results_file = self.reports_dir / output_file
         with open(results_file, 'w') as f:

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Batch test runner to identify which tests are actually failing"""
 
-import sys
-import os
 import importlib.util
-import traceback
+import os
+import sys
 
 # Setup paths
 sys.path.insert(0, './agenthub_main/src')
@@ -12,7 +11,7 @@ os.chdir('./agenthub_main')
 os.environ["HOOK_JWT_SECRET"] = "test-secret-key-for-hook-auth"
 
 # Read failing tests
-with open('./.test_cache/failed_tests.txt', 'r') as f:
+with open('./.test_cache/failed_tests.txt') as f:
     failed_tests = [line.strip() for line in f.readlines()]
 
 print(f"Checking {len(failed_tests)} test files for import errors...\n")

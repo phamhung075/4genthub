@@ -14,11 +14,14 @@ project_root = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(project_root))
 
 from sqlalchemy import text
+
 from fastmcp.agent_management.infrastructure.database.models import (
     AgentTemplateORM,
-    UserAgentInstanceORM
+    UserAgentInstanceORM,
 )
-from fastmcp.agent_management.infrastructure.repositories import ORMAgentTemplateRepository
+from fastmcp.agent_management.infrastructure.repositories import (
+    ORMAgentTemplateRepository,
+)
 
 print("=" * 80)
 print("RECREATING AGENT MANAGEMENT TABLES")

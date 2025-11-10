@@ -10,7 +10,6 @@ Usage:
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add the project src to the path
@@ -19,8 +18,8 @@ sys.path.insert(0, str(project_root / "src"))
 
 try:
     from fastmcp.task_management.infrastructure.database.timestamp_events import (
+        cleanup_timestamp_events,
         setup_timestamp_events,
-        cleanup_timestamp_events
     )
     print("✅ Successfully imported timestamp event handlers")
 except ImportError as e:
@@ -66,8 +65,11 @@ def verify_timestamp_system():
 
     try:
         # Create a test entity to verify event handling
-        from fastmcp.task_management.domain.entities.base.base_timestamp_entity import BaseTimestampEntity
         from dataclasses import dataclass
+
+        from fastmcp.task_management.domain.entities.base.base_timestamp_entity import (
+            BaseTimestampEntity,
+        )
 
         @dataclass
         class TestEntity(BaseTimestampEntity):

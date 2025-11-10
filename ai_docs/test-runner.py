@@ -4,9 +4,9 @@ Simple test runner to verify pytest collection works.
 This script tests if our fixes allow pytest to run without hook interference.
 """
 
-import subprocess
-import sys
 import os
+import subprocess
+
 
 def main():
     # Change to agenthub_main directory (as fixed in test-menu.sh)
@@ -80,7 +80,7 @@ def main():
         if error_count > 0:
             print(f"\n❌ {error_count} collection errors found")
         else:
-            print(f"\n✅ No collection errors!")
+            print("\n✅ No collection errors!")
             
     except subprocess.TimeoutExpired:
         print("❌ Test collection timed out")

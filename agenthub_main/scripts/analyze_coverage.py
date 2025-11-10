@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Analyze coverage HTML reports to extract uncovered lines for easy-win files."""
 
-import re
 import json
-from pathlib import Path
-from typing import Dict, List, Tuple
 from html.parser import HTMLParser
+from pathlib import Path
+from typing import List, Tuple
+
 
 class CoverageHTMLParser(HTMLParser):
     """Parse coverage HTML to extract uncovered line numbers."""
@@ -58,18 +58,18 @@ def find_html_file(source_file: str, htmlcov_dir: Path) -> Path:
 
     return None
 
-def analyze_file_coverage(html_file: Path) -> Tuple[List[int], List[int]]:
+def analyze_file_coverage(html_file: Path) -> tuple[list[int], list[int]]:
     """Extract uncovered and partial lines from HTML coverage file."""
     parser = CoverageHTMLParser()
 
-    with open(html_file, 'r', encoding='utf-8') as f:
+    with open(html_file, encoding='utf-8') as f:
         content = f.read()
 
     parser.feed(content)
 
     return sorted(set(parser.uncovered_lines)), sorted(set(parser.partial_lines))
 
-def categorize_file(filepath: str) -> Tuple[str, str]:
+def categorize_file(filepath: str) -> tuple[str, str]:
     """Categorize file by type and importance."""
     if '/domain/services/' in filepath:
         return ('Domain Service', 'HIGH')

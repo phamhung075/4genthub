@@ -15,17 +15,17 @@ Environment variables required:
     - KEYCLOAK_SERVICE_CLIENT_SECRET
 """
 
-import os
-import sys
 import asyncio
 import json
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
 # Add src to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from fastmcp.auth.service_account import ServiceAccountAuth, ServiceAccountConfig
+from fastmcp.auth.service_account import ServiceAccountAuth
 
 
 class Colors:
@@ -116,7 +116,7 @@ async def test_service_account_auth():
         token = await auth.authenticate()
         
         if token:
-            print_success(f"Authentication successful!")
+            print_success("Authentication successful!")
             print_info(f"Access token received (length: {len(token.access_token)})")
             print_info(f"Token expires in: {token.seconds_until_expiry} seconds")
             print_info(f"Token type: {token.token_type}")

@@ -18,17 +18,13 @@ Options:
     --test      Run validation tests after configuration
 """
 
-import os
-import sys
-import re
-import shutil
-import subprocess
-import json
-import time
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
 import argparse
 import logging
+import os
+import re
+import shutil
+import sys
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
@@ -200,7 +196,7 @@ class ProductionConfigurator:
         try:
             self.backup_file(filepath)
             
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, encoding='utf-8') as f:
                 content = f.read()
             
             cleaned_content = self.remove_supabase_references(content, str(filepath))

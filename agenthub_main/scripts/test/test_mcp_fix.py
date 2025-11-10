@@ -2,7 +2,7 @@
 """Test script to verify MCP task operations fix"""
 
 import asyncio
-import json
+
 import httpx
 
 BASE_URL = "http://localhost:8000"
@@ -20,7 +20,7 @@ async def test_task_operations():
             f"{BASE_URL}/tools/manage_project",
             json={
                 "action": "create",
-                "name": f"test-fix-project",
+                "name": "test-fix-project",
                 "description": "Testing task fixes"
             }
         )
@@ -85,7 +85,7 @@ async def test_task_operations():
         
         if get_task_response.status_code == 200:
             retrieved_task = get_task_response.json()
-            print(f"✅ Task retrieved successfully")
+            print("✅ Task retrieved successfully")
             print(f"   Title: {retrieved_task.get('task', {}).get('title')}")
         else:
             print(f"❌ Failed to get task: {get_task_response.text}")

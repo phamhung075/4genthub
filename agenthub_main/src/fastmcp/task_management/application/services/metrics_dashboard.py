@@ -570,8 +570,8 @@ class MetricsDashboard:
                 logger.debug(f"Cleaned {cleaned} old data points from {metric.name}")
         
         self._last_cleanup = now
-    
-    def export_metrics(
+
+    def export_metrics_old(
         self,
         format_type: str = "json",
         duration_minutes: int = 60

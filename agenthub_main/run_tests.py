@@ -2,9 +2,9 @@
 """
 Test runner script to run tests individually to avoid SQLAlchemy table redefinition errors
 """
+import os
 import subprocess
 import sys
-import os
 
 # Set up environment
 os.environ['PYTHONPATH'] = os.path.join(os.getcwd(), 'src')

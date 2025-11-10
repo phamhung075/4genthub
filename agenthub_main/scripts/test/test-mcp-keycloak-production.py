@@ -13,15 +13,14 @@ Usage:
     python test-mcp-keycloak-production.py [--username USER] [--password PASS]
 """
 
+import argparse
+import asyncio
+import logging
 import os
 import sys
-import json
 import time
-import asyncio
-import argparse
-import logging
-from typing import Dict, Any, Optional
 from pathlib import Path
+from typing import Optional
 
 # Add project to path
 PROJECT_ROOT = Path(__file__).parent
@@ -43,7 +42,7 @@ logger = logging.getLogger(__name__)
 class MCPKeycloakTester:
     """Test MCP Server with Keycloak authentication"""
     
-    def __init__(self, username: Optional[str] = None, password: Optional[str] = None):
+    def __init__(self, username: str | None = None, password: str | None = None):
         """Initialize tester with credentials."""
         self.username = username or os.getenv("TEST_USERNAME", "testuser")
         self.password = password or os.getenv("TEST_PASSWORD", "testpass123")
@@ -163,7 +162,7 @@ class MCPKeycloakTester:
                     )
                     self.user_id = decoded.get("sub")
                     
-                    logger.info(f"✅ Keycloak authentication successful")
+                    logger.info("✅ Keycloak authentication successful")
                     logger.info(f"   User ID: {self.user_id}")
                     logger.info(f"   Username: {decoded.get('preferred_username')}")
                     logger.info(f"   Email: {decoded.get('email')}")
@@ -191,7 +190,7 @@ class MCPKeycloakTester:
                 
                 if response.status_code == 200:
                     health_data = response.json()
-                    logger.info(f"✅ MCP Server is healthy")
+                    logger.info("✅ MCP Server is healthy")
                     logger.info(f"   Status: {health_data.get('status')}")
                     logger.info(f"   Database: {health_data.get('database', {}).get('status')}")
                     

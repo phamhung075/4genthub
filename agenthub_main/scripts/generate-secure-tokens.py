@@ -3,11 +3,11 @@
 Secure Token Generator for agenthub
 Generates cryptographically secure tokens to replace exposed ones.
 """
+import base64
 import secrets
 import string
-import base64
-import os
 from datetime import datetime
+
 
 def generate_api_token(length=32):
     """Generate a secure API token using alphanumeric characters"""

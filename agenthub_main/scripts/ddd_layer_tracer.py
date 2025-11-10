@@ -4,13 +4,13 @@ DDD Layer Tracer - Comprehensive audit of all DDD layers
 Routes → Controller → Facade → Service → Repository → ORM → DB
 """
 
-import os
-import re
 import ast
+import re
+from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
-from dataclasses import dataclass
-from collections import defaultdict
+
 
 @dataclass
 class LayerViolation:
@@ -26,20 +26,20 @@ class LayerViolation:
 class LayerFlow:
     """Represents the flow through DDD layers"""
     route_file: str
-    controller: Set[str]
-    facade: Set[str]
-    service: Set[str]
-    repository: Set[str]
-    orm_models: Set[str]
-    database_ops: Set[str]
-    violations: List[LayerViolation]
+    controller: set[str]
+    facade: set[str]
+    service: set[str]
+    repository: set[str]
+    orm_models: set[str]
+    database_ops: set[str]
+    violations: list[LayerViolation]
 
 class DDDLayerTracer:
     """Traces DDD layer compliance through entire stack"""
     
     def __init__(self, project_root: str):
         self.project_root = Path(project_root)
-        self.route_flows: Dict[str, LayerFlow] = {}
+        self.route_flows: dict[str, LayerFlow] = {}
         
         # Layer patterns
         self.layer_patterns = {
@@ -93,9 +93,9 @@ class DDDLayerTracer:
             ]
         }
         
-    def analyze_file(self, filepath: Path) -> Dict:
+    def analyze_file(self, filepath: Path) -> dict:
         """Analyze a single file for layer usage"""
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             content = f.read()
             
         # Parse imports
@@ -113,7 +113,7 @@ class DDDLayerTracer:
             'violations': self.check_violations(filepath, content, imports, layer_usage)
         }
     
-    def extract_imports(self, tree: ast.AST) -> Dict[str, List[str]]:
+    def extract_imports(self, tree: ast.AST) -> dict[str, list[str]]:
         """Extract imports categorized by layer"""
         imports = {
             'controller': [],
@@ -138,7 +138,7 @@ class DDDLayerTracer:
         
         return imports
     
-    def categorize_import(self, import_name: str, imports: Dict):
+    def categorize_import(self, import_name: str, imports: dict):
         """Categorize an import by DDD layer"""
         if 'controller' in import_name.lower() or 'api_controller' in import_name.lower():
             imports['controller'].append(import_name)
@@ -155,7 +155,7 @@ class DDDLayerTracer:
         else:
             imports['other'].append(import_name)
     
-    def detect_layer_usage(self, content: str, imports: Dict) -> Dict[str, List[Tuple[int, str]]]:
+    def detect_layer_usage(self, content: str, imports: dict) -> dict[str, list[tuple[int, str]]]:
         """Detect actual usage of each layer in code"""
         usage = defaultdict(list)
         
@@ -173,7 +173,7 @@ class DDDLayerTracer:
         
         return dict(usage)
     
-    def check_violations(self, filepath: Path, content: str, imports: Dict, usage: Dict) -> List[LayerViolation]:
+    def check_violations(self, filepath: Path, content: str, imports: dict, usage: dict) -> list[LayerViolation]:
         """Check for DDD layer violations"""
         violations = []
         filename = filepath.name

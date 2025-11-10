@@ -4,12 +4,11 @@ Test script for Keycloak + MCP integration
 Tests authentication flow and MCP tool access with Keycloak tokens
 """
 
+import asyncio
 import os
 import sys
-import json
-import asyncio
+
 import httpx
-from typing import Dict, Any, Optional
 
 # Configuration
 MCP_URL = "http://localhost:8001"
@@ -51,7 +50,7 @@ class TestKeycloakMCPIntegration:
                     token_data = response.json()
                     self.access_token = token_data.get("access_token")
                     self.refresh_token = token_data.get("refresh_token")
-                    print(f"✅ Keycloak authentication successful")
+                    print("✅ Keycloak authentication successful")
                     print(f"   Access token: {self.access_token[:50]}...")
                     return True
                 else:
@@ -73,7 +72,7 @@ class TestKeycloakMCPIntegration:
                 
                 if response.status_code == 200:
                     health_data = response.json()
-                    print(f"✅ MCP server is healthy")
+                    print("✅ MCP server is healthy")
                     print(f"   Status: {health_data.get('status')}")
                     print(f"   Database: {health_data.get('database', {}).get('status')}")
                     return True
@@ -108,7 +107,7 @@ class TestKeycloakMCPIntegration:
                 
                 if response.status_code == 200:
                     self.user_info = response.json()
-                    print(f"✅ MCP accepted Keycloak token")
+                    print("✅ MCP accepted Keycloak token")
                     print(f"   User ID: {self.user_info.get('user_id')}")
                     print(f"   Email: {self.user_info.get('email')}")
                     print(f"   Roles: {self.user_info.get('roles')}")
@@ -147,7 +146,7 @@ class TestKeycloakMCPIntegration:
                 
                 if response.status_code == 200:
                     projects = response.json()
-                    print(f"✅ Successfully accessed manage_project tool")
+                    print("✅ Successfully accessed manage_project tool")
                     print(f"   Projects found: {len(projects.get('projects', []))}")
                 else:
                     print(f"❌ Failed to access manage_project: {response.status_code}")
@@ -163,7 +162,7 @@ class TestKeycloakMCPIntegration:
                 
                 if response.status_code == 200:
                     tasks = response.json()
-                    print(f"✅ Successfully accessed manage_task tool")
+                    print("✅ Successfully accessed manage_task tool")
                     print(f"   Tasks found: {len(tasks.get('tasks', []))}")
                 else:
                     print(f"❌ Failed to access manage_task: {response.status_code}")
@@ -183,7 +182,7 @@ class TestKeycloakMCPIntegration:
                 
                 if response.status_code == 200:
                     context = response.json()
-                    print(f"✅ Successfully accessed manage_context tool")
+                    print("✅ Successfully accessed manage_context tool")
                     print(f"   Context level: {context.get('level')}")
                 else:
                     print(f"❌ Failed to access manage_context: {response.status_code}")
@@ -220,7 +219,7 @@ class TestKeycloakMCPIntegration:
                     token_data = response.json()
                     self.access_token = token_data.get("access_token")
                     self.refresh_token = token_data.get("refresh_token")
-                    print(f"✅ Token refresh successful")
+                    print("✅ Token refresh successful")
                     print(f"   New access token: {self.access_token[:50]}...")
                     return True
                 else:

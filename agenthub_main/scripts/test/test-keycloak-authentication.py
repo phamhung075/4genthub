@@ -9,24 +9,25 @@ This script tests the complete authentication flow:
 4. Validate token
 """
 
+import asyncio
 import os
 import sys
-import asyncio
-import httpx
-from typing import Optional, Dict, Any
-import json
 from pathlib import Path
+from typing import Optional
+
+import httpx
 
 # Add project to path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root / "agenthub_main" / "src"))
 
 # Import Keycloak services
-from fastmcp.auth.keycloak_service import KeycloakAuthService
-from fastmcp.auth.mcp_keycloak_validator import MCPKeycloakValidator, validate_mcp_request
-
 # Load environment variables
 from dotenv import load_dotenv
+from fastmcp.auth.keycloak_service import KeycloakAuthService
+
+from fastmcp.auth.mcp_keycloak_validator import MCPKeycloakValidator
+
 load_dotenv()
 
 class KeycloakAuthTester:
@@ -37,7 +38,7 @@ class KeycloakAuthTester:
         self.mcp_validator = MCPKeycloakValidator()
         self.base_url = os.getenv("MCP_HOST", "http://localhost:8001")
         
-    async def test_login(self, username: str, password: str) -> Optional[str]:
+    async def test_login(self, username: str, password: str) -> str | None:
         """Test user login with Keycloak."""
         print("\n" + "=" * 60)
         print("TESTING KEYCLOAK LOGIN")
@@ -46,7 +47,7 @@ class KeycloakAuthTester:
         result = await self.keycloak_service.login(username, password)
         
         if result.success:
-            print(f"✅ Login successful!")
+            print("✅ Login successful!")
             print(f"   User: {result.user.get('email', 'Unknown')}")
             print(f"   Roles: {result.roles}")
             print(f"   Token expires in: {result.expires_in} seconds")
@@ -65,7 +66,7 @@ class KeycloakAuthTester:
         claims = await self.mcp_validator.validate_mcp_token(token)
         
         if claims:
-            print(f"✅ Token is valid!")
+            print("✅ Token is valid!")
             user_info = self.mcp_validator.extract_user_info(claims)
             print(f"   User ID: {user_info['user_id']}")
             print(f"   Username: {user_info['username']}")
@@ -74,7 +75,7 @@ class KeycloakAuthTester:
             print(f"   MCP Permissions: {user_info['mcp_permissions']}")
             return True
         else:
-            print(f"❌ Token validation failed")
+            print("❌ Token validation failed")
             return False
     
     async def test_mcp_request(self, token: str) -> bool:
@@ -92,7 +93,7 @@ class KeycloakAuthTester:
                 )
                 
                 if response.status_code == 200:
-                    print(f"✅ Health check successful!")
+                    print("✅ Health check successful!")
                     print(f"   Response: {response.json()}")
                 else:
                     print(f"❌ Health check failed: {response.status_code}")
@@ -109,7 +110,7 @@ class KeycloakAuthTester:
                 )
                 
                 if response.status_code == 200:
-                    print(f"✅ MCP tool request successful!")
+                    print("✅ MCP tool request successful!")
                     tasks = response.json()
                     print(f"   Found {len(tasks.get('tasks', []))} tasks")
                     return True
@@ -125,7 +126,7 @@ class KeycloakAuthTester:
             print(f"❌ Request error: {e}")
             return False
     
-    async def test_token_refresh(self, refresh_token: str) -> Optional[str]:
+    async def test_token_refresh(self, refresh_token: str) -> str | None:
         """Test token refresh."""
         print("\n" + "=" * 60)
         print("TESTING TOKEN REFRESH")
@@ -134,7 +135,7 @@ class KeycloakAuthTester:
         result = await self.keycloak_service.refresh_token(refresh_token)
         
         if result.success:
-            print(f"✅ Token refresh successful!")
+            print("✅ Token refresh successful!")
             print(f"   New token expires in: {result.expires_in} seconds")
             return result.access_token
         else:
@@ -150,14 +151,14 @@ class KeycloakAuthTester:
         result = await self.mcp_validator.introspect_token(token)
         
         if result:
-            print(f"✅ Token introspection successful!")
+            print("✅ Token introspection successful!")
             print(f"   Active: {result.get('active')}")
             print(f"   Username: {result.get('username')}")
             print(f"   Client ID: {result.get('client_id')}")
             print(f"   Scope: {result.get('scope')}")
             return True
         else:
-            print(f"❌ Token introspection failed")
+            print("❌ Token introspection failed")
             return False
     
     async def run_all_tests(self, username: str, password: str):

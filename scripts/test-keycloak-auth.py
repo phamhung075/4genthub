@@ -4,11 +4,10 @@ Test Keycloak Authentication for MCP API Client
 Tests both password grant and client credentials grant flows
 """
 
-import requests
-import json
-import sys
-from typing import Optional, Dict, Any
 import os
+from typing import Any, Dict, Optional
+
+import requests
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -24,7 +23,7 @@ KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET", "AuJ07QpbXdSdHxfIhy
 TOKEN_ENDPOINT = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
 
 
-def test_client_credentials() -> Optional[Dict[str, Any]]:
+def test_client_credentials() -> dict[str, Any] | None:
     """Test client credentials grant (service account)"""
     print("\n🔐 Testing Client Credentials Grant (Service Account)...")
     print(f"   URL: {TOKEN_ENDPOINT}")
@@ -55,7 +54,7 @@ def test_client_credentials() -> Optional[Dict[str, Any]]:
         return None
 
 
-def test_password_grant(username: str, password: str) -> Optional[Dict[str, Any]]:
+def test_password_grant(username: str, password: str) -> dict[str, Any] | None:
     """Test password grant (user credentials)"""
     print(f"\n🔐 Testing Password Grant for user: {username}")
     print(f"   URL: {TOKEN_ENDPOINT}")
@@ -89,7 +88,7 @@ def test_password_grant(username: str, password: str) -> Optional[Dict[str, Any]
         return None
 
 
-def test_token_introspection(token: str) -> Optional[Dict[str, Any]]:
+def test_token_introspection(token: str) -> dict[str, Any] | None:
     """Test token introspection"""
     print("\n🔍 Testing Token Introspection...")
     introspect_url = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token/introspect"
@@ -133,7 +132,7 @@ def test_api_with_token(token: str):
         response = requests.get(api_url, headers=headers)
 
         if response.status_code == 200:
-            print(f"   ✅ API Call Successful")
+            print("   ✅ API Call Successful")
             print(f"   Response: {response.json()}")
         else:
             print(f"   ❌ API Call Failed: Status {response.status_code}")
@@ -148,7 +147,7 @@ def main():
     print("=" * 60)
     print("🚀 Keycloak Authentication Test Suite")
     print("=" * 60)
-    print(f"Configuration:")
+    print("Configuration:")
     print(f"  Keycloak URL: {KEYCLOAK_URL}")
     print(f"  Realm: {KEYCLOAK_REALM}")
     print(f"  Client ID: {KEYCLOAK_CLIENT_ID}")

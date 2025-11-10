@@ -6,12 +6,12 @@ This script tests the integration between MCP server and Keycloak authentication
 It verifies token validation, MCP tool access, and proper authorization.
 """
 
+import json
 import os
 import sys
-import json
-import asyncio
+from typing import Optional
+
 import requests
-from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -77,7 +77,7 @@ class KeycloakMCPTester:
                 
                 # Display endpoints
                 config = response.json()
-                print(f"\nEndpoints discovered:")
+                print("\nEndpoints discovered:")
                 print(f"  Token: {config.get('token_endpoint', 'N/A')}")
                 print(f"  Auth: {config.get('authorization_endpoint', 'N/A')}")
                 print(f"  JWKS: {config.get('jwks_uri', 'N/A')}")
@@ -90,7 +90,7 @@ class KeycloakMCPTester:
             self.print_error(f"Connection error: {e}")
             return False
     
-    def get_keycloak_token(self, username: str, password: str) -> Optional[str]:
+    def get_keycloak_token(self, username: str, password: str) -> str | None:
         """Get access token from Keycloak"""
         self.print_header("Getting Keycloak Token")
         
@@ -129,7 +129,7 @@ class KeycloakMCPTester:
                     decoded = base64.b64decode(payload)
                     claims = json.loads(decoded)
                     
-                    print(f"\nToken claims:")
+                    print("\nToken claims:")
                     print(f"  Subject: {claims.get('sub', 'N/A')}")
                     print(f"  Email: {claims.get('email', 'N/A')}")
                     
@@ -159,7 +159,7 @@ class KeycloakMCPTester:
             
             if response.status_code == 200:
                 health_data = response.json()
-                self.print_success(f"MCP Server is healthy")
+                self.print_success("MCP Server is healthy")
                 print(f"  Status: {health_data.get('status', 'N/A')}")
                 print(f"  Database: {health_data.get('database', 'N/A')}")
                 print(f"  Auth enabled: {health_data.get('auth_enabled', 'N/A')}")

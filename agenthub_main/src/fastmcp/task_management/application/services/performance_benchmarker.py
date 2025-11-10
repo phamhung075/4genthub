@@ -202,7 +202,7 @@ class PerformanceBenchmarker:
         return None
     
     @contextmanager
-    def benchmark(
+    def benchmark_context(
         self,
         name: str,
         category: BenchmarkCategory,
@@ -501,8 +501,8 @@ class PerformanceBenchmarker:
             })
         
         return summary
-    
-    def generate_report(
+
+    def generate_report_old(
         self,
         suite: BenchmarkSuite | None = None
     ) -> dict[str, Any]:

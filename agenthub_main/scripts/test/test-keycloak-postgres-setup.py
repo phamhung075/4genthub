@@ -4,11 +4,12 @@ Test Script for PostgreSQL + Keycloak Setup
 Tests MCP authentication and database connectivity
 """
 
+import asyncio
 import os
 import sys
-import asyncio
-import httpx
 from pathlib import Path
+
+import httpx
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -105,7 +106,9 @@ def test_postgresql_connection():
     print("\n🗄️  Testing PostgreSQL Connection...")
     
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         
         # Initialize database config
         db_config = DatabaseConfig.get_instance()
@@ -115,7 +118,7 @@ def test_postgresql_connection():
             # Execute test query
             result = session.execute("SELECT version()")
             version = result.scalar()
-            print(f"✅ PostgreSQL connected successfully!")
+            print("✅ PostgreSQL connected successfully!")
             print(f"   Version: {version}")
             
             # Check if tables exist
@@ -147,7 +150,7 @@ async def test_mcp_server():
             
             if response.status_code == 200:
                 health = response.json()
-                print(f"✅ MCP server is healthy")
+                print("✅ MCP server is healthy")
                 print(f"   Version: {health.get('version', 'N/A')}")
                 print(f"   Keycloak auth: {health.get('keycloak_auth', False)}")
                 print(f"   MCP tools: {health.get('mcp_tools', False)}")
@@ -179,7 +182,7 @@ async def test_mcp_server():
             
             if response.status_code == 200:
                 tools = response.json()
-                print(f"✅ MCP tools accessible with Keycloak token")
+                print("✅ MCP tools accessible with Keycloak token")
                 print(f"   Available tools: {len(tools.get('tools', []))}")
                 
                 # Test a specific MCP tool
@@ -191,7 +194,7 @@ async def test_mcp_server():
                 
                 if response.status_code == 200:
                     projects = response.json()
-                    print(f"✅ MCP project management working")
+                    print("✅ MCP project management working")
                     print(f"   Projects found: {len(projects.get('projects', []))}")
                 else:
                     print(f"⚠️  MCP project list returned: {response.status_code}")
@@ -212,7 +215,7 @@ async def main():
     print("agenthub PostgreSQL + Keycloak Setup Test")
     print("=" * 60)
     
-    print(f"\n📋 Configuration:")
+    print("\n📋 Configuration:")
     print(f"   Environment file: {env_file}")
     print(f"   Database: PostgreSQL @ {os.getenv('DATABASE_HOST')}:{os.getenv('DATABASE_PORT')}")
     print(f"   Keycloak: {os.getenv('KEYCLOAK_URL')}")

@@ -144,8 +144,8 @@ class ContextCacheService:
         except Exception as e:
             logger.warning(f"Error in sync cache clear: {e}")
     
-    def invalidate_context_cache(self, level: str, context_id: str) -> None:
-        """Sync version for compatibility"""
+    def invalidate_context_cache_sync(self, level: str, context_id: str) -> None:
+        """Sync version for compatibility (deprecated - use async version)"""
         # This just calls the existing invalidate_context method
         self.invalidate_context(level, context_id)
     

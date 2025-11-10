@@ -326,9 +326,9 @@ class TaskContextUnified:
                 continue
 
             required_fields = ['timestamp', 'category', 'content']
-            for field in required_fields:
-                if field not in insight:
-                    errors.append(f"Insight {idx} missing required field: {field}")
+            for field_name in required_fields:
+                if field_name not in insight:
+                    errors.append(f"Insight {idx} missing required field: {field_name}")
 
             # Validate category
             valid_categories = ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']

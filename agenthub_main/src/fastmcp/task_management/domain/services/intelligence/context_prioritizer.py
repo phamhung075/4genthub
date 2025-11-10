@@ -363,12 +363,12 @@ class ContextPrioritizer:
         
         context_type = context_data.get('context_type', 'task')
         fields_to_check = expected_fields.get(context_type, expected_fields['task'])
-        
-        for field in fields_to_check:
+
+        for field_name in fields_to_check:
             total_fields += 1
-            if field in context_data and context_data[field]:
-                if isinstance(context_data[field], (str, list, dict)):
-                    if context_data[field]:  # Non-empty
+            if field_name in context_data and context_data[field_name]:
+                if isinstance(context_data[field_name], (str, list, dict)):
+                    if context_data[field_name]:  # Non-empty
                         filled_fields += 1
                 else:
                     filled_fields += 1  # Non-empty primitive types
@@ -509,10 +509,10 @@ class ContextPrioritizer:
         """Extract searchable text from context data."""
         searchable_fields = ['title', 'description', 'details', 'name', 'git_branch_name']
         text_parts = []
-        
-        for field in searchable_fields:
-            if field in context_data and isinstance(context_data[field], str):
-                text_parts.append(context_data[field])
+
+        for field_name in searchable_fields:
+            if field_name in context_data and isinstance(context_data[field_name], str):
+                text_parts.append(context_data[field_name])
         
         return ' '.join(text_parts)
     

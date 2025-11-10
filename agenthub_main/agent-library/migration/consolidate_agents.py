@@ -4,13 +4,12 @@ Agent Consolidation Migration Script
 Consolidates redundant agents into optimized structure (32 → 30 agents)
 """
 
-import os
 import shutil
-import yaml
-import json
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Optional
+from pathlib import Path
+
+import yaml
+
 
 class AgentConsolidator:
     """Handles consolidation of redundant agents"""
@@ -76,10 +75,10 @@ class AgentConsolidator:
             print(f"Warning: {source_path} not found")
             return
         
-        with open(source_path, 'r') as f:
+        with open(source_path) as f:
             source_caps = yaml.safe_load(f)
         
-        with open(target_path, 'r') as f:
+        with open(target_path) as f:
             target_caps = yaml.safe_load(f)
         
         # Merge MCP tools
@@ -112,7 +111,7 @@ class AgentConsolidator:
             
             # Update config
             config_path = creative_path / "config.yaml"
-            with open(config_path, 'r') as f:
+            with open(config_path) as f:
                 config = yaml.safe_load(f)
             
             config['agent_info']['name'] = "💡 Creative Ideation Agent"
@@ -152,7 +151,7 @@ class AgentConsolidator:
         
         # Update config
         config_path = new_path / "config.yaml"
-        with open(config_path, 'r') as f:
+        with open(config_path) as f:
             config = yaml.safe_load(f)
         
         # Update slug
@@ -273,8 +272,8 @@ DEPRECATED_AGENT_MAPPINGS = {
         print("\nSummary:")
         print(f"- Agents consolidated: {len(self.consolidation_map)}")
         print(f"- Agents renamed: {len(self.rename_map)}")
-        print(f"- New agents created: 1 (creative-ideation-agent)")
-        print(f"- Final agent count: ~30 (from 42)")
+        print("- New agents created: 1 (creative-ideation-agent)")
+        print("- Final agent count: ~30 (from 42)")
     
     def rollback(self, backup_path: str):
         """Rollback to a previous backup"""

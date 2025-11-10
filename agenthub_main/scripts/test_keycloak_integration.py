@@ -9,13 +9,12 @@ This script tests the complete authentication flow:
 4. Verify MCP operations work with Keycloak tokens
 """
 
-import os
-import sys
 import asyncio
-import httpx
-import json
-from typing import Dict, Any, Optional
+import os
 from pathlib import Path
+from typing import Any, Dict, Optional
+
+import httpx
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -39,7 +38,7 @@ class KeycloakMCPTester:
         
     async def authenticate_with_keycloak(self, username: str, password: str) -> bool:
         """Authenticate with Keycloak and get tokens"""
-        print(f"\n🔐 Authenticating with Keycloak...")
+        print("\n🔐 Authenticating with Keycloak...")
         print(f"   URL: {KEYCLOAK_URL}")
         print(f"   Realm: {KEYCLOAK_REALM}")
         print(f"   Client: {KEYCLOAK_CLIENT_ID}")
@@ -77,7 +76,7 @@ class KeycloakMCPTester:
                 print(f"   ❌ Error authenticating: {e}")
                 return False
     
-    async def get_user_info(self) -> Optional[Dict[str, Any]]:
+    async def get_user_info(self) -> dict[str, Any] | None:
         """Get user information from Keycloak"""
         if not self.access_token:
             print("❌ No access token available")

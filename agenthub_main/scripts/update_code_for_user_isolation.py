@@ -5,9 +5,8 @@ This script identifies all files that need updates and creates a checklist.
 """
 
 import os
-import re
 from pathlib import Path
-from typing import List, Dict, Set
+from typing import Dict, List
 
 # Base paths
 BASE_PATH = Path(__file__).parent.parent
@@ -15,7 +14,7 @@ SRC_PATH = BASE_PATH / "src"
 TEST_PATH = BASE_PATH / "src" / "tests"
 FRONTEND_PATH = BASE_PATH.parent / "agenthub-frontend"
 
-def find_files_to_update() -> Dict[str, List[str]]:
+def find_files_to_update() -> dict[str, list[str]]:
     """Find all files that need updating for user isolation."""
     
     files_to_update = {
@@ -91,7 +90,7 @@ def find_files_to_update() -> Dict[str, List[str]]:
     
     return files_to_update
 
-def check_file_needs_update(filepath: str) -> Dict[str, bool]:
+def check_file_needs_update(filepath: str) -> dict[str, bool]:
     """Check what updates a file needs."""
     needs = {
         "user_id_field": False,
@@ -103,7 +102,7 @@ def check_file_needs_update(filepath: str) -> Dict[str, bool]:
     if not os.path.exists(filepath):
         return needs
     
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         content = f.read()
     
     # Check for user_id field/parameter
@@ -127,7 +126,7 @@ def check_file_needs_update(filepath: str) -> Dict[str, bool]:
     
     return needs
 
-def generate_update_report(files_to_update: Dict[str, List[str]]) -> str:
+def generate_update_report(files_to_update: dict[str, list[str]]) -> str:
     """Generate a detailed report of required updates."""
     report = []
     report.append("=" * 80)

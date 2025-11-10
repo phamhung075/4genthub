@@ -6,11 +6,12 @@ This script fetches agent configurations from the MCP server
 and generates .claude/agents/*.md files for local use.
 """
 
-import requests
-from pathlib import Path
-from typing import Dict, List, Any
 import argparse
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
+
+import requests
 
 # Default configuration
 DEFAULT_SERVER_URL = "http://localhost:8000"
@@ -62,7 +63,7 @@ class AgentSyncClient:
         self.claude_dir = Path(claude_dir)
         self.session = requests.Session()
         
-    def fetch_agents(self) -> List[Dict[str, Any]]:
+    def fetch_agents(self) -> list[dict[str, Any]]:
         """Fetch all available agents from MCP server"""
         try:
             # Try the new endpoint first
@@ -77,7 +78,7 @@ class AgentSyncClient:
             # Try alternative method
             return self._fetch_via_mcp_tool()
     
-    def _fetch_via_mcp_tool(self) -> List[Dict[str, Any]]:
+    def _fetch_via_mcp_tool(self) -> list[dict[str, Any]]:
         """Fetch agents via MCP tool call"""
         try:
             # Call the MCP tool to list agents
@@ -98,7 +99,7 @@ class AgentSyncClient:
             print(f"Error fetching via MCP tool: {e}")
             return []
     
-    def generate_agent_file(self, agent: Dict[str, Any]) -> str:
+    def generate_agent_file(self, agent: dict[str, Any]) -> str:
         """Generate markdown content for an agent"""
         # Extract agent details with defaults
         name = agent.get("name", "Unknown Agent")
@@ -126,13 +127,13 @@ class AgentSyncClient:
         
         return content
     
-    def _format_list(self, items: List[Any]) -> str:
+    def _format_list(self, items: list[Any]) -> str:
         """Format a list for markdown"""
         if not items:
             return "- None specified"
         return "\n".join(f"- {item}" for item in items)
     
-    def save_agent_file(self, agent: Dict[str, Any]) -> Path:
+    def save_agent_file(self, agent: dict[str, Any]) -> Path:
         """Save agent configuration to file"""
         # Create directory if it doesn't exist
         self.claude_dir.mkdir(parents=True, exist_ok=True)
@@ -148,7 +149,7 @@ class AgentSyncClient:
         
         return filepath
     
-    def sync_agents(self, filter_category: str = None) -> Dict[str, Any]:
+    def sync_agents(self, filter_category: str = None) -> dict[str, Any]:
         """Sync all agents from server to local directory"""
         results = {
             "synced": [],
@@ -188,7 +189,7 @@ class AgentSyncClient:
         
         return results
     
-    def fetch_agent_details(self, agent_id: str) -> Dict[str, Any]:
+    def fetch_agent_details(self, agent_id: str) -> dict[str, Any]:
         """Fetch detailed information for a specific agent"""
         try:
             # Call MCP tool to get agent details
@@ -262,7 +263,7 @@ def main():
         
         # Print summary
         print("\n" + "="*50)
-        print(f"Sync Summary:")
+        print("Sync Summary:")
         print(f"  Total agents: {results['total']}")
         print(f"  Successfully synced: {len(results['synced'])}")
         print(f"  Failed: {len(results['failed'])}")

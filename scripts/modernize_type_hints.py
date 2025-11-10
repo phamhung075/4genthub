@@ -18,7 +18,7 @@ Also handles:
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import List
 
 
 class TypeHintModernizer:
@@ -221,7 +221,7 @@ class TypeHintModernizer:
 
         return '\n'.join(lines)
 
-    def process_directory(self, directory: Path, exclude_patterns: List[str] = None) -> None:
+    def process_directory(self, directory: Path, exclude_patterns: list[str] = None) -> None:
         """
         Process all Python files in a directory recursively.
 

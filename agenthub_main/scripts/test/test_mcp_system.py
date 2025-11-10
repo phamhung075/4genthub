@@ -4,10 +4,9 @@ MCP System Test Script
 Tests various components of the agenthub system to identify issues
 """
 
-import requests
-import json
 import sys
-from typing import Dict, Any
+
+import requests
 
 BASE_URL = "http://localhost:8000"
 

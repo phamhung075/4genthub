@@ -7,22 +7,36 @@ It checks schema consistency, data integrity, and performs comprehensive validat
 across both SQLite and PostgreSQL databases.
 """
 
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict
 from unittest.mock import patch
+
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
 
 # Add the src directory to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from fastmcp.task_management.infrastructure.database.models import Base, Project, Agent, ProjectGitBranch, Task, Subtask, Label, TaskLabel, GlobalContext, ProjectContext, TaskContext, ContextDelegation, ContextInheritanceCache, Template
-from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+from fastmcp.task_management.infrastructure.database.models import (
+    Agent,
+    Base,
+    ContextDelegation,
+    ContextInheritanceCache,
+    GlobalContext,
+    Label,
+    Project,
+    ProjectContext,
+    ProjectGitBranch,
+    Subtask,
+    Task,
+    TaskContext,
+    TaskLabel,
+    Template,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -41,7 +55,7 @@ class MigrationValidator:
             "errors": []
         }
     
-    def validate_database_schema(self, engine) -> Dict[str, Any]:
+    def validate_database_schema(self, engine) -> dict[str, Any]:
         """Validate database schema matches ORM models"""
         logger.info("Validating database schema...")
         
@@ -97,7 +111,7 @@ class MigrationValidator:
         
         return schema_results
     
-    def validate_data_integrity(self, engine) -> Dict[str, Any]:
+    def validate_data_integrity(self, engine) -> dict[str, Any]:
         """Validate data integrity and relationships"""
         logger.info("Validating data integrity...")
         
@@ -184,7 +198,7 @@ class MigrationValidator:
         
         return integrity_results
     
-    def validate_repository_functionality(self, database_type: str) -> Dict[str, Any]:
+    def validate_repository_functionality(self, database_type: str) -> dict[str, Any]:
         """Validate that all repositories work correctly"""
         logger.info(f"Validating repository functionality for {database_type}...")
         
@@ -197,9 +211,15 @@ class MigrationValidator:
             # Test repository factory switching
             with patch.dict(os.environ, {"DATABASE_TYPE": database_type}):
                 # Import and test factories
-                from fastmcp.task_management.infrastructure.repositories.project_repository_factory import ProjectRepositoryFactory
-                from fastmcp.task_management.infrastructure.repositories.agent_repository_factory import AgentRepositoryFactory
-                from fastmcp.task_management.infrastructure.repositories.task_repository_factory import TaskRepositoryFactory
+                from fastmcp.task_management.infrastructure.repositories.agent_repository_factory import (
+                    AgentRepositoryFactory,
+                )
+                from fastmcp.task_management.infrastructure.repositories.project_repository_factory import (
+                    ProjectRepositoryFactory,
+                )
+                from fastmcp.task_management.infrastructure.repositories.task_repository_factory import (
+                    TaskRepositoryFactory,
+                )
                 
                 # Test project repository
                 try:
@@ -244,7 +264,7 @@ class MigrationValidator:
         
         return functionality_results
     
-    def validate_performance(self, engine) -> Dict[str, Any]:
+    def validate_performance(self, engine) -> dict[str, Any]:
         """Basic performance validation"""
         logger.info("Validating basic performance...")
         
@@ -285,7 +305,7 @@ class MigrationValidator:
         
         return performance_results
     
-    def compare_sqlite_postgresql_schemas(self) -> Dict[str, Any]:
+    def compare_sqlite_postgresql_schemas(self) -> dict[str, Any]:
         """Compare schemas between SQLite and PostgreSQL"""
         logger.info("Comparing SQLite and PostgreSQL schemas...")
         
@@ -325,7 +345,7 @@ class MigrationValidator:
         
         return comparison_results
     
-    def run_full_validation(self) -> Dict[str, Any]:
+    def run_full_validation(self) -> dict[str, Any]:
         """Run complete migration validation"""
         logger.info("Starting full migration validation...")
         
@@ -383,7 +403,7 @@ class MigrationValidator:
             if schema_info['missing_tables']:
                 report.append(f"  ❌ Missing: {', '.join(schema_info['missing_tables'])}")
             else:
-                report.append(f"  ✅ All tables present")
+                report.append("  ✅ All tables present")
         
         # Data integrity
         report.append("\n🔗 DATA INTEGRITY")

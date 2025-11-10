@@ -5,8 +5,6 @@ This is the main entry point for the task MCP controller, now refactored into a 
 architecture using factory pattern to maintain separation of concerns.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 

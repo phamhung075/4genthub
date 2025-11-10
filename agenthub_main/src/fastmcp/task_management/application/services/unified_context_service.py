@@ -1319,8 +1319,8 @@ class UnifiedContextService:
         # This would handle cascading deletes based on level
         # For now, just log
         logger.info(f"Cleaning up dependent contexts for {level}:{context_id}")
-    
-    def auto_create_context_if_missing(
+
+    def auto_create_context_if_missing_old(
         self,
         level: str,
         context_id: str,

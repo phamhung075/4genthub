@@ -10,8 +10,7 @@ Usage:
 """
 
 import sys
-import os
-from datetime import datetime, timezone
+from datetime import UTC, timezone
 from pathlib import Path
 
 # Add the project src to the path
@@ -19,12 +18,13 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
 try:
+    from dataclasses import dataclass
+
     from fastmcp.task_management.domain.entities.base.base_timestamp_entity import (
         BaseTimestampEntity,
         TimestampCreatedEvent,
-        TimestampUpdatedEvent
+        TimestampUpdatedEvent,
     )
-    from dataclasses import dataclass
 
     print("✅ Successfully imported BaseTimestampEntity")
 except ImportError as e:
@@ -56,8 +56,8 @@ def test_basic_functionality():
     # Check that timestamps were set
     assert entity.created_at is not None, "created_at should be set automatically"
     assert entity.updated_at is not None, "updated_at should be set automatically"
-    assert entity.created_at.tzinfo == timezone.utc, "created_at should be in UTC"
-    assert entity.updated_at.tzinfo == timezone.utc, "updated_at should be in UTC"
+    assert entity.created_at.tzinfo == UTC, "created_at should be in UTC"
+    assert entity.updated_at.tzinfo == UTC, "updated_at should be in UTC"
 
     print("✅ Timestamps initialized correctly")
 

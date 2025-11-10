@@ -1,8 +1,8 @@
 """Test template for routes with authentication."""
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch
 from uuid import uuid4
+
+from fastapi.testclient import TestClient
+
 
 class TestRouteAuthentication:
     """Test routes properly handle authentication."""

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Test runner that respects file creation rules."""
-import sys
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 # Set environment to prevent file creation in root

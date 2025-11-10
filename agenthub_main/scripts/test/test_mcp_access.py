@@ -2,8 +2,7 @@
 """Test MCP server access and functionality"""
 
 import requests
-import json
-import sys
+
 
 def test_mcp_connection():
     """Test basic MCP server connectivity"""

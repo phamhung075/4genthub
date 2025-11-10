@@ -1,7 +1,6 @@
 """Test template for repository with user isolation."""
-import pytest
-from unittest.mock import Mock, patch
 from uuid import uuid4
+
 
 class TestRepositoryUserIsolation:
     """Test repository properly filters by user_id."""

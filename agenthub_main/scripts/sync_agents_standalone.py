@@ -6,10 +6,10 @@ This script generates .claude/agents/*.md files from predefined agent configurat
 Works without server dependency.
 """
 
-from pathlib import Path
-from typing import Dict, List, Any
 import argparse
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
 
 # Default configuration
 DEFAULT_CLAUDE_DIR = ".claude/agents"
@@ -313,7 +313,7 @@ class AgentGenerator:
     def __init__(self, claude_dir: str = DEFAULT_CLAUDE_DIR):
         self.claude_dir = Path(claude_dir)
         
-    def generate_agent_file(self, agent_id: str, agent_data: Dict[str, Any]) -> str:
+    def generate_agent_file(self, agent_id: str, agent_data: dict[str, Any]) -> str:
         """Generate markdown content for an agent"""
         # Format the agent details
         content = AGENT_TEMPLATE.format(
@@ -333,13 +333,13 @@ class AgentGenerator:
         
         return content
     
-    def _format_list(self, items: List[Any]) -> str:
+    def _format_list(self, items: list[Any]) -> str:
         """Format a list for markdown"""
         if not items:
             return "- None specified"
         return "\n".join(f"- {item}" for item in items)
     
-    def save_agent_file(self, agent_id: str, agent_data: Dict[str, Any]) -> Path:
+    def save_agent_file(self, agent_id: str, agent_data: dict[str, Any]) -> Path:
         """Save agent configuration to file"""
         # Create directory if it doesn't exist
         self.claude_dir.mkdir(parents=True, exist_ok=True)
@@ -354,7 +354,7 @@ class AgentGenerator:
         
         return filepath
     
-    def generate_all_agents(self, filter_category: str = None) -> Dict[str, Any]:
+    def generate_all_agents(self, filter_category: str = None) -> dict[str, Any]:
         """Generate all agent files"""
         results = {
             "generated": [],
@@ -465,7 +465,7 @@ def main():
         
         # Print summary
         print("\n" + "="*60)
-        print(f"Generation Summary:")
+        print("Generation Summary:")
         print(f"  Total agents: {len(AGENT_DEFINITIONS)}")
         print(f"  Successfully generated: {len(results['generated'])}")
         print(f"  Failed: {len(results['failed'])}")

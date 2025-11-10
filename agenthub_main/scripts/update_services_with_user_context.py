@@ -6,10 +6,9 @@ This script analyzes service files and adds user context propagation
 following the established pattern.
 """
 
-import os
 import re
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 # Service files that need updating
 SERVICES_TO_UPDATE = [
@@ -43,7 +42,7 @@ SERVICE_DIR = Path("src/fastmcp/task_management/application/services")
 
 def analyze_service_file(filepath: Path) -> dict:
     """Analyze a service file to determine what updates are needed."""
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         content = f.read()
     
     analysis = {
@@ -58,12 +57,12 @@ def analyze_service_file(filepath: Path) -> dict:
     
     return analysis
 
-def extract_class_name(content: str) -> Optional[str]:
+def extract_class_name(content: str) -> str | None:
     """Extract the main service class name from the file."""
     match = re.search(r'class\s+(\w+Service)\s*[\(:]', content)
     return match.group(1) if match else None
 
-def extract_repositories(content: str) -> List[str]:
+def extract_repositories(content: str) -> list[str]:
     """Extract repository names from __init__ method."""
     repositories = []
     
@@ -83,7 +82,7 @@ def extract_repositories(content: str) -> List[str]:
     
     return list(set(repositories))
 
-def generate_user_context_code(class_name: str, repositories: List[str]) -> dict:
+def generate_user_context_code(class_name: str, repositories: list[str]) -> dict:
     """Generate the code snippets needed to add user context support."""
     
     # Generate __init__ update
@@ -131,7 +130,7 @@ def update_service_file(filepath: Path, analysis: dict) -> bool:
         print(f"✓ {filepath.name} already has user context support")
         return False
     
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         content = f.read()
     
     # Check if Optional import is present
@@ -201,7 +200,7 @@ def update_service_file(filepath: Path, analysis: dict) -> bool:
     
     return True
 
-def generate_summary_report(analyses: List[dict]) -> str:
+def generate_summary_report(analyses: list[dict]) -> str:
     """Generate a summary report of the updates needed."""
     report = []
     report.append("# Service User Context Update Report\n")

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Simple MCP server test - verify basic functionality."""
 
-import os
 import sys
-import json
-import requests
 from datetime import datetime
+
+import requests
+
 
 def test_mcp_server():
     """Test basic MCP server functionality."""
@@ -56,7 +56,7 @@ def test_mcp_server():
         response = requests.get(f"{base_url}/openapi.json", timeout=5)
         if response.status_code == 200:
             schema = response.json()
-            print(f"✅ OpenAPI schema retrieved")
+            print("✅ OpenAPI schema retrieved")
             print(f"   Title: {schema.get('info', {}).get('title', 'Unknown')}")
             print(f"   Version: {schema.get('info', {}).get('version', 'Unknown')}")
             tests_passed += 1

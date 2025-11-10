@@ -190,11 +190,11 @@ class FunctionTool(Tool):
                 if target_type in (int, float, bool):
                     # Try to convert string to the appropriate simple type
                     try:
-                        if target_type == int:
+                        if target_type is int:
                             arguments[param_name] = int(arg)
-                        elif target_type == float:
+                        elif target_type is float:
                             arguments[param_name] = float(arg)
-                        elif target_type == bool:
+                        elif target_type is bool:
                             # Handle common boolean string representations
                             arguments[param_name] = arg.lower() in ('true', '1', 'yes', 'on')
                     except ValueError:

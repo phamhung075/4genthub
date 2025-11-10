@@ -4,10 +4,10 @@ Test Script for PostgreSQL Docker + Keycloak Cloud Setup
 Verifies the clean setup without Supabase backward compatibility
 """
 
-import os
-import sys
 import asyncio
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 # Add project to path
@@ -104,7 +104,9 @@ def check_postgresql_connection():
     print("=" * 60)
     
     try:
-        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        from fastmcp.task_management.infrastructure.database.database_config import (
+            DatabaseConfig,
+        )
         
         config = DatabaseConfig()
         print(f"Database Type: {config.database_type}")
@@ -158,7 +160,7 @@ async def check_keycloak_connection():
             
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ Keycloak realm accessible")
+                print("✅ Keycloak realm accessible")
                 print(f"   Issuer: {data.get('issuer')}")
                 print(f"   Token endpoint: {data.get('token_endpoint')}")
                 return True
@@ -215,7 +217,7 @@ async def test_mcp_health():
             
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ MCP Server is healthy")
+                print("✅ MCP Server is healthy")
                 print(f"   Status: {data.get('status')}")
                 print(f"   Auth enabled: {data.get('auth_enabled')}")
                 print(f"   Auth provider: {data.get('auth_provider')}")

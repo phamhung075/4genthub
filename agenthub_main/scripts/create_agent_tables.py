@@ -13,12 +13,13 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(project_root))
 
-from fastmcp.task_management.infrastructure.database.database_config import Base
 from fastmcp.agent_management.infrastructure.database.models import (
     AgentTemplateORM,
-    UserAgentInstanceORM
+    UserAgentInstanceORM,
 )
-from fastmcp.agent_management.infrastructure.repositories import ORMAgentTemplateRepository
+from fastmcp.agent_management.infrastructure.repositories import (
+    ORMAgentTemplateRepository,
+)
 
 print("=" * 80)
 print("CREATING AGENT MANAGEMENT TABLES")

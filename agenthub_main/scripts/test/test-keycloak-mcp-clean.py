@@ -7,10 +7,9 @@ This script tests the MCP server's ability to authenticate using Keycloak tokens
 
 import os
 import sys
-import json
-import requests
-import time
 from pathlib import Path
+
+import requests
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -40,7 +39,7 @@ class MCPKeycloakTester:
             response = requests.get(f"{self.mcp_url}/health", timeout=5)
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ MCP Server is healthy")
+                print("✅ MCP Server is healthy")
                 print(f"   - Version: {data.get('version', 'unknown')}")
                 print(f"   - MCP Tools: {data.get('mcp_tools', False)}")
                 print(f"   - Keycloak Auth: {data.get('keycloak_auth', False)}")
@@ -69,7 +68,7 @@ class MCPKeycloakTester:
             
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ Connected to Keycloak server")
+                print("✅ Connected to Keycloak server")
                 print(f"   - Realm: {self.keycloak_realm}")
                 print(f"   - Issuer: {data.get('issuer', 'unknown')}")
                 return True
@@ -106,7 +105,7 @@ class MCPKeycloakTester:
                 token_data = response.json()
                 self.access_token = token_data.get("access_token")
                 self.refresh_token = token_data.get("refresh_token")
-                print(f"✅ Got access token using client credentials")
+                print("✅ Got access token using client credentials")
                 return True
             else:
                 print(f"⚠️  Client credentials flow failed: {response.status_code}")
@@ -126,7 +125,7 @@ class MCPKeycloakTester:
                         token_data = response.json()
                         self.access_token = token_data.get("access_token")
                         self.refresh_token = token_data.get("refresh_token")
-                        print(f"✅ Got access token using password flow")
+                        print("✅ Got access token using password flow")
                         return True
                     else:
                         print(f"❌ Password flow failed: {response.status_code}")
@@ -157,15 +156,15 @@ class MCPKeycloakTester:
             )
             
             if response.status_code == 200:
-                print(f"✅ MCP authentication successful")
+                print("✅ MCP authentication successful")
                 tools = response.json().get("tools", [])
                 print(f"   - Available tools: {len(tools)}")
                 return True
             elif response.status_code == 401:
-                print(f"❌ Authentication failed: Invalid token")
+                print("❌ Authentication failed: Invalid token")
                 return False
             elif response.status_code == 503:
-                print(f"⚠️  Authentication service unavailable")
+                print("⚠️  Authentication service unavailable")
                 if os.getenv("AUTH_ENABLED", "true").lower() == "false":
                     print("   Auth is disabled - this is expected")
                     return True
@@ -201,7 +200,7 @@ class MCPKeycloakTester:
             
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ Project listing successful")
+                print("✅ Project listing successful")
                 projects = data.get("projects", [])
                 print(f"   - Found {len(projects)} projects")
                 
@@ -221,7 +220,7 @@ class MCPKeycloakTester:
                     if response.status_code == 200:
                         data = response.json()
                         tasks = data.get("tasks", [])
-                        print(f"✅ Task listing successful")
+                        print("✅ Task listing successful")
                         print(f"   - Found {len(tasks)} tasks")
                     else:
                         print(f"⚠️  Task listing failed: {response.status_code}")

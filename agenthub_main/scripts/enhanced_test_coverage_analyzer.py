@@ -4,12 +4,12 @@ Enhanced Test Coverage Analysis for agenthub - DDD Architecture Focus
 Creates comprehensive test coverage report with specific recommendations for DDD layers
 """
 
-import os
 import re
+from collections import Counter, defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
-from dataclasses import dataclass
-from collections import defaultdict, Counter
+
 
 @dataclass
 class FileAnalysis:
@@ -76,10 +76,10 @@ class EnhancedTestCoverageAnalyzer:
     def __init__(self, src_path: str = "agenthub_main/src", test_path: str = "agenthub_main/src/tests"):
         self.src_path = Path(src_path)
         self.test_path = Path(test_path)
-        self.files: List[FileAnalysis] = []
-        self.existing_tests: Set[str] = set()
+        self.files: list[FileAnalysis] = []
+        self.existing_tests: set[str] = set()
         
-    def analyze(self) -> Dict:
+    def analyze(self) -> dict:
         """Run comprehensive analysis"""
         print("🔍 Enhanced DDD Test Coverage Analysis")
         print("=" * 60)
@@ -105,7 +105,7 @@ class EnhancedTestCoverageAnalyzer:
         
         print(f"   Found {len(self.existing_tests)} existing test modules")
     
-    def _generate_possible_source_modules(self, test_path: str) -> List[str]:
+    def _generate_possible_source_modules(self, test_path: str) -> list[str]:
         """Generate possible source module names from test file"""
         modules = []
         
@@ -164,7 +164,7 @@ class EnhancedTestCoverageAnalyzer:
                 return None
             
             # Analyze file content
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(file_path, encoding='utf-8', errors='ignore') as f:
                 content = f.read()
             
             complexity_score = self._calculate_complexity(content, component)
@@ -191,7 +191,7 @@ class EnhancedTestCoverageAnalyzer:
             print(f"   Warning: Could not analyze {file_path}: {e}")
             return None
     
-    def _classify_file(self, file_path: Path) -> Tuple[str, str, str]:
+    def _classify_file(self, file_path: Path) -> tuple[str, str, str]:
         """Classify file into layer, domain, and component"""
         parts = file_path.parts
         
@@ -216,7 +216,7 @@ class EnhancedTestCoverageAnalyzer:
         
         return layer, domain, component
     
-    def _determine_component(self, file_path: Path, parts: Tuple[str]) -> str:
+    def _determine_component(self, file_path: Path, parts: tuple[str]) -> str:
         """Determine component type from file path and name"""
         filename = file_path.stem.lower()
         
@@ -284,7 +284,7 @@ class EnhancedTestCoverageAnalyzer:
         
         return min(complexity, 100)  # Cap at 100
     
-    def _count_code_elements(self, content: str) -> Tuple[int, int, int]:
+    def _count_code_elements(self, content: str) -> tuple[int, int, int]:
         """Count lines of code, classes, and methods"""
         lines = [line.strip() for line in content.split('\n') if line.strip() and not line.strip().startswith('#')]
         loc = len(lines)
@@ -313,7 +313,7 @@ class EnhancedTestCoverageAnalyzer:
             
             file_analysis.priority = base_priority + complexity_bonus + domain_bonus
     
-    def _generate_comprehensive_report(self) -> Dict:
+    def _generate_comprehensive_report(self) -> dict:
         """Generate detailed analysis report"""
         print("📋 Generating comprehensive report...")
         
@@ -344,7 +344,7 @@ class EnhancedTestCoverageAnalyzer:
         self._print_detailed_report(report)
         return report
     
-    def _calculate_layer_stats(self) -> Dict:
+    def _calculate_layer_stats(self) -> dict:
         """Calculate statistics by DDD layer"""
         layer_stats = defaultdict(lambda: {'total': 0, 'tested': 0, 'untested': 0, 'components': Counter()})
         
@@ -360,7 +360,7 @@ class EnhancedTestCoverageAnalyzer:
         
         return dict(layer_stats)
     
-    def _calculate_domain_stats(self) -> Dict:
+    def _calculate_domain_stats(self) -> dict:
         """Calculate statistics by domain"""
         domain_stats = defaultdict(lambda: {'total': 0, 'tested': 0, 'untested': 0, 'layers': Counter()})
         
@@ -376,7 +376,7 @@ class EnhancedTestCoverageAnalyzer:
         
         return dict(domain_stats)
     
-    def _print_detailed_report(self, report: Dict):
+    def _print_detailed_report(self, report: dict):
         """Print comprehensive coverage report"""
         print("\n" + "="*80)
         print("🎯 ENHANCED TEST COVERAGE ANALYSIS REPORT - DDD FOCUSED")
@@ -384,14 +384,14 @@ class EnhancedTestCoverageAnalyzer:
         
         # Executive Summary
         summary = report['summary']
-        print(f"\n📈 EXECUTIVE SUMMARY")
+        print("\n📈 EXECUTIVE SUMMARY")
         print(f"   Total source files: {summary['total_files']:>6}")
         print(f"   Files with tests:   {summary['tested_files']:>6} ({summary['tested_files']/summary['total_files']*100:5.1f}%)")
         print(f"   Files without tests: {summary['untested_files']:>5} ({summary['untested_files']/summary['total_files']*100:5.1f}%)")
         print(f"   Overall coverage:   {summary['coverage_percentage']:>6.1f}%")
         
         # Layer Analysis
-        print(f"\n🏗️  DDD LAYER ANALYSIS")
+        print("\n🏗️  DDD LAYER ANALYSIS")
         print("   " + "-" * 60)
         layer_stats = report['layer_stats']
         
@@ -415,7 +415,7 @@ class EnhancedTestCoverageAnalyzer:
                     print(f"     Missing tests in: {components_str}")
         
         # Domain Analysis
-        print(f"\n🎯 DOMAIN ANALYSIS")
+        print("\n🎯 DOMAIN ANALYSIS")
         print("   " + "-" * 60)
         domain_stats = report['domain_stats']
         
@@ -426,7 +426,7 @@ class EnhancedTestCoverageAnalyzer:
             print(f"   {priority_indicator} {domain.upper():<20}: {stats['tested']:3d}/{stats['total']:3d} ({coverage:5.1f}%) - {stats['untested']} missing")
         
         # Top Priority Files
-        print(f"\n🎖️  TOP PRIORITY FILES NEEDING TESTS")
+        print("\n🎖️  TOP PRIORITY FILES NEEDING TESTS")
         print("   (Ranked by business importance, complexity, and DDD layer priority)")
         print("   " + "-" * 70)
         
@@ -439,7 +439,7 @@ class EnhancedTestCoverageAnalyzer:
             print(f"       Priority: {file_analysis.priority} | LOC: {file_analysis.lines_of_code} | Classes: {file_analysis.class_count} | Methods: {file_analysis.method_count}")
         
         # Strategic Recommendations
-        print(f"\n💡 STRATEGIC TESTING RECOMMENDATIONS")
+        print("\n💡 STRATEGIC TESTING RECOMMENDATIONS")
         print("   " + "-" * 50)
         print("   1. 🎯 IMMEDIATE FOCUS: Domain entities and services (business logic core)")
         print("   2. 🔄 NEXT PHASE: Application use cases and facades (workflow orchestration)")
@@ -448,7 +448,7 @@ class EnhancedTestCoverageAnalyzer:
         print("   5. 📊 METRICS: Aim for 80%+ coverage in Domain, 70%+ in Application layers")
         
         # Quick Wins
-        print(f"\n⚡ QUICK WINS - Start with these files:")
+        print("\n⚡ QUICK WINS - Start with these files:")
         quick_wins = [f for f in top_files if f.component in ['entities', 'value_objects', 'exceptions'] and f.lines_of_code < 200][:10]
         
         for i, file_analysis in enumerate(quick_wins, 1):
@@ -457,7 +457,7 @@ class EnhancedTestCoverageAnalyzer:
             print(f"      Test: {test_path}")
         
         # Test Creation Commands
-        print(f"\n🛠️  TEST CREATION COMMANDS")
+        print("\n🛠️  TEST CREATION COMMANDS")
         print("   Copy and run these commands to create high-priority tests:")
         print("   " + "-" * 55)
         
@@ -475,7 +475,7 @@ def main():
     analyzer = EnhancedTestCoverageAnalyzer()
     report = analyzer.analyze()
     
-    print(f"\n📁 TEST CREATION TEMPLATE")
+    print("\n📁 TEST CREATION TEMPLATE")
     print("="*50)
     print("Use this template to create tests for the priority files above:")
     print("""
