@@ -8,8 +8,8 @@ high-level API for agent instantiation and retrieval.
 
 import logging
 import uuid
-from typing import Dict, Any, Optional
 from datetime import datetime, timezone
+from typing import Any
 
 from ...domain.entities.agent_template import AgentTemplate
 from ...domain.entities.user_agent_instance import UserAgentInstance
@@ -41,10 +41,10 @@ class AgentManagementFacade:
 
     def __init__(
         self,
-        template_repository: Optional[ORMAgentTemplateRepository] = None,
-        instance_repository: Optional[ORMUserAgentInstanceRepository] = None,
-        instantiation_service: Optional[AgentInstantiationService] = None,
-        sharing_service: Optional[AgentSharingService] = None
+        template_repository: ORMAgentTemplateRepository | None = None,
+        instance_repository: ORMUserAgentInstanceRepository | None = None,
+        instantiation_service: AgentInstantiationService | None = None,
+        sharing_service: AgentSharingService | None = None
     ):
         """
         Initialize the facade with repositories and services.
@@ -106,7 +106,7 @@ class AgentManagementFacade:
     def bulk_create_instances(
         self,
         user_id: UserId,
-        template_slugs: Optional[list[str]] = None
+        template_slugs: list[str] | None = None
     ) -> list[UserAgentInstance]:
         """
         Create instances for multiple templates in a single operation.
@@ -169,7 +169,7 @@ class AgentManagementFacade:
         self,
         user_id: UserId,
         agent_slug: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get agent configuration for MCP call_agent tool.
 
@@ -262,7 +262,7 @@ class AgentManagementFacade:
         """
         return self._instance_repo.find_by_user(user_id)
 
-    def get_template_by_slug(self, agent_slug: str) -> Optional[AgentTemplate]:
+    def get_template_by_slug(self, agent_slug: str) -> AgentTemplate | None:
         """
         Get agent template by slug.
 
@@ -274,7 +274,7 @@ class AgentManagementFacade:
         """
         return self._template_repo.find_by_slug(agent_slug)
 
-    def get_template_by_id(self, template_id: str) -> Optional[AgentTemplate]:
+    def get_template_by_id(self, template_id: str) -> AgentTemplate | None:
         """
         Get agent template by ID.
 
@@ -302,14 +302,14 @@ class AgentManagementFacade:
         self,
         user_id: UserId,
         instance_id: str,
-        agent_name: Optional[str] = None,
-        is_enabled: Optional[bool] = None,
-        system_prompt: Optional[str] = None,
-        tools: Optional[list[str]] = None,
-        capabilities: Optional[Dict[str, Any]] = None,
-        rules: Optional[list[str]] = None,
-        output_format: Optional[str] = None,
-        visibility: Optional[str] = None
+        agent_name: str | None = None,
+        is_enabled: bool | None = None,
+        system_prompt: str | None = None,
+        tools: list[str] | None = None,
+        capabilities: dict[str, Any] | None = None,
+        rules: list[str] | None = None,
+        output_format: str | None = None,
+        visibility: str | None = None
     ) -> UserAgentInstance:
         """
         Update a user agent instance.
@@ -455,11 +455,11 @@ class AgentManagementFacade:
         self,
         user_id: UserId,
         agent_slug: str,
-        system_prompt: Optional[str] = None,
-        tools: Optional[list[str]] = None,
-        capabilities: Optional[Dict[str, Any]] = None,
-        rules: Optional[list[str]] = None,
-        output_format: Optional[str] = None
+        system_prompt: str | None = None,
+        tools: list[str] | None = None,
+        capabilities: dict[str, Any] | None = None,
+        rules: list[str] | None = None,
+        output_format: str | None = None
     ) -> UserAgentInstance:
         """
         Update agent configuration for a user.
@@ -569,7 +569,7 @@ class AgentManagementFacade:
         self,
         user_id: UserId,
         instance_id: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Generate a share token and make an instance public.
 
@@ -640,8 +640,8 @@ class AgentManagementFacade:
         self,
         share_token: str,
         importer_user_id: UserId,
-        creator_email: Optional[str] = None
-    ) -> Optional[UserAgentInstance]:
+        creator_email: str | None = None
+    ) -> UserAgentInstance | None:
         """
         Import a shared agent from another user.
 
@@ -732,7 +732,7 @@ class AgentManagementFacade:
     def get_shared_agent_preview(
         self,
         share_token: str
-    ) -> Optional[UserAgentInstance]:
+    ) -> UserAgentInstance | None:
         """
         Preview a shared agent before importing.
 
