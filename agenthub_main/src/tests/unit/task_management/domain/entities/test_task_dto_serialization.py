@@ -139,8 +139,10 @@ class TestTaskDTOSerializationNoCountFields:
         task_dict = task.to_dict()
 
         # Assert
-        assert 'subtask_count' not in task_dict, \
-            "subtask_count field should NOT exist in serialized task"
+        assert 'subtask_count' in task_dict, \
+            "subtask_count field SHOULD exist as computed property in serialized task"
+        assert task_dict['subtask_count'] == 3, \
+            "subtask_count should match length of subtasks array"
         assert 'subtasks' in task_dict, \
             "subtasks array should exist"
         assert len(task_dict['subtasks']) == 3, \
@@ -203,15 +205,17 @@ class TestTaskDTOSerializationNoCountFields:
         task_dict = task.to_dict()
 
         # Assert
-        assert 'dependency_count' not in task_dict, \
-            "dependency_count field should NOT exist in serialized task"
+        assert 'dependency_count' in task_dict, \
+            "dependency_count field SHOULD exist as computed property in serialized task"
+        assert task_dict['dependency_count'] == 2, \
+            "dependency_count should match length of dependencies array"
         assert 'dependencies' in task_dict, \
             "dependencies array should exist"
         assert len(task_dict['dependencies']) == 2, \
             "dependencies array is source of truth for count"
 
-    def test_task_to_dict_excludes_all_count_fields(self):
-        """Verify task.to_dict() excludes ALL count fields"""
+    def test_task_to_dict_includes_computed_count_fields(self):
+        """Verify task.to_dict() includes computed count fields (subtask_count, dependency_count)"""
         # Arrange
         task_id = TaskId(str(uuid4()))
         task = Task(
@@ -232,11 +236,21 @@ class TestTaskDTOSerializationNoCountFields:
         # Act
         task_dict = task.to_dict()
 
-        # Assert - None of the count fields should exist
-        count_fields = ['subtask_count', 'assignees_count', 'dependency_count', 'task_count']
-        for field in count_fields:
-            assert field not in task_dict, \
-                f"{field} should NOT exist in serialized task"
+        # Assert - Computed count fields SHOULD exist with correct values
+        assert 'subtask_count' in task_dict, \
+            "subtask_count should exist as computed property"
+        assert task_dict['subtask_count'] == 2, \
+            "subtask_count should match subtasks array length"
+        assert 'dependency_count' in task_dict, \
+            "dependency_count should exist as computed property"
+        assert task_dict['dependency_count'] == 1, \
+            "dependency_count should match dependencies array length"
+
+        # Fields that should NOT exist
+        assert 'assignees_count' not in task_dict, \
+            "assignees_count should NOT exist"
+        assert 'task_count' not in task_dict, \
+            "task_count should NOT exist"
 
 
 class TestTaskDTOSerializationArraysAreSourceOfTruth:
@@ -430,7 +444,8 @@ class TestTaskDTOSerializationEmptyArrays:
         # Assert
         assert 'subtasks' in task_dict, "subtasks field should exist"
         assert task_dict['subtasks'] == [], "Empty subtasks should be []"
-        assert 'subtask_count' not in task_dict, "No subtask_count field"
+        assert 'subtask_count' in task_dict, "subtask_count field should exist as computed property"
+        assert task_dict['subtask_count'] == 0, "subtask_count should be 0 for empty array"
 
     def test_task_with_no_dependencies_serializes_empty_array(self):
         """Verify empty dependencies array, not count field"""
@@ -457,7 +472,8 @@ class TestTaskDTOSerializationEmptyArrays:
         # Assert
         assert 'dependencies' in task_dict, "dependencies field should exist"
         assert task_dict['dependencies'] == [], "Empty dependencies should be []"
-        assert 'dependency_count' not in task_dict, "No dependency_count field"
+        assert 'dependency_count' in task_dict, "dependency_count field should exist as computed property"
+        assert task_dict['dependency_count'] == 0, "dependency_count should be 0 for empty array"
 
 
 if __name__ == "__main__":

@@ -153,7 +153,7 @@ class TestBroadcastDataChange:
         # Validate metadata
         assert "metadata" in sent_message
         metadata = sent_message["metadata"]
-        assert metadata["source"] == "system"
+        assert metadata["source"] == "user"  # Source is 'user' when userId is present
         assert metadata["userId"] == "user-123"
         assert metadata["entity_type"] == "task"
         assert metadata["entity_id"] == "task-123"

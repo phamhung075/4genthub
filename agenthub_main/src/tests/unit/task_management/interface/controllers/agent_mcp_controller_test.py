@@ -44,19 +44,29 @@ class TestAgentMCPController:
         self.mock_facade_service = create_mock_with_spec(FacadeService)
         self.mock_facade = create_mock_with_spec(AgentApplicationFacade)
         self.mock_facade_service.get_agent_facade.return_value = self.mock_facade
-        
+
+        # Mock ToolConfig to enable workflow guidance for tests
+        from fastmcp.task_management.infrastructure.configuration.tool_config import ToolConfig
+        self.mock_config = Mock(spec=ToolConfig)
+        self.mock_config.is_workflow_guidance_enabled.return_value = True
+
         # Mock workflow guidance
         with patch('fastmcp.task_management.interface.mcp_controllers.agent_mcp_controller.agent_mcp_controller.AgentWorkflowFactory'):
-            self.controller = AgentMCPController(self.mock_facade_service)
+            self.controller = AgentMCPController(self.mock_facade_service, self.mock_config)
     
     def test_init(self):
-        """Test controller initialization."""
+        """Test controller initialization with workflow guidance enabled."""
         with patch('fastmcp.task_management.interface.mcp_controllers.agent_mcp_controller.agent_mcp_controller.AgentWorkflowFactory') as mock_workflow_factory:
             mock_workflow = Mock()
             mock_workflow_factory.create.return_value = mock_workflow
-            
-            controller = AgentMCPController(self.mock_facade_service)
-            
+
+            # Create controller with enabled workflow guidance
+            from fastmcp.task_management.infrastructure.configuration.tool_config import ToolConfig
+            mock_config = Mock(spec=ToolConfig)
+            mock_config.is_workflow_guidance_enabled.return_value = True
+
+            controller = AgentMCPController(self.mock_facade_service, mock_config)
+
             assert controller._facade_service == self.mock_facade_service
             assert controller._workflow_guidance == mock_workflow
             mock_workflow_factory.create.assert_called_once()
@@ -83,9 +93,9 @@ class TestAgentMCPController:
             mock_mcp.tool.assert_called_once()
             call_kwargs = mock_mcp.tool.call_args[1]
             assert call_kwargs["name"] == "manage_agent"
-            # Check that description is present and contains expected content
-            assert "AGENT MANAGEMENT SYSTEM" in call_kwargs["description"]
-            assert "Agent Registration and Assignment" in call_kwargs["description"]
+            # Check that description is present and contains expected content (updated format)
+            assert "AGENT MANAGEMENT" in call_kwargs["description"]
+            assert "Registration & assignment" in call_kwargs["description"]
     
     @patch('fastmcp.task_management.interface.mcp_controllers.agent_mcp_controller.agent_mcp_controller.get_current_user_id')
     def test_get_facade_for_request_with_user_context(self, mock_get_user_id):
@@ -238,7 +248,7 @@ class TestAgentMCPController:
             assert result["success"] is True
             assert "data" in result or "meta" in result
             self.mock_facade.register_agent.assert_called_once_with(
-                "test-project", "agent-123", "test-agent", "call-config"
+                "test-project", "agent-123", "test-agent", "call-config", None  # user_id parameter added
             )
     
     def test_handle_crud_operations_register_auto_generate_id(self):
@@ -278,7 +288,7 @@ class TestAgentMCPController:
             assert result["success"] is True
             assert "data" in result or "meta" in result
             self.mock_facade.register_agent.assert_called_once_with(
-                "test-project", "agent-123", None, None
+                "test-project", "agent-123", None, None, None  # user_id parameter added
             )
     
     def test_handle_crud_operations_get_success(self):
@@ -536,15 +546,20 @@ class TestAgentMCPController:
 
 class TestAgentMCPControllerIntegration:
     """Integration tests for AgentMCPController."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_facade_service = create_mock_with_spec(FacadeService)
         self.mock_facade = create_mock_with_spec(AgentApplicationFacade)
         self.mock_facade_service.get_agent_facade.return_value = self.mock_facade
-        
+
+        # Mock ToolConfig to enable workflow guidance for tests
+        from fastmcp.task_management.infrastructure.configuration.tool_config import ToolConfig
+        self.mock_config = Mock(spec=ToolConfig)
+        self.mock_config.is_workflow_guidance_enabled.return_value = True
+
         with patch('fastmcp.task_management.interface.mcp_controllers.agent_mcp_controller.agent_mcp_controller.AgentWorkflowFactory'):
-            self.controller = AgentMCPController(self.mock_facade_service)
+            self.controller = AgentMCPController(self.mock_facade_service, self.mock_config)
     
     @patch('fastmcp.task_management.interface.mcp_controllers.agent_mcp_controller.agent_mcp_controller.get_current_user_id')
     def test_complete_register_workflow(self, mock_get_user_id):

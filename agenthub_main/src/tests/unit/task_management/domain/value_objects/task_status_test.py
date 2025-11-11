@@ -155,11 +155,14 @@ class TestTaskStatus:
         assert testing.can_transition_to("blocked") is False
     
     def test_can_transition_to_from_done(self):
-        """Test that no transitions are allowed from DONE status"""
+        """Test valid transitions from DONE status (can reopen for rework)"""
         done = TaskStatus("done")
-        
+
+        # Business rule: Done tasks can transition back to in_progress for rework
+        assert done.can_transition_to("in_progress") is True
+
+        # Invalid transitions from done
         assert done.can_transition_to("todo") is False
-        assert done.can_transition_to("in_progress") is False
         assert done.can_transition_to("blocked") is False
         assert done.can_transition_to("cancelled") is False
     
