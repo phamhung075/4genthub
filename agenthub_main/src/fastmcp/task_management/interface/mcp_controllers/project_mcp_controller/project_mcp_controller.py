@@ -5,8 +5,6 @@ This is the main entry point for the project MCP controller, now refactored into
 architecture using factory pattern to maintain separation of concerns.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -40,6 +38,11 @@ from .manage_project_description import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# Get centralized parameter definitions at module level
+# This must be at module level so Pydantic can access it when evaluating type annotations
+params = get_manage_project_parameters()
 
 # Import user context utilities - REQUIRED for authentication
 try:
@@ -136,9 +139,6 @@ class ProjectMCPController(ContextPropagationMixin):
 
     def register_tools(self, mcp: FastMCP):
         """Register MCP tools with the server."""
-
-        # Get centralized parameter definitions
-        params = get_manage_project_parameters()
 
         @mcp.tool(description=get_manage_project_description())
         async def manage_project(

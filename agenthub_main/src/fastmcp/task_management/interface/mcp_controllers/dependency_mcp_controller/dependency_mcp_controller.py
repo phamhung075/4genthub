@@ -5,8 +5,6 @@ It converts between MCP request formats and application DTOs, then
 delegates all business logic to the TaskApplicationFacade.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -27,6 +25,11 @@ from .services import DescriptionService
 logger = logging.getLogger(__name__)
 
 
+# Get centralized parameter definitions at module level
+# This must be at module level so Pydantic can access it when evaluating type annotations
+params = get_manage_dependency_parameters()
+
+
 class DependencyMCPController:
     """
     MCP controller for dependency operations.
@@ -43,8 +46,7 @@ class DependencyMCPController:
         logger.info("DependencyMCPController initialized")
 
     def register_tools(self, mcp: FastMCP):
-        # Get centralized parameter definitions
-        params = get_manage_dependency_parameters()
+        """Register dependency management tools."""
 
         @mcp.tool(description=get_manage_dependency_description())
         def manage_dependency(
