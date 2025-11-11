@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
     && pip install --no-cache-dir uv
 
 # Copy dependency files (pyproject.toml is the single source of truth)
-COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md ./agenthub_main/
+COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md* ./agenthub_main/
 
 # Install dependencies in a virtual environment (single layer)
 WORKDIR /build/agenthub_main
