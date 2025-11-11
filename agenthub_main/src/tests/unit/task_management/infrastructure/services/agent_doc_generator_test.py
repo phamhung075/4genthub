@@ -9,7 +9,7 @@ Tests the agent documentation generator that converts YAML agent definitions to 
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import yaml
