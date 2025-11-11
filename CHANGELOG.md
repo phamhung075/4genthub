@@ -6,6 +6,35 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+
+**Git Pre-commit Hook for Ruff Formatting** (2025-11-12)
+
+Implemented automated code formatting using ruff for Python files in both local development and CI/CD pipelines.
+
+**Changes Made**:
+- Created `.git/hooks/pre-commit` - Local git hook that runs `ruff format` on staged Python files before commits
+- Created `agenthub_main/.pre-commit-config.yaml` - Pre-commit framework configuration for CI/CD integration
+- Hook only formats staged Python files (not entire project) for performance
+- Automatically re-stages formatted files after formatting
+- Blocks commits if formatting fails
+
+**Benefits**:
+- ✅ Consistent code formatting across all commits
+- ⚡ Fast formatting (only processes changed files)
+- 🔒 Enforced in CI/CD via existing `run-static.yml` workflow
+- 🚫 Prevents unformatted code from being committed
+- 🤝 Works locally and in GitHub Actions
+
+**Files Created**:
+- `.git/hooks/pre-commit:1-37` - Local pre-commit hook script
+- `agenthub_main/.pre-commit-config.yaml:1-27` - Pre-commit framework configuration
+
+**Technical Details**:
+- Hook uses `git diff --cached --name-only --diff-filter=ACM` to find staged Python files
+- Integrates with existing CI/CD workflow at `.github/workflows/run-static.yml:62`
+- Includes additional pre-commit hooks: trailing-whitespace, end-of-file-fixer, check-yaml, check-merge-conflict
+
 ### Changed
 
 **README.md - Cloud Platform Promotion** (2025-11-11)
