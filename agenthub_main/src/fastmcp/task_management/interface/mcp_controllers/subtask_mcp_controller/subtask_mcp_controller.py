@@ -187,7 +187,7 @@ class SubtaskMCPController(ContextPropagationMixin):
             # No event loop, create one
             return asyncio.run(coro)
 
-    def register_tools(self, mcp: FastMCP):
+    def register_tools(self, mcp: "FastMCP"):
         """Register MCP tools with the server."""
 
         @mcp.tool(description=get_manage_subtask_description())

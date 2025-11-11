@@ -77,7 +77,7 @@ class UnifiedContextMCPController:
 
         logger.info("UnifiedContextMCPController initialized with modular architecture")
 
-    def register_tools(self, mcp: FastMCP):
+    def register_tools(self, mcp: "FastMCP"):
         """Register unified context management tools with FastMCP."""
 
         @mcp.tool(description=get_manage_unified_context_description())

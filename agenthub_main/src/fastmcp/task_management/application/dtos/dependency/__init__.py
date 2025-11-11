@@ -1,5 +1,5 @@
-from .add_dependency_request import *
-from .dependency_response import * 
+from .add_dependency_request import AddDependencyRequest
+from .dependency_response import DependencyResponse
 
 __all__ = [
     "AddDependencyRequest", "DependencyResponse"

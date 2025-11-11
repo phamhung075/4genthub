@@ -45,7 +45,7 @@ class DependencyMCPController:
         self._description_service = DescriptionService()
         logger.info("DependencyMCPController initialized")
 
-    def register_tools(self, mcp: FastMCP):
+    def register_tools(self, mcp: "FastMCP"):
         """Register dependency management tools."""
 
         @mcp.tool(description=get_manage_dependency_description())

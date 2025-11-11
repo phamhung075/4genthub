@@ -118,7 +118,7 @@ class GitBranchMCPController(ContextPropagationMixin):
             self._workflow_guidance = None
             logger.info("GitBranchMCPController initialized with workflow guidance disabled (token optimization)")
 
-    def register_tools(self, mcp: FastMCP):
+    def register_tools(self, mcp: "FastMCP"):
         """Register MCP tools with the server."""
 
         @mcp.tool(description=get_manage_git_branch_description())
