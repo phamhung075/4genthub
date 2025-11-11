@@ -385,7 +385,7 @@ class TestEnvPriorityImplementation:
         """All modules should load the same prioritized env file"""
         import os
 
-        from dotenv import load_dotenv
+        from dotenv import dotenv_values, load_dotenv
 
         project_root = Path(__file__).parent.parent.parent.parent.parent
         env_dev_file = project_root / ".env.dev"
@@ -402,7 +402,9 @@ class TestEnvPriorityImplementation:
 
         # Clear and reload to test consistency
         os.environ.pop("DATABASE_HOST", None)
-        load_dotenv(env_to_load, override=True)
+        # Use dotenv_values() to force a fresh file read (bypasses dotenv's internal cache)
+        env_vars = dotenv_values(env_to_load)
+        os.environ.update(env_vars)
         db_host_2 = os.getenv("DATABASE_HOST")
 
         # Should be consistent
