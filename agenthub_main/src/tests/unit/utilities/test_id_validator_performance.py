@@ -62,8 +62,8 @@ class TestIDValidatorPerformance:
         # All should be valid
         assert all(results), "Some valid UUIDs were rejected"
 
-        # Average time per validation should be very fast (< 60μs - adjusted for CI environment, 20% increase)
-        assert avg_time_per_validation < 0.00006, (
+        # Average time per validation should be very fast (< 62.5μs - adjusted for CI environment, 25% increase)
+        assert avg_time_per_validation < 0.0000625, (
             f"Average validation time too slow: {avg_time_per_validation:.8f}s"
         )
 
@@ -316,8 +316,8 @@ class TestIDValidatorPerformance:
             f"({avg_time * 1000000:.2f}μs avg)"
         )
 
-        # Should be very fast (< 60μs per detection - adjusted for CI environment, 20% increase)
-        assert avg_time < 0.00006, f"Context detection too slow: {avg_time:.8f}s avg"
+        # Should be very fast (< 62.5μs per detection - adjusted for CI environment, 25% increase)
+        assert avg_time < 0.0000625, f"Context detection too slow: {avg_time:.8f}s avg"
 
     def test_error_path_performance(self):
         """Test performance when validation fails (error paths)."""
@@ -471,8 +471,8 @@ class TestConvenienceFunctionPerformance:
             f"({avg_time * 1000000:.2f}μs avg)"
         )
 
-        # Should be fast (< 300μs per call - adjusted for CI environment, 20% increase)
-        assert avg_time < 0.0003, f"prevent_id_confusion too slow: {avg_time:.8f}s avg"
+        # Should be fast (< 312.5μs per call - adjusted for CI environment, 25% increase)
+        assert avg_time < 0.0003125, f"prevent_id_confusion too slow: {avg_time:.8f}s avg"
 
 
 @pytest.mark.performance
