@@ -16,6 +16,20 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## [2025-11-11]
 
+### Fixed
+
+**Import Error Fixes - CallAgentUseCase & BaseORMRepository** (2025-11-11)
+- Fixed AttributeError in `ddd_compliant_mcp_tools_test.py` (4 tests)
+  - Removed obsolete CallAgentUseCase patches (not in module)
+  - File: `src/tests/unit/task_management/interface/ddd_compliant_mcp_tools_test.py`
+- Fixed module import error in `supabase_optimized_repository_test.py` (12 tests)
+  - Removed BaseORMRepository patch (not in inheritance chain)
+  - Updated BaseUserScopedRepository patch to correct path
+  - Updated CacheInvalidationMixin patch to correct path
+  - File: `src/tests/unit/task_management/infrastructure/repositories/orm/supabase_optimized_repository_test.py`
+- Both files: Syntax validated successfully
+- Impact: ~16 tests fixed across 2 test files
+
 ### Added
 
 **Phase 6: DATABASE_TYPE Validation Tests** (2025-11-11)
