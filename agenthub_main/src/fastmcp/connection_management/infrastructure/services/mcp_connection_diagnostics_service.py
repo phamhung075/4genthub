@@ -108,9 +108,13 @@ class MCPConnectionDiagnosticsService(ConnectionDiagnosticsService):
         """Validate connection infrastructure health"""
         try:
             # Check if connection manager and status broadcaster are available
-            from ....server.connection_manager import get_connection_manager
-            from ....server.connection_status_broadcaster import get_status_broadcaster
-            
+            from ....server.connection_manager import (
+                get_connection_manager,  # noqa: F401
+            )
+            from ....server.connection_status_broadcaster import (
+                get_status_broadcaster,  # noqa: F401
+            )
+
             return {
                 "connection_manager_available": True,
                 "status_broadcaster_available": True,
