@@ -24,40 +24,40 @@ class TestTypesInit:
     def test_entities_exports(self):
         """Test that entities module exports expected DTO classes."""
         # Check for entity DTO classes (NOT legacy aliases)
-        assert hasattr(entities, 'TaskDTO')
-        assert hasattr(entities, 'SubtaskDTO')
-        assert hasattr(entities, 'ProjectDTO')
-        assert hasattr(entities, 'BranchDTO')
-        assert hasattr(entities, 'RuleDTO')
+        assert hasattr(entities, "TaskDTO")
+        assert hasattr(entities, "SubtaskDTO")
+        assert hasattr(entities, "ProjectDTO")
+        assert hasattr(entities, "BranchDTO")
+        assert hasattr(entities, "RuleDTO")
 
     def test_responses_exports(self):
         """Test that responses module exports expected response classes."""
         # Check for response wrapper classes (NOT legacy aliases)
-        assert hasattr(responses, 'TasksResponse')
-        assert hasattr(responses, 'SubtasksResponse')
-        assert hasattr(responses, 'TaskSummariesResponse')
+        assert hasattr(responses, "TasksResponse")
+        assert hasattr(responses, "SubtasksResponse")
+        assert hasattr(responses, "TaskSummariesResponse")
 
     def test_summaries_exports(self):
         """Test that summaries module exports expected summary DTO classes."""
         # Check for summary DTO classes (NOT legacy aliases)
-        assert hasattr(summaries, 'TaskSummaryDTO')
-        assert hasattr(summaries, 'SubtaskSummaryDTO')
-        assert hasattr(summaries, 'ProjectSummaryDTO')
-        assert hasattr(summaries, 'BranchSummaryDTO')
+        assert hasattr(summaries, "TaskSummaryDTO")
+        assert hasattr(summaries, "SubtaskSummaryDTO")
+        assert hasattr(summaries, "ProjectSummaryDTO")
+        assert hasattr(summaries, "BranchSummaryDTO")
 
     def test_converters_exports(self):
         """Test that converters module exports expected converter functions."""
         # Check for converter functions (NOT legacy aliases)
-        assert hasattr(converters, 'task_to_dto')
-        assert hasattr(converters, 'subtask_to_dto')
-        assert hasattr(converters, 'task_summary_to_dto')
-        assert hasattr(converters, 'subtask_summary_to_dto')
+        assert hasattr(converters, "task_to_dto")
+        assert hasattr(converters, "subtask_to_dto")
+        assert hasattr(converters, "task_summary_to_dto")
+        assert hasattr(converters, "subtask_summary_to_dto")
 
     def test_circular_import_protection(self):
         """Test that there are no circular import issues."""
         # Force reimport to check for circular dependencies
-        if 'fastmcp.types' in sys.modules:
-            del sys.modules['fastmcp.types']
+        if "fastmcp.types" in sys.modules:
+            del sys.modules["fastmcp.types"]
 
         # This should not raise ImportError
         import fastmcp.types
@@ -79,7 +79,7 @@ class TestTypesInit:
             assignees_count=1,
             subtask_count=0,
             has_dependencies=False,
-            has_context=False
+            has_context=False,
         )
 
         # Verify it's the correct type
@@ -91,10 +91,10 @@ class TestTypesInit:
         import fastmcp.types as types_module
 
         # If __all__ is defined, verify it contains expected exports
-        if hasattr(types_module, '__all__'):
+        if hasattr(types_module, "__all__"):
             all_exports = types_module.__all__
             assert isinstance(all_exports, list)
             # Common exports that should be included
-            expected = ['entities', 'responses', 'summaries', 'converters']
+            expected = ["entities", "responses", "summaries", "converters"]
             for exp in expected:
                 assert exp in all_exports or hasattr(types_module, exp)

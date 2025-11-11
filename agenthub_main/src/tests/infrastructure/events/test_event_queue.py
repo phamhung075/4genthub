@@ -42,9 +42,11 @@ from fastmcp.task_management.infrastructure.events.event_worker import (
 # Test Fixtures and Helpers
 # ========================
 
+
 @dataclass(frozen=True)
 class _MockTestEvent(BaseDomainEvent):
     """Mock event for testing (underscore prefix prevents pytest collection)."""
+
     data: str = "test-data"
 
     @property
@@ -87,7 +89,7 @@ def event_worker(mock_handlers):
     worker = EventWorker(
         event_handlers=mock_handlers,
         max_queue_size=100,
-        heartbeat_interval=0.3  # Short interval for testing
+        heartbeat_interval=0.3,  # Short interval for testing
     )
     yield worker
     # Cleanup - increased timeout for tests with long retry delays
@@ -97,6 +99,7 @@ def event_worker(mock_handlers):
 
 # EventQueue Tests
 # ================
+
 
 class _MockTestEventQueueBasicOperations:
     """Test basic queue operations."""
@@ -204,7 +207,7 @@ class _MockTestEventQueueBlockingOperations:
 
         assert result
         assert elapsed >= 0.2  # Waited for space
-        assert elapsed < 1.0   # Didn't timeout
+        assert elapsed < 1.0  # Didn't timeout
 
     def test_blocking_put_timeout(self, small_queue):
         """Test blocking put respects timeout."""
@@ -236,6 +239,7 @@ class _MockTestEventQueueBlockingOperations:
 
     def test_blocking_get_waits_for_event(self, event_queue):
         """Test blocking get waits for event."""
+
         # Start thread that will add event after delay
         def add_event():
             time.sleep(0.2)
@@ -687,7 +691,9 @@ class _MockTestEventQueueEdgeCases:
     def test_error_handling_increments_error_count(self, event_queue):
         """Test error scenarios increment error counter."""
         # Force an error by mocking the internal queue
-        with patch.object(event_queue._queue, 'put', side_effect=Exception("Test error")):
+        with patch.object(
+            event_queue._queue, "put", side_effect=Exception("Test error")
+        ):
             result = event_queue.put(_MockTestEvent())
             assert not result
 
@@ -707,15 +713,14 @@ class _MockTestEventQueueEdgeCases:
 # EventWorker Tests
 # =================
 
+
 class _MockTestEventWorkerLifecycle:
     """Test EventWorker start/stop lifecycle."""
 
     def test_worker_initialization(self, mock_handlers):
         """Test worker initializes correctly."""
         worker = EventWorker(
-            event_handlers=mock_handlers,
-            max_queue_size=100,
-            heartbeat_interval=10
+            event_handlers=mock_handlers, max_queue_size=100, heartbeat_interval=10
         )
 
         assert not worker._running
@@ -816,11 +821,13 @@ class _MockTestEventWorkerEventProcessing:
 
     def test_worker_handles_unknown_event_type(self, event_worker):
         """Test worker handles events with no registered handlers."""
+
         # Create event type not in handlers
         class UnknownEvent(BaseDomainEvent):
             @property
             def event_type(self) -> str:
                 return "unknown.event"
+
             def to_dict(self):
                 return {}
 
@@ -843,7 +850,7 @@ class _MockTestEventWorkerEventProcessing:
         """Test enqueue_event returns False when queue is full."""
         worker = EventWorker(
             event_handlers={_MockTestEvent: [Mock()]},
-            max_queue_size=2  # Very small queue
+            max_queue_size=2,  # Very small queue
         )
 
         # Fill queue
@@ -888,6 +895,7 @@ class _MockTestEventWorkerRetryLogic:
 
         # Track call times
         call_times = []
+
         def track_time(*args):
             call_times.append(time.time())
             raise Exception("Fail")
@@ -943,6 +951,7 @@ class _MockTestEventWorkerRetryLogic:
         handler = mock_handlers[_MockTestEvent][0]
 
         received_events = []
+
         def capture_event(event):
             received_events.append(event.data)
             if len(received_events) < 2:
@@ -972,10 +981,7 @@ class _MockTestEventWorkerDeadLetterQueue:
         handler = mock_handlers[_MockTestEvent][0]
         handler.side_effect = Exception("Permanent failure")
 
-        worker = EventWorker(
-            event_handlers=mock_handlers,
-            max_queue_size=100
-        )
+        worker = EventWorker(event_handlers=mock_handlers, max_queue_size=100)
 
         worker.start()
         time.sleep(0.1)
@@ -1027,7 +1033,7 @@ class _MockTestEventWorkerDeadLetterQueue:
             error_message="test error",
             attempt_count=5,
             first_attempt_at=datetime.now(),
-            final_failure_at=datetime.now()
+            final_failure_at=datetime.now(),
         )
         worker._dead_letter_queue.append(dlq_event)
 
@@ -1075,6 +1081,7 @@ class _MockTestEventWorkerHealthChecks:
 
         # Manually set stale heartbeat
         from datetime import UTC, timedelta
+
         event_worker._last_heartbeat = datetime.now(UTC) - timedelta(seconds=30)
 
         # Should be unhealthy (heartbeat > 2x interval)
@@ -1143,7 +1150,7 @@ class _MockTestEventWorkerStatistics:
             "queue_max_size",
             "is_running",
             "last_heartbeat",
-            "dead_letter_queue_size"
+            "dead_letter_queue_size",
         ]
 
         for key in required_keys:
@@ -1198,7 +1205,9 @@ class _MockTestEventWorkerStatistics:
 class _MockTestEventWorkerEdgeCases:
     """Test edge cases and error scenarios."""
 
-    def test_worker_handles_handler_exception_gracefully(self, mock_handlers, event_worker):
+    def test_worker_handles_handler_exception_gracefully(
+        self, mock_handlers, event_worker
+    ):
         """Test worker continues after handler exception."""
         handler1, handler2 = mock_handlers[_MockTestEvent]
 
@@ -1227,7 +1236,9 @@ class _MockTestEventWorkerEdgeCases:
 
         worker.stop()
 
-    def test_worker_survives_unexpected_errors_in_loop(self, mock_handlers, event_worker):
+    def test_worker_survives_unexpected_errors_in_loop(
+        self, mock_handlers, event_worker
+    ):
         """Test worker continues after unexpected errors."""
         handler = mock_handlers[_MockTestEvent][0]
 
@@ -1235,7 +1246,7 @@ class _MockTestEventWorkerEdgeCases:
         handler.side_effect = [
             RuntimeError("Runtime error"),
             ValueError("Value error"),
-            None  # Success
+            None,  # Success
         ]
 
         event_worker.start()
@@ -1252,6 +1263,7 @@ class _MockTestEventWorkerEdgeCases:
 
 # Integration Tests
 # ==================
+
 
 class _MockTestEventQueueWorkerIntegration:
     """Test EventQueue and EventWorker working together."""
@@ -1309,6 +1321,7 @@ class _MockTestEventQueueWorkerIntegration:
 # Performance Tests
 # ==================
 
+
 class _MockTestEventQueuePerformance:
     """Test queue performance characteristics."""
 
@@ -1347,6 +1360,7 @@ class _MockTestEventQueuePerformance:
 
 # Pytest Configuration
 # ====================
+
 
 def pytest_configure(config):
     """Register custom markers."""

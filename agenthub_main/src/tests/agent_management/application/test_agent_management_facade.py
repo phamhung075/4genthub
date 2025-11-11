@@ -53,7 +53,7 @@ def sample_template():
         capabilities={"languages": ["Python", "JavaScript"]},
         rules=["Write clean code"],
         output_format="markdown",
-        metadata={"author": "test", "version": "1.0.0"}
+        metadata={"author": "test", "version": "1.0.0"},
     )
 
     return AgentTemplate(
@@ -66,7 +66,7 @@ def sample_template():
         default_configuration=configuration,
         metadata={"source": "test"},
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
 
@@ -79,10 +79,12 @@ def sample_instance(sample_template):
     configuration = AgentConfiguration(
         system_prompt="Customized coding agent prompt",
         tools=["Read", "Write", "Edit", "Bash", "Grep"],  # Added Grep
-        capabilities={"languages": ["Python", "JavaScript", "TypeScript"]},  # Added TypeScript
+        capabilities={
+            "languages": ["Python", "JavaScript", "TypeScript"]
+        },  # Added TypeScript
         rules=["Write clean code", "Follow DRY principles"],  # Added rule
         output_format="markdown",
-        metadata={}
+        metadata={},
     )
 
     return UserAgentInstance(
@@ -96,7 +98,7 @@ def sample_instance(sample_template):
         last_used_at=None,
         metadata={"customization_notes": "Added Grep tool and TypeScript support"},
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
 
@@ -108,7 +110,7 @@ class TestGetOrCreateInstance:
         mock_template_repo,
         mock_instance_repo,
         mock_instantiation_service,
-        sample_instance
+        sample_instance,
     ):
         """Test that existing instance is returned without creating new one"""
         # Arrange
@@ -120,7 +122,7 @@ class TestGetOrCreateInstance:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -129,8 +131,7 @@ class TestGetOrCreateInstance:
         # Assert
         assert result == sample_instance
         mock_instance_repo.find_by_user_and_template_slug.assert_called_once_with(
-            user_id=user_id,
-            template_slug=agent_slug
+            user_id=user_id, template_slug=agent_slug
         )
         # Should NOT create new instance
         mock_instantiation_service.create_instance_from_template.assert_not_called()
@@ -141,7 +142,7 @@ class TestGetOrCreateInstance:
         mock_template_repo,
         mock_instance_repo,
         mock_instantiation_service,
-        sample_instance
+        sample_instance,
     ):
         """Test that new instance is created when user doesn't have one"""
         # Arrange
@@ -152,12 +153,14 @@ class TestGetOrCreateInstance:
         mock_instance_repo.find_by_user_and_template_slug.return_value = None
 
         # Instantiation service creates new instance
-        mock_instantiation_service.create_instance_from_template.return_value = sample_instance
+        mock_instantiation_service.create_instance_from_template.return_value = (
+            sample_instance
+        )
 
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -166,16 +169,12 @@ class TestGetOrCreateInstance:
         # Assert
         assert result == sample_instance
         mock_instantiation_service.create_instance_from_template.assert_called_once_with(
-            user_id=user_id,
-            template_slug=agent_slug
+            user_id=user_id, template_slug=agent_slug
         )
         mock_instance_repo.save.assert_called_once_with(sample_instance)
 
     def test_raises_value_error_when_template_not_found(
-        self,
-        mock_template_repo,
-        mock_instance_repo,
-        mock_instantiation_service
+        self, mock_template_repo, mock_instance_repo, mock_instantiation_service
     ):
         """Test that ValueError is raised when agent template doesn't exist"""
         # Arrange
@@ -183,14 +182,14 @@ class TestGetOrCreateInstance:
         agent_slug = "nonexistent-agent"
 
         mock_instance_repo.find_by_user_and_template_slug.return_value = None
-        mock_instantiation_service.create_instance_from_template.side_effect = ValueError(
-            f"Agent template not found: {agent_slug}"
+        mock_instantiation_service.create_instance_from_template.side_effect = (
+            ValueError(f"Agent template not found: {agent_slug}")
         )
 
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act & Assert
@@ -207,7 +206,7 @@ class TestGetAgentForCall:
         mock_instance_repo,
         mock_instantiation_service,
         sample_template,
-        sample_instance
+        sample_instance,
     ):
         """Test that configuration is returned in correct format for MCP"""
         # Arrange
@@ -220,7 +219,7 @@ class TestGetAgentForCall:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -242,7 +241,7 @@ class TestGetAgentForCall:
         mock_template_repo,
         mock_instance_repo,
         mock_instantiation_service,
-        sample_template
+        sample_template,
     ):
         """Test handling instance with default configuration (not customized)"""
         # Arrange
@@ -261,16 +260,18 @@ class TestGetAgentForCall:
             last_used_at=None,
             metadata={},
             created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC)
+            updated_at=datetime.now(UTC),
         )
 
-        mock_instance_repo.find_by_user_and_template_slug.return_value = default_instance
+        mock_instance_repo.find_by_user_and_template_slug.return_value = (
+            default_instance
+        )
         mock_template_repo.find_by_slug.return_value = sample_template
 
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -287,7 +288,7 @@ class TestGetAgentForCall:
         mock_instance_repo,
         mock_instantiation_service,
         sample_template,
-        sample_instance
+        sample_instance,
     ):
         """Test that usage tracking is updated when agent is called"""
         # Arrange
@@ -303,7 +304,7 @@ class TestGetAgentForCall:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -314,14 +315,17 @@ class TestGetAgentForCall:
         mock_instance_repo.save.assert_called()
 
         # Verify track_usage was called on instance (updates last_used_at)
-        assert sample_instance.last_used_at != initial_last_used or initial_last_used is None
+        assert (
+            sample_instance.last_used_at != initial_last_used
+            or initial_last_used is None
+        )
 
     def test_raises_value_error_when_template_not_found_after_instantiation(
         self,
         mock_template_repo,
         mock_instance_repo,
         mock_instantiation_service,
-        sample_instance
+        sample_instance,
     ):
         """Test that ValueError is raised if template lookup fails after instantiation"""
         # Arrange
@@ -334,7 +338,7 @@ class TestGetAgentForCall:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act & Assert
@@ -350,7 +354,7 @@ class TestGetUserInstances:
         mock_template_repo,
         mock_instance_repo,
         mock_instantiation_service,
-        sample_instance
+        sample_instance,
     ):
         """Test that all user's instances are returned"""
         # Arrange
@@ -364,15 +368,13 @@ class TestGetUserInstances:
             agent_name="Test Agent 2",
             is_customized=False,
             configuration=AgentConfiguration(
-                system_prompt="Test prompt 2",
-                tools=["Read"],
-                capabilities={}
+                system_prompt="Test prompt 2", tools=["Read"], capabilities={}
             ),
             visibility="private",
             last_used_at=None,
             metadata={},
             created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC)
+            updated_at=datetime.now(UTC),
         )
 
         mock_instance_repo.find_all_by_user.return_value = [sample_instance, instance2]
@@ -380,7 +382,7 @@ class TestGetUserInstances:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -393,10 +395,7 @@ class TestGetUserInstances:
         mock_instance_repo.find_all_by_user.assert_called_once_with(user_id)
 
     def test_returns_empty_list_when_no_instances(
-        self,
-        mock_template_repo,
-        mock_instance_repo,
-        mock_instantiation_service
+        self, mock_template_repo, mock_instance_repo, mock_instantiation_service
     ):
         """Test that empty list is returned when user has no instances"""
         # Arrange
@@ -406,7 +405,7 @@ class TestGetUserInstances:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -425,7 +424,7 @@ class TestGetTemplateBySlug:
         mock_template_repo,
         mock_instance_repo,
         mock_instantiation_service,
-        sample_template
+        sample_template,
     ):
         """Test that template is returned when found"""
         # Arrange
@@ -435,7 +434,7 @@ class TestGetTemplateBySlug:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -446,10 +445,7 @@ class TestGetTemplateBySlug:
         mock_template_repo.find_by_slug.assert_called_once_with(agent_slug)
 
     def test_returns_none_when_template_not_found(
-        self,
-        mock_template_repo,
-        mock_instance_repo,
-        mock_instantiation_service
+        self, mock_template_repo, mock_instance_repo, mock_instantiation_service
     ):
         """Test that None is returned when template doesn't exist"""
         # Arrange
@@ -459,7 +455,7 @@ class TestGetTemplateBySlug:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -477,7 +473,7 @@ class TestListAvailableTemplates:
         mock_template_repo,
         mock_instance_repo,
         mock_instantiation_service,
-        sample_template
+        sample_template,
     ):
         """Test that all available templates are returned"""
         # Arrange
@@ -489,13 +485,11 @@ class TestListAvailableTemplates:
             category="testing",
             version="1.0.0",
             default_configuration=AgentConfiguration(
-                system_prompt="Test prompt",
-                tools=["Read"],
-                capabilities={}
+                system_prompt="Test prompt", tools=["Read"], capabilities={}
             ),
             metadata={"source": "test"},
             created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC)
+            updated_at=datetime.now(UTC),
         )
 
         mock_template_repo.find_all.return_value = [sample_template, template2]
@@ -503,7 +497,7 @@ class TestListAvailableTemplates:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act
@@ -516,10 +510,7 @@ class TestListAvailableTemplates:
         mock_template_repo.find_all.assert_called_once()
 
     def test_returns_empty_list_when_no_templates(
-        self,
-        mock_template_repo,
-        mock_instance_repo,
-        mock_instantiation_service
+        self, mock_template_repo, mock_instance_repo, mock_instantiation_service
     ):
         """Test that empty list is returned when no templates exist"""
         # Arrange
@@ -528,7 +519,7 @@ class TestListAvailableTemplates:
         facade = AgentManagementFacade(
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
-            instantiation_service=mock_instantiation_service
+            instantiation_service=mock_instantiation_service,
         )
 
         # Act

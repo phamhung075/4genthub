@@ -29,6 +29,7 @@ from typing import Any
 
 class MetricStatus(Enum):
     """Status of a performance metric."""
+
     PASS = "pass"
     FAIL = "fail"
     WARNING = "warning"
@@ -38,6 +39,7 @@ class MetricStatus(Enum):
 @dataclass
 class OperationMetric:
     """Detailed metrics for a single operation."""
+
     operation_name: str
     baseline_target_ms: float
     optimized_target_ms: float
@@ -62,7 +64,9 @@ class OperationMetric:
     @property
     def stdev(self) -> float:
         """Standard deviation of execution times."""
-        return statistics.stdev(self.measurements) if len(self.measurements) > 1 else 0.0
+        return (
+            statistics.stdev(self.measurements) if len(self.measurements) > 1 else 0.0
+        )
 
     @property
     def min(self) -> float:
@@ -141,13 +145,13 @@ class OperationMetric:
                 "max": round(self.max, 2),
                 "p50": round(self.p50, 2),
                 "p95": round(self.p95, 2),
-                "p99": round(self.p99, 2)
+                "p99": round(self.p99, 2),
             },
             "performance": {
                 "improvement_factor": round(self.improvement_factor, 2),
                 "meets_target": self.meets_target,
-                "status": self.status.value
-            }
+                "status": self.status.value,
+            },
         }
 
 
@@ -174,10 +178,7 @@ class Week1MetricsCollector:
         self.test_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
     def register_operation(
-        self,
-        operation_name: str,
-        baseline_target_ms: float,
-        optimized_target_ms: float
+        self, operation_name: str, baseline_target_ms: float, optimized_target_ms: float
     ) -> None:
         """
         Register a new operation for tracking.
@@ -190,7 +191,7 @@ class Week1MetricsCollector:
         self.metrics[operation_name] = OperationMetric(
             operation_name=operation_name,
             baseline_target_ms=baseline_target_ms,
-            optimized_target_ms=optimized_target_ms
+            optimized_target_ms=optimized_target_ms,
         )
 
     def record_measurement(self, operation_name: str, duration_ms: float) -> None:
@@ -223,13 +224,16 @@ class Week1MetricsCollector:
         """
         total_operations = len(self.metrics)
         passing = sum(1 for m in self.metrics.values() if m.status == MetricStatus.PASS)
-        warning = sum(1 for m in self.metrics.values() if m.status == MetricStatus.WARNING)
+        warning = sum(
+            1 for m in self.metrics.values() if m.status == MetricStatus.WARNING
+        )
         failing = sum(1 for m in self.metrics.values() if m.status == MetricStatus.FAIL)
-        pending = sum(1 for m in self.metrics.values() if m.status == MetricStatus.PENDING)
+        pending = sum(
+            1 for m in self.metrics.values() if m.status == MetricStatus.PENDING
+        )
 
         operations_data = {
-            name: metric.to_dict()
-            for name, metric in self.metrics.items()
+            name: metric.to_dict() for name, metric in self.metrics.items()
         }
 
         return {
@@ -242,10 +246,12 @@ class Week1MetricsCollector:
                 "warning": warning,
                 "failing": failing,
                 "pending": pending,
-                "success_rate": round(passing / total_operations * 100, 2) if total_operations > 0 else 0.0,
-                "overall_success": failing == 0 and pending == 0
+                "success_rate": round(passing / total_operations * 100, 2)
+                if total_operations > 0
+                else 0.0,
+                "overall_success": failing == 0 and pending == 0,
             },
-            "operations": operations_data
+            "operations": operations_data,
         }
 
     def export_json(self, filename: str | None = None) -> Path:
@@ -264,7 +270,7 @@ class Week1MetricsCollector:
         filepath = self.output_dir / filename
         summary = self.generate_summary()
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(summary, f, indent=2)
 
         return filepath
@@ -284,45 +290,49 @@ class Week1MetricsCollector:
 
         filepath = self.output_dir / filename
 
-        with open(filepath, 'w', newline='') as f:
+        with open(filepath, "w", newline="") as f:
             writer = csv.writer(f)
 
             # Header
-            writer.writerow([
-                'Operation',
-                'Baseline Target (ms)',
-                'Optimized Target (ms)',
-                'Count',
-                'Average (ms)',
-                'Median (ms)',
-                'StdDev (ms)',
-                'Min (ms)',
-                'Max (ms)',
-                'P95 (ms)',
-                'P99 (ms)',
-                'Improvement Factor',
-                'Meets Target',
-                'Status'
-            ])
+            writer.writerow(
+                [
+                    "Operation",
+                    "Baseline Target (ms)",
+                    "Optimized Target (ms)",
+                    "Count",
+                    "Average (ms)",
+                    "Median (ms)",
+                    "StdDev (ms)",
+                    "Min (ms)",
+                    "Max (ms)",
+                    "P95 (ms)",
+                    "P99 (ms)",
+                    "Improvement Factor",
+                    "Meets Target",
+                    "Status",
+                ]
+            )
 
             # Data rows
             for metric in self.metrics.values():
-                writer.writerow([
-                    metric.operation_name,
-                    metric.baseline_target_ms,
-                    metric.optimized_target_ms,
-                    metric.count,
-                    round(metric.average, 2),
-                    round(metric.median, 2),
-                    round(metric.stdev, 2),
-                    round(metric.min, 2),
-                    round(metric.max, 2),
-                    round(metric.p95, 2),
-                    round(metric.p99, 2),
-                    round(metric.improvement_factor, 2),
-                    metric.meets_target,
-                    metric.status.value
-                ])
+                writer.writerow(
+                    [
+                        metric.operation_name,
+                        metric.baseline_target_ms,
+                        metric.optimized_target_ms,
+                        metric.count,
+                        round(metric.average, 2),
+                        round(metric.median, 2),
+                        round(metric.stdev, 2),
+                        round(metric.min, 2),
+                        round(metric.max, 2),
+                        round(metric.p95, 2),
+                        round(metric.p99, 2),
+                        round(metric.improvement_factor, 2),
+                        metric.meets_target,
+                        metric.status.value,
+                    ]
+                )
 
         return filepath
 
@@ -330,17 +340,17 @@ class Week1MetricsCollector:
         """Print formatted metrics report to console."""
         summary = self.generate_summary()
 
-        print("\n" + "="*100)
+        print("\n" + "=" * 100)
         print("WEEK 1 PERFORMANCE METRICS REPORT")
-        print("="*100)
+        print("=" * 100)
         print(f"Test ID: {summary['test_id']}")
         print(f"Timestamp: {summary['timestamp']}")
         print(f"Duration: {summary['duration_seconds']}s")
         print()
 
         print("SUMMARY:")
-        print("-"*100)
-        s = summary['summary']
+        print("-" * 100)
+        s = summary["summary"]
         print(f"  Total Operations: {s['total_operations']}")
         print(f"  Passing: {s['passing']} ✅")
         print(f"  Warning: {s['warning']} ⚠️")
@@ -351,21 +361,18 @@ class Week1MetricsCollector:
         print()
 
         print("OPERATION DETAILS:")
-        print("-"*100)
+        print("-" * 100)
 
-        for op_name, op_data in summary['operations'].items():
-            status_icon = {
-                'pass': '✅',
-                'warning': '⚠️',
-                'fail': '❌',
-                'pending': '⏳'
-            }[op_data['performance']['status']]
+        for op_name, op_data in summary["operations"].items():
+            status_icon = {"pass": "✅", "warning": "⚠️", "fail": "❌", "pending": "⏳"}[
+                op_data["performance"]["status"]
+            ]
 
             print(f"\n{status_icon} {op_name.upper().replace('_', ' ')}:")
             print(f"  Baseline Target: {op_data['baseline_target_ms']}ms")
             print(f"  Optimized Target: {op_data['optimized_target_ms']}ms")
 
-            stats = op_data['statistics']
+            stats = op_data["statistics"]
             print(f"  Measurements: {stats['count']}")
             print(f"  Average: {stats['average']}ms")
             print(f"  Median: {stats['median']}ms")
@@ -374,11 +381,11 @@ class Week1MetricsCollector:
             print(f"  P95: {stats['p95']}ms")
             print(f"  P99: {stats['p99']}ms")
 
-            perf = op_data['performance']
+            perf = op_data["performance"]
             print(f"  Improvement Factor: {perf['improvement_factor']}x")
             print(f"  Meets Target: {'✅ Yes' if perf['meets_target'] else '❌ No'}")
 
-        print("\n" + "="*100)
+        print("\n" + "=" * 100)
 
     def compare_with_baseline(self, baseline_file: Path) -> dict[str, Any]:
         """
@@ -400,7 +407,7 @@ class Week1MetricsCollector:
             "timestamp": datetime.now(UTC).isoformat(),
             "improvements": {},
             "regressions": {},
-            "summary": {}
+            "summary": {},
         }
 
         for op_name in self.metrics.keys():
@@ -408,7 +415,9 @@ class Week1MetricsCollector:
                 continue
 
             baseline_avg = baseline_data["operations"][op_name]["statistics"]["average"]
-            current_avg = current_summary["operations"][op_name]["statistics"]["average"]
+            current_avg = current_summary["operations"][op_name]["statistics"][
+                "average"
+            ]
 
             delta_ms = current_avg - baseline_avg
             delta_percent = (delta_ms / baseline_avg * 100) if baseline_avg > 0 else 0.0
@@ -417,7 +426,7 @@ class Week1MetricsCollector:
                 "baseline_avg_ms": baseline_avg,
                 "current_avg_ms": current_avg,
                 "delta_ms": round(delta_ms, 2),
-                "delta_percent": round(delta_percent, 2)
+                "delta_percent": round(delta_percent, 2),
             }
 
             if delta_percent < -5:  # 5% improvement threshold
@@ -428,7 +437,9 @@ class Week1MetricsCollector:
         comparison["summary"] = {
             "improvements_count": len(comparison["improvements"]),
             "regressions_count": len(comparison["regressions"]),
-            "stable_count": len(self.metrics) - len(comparison["improvements"]) - len(comparison["regressions"])
+            "stable_count": len(self.metrics)
+            - len(comparison["improvements"])
+            - len(comparison["regressions"]),
         }
 
         return comparison
@@ -445,6 +456,7 @@ if __name__ == "__main__":
 
     # Simulate measurements
     import random
+
     for _ in range(50):
         collector.record_measurement("task_creation", random.uniform(40, 60))
         collector.record_measurement("task_retrieval", random.uniform(25, 40))

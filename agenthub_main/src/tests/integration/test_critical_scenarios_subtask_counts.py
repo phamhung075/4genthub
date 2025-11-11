@@ -14,7 +14,6 @@ Reference: Task 51155169 - Phase 3 Investigation
 User reported: Badge counts incorrect, subtask_count/completed_subtasks missing or wrong
 """
 
-
 import pytest
 
 from fastmcp.task_management.application.dtos.subtask import (
@@ -36,6 +35,7 @@ def task_repository(shared_test_db, user_id):
     from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
         ORMTaskRepository,
     )
+
     return ORMTaskRepository(user_id=user_id)
 
 
@@ -45,6 +45,7 @@ def subtask_repository(shared_test_db, user_id):
     from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
         ORMSubtaskRepository,
     )
+
     return ORMSubtaskRepository(user_id=user_id)
 
 
@@ -54,6 +55,7 @@ def git_branch_repository(shared_test_db, user_id):
     from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
         ORMGitBranchRepository,
     )
+
     return ORMGitBranchRepository(user_id=user_id)
 
 
@@ -67,8 +69,7 @@ def create_task_use_case(task_repository):
 def add_subtask_use_case(task_repository, subtask_repository):
     """Create AddSubtaskUseCase with real repositories."""
     return AddSubtaskUseCase(
-        task_repository=task_repository,
-        subtask_repository=subtask_repository
+        task_repository=task_repository, subtask_repository=subtask_repository
     )
 
 
@@ -76,8 +77,7 @@ def add_subtask_use_case(task_repository, subtask_repository):
 def update_subtask_use_case(task_repository, subtask_repository):
     """Create UpdateSubtaskUseCase with real repositories."""
     return UpdateSubtaskUseCase(
-        task_repository=task_repository,
-        subtask_repository=subtask_repository
+        task_repository=task_repository, subtask_repository=subtask_repository
     )
 
 
@@ -85,8 +85,7 @@ def update_subtask_use_case(task_repository, subtask_repository):
 def get_task_use_case(task_repository, git_branch_repository):
     """Create GetTaskUseCase with real repositories."""
     return GetTaskUseCase(
-        task_repository=task_repository,
-        git_branch_repository=git_branch_repository
+        task_repository=task_repository, git_branch_repository=git_branch_repository
     )
 
 
@@ -113,13 +112,17 @@ class TestSubtaskCountAccuracy:
             assignees=["@test-orchestrator-agent"],
         )
         result = create_task_use_case.execute(request)
-        task = result.task if hasattr(result, 'task') else result
+        task = result.task if hasattr(result, "task") else result
 
         # CRITICAL: These fields must exist and be zero
-        assert hasattr(task, 'subtask_count'), "subtask_count field MUST exist"
-        assert hasattr(task, 'completed_subtasks'), "completed_subtasks field MUST exist"
+        assert hasattr(task, "subtask_count"), "subtask_count field MUST exist"
+        assert hasattr(task, "completed_subtasks"), (
+            "completed_subtasks field MUST exist"
+        )
         assert task.subtask_count == 0, f"Expected 0 subtasks, got {task.subtask_count}"
-        assert task.completed_subtasks == 0, f"Expected 0 completed, got {task.completed_subtasks}"
+        assert task.completed_subtasks == 0, (
+            f"Expected 0 completed, got {task.completed_subtasks}"
+        )
         assert isinstance(task.subtasks, list), "subtasks must be list (not None)"
         assert len(task.subtasks) == 0, "subtasks array should be empty"
 
@@ -145,7 +148,9 @@ class TestSubtaskCountAccuracy:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add exactly 5 subtasks
@@ -153,19 +158,28 @@ class TestSubtaskCountAccuracy:
         for i in range(5):
             subtask_request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
-                description=f"Testing subtask {i+1}",
+                title=f"Subtask {i + 1}",
+                description=f"Testing subtask {i + 1}",
                 user_id=user_id,
             )
             subtask_result = add_subtask_use_case.execute(subtask_request)
-            subtask = subtask_result.subtask if hasattr(subtask_result, 'subtask') else subtask_result
+            subtask = (
+                subtask_result.subtask
+                if hasattr(subtask_result, "subtask")
+                else subtask_result
+            )
             subtask_ids.append(subtask.id)
 
         # Retrieve parent task with fresh data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         fresh_task_result = get_task_use_case.execute(get_request)
-        fresh_task = fresh_task_result.task if hasattr(fresh_task_result, 'task') else fresh_task_result
+        fresh_task = (
+            fresh_task_result.task
+            if hasattr(fresh_task_result, "task")
+            else fresh_task_result
+        )
 
         # CRITICAL CHECKS
         assert fresh_task.subtask_count == 5, (
@@ -207,7 +221,9 @@ class TestSubtaskCountAccuracy:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 5 subtasks
@@ -215,12 +231,12 @@ class TestSubtaskCountAccuracy:
         for i in range(5):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
+                title=f"Subtask {i + 1}",
                 description="Will delete some",
                 user_id=user_id,
             )
             result = add_subtask_use_case.execute(request)
-            subtask = result.subtask if hasattr(result, 'subtask') else result
+            subtask = result.subtask if hasattr(result, "subtask") else result
             subtask_ids.append(subtask.id)
 
         # Delete 2 subtasks
@@ -229,9 +245,12 @@ class TestSubtaskCountAccuracy:
 
         # Get fresh task data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         fresh_result = get_task_use_case.execute(get_request)
-        fresh_task = fresh_result.task if hasattr(fresh_result, 'task') else fresh_result
+        fresh_task = (
+            fresh_result.task if hasattr(fresh_result, "task") else fresh_result
+        )
 
         # CRITICAL: Count should be 3 (5 - 2 deleted)
         assert fresh_task.subtask_count == 3, (
@@ -264,7 +283,9 @@ class TestSubtaskCountAccuracy:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 5 subtasks
@@ -272,12 +293,12 @@ class TestSubtaskCountAccuracy:
         for i in range(5):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
+                title=f"Subtask {i + 1}",
                 description="Will complete some",
                 user_id=user_id,
             )
             result = add_subtask_use_case.execute(request)
-            subtask = result.subtask if hasattr(result, 'subtask') else result
+            subtask = result.subtask if hasattr(result, "subtask") else result
             subtask_ids.append(subtask.id)
 
         # Complete 2 subtasks
@@ -292,9 +313,12 @@ class TestSubtaskCountAccuracy:
 
         # Get fresh task data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         fresh_result = get_task_use_case.execute(get_request)
-        fresh_task = fresh_result.task if hasattr(fresh_result, 'task') else fresh_result
+        fresh_task = (
+            fresh_result.task if hasattr(fresh_result, "task") else fresh_result
+        )
 
         # CRITICAL CHECKS
         assert fresh_task.subtask_count == 5, (
@@ -333,7 +357,9 @@ class TestSubtaskCountAccuracy:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 3 subtasks
@@ -341,12 +367,12 @@ class TestSubtaskCountAccuracy:
         for i in range(3):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
+                title=f"Subtask {i + 1}",
                 description="Will complete all",
                 user_id=user_id,
             )
             result = add_subtask_use_case.execute(request)
-            subtask = result.subtask if hasattr(result, 'subtask') else result
+            subtask = result.subtask if hasattr(result, "subtask") else result
             subtask_ids.append(subtask.id)
 
         # Complete ALL subtasks
@@ -361,9 +387,12 @@ class TestSubtaskCountAccuracy:
 
         # Get fresh task data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         fresh_result = get_task_use_case.execute(get_request)
-        fresh_task = fresh_result.task if hasattr(fresh_result, 'task') else fresh_result
+        fresh_task = (
+            fresh_result.task if hasattr(fresh_result, "task") else fresh_result
+        )
 
         # CRITICAL: Should show 100% completion
         assert fresh_task.subtask_count == 3
@@ -398,7 +427,9 @@ class TestSubtaskCountAccuracy:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 5 subtasks with different statuses
@@ -409,12 +440,12 @@ class TestSubtaskCountAccuracy:
             # Add subtask
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1} - {status}",
+                title=f"Subtask {i + 1} - {status}",
                 description=f"Testing status {status}",
                 user_id=user_id,
             )
             result = add_subtask_use_case.execute(request)
-            subtask = result.subtask if hasattr(result, 'subtask') else result
+            subtask = result.subtask if hasattr(result, "subtask") else result
             subtask_ids.append(subtask.id)
 
             # Set status
@@ -429,9 +460,12 @@ class TestSubtaskCountAccuracy:
 
         # Get fresh task data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         fresh_result = get_task_use_case.execute(get_request)
-        fresh_task = fresh_result.task if hasattr(fresh_result, 'task') else fresh_result
+        fresh_task = (
+            fresh_result.task if hasattr(fresh_result, "task") else fresh_result
+        )
 
         # CRITICAL: Only 'done' status should count (2 out of 5)
         assert fresh_task.subtask_count == 5
@@ -466,14 +500,16 @@ class TestSubtaskCountEdgeCases:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Rapidly add 10 subtasks
         for i in range(10):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Rapid subtask {i+1}",
+                title=f"Rapid subtask {i + 1}",
                 description="Testing rapid addition",
                 user_id=user_id,
             )
@@ -481,9 +517,10 @@ class TestSubtaskCountEdgeCases:
 
         # Verify count
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         result = get_task_use_case.execute(get_request)
-        task = result.task if hasattr(result, 'task') else result
+        task = result.task if hasattr(result, "task") else result
 
         assert task.subtask_count == 10, (
             f"After rapid addition of 10 subtasks, count should be 10, got {task.subtask_count}"
@@ -511,13 +548,15 @@ class TestSubtaskCountEdgeCases:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         for i in range(3):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
+                title=f"Subtask {i + 1}",
                 description="Testing persistence",
                 user_id=user_id,
             )
@@ -525,11 +564,12 @@ class TestSubtaskCountEdgeCases:
 
         # Retrieve 5 times and verify consistency
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         counts = []
         for _ in range(5):
             get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
             result = get_task_use_case.execute(get_request)
-            task = result.task if hasattr(result, 'task') else result
+            task = result.task if hasattr(result, "task") else result
             counts.append((task.subtask_count, task.completed_subtasks))
 
         # All retrievals should return same counts

@@ -20,6 +20,7 @@ from fastmcp.utilities.id_validator import (
 @dataclass
 class SimulatedTask:
     """Simulated task for testing scenarios."""
+
     id: str
     git_branch_id: str
     project_id: str
@@ -29,6 +30,7 @@ class SimulatedTask:
 @dataclass
 class SimulatedSubtask:
     """Simulated subtask for testing scenarios."""
+
     id: str
     parent_task_id: str
     title: str
@@ -53,7 +55,7 @@ class TestIDConfusionScenarios:
             id=self.app_task_id,
             git_branch_id=self.git_branch_id,
             project_id=self.project_id,
-            title="Test Task"
+            title="Test Task",
         )
 
     def test_subtask_controller_line_270_bug_scenario(self):
@@ -61,9 +63,12 @@ class TestIDConfusionScenarios:
         Test the exact scenario that caused the bug in subtask_mcp_controller.py:270
         where task_id was incorrectly passed as git_branch_id to facade service.
         """
+
         # Simulate the bug scenario
         class BuggyControllerBehavior:
-            def __init__(self, validator: IDValidator, app_task_id: str, git_branch_id: str):
+            def __init__(
+                self, validator: IDValidator, app_task_id: str, git_branch_id: str
+            ):
                 self.validator = validator
                 self.app_task_id = app_task_id
                 self.git_branch_id = git_branch_id
@@ -74,7 +79,7 @@ class TestIDConfusionScenarios:
                 return self.validator.validate_parameter_mapping(
                     task_id=task_id,
                     git_branch_id=task_id,  # BUG: Should be actual git_branch_id
-                    user_id=user_id
+                    user_id=user_id,
                 )
 
             def get_facade_for_request_fixed(self, task_id: str, user_id: str):
@@ -84,9 +89,7 @@ class TestIDConfusionScenarios:
                 git_branch_id = self.lookup_git_branch_id_for_task(task_id)
 
                 return self.validator.validate_parameter_mapping(
-                    task_id=task_id,
-                    git_branch_id=git_branch_id,
-                    user_id=user_id
+                    task_id=task_id, git_branch_id=git_branch_id, user_id=user_id
                 )
 
             def lookup_git_branch_id_for_task(self, task_id: str) -> str:
@@ -96,23 +99,25 @@ class TestIDConfusionScenarios:
                     return self.git_branch_id
                 raise ValueError(f"Task {task_id} not found")
 
-        controller = BuggyControllerBehavior(self.validator, self.app_task_id, self.git_branch_id)
+        controller = BuggyControllerBehavior(
+            self.validator, self.app_task_id, self.git_branch_id
+        )
 
         # Test buggy behavior - should detect the critical error
         buggy_result = controller.get_facade_for_request_buggy(
-            task_id=self.app_task_id,
-            user_id=self.user_id
+            task_id=self.app_task_id, user_id=self.user_id
         )
 
         # The validator should detect this as a warning (same ID used for different purposes)
         assert buggy_result.warnings is not None
-        assert any("Same ID value used for multiple parameters" in warning
-                  for warning in buggy_result.warnings)
+        assert any(
+            "Same ID value used for multiple parameters" in warning
+            for warning in buggy_result.warnings
+        )
 
         # Test fixed behavior - should be valid
         fixed_result = controller.get_facade_for_request_fixed(
-            task_id=self.app_task_id,
-            user_id=self.user_id
+            task_id=self.app_task_id, user_id=self.user_id
         )
 
         assert fixed_result.is_valid is True
@@ -133,18 +138,20 @@ class TestIDConfusionScenarios:
                 self.mcp_tasks[mcp_id] = {"title": title, "type": "mcp"}
                 return mcp_id
 
-            def create_app_task_from_mcp(self, mcp_task_id: str, git_branch_id: str) -> str:
+            def create_app_task_from_mcp(
+                self, mcp_task_id: str, git_branch_id: str
+            ) -> str:
                 """Create an application task from MCP task (correct flow)."""
                 # Validate that we're not confusing IDs
                 result = self.validator.validate_parameter_mapping(
                     task_id=mcp_task_id,  # This is actually MCP ID at this point
-                    git_branch_id=git_branch_id
+                    git_branch_id=git_branch_id,
                 )
 
                 if not result.is_valid:
                     raise IDValidationError(
                         message=f"MCP task ID validation failed: {result.error_message}",
-                        id_value=mcp_task_id
+                        id_value=mcp_task_id,
                     )
 
                 # Create proper application task
@@ -153,7 +160,7 @@ class TestIDConfusionScenarios:
                     "id": app_task_id,
                     "git_branch_id": git_branch_id,
                     "mcp_source": mcp_task_id,
-                    "type": "application"
+                    "type": "application",
                 }
                 return app_task_id
 
@@ -198,31 +205,33 @@ class TestIDConfusionScenarios:
             def __init__(self, validator: IDValidator):
                 self.validator = validator
 
-            def create_subtask_with_validation(self, parent_task_id: str, git_branch_id: str) -> str:
+            def create_subtask_with_validation(
+                self, parent_task_id: str, git_branch_id: str
+            ) -> str:
                 """Create subtask with proper ID validation."""
                 # Validate parent task context
                 context_result = self.validator.validate_task_context(
-                    task_id=parent_task_id,
-                    expected_git_branch_id=git_branch_id
+                    task_id=parent_task_id, expected_git_branch_id=git_branch_id
                 )
 
                 if not context_result.is_valid:
                     raise IDValidationError(
                         message=f"Task context validation failed: {context_result.error_message}",
-                        id_value=parent_task_id
+                        id_value=parent_task_id,
                     )
 
                 # Validate parameter mapping for subtask creation
                 subtask_id = str(uuid4())
                 mapping_result = self.validator.validate_parameter_mapping(
-                    task_id=parent_task_id,
-                    git_branch_id=git_branch_id
+                    task_id=parent_task_id, git_branch_id=git_branch_id
                 )
 
                 if not mapping_result.is_valid:
                     raise IDValidationError(
                         message=f"Parameter mapping validation failed: {mapping_result.error_message}",
-                        id_value=str({"task_id": parent_task_id, "git_branch_id": git_branch_id})
+                        id_value=str(
+                            {"task_id": parent_task_id, "git_branch_id": git_branch_id}
+                        ),
                     )
 
                 return subtask_id
@@ -236,8 +245,7 @@ class TestIDConfusionScenarios:
 
         # Test correct creation with validation
         subtask_id = system.create_subtask_with_validation(
-            parent_task_id=self.app_task_id,
-            git_branch_id=self.git_branch_id
+            parent_task_id=self.app_task_id, git_branch_id=self.git_branch_id
         )
         assert subtask_id is not None
 
@@ -245,7 +253,7 @@ class TestIDConfusionScenarios:
         with pytest.raises(IDValidationError, match="identical"):
             system.create_subtask_with_validation(
                 parent_task_id=self.app_task_id,
-                git_branch_id=self.app_task_id  # BUG: Same ID used
+                git_branch_id=self.app_task_id,  # BUG: Same ID used
             )
 
     def test_real_world_api_endpoint_behavior(self):
@@ -259,14 +267,13 @@ class TestIDConfusionScenarios:
                 """Simulate GET /api/v2/tasks/{task_id}/subtasks/{subtask_id}"""
                 # Validate all IDs before processing
                 validation_result = self.validator.validate_parameter_mapping(
-                    task_id=task_id,
-                    user_id=user_id
+                    task_id=task_id, user_id=user_id
                 )
 
                 if not validation_result.is_valid:
                     raise IDValidationError(
                         message=f"API parameter validation failed: {validation_result.error_message}",
-                        id_value=str({"task_id": task_id, "subtask_id": subtask_id})
+                        id_value=str({"task_id": task_id, "subtask_id": subtask_id}),
                     )
 
                 # Validate subtask ID format
@@ -274,28 +281,29 @@ class TestIDConfusionScenarios:
                 if not subtask_result.is_valid:
                     raise IDValidationError(
                         message=f"Invalid subtask ID: {subtask_result.error_message}",
-                        id_value=subtask_id
+                        id_value=subtask_id,
                     )
 
                 # Simulate successful retrieval
                 return {
                     "id": subtask_id,
                     "parent_task_id": task_id,
-                    "title": "Test Subtask"
+                    "title": "Test Subtask",
                 }
 
-            def create_subtask(self, task_id: str, subtask_data: dict, user_id: str) -> dict:
+            def create_subtask(
+                self, task_id: str, subtask_data: dict, user_id: str
+            ) -> dict:
                 """Simulate POST /api/v2/tasks/{task_id}/subtasks"""
                 # Validate parent task exists and user has access
                 validation_result = self.validator.validate_parameter_mapping(
-                    task_id=task_id,
-                    user_id=user_id
+                    task_id=task_id, user_id=user_id
                 )
 
                 if not validation_result.is_valid:
                     raise IDValidationError(
                         message=f"Parent task validation failed: {validation_result.error_message}",
-                        id_value=task_id
+                        id_value=task_id,
                     )
 
                 # Create subtask with proper parent relationship
@@ -304,7 +312,7 @@ class TestIDConfusionScenarios:
                     "id": subtask_id,
                     "parent_task_id": task_id,  # CRITICAL: Correct parent reference
                     "title": subtask_data.get("title", "New Subtask"),
-                    "status": "todo"
+                    "status": "todo",
                 }
 
         api = SubtaskAPIEndpoint(self.validator)
@@ -313,7 +321,7 @@ class TestIDConfusionScenarios:
         subtask = api.create_subtask(
             task_id=self.app_task_id,
             subtask_data={"title": "Test Subtask"},
-            user_id=self.user_id
+            user_id=self.user_id,
         )
 
         assert subtask["parent_task_id"] == self.app_task_id
@@ -321,9 +329,7 @@ class TestIDConfusionScenarios:
 
         # Test successful subtask retrieval
         retrieved = api.get_subtask(
-            task_id=self.app_task_id,
-            subtask_id=subtask["id"],
-            user_id=self.user_id
+            task_id=self.app_task_id, subtask_id=subtask["id"], user_id=self.user_id
         )
 
         assert retrieved["parent_task_id"] == self.app_task_id
@@ -331,9 +337,7 @@ class TestIDConfusionScenarios:
         # Test with invalid IDs
         with pytest.raises(IDValidationError):
             api.get_subtask(
-                task_id="invalid-uuid",
-                subtask_id=subtask["id"],
-                user_id=self.user_id
+                task_id="invalid-uuid", subtask_id=subtask["id"], user_id=self.user_id
             )
 
     def test_database_layer_id_consistency(self):
@@ -352,20 +356,19 @@ class TestIDConfusionScenarios:
 
                 # Validate before database insertion
                 result = self.validator.validate_parameter_mapping(
-                    task_id=task_id,
-                    git_branch_id=git_branch_id
+                    task_id=task_id, git_branch_id=git_branch_id
                 )
 
                 if not result.is_valid:
                     raise IDValidationError(
                         message=f"Database validation failed: {result.error_message}",
-                        id_value=str(task_data)
+                        id_value=str(task_data),
                     )
 
                 self.tasks[task_id] = {
                     "id": task_id,
                     "git_branch_id": git_branch_id,
-                    "title": task_data["title"]
+                    "title": task_data["title"],
                 }
                 return task_id
 
@@ -383,19 +386,19 @@ class TestIDConfusionScenarios:
                 # Validate that subtask parent relationship is correct
                 context_result = self.validator.validate_task_context(
                     task_id=parent_task_id,
-                    expected_git_branch_id=parent_task["git_branch_id"]
+                    expected_git_branch_id=parent_task["git_branch_id"],
                 )
 
                 if not context_result.is_valid:
                     raise IDValidationError(
                         message=f"Subtask parent validation failed: {context_result.error_message}",
-                        id_value=parent_task_id
+                        id_value=parent_task_id,
                     )
 
                 self.subtasks[subtask_id] = {
                     "id": subtask_id,
                     "parent_task_id": parent_task_id,
-                    "title": subtask_data["title"]
+                    "title": subtask_data["title"],
                 }
                 return subtask_id
 
@@ -406,28 +409,22 @@ class TestIDConfusionScenarios:
                     raise ValueError(f"Task {task_id} not found")
 
                 return [
-                    subtask for subtask in self.subtasks.values()
+                    subtask
+                    for subtask in self.subtasks.values()
                     if subtask["parent_task_id"] == task_id
                 ]
 
         db = DatabaseLayer(self.validator)
 
         # Insert parent task
-        task_id = db.insert_task({
-            "git_branch_id": self.git_branch_id,
-            "title": "Parent Task"
-        })
+        task_id = db.insert_task(
+            {"git_branch_id": self.git_branch_id, "title": "Parent Task"}
+        )
 
         # Insert subtasks
-        db.insert_subtask({
-            "parent_task_id": task_id,
-            "title": "Subtask 1"
-        })
+        db.insert_subtask({"parent_task_id": task_id, "title": "Subtask 1"})
 
-        db.insert_subtask({
-            "parent_task_id": task_id,
-            "title": "Subtask 2"
-        })
+        db.insert_subtask({"parent_task_id": task_id, "title": "Subtask 2"})
 
         # Verify relationships
         subtasks = db.get_subtasks_for_task(task_id)
@@ -436,10 +433,12 @@ class TestIDConfusionScenarios:
 
         # Test invalid parent reference (should fail)
         with pytest.raises(ValueError, match="not found"):
-            db.insert_subtask({
-                "parent_task_id": str(uuid4()),  # Non-existent parent
-                "title": "Orphan Subtask"
-            })
+            db.insert_subtask(
+                {
+                    "parent_task_id": str(uuid4()),  # Non-existent parent
+                    "title": "Orphan Subtask",
+                }
+            )
 
     def test_cross_session_id_consistency(self):
         """Test ID consistency across different user sessions."""
@@ -455,7 +454,7 @@ class TestIDConfusionScenarios:
                 self.sessions[session_id] = {
                     "user_id": user_id,
                     "created_tasks": [],
-                    "accessed_tasks": []
+                    "accessed_tasks": [],
                 }
                 return session_id
 
@@ -469,8 +468,7 @@ class TestIDConfusionScenarios:
 
                 # Validate session access
                 result = self.validator.validate_parameter_mapping(
-                    task_id=task_id,
-                    user_id=user_id
+                    task_id=task_id, user_id=user_id
                 )
 
                 if result.is_valid:
@@ -478,7 +476,9 @@ class TestIDConfusionScenarios:
                     return True
                 return False
 
-            def create_task_in_session(self, session_id: str, git_branch_id: str) -> str:
+            def create_task_in_session(
+                self, session_id: str, git_branch_id: str
+            ) -> str:
                 """Create a task within a session."""
                 session = self.sessions[session_id]
                 user_id = session["user_id"]
@@ -486,15 +486,13 @@ class TestIDConfusionScenarios:
 
                 # Validate task creation
                 result = self.validator.validate_parameter_mapping(
-                    task_id=task_id,
-                    git_branch_id=git_branch_id,
-                    user_id=user_id
+                    task_id=task_id, git_branch_id=git_branch_id, user_id=user_id
                 )
 
                 if not result.is_valid:
                     raise IDValidationError(
                         message=f"Session task creation failed: {result.error_message}",
-                        id_value=str({"session": session_id, "task": task_id})
+                        id_value=str({"session": session_id, "task": task_id}),
                     )
 
                 session["created_tasks"].append(task_id)
@@ -539,36 +537,50 @@ class TestComplexValidationFlows:
                 self.validator = validator
                 self.validation_history = []
 
-            def validate_step1_format(self, id_value: str, context: str) -> ValidationResult:
+            def validate_step1_format(
+                self, id_value: str, context: str
+            ) -> ValidationResult:
                 """Step 1: Format validation."""
                 result = self.validator.validate_uuid_format(id_value)
                 self.validation_history.append(("format", context, result.is_valid))
                 return result
 
-            def validate_step2_type(self, id_value: str, context: str) -> ValidationResult:
+            def validate_step2_type(
+                self, id_value: str, context: str
+            ) -> ValidationResult:
                 """Step 2: Type detection."""
                 result = self.validator.detect_id_type(id_value, context)
                 self.validation_history.append(("type", context, result.is_valid))
                 return result
 
-            def validate_step3_context(self, task_id: str, git_branch_id: str) -> ValidationResult:
+            def validate_step3_context(
+                self, task_id: str, git_branch_id: str
+            ) -> ValidationResult:
                 """Step 3: Context validation."""
                 result = self.validator.validate_task_context(task_id, git_branch_id)
-                self.validation_history.append(("context", f"{task_id}:{git_branch_id}", result.is_valid))
+                self.validation_history.append(
+                    ("context", f"{task_id}:{git_branch_id}", result.is_valid)
+                )
                 return result
 
             def validate_step4_mapping(self, **params) -> ValidationResult:
                 """Step 4: Parameter mapping validation."""
                 result = self.validator.validate_parameter_mapping(**params)
-                self.validation_history.append(("mapping", str(params), result.is_valid))
+                self.validation_history.append(
+                    ("mapping", str(params), result.is_valid)
+                )
                 return result
 
-            def run_full_pipeline(self, task_id: str, git_branch_id: str, user_id: str) -> bool:
+            def run_full_pipeline(
+                self, task_id: str, git_branch_id: str, user_id: str
+            ) -> bool:
                 """Run the complete validation pipeline."""
                 # Step 1: Format validation
                 if not self.validate_step1_format(task_id, "task_id").is_valid:
                     return False
-                if not self.validate_step1_format(git_branch_id, "git_branch_id").is_valid:
+                if not self.validate_step1_format(
+                    git_branch_id, "git_branch_id"
+                ).is_valid:
                     return False
                 if not self.validate_step1_format(user_id, "user_id").is_valid:
                     return False
@@ -576,7 +588,9 @@ class TestComplexValidationFlows:
                 # Step 2: Type detection
                 if not self.validate_step2_type(task_id, "task_id").is_valid:
                     return False
-                if not self.validate_step2_type(git_branch_id, "git_branch_id").is_valid:
+                if not self.validate_step2_type(
+                    git_branch_id, "git_branch_id"
+                ).is_valid:
                     return False
 
                 # Step 3: Context validation
@@ -585,9 +599,7 @@ class TestComplexValidationFlows:
 
                 # Step 4: Parameter mapping
                 if not self.validate_step4_mapping(
-                    task_id=task_id,
-                    git_branch_id=git_branch_id,
-                    user_id=user_id
+                    task_id=task_id, git_branch_id=git_branch_id, user_id=user_id
                 ).is_valid:
                     return False
 
@@ -604,7 +616,9 @@ class TestComplexValidationFlows:
         assert success is True
 
         # Verify all steps were executed
-        assert len(pipeline.validation_history) == 7  # 3 format + 2 type + 1 context + 1 mapping
+        assert (
+            len(pipeline.validation_history) == 7
+        )  # 3 format + 2 type + 1 context + 1 mapping
 
         # Test failed pipeline (invalid UUID in step 1)
         pipeline_fail = ValidationPipeline(self.validator)
@@ -621,7 +635,9 @@ class TestComplexValidationFlows:
             def __init__(self, validator: IDValidator):
                 self.validator = validator
 
-            def validate_based_on_operation(self, operation: str, **params) -> ValidationResult:
+            def validate_based_on_operation(
+                self, operation: str, **params
+            ) -> ValidationResult:
                 """Validate based on operation type."""
                 if operation == "create_task":
                     return self._validate_task_creation(**params)
@@ -641,7 +657,7 @@ class TestComplexValidationFlows:
                             is_valid=False,
                             id_type=IDType.UNKNOWN,
                             original_value=str(params),
-                            error_message=f"Missing required parameter: {param}"
+                            error_message=f"Missing required parameter: {param}",
                         )
 
                 return self.validator.validate_parameter_mapping(**params)
@@ -655,7 +671,7 @@ class TestComplexValidationFlows:
                             is_valid=False,
                             id_type=IDType.UNKNOWN,
                             original_value=str(params),
-                            error_message=f"Missing required parameter: {param}"
+                            error_message=f"Missing required parameter: {param}",
                         )
 
                 # Additional validation for subtask
@@ -673,7 +689,7 @@ class TestComplexValidationFlows:
                         is_valid=False,
                         id_type=IDType.UNKNOWN,
                         original_value=str(params),
-                        error_message="task_id required for update"
+                        error_message="task_id required for update",
                     )
 
                 return self.validator.validate_parameter_mapping(**params)
@@ -682,25 +698,19 @@ class TestComplexValidationFlows:
 
         # Test task creation
         task_create_result = conditional.validate_based_on_operation(
-            "create_task",
-            git_branch_id=str(uuid4()),
-            user_id=str(uuid4())
+            "create_task", git_branch_id=str(uuid4()), user_id=str(uuid4())
         )
         assert task_create_result.is_valid is True
 
         # Test subtask creation
         subtask_create_result = conditional.validate_based_on_operation(
-            "create_subtask",
-            task_id=str(uuid4()),
-            user_id=str(uuid4())
+            "create_subtask", task_id=str(uuid4()), user_id=str(uuid4())
         )
         assert subtask_create_result.is_valid is True
 
         # Test task update
         task_update_result = conditional.validate_based_on_operation(
-            "update_task",
-            task_id=str(uuid4()),
-            user_id=str(uuid4())
+            "update_task", task_id=str(uuid4()), user_id=str(uuid4())
         )
         assert task_update_result.is_valid is True
 
@@ -710,9 +720,7 @@ class TestComplexValidationFlows:
 
         # Test validation failure
         fail_result = conditional.validate_based_on_operation(
-            "create_task",
-            git_branch_id="invalid",
-            user_id=str(uuid4())
+            "create_task", git_branch_id="invalid", user_id=str(uuid4())
         )
         assert fail_result.is_valid is False
 

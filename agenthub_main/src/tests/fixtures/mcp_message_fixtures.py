@@ -36,7 +36,7 @@ class MCPMessageFixtures:
     def get_task_create_request(
         title: str = "Test Task",
         assignees: str = "coding-agent",
-        git_branch_id: str | None = None
+        git_branch_id: str | None = None,
     ) -> dict[str, Any]:
         """Generate a valid task creation request."""
         return {
@@ -48,7 +48,7 @@ class MCPMessageFixtures:
             "details": "Detailed implementation notes",
             "priority": "high",
             "estimated_effort": "2 hours",
-            "labels": ["testing", "infrastructure"]
+            "labels": ["testing", "infrastructure"],
         }
 
     @staticmethod
@@ -72,15 +72,15 @@ class MCPMessageFixtures:
                     "labels": ["testing", "infrastructure"],
                     "created_at": now,
                     "updated_at": now,
-                    "progress_percentage": 0
+                    "progress_percentage": 0,
                 }
             },
             "meta": {
                 "persisted": True,
                 "id": str(uuid.uuid4()),
                 "timestamp": now,
-                "operation": "create"
-            }
+                "operation": "create",
+            },
         }
 
     @staticmethod
@@ -91,7 +91,7 @@ class MCPMessageFixtures:
             "task_id": task_id or str(uuid.uuid4()),
             "status": "in_progress",
             "progress_percentage": 50,
-            "details": "Updated progress notes"
+            "details": "Updated progress notes",
         }
 
     @staticmethod
@@ -101,7 +101,7 @@ class MCPMessageFixtures:
             "action": "complete",
             "task_id": task_id or str(uuid.uuid4()),
             "completion_summary": "Task completed successfully",
-            "testing_notes": "All tests passing"
+            "testing_notes": "All tests passing",
         }
 
     @staticmethod
@@ -111,7 +111,7 @@ class MCPMessageFixtures:
             "action": "list",
             "git_branch_id": git_branch_id or str(uuid.uuid4()),
             "status": "in_progress",
-            "limit": 50
+            "limit": 50,
         }
 
     # =========================================================================
@@ -120,8 +120,7 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_subtask_create_request(
-        task_id: str | None = None,
-        title: str = "Test Subtask"
+        task_id: str | None = None, title: str = "Test Subtask"
     ) -> dict[str, Any]:
         """Generate a valid subtask creation request."""
         return {
@@ -130,13 +129,12 @@ class MCPMessageFixtures:
             "title": title,
             "description": "Subtask description",
             "priority": "medium",
-            "progress_notes": "Initial setup"
+            "progress_notes": "Initial setup",
         }
 
     @staticmethod
     def get_subtask_update_request(
-        task_id: str | None = None,
-        subtask_id: str | None = None
+        task_id: str | None = None, subtask_id: str | None = None
     ) -> dict[str, Any]:
         """Generate a valid subtask update request."""
         return {
@@ -144,7 +142,7 @@ class MCPMessageFixtures:
             "task_id": task_id or str(uuid.uuid4()),
             "subtask_id": subtask_id or str(uuid.uuid4()),
             "progress_percentage": 75,
-            "progress_notes": "Nearly complete"
+            "progress_notes": "Nearly complete",
         }
 
     # =========================================================================
@@ -153,49 +151,47 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_context_create_request(
-        level: str = "task",
-        context_id: str | None = None
+        level: str = "task", context_id: str | None = None
     ) -> dict[str, Any]:
         """Generate a valid context creation request."""
         return {
             "action": "create",
             "level": level,
             "context_id": context_id or str(uuid.uuid4()),
-            "data": json.dumps({
-                "metadata": {"version": 1},
-                "objective": {"title": "Test Objective"},
-                "progress": {"completion_percentage": 0}
-            })
+            "data": json.dumps(
+                {
+                    "metadata": {"version": 1},
+                    "objective": {"title": "Test Objective"},
+                    "progress": {"completion_percentage": 0},
+                }
+            ),
         }
 
     @staticmethod
     def get_context_get_request(
         level: str = "task",
         context_id: str | None = None,
-        include_inherited: bool = False
+        include_inherited: bool = False,
     ) -> dict[str, Any]:
         """Generate a valid context get request."""
         return {
             "action": "get",
             "level": level,
             "context_id": context_id or str(uuid.uuid4()),
-            "include_inherited": "true" if include_inherited else "false"
+            "include_inherited": "true" if include_inherited else "false",
         }
 
     @staticmethod
     def get_context_update_request(
-        level: str = "task",
-        context_id: str | None = None
+        level: str = "task", context_id: str | None = None
     ) -> dict[str, Any]:
         """Generate a valid context update request."""
         return {
             "action": "update",
             "level": level,
             "context_id": context_id or str(uuid.uuid4()),
-            "data": json.dumps({
-                "progress": {"completion_percentage": 50}
-            }),
-            "propagate_changes": "true"
+            "data": json.dumps({"progress": {"completion_percentage": 50}}),
+            "propagate_changes": "true",
         }
 
     # =========================================================================
@@ -208,23 +204,18 @@ class MCPMessageFixtures:
         return {
             "action": "create",
             "name": name,
-            "description": "Test project description"
+            "description": "Test project description",
         }
 
     @staticmethod
     def get_project_get_request(project_id: str | None = None) -> dict[str, Any]:
         """Generate a valid project get request."""
-        return {
-            "action": "get",
-            "project_id": project_id or str(uuid.uuid4())
-        }
+        return {"action": "get", "project_id": project_id or str(uuid.uuid4())}
 
     @staticmethod
     def get_project_list_request() -> dict[str, Any]:
         """Generate a valid project list request."""
-        return {
-            "action": "list"
-        }
+        return {"action": "list"}
 
     # =========================================================================
     # GIT BRANCH MANAGEMENT FIXTURES
@@ -232,24 +223,20 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_branch_create_request(
-        project_id: str | None = None,
-        name: str = "feature/test"
+        project_id: str | None = None, name: str = "feature/test"
     ) -> dict[str, Any]:
         """Generate a valid branch creation request."""
         return {
             "action": "create",
             "project_id": project_id or str(uuid.uuid4()),
             "git_branch_name": name,
-            "git_branch_description": "Test branch description"
+            "git_branch_description": "Test branch description",
         }
 
     @staticmethod
     def get_branch_list_request(project_id: str | None = None) -> dict[str, Any]:
         """Generate a valid branch list request."""
-        return {
-            "action": "list",
-            "project_id": project_id or str(uuid.uuid4())
-        }
+        return {"action": "list", "project_id": project_id or str(uuid.uuid4())}
 
     # =========================================================================
     # AGENT MANAGEMENT FIXTURES
@@ -257,29 +244,28 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_agent_register_request(
-        project_id: str | None = None,
-        name: str = "test-agent"
+        project_id: str | None = None, name: str = "test-agent"
     ) -> dict[str, Any]:
         """Generate a valid agent registration request."""
         return {
             "action": "register",
             "project_id": project_id or str(uuid.uuid4()),
             "name": name,
-            "agent_id": f"{name}-{uuid.uuid4()}"
+            "agent_id": f"{name}-{uuid.uuid4()}",
         }
 
     @staticmethod
     def get_agent_assign_request(
         project_id: str | None = None,
         agent_id: str | None = None,
-        git_branch_id: str | None = None
+        git_branch_id: str | None = None,
     ) -> dict[str, Any]:
         """Generate a valid agent assignment request."""
         return {
             "action": "assign",
             "project_id": project_id or str(uuid.uuid4()),
             "agent_id": agent_id or f"agent-{uuid.uuid4()}",
-            "git_branch_id": git_branch_id or str(uuid.uuid4())
+            "git_branch_id": git_branch_id or str(uuid.uuid4()),
         }
 
     # =========================================================================
@@ -304,16 +290,10 @@ class MCPMessageFixtures:
             Invalid request dictionary
         """
         if error_type == "missing_action":
-            return {
-                "title": "Task without action",
-                "assignees": "coding-agent"
-            }
+            return {"title": "Task without action", "assignees": "coding-agent"}
 
         elif error_type == "invalid_action":
-            return {
-                "action": "nonexistent_action",
-                "task_id": str(uuid.uuid4())
-            }
+            return {"action": "nonexistent_action", "task_id": str(uuid.uuid4())}
 
         elif error_type == "missing_required":
             return {
@@ -322,22 +302,16 @@ class MCPMessageFixtures:
             }
 
         elif error_type == "invalid_uuid":
-            return {
-                "action": "get",
-                "task_id": "not-a-valid-uuid"
-            }
+            return {"action": "get", "task_id": "not-a-valid-uuid"}
 
         elif error_type == "invalid_json":
-            return {
-                "action": "create",
-                "data": "{'malformed': json, missing quotes}"
-            }
+            return {"action": "create", "data": "{'malformed': json, missing quotes}"}
 
         elif error_type == "unauthorized":
             return {
                 "action": "list",
                 # No auth token provided
-                "_error_hint": "missing_auth"
+                "_error_hint": "missing_auth",
             }
 
         elif error_type == "forbidden":
@@ -345,7 +319,7 @@ class MCPMessageFixtures:
                 "action": "delete",
                 "task_id": str(uuid.uuid4()),
                 # User doesn't have delete permission
-                "_error_hint": "insufficient_permissions"
+                "_error_hint": "insufficient_permissions",
             }
 
         else:
@@ -353,8 +327,7 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_error_response(
-        error_type: str,
-        detail: str | None = None
+        error_type: str, detail: str | None = None
     ) -> dict[str, Any]:
         """Generate error response for testing error handling.
 
@@ -371,7 +344,7 @@ class MCPMessageFixtures:
             "missing_required": "Missing required parameters",
             "invalid_uuid": "Invalid UUID format",
             "unauthorized": "Authentication required",
-            "forbidden": "Insufficient permissions"
+            "forbidden": "Insufficient permissions",
         }
 
         return {
@@ -379,8 +352,8 @@ class MCPMessageFixtures:
             "error": {
                 "type": error_type,
                 "message": detail or error_messages.get(error_type, "Unknown error"),
-                "timestamp": datetime.now(UTC).isoformat()
-            }
+                "timestamp": datetime.now(UTC).isoformat(),
+            },
         }
 
     # =========================================================================
@@ -389,7 +362,7 @@ class MCPMessageFixtures:
 
     @staticmethod
     def get_request_response_pair(
-        operation: str
+        operation: str,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """Get matching request/response pair for integration tests.
 
@@ -414,9 +387,9 @@ class MCPMessageFixtures:
                         "id": task_id,
                         "status": "in_progress",
                         "progress_percentage": 50,
-                        "updated_at": datetime.now(UTC).isoformat()
+                        "updated_at": datetime.now(UTC).isoformat(),
                     }
-                }
+                },
             }
             return request, response
 
@@ -430,8 +403,8 @@ class MCPMessageFixtures:
                 "data": {
                     "context_id": context_id,
                     "level": "task",
-                    "created_at": datetime.now(UTC).isoformat()
-                }
+                    "created_at": datetime.now(UTC).isoformat(),
+                },
             }
             return request, response
 
@@ -471,8 +444,7 @@ class MCPMessageFixtures:
 
     @staticmethod
     def validate_message_structure(
-        message: dict[str, Any],
-        required_fields: list[str]
+        message: dict[str, Any], required_fields: list[str]
     ) -> tuple[bool, str | None]:
         """Validate that a message has required fields.
 
@@ -483,10 +455,7 @@ class MCPMessageFixtures:
         Returns:
             Tuple of (is_valid, error_message)
         """
-        missing_fields = [
-            field for field in required_fields
-            if field not in message
-        ]
+        missing_fields = [field for field in required_fields if field not in message]
 
         if missing_fields:
             return False, f"Missing required fields: {', '.join(missing_fields)}"
@@ -495,6 +464,7 @@ class MCPMessageFixtures:
 
 
 # Convenience functions for quick access
+
 
 def get_sample_task_request() -> dict[str, Any]:
     """Quick helper to get a sample task creation request."""

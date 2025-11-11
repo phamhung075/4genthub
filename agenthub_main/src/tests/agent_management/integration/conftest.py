@@ -51,7 +51,7 @@ def test_engine(test_database_url):
     engine = create_engine(
         test_database_url,
         echo=False,  # Set to True for SQL debugging
-        connect_args={"check_same_thread": False}  # For SQLite threading
+        connect_args={"check_same_thread": False},  # For SQLite threading
     )
 
     # Create all tables
@@ -107,11 +107,11 @@ def sample_agent_template(db_session):
         tools=["Read", "Write", "Edit", "Bash", "Grep"],
         capabilities={
             "languages": ["Python", "JavaScript", "TypeScript"],
-            "frameworks": ["FastAPI", "React"]
+            "frameworks": ["FastAPI", "React"],
         },
         rules=["Write clean code", "Follow DRY principles", "Add tests"],
         output_format="markdown",
-        metadata={"author": "test", "version": "1.0.0"}
+        metadata={"author": "test", "version": "1.0.0"},
     )
 
     # Create ORM model (serialize lists/dicts to JSON for SQLite compatibility)
@@ -125,11 +125,15 @@ def sample_agent_template(db_session):
         system_prompt=configuration.system_prompt,
         tools=json.dumps(list(configuration.tools)),  # Serialize to JSON
         capabilities=json.dumps(configuration.capabilities),  # Serialize to JSON
-        rules=json.dumps(list(configuration.rules)) if configuration.rules else None,  # Serialize to JSON
-        output_format=json.dumps(configuration.output_format) if configuration.output_format else None,  # Serialize to JSON
+        rules=json.dumps(list(configuration.rules))
+        if configuration.rules
+        else None,  # Serialize to JSON
+        output_format=json.dumps(configuration.output_format)
+        if configuration.output_format
+        else None,  # Serialize to JSON
         metadata_json=json.dumps(configuration.metadata),  # Serialize to JSON
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
     # Save to database
@@ -148,7 +152,7 @@ def sample_agent_template(db_session):
         default_configuration=configuration,
         metadata=template_orm.metadata_json or {},
         created_at=template_orm.created_at,
-        updated_at=template_orm.updated_at
+        updated_at=template_orm.updated_at,
     )
 
     return template
@@ -181,16 +185,16 @@ def sample_user_instance(db_session, sample_agent_template, sample_user_id):
         tools=["Read", "Write", "Edit", "Bash", "Grep", "Glob"],  # Added Glob
         capabilities={
             "languages": ["Python", "JavaScript", "TypeScript", "Go"],  # Added Go
-            "frameworks": ["FastAPI", "React", "Next.js"]  # Added Next.js
+            "frameworks": ["FastAPI", "React", "Next.js"],  # Added Next.js
         },
         rules=[
             "Write clean code",
             "Follow DRY principles",
             "Add tests",
-            "Use type hints"  # Added custom rule
+            "Use type hints",  # Added custom rule
         ],
         output_format="markdown",
-        metadata={}
+        metadata={},
     )
 
     # Create ORM model (serialize lists/dicts to JSON for SQLite compatibility)
@@ -204,12 +208,16 @@ def sample_user_instance(db_session, sample_agent_template, sample_user_id):
         system_prompt=custom_configuration.system_prompt,
         tools=json.dumps(list(custom_configuration.tools)),  # Serialize to JSON
         capabilities=json.dumps(custom_configuration.capabilities),  # Serialize to JSON
-        rules=json.dumps(list(custom_configuration.rules)) if custom_configuration.rules else None,  # Serialize to JSON
-        output_format=json.dumps(custom_configuration.output_format) if custom_configuration.output_format else None,  # Serialize to JSON
+        rules=json.dumps(list(custom_configuration.rules))
+        if custom_configuration.rules
+        else None,  # Serialize to JSON
+        output_format=json.dumps(custom_configuration.output_format)
+        if custom_configuration.output_format
+        else None,  # Serialize to JSON
         visibility="private",
         metadata_json=json.dumps({}),  # Serialize to JSON
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
     # Save to database
@@ -229,7 +237,7 @@ def sample_user_instance(db_session, sample_agent_template, sample_user_id):
         last_used_at=None,  # Not in ORM model yet
         metadata={},
         created_at=instance_orm.created_at,
-        updated_at=instance_orm.updated_at
+        updated_at=instance_orm.updated_at,
     )
 
     return instance

@@ -140,8 +140,7 @@ class TestIDValidator:
         git_branch_id = "550e8400-e29b-41d4-a716-446655440002"
 
         result = self.validator.validate_parameter_mapping(
-            task_id=task_id,
-            git_branch_id=git_branch_id
+            task_id=task_id, git_branch_id=git_branch_id
         )
 
         assert result.is_valid is True
@@ -189,15 +188,16 @@ class TestIDValidator:
         same_id = self.valid_uuid_v4
 
         result = self.validator.validate_parameter_mapping(
-            task_id=same_id,
-            git_branch_id=same_id
+            task_id=same_id, git_branch_id=same_id
         )
 
         # Should be valid but with warnings
         assert result.is_valid is True
         assert result.warnings is not None
-        assert any("Same ID value used for multiple parameters" in warning
-                  for warning in result.warnings)
+        assert any(
+            "Same ID value used for multiple parameters" in warning
+            for warning in result.warnings
+        )
 
     def test_validate_task_context_valid(self):
         """Test task context validation with valid IDs."""
@@ -205,8 +205,7 @@ class TestIDValidator:
         git_branch_id = "550e8400-e29b-41d4-a716-446655440002"
 
         result = self.validator.validate_task_context(
-            task_id=task_id,
-            expected_git_branch_id=git_branch_id
+            task_id=task_id, expected_git_branch_id=git_branch_id
         )
 
         assert result.is_valid is True
@@ -223,8 +222,7 @@ class TestIDValidator:
     def test_validate_task_context_invalid_git_branch_id(self):
         """Test task context validation with invalid git branch ID."""
         result = self.validator.validate_task_context(
-            task_id=self.valid_uuid_v4,
-            expected_git_branch_id="invalid-branch-id"
+            task_id=self.valid_uuid_v4, expected_git_branch_id="invalid-branch-id"
         )
 
         assert result.is_valid is False
@@ -235,8 +233,7 @@ class TestIDValidator:
         same_id = self.valid_uuid_v4
 
         result = self.validator.validate_task_context(
-            task_id=same_id,
-            expected_git_branch_id=same_id
+            task_id=same_id, expected_git_branch_id=same_id
         )
 
         assert result.is_valid is False
@@ -246,6 +243,7 @@ class TestIDValidator:
 
     def test_validate_task_context_mcp_warning(self):
         """Test warning when task ID appears to be MCP task ID."""
+
         # Mock scenario where task_id is detected as MCP_TASK_ID
         class MockValidator(IDValidator):
             def detect_id_type(self, value, context_hint=None):
@@ -264,8 +262,7 @@ class TestIDValidator:
     def test_suggest_fix_for_confusion(self):
         """Test fix suggestions for ID confusion."""
         suggestions = self.validator.suggest_fix_for_confusion(
-            confused_task_id=self.valid_uuid_v4,
-            context="subtask_controller"
+            confused_task_id=self.valid_uuid_v4, context="subtask_controller"
         )
 
         assert "issue" in suggestions
@@ -346,7 +343,7 @@ class TestValidationResult:
             normalized_value="normalized-value",
             error_message=None,
             warnings=["warning1", "warning2"],
-            metadata={"key": "value"}
+            metadata={"key": "value"},
         )
 
         assert result.is_valid is True
@@ -360,9 +357,7 @@ class TestValidationResult:
     def test_validation_result_minimal(self):
         """Test ValidationResult creation with minimal fields."""
         result = ValidationResult(
-            is_valid=False,
-            id_type=IDType.UNKNOWN,
-            original_value="test-value"
+            is_valid=False, id_type=IDType.UNKNOWN, original_value="test-value"
         )
 
         assert result.is_valid is False
@@ -380,9 +375,7 @@ class TestIDValidationError:
     def test_id_validation_error_creation(self):
         """Test IDValidationError creation."""
         error = IDValidationError(
-            message="Test error",
-            id_value="test-id",
-            expected_type=IDType.UUID
+            message="Test error", id_value="test-id", expected_type=IDType.UUID
         )
 
         assert str(error) == "Test error"
@@ -391,10 +384,7 @@ class TestIDValidationError:
 
     def test_id_validation_error_minimal(self):
         """Test IDValidationError creation with minimal parameters."""
-        error = IDValidationError(
-            message="Test error",
-            id_value="test-id"
-        )
+        error = IDValidationError(message="Test error", id_value="test-id")
 
         assert str(error) == "Test error"
         assert error.id_value == "test-id"

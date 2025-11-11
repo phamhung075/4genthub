@@ -39,7 +39,7 @@ def mock_session_factory():
 @pytest.fixture
 def mock_keycloak_auth():
     """Mock Keycloak authentication."""
-    with patch('fastmcp.websocket.server.KeycloakAuth') as mock_auth:
+    with patch("fastmcp.websocket.server.KeycloakAuth") as mock_auth:
         auth_instance = mock_auth.return_value
         # Configure successful authentication by default
         # Create a proper mock object for the validation result
@@ -49,7 +49,7 @@ def mock_keycloak_auth():
         validation_result.email = "test@example.com"
         validation_result.roles = ["user"]
         validation_result.error = None
-        
+
         # Make validate_token an async method that returns the result
         auth_instance.validate_token = AsyncMock(return_value=validation_result)
         yield auth_instance
@@ -90,13 +90,14 @@ class TestWebSocketServer:
         """Test WebSocket server initialization."""
         # Use a real FastAPI instance to avoid mock issues
         import sys
-        fastapi_module = sys.modules.get('fastapi.original', None)
+
+        fastapi_module = sys.modules.get("fastapi.original", None)
         if not fastapi_module:
             pytest.skip("Real FastAPI not available in test environment")
-        
+
         fresh_app = MagicMock()
         fresh_app.websocket = MagicMock()
-        
+
         server = WebSocketServer(fresh_app, mock_session_factory)
 
         assert server.app == fresh_app
@@ -181,15 +182,9 @@ class TestConnectionManager:
             "payload": {
                 "entity": "task",
                 "action": "update",
-                "data": {
-                    "primary": {"id": "task123", "title": "Test task"}
-                }
+                "data": {"primary": {"id": "task123", "title": "Test task"}},
             },
-            "metadata": {
-                "source": "user",
-                "user_id": "user123",
-                "immediate": True
-            }
+            "metadata": {"source": "user", "user_id": "user123", "immediate": True},
         }
 
         # Should not raise an exception
@@ -212,12 +207,9 @@ class TestConnectionManager:
             "payload": {
                 "entity": "task",
                 "action": "update",
-                "data": {"primary": {"id": "task123"}}
+                "data": {"primary": {"id": "task123"}},
             },
-            "metadata": {
-                "source": "user",
-                "immediate": True
-            }
+            "metadata": {"source": "user", "immediate": True},
         }
 
         # Process message - should send error response
@@ -274,9 +266,7 @@ class TestBatchProcessor:
 
         # Test configuration update
         batch_processor.configure_batch_params(
-            interval=0.3,
-            max_size=25,
-            max_timeout=1.0
+            interval=0.3, max_size=25, max_timeout=1.0
         )
 
         assert batch_processor.batch_interval == 0.3
@@ -295,14 +285,9 @@ class TestBatchProcessor:
                 payload={
                     "entity": "task",
                     "action": "update",
-                    "data": {
-                        "primary": {"id": "task123", "title": f"Update {i}"}
-                    }
+                    "data": {"primary": {"id": "task123", "title": f"Update {i}"}},
                 },
-                metadata={
-                    "source": "mcp-ai",
-                    "immediate": False
-                }
+                metadata={"source": "mcp-ai", "immediate": False},
             )
             messages.append(message)
 
@@ -355,7 +340,7 @@ class TestProtocolIntegration:
             cascade_calculator=mock_cascade_calculator,
             entity_id="task123",
             user_id="user123",
-            sequence=1
+            sequence=1,
         )
 
         assert message.type == "update"
@@ -374,7 +359,7 @@ class TestProtocolIntegration:
             error_message="Test error",
             error_code="TEST_ERROR",
             session_id="session123",
-            sequence=1
+            sequence=1,
         )
 
         assert error_msg.type == "error"
@@ -407,7 +392,7 @@ class TestAuthentication:
         invalid_result.user_id = None
         invalid_result.email = None
         invalid_result.roles = []
-        
+
         mock_keycloak_auth.validate_token.return_value = invalid_result
 
         validation = await mock_keycloak_auth.validate_token("invalid-token")
@@ -434,7 +419,9 @@ class TestFastAPIIntegration:
         """Test WebSocket integration setup."""
         from fastmcp.websocket.fastapi_integration import setup_websocket_integration
 
-        with patch('fastmcp.websocket.fastapi_integration.get_db_config') as mock_get_db:
+        with patch(
+            "fastmcp.websocket.fastapi_integration.get_db_config"
+        ) as mock_get_db:
             # Mock database config
             mock_db_config = MagicMock()
             mock_db_config.get_async_session = mock_session_factory

@@ -33,9 +33,11 @@ from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository 
 def create_mock_with_spec(spec_class):
     """Safely create a Mock with spec, handling already-mocked classes."""
     # Check if the class is actually a Mock or has been patched
-    if (hasattr(spec_class, '_mock_name') or
-        hasattr(spec_class, '_spec_class') or
-        hasattr(spec_class, '_mock_methods')):
+    if (
+        hasattr(spec_class, "_mock_name")
+        or hasattr(spec_class, "_spec_class")
+        or hasattr(spec_class, "_mock_methods")
+    ):
         # It's already a Mock, don't use spec
         return Mock()
     else:
@@ -45,7 +47,7 @@ def create_mock_with_spec(spec_class):
 
 class TestORMSubtaskRepositoryInitialization:
     """Test cases for ORMSubtaskRepository initialization and configuration."""
-    
+
     def test_init_with_minimal_params(self):
         """Test repository initialization with minimal parameters."""
         # Inject mock session directly via constructor (get_session no longer exists)
@@ -54,18 +56,18 @@ class TestORMSubtaskRepositoryInitialization:
 
         # Should initialize both base classes
         assert repo.model_class == SubtaskModel
-        assert hasattr(repo, 'user_id')
-        assert hasattr(repo, 'apply_user_filter')
-    
+        assert hasattr(repo, "user_id")
+        assert hasattr(repo, "apply_user_filter")
+
     def test_init_with_session_and_user_id(self):
         """Test repository initialization with session and user ID."""
         mock_session = Mock()
-        
+
         repo = ORMSubtaskRepository(session=mock_session, user_id="test-user")
-        
+
         assert repo.user_id == "test-user"
         # BaseUserScopedRepository should handle the session
-    
+
     def test_init_inheritance_chain(self):
         """Test repository properly inherits from all base classes."""
         # Inject mock session directly via constructor (get_session no longer exists)
@@ -73,38 +75,38 @@ class TestORMSubtaskRepositoryInitialization:
         repo = ORMSubtaskRepository(session=mock_session)
 
         # Should have methods from all base classes
-        assert hasattr(repo, 'apply_user_filter')  # BaseUserScopedRepository
-        assert hasattr(repo, 'model_class')         # BaseORMRepository
-        assert hasattr(repo, 'save')                # SubtaskRepository interface
+        assert hasattr(repo, "apply_user_filter")  # BaseUserScopedRepository
+        assert hasattr(repo, "model_class")  # BaseORMRepository
+        assert hasattr(repo, "save")  # SubtaskRepository interface
 
 
 class TestORMSubtaskRepositoryDataConversion:
     """Test cases for domain entity to ORM model conversion."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         # Inject mock session directly via constructor (get_session no longer exists)
         mock_session = Mock()
         self.repo = ORMSubtaskRepository(session=mock_session, user_id="test-user")
-    
+
     def test_to_model_data_minimal_subtask(self):
         """Test converting minimal subtask entity to model data."""
         subtask = Subtask(
             id=TaskId("sub-123"),
             parent_task_id=TaskId("task-456"),
             title="Test Subtask",
-            description="Test Description"
+            description="Test Description",
         )
 
         # FIX: Use correct method name _entity_to_model_dict instead of _to_model_data
-        with patch.object(self.repo, '_entity_to_model_dict') as mock_convert:
+        with patch.object(self.repo, "_entity_to_model_dict") as mock_convert:
             expected_data = {
-                'id': 'sub-123',
-                'parent_task_id': 'task-456',
-                'title': 'Test Subtask',
-                'description': 'Test Description',
-                'status': 'todo',
-                'priority': 'medium'
+                "id": "sub-123",
+                "parent_task_id": "task-456",
+                "title": "Test Subtask",
+                "description": "Test Description",
+                "status": "todo",
+                "priority": "medium",
             }
             mock_convert.return_value = expected_data
 
@@ -112,7 +114,7 @@ class TestORMSubtaskRepositoryDataConversion:
 
             mock_convert.assert_called_once_with(subtask)
             assert result == expected_data
-    
+
     def test_to_model_data_full_subtask(self):
         """Test converting complete subtask entity to model data."""
         subtask = Subtask(
@@ -123,22 +125,22 @@ class TestORMSubtaskRepositoryDataConversion:
             status=TaskStatus.in_progress(),
             priority=Priority.high(),
             assignees=["@user1", "@user2"],
-            progress_percentage=75
+            progress_percentage=75,
         )
 
         # FIX: Use correct method name _entity_to_model_dict instead of _to_model_data
-        with patch.object(self.repo, '_entity_to_model_dict') as mock_convert:
+        with patch.object(self.repo, "_entity_to_model_dict") as mock_convert:
             expected_data = {
-                'id': 'sub-123',
-                'parent_task_id': 'task-456',
-                'title': 'Full Subtask',
-                'description': 'Full Description',
-                'status': 'in_progress',
-                'priority': 'high',
-                'assignees': json.dumps(['@user1', '@user2']),
-                'progress_percentage': 75,
-                'completion_summary': 'Nearly done',
-                'testing_notes': 'Tests passed'
+                "id": "sub-123",
+                "parent_task_id": "task-456",
+                "title": "Full Subtask",
+                "description": "Full Description",
+                "status": "in_progress",
+                "priority": "high",
+                "assignees": json.dumps(["@user1", "@user2"]),
+                "progress_percentage": 75,
+                "completion_summary": "Nearly done",
+                "testing_notes": "Tests passed",
             }
             mock_convert.return_value = expected_data
 
@@ -146,7 +148,7 @@ class TestORMSubtaskRepositoryDataConversion:
 
             mock_convert.assert_called_once_with(subtask)
             assert result == expected_data
-    
+
     def test_from_model_data_to_entity(self):
         """Test converting ORM model to domain entity."""
         # Mock Subtask model
@@ -175,7 +177,7 @@ class TestORMSubtaskRepositoryDataConversion:
             assignees=json.loads(mock_model.assignees),
             progress_percentage=mock_model.progress_percentage,
             created_at=mock_model.created_at,
-            updated_at=mock_model.updated_at
+            updated_at=mock_model.updated_at,
         )
 
         # Verify entity was created with correct data
@@ -187,7 +189,7 @@ class TestORMSubtaskRepositoryDataConversion:
 
 class TestORMSubtaskRepositorySaveOperations:
     """Test cases for subtask save operations."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
@@ -197,14 +199,14 @@ class TestORMSubtaskRepositorySaveOperations:
 
         # Inject mock session directly via constructor (get_session no longer exists)
         self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
-    
+
     def test_save_new_subtask_success(self):
         """Test successfully saving a new subtask."""
         # Create new subtask (no ID)
         subtask = Subtask(
             parent_task_id=TaskId("task-456"),
             title="New Subtask",
-            description="New Description"
+            description="New Description",
         )
         subtask.id = None  # Explicitly no ID to indicate new subtask
 
@@ -219,7 +221,7 @@ class TestORMSubtaskRepositorySaveOperations:
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
         # Mock the repository methods directly to prevent actual execution
-        with patch.object(self.repo, 'save') as mock_save:
+        with patch.object(self.repo, "save") as mock_save:
             mock_save.return_value = True
 
             result = self.repo.save(subtask)
@@ -227,7 +229,7 @@ class TestORMSubtaskRepositorySaveOperations:
             # Verify mock was called and returned expected result
             mock_save.assert_called_once_with(subtask)
             assert result is True
-    
+
     def test_save_existing_subtask_success(self):
         """Test successfully updating an existing subtask."""
         # Create existing subtask with ID
@@ -235,7 +237,7 @@ class TestORMSubtaskRepositorySaveOperations:
             id=TaskId("sub-123"),
             parent_task_id=TaskId("task-456"),
             title="Updated Subtask",
-            description="Updated Description"
+            description="Updated Description",
         )
 
         # Mock existing model in database
@@ -255,21 +257,21 @@ class TestORMSubtaskRepositorySaveOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'save') as mock_save:
+        with patch.object(self.repo, "save") as mock_save:
             mock_save.return_value = True
 
             result = self.repo.save(subtask)
 
             # Verify success
             assert result is True
-    
+
     def test_save_existing_subtask_not_found(self):
         """Test updating non-existent subtask creates new one."""
         subtask = Subtask(
             id=TaskId("sub-nonexistent"),
             parent_task_id=TaskId("task-456"),
             title="Subtask",
-            description="Description"
+            description="Description",
         )
 
         # Mock query returning no existing subtask
@@ -289,20 +291,20 @@ class TestORMSubtaskRepositorySaveOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'save') as mock_save:
+        with patch.object(self.repo, "save") as mock_save:
             mock_save.return_value = True
 
             result = self.repo.save(subtask)
 
             # Verify success
             assert result is True
-    
+
     def test_save_database_error(self):
         """Test save operation with database error."""
         subtask = Subtask(
             parent_task_id=TaskId("task-456"),
             title="Subtask",
-            description="Description"
+            description="Description",
         )
         subtask.id = None
 
@@ -311,7 +313,7 @@ class TestORMSubtaskRepositorySaveOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'save') as mock_save:
+        with patch.object(self.repo, "save") as mock_save:
             mock_save.return_value = False  # Simulate database error
 
             result = self.repo.save(subtask)
@@ -322,7 +324,7 @@ class TestORMSubtaskRepositorySaveOperations:
 
 class TestORMSubtaskRepositoryFindOperations:
     """Test cases for subtask find operations."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
@@ -332,7 +334,7 @@ class TestORMSubtaskRepositoryFindOperations:
 
         # Inject mock session directly via constructor (get_session no longer exists)
         self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
-    
+
     def test_find_by_id_found(self):
         """Test finding subtask by ID when it exists."""
         # Mock subtask model
@@ -366,14 +368,14 @@ class TestORMSubtaskRepositoryFindOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'find_by_id') as mock_find:
+        with patch.object(self.repo, "find_by_id") as mock_find:
             mock_find.return_value = mock_entity
 
             result = self.repo.find_by_id(TaskId("sub-123"))
 
             # Verify result
             assert result == mock_entity
-    
+
     def test_find_by_id_not_found(self):
         """Test finding subtask by ID when it doesn't exist."""
         # Mock empty query result
@@ -388,14 +390,14 @@ class TestORMSubtaskRepositoryFindOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'find_by_id') as mock_find:
+        with patch.object(self.repo, "find_by_id") as mock_find:
             mock_find.return_value = None
 
             result = self.repo.find_by_id(TaskId("sub-nonexistent"))
 
             # Should return None when not found
             assert result is None
-    
+
     def test_find_by_id_user_filter_denied(self):
         """Test finding subtask denied by user filter."""
         mock_model = create_mock_with_spec(Subtask)
@@ -413,14 +415,14 @@ class TestORMSubtaskRepositoryFindOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'find_by_id') as mock_find:
+        with patch.object(self.repo, "find_by_id") as mock_find:
             mock_find.return_value = None  # User filter denied
 
             result = self.repo.find_by_id(TaskId("sub-123"))
 
             # Should return None when user filter denies access
             assert result is None
-    
+
     def test_find_by_parent_task_id(self):
         """Test finding subtasks by parent task ID."""
         # Mock subtask models
@@ -449,7 +451,7 @@ class TestORMSubtaskRepositoryFindOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'find_by_parent_task_id') as mock_find:
+        with patch.object(self.repo, "find_by_parent_task_id") as mock_find:
             mock_find.return_value = mock_entities
 
             result = self.repo.find_by_parent_task_id(TaskId("task-456"))
@@ -461,7 +463,7 @@ class TestORMSubtaskRepositoryFindOperations:
 
 class TestORMSubtaskRepositoryCompletionOperations:
     """Test cases for subtask completion operations."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
@@ -471,7 +473,7 @@ class TestORMSubtaskRepositoryCompletionOperations:
 
         # Inject mock session directly via constructor (get_session no longer exists)
         self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
-    
+
     def test_complete_subtask_success(self):
         """Test successful subtask completion."""
         # Mock existing subtask
@@ -491,18 +493,18 @@ class TestORMSubtaskRepositoryCompletionOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'complete_subtask') as mock_complete:
+        with patch.object(self.repo, "complete_subtask") as mock_complete:
             mock_complete.return_value = True
 
             result = self.repo.complete_subtask(
                 TaskId("sub-123"),
                 completion_summary="Task completed successfully",
-                testing_notes="All tests passed"
+                testing_notes="All tests passed",
             )
 
             # Verify success
             assert result is True
-    
+
     def test_complete_subtask_not_found(self):
         """Test completing non-existent subtask."""
         # Mock empty query result
@@ -517,17 +519,17 @@ class TestORMSubtaskRepositoryCompletionOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'complete_subtask') as mock_complete:
+        with patch.object(self.repo, "complete_subtask") as mock_complete:
             mock_complete.return_value = False
 
             result = self.repo.complete_subtask(
                 TaskId("sub-nonexistent"),
-                completion_summary="Trying to complete non-existent"
+                completion_summary="Trying to complete non-existent",
             )
 
             # Should return False when subtask not found
             assert result is False
-    
+
     def test_complete_subtask_user_filter_denied(self):
         """Test completing subtask denied by user filter."""
         # Mock query chain that returns empty after user filter
@@ -542,12 +544,11 @@ class TestORMSubtaskRepositoryCompletionOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'complete_subtask') as mock_complete:
+        with patch.object(self.repo, "complete_subtask") as mock_complete:
             mock_complete.return_value = False  # User filter denied
 
             result = self.repo.complete_subtask(
-                TaskId("sub-123"),
-                completion_summary="Denied by user filter"
+                TaskId("sub-123"), completion_summary="Denied by user filter"
             )
 
             # Should return False when user filter denies access
@@ -556,7 +557,7 @@ class TestORMSubtaskRepositoryCompletionOperations:
 
 class TestORMSubtaskRepositoryProgressOperations:
     """Test cases for subtask progress tracking operations."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
@@ -566,7 +567,7 @@ class TestORMSubtaskRepositoryProgressOperations:
 
         # Inject mock session directly via constructor (get_session no longer exists)
         self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
-    
+
     def test_update_progress_success(self):
         """Test successful progress update."""
         # Mock existing subtask
@@ -586,18 +587,18 @@ class TestORMSubtaskRepositoryProgressOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'update_progress') as mock_update:
+        with patch.object(self.repo, "update_progress") as mock_update:
             mock_update.return_value = True
 
             result = self.repo.update_progress(
                 TaskId("sub-123"),
                 progress_percentage=75,
-                progress_notes="Making good progress"
+                progress_notes="Making good progress",
             )
 
             # Verify success
             assert result is True
-    
+
     def test_get_subtask_progress(self):
         """Test getting subtask progress for parent task."""
         # Mock subtasks with different completion states
@@ -628,7 +629,7 @@ class TestORMSubtaskRepositoryProgressOperations:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'get_subtask_progress') as mock_progress:
+        with patch.object(self.repo, "get_subtask_progress") as mock_progress:
             mock_progress.return_value = {
                 "total": 3,
                 "completed": 2,
@@ -636,8 +637,8 @@ class TestORMSubtaskRepositoryProgressOperations:
                 "details": [
                     {"id": "sub-1", "status": "done", "progress_percentage": 100},
                     {"id": "sub-2", "status": "in_progress", "progress_percentage": 50},
-                    {"id": "sub-3", "status": "done", "progress_percentage": 100}
-                ]
+                    {"id": "sub-3", "status": "done", "progress_percentage": 100},
+                ],
             }
 
             status = self.repo.get_subtask_progress(TaskId("task-456"))
@@ -652,7 +653,7 @@ class TestORMSubtaskRepositoryProgressOperations:
 
 class TestORMSubtaskRepositoryErrorHandling:
     """Test cases for error handling and edge cases."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
@@ -662,17 +663,17 @@ class TestORMSubtaskRepositoryErrorHandling:
 
         # Inject mock session directly via constructor (get_session no longer exists)
         self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
-    
+
     def test_save_with_session_error(self):
         """Test save operation with session error."""
         subtask = Subtask(
             parent_task_id=TaskId("task-456"),
             title="Test Subtask",
-            description="Test Description"
+            description="Test Description",
         )
         subtask.id = None
 
-        with patch.object(self.repo, 'save') as mock_save:
+        with patch.object(self.repo, "save") as mock_save:
             mock_save.side_effect = SQLAlchemyError("Session creation failed")
 
             try:
@@ -682,7 +683,7 @@ class TestORMSubtaskRepositoryErrorHandling:
 
             # Should handle session error gracefully
             assert result is False
-    
+
     def test_find_with_invalid_id_type(self):
         """Test finding subtask with invalid ID type."""
         # Mock session context manager
@@ -697,7 +698,7 @@ class TestORMSubtaskRepositoryErrorHandling:
         mock_filter.first.return_value = None
         self.mock_session.query.return_value = mock_query
 
-        with patch.object(self.repo, 'find_by_id') as mock_find:
+        with patch.object(self.repo, "find_by_id") as mock_find:
             mock_find.return_value = None  # Handle invalid ID gracefully
 
             # Should handle invalid ID gracefully
@@ -705,13 +706,13 @@ class TestORMSubtaskRepositoryErrorHandling:
 
             # Implementation should handle type conversion or return None
             assert result is None or isinstance(result, Subtask)
-    
+
     def test_database_constraint_violation(self):
         """Test handling of database constraint violations."""
         subtask = Subtask(
             parent_task_id=TaskId("nonexistent-task"),  # Foreign key violation
             title="Subtask",
-            description="Description"
+            description="Description",
         )
         subtask.id = None
 
@@ -720,7 +721,7 @@ class TestORMSubtaskRepositoryErrorHandling:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
-        with patch.object(self.repo, 'save') as mock_save:
+        with patch.object(self.repo, "save") as mock_save:
             mock_save.side_effect = IntegrityError("Foreign key constraint", None, None)
 
             try:
@@ -730,7 +731,7 @@ class TestORMSubtaskRepositoryErrorHandling:
 
             # Should handle constraint violations gracefully
             assert result is False
-    
+
     def test_json_serialization_error(self):
         """Test handling of JSON serialization errors for assignees."""
         # Create a valid subtask object first
@@ -738,7 +739,7 @@ class TestORMSubtaskRepositoryErrorHandling:
             parent_task_id=TaskId("task-456"),
             title="Test",
             description="Test",
-            assignees=["valid-assignee"]  # Valid assignee list
+            assignees=["valid-assignee"],  # Valid assignee list
         )
 
         # Mock session context manager
@@ -747,8 +748,10 @@ class TestORMSubtaskRepositoryErrorHandling:
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
         # Mock the save method to simulate JSON serialization error
-        with patch.object(self.repo, 'save') as mock_save:
-            mock_save.side_effect = TypeError("Object of type 'dict' is not JSON serializable")
+        with patch.object(self.repo, "save") as mock_save:
+            mock_save.side_effect = TypeError(
+                "Object of type 'dict' is not JSON serializable"
+            )
 
             try:
                 result = self.repo.save(subtask)

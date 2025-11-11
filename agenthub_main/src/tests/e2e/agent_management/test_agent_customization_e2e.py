@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
 # MOCK BROWSER CONTEXT (Simulating Playwright Browser Automation)
 # ============================================================================
 
+
 class MockBrowserContext:
     """
     Mock browser context that simulates Playwright browser automation
@@ -113,6 +114,7 @@ class MockBrowserContext:
 # E2E TEST SUITE: AGENT CUSTOMIZATION COMPLETE WORKFLOW
 # ============================================================================
 
+
 @pytest.mark.asyncio
 class TestAgentCustomizationE2EWorkflow:
     """
@@ -122,11 +124,7 @@ class TestAgentCustomizationE2EWorkflow:
     """
 
     async def test_complete_customization_workflow(
-        self,
-        test_user_id,
-        test_template,
-        agent_management_facade,
-        db_session
+        self, test_user_id, test_template, agent_management_facade, db_session
     ):
         """
         Test COMPLETE customization workflow:
@@ -157,9 +155,10 @@ class TestAgentCustomizationE2EWorkflow:
         await browser.store_auth_token(mock_auth_token)
 
         await browser.wait_for_selector("#dashboard")
-        assert await browser.get_auth_token() != "", "Authentication failed - no token stored"
+        assert await browser.get_auth_token() != "", (
+            "Authentication failed - no token stored"
+        )
         logger.info("✅ User authenticated successfully")
-
 
         # ========================================================================
         # STEP 2: AUTO-INSTANTIATE AGENT (via call_agent pattern)
@@ -174,7 +173,7 @@ class TestAgentCustomizationE2EWorkflow:
         instance = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         assert instance is not None, "Failed to create agent instance"
@@ -182,7 +181,6 @@ class TestAgentCustomizationE2EWorkflow:
         assert instance.template_id == test_template.id
         assert instance.is_customized is False, "New instance should not be customized"
         logger.info(f"✅ Agent instance created: {instance.id}")
-
 
         # ========================================================================
         # STEP 3: VIEW AGENT INSTANCES LIST
@@ -197,15 +195,13 @@ class TestAgentCustomizationE2EWorkflow:
 
         # Simulate API call to GET /api/v2/agent-management/instances
         instances = await asyncio.to_thread(
-            agent_management_facade.list_user_instances,
-            user_id=user_id
+            agent_management_facade.list_user_instances, user_id=user_id
         )
 
         assert len(instances) >= 1, "Should have at least one instance"
         found_instance = next((i for i in instances if i.id == instance.id), None)
         assert found_instance is not None, "Created instance not found in list"
         logger.info(f"✅ Found {len(instances)} agent instance(s)")
-
 
         # ========================================================================
         # STEP 4: SELECT AGENT AND OPEN CONFIGURATION EDITOR
@@ -223,12 +219,11 @@ class TestAgentCustomizationE2EWorkflow:
         full_instance = await asyncio.to_thread(
             agent_management_facade.get_instance_details,
             user_id=user_id,
-            instance_id=instance.id
+            instance_id=instance.id,
         )
 
         assert full_instance is not None, "Failed to load instance details"
         logger.info("✅ Configuration editor opened")
-
 
         # ========================================================================
         # STEP 5: EDIT MARKDOWN CONFIGURATION
@@ -280,7 +275,6 @@ class TestAgentCustomizationE2EWorkflow:
         await browser.fill_input("#markdown-editor", new_capabilities)
         logger.info("✅ Capabilities edited")
 
-
         # ========================================================================
         # STEP 6: SAVE CONFIGURATION
         # ========================================================================
@@ -299,12 +293,11 @@ class TestAgentCustomizationE2EWorkflow:
             instance_id=instance.id,
             instructions_markdown=new_instructions,
             rules_markdown=new_rules,
-            capabilities_markdown=new_capabilities
+            capabilities_markdown=new_capabilities,
         )
 
         assert update_result is not None, "Configuration update failed"
         logger.info("✅ Configuration saved successfully")
-
 
         # ========================================================================
         # STEP 7: VERIFY PERSISTENCE - Reload and Check
@@ -323,37 +316,38 @@ class TestAgentCustomizationE2EWorkflow:
         persisted_instance = await asyncio.to_thread(
             agent_management_facade.get_instance_details,
             user_id=user_id,
-            instance_id=instance.id
+            instance_id=instance.id,
         )
 
         # Verify configuration was saved
         assert persisted_instance is not None, "Failed to reload instance"
-        assert persisted_instance.is_customized is True, "Instance not marked as customized"
+        assert persisted_instance.is_customized is True, (
+            "Instance not marked as customized"
+        )
 
         # Verify instructions were saved
-        assert "UPDATED INSTRUCTIONS FOR E2E TEST" in persisted_instance.configuration.get("instructions", ""), \
-            "Instructions not persisted correctly"
+        assert (
+            "UPDATED INSTRUCTIONS FOR E2E TEST"
+            in persisted_instance.configuration.get("instructions", "")
+        ), "Instructions not persisted correctly"
 
         # Verify rules were saved
-        assert "CUSTOM RULES" in persisted_instance.configuration.get("rules", ""), \
+        assert "CUSTOM RULES" in persisted_instance.configuration.get("rules", ""), (
             "Rules not persisted correctly"
+        )
 
         # Verify capabilities were saved
-        assert "E2E Testing" in persisted_instance.configuration.get("capabilities", ""), \
-            "Capabilities not persisted correctly"
+        assert "E2E Testing" in persisted_instance.configuration.get(
+            "capabilities", ""
+        ), "Capabilities not persisted correctly"
 
         logger.info("✅ All configuration changes persisted correctly")
         logger.info("=" * 80)
         logger.info("E2E TEST COMPLETE - ALL STEPS PASSED")
         logger.info("=" * 80)
 
-
     async def test_configuration_editor_tabs_switching(
-        self,
-        test_user_id,
-        test_template,
-        agent_management_facade,
-        db_session
+        self, test_user_id, test_template, agent_management_facade, db_session
     ):
         """
         Test configuration editor tab switching functionality
@@ -367,7 +361,7 @@ class TestAgentCustomizationE2EWorkflow:
         instance = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         # Navigate to config editor
@@ -389,16 +383,14 @@ class TestAgentCustomizationE2EWorkflow:
         # Verify tab switch preserves previous content
         await browser.click_button("#tab-instructions")
         preserved_instructions = await browser.get_text("#markdown-editor")
-        assert preserved_instructions == "Instructions content", "Instructions lost after tab switch"
+        assert preserved_instructions == "Instructions content", (
+            "Instructions lost after tab switch"
+        )
 
         logger.info("✅ Tab switching preserves content correctly")
 
-
     async def test_save_validation_feedback(
-        self,
-        test_user_id,
-        test_template,
-        agent_management_facade
+        self, test_user_id, test_template, agent_management_facade
     ):
         """
         Test that save operation provides proper feedback
@@ -414,7 +406,7 @@ class TestAgentCustomizationE2EWorkflow:
         instance = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         # Navigate to editor
@@ -434,13 +426,8 @@ class TestAgentCustomizationE2EWorkflow:
 
         logger.info("✅ Save validation feedback working correctly")
 
-
     async def test_cancel_changes_without_saving(
-        self,
-        test_user_id,
-        test_template,
-        agent_management_facade,
-        db_session
+        self, test_user_id, test_template, agent_management_facade, db_session
     ):
         """
         Test that canceling changes without saving doesn't persist them
@@ -453,20 +440,22 @@ class TestAgentCustomizationE2EWorkflow:
         instance = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         # Get original configuration
         original_instance = await asyncio.to_thread(
             agent_management_facade.get_instance_details,
             user_id=user_id,
-            instance_id=instance.id
+            instance_id=instance.id,
         )
         original_instructions = original_instance.configuration.get("instructions", "")
 
         # Navigate and make changes
         await browser.navigate(f"/agents/{instance.id}/config")
-        await browser.fill_input("#markdown-editor", "Changed content that will be canceled")
+        await browser.fill_input(
+            "#markdown-editor", "Changed content that will be canceled"
+        )
 
         # Navigate away without saving
         await browser.navigate("/agents")
@@ -476,11 +465,13 @@ class TestAgentCustomizationE2EWorkflow:
         reloaded_instance = await asyncio.to_thread(
             agent_management_facade.get_instance_details,
             user_id=user_id,
-            instance_id=instance.id
+            instance_id=instance.id,
         )
 
         reloaded_instructions = reloaded_instance.configuration.get("instructions", "")
-        assert reloaded_instructions == original_instructions, "Changes persisted without save"
+        assert reloaded_instructions == original_instructions, (
+            "Changes persisted without save"
+        )
 
         logger.info("✅ Canceled changes not persisted")
 
@@ -489,14 +480,13 @@ class TestAgentCustomizationE2EWorkflow:
 # E2E TEST SUITE: EDGE CASES AND ERROR SCENARIOS
 # ============================================================================
 
+
 @pytest.mark.asyncio
 class TestAgentCustomizationE2EEdgeCases:
     """Test edge cases and error scenarios in E2E workflow"""
 
     async def test_unauthorized_access_to_config_editor(
-        self,
-        test_template,
-        agent_management_facade
+        self, test_template, agent_management_facade
     ):
         """Test that unauthorized users cannot access configuration editor"""
 
@@ -507,7 +497,7 @@ class TestAgentCustomizationE2EEdgeCases:
         instance = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_a_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         # User B tries to access User A's instance
@@ -517,18 +507,17 @@ class TestAgentCustomizationE2EEdgeCases:
             await asyncio.to_thread(
                 agent_management_facade.get_instance_details,
                 user_id=user_b_id,
-                instance_id=instance.id
+                instance_id=instance.id,
             )
 
-        assert "not found" in str(exc_info.value).lower() or "unauthorized" in str(exc_info.value).lower()
+        assert (
+            "not found" in str(exc_info.value).lower()
+            or "unauthorized" in str(exc_info.value).lower()
+        )
         logger.info("✅ Unauthorized access properly blocked")
 
-
     async def test_concurrent_edits_handling(
-        self,
-        test_user_id,
-        test_template,
-        agent_management_facade
+        self, test_user_id, test_template, agent_management_facade
     ):
         """Test handling of concurrent edits from multiple browser tabs"""
 
@@ -538,7 +527,7 @@ class TestAgentCustomizationE2EEdgeCases:
         instance = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         # Simulate two browser tabs editing simultaneously
@@ -555,7 +544,7 @@ class TestAgentCustomizationE2EEdgeCases:
             agent_management_facade.update_configuration,
             user_id=user_id,
             instance_id=instance.id,
-            instructions_markdown="Tab 1 changes"
+            instructions_markdown="Tab 1 changes",
         )
 
         # Tab 2 makes and saves changes (should overwrite)
@@ -564,14 +553,14 @@ class TestAgentCustomizationE2EEdgeCases:
             agent_management_facade.update_configuration,
             user_id=user_id,
             instance_id=instance.id,
-            instructions_markdown="Tab 2 changes"
+            instructions_markdown="Tab 2 changes",
         )
 
         # Verify last write wins
         final_instance = await asyncio.to_thread(
             agent_management_facade.get_instance_details,
             user_id=user_id,
-            instance_id=instance.id
+            instance_id=instance.id,
         )
 
         assert "Tab 2 changes" in final_instance.configuration.get("instructions", "")

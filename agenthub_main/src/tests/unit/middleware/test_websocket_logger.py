@@ -33,7 +33,7 @@ class TestWebSocketMessageValidator:
                 "updated_at": "2025-01-15T10:00:00Z",
                 "project_id": "project-456",
                 "git_branch_id": "branch-789",
-            }
+            },
         }
 
         errors = WebSocketMessageValidator.validate_message(message)
@@ -75,7 +75,7 @@ class TestWebSocketMessageValidator:
                 "id": "task-123",
                 "title": "Test Task",
                 # Missing: status, priority, assignees, subtask_count, etc.
-            }
+            },
         }
 
         errors = WebSocketMessageValidator.validate_message(message)
@@ -104,12 +104,14 @@ class TestWebSocketMessageValidator:
                 "progress_count": 1,
                 "created_at": "2025-01-15T10:00:00Z",
                 "updated_at": "2025-01-15T10:00:00Z",
-            }
+            },
         }
 
         errors = WebSocketMessageValidator.validate_message(message)
 
-        assert len(errors) >= 4, f"Should detect at least 4 type errors, got {len(errors)}: {errors}"
+        assert len(errors) >= 4, (
+            f"Should detect at least 4 type errors, got {len(errors)}: {errors}"
+        )
 
     def test_validate_subtask_event_complete(self):
         """Test validation of complete subtask event"""
@@ -125,12 +127,14 @@ class TestWebSocketMessageValidator:
                 "progress_percentage": 0,
                 "created_at": "2025-01-15T10:00:00Z",
                 "updated_at": "2025-01-15T10:00:00Z",
-            }
+            },
         }
 
         errors = WebSocketMessageValidator.validate_message(message)
 
-        assert len(errors) == 0, f"Valid subtask message should have no errors: {errors}"
+        assert len(errors) == 0, (
+            f"Valid subtask message should have no errors: {errors}"
+        )
 
     def test_validate_subtask_event_missing_parent(self):
         """Test validation detects missing parent_task_id in subtask events"""
@@ -146,7 +150,7 @@ class TestWebSocketMessageValidator:
                 "progress_percentage": 50,
                 "created_at": "2025-01-15T10:00:00Z",
                 "updated_at": "2025-01-15T11:00:00Z",
-            }
+            },
         }
 
         errors = WebSocketMessageValidator.validate_message(message)
@@ -170,13 +174,15 @@ class TestWebSocketMessageValidator:
                 "progress_count": 1,
                 "created_at": "2025-01-15T10:00:00Z",
                 "updated_at": "2025-01-15T11:00:00Z",
-            }
+            },
         }
 
         errors = WebSocketMessageValidator.validate_message(message)
 
         assert len(errors) > 0, "Should detect invalid subtask counts"
-        assert any("completed_subtasks" in error and "exceeds" in error for error in errors)
+        assert any(
+            "completed_subtasks" in error and "exceeds" in error for error in errors
+        )
 
 
 class TestWebSocketMessageLogger:
@@ -202,7 +208,7 @@ class TestWebSocketMessageLogger:
                 "updated_at": "2025-01-15T10:00:00Z",
             },
             user_id="user-456",
-            validate=True
+            validate=True,
         )
 
         assert len(errors) == 0, f"Valid message should have no errors: {errors}"
@@ -220,7 +226,7 @@ class TestWebSocketMessageLogger:
                 # Missing many required fields
             },
             user_id="user-456",
-            validate=True
+            validate=True,
         )
 
         assert len(errors) > 0, "Invalid message should have errors"
@@ -232,9 +238,41 @@ class TestWebSocketMessageLogger:
         logger = WebSocketMessageLogger()
 
         # Log some messages
-        logger.log_message("task.created", {"id": "1", "title": "Task 1", "status": "todo", "priority": "high", "assignees": [], "subtask_count": 0, "completed_subtasks": 0, "progress_percentage": 0, "progress_count": 0, "created_at": "2025-01-15T10:00:00Z", "updated_at": "2025-01-15T10:00:00Z"}, validate=True)
+        logger.log_message(
+            "task.created",
+            {
+                "id": "1",
+                "title": "Task 1",
+                "status": "todo",
+                "priority": "high",
+                "assignees": [],
+                "subtask_count": 0,
+                "completed_subtasks": 0,
+                "progress_percentage": 0,
+                "progress_count": 0,
+                "created_at": "2025-01-15T10:00:00Z",
+                "updated_at": "2025-01-15T10:00:00Z",
+            },
+            validate=True,
+        )
         logger.log_message("task.updated", {"id": "2"}, validate=True)  # Invalid
-        logger.log_message("task.deleted", {"id": "3", "title": "Task 3", "status": "done", "priority": "low", "assignees": [], "subtask_count": 0, "completed_subtasks": 0, "progress_percentage": 100, "progress_count": 1, "created_at": "2025-01-15T10:00:00Z", "updated_at": "2025-01-15T11:00:00Z"}, validate=True)
+        logger.log_message(
+            "task.deleted",
+            {
+                "id": "3",
+                "title": "Task 3",
+                "status": "done",
+                "priority": "low",
+                "assignees": [],
+                "subtask_count": 0,
+                "completed_subtasks": 0,
+                "progress_percentage": 100,
+                "progress_count": 1,
+                "created_at": "2025-01-15T10:00:00Z",
+                "updated_at": "2025-01-15T11:00:00Z",
+            },
+            validate=True,
+        )
 
         stats = logger.get_stats()
 

@@ -44,7 +44,7 @@ class TestMiddlewareContext:
             message=original_message,
             source="client",
             type="request",
-            method="tools/call"
+            method="tools/call",
         )
 
         # Test copy with updates
@@ -73,7 +73,7 @@ class TestMiddlewareContext:
             source="server",
             type="notification",
             method="resources/read",
-            timestamp=timestamp
+            timestamp=timestamp,
         )
 
         assert context.message == message
@@ -90,6 +90,7 @@ class TestMakeMiddlewareWrapper:
     @pytest.mark.asyncio
     async def test_make_middleware_wrapper_basic(self):
         """Test make_middleware_wrapper creates proper wrapper."""
+
         # Create a simple middleware
         async def test_middleware(context, call_next):
             result = await call_next(context)
@@ -111,6 +112,7 @@ class TestMakeMiddlewareWrapper:
     @pytest.mark.asyncio
     async def test_make_middleware_wrapper_with_context_modification(self):
         """Test middleware wrapper that modifies context."""
+
         async def modifying_middleware(context, call_next):
             # Modify context before passing to next
             modified_context = context.copy(source="server")
@@ -139,9 +141,7 @@ class TestMiddlewareDispatch:
             return "result"
 
         context = MiddlewareContext(
-            message={"test": "data"},
-            method="tools/call",
-            type="request"
+            message={"test": "data"}, method="tools/call", type="request"
         )
 
         result = await middleware(context, mock_call_next)
@@ -158,7 +158,7 @@ class TestMiddlewareDispatch:
         context = MiddlewareContext(
             message=mt.CallToolRequestParams(name="test_tool", arguments={}),
             method="tools/call",
-            type="request"
+            type="request",
         )
 
         result = await middleware(context, mock_call_next)
@@ -175,7 +175,7 @@ class TestMiddlewareDispatch:
         context = MiddlewareContext(
             message=mt.ReadResourceRequestParams(uri="test://resource"),
             method="resources/read",
-            type="request"
+            type="request",
         )
 
         result = await middleware(context, mock_call_next)
@@ -187,15 +187,12 @@ class TestMiddlewareDispatch:
         middleware = Middleware()
 
         async def mock_call_next(context):
-            return mt.GetPromptResult(
-                description="test",
-                messages=[]
-            )
+            return mt.GetPromptResult(description="test", messages=[])
 
         context = MiddlewareContext(
             message=mt.GetPromptRequestParams(name="test_prompt"),
             method="prompts/get",
-            type="request"
+            type="request",
         )
 
         result = await middleware(context, mock_call_next)
@@ -212,7 +209,7 @@ class TestMiddlewareDispatch:
         context = MiddlewareContext(
             message=mt.Notification(method="test/notification", params={}),
             method="test/notification",
-            type="notification"
+            type="notification",
         )
 
         result = await middleware(context, mock_call_next)
@@ -244,8 +241,7 @@ class TestMiddlewareHandlers:
             return "request_result"
 
         context = MiddlewareContext(
-            message=mt.Request(method="test/method", params={}),
-            type="request"
+            message=mt.Request(method="test/method", params={}), type="request"
         )
         result = await middleware.on_request(context, mock_call_next)
 
@@ -261,7 +257,7 @@ class TestMiddlewareHandlers:
 
         context = MiddlewareContext(
             message=mt.Notification(method="test/notification", params={}),
-            type="notification"
+            type="notification",
         )
         result = await middleware.on_notification(context, mock_call_next)
 
@@ -277,7 +273,7 @@ class TestMiddlewareHandlers:
 
         context = MiddlewareContext(
             message=mt.CallToolRequestParams(name="test_tool", arguments={}),
-            method="tools/call"
+            method="tools/call",
         )
         result = await middleware.on_call_tool(context, mock_call_next)
 
@@ -293,7 +289,7 @@ class TestMiddlewareHandlers:
 
         context = MiddlewareContext(
             message=mt.ReadResourceRequestParams(uri="test://resource"),
-            method="resources/read"
+            method="resources/read",
         )
         result = await middleware.on_read_resource(context, mock_call_next)
 
@@ -308,8 +304,7 @@ class TestMiddlewareHandlers:
             return mt.GetPromptResult(description="test", messages=[])
 
         context = MiddlewareContext(
-            message=mt.GetPromptRequestParams(name="test_prompt"),
-            method="prompts/get"
+            message=mt.GetPromptRequestParams(name="test_prompt"), method="prompts/get"
         )
         result = await middleware.on_get_prompt(context, mock_call_next)
 
@@ -338,7 +333,7 @@ class TestCustomMiddleware:
         context = MiddlewareContext(
             message=mt.CallToolRequestParams(name="test", arguments={}),
             method="tools/call",
-            type="request"
+            type="request",
         )
 
         result = await custom(context, mock_call_next)

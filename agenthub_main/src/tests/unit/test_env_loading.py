@@ -15,22 +15,25 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 def test_env_file_loads_from_project_root():
     """Test that .env file loads correctly from project root."""
     # For unit tests, mock the environment loading behavior
-    with patch.dict(os.environ, {
-        'DATABASE_HOST': 'test-host',
-        'DATABASE_PORT': '5432',
-        'DATABASE_NAME': 'test-db',
-        'DATABASE_USER': 'test-user'
-    }):
+    with patch.dict(
+        os.environ,
+        {
+            "DATABASE_HOST": "test-host",
+            "DATABASE_PORT": "5432",
+            "DATABASE_NAME": "test-db",
+            "DATABASE_USER": "test-user",
+        },
+    ):
         # Test that environment variables are accessible
-        assert os.getenv('DATABASE_HOST') == 'test-host'
-        assert os.getenv('DATABASE_PORT') == '5432'
-        assert os.getenv('DATABASE_NAME') == 'test-db'
-        assert os.getenv('DATABASE_USER') == 'test-user'
+        assert os.getenv("DATABASE_HOST") == "test-host"
+        assert os.getenv("DATABASE_PORT") == "5432"
+        assert os.getenv("DATABASE_NAME") == "test-db"
+        assert os.getenv("DATABASE_USER") == "test-user"
 
         # Verify values match expected format
-        os.getenv('DATABASE_HOST')
-        db_port = os.getenv('DATABASE_PORT')
-        db_name = os.getenv('DATABASE_NAME')
+        os.getenv("DATABASE_HOST")
+        db_port = os.getenv("DATABASE_PORT")
+        db_name = os.getenv("DATABASE_NAME")
 
         assert db_port.isdigit(), f"DATABASE_PORT should be numeric, got: {db_port}"
         assert len(db_name) > 0, "DATABASE_NAME should not be empty"
@@ -48,9 +51,9 @@ def test_fastmcp_settings_loads_env_file():
     assert settings is not None
 
     # Check default FastMCP settings
-    assert hasattr(settings, 'host')
-    assert hasattr(settings, 'port')
-    assert hasattr(settings, 'debug')
+    assert hasattr(settings, "host")
+    assert hasattr(settings, "port")
+    assert hasattr(settings, "debug")
 
     # Verify default values (may vary based on environment)
     assert isinstance(settings.port, int)
@@ -72,30 +75,33 @@ def test_env_file_precedence():
     settings = Settings()
 
     # Verify env file is loaded (may be .env or .env.dev depending on what exists)
-    env_file = settings.model_config.get('env_file')
+    env_file = settings.model_config.get("env_file")
     assert env_file is not None
-    assert '.env' in str(env_file)
+    assert ".env" in str(env_file)
 
 
 @pytest.mark.unit
 def test_env_variables_accessible_in_app():
     """Test that environment variables are accessible throughout the application."""
     # Mock critical environment variables for unit testing
-    with patch.dict(os.environ, {
-        'DATABASE_TYPE': 'postgresql',
-        'DATABASE_HOST': 'localhost',
-        'DATABASE_PORT': '5432',
-        'DATABASE_NAME': 'test-db',
-        'DATABASE_USER': 'test_user',
-        'DATABASE_PASSWORD': 'test_password',
-        'PYTEST_CURRENT_TEST': 'test'
-    }):
+    with patch.dict(
+        os.environ,
+        {
+            "DATABASE_TYPE": "postgresql",
+            "DATABASE_HOST": "localhost",
+            "DATABASE_PORT": "5432",
+            "DATABASE_NAME": "test-db",
+            "DATABASE_USER": "test_user",
+            "DATABASE_PASSWORD": "test_password",
+            "PYTEST_CURRENT_TEST": "test",
+        },
+    ):
         # Test critical variables
         critical_vars = {
-            'DATABASE_TYPE': 'postgresql',
-            'DATABASE_HOST': ['localhost', '127.0.0.1', 'agenthub-postgres'],
-            'DATABASE_PORT': lambda x: x.isdigit(),
-            'DATABASE_NAME': lambda x: len(x) > 0,
+            "DATABASE_TYPE": "postgresql",
+            "DATABASE_HOST": ["localhost", "127.0.0.1", "agenthub-postgres"],
+            "DATABASE_PORT": lambda x: x.isdigit(),
+            "DATABASE_NAME": lambda x: len(x) > 0,
         }
 
         for var, expected in critical_vars.items():
@@ -105,7 +111,9 @@ def test_env_variables_accessible_in_app():
             if isinstance(expected, str):
                 assert value == expected, f"{var} expected '{expected}', got '{value}'"
             elif isinstance(expected, list):
-                assert value in expected, f"{var} expected one of {expected}, got '{value}'"
+                assert value in expected, (
+                    f"{var} expected one of {expected}, got '{value}'"
+                )
             elif callable(expected):
                 assert expected(value), f"{var} validation failed for value '{value}'"
 

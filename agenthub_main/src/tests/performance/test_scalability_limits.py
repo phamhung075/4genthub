@@ -46,11 +46,9 @@ class QueryCounter:
     def _count_query(self, conn, cursor, statement, parameters, context, executemany):
         """SQLAlchemy event handler to count queries"""
         self.count += 1
-        self.queries.append({
-            'sql': statement,
-            'params': parameters,
-            'timestamp': time.time()
-        })
+        self.queries.append(
+            {"sql": statement, "params": parameters, "timestamp": time.time()}
+        )
 
     def __enter__(self):
         """Start counting queries"""
@@ -67,26 +65,20 @@ class QueryCounter:
 
     def get_query_breakdown(self) -> dict:
         """Get breakdown of query types"""
-        breakdown = {
-            'SELECT': 0,
-            'INSERT': 0,
-            'UPDATE': 0,
-            'DELETE': 0,
-            'OTHER': 0
-        }
+        breakdown = {"SELECT": 0, "INSERT": 0, "UPDATE": 0, "DELETE": 0, "OTHER": 0}
 
         for query in self.queries:
-            sql = query['sql'].strip().upper()
-            if sql.startswith('SELECT'):
-                breakdown['SELECT'] += 1
-            elif sql.startswith('INSERT'):
-                breakdown['INSERT'] += 1
-            elif sql.startswith('UPDATE'):
-                breakdown['UPDATE'] += 1
-            elif sql.startswith('DELETE'):
-                breakdown['DELETE'] += 1
+            sql = query["sql"].strip().upper()
+            if sql.startswith("SELECT"):
+                breakdown["SELECT"] += 1
+            elif sql.startswith("INSERT"):
+                breakdown["INSERT"] += 1
+            elif sql.startswith("UPDATE"):
+                breakdown["UPDATE"] += 1
+            elif sql.startswith("DELETE"):
+                breakdown["DELETE"] += 1
             else:
-                breakdown['OTHER'] += 1
+                breakdown["OTHER"] += 1
 
         return breakdown
 
@@ -120,7 +112,7 @@ def create_test_project_and_branch(session) -> tuple[str, str]:
         description="Project for scalability load testing",
         user_id=user_id,
         status="active",
-        metadata={}
+        metadata={},
     )
     session.add(project)
 
@@ -135,7 +127,7 @@ def create_test_project_and_branch(session) -> tuple[str, str]:
         status="todo",
         metadata={},
         task_count=0,
-        completed_task_count=0
+        completed_task_count=0,
     )
     session.add(branch)
     session.commit()
@@ -143,7 +135,9 @@ def create_test_project_and_branch(session) -> tuple[str, str]:
     return project_id, git_branch_id
 
 
-def create_bulk_tasks(session, git_branch_id: str, project_id: str, count: int) -> list[str]:
+def create_bulk_tasks(
+    session, git_branch_id: str, project_id: str, count: int
+) -> list[str]:
     """
     Create multiple test tasks efficiently in bulk.
 
@@ -183,7 +177,7 @@ def create_bulk_tasks(session, git_branch_id: str, project_id: str, count: int) 
                 user_id=user_id,
                 progress_percentage=0,
                 created_at=now,
-                updated_at=now
+                updated_at=now,
             )
             tasks.append(task)
 
@@ -197,6 +191,7 @@ def create_bulk_tasks(session, git_branch_id: str, project_id: str, count: int) 
 # =============================================
 # TEST 1: 500 TASKS LOAD TEST
 # =============================================
+
 
 @pytest.mark.performance
 @pytest.mark.load
@@ -246,7 +241,9 @@ def test_500_tasks_load_performance(query_counter):
             f"Queries: {query_count}, Breakdown: {query_breakdown}"
         )
 
-        assert len(response.tasks) == 500, f"Expected 500 tasks, got {len(response.tasks)}"
+        assert len(response.tasks) == 500, (
+            f"Expected 500 tasks, got {len(response.tasks)}"
+        )
 
         # Verify query efficiency (should be constant ~3 queries, not 501)
         assert query_count <= 10, (
@@ -258,12 +255,15 @@ def test_500_tasks_load_performance(query_counter):
         for task in response.tasks:
             assert task.project_id is not None, "project_id should be populated"
 
-        print(f"\n✅ Test 1 PASSED: 500 tasks in {duration:.3f}s with {query_count} queries")
+        print(
+            f"\n✅ Test 1 PASSED: 500 tasks in {duration:.3f}s with {query_count} queries"
+        )
 
 
 # =============================================
 # TEST 2: 1000 TASKS LOAD TEST
 # =============================================
+
 
 @pytest.mark.performance
 @pytest.mark.load
@@ -310,7 +310,9 @@ def test_1000_tasks_load_performance(query_counter):
             f"UNACCEPTABLE RESPONSE TIME: 1000 tasks took {duration:.2f}s (target: <5s)"
         )
 
-        assert len(response.tasks) == 1000, f"Expected 1000 tasks, got {len(response.tasks)}"
+        assert len(response.tasks) == 1000, (
+            f"Expected 1000 tasks, got {len(response.tasks)}"
+        )
 
         assert query_count <= 10, (
             f"QUERY EFFICIENCY ISSUE: {query_count} queries for 1000 tasks. "
@@ -321,12 +323,15 @@ def test_1000_tasks_load_performance(query_counter):
         project_ids = [task.project_id for task in response.tasks]
         assert None not in project_ids, "Data integrity compromised at 1000 task scale"
 
-        print(f"\n✅ Test 2 PASSED: 1000 tasks in {duration:.3f}s with {query_count} queries")
+        print(
+            f"\n✅ Test 2 PASSED: 1000 tasks in {duration:.3f}s with {query_count} queries"
+        )
 
 
 # =============================================
 # TEST 3: 2000 TASKS FUTURE-PROOFING
 # =============================================
+
 
 @pytest.mark.performance
 @pytest.mark.stress
@@ -373,19 +378,24 @@ def test_2000_tasks_future_proofing(query_counter):
             f"FUTURE-PROOFING CONCERN: 2000 tasks took {duration:.2f}s (target: <10s)"
         )
 
-        assert len(response.tasks) == 2000, f"Expected 2000 tasks, got {len(response.tasks)}"
+        assert len(response.tasks) == 2000, (
+            f"Expected 2000 tasks, got {len(response.tasks)}"
+        )
 
         assert query_count <= 10, (
             f"SCALABILITY ISSUE: {query_count} queries for 2000 tasks. "
             f"Batch loading not scaling properly!"
         )
 
-        print(f"\n✅ Test 3 PASSED: 2000 tasks in {duration:.3f}s with {query_count} queries")
+        print(
+            f"\n✅ Test 3 PASSED: 2000 tasks in {duration:.3f}s with {query_count} queries"
+        )
 
 
 # =============================================
 # TEST 4: 5000 TASKS SCALABILITY CEILING
 # =============================================
+
 
 @pytest.mark.performance
 @pytest.mark.stress
@@ -440,20 +450,27 @@ def test_5000_tasks_scalability_ceiling(query_counter):
             f"Consider implementing pagination for datasets this large."
         )
 
-        assert len(response.tasks) == 5000, f"Expected 5000 tasks, got {len(response.tasks)}"
+        assert len(response.tasks) == 5000, (
+            f"Expected 5000 tasks, got {len(response.tasks)}"
+        )
 
         assert query_count <= 10, (
             f"BATCH LOADING FAILURE: {query_count} queries for 5000 tasks. "
             f"Batch loading should be constant ~3 queries regardless of task count!"
         )
 
-        print(f"\n✅ Test 4 PASSED: 5000 tasks in {duration:.3f}s with {query_count} queries")
-        print("   Scalability ceiling validated - system can handle enterprise-scale workloads")
+        print(
+            f"\n✅ Test 4 PASSED: 5000 tasks in {duration:.3f}s with {query_count} queries"
+        )
+        print(
+            "   Scalability ceiling validated - system can handle enterprise-scale workloads"
+        )
 
 
 # =============================================
 # TEST 5: CONNECTION POOL STABILITY
 # =============================================
+
 
 @pytest.mark.performance
 @pytest.mark.stress
@@ -505,14 +522,19 @@ def test_connection_pool_stability_concurrent_load():
     errors = []
 
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = {executor.submit(query_tasks, branch_id): branch_id for branch_id in branch_configs}
+        futures = {
+            executor.submit(query_tasks, branch_id): branch_id
+            for branch_id in branch_configs
+        }
 
         for future in as_completed(futures, timeout=30):
             branch_id = futures[future]
             try:
                 duration, task_count = future.result(timeout=10)
                 results.append((branch_id, duration, task_count))
-                print(f"  ✅ Branch {branch_id[:8]}: {task_count} tasks in {duration:.3f}s")
+                print(
+                    f"  ✅ Branch {branch_id[:8]}: {task_count} tasks in {duration:.3f}s"
+                )
             except Exception as e:
                 errors.append((branch_id, str(e)))
                 print(f"  ❌ Branch {branch_id[:8]} failed: {e}")
@@ -528,7 +550,9 @@ def test_connection_pool_stability_concurrent_load():
     )
 
     for branch_id, duration, task_count in results:
-        assert task_count == 200, f"Branch {branch_id} returned {task_count} tasks, expected 200"
+        assert task_count == 200, (
+            f"Branch {branch_id} returned {task_count} tasks, expected 200"
+        )
         assert duration < 10.0, f"Branch {branch_id} took {duration:.2f}s (max: 10s)"
 
     print("\n✅ Test 5 PASSED: Connection pool stable under 5 concurrent requests")
@@ -537,6 +561,7 @@ def test_connection_pool_stability_concurrent_load():
 # =============================================
 # TEST 6: MEMORY CONSUMPTION STABILITY
 # =============================================
+
 
 @pytest.mark.performance
 @pytest.mark.memory
@@ -596,13 +621,16 @@ def test_memory_consumption_stability():
         f"Memory before: {mem_before:.2f}MB, after: {mem_after:.2f}MB"
     )
 
-    print(f"\n✅ Test 6 PASSED: Memory stable - {mem_growth:.2f}MB growth over 10 requests")
+    print(
+        f"\n✅ Test 6 PASSED: Memory stable - {mem_growth:.2f}MB growth over 10 requests"
+    )
     print(f"   (Before: {mem_before:.1f}MB, After: {mem_after:.1f}MB)")
 
 
 # =============================================
 # PERFORMANCE REPORT SUMMARY
 # =============================================
+
 
 @pytest.mark.performance
 def test_generate_performance_summary(query_counter):
@@ -641,31 +669,45 @@ def test_generate_performance_summary(query_counter):
             duration = time.time() - start
 
             metrics[scale] = {
-                'duration': duration,
-                'queries': qc.count,
-                'task_count': len(response.tasks),
-                'queries_per_task': qc.count / scale if scale > 0 else 0
+                "duration": duration,
+                "queries": qc.count,
+                "task_count": len(response.tasks),
+                "queries_per_task": qc.count / scale if scale > 0 else 0,
             }
 
     # Print performance report
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("SCALABILITY PERFORMANCE REPORT")
-    print("="*70)
+    print("=" * 70)
     print(f"{'Tasks':<10} {'Duration':<12} {'Queries':<10} {'Q/Task':<10} {'Status'}")
-    print("-"*70)
+    print("-" * 70)
 
     for scale in test_scales:
         m = metrics[scale]
-        status = "✅ PASS" if m['duration'] < (2.0 if scale == 500 else 5.0 if scale == 1000 else 1.0) else "❌ SLOW"
-        print(f"{scale:<10} {m['duration']:.3f}s {'':<6} {m['queries']:<10} {m['queries_per_task']:.4f} {'':<5} {status}")
+        status = (
+            "✅ PASS"
+            if m["duration"] < (2.0 if scale == 500 else 5.0 if scale == 1000 else 1.0)
+            else "❌ SLOW"
+        )
+        print(
+            f"{scale:<10} {m['duration']:.3f}s {'':<6} {m['queries']:<10} {m['queries_per_task']:.4f} {'':<5} {status}"
+        )
 
-    print("="*70)
+    print("=" * 70)
     print("\nSCALABILITY VALIDATION:")
-    print(f"✅ Query efficiency: Constant ~{metrics[1000]['queries']} queries regardless of task count")
-    print(f"✅ Linear time scaling: {metrics[1000]['duration'] / metrics[100]['duration']:.1f}x time for 10x tasks")
-    print(f"✅ N+1 problem resolved: {metrics[1000]['queries_per_task']:.4f} queries per task")
-    print("="*70 + "\n")
+    print(
+        f"✅ Query efficiency: Constant ~{metrics[1000]['queries']} queries regardless of task count"
+    )
+    print(
+        f"✅ Linear time scaling: {metrics[1000]['duration'] / metrics[100]['duration']:.1f}x time for 10x tasks"
+    )
+    print(
+        f"✅ N+1 problem resolved: {metrics[1000]['queries_per_task']:.4f} queries per task"
+    )
+    print("=" * 70 + "\n")
 
     # Assert summary metrics
-    assert metrics[1000]['queries'] <= 10, "Query count should be constant with batch loading"
-    assert metrics[1000]['duration'] < 5.0, "1000 tasks should complete in <5s"
+    assert metrics[1000]["queries"] <= 10, (
+        "Query count should be constant with batch loading"
+    )
+    assert metrics[1000]["duration"] < 5.0, "1000 tasks should complete in <5s"

@@ -22,7 +22,7 @@ Success Criteria:
 import os
 import sys
 
-sys.path.append(os.path.dirname(__file__) + '/../..')
+sys.path.append(os.path.dirname(__file__) + "/../..")
 
 import uuid
 from datetime import UTC, datetime
@@ -54,11 +54,17 @@ class LabelIntegrationTestSuite:
 
         # Ensure test project and branch exist
         try:
-            project = self.session.query(Project).filter(Project.id == "default_project").first()
+            project = (
+                self.session.query(Project)
+                .filter(Project.id == "default_project")
+                .first()
+            )
             if project:
-                branch = self.session.query(ProjectGitBranch).filter(
-                    ProjectGitBranch.project_id == "default_project"
-                ).first()
+                branch = (
+                    self.session.query(ProjectGitBranch)
+                    .filter(ProjectGitBranch.project_id == "default_project")
+                    .first()
+                )
                 if branch:
                     self.git_branch_id = branch.id
                 else:
@@ -71,7 +77,7 @@ class LabelIntegrationTestSuite:
                         description="Test branch for label tests",
                         user_id=self.user_id,
                         created_at=datetime.now(UTC),
-                        updated_at=datetime.now(UTC)
+                        updated_at=datetime.now(UTC),
                     )
                     self.session.add(test_branch)
                     self.session.commit()
@@ -92,9 +98,9 @@ class LabelIntegrationTestSuite:
 
     def run_test(self, test_name, test_func):
         """Run a single test and track result"""
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"Test: {test_name}")
-        print('='*80)
+        print("=" * 80)
 
         try:
             test_func()
@@ -104,14 +110,19 @@ class LabelIntegrationTestSuite:
         except AssertionError as e:
             print(f"❌ FAIL: {test_name}")
             print(f"AssertionError: {str(e)}")
-            self.test_results.append({"name": test_name, "result": "FAIL", "error": str(e)})
+            self.test_results.append(
+                {"name": test_name, "result": "FAIL", "error": str(e)}
+            )
             return False
         except Exception as e:
             print(f"❌ ERROR: {test_name}")
             print(f"{type(e).__name__}: {str(e)}")
             import traceback
+
             print(traceback.format_exc())
-            self.test_results.append({"name": test_name, "result": "ERROR", "error": str(e)})
+            self.test_results.append(
+                {"name": test_name, "result": "ERROR", "error": str(e)}
+            )
             return False
 
     # ========================================================================
@@ -121,9 +132,7 @@ class LabelIntegrationTestSuite:
     def test_create_single_label(self):
         """Test creating a single label with UTC timestamp"""
         label = self.label_repo.create_label(
-            name="test-backend",
-            color="#0066cc",
-            description="Backend tasks"
+            name="test-backend", color="#0066cc", description="Backend tasks"
         )
 
         assert label is not None, "Label should not be None"
@@ -146,12 +155,18 @@ class LabelIntegrationTestSuite:
 
         assert len(created_labels) == 3, "Should create 3 labels"
         for label in created_labels:
-            assert label.created_at.tzinfo == UTC, f"{label.name} must have UTC timestamp"
+            assert label.created_at.tzinfo == UTC, (
+                f"{label.name} must have UTC timestamp"
+            )
         print(f"  ✓ Created {len(created_labels)} labels with UTC timestamps")
 
     def test_create_label_with_complex_name(self):
         """Test labels with hyphens and numbers"""
-        complex_names = ["api-v2-integration", "frontend-ui-redesign", "db-migration-phase-3"]
+        complex_names = [
+            "api-v2-integration",
+            "frontend-ui-redesign",
+            "db-migration-phase-3",
+        ]
 
         for name in complex_names:
             label = self.label_repo.create_label(name=name)
@@ -168,7 +183,9 @@ class LabelIntegrationTestSuite:
 
         assert label.created_at >= before_create, "Timestamp should be after test start"
         assert label.created_at <= after_create, "Timestamp should be before test end"
-        assert (after_create - label.created_at).total_seconds() < 5, "Timestamp should be very recent"
+        assert (after_create - label.created_at).total_seconds() < 5, (
+            "Timestamp should be very recent"
+        )
         print("  ✓ Timestamp precision verified")
 
     # ========================================================================
@@ -186,12 +203,14 @@ class LabelIntegrationTestSuite:
             git_branch_id=self.git_branch_id,
             assignees="test-orchestrator-agent",
             priority="medium",
-            status="todo"
+            status="todo",
         )
 
         # Create and assign label
         label = self.label_repo.create_label(name="assign-test")
-        result = self.label_repo.assign_label_to_task(task_id=task_id, label_id=label.id)
+        result = self.label_repo.assign_label_to_task(
+            task_id=task_id, label_id=label.id
+        )
 
         assert result is True, "Label assignment should return True"
 
@@ -211,7 +230,7 @@ class LabelIntegrationTestSuite:
             git_branch_id=self.git_branch_id,
             assignees="test-orchestrator-agent",
             priority="high",
-            status="todo"
+            status="todo",
         )
 
         # Create and assign multiple labels
@@ -238,12 +257,12 @@ class LabelIntegrationTestSuite:
             task_id = str(uuid.uuid4())
             self.task_repo.create_task(
                 task_id=task_id,
-                title=f"Shared Label Task {i+1}",
-                description=f"Task {i+1} with shared label",
+                title=f"Shared Label Task {i + 1}",
+                description=f"Task {i + 1} with shared label",
                 git_branch_id=self.git_branch_id,
                 assignees="test-orchestrator-agent",
                 priority="medium",
-                status="todo"
+                status="todo",
             )
             task_ids.append(task_id)
             self.label_repo.assign_label_to_task(task_id=task_id, label_id=label.id)
@@ -263,14 +282,16 @@ class LabelIntegrationTestSuite:
             git_branch_id=self.git_branch_id,
             assignees="test-orchestrator-agent",
             priority="medium",
-            status="todo"
+            status="todo",
         )
 
         label = self.label_repo.create_label(name="temp-label")
         self.label_repo.assign_label_to_task(task_id=task_id, label_id=label.id)
 
         # Remove label
-        result = self.label_repo.remove_label_from_task(task_id=task_id, label_id=label.id)
+        result = self.label_repo.remove_label_from_task(
+            task_id=task_id, label_id=label.id
+        )
 
         assert result is True, "Label removal should return True"
         task_labels = self.label_repo.get_labels_by_task(task_id)
@@ -333,10 +354,14 @@ class LabelIntegrationTestSuite:
         fake_task_id = str(uuid.uuid4())
 
         try:
-            self.label_repo.assign_label_to_task(task_id=fake_task_id, label_id=label.id)
+            self.label_repo.assign_label_to_task(
+                task_id=fake_task_id, label_id=label.id
+            )
             assert False, "Should have raised NotFoundError"
         except Exception as e:
-            assert "not found" in str(e).lower() or "Task" in str(e), "Error should mention task not found"
+            assert "not found" in str(e).lower() or "Task" in str(e), (
+                "Error should mention task not found"
+            )
             print("  ✓ Assignment to nonexistent task correctly rejected")
 
     def test_get_nonexistent_label(self):
@@ -353,24 +378,28 @@ class LabelIntegrationTestSuite:
 
     def run_all_tests(self):
         """Run all tests and print summary"""
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("COMPREHENSIVE LABEL INTEGRATION TEST SUITE")
-        print("="*80)
+        print("=" * 80)
         print(f"User ID: {self.user_id}")
         print(f"Branch ID: {self.git_branch_id}")
-        print("="*80)
+        print("=" * 80)
 
         # Label Creation Tests
         print("\n### LABEL CREATION TESTS ###")
         self.run_test("Create Single Label", self.test_create_single_label)
         self.run_test("Create Multiple Labels", self.test_create_multiple_labels)
-        self.run_test("Create Label with Complex Name", self.test_create_label_with_complex_name)
+        self.run_test(
+            "Create Label with Complex Name", self.test_create_label_with_complex_name
+        )
         self.run_test("Label Timestamp Precision", self.test_label_timestamp_precision)
 
         # Label-Task Association Tests
         print("\n### LABEL-TASK ASSOCIATION TESTS ###")
         self.run_test("Assign Label to Task", self.test_assign_label_to_task)
-        self.run_test("Assign Multiple Labels to Task", self.test_assign_multiple_labels_to_task)
+        self.run_test(
+            "Assign Multiple Labels to Task", self.test_assign_multiple_labels_to_task
+        )
         self.run_test("Same Label Multiple Tasks", self.test_same_label_multiple_tasks)
         self.run_test("Remove Label from Task", self.test_remove_label_from_task)
 
@@ -383,7 +412,9 @@ class LabelIntegrationTestSuite:
         # Error Handling Tests
         print("\n### ERROR HANDLING TESTS ###")
         self.run_test("Duplicate Label Rejected", self.test_duplicate_label_rejected)
-        self.run_test("Assign to Nonexistent Task", self.test_assign_to_nonexistent_task)
+        self.run_test(
+            "Assign to Nonexistent Task", self.test_assign_to_nonexistent_task
+        )
         self.run_test("Get Nonexistent Label", self.test_get_nonexistent_label)
 
         # Print Summary
@@ -393,9 +424,9 @@ class LabelIntegrationTestSuite:
 
     def print_summary(self):
         """Print test execution summary"""
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("TEST SUMMARY")
-        print("="*80)
+        print("=" * 80)
 
         total = len(self.test_results)
         passed = sum(1 for r in self.test_results if r["result"] == "PASS")
@@ -408,11 +439,13 @@ class LabelIntegrationTestSuite:
         print(f"Failed: {failed} ❌")
         print(f"Errors: {errors} ⚠️")
         print(f"Success Rate: {success_rate:.1f}%")
-        print("="*80)
+        print("=" * 80)
 
         if passed == total:
             print("\n🎉 ALL TESTS PASSED!")
-            print("Label integration functionality is working correctly with UTC timestamps.")
+            print(
+                "Label integration functionality is working correctly with UTC timestamps."
+            )
         else:
             print(f"\n⚠️ {failed + errors} test(s) did not pass.")
             print("\nFailed/Error Tests:")

@@ -40,6 +40,7 @@ from fastmcp.agent_management.infrastructure.repositories import (
 # HELPER FUNCTIONS
 # ============================================================================
 
+
 def create_test_template(slug: str = "test-agent") -> AgentTemplate:
     """Create a test agent template"""
     template_id = AgentTemplateId.generate_new()
@@ -48,7 +49,7 @@ def create_test_template(slug: str = "test-agent") -> AgentTemplate:
         tools=["Read", "Write"],
         capabilities={"test": True},
         rules=["Test rule"],
-        output_format=None
+        output_format=None,
     )
 
     return AgentTemplate(
@@ -61,7 +62,7 @@ def create_test_template(slug: str = "test-agent") -> AgentTemplate:
         default_configuration=configuration,
         metadata={"source": "test"},
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
 
@@ -70,7 +71,7 @@ def create_test_instance(
     template_id: AgentTemplateId,
     visibility: str = "public",
     share_token: str = None,
-    original_creator_id: UserAgentInstanceId = None
+    original_creator_id: UserAgentInstanceId = None,
 ) -> UserAgentInstance:
     """Create a test user agent instance"""
     instance_id = UserAgentInstanceId.generate_new()
@@ -79,7 +80,7 @@ def create_test_instance(
         tools=["Read"],
         capabilities={},
         rules=[],
-        output_format=None
+        output_format=None,
     )
 
     return UserAgentInstance(
@@ -91,18 +92,20 @@ def create_test_instance(
         is_enabled=True,
         is_customized=False,
         visibility=visibility,
-        share_token=share_token or (str(uuid4())[:64] if visibility == "public" else None),
+        share_token=share_token
+        or (str(uuid4())[:64] if visibility == "public" else None),
         original_creator_id=original_creator_id,
         metadata={},
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
-        last_used_at=None
+        last_used_at=None,
     )
 
 
 # ============================================================================
 # TEST SUITE: get_agent_for_call() - ORPHANED FLAG IN API RESPONSE
 # ============================================================================
+
 
 class TestGetAgentForCallOrphanedFlag:
     """Test API responses include orphaned status and warnings"""
@@ -131,7 +134,7 @@ class TestGetAgentForCallOrphanedFlag:
         imported_instance = create_test_instance(
             user_b,
             template.id,
-            original_creator_id=user_a  # User ID of original creator
+            original_creator_id=user_a,  # User ID of original creator
         )
         instance_repo.save(imported_instance)
 
@@ -142,12 +145,13 @@ class TestGetAgentForCallOrphanedFlag:
         response = facade.get_agent_for_call(user_b, template.slug)
 
         # Assert - Orphaned flag and warning present
-        assert response["is_orphaned"] is True, \
-            "Response should flag orphaned import"
-        assert response["metadata"]["orphaned_warning"] is not None, \
+        assert response["is_orphaned"] is True, "Response should flag orphaned import"
+        assert response["metadata"]["orphaned_warning"] is not None, (
             "Response should include orphaned warning message"
-        assert "not supported by owner anymore" in response["metadata"]["orphaned_warning"], \
-            "Warning should mention owner no longer supports"
+        )
+        assert (
+            "not supported by owner anymore" in response["metadata"]["orphaned_warning"]
+        ), "Warning should mention owner no longer supports"
 
         # Cleanup
         instance_repo.delete(imported_instance.id)
@@ -177,10 +181,12 @@ class TestGetAgentForCallOrphanedFlag:
         response = facade.get_agent_for_call(user_a, template.slug)
 
         # Assert - No orphaned flag
-        assert response["is_orphaned"] is False, \
+        assert response["is_orphaned"] is False, (
             "Original agent should not be flagged as orphaned"
-        assert response["metadata"]["orphaned_warning"] is None, \
+        )
+        assert response["metadata"]["orphaned_warning"] is None, (
             "Original agent should not have warning"
+        )
 
         # Cleanup
         instance_repo.delete(original_instance.id)
@@ -212,7 +218,7 @@ class TestGetAgentForCallOrphanedFlag:
         imported_instance = create_test_instance(
             user_b,
             template.id,
-            original_creator_id=user_a  # User ID of original creator
+            original_creator_id=user_a,  # User ID of original creator
         )
         instance_repo.save(imported_instance)
 
@@ -220,10 +226,12 @@ class TestGetAgentForCallOrphanedFlag:
         response = facade.get_agent_for_call(user_b, template.slug)
 
         # Assert - No orphaned flag (original still exists)
-        assert response["is_orphaned"] is False, \
+        assert response["is_orphaned"] is False, (
             "Active import should not be flagged as orphaned"
-        assert response["metadata"]["orphaned_warning"] is None, \
+        )
+        assert response["metadata"]["orphaned_warning"] is None, (
             "Active import should not have warning"
+        )
 
         # Cleanup
         instance_repo.delete(imported_instance.id)

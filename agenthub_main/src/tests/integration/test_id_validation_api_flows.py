@@ -41,14 +41,14 @@ class TestSubtaskAPIIntegrationWithValidation:
             "git_branch_id": self.git_branch_id,
             "project_id": self.project_id,
             "title": "Test Parent Task",
-            "status": "todo"
+            "status": "todo",
         }
 
         self.mock_subtask = {
             "id": self.subtask_id,
             "parent_task_id": self.task_id,
             "title": "Test Subtask",
-            "status": "todo"
+            "status": "todo",
         }
 
     def test_subtask_controller_integration_with_validation(self):
@@ -86,20 +86,23 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                 # Validate task context
                 context_result = self.validator.validate_task_context(
-                    task_id=task_id,
-                    expected_git_branch_id=git_branch_id
+                    task_id=task_id, expected_git_branch_id=git_branch_id
                 )
 
                 if not context_result.is_valid:
-                    raise ValueError(f"Task context validation failed: {context_result.error_message}")
+                    raise ValueError(
+                        f"Task context validation failed: {context_result.error_message}"
+                    )
 
                 # Get subtask facade with CORRECT git_branch_id
                 return self._facade_service.get_subtask_facade(
                     user_id=user_id,
-                    git_branch_id=git_branch_id  # FIXED: Use actual git_branch_id
+                    git_branch_id=git_branch_id,  # FIXED: Use actual git_branch_id
                 )
 
-            def create_subtask(self, task_id: str, title: str, user_id: str, **kwargs) -> dict:
+            def create_subtask(
+                self, task_id: str, title: str, user_id: str, **kwargs
+            ) -> dict:
                 """Create subtask with validation."""
                 # Get validated facade
                 facade = self._get_facade_for_request(task_id=task_id, user_id=user_id)
@@ -108,7 +111,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                 result = facade.create_subtask(
                     task_id=task_id,  # Use as parent_task_id
                     title=title,
-                    **kwargs
+                    **kwargs,
                 )
 
                 return result
@@ -116,15 +119,14 @@ class TestSubtaskAPIIntegrationWithValidation:
             def get_subtask(self, task_id: str, subtask_id: str, user_id: str) -> dict:
                 """Get subtask with validation."""
                 # Validate all parameters
-                self._validate_request_parameters(
-                    task_id=task_id,
-                    user_id=user_id
-                )
+                self._validate_request_parameters(task_id=task_id, user_id=user_id)
 
                 # Validate subtask ID format
                 subtask_result = self.validator.validate_uuid_format(subtask_id)
                 if not subtask_result.is_valid:
-                    raise ValueError(f"Invalid subtask ID: {subtask_result.error_message}")
+                    raise ValueError(
+                        f"Invalid subtask ID: {subtask_result.error_message}"
+                    )
 
                 # Get validated facade
                 facade = self._get_facade_for_request(task_id=task_id, user_id=user_id)
@@ -140,18 +142,18 @@ class TestSubtaskAPIIntegrationWithValidation:
         mock_task_facade = Mock()
         mock_task_facade.get_task.return_value = {
             "success": True,
-            "data": {"task": self.mock_task}
+            "data": {"task": self.mock_task},
         }
 
         # Mock subtask facade
         mock_subtask_facade = Mock()
         mock_subtask_facade.create_subtask.return_value = {
             "success": True,
-            "subtask": self.mock_subtask
+            "subtask": self.mock_subtask,
         }
         mock_subtask_facade.get_subtask.return_value = {
             "success": True,
-            "subtask": self.mock_subtask
+            "subtask": self.mock_subtask,
         }
 
         controller._facade_service.get_task_facade.return_value = mock_task_facade
@@ -159,9 +161,7 @@ class TestSubtaskAPIIntegrationWithValidation:
 
         # Test successful subtask creation
         result = controller.create_subtask(
-            task_id=self.task_id,
-            title="Test Subtask",
-            user_id=self.user_id
+            task_id=self.task_id, title="Test Subtask", user_id=self.user_id
         )
 
         assert result["success"] is True
@@ -170,14 +170,12 @@ class TestSubtaskAPIIntegrationWithValidation:
         # Verify facade was called with correct git_branch_id
         controller._facade_service.get_subtask_facade.assert_called_with(
             user_id=self.user_id,
-            git_branch_id=self.git_branch_id  # Should use git_branch_id from task
+            git_branch_id=self.git_branch_id,  # Should use git_branch_id from task
         )
 
         # Test successful subtask retrieval
         get_result = controller.get_subtask(
-            task_id=self.task_id,
-            subtask_id=self.subtask_id,
-            user_id=self.user_id
+            task_id=self.task_id, subtask_id=self.subtask_id, user_id=self.user_id
         )
 
         assert get_result["success"] is True
@@ -185,9 +183,7 @@ class TestSubtaskAPIIntegrationWithValidation:
         # Test validation failures
         with pytest.raises(ValueError, match="Parameter validation failed"):
             controller.create_subtask(
-                task_id="invalid-uuid",
-                title="Test",
-                user_id=self.user_id
+                task_id="invalid-uuid", title="Test", user_id=self.user_id
             )
 
     def test_api_endpoint_integration_with_validation(self):
@@ -208,7 +204,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                 if not task_id or not user_id:
                     return {
                         "success": False,
-                        "error": "Missing required parameters: task_id, user_id"
+                        "error": "Missing required parameters: task_id, user_id",
                     }
 
                 try:
@@ -222,31 +218,20 @@ class TestSubtaskAPIIntegrationWithValidation:
                         if not subtask_result.is_valid:
                             return {
                                 "success": False,
-                                "error": f"Invalid subtask ID: {subtask_result.error_message}"
+                                "error": f"Invalid subtask ID: {subtask_result.error_message}",
                             }
 
                     # Call controller
                     result = self.controller.create_subtask(
-                        task_id=task_id,
-                        user_id=user_id,
-                        **subtask_data
+                        task_id=task_id, user_id=user_id, **subtask_data
                     )
 
-                    return {
-                        "success": True,
-                        "data": result
-                    }
+                    return {"success": True, "data": result}
 
                 except IDValidationError as e:
-                    return {
-                        "success": False,
-                        "error": f"Validation error: {str(e)}"
-                    }
+                    return {"success": False, "error": f"Validation error: {str(e)}"}
                 except Exception as e:
-                    return {
-                        "success": False,
-                        "error": f"Internal error: {str(e)}"
-                    }
+                    return {"success": False, "error": f"Internal error: {str(e)}"}
 
             def handle_get_subtask(self, request_data: dict) -> dict:
                 """Handle GET /api/v2/tasks/{task_id}/subtasks/{subtask_id} with validation."""
@@ -256,48 +241,36 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                 # API-level validation
                 if not all([task_id, subtask_id, user_id]):
-                    return {
-                        "success": False,
-                        "error": "Missing required parameters"
-                    }
+                    return {"success": False, "error": "Missing required parameters"}
 
                 try:
                     # Validate all IDs
                     result = self.validator.validate_parameter_mapping(
-                        task_id=task_id,
-                        user_id=user_id
+                        task_id=task_id, user_id=user_id
                     )
 
                     if not result.is_valid:
                         return {
                             "success": False,
-                            "error": f"Parameter validation failed: {result.error_message}"
+                            "error": f"Parameter validation failed: {result.error_message}",
                         }
 
                     subtask_result = self.validator.validate_uuid_format(subtask_id)
                     if not subtask_result.is_valid:
                         return {
                             "success": False,
-                            "error": f"Invalid subtask ID: {subtask_result.error_message}"
+                            "error": f"Invalid subtask ID: {subtask_result.error_message}",
                         }
 
                     # Call controller
                     controller_result = self.controller.get_subtask(
-                        task_id=task_id,
-                        subtask_id=subtask_id,
-                        user_id=user_id
+                        task_id=task_id, subtask_id=subtask_id, user_id=user_id
                     )
 
-                    return {
-                        "success": True,
-                        "data": controller_result
-                    }
+                    return {"success": True, "data": controller_result}
 
                 except Exception as e:
-                    return {
-                        "success": False,
-                        "error": str(e)
-                    }
+                    return {"success": False, "error": str(e)}
 
         # Set up API handler
         api_handler = ValidatedAPIHandler(self.validator)
@@ -308,10 +281,7 @@ class TestSubtaskAPIIntegrationWithValidation:
         create_request = {
             "task_id": self.task_id,
             "user_id": self.user_id,
-            "subtask_data": {
-                "title": "New Subtask",
-                "description": "Test description"
-            }
+            "subtask_data": {"title": "New Subtask", "description": "Test description"},
         }
 
         create_response = api_handler.handle_create_subtask(create_request)
@@ -322,7 +292,7 @@ class TestSubtaskAPIIntegrationWithValidation:
         get_request = {
             "task_id": self.task_id,
             "subtask_id": self.subtask_id,
-            "user_id": self.user_id
+            "user_id": self.user_id,
         }
 
         get_response = api_handler.handle_get_subtask(get_request)
@@ -332,7 +302,7 @@ class TestSubtaskAPIIntegrationWithValidation:
         invalid_create_request = {
             "task_id": "invalid-uuid",
             "user_id": self.user_id,
-            "subtask_data": {"title": "Test"}
+            "subtask_data": {"title": "Test"},
         }
 
         invalid_response = api_handler.handle_create_subtask(invalid_create_request)
@@ -357,9 +327,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                 # Validate before database operation
                 try:
                     prevent_id_confusion(
-                        task_id=task_id,
-                        git_branch_id=git_branch_id,
-                        user_id=user_id
+                        task_id=task_id, git_branch_id=git_branch_id, user_id=user_id
                     )
                 except IDValidationError as e:
                     raise ValueError(f"Task creation validation failed: {e}")
@@ -370,7 +338,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                     "git_branch_id": git_branch_id,
                     "user_id": user_id,
                     "title": task_data["title"],
-                    "created_at": "2025-09-20T21:00:00Z"
+                    "created_at": "2025-09-20T21:00:00Z",
                 }
 
                 return task_id
@@ -389,23 +357,24 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                 # Validate user access
                 if parent_task["user_id"] != user_id:
-                    raise ValueError("User not authorized to create subtask for this task")
+                    raise ValueError(
+                        "User not authorized to create subtask for this task"
+                    )
 
                 # Validate task context
                 context_result = self.validator.validate_task_context(
                     task_id=parent_task_id,
-                    expected_git_branch_id=parent_task["git_branch_id"]
+                    expected_git_branch_id=parent_task["git_branch_id"],
                 )
 
                 if not context_result.is_valid:
-                    raise ValueError(f"Task context validation failed: {context_result.error_message}")
+                    raise ValueError(
+                        f"Task context validation failed: {context_result.error_message}"
+                    )
 
                 # Validate subtask parameters
                 try:
-                    prevent_id_confusion(
-                        task_id=parent_task_id,
-                        user_id=user_id
-                    )
+                    prevent_id_confusion(task_id=parent_task_id, user_id=user_id)
                 except IDValidationError as e:
                     raise ValueError(f"Subtask creation validation failed: {e}")
 
@@ -416,7 +385,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                     "user_id": user_id,
                     "title": subtask_data["title"],
                     "status": "todo",
-                    "created_at": "2025-09-20T21:00:00Z"
+                    "created_at": "2025-09-20T21:00:00Z",
                 }
 
                 return subtask_id
@@ -439,11 +408,15 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                 # Return subtasks
                 return [
-                    subtask for subtask in self.subtasks.values()
-                    if subtask["parent_task_id"] == task_id and subtask["user_id"] == user_id
+                    subtask
+                    for subtask in self.subtasks.values()
+                    if subtask["parent_task_id"] == task_id
+                    and subtask["user_id"] == user_id
                 ]
 
-            def update_subtask(self, subtask_id: str, update_data: dict, user_id: str) -> dict:
+            def update_subtask(
+                self, subtask_id: str, update_data: dict, user_id: str
+            ) -> dict:
                 """Update subtask with validation."""
                 # Validate subtask exists
                 if subtask_id not in self.subtasks:
@@ -458,16 +431,17 @@ class TestSubtaskAPIIntegrationWithValidation:
                 # Validate parameters
                 parent_task_id = subtask["parent_task_id"]
                 try:
-                    prevent_id_confusion(
-                        task_id=parent_task_id,
-                        user_id=user_id
-                    )
+                    prevent_id_confusion(task_id=parent_task_id, user_id=user_id)
                 except IDValidationError as e:
                     raise ValueError(f"Subtask update validation failed: {e}")
 
                 # Update subtask
                 for key, value in update_data.items():
-                    if key not in ["id", "parent_task_id", "user_id"]:  # Protect key fields
+                    if key not in [
+                        "id",
+                        "parent_task_id",
+                        "user_id",
+                    ]:  # Protect key fields
                         subtask[key] = value
 
                 subtask["updated_at"] = "2025-09-20T21:00:00Z"
@@ -477,26 +451,24 @@ class TestSubtaskAPIIntegrationWithValidation:
         db_service = ValidatedDatabaseService(self.validator)
 
         # Create parent task
-        task_id = db_service.create_task({
-            "git_branch_id": self.git_branch_id,
-            "user_id": self.user_id,
-            "title": "Parent Task"
-        })
+        task_id = db_service.create_task(
+            {
+                "git_branch_id": self.git_branch_id,
+                "user_id": self.user_id,
+                "title": "Parent Task",
+            }
+        )
 
         assert task_id in db_service.tasks
 
         # Create subtasks
-        subtask1_id = db_service.create_subtask({
-            "parent_task_id": task_id,
-            "user_id": self.user_id,
-            "title": "Subtask 1"
-        })
+        subtask1_id = db_service.create_subtask(
+            {"parent_task_id": task_id, "user_id": self.user_id, "title": "Subtask 1"}
+        )
 
-        subtask2_id = db_service.create_subtask({
-            "parent_task_id": task_id,
-            "user_id": self.user_id,
-            "title": "Subtask 2"
-        })
+        subtask2_id = db_service.create_subtask(
+            {"parent_task_id": task_id, "user_id": self.user_id, "title": "Subtask 2"}
+        )
 
         assert subtask1_id in db_service.subtasks
         assert subtask2_id in db_service.subtasks
@@ -514,25 +486,29 @@ class TestSubtaskAPIIntegrationWithValidation:
         updated = db_service.update_subtask(
             subtask1_id,
             {"title": "Updated Subtask 1", "status": "in_progress"},
-            self.user_id
+            self.user_id,
         )
         assert updated["title"] == "Updated Subtask 1"
         assert updated["status"] == "in_progress"
 
         # Test validation failures
         with pytest.raises(ValueError, match="validation failed"):
-            db_service.create_task({
-                "git_branch_id": "invalid-uuid",
-                "user_id": self.user_id,
-                "title": "Invalid Task"
-            })
+            db_service.create_task(
+                {
+                    "git_branch_id": "invalid-uuid",
+                    "user_id": self.user_id,
+                    "title": "Invalid Task",
+                }
+            )
 
         with pytest.raises(ValueError, match="not found"):
-            db_service.create_subtask({
-                "parent_task_id": str(uuid4()),  # Non-existent
-                "user_id": self.user_id,
-                "title": "Orphan Subtask"
-            })
+            db_service.create_subtask(
+                {
+                    "parent_task_id": str(uuid4()),  # Non-existent
+                    "user_id": self.user_id,
+                    "title": "Orphan Subtask",
+                }
+            )
 
     def test_full_stack_integration_scenario(self):
         """Test full stack integration scenario from API to database."""
@@ -552,42 +528,32 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                     # Validate API parameters
                     api_result = self.validator.validate_parameter_mapping(
-                        task_id=task_id,
-                        user_id=user_id
+                        task_id=task_id, user_id=user_id
                     )
 
                     if not api_result.is_valid:
                         return {
                             "status": 400,
-                            "error": f"Invalid parameters: {api_result.error_message}"
+                            "error": f"Invalid parameters: {api_result.error_message}",
                         }
 
                     # 2. Controller Layer
                     controller_result = self._controller_create_subtask(
-                        task_id=task_id,
-                        user_id=user_id,
-                        subtask_data=body
+                        task_id=task_id, user_id=user_id, subtask_data=body
                     )
 
                     if not controller_result["success"]:
-                        return {
-                            "status": 400,
-                            "error": controller_result["error"]
-                        }
+                        return {"status": 400, "error": controller_result["error"]}
 
                     # 3. Return success response
-                    return {
-                        "status": 201,
-                        "data": controller_result["data"]
-                    }
+                    return {"status": 201, "data": controller_result["data"]}
 
                 except Exception as e:
-                    return {
-                        "status": 500,
-                        "error": f"Internal server error: {str(e)}"
-                    }
+                    return {"status": 500, "error": f"Internal server error: {str(e)}"}
 
-            def _controller_create_subtask(self, task_id: str, user_id: str, subtask_data: dict) -> dict:
+            def _controller_create_subtask(
+                self, task_id: str, user_id: str, subtask_data: dict
+            ) -> dict:
                 """Controller layer with business logic."""
                 try:
                     # Validate task exists
@@ -597,21 +563,20 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                     # Validate task context
                     context_result = self.validator.validate_task_context(
-                        task_id=task_id,
-                        expected_git_branch_id=task["git_branch_id"]
+                        task_id=task_id, expected_git_branch_id=task["git_branch_id"]
                     )
 
                     if not context_result.is_valid:
                         return {
                             "success": False,
-                            "error": f"Task context validation failed: {context_result.error_message}"
+                            "error": f"Task context validation failed: {context_result.error_message}",
                         }
 
                     # Create subtask via service layer
                     subtask = self._service_create_subtask(
                         parent_task_id=task_id,
                         user_id=user_id,
-                        subtask_data=subtask_data
+                        subtask_data=subtask_data,
                     )
 
                     return {"success": True, "data": subtask}
@@ -619,7 +584,9 @@ class TestSubtaskAPIIntegrationWithValidation:
                 except Exception as e:
                     return {"success": False, "error": str(e)}
 
-            def _service_create_subtask(self, parent_task_id: str, user_id: str, subtask_data: dict) -> dict:
+            def _service_create_subtask(
+                self, parent_task_id: str, user_id: str, subtask_data: dict
+            ) -> dict:
                 """Service layer with database operations."""
                 # Validate service parameters
                 try:
@@ -633,7 +600,9 @@ class TestSubtaskAPIIntegrationWithValidation:
                 # Validate subtask ID
                 subtask_result = self.validator.validate_uuid_format(subtask_id)
                 if not subtask_result.is_valid:
-                    raise ValueError(f"Generated invalid subtask ID: {subtask_result.error_message}")
+                    raise ValueError(
+                        f"Generated invalid subtask ID: {subtask_result.error_message}"
+                    )
 
                 # Store in database
                 subtask = {
@@ -643,7 +612,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                     "title": subtask_data["title"],
                     "description": subtask_data.get("description", ""),
                     "status": "todo",
-                    "created_at": "2025-09-20T21:00:00Z"
+                    "created_at": "2025-09-20T21:00:00Z",
                 }
 
                 self.db[f"subtask:{subtask_id}"] = subtask
@@ -656,7 +625,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                     "id": task_id,
                     "git_branch_id": str(uuid4()),
                     "user_id": user_id,
-                    "title": "Test Task"
+                    "title": "Test Task",
                 }
 
         # Test full stack service
@@ -666,10 +635,7 @@ class TestSubtaskAPIIntegrationWithValidation:
         api_request = {
             "path_params": {"task_id": self.task_id},
             "auth": {"user_id": self.user_id},
-            "body": {
-                "title": "New Subtask",
-                "description": "Test subtask description"
-            }
+            "body": {"title": "New Subtask", "description": "Test subtask description"},
         }
 
         response = full_stack.api_create_subtask(api_request)
@@ -685,7 +651,7 @@ class TestSubtaskAPIIntegrationWithValidation:
         invalid_request = {
             "path_params": {"task_id": "invalid-uuid"},
             "auth": {"user_id": self.user_id},
-            "body": {"title": "Invalid Subtask"}
+            "body": {"title": "Invalid Subtask"},
         }
 
         invalid_response = full_stack.api_create_subtask(invalid_request)

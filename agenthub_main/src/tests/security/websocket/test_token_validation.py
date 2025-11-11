@@ -43,11 +43,13 @@ class TestWebSocketTokenValidation:
             "user_id": self.test_user_id,
             "email": self.test_email,
             "aud": "authenticated" if issuer == "keycloak" else None,
-            "iss": "http://localhost:8080/realms/agenthub" if issuer == "keycloak" else "local-issuer",
+            "iss": "http://localhost:8080/realms/agenthub"
+            if issuer == "keycloak"
+            else "local-issuer",
             "exp": datetime.now(UTC) + timedelta(minutes=expires_in_minutes),
             "iat": datetime.now(UTC),
             "role": "authenticated",
-            **extra_claims
+            **extra_claims,
         }
         return jwt.encode(payload, self.test_secret, algorithm="HS256")
 
@@ -55,10 +57,10 @@ class TestWebSocketTokenValidation:
     async def test_valid_keycloak_token_validation(self):
         """Test validation of valid Keycloak token"""
         # Set up environment for Keycloak
-        with patch.dict(os.environ, {
-            'KEYCLOAK_URL': 'http://localhost:8080',
-            'AUTH_PROVIDER': 'keycloak'
-        }):
+        with patch.dict(
+            os.environ,
+            {"KEYCLOAK_URL": "http://localhost:8080", "AUTH_PROVIDER": "keycloak"},
+        ):
             # Create Keycloak-style token
             token = self.create_test_token(issuer="keycloak")
 
@@ -67,10 +69,12 @@ class TestWebSocketTokenValidation:
                 id=self.test_user_id,
                 email=self.test_email,
                 username="testuser",
-                password_hash="dummy_hash_for_test"
+                password_hash="dummy_hash_for_test",
             )
 
-            with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+            ) as mock_validate:
                 mock_validate.return_value = expected_user
 
                 # Test validation
@@ -86,9 +90,7 @@ class TestWebSocketTokenValidation:
     async def test_valid_local_token_validation(self):
         """Test validation of valid local JWT token"""
         # Set up environment for local auth
-        with patch.dict(os.environ, {
-            'AUTH_PROVIDER': 'local'
-        }):
+        with patch.dict(os.environ, {"AUTH_PROVIDER": "local"}):
             # Create local token
             token = self.create_test_token(issuer="local")
 
@@ -97,10 +99,12 @@ class TestWebSocketTokenValidation:
                 id=self.test_user_id,
                 email=self.test_email,
                 username="testuser",
-                password_hash="dummy_hash_for_test"
+                password_hash="dummy_hash_for_test",
             )
 
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_validate:
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_validate:
                 mock_validate.return_value = expected_user
 
                 # Test validation
@@ -147,12 +151,19 @@ class TestWebSocketTokenValidation:
     async def test_expired_token_rejection(self):
         """Test rejection of expired JWT tokens"""
         # Create expired token
-        expired_token = self.create_test_token(expires_in_minutes=-30)  # Expired 30 minutes ago
+        expired_token = self.create_test_token(
+            expires_in_minutes=-30
+        )  # Expired 30 minutes ago
 
-        with patch.dict(os.environ, {'AUTH_PROVIDER': 'local'}):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_validate:
+        with patch.dict(os.environ, {"AUTH_PROVIDER": "local"}):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_validate:
                 from fastapi import HTTPException
-                mock_validate.side_effect = HTTPException(status_code=401, detail="Token expired")
+
+                mock_validate.side_effect = HTTPException(
+                    status_code=401, detail="Token expired"
+                )
 
                 result = await validate_websocket_token(expired_token)
                 assert result is None
@@ -163,14 +174,19 @@ class TestWebSocketTokenValidation:
         # Create token with wrong secret
         payload = {
             "sub": self.test_user_id,
-            "exp": datetime.now(UTC) + timedelta(minutes=30)
+            "exp": datetime.now(UTC) + timedelta(minutes=30),
         }
         invalid_token = jwt.encode(payload, "wrong-secret", algorithm="HS256")
 
-        with patch.dict(os.environ, {'AUTH_PROVIDER': 'local'}):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_validate:
+        with patch.dict(os.environ, {"AUTH_PROVIDER": "local"}):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_validate:
                 from fastapi import HTTPException
-                mock_validate.side_effect = HTTPException(status_code=401, detail="Invalid signature")
+
+                mock_validate.side_effect = HTTPException(
+                    status_code=401, detail="Invalid signature"
+                )
 
                 result = await validate_websocket_token(invalid_token)
                 assert result is None
@@ -181,22 +197,29 @@ class TestWebSocketTokenValidation:
         # Create local-style token but with Keycloak environment
         token = self.create_test_token(issuer="local")
 
-        with patch.dict(os.environ, {
-            'KEYCLOAK_URL': 'http://localhost:8080',
-            'AUTH_PROVIDER': 'keycloak'
-        }):
+        with patch.dict(
+            os.environ,
+            {"KEYCLOAK_URL": "http://localhost:8080", "AUTH_PROVIDER": "keycloak"},
+        ):
             expected_user = User(
                 id=self.test_user_id,
                 email=self.test_email,
                 username="testuser",
-                password_hash="dummy_hash_for_test"
+                password_hash="dummy_hash_for_test",
             )
 
-            with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_keycloak:
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+            ) as mock_keycloak:
                 from fastapi import HTTPException
-                mock_keycloak.side_effect = HTTPException(status_code=401, detail="Not a Keycloak token")
 
-                with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_local:
+                mock_keycloak.side_effect = HTTPException(
+                    status_code=401, detail="Not a Keycloak token"
+                )
+
+                with patch(
+                    "fastmcp.server.routes.websocket_routes.validate_local_token"
+                ) as mock_local:
                     mock_local.return_value = expected_user
 
                     result = await validate_websocket_token(token)
@@ -211,8 +234,10 @@ class TestWebSocketTokenValidation:
         """Test error handling during token validation"""
         token = self.create_test_token()
 
-        with patch.dict(os.environ, {'AUTH_PROVIDER': 'local'}):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_validate:
+        with patch.dict(os.environ, {"AUTH_PROVIDER": "local"}):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_validate:
                 # Simulate unexpected error
                 mock_validate.side_effect = Exception("Database connection failed")
 
@@ -223,7 +248,9 @@ class TestWebSocketTokenValidation:
     async def test_token_decode_error_handling(self):
         """Test handling of JWT decode errors"""
         # Create a token that looks valid but has decode issues
-        invalid_base64_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.invalid-base64.signature"
+        invalid_base64_token = (
+            "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.invalid-base64.signature"
+        )
 
         result = await validate_websocket_token(invalid_base64_token)
         assert result is None
@@ -235,15 +262,20 @@ class TestWebSocketTokenValidation:
         payload = {
             "aud": "authenticated",
             "exp": datetime.now(UTC) + timedelta(minutes=30),
-            "role": "authenticated"
+            "role": "authenticated",
             # Missing 'sub' and 'user_id'
         }
         token = jwt.encode(payload, self.test_secret, algorithm="HS256")
 
-        with patch.dict(os.environ, {'AUTH_PROVIDER': 'local'}):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_validate:
+        with patch.dict(os.environ, {"AUTH_PROVIDER": "local"}):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_validate:
                 from fastapi import HTTPException
-                mock_validate.side_effect = HTTPException(status_code=401, detail="Missing user claims")
+
+                mock_validate.side_effect = HTTPException(
+                    status_code=401, detail="Missing user claims"
+                )
 
                 result = await validate_websocket_token(token)
                 assert result is None
@@ -253,10 +285,15 @@ class TestWebSocketTokenValidation:
         """Test rejection of revoked tokens"""
         token = self.create_test_token()
 
-        with patch.dict(os.environ, {'AUTH_PROVIDER': 'local'}):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_validate:
+        with patch.dict(os.environ, {"AUTH_PROVIDER": "local"}):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_validate:
                 from fastapi import HTTPException
-                mock_validate.side_effect = HTTPException(status_code=401, detail="Token revoked")
+
+                mock_validate.side_effect = HTTPException(
+                    status_code=401, detail="Token revoked"
+                )
 
                 result = await validate_websocket_token(token)
                 assert result is None
@@ -267,10 +304,15 @@ class TestWebSocketTokenValidation:
         # Create token with wrong audience
         token = self.create_test_token(aud="wrong-audience")
 
-        with patch.dict(os.environ, {'AUTH_PROVIDER': 'local'}):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_validate:
+        with patch.dict(os.environ, {"AUTH_PROVIDER": "local"}):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_validate:
                 from fastapi import HTTPException
-                mock_validate.side_effect = HTTPException(status_code=401, detail="Invalid audience")
+
+                mock_validate.side_effect = HTTPException(
+                    status_code=401, detail="Invalid audience"
+                )
 
                 result = await validate_websocket_token(token)
                 assert result is None
@@ -283,11 +325,13 @@ class TestWebSocketTokenValidation:
             id=self.test_user_id,
             email=self.test_email,
             username="testuser",
-            password_hash="dummy_hash_for_test"
+            password_hash="dummy_hash_for_test",
         )
 
-        with patch.dict(os.environ, {'AUTH_PROVIDER': 'local'}):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_validate:
+        with patch.dict(os.environ, {"AUTH_PROVIDER": "local"}):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_validate:
                 mock_validate.return_value = expected_user
 
                 # Test concurrent validations

@@ -29,25 +29,28 @@ class TestWebSocketJWTAuth:
             id="test_user_123",
             email="test@example.com",
             username="testuser",
-            password_hash="hashed"
+            password_hash="hashed",
         )
 
         # Mock the validation functions and jwt decode
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token'):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_local:
-                with patch('fastmcp.server.routes.websocket_routes.os.getenv') as mock_getenv:
-                    with patch('jwt.decode') as mock_jwt_decode:
-
+        with patch("fastmcp.server.routes.websocket_routes.validate_keycloak_token"):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_local:
+                with patch(
+                    "fastmcp.server.routes.websocket_routes.os.getenv"
+                ) as mock_getenv:
+                    with patch("jwt.decode") as mock_jwt_decode:
                         # Configure mocks for local JWT validation
                         mock_getenv.side_effect = lambda key, default=None: {
-                            'AUTH_PROVIDER': 'local',
-                            'KEYCLOAK_URL': None
+                            "AUTH_PROVIDER": "local",
+                            "KEYCLOAK_URL": None,
                         }.get(key, default)
 
                         # Mock jwt.decode to return a local token payload (no issuer for local tokens)
                         mock_jwt_decode.return_value = {
                             "sub": "test_user_123",
-                            "email": "test@example.com"
+                            "email": "test@example.com",
                         }
 
                         mock_local.return_value = mock_user
@@ -65,26 +68,32 @@ class TestWebSocketJWTAuth:
         """Test that invalid tokens are rejected"""
 
         # Mock the validation functions to return HTTPException
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token'):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_local:
-                with patch('fastmcp.server.routes.websocket_routes.os.getenv') as mock_getenv:
-                    with patch('jwt.decode') as mock_jwt_decode:
+        with patch("fastmcp.server.routes.websocket_routes.validate_keycloak_token"):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token"
+            ) as mock_local:
+                with patch(
+                    "fastmcp.server.routes.websocket_routes.os.getenv"
+                ) as mock_getenv:
+                    with patch("jwt.decode") as mock_jwt_decode:
                         from fastapi import HTTPException
 
                         # Configure mocks for local JWT validation
                         mock_getenv.side_effect = lambda key, default=None: {
-                            'AUTH_PROVIDER': 'local',
-                            'KEYCLOAK_URL': None
+                            "AUTH_PROVIDER": "local",
+                            "KEYCLOAK_URL": None,
                         }.get(key, default)
 
                         # Mock jwt.decode to return a local token payload (no issuer for local tokens)
                         mock_jwt_decode.return_value = {
                             "sub": "invalid_user",
-                            "email": "invalid@example.com"
+                            "email": "invalid@example.com",
                         }
 
                         # Mock validation to raise HTTPException (invalid token)
-                        mock_local.side_effect = HTTPException(status_code=401, detail="Invalid token")
+                        mock_local.side_effect = HTTPException(
+                            status_code=401, detail="Invalid token"
+                        )
 
                         # Test with invalid token
                         invalid_token = "invalid.jwt.token"
@@ -112,19 +121,21 @@ class TestWebSocketJWTAuth:
             id="test_user_123",
             email="test@example.com",
             username="testuser",
-            password_hash="hashed"
+            password_hash="hashed",
         )
 
         # Mock the connection_users dict
-        with patch('fastmcp.server.routes.websocket_routes.connection_users', {mock_websocket: mock_user}):
-
+        with patch(
+            "fastmcp.server.routes.websocket_routes.connection_users",
+            {mock_websocket: mock_user},
+        ):
             # Test authorization for user's own data
             is_authorized = await is_user_authorized_for_message(
                 websocket=mock_websocket,
                 entity_type="task",
                 entity_id="task_123",
                 triggering_user_id="test_user_123",  # Same as user ID
-                metadata={}
+                metadata={},
             )
 
             assert is_authorized is True
@@ -139,13 +150,17 @@ class TestWebSocketJWTAuth:
             id="test_user_123",
             email="test@example.com",
             username="testuser",
-            password_hash="hashed"
+            password_hash="hashed",
         )
 
         # Mock the connection_users dict and database session
-        with patch('fastmcp.server.routes.websocket_routes.connection_users', {mock_websocket: mock_user}):
-            with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
-
+        with patch(
+            "fastmcp.server.routes.websocket_routes.connection_users",
+            {mock_websocket: mock_user},
+        ):
+            with patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_session"
+            ) as mock_get_session:
                 # Mock database session to return None (no access to task)
                 mock_session = MagicMock()
                 mock_session.query.return_value.filter.return_value.first.return_value = None
@@ -157,7 +172,7 @@ class TestWebSocketJWTAuth:
                     entity_type="task",
                     entity_id="task_456",
                     triggering_user_id="other_user_456",  # Different user
-                    metadata={}
+                    metadata={},
                 )
 
                 assert is_authorized is False
@@ -169,14 +184,13 @@ class TestWebSocketJWTAuth:
         mock_websocket = AsyncMock()
 
         # Mock empty connection_users dict
-        with patch('fastmcp.server.routes.websocket_routes.connection_users', {}):
-
+        with patch("fastmcp.server.routes.websocket_routes.connection_users", {}):
             is_authorized = await is_user_authorized_for_message(
                 websocket=mock_websocket,
                 entity_type="task",
                 entity_id="task_123",
                 triggering_user_id="test_user_123",
-                metadata={}
+                metadata={},
             )
 
             assert is_authorized is False

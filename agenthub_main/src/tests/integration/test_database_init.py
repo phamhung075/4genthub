@@ -39,14 +39,17 @@ class TestDatabaseInitializerInit:
 
         assert initializer.database_url == test_url
 
-    @patch.dict(os.environ, {
-        "DATABASE_TYPE": "postgresql",
-        "DATABASE_HOST": "testhost",
-        "DATABASE_PORT": "5433",
-        "DATABASE_NAME": "customdb",
-        "DATABASE_USER": "testuser",
-        "DATABASE_PASSWORD": "testpass"
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "DATABASE_TYPE": "postgresql",
+            "DATABASE_HOST": "testhost",
+            "DATABASE_PORT": "5433",
+            "DATABASE_NAME": "customdb",
+            "DATABASE_USER": "testuser",
+            "DATABASE_PASSWORD": "testpass",
+        },
+    )
     def test_init_postgresql_from_environment(self):
         """Test PostgreSQL URL construction from environment variables"""
         initializer = DatabaseInitializer()
@@ -54,9 +57,7 @@ class TestDatabaseInitializerInit:
         expected_url = "postgresql://testuser:testpass@testhost:5433/customdb"
         assert initializer.database_url == expected_url
 
-    @patch.dict(os.environ, {
-        "DATABASE_TYPE": "postgresql"
-    }, clear=True)
+    @patch.dict(os.environ, {"DATABASE_TYPE": "postgresql"}, clear=True)
     def test_init_postgresql_with_defaults(self):
         """Test PostgreSQL initialization uses default values when env vars missing"""
         # Set only DATABASE_TYPE, let others default
@@ -71,10 +72,14 @@ class TestDatabaseInitializerInit:
         assert "agenthub_user" in initializer.database_url
         assert "agenthub_password" in initializer.database_url
 
-    @pytest.mark.skip(reason="SQLite is no longer supported - only postgresql/supabase are valid")
+    @pytest.mark.skip(
+        reason="SQLite is no longer supported - only postgresql/supabase are valid"
+    )
     def test_init_sqlite_from_environment_deprecated(self):
         """DEPRECATED: SQLite is no longer a supported DATABASE_TYPE"""
-        pytest.skip("SQLite support removed - DATABASE_TYPE must be 'postgresql' or 'supabase'")
+        pytest.skip(
+            "SQLite support removed - DATABASE_TYPE must be 'postgresql' or 'supabase'"
+        )
 
     @patch.dict(os.environ, {"DATABASE_TYPE": "other"}, clear=True)
     def test_init_other_database_type_uses_default(self):
@@ -113,7 +118,8 @@ class TestCreateDefaultProject:
         # Create required tables
         with engine.connect() as conn:
             # Create projects table
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS projects (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -124,10 +130,12 @@ class TestCreateDefaultProject:
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL
                 )
-            """))
+            """)
+            )
 
             # Create project_git_branchs table
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS project_git_branchs (
                     id TEXT PRIMARY KEY,
                     project_id TEXT NOT NULL,
@@ -143,7 +151,8 @@ class TestCreateDefaultProject:
                     updated_at TIMESTAMP NOT NULL,
                     FOREIGN KEY (project_id) REFERENCES projects(id)
                 )
-            """))
+            """)
+            )
 
             conn.commit()
 
@@ -169,8 +178,10 @@ class TestCreateDefaultProject:
         engine = create_engine(temp_sqlite_db)
         with engine.connect() as conn:
             result = conn.execute(
-                text("SELECT name, description, user_id, status FROM projects WHERE id = :id"),
-                {"id": project_id}
+                text(
+                    "SELECT name, description, user_id, status FROM projects WHERE id = :id"
+                ),
+                {"id": project_id},
             )
             project = result.fetchone()
 
@@ -196,7 +207,7 @@ class TestCreateDefaultProject:
                     FROM project_git_branchs
                     WHERE project_id = :project_id
                 """),
-                {"project_id": project_id}
+                {"project_id": project_id},
             )
             branch = result.fetchone()
 
@@ -226,7 +237,7 @@ class TestCreateDefaultProject:
         with engine.connect() as conn:
             result = conn.execute(
                 text("SELECT COUNT(*) FROM projects WHERE user_id = :user_id"),
-                {"user_id": user_id}
+                {"user_id": user_id},
             )
             count = result.scalar()
             assert count == 1
@@ -237,12 +248,12 @@ class TestCreateDefaultProject:
         initializer = DatabaseInitializer(database_url=temp_sqlite_db)
 
         # Patch to cause an error after project creation but before commit
-        with patch('sqlalchemy.engine.base.Connection.execute') as mock_execute:
+        with patch("sqlalchemy.engine.base.Connection.execute") as mock_execute:
             # First call succeeds (SELECT check)
             # Second call fails (INSERT project)
             mock_execute.side_effect = [
                 Mock(fetchone=Mock(return_value=None)),  # No existing project
-                SQLAlchemyError("Simulated database error")
+                SQLAlchemyError("Simulated database error"),
             ]
 
             project_id = initializer.create_default_project(user_id)
@@ -250,9 +261,12 @@ class TestCreateDefaultProject:
             # Should return None on error
             assert project_id is None
 
-    def test_create_default_project_logs_error_on_exception(self, temp_sqlite_db, caplog):
+    def test_create_default_project_logs_error_on_exception(
+        self, temp_sqlite_db, caplog
+    ):
         """Test that errors are properly logged"""
         import logging
+
         caplog.set_level(logging.ERROR)
 
         # Use invalid database URL to trigger error
@@ -264,7 +278,9 @@ class TestCreateDefaultProject:
         assert project_id is None
         assert "Error creating default project" in caplog.text
 
-    def test_create_default_project_with_special_characters_in_user_id(self, temp_sqlite_db):
+    def test_create_default_project_with_special_characters_in_user_id(
+        self, temp_sqlite_db
+    ):
         """Test project creation with special characters in user ID"""
         user_id = "user@example.com"
         initializer = DatabaseInitializer(database_url=temp_sqlite_db)
@@ -277,8 +293,7 @@ class TestCreateDefaultProject:
         engine = create_engine(temp_sqlite_db)
         with engine.connect() as conn:
             result = conn.execute(
-                text("SELECT user_id FROM projects WHERE id = :id"),
-                {"id": project_id}
+                text("SELECT user_id FROM projects WHERE id = :id"), {"id": project_id}
             )
             stored_user_id = result.scalar()
             assert stored_user_id == user_id
@@ -297,7 +312,7 @@ class TestCreateDefaultProject:
         with engine.connect() as conn:
             result = conn.execute(
                 text("SELECT created_at, updated_at FROM projects WHERE id = :id"),
-                {"id": project_id}
+                {"id": project_id},
             )
             row = result.fetchone()
             created_at = row[0]
@@ -305,9 +320,9 @@ class TestCreateDefaultProject:
 
             # Parse timestamps (SQLite returns them as strings)
             if isinstance(created_at, str):
-                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
             if isinstance(updated_at, str):
-                updated_at = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+                updated_at = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
 
             # Timestamps should be within the test execution window
             assert before_creation <= created_at <= after_creation
@@ -328,7 +343,8 @@ class TestInitializeForUser:
 
         # Create required tables
         with engine.connect() as conn:
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS projects (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -339,9 +355,11 @@ class TestInitializeForUser:
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL
                 )
-            """))
+            """)
+            )
 
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS project_git_branchs (
                     id TEXT PRIMARY KEY,
                     project_id TEXT NOT NULL,
@@ -356,7 +374,8 @@ class TestInitializeForUser:
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL
                 )
-            """))
+            """)
+            )
 
             conn.commit()
 
@@ -395,7 +414,7 @@ class TestInitializeForUser:
 
         # Mock create_default_project to return None (indicating error)
         initializer = DatabaseInitializer(database_url="sqlite:///test.db")
-        with patch.object(initializer, 'create_default_project', return_value=None):
+        with patch.object(initializer, "create_default_project", return_value=None):
             # When create_default_project returns None, initialize_for_user still returns True
             # because it handles the case where the user already has projects
             result = initializer.initialize_for_user(user_id)
@@ -407,6 +426,7 @@ class TestInitializeForUser:
     def test_initialize_for_user_logs_success(self, temp_sqlite_db_with_tables, caplog):
         """Test that successful initialization is logged"""
         import logging
+
         caplog.set_level(logging.INFO)
 
         user_id = str(uuid.uuid4())
@@ -420,13 +440,16 @@ class TestInitializeForUser:
     def test_initialize_for_user_logs_errors(self, caplog):
         """Test that initialization errors are logged"""
         import logging
+
         caplog.set_level(logging.ERROR)
 
         user_id = str(uuid.uuid4())
         initializer = DatabaseInitializer(database_url="sqlite:///test.db")
 
         # Mock create_default_project to raise an exception
-        with patch.object(initializer, 'create_default_project', side_effect=Exception("Test error")):
+        with patch.object(
+            initializer, "create_default_project", side_effect=Exception("Test error")
+        ):
             result = initializer.initialize_for_user(user_id)
 
             assert result is False
@@ -462,33 +485,41 @@ class TestEnsureTablesExist:
 
         with engine.connect() as conn:
             # Create all required tables
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS projects (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL
                 )
-            """))
+            """)
+            )
 
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS project_git_branchs (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL
                 )
-            """))
+            """)
+            )
 
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS tasks (
                     id TEXT PRIMARY KEY,
                     title TEXT NOT NULL
                 )
-            """))
+            """)
+            )
 
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS subtasks (
                     id TEXT PRIMARY KEY,
                     title TEXT NOT NULL
                 )
-            """))
+            """)
+            )
 
             conn.commit()
 
@@ -499,7 +530,9 @@ class TestEnsureTablesExist:
         except Exception:
             pass
 
-    def test_ensure_tables_exist_all_present_sqlite(self, temp_sqlite_db_with_all_tables):
+    def test_ensure_tables_exist_all_present_sqlite(
+        self, temp_sqlite_db_with_all_tables
+    ):
         """Test table check succeeds when all tables exist (SQLite)"""
         initializer = DatabaseInitializer(database_url=temp_sqlite_db_with_all_tables)
 
@@ -514,9 +547,11 @@ class TestEnsureTablesExist:
     def test_ensure_tables_exist_all_present_postgresql(self):
         """Test table check with PostgreSQL (mocked)"""
         # Create initializer with explicit PostgreSQL URL
-        initializer = DatabaseInitializer(database_url="postgresql://user:pass@localhost:5432/testdb")
+        initializer = DatabaseInitializer(
+            database_url="postgresql://user:pass@localhost:5432/testdb"
+        )
 
-        with patch('fastmcp.database_init.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_init.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
             mock_result = Mock()
@@ -533,9 +568,11 @@ class TestEnsureTablesExist:
 
     def test_ensure_tables_exist_missing_tables(self):
         """Test table check fails when tables are missing"""
-        initializer = DatabaseInitializer(database_url="postgresql://user:pass@localhost:5432/testdb")
+        initializer = DatabaseInitializer(
+            database_url="postgresql://user:pass@localhost:5432/testdb"
+        )
 
-        with patch('fastmcp.database_init.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_init.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
             mock_result = Mock()
@@ -561,11 +598,14 @@ class TestEnsureTablesExist:
     def test_ensure_tables_exist_logs_warning_on_missing_tables(self, caplog):
         """Test that warning is logged when tables are missing"""
         import logging
+
         caplog.set_level(logging.WARNING)
 
-        initializer = DatabaseInitializer(database_url="postgresql://user:pass@localhost:5432/testdb")
+        initializer = DatabaseInitializer(
+            database_url="postgresql://user:pass@localhost:5432/testdb"
+        )
 
-        with patch('fastmcp.database_init.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_init.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
             mock_result = Mock()
@@ -595,7 +635,8 @@ class TestInitializeDatabaseForCurrentUser:
         engine = create_engine(db_url)
 
         with engine.connect() as conn:
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS projects (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -606,9 +647,11 @@ class TestInitializeDatabaseForCurrentUser:
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL
                 )
-            """))
+            """)
+            )
 
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS project_git_branchs (
                     id TEXT PRIMARY KEY,
                     project_id TEXT NOT NULL,
@@ -623,7 +666,8 @@ class TestInitializeDatabaseForCurrentUser:
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL
                 )
-            """))
+            """)
+            )
 
             conn.commit()
 
@@ -635,9 +679,11 @@ class TestInitializeDatabaseForCurrentUser:
             pass
 
     @patch.dict(os.environ, {"CURRENT_USER_ID": "test-user-123"})
-    def test_initialize_database_for_current_user_with_user_id(self, temp_sqlite_db_complete):
+    def test_initialize_database_for_current_user_with_user_id(
+        self, temp_sqlite_db_complete
+    ):
         """Test initialization with CURRENT_USER_ID set"""
-        with patch('fastmcp.database_init.DatabaseInitializer') as mock_init_class:
+        with patch("fastmcp.database_init.DatabaseInitializer") as mock_init_class:
             mock_initializer = Mock()
             mock_initializer.ensure_tables_exist.return_value = True
             mock_initializer.initialize_for_user.return_value = True
@@ -646,12 +692,14 @@ class TestInitializeDatabaseForCurrentUser:
             result = initialize_database_for_current_user()
 
             assert result is True
-            mock_initializer.initialize_for_user.assert_called_once_with("test-user-123")
+            mock_initializer.initialize_for_user.assert_called_once_with(
+                "test-user-123"
+            )
 
     @patch.dict(os.environ, {}, clear=True)
     def test_initialize_database_for_current_user_uses_default(self):
         """Test initialization uses default user ID when not set"""
-        with patch('fastmcp.database_init.DatabaseInitializer') as mock_init_class:
+        with patch("fastmcp.database_init.DatabaseInitializer") as mock_init_class:
             mock_initializer = Mock()
             mock_initializer.ensure_tables_exist.return_value = True
             mock_initializer.initialize_for_user.return_value = True
@@ -661,12 +709,14 @@ class TestInitializeDatabaseForCurrentUser:
 
             assert result is True
             # Should use default user ID
-            mock_initializer.initialize_for_user.assert_called_once_with("default-user-001")
+            mock_initializer.initialize_for_user.assert_called_once_with(
+                "default-user-001"
+            )
 
     @patch.dict(os.environ, {"DEFAULT_USER_ID": "custom-default-user"})
     def test_initialize_database_for_current_user_custom_default(self):
         """Test initialization with custom default user ID"""
-        with patch('fastmcp.database_init.DatabaseInitializer') as mock_init_class:
+        with patch("fastmcp.database_init.DatabaseInitializer") as mock_init_class:
             mock_initializer = Mock()
             mock_initializer.ensure_tables_exist.return_value = True
             mock_initializer.initialize_for_user.return_value = True
@@ -675,11 +725,13 @@ class TestInitializeDatabaseForCurrentUser:
             result = initialize_database_for_current_user()
 
             assert result is True
-            mock_initializer.initialize_for_user.assert_called_once_with("custom-default-user")
+            mock_initializer.initialize_for_user.assert_called_once_with(
+                "custom-default-user"
+            )
 
     def test_initialize_database_for_current_user_no_tables(self):
         """Test initialization skips when tables don't exist"""
-        with patch('fastmcp.database_init.DatabaseInitializer') as mock_init_class:
+        with patch("fastmcp.database_init.DatabaseInitializer") as mock_init_class:
             mock_initializer = Mock()
             mock_initializer.ensure_tables_exist.return_value = False
             mock_init_class.return_value = mock_initializer
@@ -692,7 +744,7 @@ class TestInitializeDatabaseForCurrentUser:
 
     def test_initialize_database_for_current_user_handles_errors(self):
         """Test error handling in module-level function"""
-        with patch('fastmcp.database_init.DatabaseInitializer') as mock_init_class:
+        with patch("fastmcp.database_init.DatabaseInitializer") as mock_init_class:
             mock_init_class.side_effect = Exception("Initialization failed")
 
             result = initialize_database_for_current_user()
@@ -702,10 +754,11 @@ class TestInitializeDatabaseForCurrentUser:
     def test_initialize_database_for_current_user_logs_default_user(self, caplog):
         """Test that using default user is logged"""
         import logging
+
         caplog.set_level(logging.INFO)
 
         with patch.dict(os.environ, {}, clear=True):
-            with patch('fastmcp.database_init.DatabaseInitializer') as mock_init_class:
+            with patch("fastmcp.database_init.DatabaseInitializer") as mock_init_class:
                 mock_initializer = Mock()
                 mock_initializer.ensure_tables_exist.return_value = True
                 mock_initializer.initialize_for_user.return_value = True
@@ -721,7 +774,9 @@ class TestConnectionHandling:
 
     def test_connection_error_handling(self):
         """Test handling of connection errors"""
-        initializer = DatabaseInitializer(database_url="postgresql://invalid:invalid@nonexistent:9999/db")
+        initializer = DatabaseInitializer(
+            database_url="postgresql://invalid:invalid@nonexistent:9999/db"
+        )
         user_id = str(uuid.uuid4())
 
         # Should handle connection error gracefully
@@ -731,14 +786,18 @@ class TestConnectionHandling:
     def test_connection_timeout_handling(self):
         """Test handling of connection timeout"""
         # Use a non-routable IP to trigger timeout
-        initializer = DatabaseInitializer(database_url="postgresql://user:pass@192.0.2.1:5432/db")
+        initializer = DatabaseInitializer(
+            database_url="postgresql://user:pass@192.0.2.1:5432/db"
+        )
 
         result = initializer.ensure_tables_exist()
         assert result is False
 
     def test_invalid_credentials_handling(self):
         """Test handling of invalid credentials"""
-        initializer = DatabaseInitializer(database_url="postgresql://baduser:badpass@localhost:5432/db")
+        initializer = DatabaseInitializer(
+            database_url="postgresql://baduser:badpass@localhost:5432/db"
+        )
 
         result = initializer.ensure_tables_exist()
         assert result is False
@@ -749,14 +808,17 @@ class TestSecurityScenarios:
 
     def test_password_special_characters_in_url(self):
         """Test that passwords with special characters are handled correctly"""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "localhost",
-            "DATABASE_PORT": "5432",
-            "DATABASE_NAME": "testdb",
-            "DATABASE_USER": "user",
-            "DATABASE_PASSWORD": "p@ss!w0rd#$%"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_PORT": "5432",
+                "DATABASE_NAME": "testdb",
+                "DATABASE_USER": "user",
+                "DATABASE_PASSWORD": "p@ss!w0rd#$%",
+            },
+        ):
             initializer = DatabaseInitializer()
 
             # Password should be included in URL (actual encoding is handled by SQLAlchemy)
@@ -774,7 +836,8 @@ class TestSecurityScenarios:
 
             # Create tables
             with engine.connect() as conn:
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS projects (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -785,9 +848,11 @@ class TestSecurityScenarios:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
-                """))
+                """)
+                )
 
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS project_git_branchs (
                         id TEXT PRIMARY KEY,
                         project_id TEXT NOT NULL,
@@ -802,7 +867,8 @@ class TestSecurityScenarios:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
-                """))
+                """)
+                )
 
                 conn.commit()
 
@@ -841,7 +907,8 @@ class TestEdgeCases:
             engine = create_engine(db_url)
 
             with engine.connect() as conn:
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS projects (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -852,9 +919,11 @@ class TestEdgeCases:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
-                """))
+                """)
+                )
 
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS project_git_branchs (
                         id TEXT PRIMARY KEY,
                         project_id TEXT NOT NULL,
@@ -869,7 +938,8 @@ class TestEdgeCases:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
-                """))
+                """)
+                )
 
                 conn.commit()
 
@@ -897,7 +967,8 @@ class TestEdgeCases:
             engine = create_engine(db_url)
 
             with engine.connect() as conn:
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS projects (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -908,9 +979,11 @@ class TestEdgeCases:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
-                """))
+                """)
+                )
 
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS project_git_branchs (
                         id TEXT PRIMARY KEY,
                         project_id TEXT NOT NULL,
@@ -925,7 +998,8 @@ class TestEdgeCases:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
-                """))
+                """)
+                )
 
                 conn.commit()
 
@@ -953,7 +1027,8 @@ class TestEdgeCases:
             engine = create_engine(db_url)
 
             with engine.connect() as conn:
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS projects (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -964,9 +1039,11 @@ class TestEdgeCases:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
-                """))
+                """)
+                )
 
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS project_git_branchs (
                         id TEXT PRIMARY KEY,
                         project_id TEXT NOT NULL,
@@ -981,7 +1058,8 @@ class TestEdgeCases:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
-                """))
+                """)
+                )
 
                 conn.commit()
 
@@ -997,7 +1075,7 @@ class TestEdgeCases:
             with engine.connect() as conn:
                 result = conn.execute(
                     text("SELECT user_id FROM projects WHERE id = :id"),
-                    {"id": project_id}
+                    {"id": project_id},
                 )
                 stored_user_id = result.scalar()
                 assert stored_user_id == unicode_user_id

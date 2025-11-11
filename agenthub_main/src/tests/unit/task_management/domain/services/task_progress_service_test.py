@@ -20,9 +20,11 @@ def create_mock_with_spec(spec_class):
     """Safely create a Mock with spec, handling already-mocked classes."""
 
     # Check if the class is actually a Mock or has been patched
-    if (hasattr(spec_class, '_mock_name') or
-        hasattr(spec_class, '_spec_class') or
-        str(type(spec_class)).find('Mock') != -1):
+    if (
+        hasattr(spec_class, "_mock_name")
+        or hasattr(spec_class, "_spec_class")
+        or str(type(spec_class)).find("Mock") != -1
+    ):
         # It's already a Mock, don't use spec
         return Mock()
     else:
@@ -44,7 +46,9 @@ class TestTaskProgressService:
         return TaskProgressService()
 
     @pytest.fixture
-    def progress_service_with_repo(self, mock_subtask_repository: Mock) -> TaskProgressService:
+    def progress_service_with_repo(
+        self, mock_subtask_repository: Mock
+    ) -> TaskProgressService:
         """Create TaskProgressService instance with repository."""
         return TaskProgressService(subtask_repository=mock_subtask_repository)
 
@@ -52,15 +56,18 @@ class TestTaskProgressService:
     def sample_task(self) -> Task:
         """Create a sample task for testing."""
         from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+
         return Task(
             id=TaskId.generate(),
             title="Sample Task",
             description="A sample task for progress testing",
             status=TaskStatus.in_progress(),
-            priority="medium"
+            priority="medium",
         )
 
-    def create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
+    def create_subtask(
+        self, parent_task_id: TaskId, title: str, is_completed: bool = False
+    ) -> Subtask:
         """Helper method to create a subtask."""
         from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
@@ -69,7 +76,7 @@ class TestTaskProgressService:
             parent_task_id=parent_task_id,
             title=title,
             description=f"Description for {title}",
-            status=TaskStatus.done() if is_completed else TaskStatus.todo()
+            status=TaskStatus.done() if is_completed else TaskStatus.todo(),
         )
         # No need to set _is_completed as status handles it
         return subtask
@@ -87,49 +94,72 @@ class TestTaskProgressService:
             # Assert
             assert progress["task_id"] == str(sample_task.id)
             assert progress["base_progress"]["status"] == "in_progress"
-            assert progress["base_progress"]["progress_percentage"] == 50.0  # in_progress = 50%
+            assert (
+                progress["base_progress"]["progress_percentage"] == 50.0
+            )  # in_progress = 50%
             assert progress["subtask_progress"] is None
             assert progress["overall_progress"]["percentage"] == 50.0
-            assert progress["overall_progress"]["calculation_method"] == "task_status_only"
+            assert (
+                progress["overall_progress"]["calculation_method"] == "task_status_only"
+            )
             assert progress["can_complete"] is True  # No subtasks blocking
             assert len(progress["blocking_factors"]) == 0
 
         def test_calculate_progress_with_completed_subtasks(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test progress calculation with all subtasks completed."""
             # Arrange
             parent = TestTaskProgressService()
             completed_subtasks = [
                 parent.create_subtask(sample_task.id, "Subtask 1", is_completed=True),
-                parent.create_subtask(sample_task.id, "Subtask 2", is_completed=True)
+                parent.create_subtask(sample_task.id, "Subtask 2", is_completed=True),
             ]
-            mock_subtask_repository.find_by_parent_task_id.return_value = completed_subtasks
+            mock_subtask_repository.find_by_parent_task_id.return_value = (
+                completed_subtasks
+            )
 
             # Act
             progress = progress_service_with_repo.calculate_task_progress(sample_task)
 
             # Assert
             assert progress["task_id"] == str(sample_task.id)
-            assert progress["base_progress"]["progress_percentage"] == 50.0  # in_progress
+            assert (
+                progress["base_progress"]["progress_percentage"] == 50.0
+            )  # in_progress
             assert progress["subtask_progress"]["completion_percentage"] == 100.0
             assert progress["subtask_progress"]["total"] == 2
             assert progress["subtask_progress"]["completed"] == 2
-            assert progress["overall_progress"]["calculation_method"] == "weighted_combination"
+            assert (
+                progress["overall_progress"]["calculation_method"]
+                == "weighted_combination"
+            )
             # Weighted: (50 * 0.6) + (100 * 0.4) = 30 + 40 = 70
             assert progress["overall_progress"]["percentage"] == 70.0
             assert progress["can_complete"] is True
 
         def test_calculate_progress_with_incomplete_subtasks(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test progress calculation with incomplete subtasks."""
             # Arrange
             parent = TestTaskProgressService()
             subtasks = [
-                parent.create_subtask(sample_task.id, "Complete Task", is_completed=True),
-                parent.create_subtask(sample_task.id, "Incomplete Task 1", is_completed=False),
-                parent.create_subtask(sample_task.id, "Incomplete Task 2", is_completed=False)
+                parent.create_subtask(
+                    sample_task.id, "Complete Task", is_completed=True
+                ),
+                parent.create_subtask(
+                    sample_task.id, "Incomplete Task 1", is_completed=False
+                ),
+                parent.create_subtask(
+                    sample_task.id, "Incomplete Task 2", is_completed=False
+                ),
             ]
             mock_subtask_repository.find_by_parent_task_id.return_value = subtasks
 
@@ -137,11 +167,16 @@ class TestTaskProgressService:
             progress = progress_service_with_repo.calculate_task_progress(sample_task)
 
             # Assert
-            assert progress["subtask_progress"]["completion_percentage"] == 33.3  # 1 of 3 completed
+            assert (
+                progress["subtask_progress"]["completion_percentage"] == 33.3
+            )  # 1 of 3 completed
             assert progress["subtask_progress"]["incomplete"] == 2
             assert progress["can_complete"] is False  # Blocked by incomplete subtasks
             assert len(progress["blocking_factors"]) > 0
-            assert any("2 of 3 subtasks incomplete" in factor for factor in progress["blocking_factors"])
+            assert any(
+                "2 of 3 subtasks incomplete" in factor
+                for factor in progress["blocking_factors"]
+            )
 
         def test_calculate_progress_blocked_task(
             self, progress_service: TaskProgressService
@@ -151,22 +186,28 @@ class TestTaskProgressService:
             from fastmcp.task_management.domain.value_objects.task_status import (
                 TaskStatus,
             )
+
             blocked_task = Task(
                 id=TaskId.generate(),
                 title="Blocked Task",
                 description="A blocked task",
                 status=TaskStatus.blocked(),
-                priority="high"
+                priority="high",
             )
 
             # Act
             progress = progress_service.calculate_task_progress(blocked_task)
 
             # Assert
-            assert progress["base_progress"]["progress_percentage"] == 0.0  # blocked = 0%
+            assert (
+                progress["base_progress"]["progress_percentage"] == 0.0
+            )  # blocked = 0%
             assert progress["base_progress"]["is_blocked"] is True
             assert len(progress["blocking_factors"]) > 0
-            assert any("Task status is blocked" in factor for factor in progress["blocking_factors"])
+            assert any(
+                "Task status is blocked" in factor
+                for factor in progress["blocking_factors"]
+            )
 
         def test_calculate_progress_done_task(
             self, progress_service: TaskProgressService
@@ -182,14 +223,16 @@ class TestTaskProgressService:
                 title="Done Task",
                 description="A completed task",
                 status=TaskStatus.done(),
-                priority="medium"
+                priority="medium",
             )
 
             # Act
             progress = progress_service.calculate_task_progress(done_task)
 
             # Assert
-            assert progress["base_progress"]["progress_percentage"] == 100.0  # done = 100%
+            assert (
+                progress["base_progress"]["progress_percentage"] == 100.0
+            )  # done = 100%
             assert progress["base_progress"]["is_completed"] is True
             assert progress["overall_progress"]["percentage"] == 100.0
             assert progress["can_complete"] is True
@@ -208,7 +251,7 @@ class TestTaskProgressService:
                 title="Task with Dependencies",
                 description="A task with dependencies",
                 status=TaskStatus.in_progress(),
-                priority="medium"
+                priority="medium",
             )
             # Add dependencies attribute to trigger line 282
             task_with_deps.dependencies = [TaskId.generate(), TaskId.generate()]
@@ -218,14 +261,22 @@ class TestTaskProgressService:
 
             # Assert
             assert len(progress["blocking_factors"]) > 0
-            assert any("Dependencies may not be satisfied" in factor for factor in progress["blocking_factors"])
+            assert any(
+                "Dependencies may not be satisfied" in factor
+                for factor in progress["blocking_factors"]
+            )
 
         def test_calculate_progress_exception_handling(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test exception handling during progress calculation."""
             # Arrange
-            mock_subtask_repository.find_by_parent_task_id.side_effect = Exception("Database error")
+            mock_subtask_repository.find_by_parent_task_id.side_effect = Exception(
+                "Database error"
+            )
 
             # Act
             progress = progress_service_with_repo.calculate_task_progress(sample_task)
@@ -234,10 +285,16 @@ class TestTaskProgressService:
             # Exception in subtask retrieval is handled gracefully
             # The service continues with base task progress only
             assert progress["subtask_progress"]["error"] == "Database error"
-            assert progress["base_progress"]["progress_percentage"] == 50.0  # in_progress status
-            assert progress["can_complete"] is True  # Can complete based on task status alone
+            assert (
+                progress["base_progress"]["progress_percentage"] == 50.0
+            )  # in_progress status
+            assert (
+                progress["can_complete"] is True
+            )  # Can complete based on task status alone
 
-        def create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
+        def create_subtask(
+            self, parent_task_id: TaskId, title: str, is_completed: bool = False
+        ) -> Subtask:
             """Helper method to create a subtask."""
             from fastmcp.task_management.domain.value_objects.task_status import (
                 TaskStatus,
@@ -248,7 +305,7 @@ class TestTaskProgressService:
                 parent_task_id=parent_task_id,
                 title=title,
                 description=f"Description for {title}",
-                status=TaskStatus.done() if is_completed else TaskStatus.todo()
+                status=TaskStatus.done() if is_completed else TaskStatus.todo(),
             )
             # No need to set _is_completed as status handles it
             return subtask
@@ -261,44 +318,63 @@ class TestTaskProgressService:
         ):
             """Test percentage calculation without subtask repository."""
             # Act
-            percentage = progress_service.calculate_subtask_completion_percentage(sample_task)
+            percentage = progress_service.calculate_subtask_completion_percentage(
+                sample_task
+            )
 
             # Assert
             assert percentage == 100.0
 
         def test_no_subtasks(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test percentage calculation when no subtasks exist."""
             # Arrange
             mock_subtask_repository.find_by_parent_task_id.return_value = []
 
             # Act
-            percentage = progress_service_with_repo.calculate_subtask_completion_percentage(sample_task)
+            percentage = (
+                progress_service_with_repo.calculate_subtask_completion_percentage(
+                    sample_task
+                )
+            )
 
             # Assert
             assert percentage == 100.0
 
         def test_all_subtasks_completed(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test percentage when all subtasks are completed."""
             # Arrange
             parent = TestTaskProgressService()
             subtasks = [
                 parent.create_subtask(sample_task.id, "Task 1", is_completed=True),
-                parent.create_subtask(sample_task.id, "Task 2", is_completed=True)
+                parent.create_subtask(sample_task.id, "Task 2", is_completed=True),
             ]
             mock_subtask_repository.find_by_parent_task_id.return_value = subtasks
 
             # Act
-            percentage = progress_service_with_repo.calculate_subtask_completion_percentage(sample_task)
+            percentage = (
+                progress_service_with_repo.calculate_subtask_completion_percentage(
+                    sample_task
+                )
+            )
 
             # Assert
             assert percentage == 100.0
 
         def test_partial_completion(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test percentage with partial completion."""
             # Arrange
@@ -306,48 +382,78 @@ class TestTaskProgressService:
             subtasks = [
                 parent.create_subtask(sample_task.id, "Complete 1", is_completed=True),
                 parent.create_subtask(sample_task.id, "Complete 2", is_completed=True),
-                parent.create_subtask(sample_task.id, "Incomplete 1", is_completed=False)
+                parent.create_subtask(
+                    sample_task.id, "Incomplete 1", is_completed=False
+                ),
             ]
             mock_subtask_repository.find_by_parent_task_id.return_value = subtasks
 
             # Act
-            percentage = progress_service_with_repo.calculate_subtask_completion_percentage(sample_task)
+            percentage = (
+                progress_service_with_repo.calculate_subtask_completion_percentage(
+                    sample_task
+                )
+            )
 
             # Assert
             assert percentage == 66.7  # 2 of 3 = 66.666... rounded to 66.7
 
         def test_decimal_precision(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test decimal precision in percentage calculation."""
             # Arrange - 1 out of 7 subtasks completed = 14.285714...%
-            subtasks = [self.create_subtask(sample_task.id, "Complete", is_completed=True)]
-            subtasks.extend([
-                self.create_subtask(sample_task.id, f"Incomplete {i}", is_completed=False)
-                for i in range(6)
-            ])
+            subtasks = [
+                self.create_subtask(sample_task.id, "Complete", is_completed=True)
+            ]
+            subtasks.extend(
+                [
+                    self.create_subtask(
+                        sample_task.id, f"Incomplete {i}", is_completed=False
+                    )
+                    for i in range(6)
+                ]
+            )
             mock_subtask_repository.find_by_parent_task_id.return_value = subtasks
 
             # Act
-            percentage = progress_service_with_repo.calculate_subtask_completion_percentage(sample_task)
+            percentage = (
+                progress_service_with_repo.calculate_subtask_completion_percentage(
+                    sample_task
+                )
+            )
 
             # Assert
             assert percentage == 14.3  # Rounded to 1 decimal place
 
         def test_exception_handling(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test exception handling in percentage calculation."""
             # Arrange
-            mock_subtask_repository.find_by_parent_task_id.side_effect = Exception("DB error")
+            mock_subtask_repository.find_by_parent_task_id.side_effect = Exception(
+                "DB error"
+            )
 
             # Act
-            percentage = progress_service_with_repo.calculate_subtask_completion_percentage(sample_task)
+            percentage = (
+                progress_service_with_repo.calculate_subtask_completion_percentage(
+                    sample_task
+                )
+            )
 
             # Assert
             assert percentage == 0.0
 
-        def create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
+        def create_subtask(
+            self, parent_task_id: TaskId, title: str, is_completed: bool = False
+        ) -> Subtask:
             """Helper method to create a subtask."""
             from fastmcp.task_management.domain.value_objects.task_status import (
                 TaskStatus,
@@ -358,7 +464,7 @@ class TestTaskProgressService:
                 parent_task_id=parent_task_id,
                 title=title,
                 description=f"Description for {title}",
-                status=TaskStatus.done() if is_completed else TaskStatus.todo()
+                status=TaskStatus.done() if is_completed else TaskStatus.todo(),
             )
             # No need to set _is_completed as status handles it
             return subtask
@@ -382,7 +488,10 @@ class TestTaskProgressService:
             assert summary["details"] == []
 
         def test_no_subtasks(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test summary when no subtasks exist."""
             # Arrange
@@ -396,16 +505,29 @@ class TestTaskProgressService:
             assert summary["can_complete_parent"] is True
 
         def test_mixed_subtask_summary(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test summary with mixed completed and incomplete subtasks."""
             # Arrange
             subtasks = [
-                self.create_subtask(sample_task.id, "Completed Task 1", is_completed=True),
-                self.create_subtask(sample_task.id, "Completed Task 2", is_completed=True),
-                self.create_subtask(sample_task.id, "Incomplete Task 1", is_completed=False),
-                self.create_subtask(sample_task.id, "Incomplete Task 2", is_completed=False),
-                self.create_subtask(sample_task.id, "Incomplete Task 3", is_completed=False)
+                self.create_subtask(
+                    sample_task.id, "Completed Task 1", is_completed=True
+                ),
+                self.create_subtask(
+                    sample_task.id, "Completed Task 2", is_completed=True
+                ),
+                self.create_subtask(
+                    sample_task.id, "Incomplete Task 1", is_completed=False
+                ),
+                self.create_subtask(
+                    sample_task.id, "Incomplete Task 2", is_completed=False
+                ),
+                self.create_subtask(
+                    sample_task.id, "Incomplete Task 3", is_completed=False
+                ),
             ]
             mock_subtask_repository.find_by_parent_task_id.return_value = subtasks
 
@@ -423,11 +545,16 @@ class TestTaskProgressService:
             assert len(summary["completed_titles"]) == 2
 
         def test_summary_with_progress_percentage(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test summary includes subtask progress percentage."""
             # Arrange
-            subtask = self.create_subtask(sample_task.id, "Test Task", is_completed=False)
+            subtask = self.create_subtask(
+                sample_task.id, "Test Task", is_completed=False
+            )
             subtask.progress_percentage = 75  # Partially complete
             mock_subtask_repository.find_by_parent_task_id.return_value = [subtask]
 
@@ -438,13 +565,18 @@ class TestTaskProgressService:
             assert summary["details"][0]["progress_percentage"] == 75
 
         def test_summary_title_truncation(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test that title lists are truncated to 5 items for UI display."""
             # Arrange
             parent = TestTaskProgressService()
             subtasks = [
-                parent.create_subtask(sample_task.id, f"Incomplete {i}", is_completed=False)
+                parent.create_subtask(
+                    sample_task.id, f"Incomplete {i}", is_completed=False
+                )
                 for i in range(7)
             ]
             mock_subtask_repository.find_by_parent_task_id.return_value = subtasks
@@ -457,11 +589,16 @@ class TestTaskProgressService:
             assert len(summary["completed_titles"]) == 0
 
         def test_summary_exception_handling(
-            self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            sample_task: Task,
+            mock_subtask_repository: Mock,
         ):
             """Test exception handling in summary generation."""
             # Arrange
-            mock_subtask_repository.find_by_parent_task_id.side_effect = Exception("DB error")
+            mock_subtask_repository.find_by_parent_task_id.side_effect = Exception(
+                "DB error"
+            )
 
             # Act
             summary = progress_service_with_repo.get_subtask_summary(sample_task)
@@ -472,7 +609,9 @@ class TestTaskProgressService:
             assert "error" in summary
             assert summary["error"] == "DB error"
 
-        def create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
+        def create_subtask(
+            self, parent_task_id: TaskId, title: str, is_completed: bool = False
+        ) -> Subtask:
             """Helper method to create a subtask."""
             from fastmcp.task_management.domain.value_objects.task_status import (
                 TaskStatus,
@@ -483,7 +622,7 @@ class TestTaskProgressService:
                 parent_task_id=parent_task_id,
                 title=title,
                 description=f"Description for {title}",
-                status=TaskStatus.done() if is_completed else TaskStatus.todo()
+                status=TaskStatus.done() if is_completed else TaskStatus.todo(),
             )
             # No need to set _is_completed as status handles it
             return subtask
@@ -497,12 +636,13 @@ class TestTaskProgressService:
             from fastmcp.task_management.domain.value_objects.task_status import (
                 TaskStatus,
             )
+
             task = Task(
                 id=TaskId.generate(),
                 title="Todo Task",
                 description="Not started",
                 status=TaskStatus.todo(),
-                priority="medium"
+                priority="medium",
             )
 
             # Act
@@ -521,7 +661,7 @@ class TestTaskProgressService:
                 title="In Progress Task",
                 description="Currently working",
                 status=TaskStatus.in_progress(),
-                priority="medium"
+                priority="medium",
             )
 
             # Act
@@ -540,7 +680,7 @@ class TestTaskProgressService:
                 title="Done Task",
                 description="Completed",
                 status=TaskStatus.done(),
-                priority="medium"
+                priority="medium",
             )
 
             # Act
@@ -552,7 +692,9 @@ class TestTaskProgressService:
             assert score == 1.0
 
         def test_task_with_incomplete_subtasks_score(
-            self, progress_service_with_repo: TaskProgressService, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            mock_subtask_repository: Mock,
         ):
             """Test progress score with incomplete subtasks."""
             # Arrange
@@ -561,15 +703,17 @@ class TestTaskProgressService:
                 title="Task with Subtasks",
                 description="Has subtasks",
                 status=TaskStatus.in_progress(),
-                priority="medium"
+                priority="medium",
             )
-            
+
             # 1 of 4 subtasks complete = 25%
             subtasks = [self.create_subtask(task.id, "Complete", is_completed=True)]
-            subtasks.extend([
-                self.create_subtask(task.id, f"Incomplete {i}", is_completed=False)
-                for i in range(3)
-            ])
+            subtasks.extend(
+                [
+                    self.create_subtask(task.id, f"Incomplete {i}", is_completed=False)
+                    for i in range(3)
+                ]
+            )
             mock_subtask_repository.find_by_parent_task_id.return_value = subtasks
 
             # Act
@@ -583,14 +727,14 @@ class TestTaskProgressService:
         def test_score_bounds_clamping(self, progress_service: TaskProgressService):
             """Test that score is clamped to [0.0, 1.0] bounds."""
             # This test ensures the clamping logic works, though normal calculation shouldn't exceed bounds
-            
+
             # Test with cancelled task (edge case)
             task = Task(
                 id=TaskId.generate(),
                 title="Cancelled Task",
                 description="Cancelled work",
                 status=TaskStatus.cancelled(),
-                priority="medium"
+                priority="medium",
             )
 
             # Act
@@ -600,7 +744,9 @@ class TestTaskProgressService:
             assert 0.0 <= score <= 1.0
 
         def test_score_exception_handling(
-            self, progress_service_with_repo: TaskProgressService, mock_subtask_repository: Mock
+            self,
+            progress_service_with_repo: TaskProgressService,
+            mock_subtask_repository: Mock,
         ):
             """Test exception handling in score calculation."""
             # Arrange
@@ -613,9 +759,11 @@ class TestTaskProgressService:
                 title="Error Task",
                 description="Will cause error",
                 status=TaskStatus.in_progress(),
-                priority="medium"
+                priority="medium",
             )
-            mock_subtask_repository.find_by_parent_task_id.side_effect = Exception("DB error")
+            mock_subtask_repository.find_by_parent_task_id.side_effect = Exception(
+                "DB error"
+            )
 
             # Act
             score = progress_service_with_repo.calculate_progress_score(task)
@@ -625,7 +773,9 @@ class TestTaskProgressService:
             # in_progress status = 50% progress = 0.3 weighted score (50% * 0.6)
             assert score == 0.3
 
-        def create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
+        def create_subtask(
+            self, parent_task_id: TaskId, title: str, is_completed: bool = False
+        ) -> Subtask:
             """Helper method to create a subtask."""
             from fastmcp.task_management.domain.value_objects.task_status import (
                 TaskStatus,
@@ -636,7 +786,7 @@ class TestTaskProgressService:
                 parent_task_id=parent_task_id,
                 title=title,
                 description=f"Description for {title}",
-                status=TaskStatus.done() if is_completed else TaskStatus.todo()
+                status=TaskStatus.done() if is_completed else TaskStatus.todo(),
             )
             # No need to set _is_completed as status handles it
             return subtask
@@ -644,7 +794,9 @@ class TestTaskProgressService:
     class TestStatusProgressMapping:
         """Test cases for status to progress value mapping."""
 
-        def test_get_status_progress_value_all_statuses(self, progress_service: TaskProgressService):
+        def test_get_status_progress_value_all_statuses(
+            self, progress_service: TaskProgressService
+        ):
             """Test progress values for all status types."""
             # Create tasks with different statuses and test their progress values
             test_cases = [
@@ -654,7 +806,7 @@ class TestTaskProgressService:
                 ("testing", 0.9),
                 ("done", 1.0),
                 ("blocked", 0.0),
-                ("cancelled", 0.0)
+                ("cancelled", 0.0),
             ]
 
             for status_str, expected_value in test_cases:
@@ -664,16 +816,18 @@ class TestTaskProgressService:
                     title=f"Task with {status_str} status",
                     description="Test task",
                     status=status_str,
-                    priority="medium"
+                    priority="medium",
                 )
 
                 # Get base progress
                 progress = progress_service._calculate_base_task_progress(task)
-                
+
                 # Assert expected progress percentage
                 assert progress["progress_percentage"] == expected_value * 100
 
-        def test_is_status_in_progress_detection(self, progress_service: TaskProgressService):
+        def test_is_status_in_progress_detection(
+            self, progress_service: TaskProgressService
+        ):
             """Test detection of in-progress statuses."""
             in_progress_statuses = ["in_progress", "review", "testing"]
             not_in_progress_statuses = ["todo", "done", "blocked", "cancelled"]
@@ -684,7 +838,7 @@ class TestTaskProgressService:
                     title="Test Task",
                     description="Test",
                     status=status_str,
-                    priority="medium"
+                    priority="medium",
                 )
                 progress = progress_service._calculate_base_task_progress(task)
                 assert progress["is_in_progress"] is True
@@ -695,19 +849,21 @@ class TestTaskProgressService:
                     title="Test Task",
                     description="Test",
                     status=status_str,
-                    priority="medium"
+                    priority="medium",
                 )
                 progress = progress_service._calculate_base_task_progress(task)
                 assert progress["is_in_progress"] is False
 
-        def test_is_status_blocked_detection(self, progress_service: TaskProgressService):
+        def test_is_status_blocked_detection(
+            self, progress_service: TaskProgressService
+        ):
             """Test detection of blocked status."""
             blocked_task = Task(
                 id=TaskId.generate(),
                 title="Blocked Task",
                 description="Test",
                 status=TaskStatus.blocked(),
-                priority="medium"
+                priority="medium",
             )
 
             not_blocked_task = Task(
@@ -715,16 +871,22 @@ class TestTaskProgressService:
                 title="Active Task",
                 description="Test",
                 status=TaskStatus.in_progress(),
-                priority="medium"
+                priority="medium",
             )
 
-            blocked_progress = progress_service._calculate_base_task_progress(blocked_task)
-            active_progress = progress_service._calculate_base_task_progress(not_blocked_task)
+            blocked_progress = progress_service._calculate_base_task_progress(
+                blocked_task
+            )
+            active_progress = progress_service._calculate_base_task_progress(
+                not_blocked_task
+            )
 
             assert blocked_progress["is_blocked"] is True
             assert active_progress["is_blocked"] is False
 
-        def test_calculate_subtask_progress_without_repository(self, progress_service: TaskProgressService):
+        def test_calculate_subtask_progress_without_repository(
+            self, progress_service: TaskProgressService
+        ):
             """Test _calculate_subtask_progress when no repository is available."""
             # Arrange
             task = Task(
@@ -732,7 +894,7 @@ class TestTaskProgressService:
                 title="Test Task",
                 description="Test",
                 status=TaskStatus.in_progress(),
-                priority="medium"
+                priority="medium",
             )
 
             # Act - Call the private method directly to test line 229
@@ -741,7 +903,9 @@ class TestTaskProgressService:
             # Assert
             assert result is None
 
-        def test_identify_blocking_factors_with_dependencies(self, progress_service: TaskProgressService, mock_subtask_repository: Mock):
+        def test_identify_blocking_factors_with_dependencies(
+            self, progress_service: TaskProgressService, mock_subtask_repository: Mock
+        ):
             """Test blocking factor identification when task has dependencies."""
             # Arrange
             task = Task(
@@ -749,7 +913,7 @@ class TestTaskProgressService:
                 title="Task with Dependencies",
                 description="Test",
                 status=TaskStatus.in_progress(),
-                priority="medium"
+                priority="medium",
             )
             # Manually add dependencies attribute to trigger line 282
             task.dependencies = ["dep1", "dep2"]
@@ -777,26 +941,38 @@ class TestTaskProgressServiceIntegration:
             title="Implement user authentication system",
             description="Complete auth system with login, logout, and session management",
             status=TaskStatus.in_progress(),
-            priority="high"
+            priority="high",
         )
 
         # Subtasks with varying completion
         subtasks = [
             # Backend tasks
             self._create_subtask(main_task.id, "Create user model", is_completed=True),
-            self._create_subtask(main_task.id, "Implement password hashing", is_completed=True),
-            self._create_subtask(main_task.id, "Create login API endpoint", is_completed=True),
-            self._create_subtask(main_task.id, "Create logout API endpoint", is_completed=False),
-            
+            self._create_subtask(
+                main_task.id, "Implement password hashing", is_completed=True
+            ),
+            self._create_subtask(
+                main_task.id, "Create login API endpoint", is_completed=True
+            ),
+            self._create_subtask(
+                main_task.id, "Create logout API endpoint", is_completed=False
+            ),
             # Frontend tasks
-            self._create_subtask(main_task.id, "Design login form UI", is_completed=True),
-            self._create_subtask(main_task.id, "Implement login form logic", is_completed=False),
-            self._create_subtask(main_task.id, "Add session management", is_completed=False),
-            
+            self._create_subtask(
+                main_task.id, "Design login form UI", is_completed=True
+            ),
+            self._create_subtask(
+                main_task.id, "Implement login form logic", is_completed=False
+            ),
+            self._create_subtask(
+                main_task.id, "Add session management", is_completed=False
+            ),
             # Testing tasks
             self._create_subtask(main_task.id, "Write unit tests", is_completed=False),
-            self._create_subtask(main_task.id, "Write integration tests", is_completed=False),
-            self._create_subtask(main_task.id, "Manual testing", is_completed=False)
+            self._create_subtask(
+                main_task.id, "Write integration tests", is_completed=False
+            ),
+            self._create_subtask(main_task.id, "Manual testing", is_completed=False),
         ]
 
         mock_repo.find_by_parent_task_id.return_value = subtasks
@@ -808,17 +984,21 @@ class TestTaskProgressServiceIntegration:
         # 4 of 10 subtasks completed = 40%
         # Task status "in_progress" = 50%
         # Weighted: (50 * 0.6) + (40 * 0.4) = 30 + 16 = 46%
-        
+
         assert progress["subtask_progress"]["total"] == 10
         assert progress["subtask_progress"]["completed"] == 4
         assert progress["subtask_progress"]["completion_percentage"] == 40.0
         assert progress["overall_progress"]["percentage"] == 46.0
-        assert progress["can_complete"] is False  # 6 incomplete subtasks block completion
-        
+        assert (
+            progress["can_complete"] is False
+        )  # 6 incomplete subtasks block completion
+
         # Should have blocking factors
         blocking_factors = progress["blocking_factors"]
         assert len(blocking_factors) > 0
-        assert any("6 of 10 subtasks incomplete" in factor for factor in blocking_factors)
+        assert any(
+            "6 of 10 subtasks incomplete" in factor for factor in blocking_factors
+        )
 
         # Get detailed summary
         summary = service.get_subtask_summary(main_task)
@@ -828,6 +1008,7 @@ class TestTaskProgressServiceIntegration:
     def test_project_completion_workflow(self):
         """Test the complete workflow of a project from start to finish."""
         from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+
         mock_repo = create_mock_with_spec(SubtaskRepositoryProtocol)
         service = TaskProgressService(subtask_repository=mock_repo)
 
@@ -836,12 +1017,12 @@ class TestTaskProgressServiceIntegration:
             title="Small feature implementation",
             description="Simple feature with 3 steps",
             status=TaskStatus.todo(),
-            priority="medium"
+            priority="medium",
         )
 
         # Phase 1: Project starts - no subtasks yet
         mock_repo.find_by_parent_task_id.return_value = []
-        
+
         phase1_progress = service.calculate_task_progress(task)
         assert phase1_progress["overall_progress"]["percentage"] == 0.0  # todo status
         assert phase1_progress["can_complete"] is True  # No subtasks blocking
@@ -851,12 +1032,14 @@ class TestTaskProgressServiceIntegration:
         subtasks = [
             self._create_subtask(task.id, "Step 1", is_completed=False),
             self._create_subtask(task.id, "Step 2", is_completed=False),
-            self._create_subtask(task.id, "Step 3", is_completed=False)
+            self._create_subtask(task.id, "Step 3", is_completed=False),
         ]
         mock_repo.find_by_parent_task_id.return_value = subtasks
 
         phase2_progress = service.calculate_task_progress(task)
-        assert phase2_progress["overall_progress"]["percentage"] == 30.0  # (50*0.6) + (0*0.4)
+        assert (
+            phase2_progress["overall_progress"]["percentage"] == 30.0
+        )  # (50*0.6) + (0*0.4)
         assert phase2_progress["can_complete"] is False
 
         # Phase 3: First subtask completed
@@ -885,7 +1068,9 @@ class TestTaskProgressServiceIntegration:
         assert phase5_progress["overall_progress"]["percentage"] == 100.0
         assert phase5_progress["can_complete"] is True
 
-    def _create_subtask(self, parent_task_id: TaskId, title: str, is_completed: bool = False) -> Subtask:
+    def _create_subtask(
+        self, parent_task_id: TaskId, title: str, is_completed: bool = False
+    ) -> Subtask:
         """Helper to create subtasks for integration tests."""
         from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
@@ -894,7 +1079,7 @@ class TestTaskProgressServiceIntegration:
             parent_task_id=parent_task_id,
             title=title,
             description=f"Description for {title}",
-            status=TaskStatus.done() if is_completed else TaskStatus.todo()
+            status=TaskStatus.done() if is_completed else TaskStatus.todo(),
         )
         # No need to set _is_completed as status handles it
         return subtask

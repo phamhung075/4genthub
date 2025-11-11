@@ -30,19 +30,15 @@ class TestSecurityVulnerabilities:
             "550e8400'; DROP TABLE tasks; --",
             "550e8400' OR '1'='1",
             "550e8400-e29b-41d4-a716-446655440000'; DELETE FROM users; --",
-
             # Union-based injections
             "550e8400' UNION SELECT * FROM sensitive_data --",
             "550e8400-e29b-41d4-a716-446655440000' UNION ALL SELECT password FROM users --",
-
             # Boolean-based blind injections
             "550e8400' AND (SELECT COUNT(*) FROM users) > 0 --",
             "550e8400-e29b-41d4-a716-446655440000' AND SLEEP(5) --",
-
             # Time-based blind injections
             "550e8400'; WAITFOR DELAY '00:00:05' --",
             "550e8400' OR (SELECT * FROM (SELECT COUNT(*),CONCAT(VERSION(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a) --",
-
             # Stacked queries
             "550e8400'; INSERT INTO admin_users VALUES ('hacker', 'password'); --",
             "550e8400-e29b-41d4-a716-446655440000'; UPDATE users SET role='admin' WHERE id=1; --",
@@ -50,7 +46,9 @@ class TestSecurityVulnerabilities:
 
         for payload in sql_injection_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, f"SQL injection payload should be rejected: {payload}"
+            assert result.is_valid is False, (
+                f"SQL injection payload should be rejected: {payload}"
+            )
             assert "Invalid UUID format" in result.error_message
 
     def test_nosql_injection_prevention(self):
@@ -60,11 +58,9 @@ class TestSecurityVulnerabilities:
             "550e8400'; return true; //",
             "550e8400-e29b-41d4-a716-446655440000'; db.users.drop(); //",
             "550e8400' || '1'=='1",
-
             # JSON injection
             '550e8400", "$where": "function() { return true; }", "id": "550e8400',
             '550e8400-e29b-41d4-a716-446655440000", "role": "admin", "id": "fake',
-
             # LDAP injection
             "550e8400')(|(objectClass=*))",
             "550e8400-e29b-41d4-a716-446655440000*)(uid=*))(|(uid=*",
@@ -72,7 +68,9 @@ class TestSecurityVulnerabilities:
 
         for payload in nosql_injection_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, f"NoSQL injection payload should be rejected: {payload}"
+            assert result.is_valid is False, (
+                f"NoSQL injection payload should be rejected: {payload}"
+            )
 
     def test_xss_prevention_in_error_messages(self):
         """Test that error messages don't enable XSS attacks."""
@@ -112,7 +110,9 @@ class TestSecurityVulnerabilities:
 
         for payload in path_traversal_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, f"Path traversal payload should be rejected: {payload}"
+            assert result.is_valid is False, (
+                f"Path traversal payload should be rejected: {payload}"
+            )
 
     def test_command_injection_prevention(self):
         """Test prevention of command injection attacks."""
@@ -129,7 +129,9 @@ class TestSecurityVulnerabilities:
 
         for payload in command_injection_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, f"Command injection payload should be rejected: {payload}"
+            assert result.is_valid is False, (
+                f"Command injection payload should be rejected: {payload}"
+            )
 
     def test_buffer_overflow_attempts(self):
         """Test handling of extremely long inputs that might cause buffer overflows."""
@@ -139,12 +141,14 @@ class TestSecurityVulnerabilities:
             "550e8400-e29b-41d4-a716-446655440000" + "A" * 9000,
             "B" * 100000,
             "\x00" * 1000,  # Null bytes
-            "\xFF" * 1000,  # High bytes
+            "\xff" * 1000,  # High bytes
         ]
 
         for payload in long_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, f"Long payload should be rejected safely: len={len(payload)}"
+            assert result.is_valid is False, (
+                f"Long payload should be rejected safely: len={len(payload)}"
+            )
             # Validator should handle gracefully without crashing
 
     def test_unicode_exploitation_attempts(self):
@@ -152,22 +156,22 @@ class TestSecurityVulnerabilities:
         unicode_payloads = [
             # Unicode normalization attacks - extra characters at the end make UUID invalid
             "550e8400-e29b-41d4-a716-446655440000\u202e",  # Right-to-left override
-            "550e8400-e29b-41d4-a716-446655440000\uFEFF",  # Byte order mark
-
+            "550e8400-e29b-41d4-a716-446655440000\ufeff",  # Byte order mark
             # Mixed scripts (potential homograph attacks)
             "550е8400-е29b-41d4-а716-446655440000",  # Cyrillic 'е' instead of 'e'
             "550e8400-e29b-41d4-a716-44665544000α",  # Greek alpha
-
             # Control characters
             "550e8400-e29b-41d4-a716-446655440000\x00",
-            "550e8400-e29b-41d4-a716-446655440000\x0A",
-            "550e8400-e29b-41d4-a716-446655440000\x0D",
-            "550e8400-e29b-41d4-a716-446655440000\x1B",
+            "550e8400-e29b-41d4-a716-446655440000\x0a",
+            "550e8400-e29b-41d4-a716-446655440000\x0d",
+            "550e8400-e29b-41d4-a716-446655440000\x1b",
         ]
 
         for payload in unicode_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, f"Unicode payload should be rejected: {repr(payload)}"
+            assert result.is_valid is False, (
+                f"Unicode payload should be rejected: {repr(payload)}"
+            )
 
     def test_format_string_attacks(self):
         """Test prevention of format string attacks."""
@@ -182,7 +186,9 @@ class TestSecurityVulnerabilities:
 
         for payload in format_string_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, f"Format string payload should be rejected: {payload}"
+            assert result.is_valid is False, (
+                f"Format string payload should be rejected: {payload}"
+            )
 
     def test_regex_dos_prevention(self):
         """Test prevention of ReDoS (Regular Expression Denial of Service) attacks."""
@@ -192,10 +198,8 @@ class TestSecurityVulnerabilities:
             "5" + "5" * 1000 + "0e8400-e29b-41d4-a716-446655440000",
             "550e8400-" + "e" * 1000 + "29b-41d4-a716-446655440000",
             "550e8400-e29b-" + "4" * 1000 + "1d4-a716-446655440000",
-
             # Alternation with overlapping patterns
             "550e8400-e29b-41d4-a716-446655440000" + ("a|a" * 500),
-
             # Grouping with quantifiers
             "550e8400-e29b-41d4-a716-446655440000" + "(a+)+b",
             "550e8400-e29b-41d4-a716-446655440000" + "(a*)*b",
@@ -209,7 +213,9 @@ class TestSecurityVulnerabilities:
             elapsed_time = time.time() - start_time
 
             # Validation should complete quickly (< 100ms) to prevent DoS
-            assert elapsed_time < 0.1, f"Validation took too long: {elapsed_time:.3f}s for payload length {len(payload)}"
+            assert elapsed_time < 0.1, (
+                f"Validation took too long: {elapsed_time:.3f}s for payload length {len(payload)}"
+            )
             assert result.is_valid is False
 
     def test_null_byte_injection(self):
@@ -224,15 +230,20 @@ class TestSecurityVulnerabilities:
 
         for payload in null_byte_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, f"Null byte payload should be rejected: {repr(payload)}"
+            assert result.is_valid is False, (
+                f"Null byte payload should be rejected: {repr(payload)}"
+            )
 
     def test_malformed_encoding_attacks(self):
         """Test handling of malformed encoding attacks."""
         malformed_encoding_payloads = [
             # Mix invalid UTF-8 with valid chars to corrupt the UUID structure
-            b"550e8400-e29b\xFF\xFE41d4-a716-446655440000".decode('utf-8', errors='replace'),
-            b"550e8400-e29b-41d4\x80\x81a716-446655440000".decode('utf-8', errors='replace'),
-
+            b"550e8400-e29b\xff\xfe41d4-a716-446655440000".decode(
+                "utf-8", errors="replace"
+            ),
+            b"550e8400-e29b-41d4\x80\x81a716-446655440000".decode(
+                "utf-8", errors="replace"
+            ),
             # UUIDs with replacement characters from error handling
             "550e8400-e29b-41d4-a716-44665544000�",  # Replacement char
             "550e8400-e29b-41d4-a716-446655440000\ufffd",  # Unicode replacement
@@ -240,7 +251,9 @@ class TestSecurityVulnerabilities:
 
         for payload in malformed_encoding_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, f"Malformed encoding should be rejected: {repr(payload)}"
+            assert result.is_valid is False, (
+                f"Malformed encoding should be rejected: {repr(payload)}"
+            )
 
 
 class TestSecurityBoundaries:
@@ -257,23 +270,25 @@ class TestSecurityBoundaries:
             {
                 "task_id": "550e8400'; DROP TABLE tasks; --",
                 "git_branch_id": str(uuid4()),
-                "user_id": str(uuid4())
+                "user_id": str(uuid4()),
             },
             {
                 "task_id": str(uuid4()),
                 "git_branch_id": "<script>alert('xss')</script>",
-                "user_id": str(uuid4())
+                "user_id": str(uuid4()),
             },
             {
                 "task_id": str(uuid4()),
                 "git_branch_id": str(uuid4()),
-                "user_id": "../../../etc/passwd"
-            }
+                "user_id": "../../../etc/passwd",
+            },
         ]
 
         for combo in malicious_combinations:
             result = self.validator.validate_parameter_mapping(**combo)
-            assert result.is_valid is False, f"Malicious combination should be rejected: {combo}"
+            assert result.is_valid is False, (
+                f"Malicious combination should be rejected: {combo}"
+            )
 
     def test_context_validation_security(self):
         """Test security aspects of context validation."""
@@ -293,7 +308,9 @@ class TestSecurityBoundaries:
             # Should still validate UUID but not trust malicious context
             assert result.is_valid is True  # UUID itself is valid
             # Context should be treated safely
-            assert result.metadata.get("context_hint") == context  # But stored as-is for logging
+            assert (
+                result.metadata.get("context_hint") == context
+            )  # But stored as-is for logging
 
     def test_error_information_disclosure(self):
         """Test that errors don't disclose sensitive information."""
@@ -330,7 +347,7 @@ class TestSecurityBoundaries:
             "550e8400-invalid-format",
             "not-a-uuid-at-all",
             "",
-            "x" * 36
+            "x" * 36,
         ]
 
         # Measure timing for valid UUID
@@ -359,7 +376,9 @@ class TestSecurityBoundaries:
         # Timing difference should not be significant (< 10x difference)
         # This prevents attackers from determining validity through timing
         timing_ratio = max(avg_valid, avg_invalid) / min(avg_valid, avg_invalid)
-        assert timing_ratio < 10, f"Timing difference too large: {timing_ratio:.2f}x (valid: {avg_valid:.6f}s, invalid: {avg_invalid:.6f}s)"
+        assert timing_ratio < 10, (
+            f"Timing difference too large: {timing_ratio:.2f}x (valid: {avg_valid:.6f}s, invalid: {avg_invalid:.6f}s)"
+        )
 
     def test_memory_exhaustion_protection(self):
         """Test protection against memory exhaustion attacks."""
@@ -380,7 +399,7 @@ class TestSecurityBoundaries:
         malicious_params = {
             "task_id": "550e8400'; DELETE FROM tasks; --",
             "git_branch_id": "<script>alert('xss')</script>",
-            "user_id": "../../../etc/passwd"
+            "user_id": "../../../etc/passwd",
         }
 
         with pytest.raises(IDValidationError) as exc_info:
@@ -427,7 +446,7 @@ class TestSecurityLogging:
         """Set up test fixtures."""
         self.validator = IDValidator(strict_uuid_validation=True)
 
-    @patch('fastmcp.utilities.id_validator.logger')
+    @patch("fastmcp.utilities.id_validator.logger")
     def test_security_event_logging(self, mock_logger):
         """Test that security events are properly logged."""
         # Test suspicious patterns that should be logged

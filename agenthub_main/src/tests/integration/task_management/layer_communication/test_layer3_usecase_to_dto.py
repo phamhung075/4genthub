@@ -38,6 +38,7 @@ from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 # TEST FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def sample_task_entity():
     """Create a fully populated Task entity for testing"""
@@ -53,7 +54,7 @@ def sample_task_entity():
             description="First subtask",
             parent_task_id=parent_task_id,
             status=TaskStatus.done(),
-            priority=Priority.medium()
+            priority=Priority.medium(),
         ),
         Subtask(
             id=TaskId(str(uuid4())),
@@ -61,7 +62,7 @@ def sample_task_entity():
             description="Second subtask",
             parent_task_id=parent_task_id,
             status=TaskStatus.in_progress(),
-            priority=Priority.low()
+            priority=Priority.low(),
         ),
         Subtask(
             id=TaskId(str(uuid4())),
@@ -69,14 +70,14 @@ def sample_task_entity():
             description="Third subtask",
             parent_task_id=parent_task_id,
             status=TaskStatus.todo(),
-            priority=Priority.high()
-        )
+            priority=Priority.high(),
+        ),
     ]
 
     # Create labels (Note: Label entity doesn't have user_id field)
     labels = [
         Label(id=1, name="backend", color="#ff0000"),
-        Label(id=2, name="urgent", color="#00ff00")
+        Label(id=2, name="urgent", color="#00ff00"),
     ]
 
     # Create task entity
@@ -101,6 +102,7 @@ def sample_task_entity():
 # TEST 1: Basic Entity Field Mapping (SHOULD PASS)
 # ============================================================================
 
+
 def test_dto_includes_basic_entity_fields(sample_task_entity):
     """
     Test: TaskResponse DTO includes all basic entity fields
@@ -114,19 +116,30 @@ def test_dto_includes_basic_entity_fields(sample_task_entity):
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: Basic fields are present and correct
-    assert dto.id == str(sample_task_entity.id), "ID should match (DTO converts TaskId to string)"
+    assert dto.id == str(sample_task_entity.id), (
+        "ID should match (DTO converts TaskId to string)"
+    )
     assert dto.title == sample_task_entity.title, "Title should match"
     assert dto.description == sample_task_entity.description, "Description should match"
-    assert dto.status == sample_task_entity.status.value, "Status should match (DTO converts TaskStatus to string)"
-    assert dto.priority == sample_task_entity.priority.value, "Priority should match (DTO converts Priority to string)"
-    assert dto.git_branch_id == sample_task_entity.git_branch_id, "git_branch_id should match"
-    assert dto.estimated_effort == sample_task_entity.estimated_effort, "estimated_effort should match"
+    assert dto.status == sample_task_entity.status.value, (
+        "Status should match (DTO converts TaskStatus to string)"
+    )
+    assert dto.priority == sample_task_entity.priority.value, (
+        "Priority should match (DTO converts Priority to string)"
+    )
+    assert dto.git_branch_id == sample_task_entity.git_branch_id, (
+        "git_branch_id should match"
+    )
+    assert dto.estimated_effort == sample_task_entity.estimated_effort, (
+        "estimated_effort should match"
+    )
     # Note: details field is on DTO but not on Task entity - it's populated from context_data
 
 
 # ============================================================================
 # TEST 2: Nested Objects Serialization (SHOULD PASS)
 # ============================================================================
+
 
 def test_dto_serializes_nested_objects_correctly(sample_task_entity):
     """
@@ -142,17 +155,24 @@ def test_dto_serializes_nested_objects_correctly(sample_task_entity):
 
     # Assert: Labels are serialized
     assert len(dto.labels) == 2, "Should have 2 labels"
-    assert all(isinstance(label, Label) for label in dto.labels), "Labels should be Label objects"
-    assert all(hasattr(label, 'name') and label.name for label in dto.labels), "All labels should have name"
+    assert all(isinstance(label, Label) for label in dto.labels), (
+        "Labels should be Label objects"
+    )
+    assert all(hasattr(label, "name") and label.name for label in dto.labels), (
+        "All labels should have name"
+    )
 
     # Assert: Subtasks are serialized
     assert len(dto.subtasks) == 3, "Should have 3 subtasks"
-    assert all(isinstance(subtask, Subtask) for subtask in dto.subtasks), "Subtasks should be Subtask objects"
+    assert all(isinstance(subtask, Subtask) for subtask in dto.subtasks), (
+        "Subtasks should be Subtask objects"
+    )
 
 
 # ============================================================================
 # TEST 3: Datetime Field Formatting (SHOULD PASS)
 # ============================================================================
+
 
 def test_dto_formats_datetime_fields_correctly(sample_task_entity):
     """
@@ -183,9 +203,10 @@ def test_dto_formats_datetime_fields_correctly(sample_task_entity):
 # TEST 4: project_id Traversal from git_branch_id (EXPECTED FAILURE)
 # ============================================================================
 
+
 @pytest.mark.xfail(
     reason="TaskResponse.from_domain() does not traverse git_branch relationship to fetch project_id",
-    strict=True
+    strict=True,
 )
 def test_dto_includes_project_id_from_git_branch_relationship(sample_task_entity):
     """
@@ -214,8 +235,9 @@ def test_dto_includes_project_id_from_git_branch_relationship(sample_task_entity
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: project_id should be present (WILL FAIL)
-    assert dto.project_id is not None, \
+    assert dto.project_id is not None, (
         "project_id should be computed from git_branch_id relationship"
+    )
 
     # This assertion would pass after fix:
     # assert dto.project_id == expected_project_id
@@ -224,6 +246,7 @@ def test_dto_includes_project_id_from_git_branch_relationship(sample_task_entity
 # ============================================================================
 # TEST 5: subtask_count Computation (EXPECTED FAILURE)
 # ============================================================================
+
 
 def test_dto_computes_subtask_count_from_subtasks_array(sample_task_entity):
     """
@@ -240,19 +263,20 @@ def test_dto_computes_subtask_count_from_subtasks_array(sample_task_entity):
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: subtask_count should equal length of subtasks array
-    assert dto.subtask_count is not None, \
+    assert dto.subtask_count is not None, (
         "subtask_count should be computed from subtasks array"
-    assert dto.subtask_count == 3, \
-        f"Expected subtask_count=3, got {dto.subtask_count}"
+    )
+    assert dto.subtask_count == 3, f"Expected subtask_count=3, got {dto.subtask_count}"
 
 
 # ============================================================================
 # TEST 6: completed_subtasks Computation (EXPECTED FAILURE)
 # ============================================================================
 
+
 @pytest.mark.xfail(
     reason="TaskResponse.from_domain() does not compute completed_subtasks from subtask statuses",
-    strict=True
+    strict=True,
 )
 def test_dto_computes_completed_subtasks_from_subtask_statuses(sample_task_entity):
     """
@@ -276,15 +300,18 @@ def test_dto_computes_completed_subtasks_from_subtask_statuses(sample_task_entit
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: completed_subtasks should be computed (WILL FAIL)
-    assert dto.completed_subtasks is not None, \
+    assert dto.completed_subtasks is not None, (
         "completed_subtasks should be computed from subtask statuses"
-    assert dto.completed_subtasks == expected_completed, \
+    )
+    assert dto.completed_subtasks == expected_completed, (
         f"Expected completed_subtasks={expected_completed}, got {dto.completed_subtasks}"
+    )
 
 
 # ============================================================================
 # TEST 7: Assignee @ Prefix Formatting (EXPECTED FAILURE)
 # ============================================================================
+
 
 def test_dto_adds_prefix_to_assignees(sample_task_entity):
     """
@@ -301,22 +328,24 @@ def test_dto_adds_prefix_to_assignees(sample_task_entity):
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: All assignees should have @ prefix
-    assert all(assignee.startswith("@") for assignee in dto.assignees), \
+    assert all(assignee.startswith("@") for assignee in dto.assignees), (
         f"All assignees should have @ prefix. Got: {dto.assignees}"
+    )
 
     # Verify expected values after fix:
     expected_assignees = ["@coding-agent", "@test-orchestrator-agent"]
-    assert dto.assignees == expected_assignees, \
+    assert dto.assignees == expected_assignees, (
         f"Expected {expected_assignees}, got {dto.assignees}"
+    )
 
 
 # ============================================================================
 # SUMMARY TEST: Verify All 4 Issues Together
 # ============================================================================
 
+
 @pytest.mark.xfail(
-    reason="Documents all 4 data loss issues in one comprehensive test",
-    strict=True
+    reason="Documents all 4 data loss issues in one comprehensive test", strict=True
 )
 def test_dto_transformation_includes_all_missing_fields(sample_task_entity):
     """
@@ -355,8 +384,10 @@ def test_dto_transformation_includes_all_missing_fields(sample_task_entity):
         issues.append(f"assignees missing @ prefix: {dto.assignees}")
 
     # Assert: Should have NO issues (WILL FAIL with all 4 issues)
-    assert len(issues) == 0, \
-        f"DTO transformation has {len(issues)} issues:\n" + "\n".join(f"  - {issue}" for issue in issues)
+    assert len(issues) == 0, (
+        f"DTO transformation has {len(issues)} issues:\n"
+        + "\n".join(f"  - {issue}" for issue in issues)
+    )
 
 
 # ============================================================================

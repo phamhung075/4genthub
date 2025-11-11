@@ -22,7 +22,7 @@ def performance_logger():
     return setup_performance_logger()
 
 
-@pytest.fixture(scope="session") 
+@pytest.fixture(scope="session")
 def event_loop():
     """Create event loop for async tests."""
     loop = asyncio.new_event_loop()
@@ -40,10 +40,7 @@ def temp_cache_dir():
 @pytest.fixture
 def mock_mcp_server():
     """Create mock MCP server for controlled testing."""
-    server = create_performance_test_server(
-        response_delay=0.05,
-        error_rate=0.0
-    )
+    server = create_performance_test_server(response_delay=0.05, error_rate=0.0)
     yield server
     server.reset_metrics()
 
@@ -52,15 +49,17 @@ def mock_mcp_server():
 def high_latency_server():
     """Create high latency server for stress testing."""
     from .mocks.mock_mcp_server import create_high_latency_server
+
     server = create_high_latency_server()
     yield server
     server.reset_metrics()
 
 
-@pytest.fixture 
+@pytest.fixture
 def unreliable_server():
     """Create unreliable server for fallback testing."""
     from .mocks.mock_mcp_server import create_unreliable_server
+
     server = create_unreliable_server()
     yield server
     server.reset_metrics()
@@ -76,9 +75,7 @@ def cleanup_mock_servers():
 # Mark all tests in this package as performance tests
 def pytest_configure(config):
     """Configure pytest for performance testing."""
-    config.addinivalue_line(
-        "markers", "performance: mark test as performance test"
-    )
+    config.addinivalue_line("markers", "performance: mark test as performance test")
 
 
 def pytest_collection_modifyitems(config, items):

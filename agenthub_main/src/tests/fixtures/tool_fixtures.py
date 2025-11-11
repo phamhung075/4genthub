@@ -23,12 +23,12 @@ FIXED_TEST_TIMESTAMP = datetime(2024, 1, 1, 12, 0, 0)
 
 class FixtureGenerator:
     """Generator for test fixtures"""
-    
+
     @staticmethod
     def generate_uuid():
         """Generate a test UUID"""
         return str(uuid.uuid4())
-    
+
     @staticmethod
     def generate_timestamp():
         """Generate a test timestamp"""
@@ -51,7 +51,7 @@ def sample_project_data():
         "status": "active",
         "created_at": FixtureGenerator.generate_timestamp(),
         "updated_at": FixtureGenerator.generate_timestamp(),
-        "git_branchs": ["feature_development", "bug_fixes"]
+        "git_branchs": ["feature_development", "bug_fixes"],
     }
 
 
@@ -63,7 +63,7 @@ def sample_project_entity(sample_project_data):
         name=sample_project_data["name"],
         description=sample_project_data["description"],
         git_branch_name=sample_project_data["git_branch_name"],
-        status=sample_project_data["status"]
+        status=sample_project_data["status"],
     )
 
 
@@ -86,7 +86,7 @@ def sample_task_data():
         "created_at": FixtureGenerator.generate_timestamp(),
         "updated_at": FixtureGenerator.generate_timestamp(),
         "dependencies": [],
-        "subtasks": []
+        "subtasks": [],
     }
 
 
@@ -101,7 +101,7 @@ def sample_task_entity(sample_task_data):
         priority=Priority.medium(),
         project_id=sample_task_data["project_id"],
         git_branch_name=sample_task_data["git_branch_name"],
-        user_id=sample_task_data["user_id"]
+        user_id=sample_task_data["user_id"],
     )
 
 
@@ -116,7 +116,7 @@ def sample_subtask_data():
         "task_id": "test-task-456",
         "order": 1,
         "created_at": FixtureGenerator.generate_timestamp(),
-        "updated_at": FixtureGenerator.generate_timestamp()
+        "updated_at": FixtureGenerator.generate_timestamp(),
     }
 
 
@@ -129,7 +129,7 @@ def sample_subtask_entity(sample_subtask_data):
         description=sample_subtask_data["description"],
         status=TaskStatus.TODO,
         task_id=sample_subtask_data["task_id"],
-        order=sample_subtask_data["order"]
+        order=sample_subtask_data["order"],
     )
 
 
@@ -144,13 +144,9 @@ def sample_agent_data():
         "version": "1.0.0",
         "capabilities": ["code_generation", "documentation", "testing"],
         "status": "active",
-        "configuration": {
-            "max_tokens": 4000,
-            "temperature": 0.7,
-            "model": "gpt-4"
-        },
+        "configuration": {"max_tokens": 4000, "temperature": 0.7, "model": "gpt-4"},
         "created_at": FixtureGenerator.generate_timestamp(),
-        "updated_at": FixtureGenerator.generate_timestamp()
+        "updated_at": FixtureGenerator.generate_timestamp(),
     }
 
 
@@ -169,7 +165,7 @@ def sample_template_data():
         "version": "1.0.0",
         "tags": ["testing", "template"],
         "created_at": FixtureGenerator.generate_timestamp(),
-        "updated_at": FixtureGenerator.generate_timestamp()
+        "updated_at": FixtureGenerator.generate_timestamp(),
     }
 
 
@@ -186,13 +182,13 @@ def sample_connection_data():
             "client_name": "Test Client",
             "version": "1.0.0",
             "capabilities": ["tools", "resources", "prompts"],
-            "user_agent": "TestClient/1.0"
+            "user_agent": "TestClient/1.0",
         },
         "metrics": {
             "requests_count": 150,
             "errors_count": 2,
-            "average_response_time_ms": 45
-        }
+            "average_response_time_ms": 45,
+        },
     }
 
 
@@ -206,7 +202,7 @@ def sample_auth_token_data():
         "expires_at": FixtureGenerator.generate_future_timestamp(24),
         "created_at": FixtureGenerator.generate_timestamp(),
         "token_type": "bearer",
-        "is_active": True
+        "is_active": True,
     }
 
 
@@ -220,11 +216,11 @@ def sample_health_check_data():
             "database": {"status": "ok", "response_time_ms": 15},
             "redis": {"status": "ok", "response_time_ms": 5},
             "file_system": {"status": "ok", "free_space_gb": 50},
-            "memory": {"status": "ok", "usage_percent": 65}
+            "memory": {"status": "ok", "usage_percent": 65},
         },
         "overall_response_time_ms": 25,
         "timestamp": FixtureGenerator.generate_timestamp(),
-        "version": "1.0.0"
+        "version": "1.0.0",
     }
 
 
@@ -239,10 +235,10 @@ def sample_render_result():
         "variables_used": {
             "title": "Test Task",
             "description": "This is a test task description",
-            "task_item": "Implement feature"
+            "task_item": "Implement feature",
         },
         "render_time_ms": 50,
-        "timestamp": FixtureGenerator.generate_timestamp()
+        "timestamp": FixtureGenerator.generate_timestamp(),
     }
 
 
@@ -256,15 +252,15 @@ def sample_agent_call_result():
             "output": "Agent execution completed successfully",
             "data": {
                 "generated_code": "def hello_world():\n    return 'Hello, World!'",
-                "documentation": "A simple hello world function"
+                "documentation": "A simple hello world function",
             },
             "metadata": {
                 "execution_time_ms": 1500,
                 "tokens_used": 150,
-                "model_used": "gpt-4"
-            }
+                "model_used": "gpt-4",
+            },
         },
-        "timestamp": FixtureGenerator.generate_timestamp()
+        "timestamp": FixtureGenerator.generate_timestamp(),
     }
 
 
@@ -388,7 +384,13 @@ def template_types():
 @pytest.fixture
 def agent_types():
     """All valid agent types"""
-    return ["code_generator", "task_planner", "documentation_writer", "test_generator", "reviewer"]
+    return [
+        "code_generator",
+        "task_planner",
+        "documentation_writer",
+        "test_generator",
+        "reviewer",
+    ]
 
 
 @pytest.fixture
@@ -410,7 +412,7 @@ def common_test_params():
         "agent_id": "test-agent-123",
         "template_id": "test-template-123",
         "connection_id": "test-conn-123",
-        "session_id": "test-session-456"
+        "session_id": "test-session-456",
     }
 
 
@@ -422,7 +424,7 @@ def error_scenarios():
         "validation_error": ValueError("Invalid input data"),
         "not_found_error": Exception("Resource not found"),
         "permission_error": Exception("Permission denied"),
-        "timeout_error": Exception("Operation timed out")
+        "timeout_error": Exception("Operation timed out"),
     }
 
 
@@ -435,7 +437,7 @@ def performance_metrics():
         "memory_usage_mb": 256,
         "cpu_usage_percent": 15.5,
         "requests_per_second": 100,
-        "error_rate_percent": 0.1
+        "error_rate_percent": 0.1,
     }
 
 

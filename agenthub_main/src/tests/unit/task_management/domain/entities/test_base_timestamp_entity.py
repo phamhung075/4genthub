@@ -210,7 +210,7 @@ class TestBaseTimestampEntity:
 
         # Validation should handle non-UTC timestamps without errors
         entity._validate_entity()  # Should not raise any exceptions
-        
+
         # Entity should still function with non-UTC timestamp
         assert entity.created_at == non_utc_time
 
@@ -294,7 +294,9 @@ class TestBaseTimestampEntity:
         timestamp_dict = entity.to_timestamp_dict()
         assert timestamp_dict["entity_id"] == "test-id-123"
 
-    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
+    @patch(
+        "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+    )
     def test_timestamp_consistency_during_creation(self, mock_datetime):
         """Test that created_at and updated_at are set to same value during creation"""
         # Mock datetime.now to return consistent time
@@ -318,8 +320,8 @@ class TestBaseTimestampEntity:
 
         # Only updated_at should change
         assert entity.created_at == original_created  # Unchanged
-        assert entity.updated_at > original_updated   # Changed
-        assert entity.updated_at > original_created   # Newer than creation
+        assert entity.updated_at > original_updated  # Changed
+        assert entity.updated_at > original_created  # Newer than creation
 
     def test_concurrent_touch_thread_safety_simulation(self):
         """Test simulated concurrent touch operations"""
@@ -336,7 +338,7 @@ class TestBaseTimestampEntity:
 
         # All timestamps should be different and increasing
         for i in range(1, len(timestamps)):
-            assert timestamps[i] >= timestamps[i-1]
+            assert timestamps[i] >= timestamps[i - 1]
 
         # created_at should never change
         assert entity.created_at == original_created
@@ -370,9 +372,7 @@ class TestTimestampUpdatedEvent:
         new_time = old_time + timedelta(seconds=1)
 
         event = TimestampUpdatedEvent(
-            entity_id="test-entity-123",
-            old_timestamp=old_time,
-            new_timestamp=new_time
+            entity_id="test-entity-123", old_timestamp=old_time, new_timestamp=new_time
         )
 
         assert event.entity_id == "test-entity-123"
@@ -386,9 +386,7 @@ class TestTimestampUpdatedEvent:
         new_time = old_time + timedelta(seconds=1)
 
         event = TimestampUpdatedEvent(
-            entity_id="test-entity-456",
-            old_timestamp=old_time,
-            new_timestamp=new_time
+            entity_id="test-entity-456", old_timestamp=old_time, new_timestamp=new_time
         )
 
         event_dict = event.to_dict()
@@ -408,8 +406,7 @@ class TestTimestampCreatedEvent:
         created_time = datetime.now(UTC)
 
         event = TimestampCreatedEvent(
-            entity_id="new-entity-789",
-            created_timestamp=created_time
+            entity_id="new-entity-789", created_timestamp=created_time
         )
 
         assert event.entity_id == "new-entity-789"
@@ -421,8 +418,7 @@ class TestTimestampCreatedEvent:
         created_time = datetime.now(UTC)
 
         event = TimestampCreatedEvent(
-            entity_id="new-entity-101112",
-            created_timestamp=created_time
+            entity_id="new-entity-101112", created_timestamp=created_time
         )
 
         event_dict = event.to_dict()

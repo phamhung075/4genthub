@@ -49,6 +49,7 @@ except ImportError as e:
 # Test Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def mock_settings():
     """Mock Settings instance"""
@@ -81,12 +82,13 @@ def mock_mcp_server():
 # Target: 6 tests covering initialization logic
 # ============================================================================
 
+
 class TestFastMCPInitialization:
     """Test FastMCP initialization with various configurations"""
 
     def test_basic_initialization_with_defaults(self):
         """Test creating FastMCP with minimal parameters"""
-        with patch('fastmcp.server.server.MCPServer') as mock_server_cls:
+        with patch("fastmcp.server.server.MCPServer") as mock_server_cls:
             mock_server = Mock()
             # Set up proper attribute access
             mock_server.configure_mock(name="FastMCP", instructions=None)
@@ -103,18 +105,17 @@ class TestFastMCPInitialization:
             # Verify MCP server exists
             assert server._mcp_server is not None
 
-
     def test_initialization_with_name_and_instructions(self):
         """Test FastMCP with custom name and instructions"""
-        with patch('fastmcp.server.server.MCPServer') as mock_server_cls:
+        with patch("fastmcp.server.server.MCPServer") as mock_server_cls:
             mock_server = Mock()
-            mock_server.configure_mock(name="MyServer", instructions="Custom instructions")
+            mock_server.configure_mock(
+                name="MyServer", instructions="Custom instructions"
+            )
             mock_server_cls.return_value = mock_server
 
             server = FastMCP(
-                name="MyServer",
-                instructions="Custom instructions",
-                version="1.0.0"
+                name="MyServer", instructions="Custom instructions", version="1.0.0"
             )
 
             # Verify server was created with components
@@ -123,17 +124,16 @@ class TestFastMCPInitialization:
             # Verify MCPServer was called (may be via __getitem__)
             assert mock_server_cls.called or mock_server_cls.return_value is not None
 
-
     def test_initialization_with_custom_settings(self):
         """Test FastMCP with custom cache, duplicate behavior, and resource format"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(
                 name="TestServer",
                 cache_expiration_seconds=300,
                 on_duplicate_tools="replace",
                 on_duplicate_resources="warn",
                 on_duplicate_prompts="ignore",
-                resource_prefix_format="path"
+                resource_prefix_format="path",
             )
 
             # Verify custom settings
@@ -141,49 +141,42 @@ class TestFastMCPInitialization:
             # Cache expiration is internal, but we can verify it was created
             assert server._cache is not None
 
-
     def test_initialization_with_task_management_disabled(self):
         """Test FastMCP with task management explicitly disabled"""
-        with patch('fastmcp.server.server.MCPServer'):
-            server = FastMCP(
-                name="NoTaskServer",
-                enable_task_management=False
-            )
+        with patch("fastmcp.server.server.MCPServer"):
+            server = FastMCP(name="NoTaskServer", enable_task_management=False)
 
             # Verify task management is not initialized
             assert server._consolidated_tools is None
             assert server.consolidated_tools is None
 
-
-    @patch.dict('os.environ', {'AGENTHUB_DISABLE_CURSOR_TOOLS': 'true'})
+    @patch.dict("os.environ", {"AGENTHUB_DISABLE_CURSOR_TOOLS": "true"})
     def test_initialization_with_task_management_environment_override(self):
         """Test task management initialization respects environment variables"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd:
                 mock_tools = Mock()
                 mock_tools.register_tools = Mock()
                 mock_ddd.return_value = mock_tools
 
-                server = FastMCP(
-                    name="EnvServer",
-                    enable_task_management=True
-                )
+                server = FastMCP(name="EnvServer", enable_task_management=True)
 
                 # Verify DDDCompliantMCPTools was called (if task management succeeded)
                 # Note: This might not be called if imports fail, which is okay for testing
-                assert server._consolidated_tools is not None or mock_ddd.call_count == 0
-
+                assert (
+                    server._consolidated_tools is not None or mock_ddd.call_count == 0
+                )
 
     def test_initialization_with_middleware_and_auth(self):
         """Test FastMCP with middleware and auth provider"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             mock_middleware = Mock()
             mock_auth = Mock(spec=OAuthProvider)
 
             server = FastMCP(
-                name="SecureServer",
-                middleware=[mock_middleware],
-                auth=mock_auth
+                name="SecureServer", middleware=[mock_middleware], auth=mock_auth
             )
 
             # Verify middleware and auth
@@ -197,16 +190,18 @@ class TestFastMCPInitialization:
 # Target: 5 tests covering tool decorator and add_tool
 # ============================================================================
 
+
 class TestToolRegistration:
     """Test tool registration via decorator and add_tool method"""
 
     def test_tool_decorator_basic_registration(self):
         """Test @tool decorator registers function as tool"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="ToolServer")
 
             # Mock the tool manager's add_tool method
-            with patch.object(server._tool_manager, 'add_tool') as mock_add:
+            with patch.object(server._tool_manager, "add_tool") as mock_add:
+
                 @server.tool()
                 def test_function():
                     """Test tool"""
@@ -215,33 +210,28 @@ class TestToolRegistration:
                 # Verify add_tool was called
                 assert mock_add.call_count >= 1
 
-
     def test_add_tool_method_with_tool_object(self):
         """Test add_tool method with Tool object"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="ToolServer")
 
             mock_tool = Mock(spec=Tool)
             mock_tool.key = "test_tool"
 
-            with patch.object(server._tool_manager, 'add_tool') as mock_add:
+            with patch.object(server._tool_manager, "add_tool") as mock_add:
                 server.add_tool(mock_tool)
 
                 # Verify tool was added
                 mock_add.assert_called_once_with(mock_tool)
 
-
     @pytest.mark.asyncio
     async def test_get_tools_returns_list(self):
         """Test get_tools returns list of registered tools"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="ToolServer")
 
             # Mock tool manager to return tools
-            mock_tools = {
-                "tool1": Mock(spec=Tool),
-                "tool2": Mock(spec=Tool)
-            }
+            mock_tools = {"tool1": Mock(spec=Tool), "tool2": Mock(spec=Tool)}
             server._tool_manager.get_tools = AsyncMock(return_value=mock_tools)
 
             tools = await server.get_tools()
@@ -250,30 +240,22 @@ class TestToolRegistration:
             assert len(tools) == 2
             assert isinstance(tools, list)
 
-
     def test_tool_registration_with_dependencies(self):
         """Test tool registration with dependency injection"""
-        with patch('fastmcp.server.server.MCPServer'):
-            server = FastMCP(
-                name="DepServer",
-                dependencies=["dep1", "dep2"]
-            )
+        with patch("fastmcp.server.server.MCPServer"):
+            server = FastMCP(name="DepServer", dependencies=["dep1", "dep2"])
 
             # Verify dependencies are set
             assert server.dependencies == ["dep1", "dep2"]
 
-
     def test_initialization_with_tools_list(self):
         """Test initializing server with list of tools"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Create a pre-made Tool object
             mock_tool = Mock(spec=Tool)
             mock_tool.key = "sample_tool"
 
-            server = FastMCP(
-                name="PreloadedServer",
-                tools=[mock_tool]
-            )
+            server = FastMCP(name="PreloadedServer", tools=[mock_tool])
 
             # Verify server initialized and tool manager exists
             assert server is not None
@@ -281,12 +263,15 @@ class TestToolRegistration:
 
     def test_tool_decorator_with_dict_annotations(self):
         """Test @tool decorator with dict annotations (Line 991)"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="DictAnnotationsServer")
 
             # Use dict annotations instead of ToolAnnotations object
-            with patch.object(server._tool_manager, 'add_tool') as mock_add:
-                @server.tool(annotations={"description": "Test tool with dict annotations"})
+            with patch.object(server._tool_manager, "add_tool") as mock_add:
+
+                @server.tool(
+                    annotations={"description": "Test tool with dict annotations"}
+                )
                 def test_tool():
                     """Test function"""
                     return "result"
@@ -300,15 +285,17 @@ class TestToolRegistration:
 # Target: 4 tests covering resource and prompt registration
 # ============================================================================
 
+
 class TestResourceAndPromptRegistration:
     """Test resource and prompt registration"""
 
     def test_resource_decorator_registration(self):
         """Test @resource decorator registers resource"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="ResourceServer")
 
-            with patch.object(server._resource_manager, 'add_resource') as mock_add:
+            with patch.object(server._resource_manager, "add_resource") as mock_add:
+
                 @server.resource("test://resource")
                 def test_resource():
                     """Test resource"""
@@ -317,31 +304,29 @@ class TestResourceAndPromptRegistration:
                 # Decorator should have been applied
                 assert mock_add.call_count >= 0  # May be called during decoration
 
-
     @pytest.mark.asyncio
     async def test_get_resources_returns_dict(self):
         """Test get_resources returns dictionary"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="ResourceServer")
 
-            mock_resources = {
-                "res1": Mock(spec=Resource),
-                "res2": Mock(spec=Resource)
-            }
-            server._resource_manager.get_resources = AsyncMock(return_value=mock_resources)
+            mock_resources = {"res1": Mock(spec=Resource), "res2": Mock(spec=Resource)}
+            server._resource_manager.get_resources = AsyncMock(
+                return_value=mock_resources
+            )
 
             resources = await server.get_resources()
 
             assert len(resources) == 2
             assert "res1" in resources
 
-
     def test_prompt_decorator_registration(self):
         """Test @prompt decorator registers prompt"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="PromptServer")
 
-            with patch.object(server._prompt_manager, 'add_prompt') as mock_add:
+            with patch.object(server._prompt_manager, "add_prompt") as mock_add:
+
                 @server.prompt()
                 def test_prompt():
                     """Test prompt"""
@@ -350,17 +335,13 @@ class TestResourceAndPromptRegistration:
                 # Decorator should have been applied
                 assert mock_add.call_count >= 0
 
-
     @pytest.mark.asyncio
     async def test_get_prompts_returns_dict(self):
         """Test get_prompts returns dictionary"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="PromptServer")
 
-            mock_prompts = {
-                "prompt1": Mock(spec=Prompt),
-                "prompt2": Mock(spec=Prompt)
-            }
+            mock_prompts = {"prompt1": Mock(spec=Prompt), "prompt2": Mock(spec=Prompt)}
             server._prompt_manager.get_prompts = AsyncMock(return_value=mock_prompts)
 
             prompts = await server.get_prompts()
@@ -374,13 +355,14 @@ class TestResourceAndPromptRegistration:
 # Target: 5 tests covering server startup and lifecycle
 # ============================================================================
 
+
 class TestServerLifecycle:
     """Test server lifecycle methods"""
 
     @pytest.mark.asyncio
     async def test_default_lifespan_context(self):
         """Test default_lifespan context manager"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="LifespanServer")
 
             # Test default lifespan
@@ -388,10 +370,9 @@ class TestServerLifecycle:
                 # Default lifespan yields empty dict
                 assert context == {}
 
-
     def test_lifespan_wrapper_function(self):
         """Test _lifespan_wrapper wraps user lifespan"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="WrapperServer")
 
             @asynccontextmanager
@@ -404,11 +385,10 @@ class TestServerLifecycle:
             # Verify wrapper is callable
             assert callable(wrapper)
 
-
     @pytest.mark.asyncio
     async def test_run_async_with_stdio_transport(self):
         """Test run_async with stdio transport"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="StdioServer")
 
             # Mock run_stdio_async
@@ -419,11 +399,10 @@ class TestServerLifecycle:
             # Verify stdio was called
             server.run_stdio_async.assert_called_once()
 
-
     @pytest.mark.asyncio
     async def test_run_async_with_sse_transport(self):
         """Test run_async with sse transport"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="SSEServer")
 
             # Mock run_http_async
@@ -434,13 +413,12 @@ class TestServerLifecycle:
             # Verify http was called with sse
             server.run_http_async.assert_called_once()
             call_kwargs = server.run_http_async.call_args[1]
-            assert call_kwargs.get('transport') == 'sse'
-
+            assert call_kwargs.get("transport") == "sse"
 
     @pytest.mark.asyncio
     async def test_run_async_invalid_transport_raises_error(self):
         """Test run_async with invalid transport raises ValueError"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="InvalidServer")
 
             with pytest.raises(ValueError, match="Unknown transport"):
@@ -449,7 +427,7 @@ class TestServerLifecycle:
     @pytest.mark.asyncio
     async def test_run_async_with_none_transport_defaults_to_stdio(self):
         """Test run_async with transport=None defaults to stdio (Line 440)"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="DefaultTransportServer")
 
             # Mock run_stdio_async
@@ -464,20 +442,26 @@ class TestServerLifecycle:
     @pytest.mark.asyncio
     async def test_mcp_list_resource_templates_wrapper(self):
         """Test _mcp_list_resource_templates wrapper method (Lines 657-661)"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="ResourceTemplateServer")
 
             # Create mock resource templates
             mock_template1 = Mock()
             mock_template1.key = "template://test1"
-            mock_template1.to_mcp_template = Mock(return_value={"uri": "template://test1"})
+            mock_template1.to_mcp_template = Mock(
+                return_value={"uri": "template://test1"}
+            )
 
             mock_template2 = Mock()
             mock_template2.key = "template://test2"
-            mock_template2.to_mcp_template = Mock(return_value={"uri": "template://test2"})
+            mock_template2.to_mcp_template = Mock(
+                return_value={"uri": "template://test2"}
+            )
 
             # Mock _list_resource_templates to return our mocks
-            server._list_resource_templates = AsyncMock(return_value=[mock_template1, mock_template2])
+            server._list_resource_templates = AsyncMock(
+                return_value=[mock_template1, mock_template2]
+            )
 
             # Call the wrapper
             result = await server._mcp_list_resource_templates()
@@ -487,8 +471,12 @@ class TestServerLifecycle:
 
             # Verify conversion to MCP templates
             assert len(result) == 2
-            mock_template1.to_mcp_template.assert_called_once_with(uriTemplate="template://test1")
-            mock_template2.to_mcp_template.assert_called_once_with(uriTemplate="template://test2")
+            mock_template1.to_mcp_template.assert_called_once_with(
+                uriTemplate="template://test1"
+            )
+            mock_template2.to_mcp_template.assert_called_once_with(
+                uriTemplate="template://test2"
+            )
 
 
 # ============================================================================
@@ -496,12 +484,13 @@ class TestServerLifecycle:
 # Target: 4 tests covering middleware and handler setup
 # ============================================================================
 
+
 class TestASGIAndMiddleware:
     """Test ASGI app creation and middleware integration"""
 
     def test_setup_handlers_registers_mcp_handlers(self):
         """Test _setup_handlers is called during initialization"""
-        with patch('fastmcp.server.server.MCPServer') as mock_server_cls:
+        with patch("fastmcp.server.server.MCPServer") as mock_server_cls:
             mock_server = Mock()
             mock_server.configure_mock(name="HandlerServer", instructions=None)
 
@@ -522,12 +511,11 @@ class TestASGIAndMiddleware:
             assert server is not None
             assert server._mcp_server is not None
             # Verify _setup_handlers was called (it registers handlers on _mcp_server)
-            assert hasattr(server, '_mcp_server')
-
+            assert hasattr(server, "_mcp_server")
 
     def test_add_middleware_appends_to_list(self):
         """Test add_middleware adds middleware to server"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="MiddlewareServer")
 
             mock_middleware = Mock()
@@ -536,11 +524,10 @@ class TestASGIAndMiddleware:
             assert len(server.middleware) == 1
             assert server.middleware[0] == mock_middleware
 
-
     @pytest.mark.asyncio
     async def test_apply_middleware_builds_chain(self):
         """Test _apply_middleware builds and executes middleware chain"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="ChainServer")
 
             # Create mock middleware
@@ -570,13 +557,18 @@ class TestASGIAndMiddleware:
             result = await server._apply_middleware(mock_context, call_next)
 
             # Verify middleware chain executed in correct order
-            assert call_order == ["mw1_before", "mw2_before", "handler", "mw2_after", "mw1_after"]
+            assert call_order == [
+                "mw1_before",
+                "mw2_before",
+                "handler",
+                "mw2_after",
+                "mw1_after",
+            ]
             assert result == "result"
-
 
     def test_repr_returns_formatted_string(self):
         """Test __repr__ returns properly formatted string"""
-        with patch('fastmcp.server.server.MCPServer') as mock_server_cls:
+        with patch("fastmcp.server.server.MCPServer") as mock_server_cls:
             mock_server = Mock()
             mock_server.name = "TestServer"
             mock_server.instructions = None
@@ -594,12 +586,13 @@ class TestASGIAndMiddleware:
 # Target: 3 tests covering properties and utility methods
 # ============================================================================
 
+
 class TestPropertiesAndUtilities:
     """Test server properties and utility methods"""
 
     def test_name_property_returns_mcp_server_name(self):
         """Test name property delegates to MCP server"""
-        with patch('fastmcp.server.server.MCPServer') as mock_server_cls:
+        with patch("fastmcp.server.server.MCPServer") as mock_server_cls:
             mock_server = Mock()
             mock_server.configure_mock(name="PropertyServer", instructions=None)
             mock_server_cls.return_value = mock_server
@@ -609,40 +602,34 @@ class TestPropertiesAndUtilities:
             # Verify server has _mcp_server and it was configured
             assert server._mcp_server is not None
             # The name property delegates to _mcp_server.name
-            assert hasattr(server, 'name')
-
+            assert hasattr(server, "name")
 
     def test_instructions_property_returns_mcp_instructions(self):
         """Test instructions property delegates to MCP server"""
-        with patch('fastmcp.server.server.MCPServer') as mock_server_cls:
+        with patch("fastmcp.server.server.MCPServer") as mock_server_cls:
             mock_server = Mock()
-            mock_server.configure_mock(name="InstructServer", instructions="Custom instructions")
+            mock_server.configure_mock(
+                name="InstructServer", instructions="Custom instructions"
+            )
             mock_server_cls.return_value = mock_server
 
-            server = FastMCP(
-                name="InstructServer",
-                instructions="Custom instructions"
-            )
+            server = FastMCP(name="InstructServer", instructions="Custom instructions")
 
             # Verify server has _mcp_server and it was configured
             assert server._mcp_server is not None
             # The instructions property delegates to _mcp_server.instructions
-            assert hasattr(server, 'instructions')
-
+            assert hasattr(server, "instructions")
 
     def test_consolidated_tools_property_access(self):
         """Test consolidated_tools property returns task management tools"""
-        with patch('fastmcp.server.server.MCPServer'):
-            server = FastMCP(
-                name="ToolAccessServer",
-                enable_task_management=True
-            )
+        with patch("fastmcp.server.server.MCPServer"):
+            server = FastMCP(name="ToolAccessServer", enable_task_management=True)
 
             # Access consolidated tools property
             tools = server.consolidated_tools
 
             # Should be either None (if task mgmt failed) or a tools instance
-            assert tools is None or hasattr(tools, 'register_tools')
+            assert tools is None or hasattr(tools, "register_tools")
 
 
 # ============================================================================
@@ -650,32 +637,29 @@ class TestPropertiesAndUtilities:
 # Target: 3 tests covering error scenarios
 # ============================================================================
 
+
 class TestErrorHandling:
     """Test error handling and edge cases"""
 
     def test_initialization_with_valid_duplicate_behavior(self):
         """Test initialization with valid duplicate behavior values"""
-        with patch('fastmcp.server.server.MCPServer') as mock_server_cls:
+        with patch("fastmcp.server.server.MCPServer") as mock_server_cls:
             mock_server = Mock()
             mock_server.configure_mock(name="DupServer", instructions=None)
             mock_server_cls.return_value = mock_server
 
             # FastMCP should accept valid duplicate behavior values
             for behavior in ["warn", "error", "replace", "ignore"]:
-                server = FastMCP(
-                    name="DupServer",
-                    on_duplicate_tools=behavior
-                )
+                server = FastMCP(name="DupServer", on_duplicate_tools=behavior)
 
                 # Should initialize without error
                 assert server is not None
                 assert server._tool_manager is not None
 
-
     @pytest.mark.asyncio
     async def test_get_tool_raises_not_found_error(self):
         """Test get_tool raises NotFoundError for unknown tool"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             server = FastMCP(name="ErrorServer")
 
             # Mock get_tools to return empty dict
@@ -687,11 +671,10 @@ class TestErrorHandling:
             with pytest.raises(NotFoundError, match="Unknown tool"):
                 await server.get_tool("nonexistent_tool")
 
-
     def test_settings_property_shows_deprecation_warning(self):
         """Test accessing .settings property shows deprecation warning"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.server.server._settings') as mock_settings:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch("fastmcp.server.server._settings") as mock_settings:
                 mock_settings.deprecation_warnings = True
 
                 server = FastMCP(name="DeprecatedServer")
@@ -711,12 +694,13 @@ class TestErrorHandling:
 # Target: 3 production-ready tests covering server composition and prefix handling
 # ============================================================================
 
+
 class TestMountedServerAndPrefixHandling:
     """Test MountedServer class and resource prefix handling functions"""
 
     def test_mounted_server_dataclass_initialization(self):
         """Test MountedServer dataclass initialization with all attributes"""
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Create a FastMCP server instance
             server = FastMCP(name="SubServer", instructions="Sub-server instructions")
 
@@ -725,9 +709,7 @@ class TestMountedServerAndPrefixHandling:
 
             # Test initialization with all fields
             mounted = MountedServer(
-                prefix="api/v1",
-                server=server,
-                resource_prefix_format="path"
+                prefix="api/v1", server=server, resource_prefix_format="path"
             )
 
             # Verify all attributes
@@ -736,15 +718,11 @@ class TestMountedServerAndPrefixHandling:
             assert mounted.resource_prefix_format == "path"
 
             # Test initialization with minimal fields (None defaults)
-            mounted_minimal = MountedServer(
-                prefix=None,
-                server=server
-            )
+            mounted_minimal = MountedServer(prefix=None, server=server)
 
             assert mounted_minimal.prefix is None
             assert mounted_minimal.server is server
             assert mounted_minimal.resource_prefix_format is None
-
 
     def test_remove_resource_prefix_with_path_format(self):
         """Test remove_resource_prefix function with path-style prefix (lines 2139-2171)"""
@@ -754,7 +732,7 @@ class TestMountedServerAndPrefixHandling:
         result = remove_resource_prefix(
             uri="resource://api/v1/path/to/resource",
             prefix="api/v1",
-            prefix_format="path"
+            prefix_format="path",
         )
         assert result == "resource://path/to/resource"
 
@@ -762,23 +740,19 @@ class TestMountedServerAndPrefixHandling:
         result_absolute = remove_resource_prefix(
             uri="resource://prefix//absolute/path",
             prefix="prefix",
-            prefix_format="path"
+            prefix_format="path",
         )
         assert result_absolute == "resource:///absolute/path"
 
         # Test with empty prefix returns original URI (line 2139-2140)
         result_empty = remove_resource_prefix(
-            uri="resource://path/to/resource",
-            prefix="",
-            prefix_format="path"
+            uri="resource://path/to/resource", prefix="", prefix_format="path"
         )
         assert result_empty == "resource://path/to/resource"
 
         # Test URI without prefix returns unchanged (line 2165-2166)
         result_no_prefix = remove_resource_prefix(
-            uri="resource://other/path/to/resource",
-            prefix="api",
-            prefix_format="path"
+            uri="resource://other/path/to/resource", prefix="api", prefix_format="path"
         )
         assert result_no_prefix == "resource://other/path/to/resource"
 
@@ -786,10 +760,9 @@ class TestMountedServerAndPrefixHandling:
         result_complex = remove_resource_prefix(
             uri="file://mounted/server/data/nested/resource.json",
             prefix="mounted/server",
-            prefix_format="path"
+            prefix_format="path",
         )
         assert result_complex == "file://data/nested/resource.json"
-
 
     def test_remove_resource_prefix_with_protocol_format(self):
         """Test remove_resource_prefix with legacy protocol-style prefix (lines 2145-2150)"""
@@ -799,7 +772,7 @@ class TestMountedServerAndPrefixHandling:
         result = remove_resource_prefix(
             uri="api+resource://path/to/resource",
             prefix="api",
-            prefix_format="protocol"
+            prefix_format="protocol",
         )
         assert result == "resource://path/to/resource"
 
@@ -807,37 +780,32 @@ class TestMountedServerAndPrefixHandling:
         result_complex = remove_resource_prefix(
             uri="api-v2+http://example.com/endpoint",
             prefix="api-v2",
-            prefix_format="protocol"
+            prefix_format="protocol",
         )
         assert result_complex == "http://example.com/endpoint"
 
         # Test URI without legacy prefix returns unchanged (line 2150)
         result_no_prefix = remove_resource_prefix(
-            uri="resource://path/to/resource",
-            prefix="api",
-            prefix_format="protocol"
+            uri="resource://path/to/resource", prefix="api", prefix_format="protocol"
         )
         assert result_no_prefix == "resource://path/to/resource"
 
         # Test with empty prefix returns original (line 2139-2140)
         result_empty = remove_resource_prefix(
-            uri="prefix+resource://test",
-            prefix="",
-            prefix_format="protocol"
+            uri="prefix+resource://test", prefix="", prefix_format="protocol"
         )
         assert result_empty == "prefix+resource://test"
-
 
     def test_remove_resource_prefix_error_handling(self):
         """Test remove_resource_prefix error handling for invalid inputs (lines 2154-2171)"""
         from fastmcp.server.server import remove_resource_prefix
 
         # Test invalid URI format raises ValueError (line 2155-2158)
-        with pytest.raises(ValueError, match="Invalid URI format.*Expected protocol://path format"):
+        with pytest.raises(
+            ValueError, match="Invalid URI format.*Expected protocol://path format"
+        ):
             remove_resource_prefix(
-                uri="invalid-uri-without-protocol",
-                prefix="test",
-                prefix_format="path"
+                uri="invalid-uri-without-protocol", prefix="test", prefix_format="path"
             )
 
         # Test invalid prefix_format raises ValueError (line 2171)
@@ -845,138 +813,154 @@ class TestMountedServerAndPrefixHandling:
             remove_resource_prefix(
                 uri="resource://path",
                 prefix="test",
-                prefix_format="invalid"  # type: ignore
+                prefix_format="invalid",  # type: ignore
             )
 
         # Test URI without proper protocol separator
         with pytest.raises(ValueError, match="Invalid URI format"):
             remove_resource_prefix(
-                uri="resource:no-double-slash",
-                prefix="test",
-                prefix_format="path"
+                uri="resource:no-double-slash", prefix="test", prefix_format="path"
             )
-
 
     def test_remove_resource_prefix_uses_settings_default(self):
         """Test remove_resource_prefix uses _settings.resource_prefix_format when None (line 2142-2143)"""
         from fastmcp.server.server import remove_resource_prefix
 
         # Mock _settings to use "path" format by default
-        with patch('fastmcp.server.server._settings') as mock_settings:
+        with patch("fastmcp.server.server._settings") as mock_settings:
             mock_settings.resource_prefix_format = "path"
 
             # Call without explicit prefix_format (should use settings default)
             result = remove_resource_prefix(
-                uri="resource://api/test/path",
-                prefix="api"
+                uri="resource://api/test/path", prefix="api"
             )
 
             # Should use path format from settings
             assert result == "resource://test/path"
 
         # Mock _settings to use "protocol" format by default
-        with patch('fastmcp.server.server._settings') as mock_settings:
+        with patch("fastmcp.server.server._settings") as mock_settings:
             mock_settings.resource_prefix_format = "protocol"
 
             result = remove_resource_prefix(
-                uri="api+resource://test/path",
-                prefix="api"
+                uri="api+resource://test/path", prefix="api"
             )
 
             # Should use protocol format from settings
             assert result == "resource://test/path"
-
 
     def test_has_resource_prefix_with_path_format(self):
         """Test has_resource_prefix function with path-style prefix (lines 2197-2224)"""
         from fastmcp.server.server import has_resource_prefix
 
         # Test new-style path format: protocol://prefix/path
-        assert has_resource_prefix(
-            uri="resource://api/v1/path/to/resource",
-            prefix="api/v1",
-            prefix_format="path"
-        ) is True
+        assert (
+            has_resource_prefix(
+                uri="resource://api/v1/path/to/resource",
+                prefix="api/v1",
+                prefix_format="path",
+            )
+            is True
+        )
 
         # Test with different prefix returns False (line 2222)
-        assert has_resource_prefix(
-            uri="resource://other/path/to/resource",
-            prefix="api",
-            prefix_format="path"
-        ) is False
+        assert (
+            has_resource_prefix(
+                uri="resource://other/path/to/resource",
+                prefix="api",
+                prefix_format="path",
+            )
+            is False
+        )
 
         # Test with empty prefix returns False (line 2197-2198)
-        assert has_resource_prefix(
-            uri="resource://api/path",
-            prefix="",
-            prefix_format="path"
-        ) is False
+        assert (
+            has_resource_prefix(
+                uri="resource://api/path", prefix="", prefix_format="path"
+            )
+            is False
+        )
 
         # Test URI without prefix slash pattern
-        assert has_resource_prefix(
-            uri="resource://apitest/path",  # prefix not followed by /
-            prefix="api",
-            prefix_format="path"
-        ) is False
+        assert (
+            has_resource_prefix(
+                uri="resource://apitest/path",  # prefix not followed by /
+                prefix="api",
+                prefix_format="path",
+            )
+            is False
+        )
 
         # Test with matching prefix followed by slash
-        assert has_resource_prefix(
-            uri="file://mounted/server/data.json",
-            prefix="mounted/server",
-            prefix_format="path"
-        ) is True
-
+        assert (
+            has_resource_prefix(
+                uri="file://mounted/server/data.json",
+                prefix="mounted/server",
+                prefix_format="path",
+            )
+            is True
+        )
 
     def test_has_resource_prefix_with_protocol_format(self):
         """Test has_resource_prefix with legacy protocol-style prefix (lines 2205-2208)"""
         from fastmcp.server.server import has_resource_prefix
 
         # Test legacy-style protocol format: prefix+protocol://path
-        assert has_resource_prefix(
-            uri="api+resource://path/to/resource",
-            prefix="api",
-            prefix_format="protocol"
-        ) is True
+        assert (
+            has_resource_prefix(
+                uri="api+resource://path/to/resource",
+                prefix="api",
+                prefix_format="protocol",
+            )
+            is True
+        )
 
         # Test with complex prefix
-        assert has_resource_prefix(
-            uri="api-v2+http://example.com",
-            prefix="api-v2",
-            prefix_format="protocol"
-        ) is True
+        assert (
+            has_resource_prefix(
+                uri="api-v2+http://example.com",
+                prefix="api-v2",
+                prefix_format="protocol",
+            )
+            is True
+        )
 
         # Test URI without legacy prefix returns False
-        assert has_resource_prefix(
-            uri="resource://path/to/resource",
-            prefix="api",
-            prefix_format="protocol"
-        ) is False
+        assert (
+            has_resource_prefix(
+                uri="resource://path/to/resource",
+                prefix="api",
+                prefix_format="protocol",
+            )
+            is False
+        )
 
         # Test with empty prefix returns False (line 2197-2198)
-        assert has_resource_prefix(
-            uri="prefix+resource://test",
-            prefix="",
-            prefix_format="protocol"
-        ) is False
+        assert (
+            has_resource_prefix(
+                uri="prefix+resource://test", prefix="", prefix_format="protocol"
+            )
+            is False
+        )
 
         # Test partial match doesn't count
-        assert has_resource_prefix(
-            uri="apitest+resource://path",
-            prefix="api",
-            prefix_format="protocol"
-        ) is False
-
+        assert (
+            has_resource_prefix(
+                uri="apitest+resource://path", prefix="api", prefix_format="protocol"
+            )
+            is False
+        )
 
     def test_has_resource_prefix_error_handling(self):
         """Test has_resource_prefix error handling for invalid inputs (lines 2212-2224)"""
         from fastmcp.server.server import has_resource_prefix
 
         # Test invalid URI format raises ValueError (line 2213-2216)
-        with pytest.raises(ValueError, match="Invalid URI format.*Expected protocol://path format"):
+        with pytest.raises(
+            ValueError, match="Invalid URI format.*Expected protocol://path format"
+        ):
             has_resource_prefix(
-                uri="invalid-uri-without-protocol",
-                prefix="test",
-                prefix_format="path"
+                uri="invalid-uri-without-protocol", prefix="test", prefix_format="path"
             )
 
         # Test invalid prefix_format raises ValueError (line 2224)
@@ -984,47 +968,37 @@ class TestMountedServerAndPrefixHandling:
             has_resource_prefix(
                 uri="resource://path",
                 prefix="test",
-                prefix_format="invalid"  # type: ignore
+                prefix_format="invalid",  # type: ignore
             )
 
         # Test URI without proper protocol separator
         with pytest.raises(ValueError, match="Invalid URI format"):
             has_resource_prefix(
-                uri="resource:no-double-slash",
-                prefix="test",
-                prefix_format="path"
+                uri="resource:no-double-slash", prefix="test", prefix_format="path"
             )
-
 
     def test_has_resource_prefix_uses_settings_default(self):
         """Test has_resource_prefix uses _settings.resource_prefix_format when None (line 2202-2203)"""
         from fastmcp.server.server import has_resource_prefix
 
         # Mock _settings to use "path" format by default
-        with patch('fastmcp.server.server._settings') as mock_settings:
+        with patch("fastmcp.server.server._settings") as mock_settings:
             mock_settings.resource_prefix_format = "path"
 
             # Call without explicit prefix_format (should use settings default)
-            result = has_resource_prefix(
-                uri="resource://api/test/path",
-                prefix="api"
-            )
+            result = has_resource_prefix(uri="resource://api/test/path", prefix="api")
 
             # Should use path format from settings
             assert result is True
 
         # Mock _settings to use "protocol" format by default
-        with patch('fastmcp.server.server._settings') as mock_settings:
+        with patch("fastmcp.server.server._settings") as mock_settings:
             mock_settings.resource_prefix_format = "protocol"
 
-            result = has_resource_prefix(
-                uri="api+resource://test/path",
-                prefix="api"
-            )
+            result = has_resource_prefix(uri="api+resource://test/path", prefix="api")
 
             # Should use protocol format from settings
             assert result is True
-
 
     def test_add_resource_prefix_with_path_format(self):
         """Test add_resource_prefix function with path-style prefix (lines 2096-2111)"""
@@ -1032,25 +1006,19 @@ class TestMountedServerAndPrefixHandling:
 
         # Test new-style path format: protocol://prefix/path
         result = add_resource_prefix(
-            uri="resource://path/to/resource",
-            prefix="api/v1",
-            prefix_format="path"
+            uri="resource://path/to/resource", prefix="api/v1", prefix_format="path"
         )
         assert result == "resource://api/v1/path/to/resource"
 
         # Test with absolute path (triple slash)
         result_absolute = add_resource_prefix(
-            uri="resource:///absolute/path",
-            prefix="prefix",
-            prefix_format="path"
+            uri="resource:///absolute/path", prefix="prefix", prefix_format="path"
         )
         assert result_absolute == "resource://prefix//absolute/path"
 
         # Test with empty prefix returns original URI
         result_empty = add_resource_prefix(
-            uri="resource://path/to/resource",
-            prefix="",
-            prefix_format="path"
+            uri="resource://path/to/resource", prefix="", prefix_format="path"
         )
         assert result_empty == "resource://path/to/resource"
 
@@ -1058,10 +1026,9 @@ class TestMountedServerAndPrefixHandling:
         result_complex = add_resource_prefix(
             uri="file://data/nested/deep/resource.json",
             prefix="mounted/server",
-            prefix_format="path"
+            prefix_format="path",
         )
         assert result_complex == "file://mounted/server/data/nested/deep/resource.json"
-
 
     def test_add_resource_prefix_with_protocol_format(self):
         """Test add_resource_prefix with legacy protocol-style prefix (lines 2096-2098)"""
@@ -1069,9 +1036,7 @@ class TestMountedServerAndPrefixHandling:
 
         # Test legacy-style protocol format: prefix+protocol://path
         result = add_resource_prefix(
-            uri="resource://path/to/resource",
-            prefix="prefix",
-            prefix_format="protocol"
+            uri="resource://path/to/resource", prefix="prefix", prefix_format="protocol"
         )
         assert result == "prefix+resource://path/to/resource"
 
@@ -1079,29 +1044,26 @@ class TestMountedServerAndPrefixHandling:
         result_complex = add_resource_prefix(
             uri="http://example.com/api/endpoint",
             prefix="api-v2",
-            prefix_format="protocol"
+            prefix_format="protocol",
         )
         assert result_complex == "api-v2+http://example.com/api/endpoint"
 
         # Test that empty prefix returns original
         result_empty = add_resource_prefix(
-            uri="resource://test",
-            prefix="",
-            prefix_format="protocol"
+            uri="resource://test", prefix="", prefix_format="protocol"
         )
         assert result_empty == "resource://test"
-
 
     def test_add_resource_prefix_error_handling(self):
         """Test add_resource_prefix error handling for invalid inputs (lines 2102-2113)"""
         from fastmcp.server.server import add_resource_prefix
 
         # Test invalid URI format raises ValueError (line 2104-2106)
-        with pytest.raises(ValueError, match="Invalid URI format.*Expected protocol://path format"):
+        with pytest.raises(
+            ValueError, match="Invalid URI format.*Expected protocol://path format"
+        ):
             add_resource_prefix(
-                uri="invalid-uri-without-protocol",
-                prefix="test",
-                prefix_format="path"
+                uri="invalid-uri-without-protocol", prefix="test", prefix_format="path"
             )
 
         # Test invalid prefix_format raises ValueError (line 2113)
@@ -1109,43 +1071,34 @@ class TestMountedServerAndPrefixHandling:
             add_resource_prefix(
                 uri="resource://path",
                 prefix="test",
-                prefix_format="invalid"  # type: ignore
+                prefix_format="invalid",  # type: ignore
             )
 
         # Test URI without proper protocol separator
         with pytest.raises(ValueError, match="Invalid URI format"):
             add_resource_prefix(
-                uri="resource:no-double-slash",
-                prefix="test",
-                prefix_format="path"
+                uri="resource:no-double-slash", prefix="test", prefix_format="path"
             )
-
 
     def test_add_resource_prefix_uses_settings_default(self):
         """Test add_resource_prefix uses _settings.resource_prefix_format when None (line 2093-2094)"""
         from fastmcp.server.server import add_resource_prefix
 
         # Mock _settings to use "path" format by default
-        with patch('fastmcp.server.server._settings') as mock_settings:
+        with patch("fastmcp.server.server._settings") as mock_settings:
             mock_settings.resource_prefix_format = "path"
 
             # Call without explicit prefix_format (should use settings default)
-            result = add_resource_prefix(
-                uri="resource://test/path",
-                prefix="api"
-            )
+            result = add_resource_prefix(uri="resource://test/path", prefix="api")
 
             # Should use path format from settings
             assert result == "resource://api/test/path"
 
         # Mock _settings to use "protocol" format by default
-        with patch('fastmcp.server.server._settings') as mock_settings:
+        with patch("fastmcp.server.server._settings") as mock_settings:
             mock_settings.resource_prefix_format = "protocol"
 
-            result = add_resource_prefix(
-                uri="resource://test/path",
-                prefix="api"
-            )
+            result = add_resource_prefix(uri="resource://test/path", prefix="api")
 
             # Should use protocol format from settings
             assert result == "api+resource://test/path"
@@ -1156,14 +1109,19 @@ class TestMountedServerAndPrefixHandling:
 # Target: 4 tests covering http_app method and ASGI app creation
 # ============================================================================
 
+
 class TestASGIAppCreation:
     """Test ASGI app creation with streamable-http and SSE transports"""
 
     def test_http_app_creates_streamable_http_app_by_default(self):
         """Test http_app creates streamable-http app with default transport"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.server.server.create_streamable_http_app') as mock_create:
-                with patch('fastmcp.server.session_store.MemoryEventStore') as mock_event_store:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.server.server.create_streamable_http_app"
+            ) as mock_create:
+                with patch(
+                    "fastmcp.server.session_store.MemoryEventStore"
+                ) as mock_event_store:
                     mock_app = Mock()
                     mock_create.return_value = mock_app
                     mock_event_store.return_value = Mock()
@@ -1176,16 +1134,15 @@ class TestASGIAppCreation:
                     # Verify create_streamable_http_app was called
                     assert mock_create.called
                     call_kwargs = mock_create.call_args[1]
-                    assert call_kwargs['server'] == server
-                    assert 'event_store' in call_kwargs
-                    assert call_kwargs.get('cors_origins') == ["*"]
+                    assert call_kwargs["server"] == server
+                    assert "event_store" in call_kwargs
+                    assert call_kwargs.get("cors_origins") == ["*"]
                     assert result == mock_app
-
 
     def test_http_app_creates_sse_app_with_sse_transport(self):
         """Test http_app creates SSE app when transport='sse'"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.server.server.create_sse_app') as mock_create_sse:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch("fastmcp.server.server.create_sse_app") as mock_create_sse:
                 mock_sse_app = Mock()
                 mock_create_sse.return_value = mock_sse_app
 
@@ -1197,27 +1154,25 @@ class TestASGIAppCreation:
                 # Verify create_sse_app was called
                 assert mock_create_sse.called
                 call_kwargs = mock_create_sse.call_args[1]
-                assert call_kwargs['server'] == server
-                assert 'sse_path' in call_kwargs
-                assert call_kwargs.get('cors_origins') == ["*"]
+                assert call_kwargs["server"] == server
+                assert "sse_path" in call_kwargs
+                assert call_kwargs.get("cors_origins") == ["*"]
                 assert result == mock_sse_app
-
 
     def test_http_app_passes_custom_parameters_to_streamable_http(self):
         """Test http_app correctly passes custom parameters to streamable-http app"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.server.server.create_streamable_http_app') as mock_create:
-                with patch('fastmcp.server.session_store.MemoryEventStore'):
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.server.server.create_streamable_http_app"
+            ) as mock_create:
+                with patch("fastmcp.server.session_store.MemoryEventStore"):
                     mock_app = Mock()
                     mock_create.return_value = mock_app
 
                     # Create server with custom settings
                     mock_middleware = Mock()
                     mock_auth = Mock(spec=OAuthProvider)
-                    server = FastMCP(
-                        name="CustomServer",
-                        auth=mock_auth
-                    )
+                    server = FastMCP(name="CustomServer", auth=mock_auth)
 
                     custom_cors = ["https://example.com", "https://api.example.com"]
 
@@ -1227,27 +1182,28 @@ class TestASGIAppCreation:
                         middleware=[mock_middleware],
                         json_response=True,
                         stateless_http=True,
-                        cors_origins=custom_cors
+                        cors_origins=custom_cors,
                     )
 
                     # Verify parameters were passed correctly
                     assert mock_create.called
                     call_kwargs = mock_create.call_args[1]
-                    assert call_kwargs['server'] == server
-                    assert call_kwargs['auth'] == mock_auth
-                    assert call_kwargs['middleware'] == [mock_middleware]
-                    assert call_kwargs['json_response'] is True
-                    assert call_kwargs['stateless_http'] is True
-                    assert call_kwargs['cors_origins'] == custom_cors
+                    assert call_kwargs["server"] == server
+                    assert call_kwargs["auth"] == mock_auth
+                    assert call_kwargs["middleware"] == [mock_middleware]
+                    assert call_kwargs["json_response"] is True
+                    assert call_kwargs["stateless_http"] is True
+                    assert call_kwargs["cors_origins"] == custom_cors
                     assert result == mock_app
-
 
     def test_http_app_uses_memory_event_store_in_async_context(self):
         """Test http_app uses MemoryEventStore when in async context"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.server.server.create_streamable_http_app') as mock_create:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.server.server.create_streamable_http_app"
+            ) as mock_create:
                 # Mock asyncio.get_running_loop to simulate async context
-                with patch('asyncio.get_running_loop') as mock_get_loop:
+                with patch("asyncio.get_running_loop") as mock_get_loop:
                     mock_loop = Mock()
                     mock_get_loop.return_value = mock_loop
 
@@ -1262,9 +1218,9 @@ class TestASGIAppCreation:
                     # Verify create_streamable_http_app was called
                     assert mock_create.called
                     call_kwargs = mock_create.call_args[1]
-                    assert call_kwargs['server'] == server
+                    assert call_kwargs["server"] == server
                     # EventStore should be present (memory fallback)
-                    assert 'event_store' in call_kwargs
+                    assert "event_store" in call_kwargs
                     assert result == mock_app
 
 
@@ -1373,8 +1329,9 @@ class TestDecoratorImplementations:
         mock_template = Mock(spec=ResourceTemplate)
         mock_template.uri_template = "file:///{path}"
 
-        with patch.object(server._resource_manager, 'get_resource_templates',
-                         new_callable=AsyncMock) as mock_get_templates:
+        with patch.object(
+            server._resource_manager, "get_resource_templates", new_callable=AsyncMock
+        ) as mock_get_templates:
             mock_get_templates.return_value = {"test_template": mock_template}
 
             # Act
@@ -1392,12 +1349,15 @@ class TestDecoratorImplementations:
         # Arrange
         server = FastMCP(name="test_server")
 
-        with patch.object(server._resource_manager, 'get_resource_templates',
-                         new_callable=AsyncMock) as mock_get_templates:
+        with patch.object(
+            server._resource_manager, "get_resource_templates", new_callable=AsyncMock
+        ) as mock_get_templates:
             mock_get_templates.return_value = {}
 
             # Act & Assert
-            with pytest.raises(NotFoundError, match="Unknown resource template: missing_template"):
+            with pytest.raises(
+                NotFoundError, match="Unknown resource template: missing_template"
+            ):
                 await server.get_resource_template("missing_template")
 
     @pytest.mark.asyncio
@@ -1411,8 +1371,9 @@ class TestDecoratorImplementations:
         mock_prompt.name = "test_prompt"
         mock_prompt.description = "Test prompt description"
 
-        with patch.object(server._prompt_manager, 'get_prompts',
-                         new_callable=AsyncMock) as mock_get_prompts:
+        with patch.object(
+            server._prompt_manager, "get_prompts", new_callable=AsyncMock
+        ) as mock_get_prompts:
             mock_get_prompts.return_value = {"test_prompt": mock_prompt}
 
             # Act
@@ -1430,8 +1391,9 @@ class TestDecoratorImplementations:
         # Arrange
         server = FastMCP(name="test_server")
 
-        with patch.object(server._prompt_manager, 'get_prompts',
-                         new_callable=AsyncMock) as mock_get_prompts:
+        with patch.object(
+            server._prompt_manager, "get_prompts", new_callable=AsyncMock
+        ) as mock_get_prompts:
             mock_get_prompts.return_value = {}
 
             # Act & Assert
@@ -1473,7 +1435,7 @@ class TestDecoratorImplementations:
             "/oauth/callback",
             methods=["POST"],
             name="oauth_callback",
-            include_in_schema=False
+            include_in_schema=False,
         )
         async def oauth_callback(request: Request) -> Response:
             return JSONResponse({"result": "authenticated"})
@@ -1520,16 +1482,19 @@ class TestDecoratorImplementations:
         mock_tool.key = "test_tool"
         mock_tool.to_mcp_tool = Mock(return_value={"name": "test_tool"})
 
-        with patch.object(server._tool_manager, 'list_tools',
-                         new_callable=AsyncMock) as mock_list_tools:
+        with patch.object(
+            server._tool_manager, "list_tools", new_callable=AsyncMock
+        ) as mock_list_tools:
             mock_list_tools.return_value = [mock_tool]
 
-            with patch.object(server, '_should_enable_component', return_value=True):
-                with patch.object(server, '_apply_middleware',
-                                 new_callable=AsyncMock) as mock_apply_middleware:
+            with patch.object(server, "_should_enable_component", return_value=True):
+                with patch.object(
+                    server, "_apply_middleware", new_callable=AsyncMock
+                ) as mock_apply_middleware:
                     # Mock the middleware to just call the handler
                     async def middleware_passthrough(context, handler):
                         return await handler(context)
+
                     mock_apply_middleware.side_effect = middleware_passthrough
 
                     # Act
@@ -1553,13 +1518,15 @@ class TestDecoratorImplementations:
         mock_tool = Mock(spec=Tool)
         mock_tool.key = "test_tool"
 
-        with patch.object(server._tool_manager, 'list_tools',
-                         new_callable=AsyncMock) as mock_list_tools:
+        with patch.object(
+            server._tool_manager, "list_tools", new_callable=AsyncMock
+        ) as mock_list_tools:
             mock_list_tools.return_value = [mock_tool]
 
-            with patch.object(server, '_should_enable_component', return_value=True):
-                with patch.object(server, '_apply_middleware',
-                                 new_callable=AsyncMock) as mock_apply_middleware:
+            with patch.object(server, "_should_enable_component", return_value=True):
+                with patch.object(
+                    server, "_apply_middleware", new_callable=AsyncMock
+                ) as mock_apply_middleware:
                     # Capture the middleware context
                     captured_context = None
 
@@ -1593,16 +1560,19 @@ class TestDecoratorImplementations:
         mock_resource.key = "test_resource"
         mock_resource.to_mcp_resource = Mock(return_value={"uri": "test://resource"})
 
-        with patch.object(server._resource_manager, 'list_resources',
-                         new_callable=AsyncMock) as mock_list_resources:
+        with patch.object(
+            server._resource_manager, "list_resources", new_callable=AsyncMock
+        ) as mock_list_resources:
             mock_list_resources.return_value = [mock_resource]
 
-            with patch.object(server, '_should_enable_component', return_value=True):
-                with patch.object(server, '_apply_middleware',
-                                 new_callable=AsyncMock) as mock_apply_middleware:
+            with patch.object(server, "_should_enable_component", return_value=True):
+                with patch.object(
+                    server, "_apply_middleware", new_callable=AsyncMock
+                ) as mock_apply_middleware:
                     # Mock the middleware to just call the handler
                     async def middleware_passthrough(context, handler):
                         return await handler(context)
+
                     mock_apply_middleware.side_effect = middleware_passthrough
 
                     # Act
@@ -1626,13 +1596,15 @@ class TestDecoratorImplementations:
         mock_resource = Mock(spec=Resource)
         mock_resource.key = "test_resource"
 
-        with patch.object(server._resource_manager, 'list_resources',
-                         new_callable=AsyncMock) as mock_list_resources:
+        with patch.object(
+            server._resource_manager, "list_resources", new_callable=AsyncMock
+        ) as mock_list_resources:
             mock_list_resources.return_value = [mock_resource]
 
-            with patch.object(server, '_should_enable_component', return_value=True):
-                with patch.object(server, '_apply_middleware',
-                                 new_callable=AsyncMock) as mock_apply_middleware:
+            with patch.object(server, "_should_enable_component", return_value=True):
+                with patch.object(
+                    server, "_apply_middleware", new_callable=AsyncMock
+                ) as mock_apply_middleware:
                     # Capture the middleware context
                     captured_context = None
 
@@ -1649,7 +1621,9 @@ class TestDecoratorImplementations:
                     # Assert - Verify MiddlewareContext was created correctly
                     assert captured_context is not None
                     assert isinstance(captured_context, MiddlewareContext)
-                    assert captured_context.message == {}  # List resources has no parameters
+                    assert (
+                        captured_context.message == {}
+                    )  # List resources has no parameters
                     assert captured_context.source == "client"
                     assert captured_context.type == "request"
                     assert captured_context.method == "resources/list"
@@ -1659,6 +1633,7 @@ class TestDecoratorImplementations:
 # Task Management Tools Registration Tests (Lines 386-427)
 # Target: 3 production-ready tests covering task management initialization
 # ============================================================================
+
 
 class TestRegisterTaskManagementTools:
     """
@@ -1673,8 +1648,10 @@ class TestRegisterTaskManagementTools:
 
     def test_register_task_management_tools_success(self):
         """Test successful registration of task management tools - Lines 386-427"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd:
                 # Arrange
                 mock_tools = Mock()
                 mock_tools.register_tools = Mock()
@@ -1693,14 +1670,16 @@ class TestRegisterTaskManagementTools:
                 assert server._consolidated_tools is not None
                 mock_ddd.assert_called_once()
                 call_kwargs = mock_ddd.call_args[1]
-                assert call_kwargs['projects_file_path'] == "/test/projects.json"
-                assert 'config_overrides' in call_kwargs
+                assert call_kwargs["projects_file_path"] == "/test/projects.json"
+                assert "config_overrides" in call_kwargs
                 mock_tools.register_tools.assert_called_once_with(server)
 
     def test_register_task_management_tools_already_registered(self):
         """Test registration when tools are already registered returns True - Lines 386-388"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd:
                 # Arrange
                 mock_tools = Mock()
                 mock_tools.register_tools = Mock()
@@ -1713,21 +1692,25 @@ class TestRegisterTaskManagementTools:
                 first_tools_instance = server._consolidated_tools
 
                 # Act - Second registration attempt
-                with patch('fastmcp.server.server.logger') as mock_logger:
+                with patch("fastmcp.server.server.logger") as mock_logger:
                     second_result = server.register_task_management_tools()
 
                     # Assert
                     assert second_result is True
-                    assert server._consolidated_tools is first_tools_instance  # Same instance
+                    assert (
+                        server._consolidated_tools is first_tools_instance
+                    )  # Same instance
                     mock_logger.warning.assert_called_once_with(
                         "Task management tools are already registered"
                     )
 
-    @patch.dict('os.environ', {'AGENTHUB_DISABLE_CURSOR_TOOLS': 'true'})
+    @patch.dict("os.environ", {"AGENTHUB_DISABLE_CURSOR_TOOLS": "true"})
     def test_register_task_management_tools_with_cursor_disabled(self):
         """Test registration respects AGENTHUB_DISABLE_CURSOR_TOOLS env var - Lines 394-413"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd:
                 # Arrange
                 mock_tools = Mock()
                 mock_tools.register_tools = Mock()
@@ -1744,29 +1727,31 @@ class TestRegisterTaskManagementTools:
                 call_kwargs = mock_ddd.call_args[1]
 
                 # Verify config_overrides contains disabled cursor tools
-                assert 'config_overrides' in call_kwargs
-                config = call_kwargs['config_overrides']
-                assert 'enabled_tools' in config
-                enabled_tools = config['enabled_tools']
+                assert "config_overrides" in call_kwargs
+                config = call_kwargs["config_overrides"]
+                assert "enabled_tools" in config
+                enabled_tools = config["enabled_tools"]
 
                 # Core tools should be enabled
-                assert enabled_tools['manage_project'] is True
-                assert enabled_tools['manage_task'] is True
-                assert enabled_tools['manage_subtask'] is True
-                assert enabled_tools['manage_agent'] is True
-                assert enabled_tools['call_agent'] is True
+                assert enabled_tools["manage_project"] is True
+                assert enabled_tools["manage_task"] is True
+                assert enabled_tools["manage_subtask"] is True
+                assert enabled_tools["manage_agent"] is True
+                assert enabled_tools["call_agent"] is True
 
                 # Cursor-specific tools should be disabled
-                assert enabled_tools['update_auto_rule'] is False
-                assert enabled_tools['validate_rules'] is False
-                assert enabled_tools['regenerate_auto_rule'] is False
-                assert enabled_tools['validate_tasks_json'] is False
+                assert enabled_tools["update_auto_rule"] is False
+                assert enabled_tools["validate_rules"] is False
+                assert enabled_tools["regenerate_auto_rule"] is False
+                assert enabled_tools["validate_tasks_json"] is False
 
-    @patch.dict('os.environ', {'AGENTHUB_DISABLE_CURSOR_TOOLS': 'false'})
+    @patch.dict("os.environ", {"AGENTHUB_DISABLE_CURSOR_TOOLS": "false"})
     def test_register_task_management_tools_with_cursor_enabled(self):
         """Test registration with AGENTHUB_DISABLE_CURSOR_TOOLS=false - Lines 394-413"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd:
                 # Arrange
                 mock_tools = Mock()
                 mock_tools.register_tools = Mock()
@@ -1783,21 +1768,25 @@ class TestRegisterTaskManagementTools:
                 call_kwargs = mock_ddd.call_args[1]
 
                 # Verify config_overrides is empty (no cursor disabling)
-                assert 'config_overrides' in call_kwargs
-                config = call_kwargs['config_overrides']
+                assert "config_overrides" in call_kwargs
+                config = call_kwargs["config_overrides"]
                 assert config == {}  # Empty when cursor tools not disabled
 
     def test_register_task_management_tools_failure_handling(self):
         """Test registration handles exceptions and returns False - Lines 425-427"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd:
                 # Arrange - Mock DDDCompliantMCPTools to raise exception
-                mock_ddd.side_effect = ImportError("Failed to import task management module")
+                mock_ddd.side_effect = ImportError(
+                    "Failed to import task management module"
+                )
 
                 server = FastMCP(name="TaskMgmtServer", enable_task_management=False)
 
                 # Act
-                with patch('fastmcp.server.server.logger') as mock_logger:
+                with patch("fastmcp.server.server.logger") as mock_logger:
                     result = server.register_task_management_tools()
 
                     # Assert
@@ -1809,8 +1798,10 @@ class TestRegisterTaskManagementTools:
 
     def test_register_task_management_tools_with_custom_task_repository(self):
         """Test registration with custom task_repository parameter - Lines 376-385"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd:
                 # Arrange
                 mock_tools = Mock()
                 mock_tools.register_tools = Mock()
@@ -1822,20 +1813,24 @@ class TestRegisterTaskManagementTools:
                 # Act
                 result = server.register_task_management_tools(
                     task_repository=mock_task_repo,
-                    projects_file_path="/custom/path.json"
+                    projects_file_path="/custom/path.json",
                 )
 
                 # Assert
                 assert result is True
                 mock_ddd.assert_called_once()
                 call_kwargs = mock_ddd.call_args[1]
-                assert call_kwargs['projects_file_path'] == "/custom/path.json"
+                assert call_kwargs["projects_file_path"] == "/custom/path.json"
                 # Note: task_repository is accepted but currently not used in implementation
 
-    def test_register_task_management_tools_integration_with_consolidated_tools_property(self):
+    def test_register_task_management_tools_integration_with_consolidated_tools_property(
+        self,
+    ):
         """Test registration integrates with consolidated_tools property - Lines 372-374"""
-        with patch('fastmcp.server.server.MCPServer'):
-            with patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd:
+        with patch("fastmcp.server.server.MCPServer"):
+            with patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd:
                 # Arrange
                 mock_tools = Mock()
                 mock_tools.register_tools = Mock()
@@ -1861,6 +1856,7 @@ class TestRegisterTaskManagementTools:
 # Goal: 15-18 lines covered (+2.5-3.0pp)
 # ============================================================================
 
+
 class TestDecoratorErrorPaths:
     """
     Tests for decorator error handling in @tool, @resource, and @prompt decorators.
@@ -1878,19 +1874,23 @@ class TestDecoratorErrorPaths:
         Coverage: Lines 1028-1032
         Error path: @tool("name", name="other_name")
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
             # Act & Assert - Should raise TypeError for conflicting names
             with pytest.raises(TypeError) as exc_info:
+
                 @server.tool("my_tool", name="other_tool")
                 def duplicate_name_tool(x: int) -> int:
                     return x * 2
 
             # Verify error message is descriptive
             error_msg = str(exc_info.value)
-            assert "Cannot specify both a name as first argument and as keyword argument" in error_msg
+            assert (
+                "Cannot specify both a name as first argument and as keyword argument"
+                in error_msg
+            )
             assert "my_tool" in error_msg
             assert "other_tool" in error_msg
 
@@ -1901,19 +1901,23 @@ class TestDecoratorErrorPaths:
         Coverage: Lines 1038-1040
         Error path: @tool(123) - invalid type (not function, string, or None)
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
             # Act & Assert - Should raise TypeError for invalid type
             with pytest.raises(TypeError) as exc_info:
+
                 @server.tool(123)  # Invalid: integer instead of string/function/None
                 def invalid_type_tool(x: int) -> int:
                     return x * 2
 
             # Verify error message mentions expected types
             error_msg = str(exc_info.value)
-            assert "First argument to @tool must be a function, string, or None" in error_msg
+            assert (
+                "First argument to @tool must be a function, string, or None"
+                in error_msg
+            )
             assert "int" in error_msg  # Should mention the actual type received
 
     def test_resource_decorator_missing_uri_error(self):
@@ -1923,7 +1927,7 @@ class TestDecoratorErrorPaths:
         Coverage: Lines 1169-1172
         Error path: @resource (without calling it) instead of @resource('uri')
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
@@ -1949,19 +1953,23 @@ class TestDecoratorErrorPaths:
         Coverage: Lines 1369-1373
         Error path: @prompt("name", name="other_name")
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
             # Act & Assert - Should raise TypeError for conflicting names
             with pytest.raises(TypeError) as exc_info:
+
                 @server.prompt("my_prompt", name="other_prompt")
                 def duplicate_name_prompt() -> str:
                     return "prompt text"
 
             # Verify error message is descriptive
             error_msg = str(exc_info.value)
-            assert "Cannot specify both a name as first argument and as keyword argument" in error_msg
+            assert (
+                "Cannot specify both a name as first argument and as keyword argument"
+                in error_msg
+            )
             assert "my_prompt" in error_msg
             assert "other_prompt" in error_msg
 
@@ -1972,19 +1980,25 @@ class TestDecoratorErrorPaths:
         Coverage: Lines 1379-1381
         Error path: @prompt([1, 2, 3]) - invalid type (list instead of function/string/None)
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
             # Act & Assert - Should raise TypeError for invalid type
             with pytest.raises(TypeError) as exc_info:
-                @server.prompt([1, 2, 3])  # Invalid: list instead of string/function/None
+
+                @server.prompt(
+                    [1, 2, 3]
+                )  # Invalid: list instead of string/function/None
                 def invalid_type_prompt() -> str:
                     return "prompt text"
 
             # Verify error message mentions expected types
             error_msg = str(exc_info.value)
-            assert "First argument to @prompt must be a function, string, or None" in error_msg
+            assert (
+                "First argument to @prompt must be a function, string, or None"
+                in error_msg
+            )
             assert "list" in error_msg  # Should mention the actual type received
 
 
@@ -1993,6 +2007,7 @@ class TestDecoratorErrorPaths:
 # Target: Lines 672-685, 698-708, 725-738 in server.py
 # Goal: 17-20 lines covered (+2.9-3.4pp)
 # ============================================================================
+
 
 class TestMiddlewareErrorPaths:
     """
@@ -2012,7 +2027,7 @@ class TestMiddlewareErrorPaths:
         Coverage: Lines 672-696 (exception path in middleware chain)
         Error path: Middleware raises exception during template listing
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
@@ -2028,8 +2043,7 @@ class TestMiddlewareErrorPaths:
 
             # Create a middleware that raises an exception
             async def failing_middleware(
-                context: MiddlewareContext,
-                call_next: Any
+                context: MiddlewareContext, call_next: Any
             ) -> Any:
                 raise RuntimeError("Middleware processing failed")
 
@@ -2050,7 +2064,7 @@ class TestMiddlewareErrorPaths:
         Coverage: Lines 698-703 (context manager cleanup path)
         Error path: Exception during prompt listing, context cleanup
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
@@ -2076,16 +2090,14 @@ class TestMiddlewareErrorPaths:
         Coverage: Lines 725-735 (middleware exception propagation)
         Error path: Exception in middleware chain during prompt filtering
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
             # Mock prompt manager to return prompts
             mock_prompt = Mock()
             mock_prompt.key = "test_prompt"
-            server._prompt_manager.list_prompts = AsyncMock(
-                return_value=[mock_prompt]
-            )
+            server._prompt_manager.list_prompts = AsyncMock(return_value=[mock_prompt])
 
             # Mock _should_enable_component to raise during filtering
             server._should_enable_component = Mock(
@@ -2109,7 +2121,7 @@ class TestMiddlewareErrorPaths:
         Coverage: Lines 676-683 (template filtering logic in handler)
         Normal path: Resource templates are filtered based on component enablement
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
@@ -2149,7 +2161,7 @@ class TestMiddlewareErrorPaths:
         Coverage: Lines 701-703 (context setup and prompt conversion)
         Normal path: Prompts are retrieved and converted to MCP format
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 
@@ -2180,7 +2192,7 @@ class TestMiddlewareErrorPaths:
         Coverage: Lines 715-722 (prompt filtering logic in handler)
         Normal path: Prompts are filtered based on component enablement
         """
-        with patch('fastmcp.server.server.MCPServer'):
+        with patch("fastmcp.server.server.MCPServer"):
             # Arrange
             server = FastMCP(name="TestServer")
 

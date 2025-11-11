@@ -28,7 +28,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 # This prevents ModuleNotFoundError during client import chain
 oauth_callback_mock = MagicMock()
 oauth_callback_mock.create_oauth_callback_server = MagicMock()
-sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
+sys.modules["fastmcp.client.oauth_callback"] = oauth_callback_mock
 
 # fmt: off - Imports must come after sys.modules mock, cannot auto-sort
 import mcp.types  # noqa: E402, I001
@@ -40,15 +40,13 @@ from fastmcp.exceptions import ToolError  # noqa: E402, I001
 # fmt: on
 
 # Test markers
-pytestmark = [
-    pytest.mark.integration,
-    pytest.mark.asyncio
-]
+pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 
 # =========================================================================
 # MOCK FIXTURES
 # =========================================================================
+
 
 @pytest.fixture
 def mock_transport():
@@ -65,13 +63,8 @@ def mock_transport():
         # Mock initialize result
         init_result = mcp.types.InitializeResult(
             protocolVersion="2024-11-05",
-            capabilities=mcp.types.ServerCapabilities(
-                tools={}
-            ),
-            serverInfo=mcp.types.Implementation(
-                name="test-server",
-                version="1.0.0"
-            )
+            capabilities=mcp.types.ServerCapabilities(tools={}),
+            serverInfo=mcp.types.Implementation(name="test-server", version="1.0.0"),
         )
         session.initialize = AsyncMock(return_value=init_result)
 
@@ -110,13 +103,16 @@ def mock_server():
 # CONNECTION LIFECYCLE TESTS
 # =========================================================================
 
+
 class TestConnectionLifecycle:
     """Test client connection lifecycle - connect, handshake, disconnect"""
 
     @pytest.mark.asyncio
     async def test_client_connects_successfully(self, mock_transport):
         """Test client connects to server successfully"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             # Connect using context manager
@@ -133,7 +129,9 @@ class TestConnectionLifecycle:
     @pytest.mark.asyncio
     async def test_handshake_completes_correctly(self, mock_transport):
         """Test MCP handshake completes with correct protocol version"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -147,7 +145,9 @@ class TestConnectionLifecycle:
     @pytest.mark.asyncio
     async def test_client_can_send_commands_after_connection(self, mock_transport):
         """Test client can send commands after successful connection"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -158,7 +158,9 @@ class TestConnectionLifecycle:
     @pytest.mark.asyncio
     async def test_client_disconnects_cleanly(self, mock_transport):
         """Test client disconnects cleanly and releases resources"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -174,7 +176,9 @@ class TestConnectionLifecycle:
     @pytest.mark.asyncio
     async def test_connection_state_tracking_correct(self, mock_transport):
         """Test connection state is tracked correctly throughout lifecycle"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             # Initially disconnected
@@ -198,7 +202,9 @@ class TestConnectionLifecycle:
     @pytest.mark.asyncio
     async def test_nested_context_managers(self, mock_transport):
         """Test client handles nested context manager usage"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -219,13 +225,16 @@ class TestConnectionLifecycle:
 # COMMAND SENDING TESTS
 # =========================================================================
 
+
 class TestCommandSending:
     """Test sending valid commands and receiving responses"""
 
     @pytest.mark.asyncio
     async def test_send_valid_command_receive_response(self, mock_transport):
         """Test sending valid command and receiving response"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -235,7 +244,7 @@ class TestCommandSending:
                         mcp.types.Tool(
                             name="test_tool",
                             description="A test tool",
-                            inputSchema={"type": "object"}
+                            inputSchema={"type": "object"},
                         )
                     ]
                 )
@@ -251,7 +260,9 @@ class TestCommandSending:
     @pytest.mark.asyncio
     async def test_command_parameters_serialized_correctly(self, mock_transport):
         """Test command parameters are serialized correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -259,11 +270,10 @@ class TestCommandSending:
                 call_result = mcp.types.CallToolResult(
                     content=[
                         mcp.types.TextContent(
-                            type="text",
-                            text="Tool executed successfully"
+                            type="text", text="Tool executed successfully"
                         )
                     ],
-                    isError=False
+                    isError=False,
                 )
                 client._session.call_tool = AsyncMock(return_value=call_result)
 
@@ -280,7 +290,9 @@ class TestCommandSending:
     @pytest.mark.asyncio
     async def test_response_deserialized_correctly(self, mock_transport):
         """Test response is deserialized correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -290,7 +302,7 @@ class TestCommandSending:
                         mcp.types.TextResourceContents(
                             uri=AnyUrl("file:///test.txt"),
                             mimeType="text/plain",
-                            text="Test content"
+                            text="Test content",
                         )
                     ]
                 )
@@ -306,7 +318,9 @@ class TestCommandSending:
     @pytest.mark.asyncio
     async def test_multiple_commands_in_sequence(self, mock_transport):
         """Test multiple commands can be sent in sequence"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -321,7 +335,9 @@ class TestCommandSending:
     @pytest.mark.asyncio
     async def test_concurrent_command_sending(self, mock_transport):
         """Test concurrent command sending is handled correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -337,6 +353,7 @@ class TestCommandSending:
 # =========================================================================
 # ERROR HANDLING - CONNECTION ISSUES
 # =========================================================================
+
 
 class TestConnectionErrorHandling:
     """Test error handling for connection issues"""
@@ -356,7 +373,9 @@ class TestConnectionErrorHandling:
 
         failing_transport.connect_session = failing_connect
 
-        with patch('fastmcp.client.client.infer_transport', return_value=failing_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=failing_transport
+        ):
             client = Client("http://localhost:8000")
 
             # Should raise connection error
@@ -380,7 +399,7 @@ class TestConnectionErrorHandling:
                 return mcp.types.InitializeResult(
                     protocolVersion="2024-11-05",
                     capabilities=mcp.types.ServerCapabilities(tools={}),
-                    serverInfo=mcp.types.Implementation(name="test", version="1.0")
+                    serverInfo=mcp.types.Implementation(name="test", version="1.0"),
                 )
 
             session.initialize = slow_initialize
@@ -388,7 +407,9 @@ class TestConnectionErrorHandling:
 
         timeout_transport.connect_session = timeout_connect
 
-        with patch('fastmcp.client.client.infer_transport', return_value=timeout_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=timeout_transport
+        ):
             # Set very short timeout
             client = Client("http://localhost:8000", init_timeout=0.1)
 
@@ -397,7 +418,9 @@ class TestConnectionErrorHandling:
                 async with client:
                     pass
 
-    @pytest.mark.skip(reason="ExceptionGroup handling makes this test complex - covered by other error tests")
+    @pytest.mark.skip(
+        reason="ExceptionGroup handling makes this test complex - covered by other error tests"
+    )
     @pytest.mark.asyncio
     async def test_connection_dropped_mid_request(self):
         """Test connection dropped mid-request is detected"""
@@ -417,7 +440,7 @@ class TestConnectionErrorHandling:
             init_result = mcp.types.InitializeResult(
                 protocolVersion="2024-11-05",
                 capabilities=mcp.types.ServerCapabilities(tools={}),
-                serverInfo=mcp.types.Implementation(name="test", version="1.0")
+                serverInfo=mcp.types.Implementation(name="test", version="1.0"),
             )
             session.initialize = AsyncMock(return_value=init_result)
 
@@ -430,7 +453,9 @@ class TestConnectionErrorHandling:
 
         failing_transport.connect_session = failing_context
 
-        with patch('fastmcp.client.client.infer_transport', return_value=failing_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=failing_transport
+        ):
             client = Client("http://localhost:8000")
 
             # The error should be caught and wrapped in RuntimeError
@@ -444,13 +469,16 @@ class TestConnectionErrorHandling:
 # ERROR HANDLING - PROTOCOL ISSUES
 # =========================================================================
 
+
 class TestProtocolErrorHandling:
     """Test error handling for protocol-level issues"""
 
     @pytest.mark.asyncio
     async def test_malformed_server_response_handled(self, mock_transport):
         """Test malformed server response is handled"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -466,7 +494,9 @@ class TestProtocolErrorHandling:
     @pytest.mark.asyncio
     async def test_invalid_message_format_logged(self, mock_transport, caplog):
         """Test invalid message format is logged appropriately"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -482,19 +512,18 @@ class TestProtocolErrorHandling:
     @pytest.mark.asyncio
     async def test_tool_error_raised_on_is_error_true(self, mock_transport):
         """Test ToolError is raised when response has isError=True"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
                 # Mock tool call with error
                 error_result = mcp.types.CallToolResult(
                     content=[
-                        mcp.types.TextContent(
-                            type="text",
-                            text="Tool execution failed"
-                        )
+                        mcp.types.TextContent(type="text", text="Tool execution failed")
                     ],
-                    isError=True
+                    isError=True,
                 )
                 client._session.call_tool = AsyncMock(return_value=error_result)
 
@@ -507,19 +536,24 @@ class TestProtocolErrorHandling:
 # SECURITY TESTS
 # =========================================================================
 
+
 class TestSecurity:
     """Test security measures - validation, sanitization, auth"""
 
     @pytest.mark.asyncio
     async def test_invalid_uri_rejected(self, mock_transport):
         """Test invalid URI is rejected with clear error"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
                 # Try to read resource with completely invalid URI format
                 # The AnyUrl validation will fail on this
-                with pytest.raises((ValueError, Exception)):  # AnyUrl raises validation error
+                with pytest.raises(
+                    (ValueError, Exception)
+                ):  # AnyUrl raises validation error
                     await client.read_resource("://invalid-uri-format")
 
     @pytest.mark.asyncio
@@ -528,7 +562,9 @@ class TestSecurity:
         mock_transport = AsyncMock()
         mock_transport._set_auth = Mock()
 
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             # Create client with auth
             Client("http://localhost:8000", auth="test-token")
 
@@ -538,11 +574,10 @@ class TestSecurity:
     @pytest.mark.asyncio
     async def test_client_info_sent_in_handshake(self, mock_transport):
         """Test client info is sent in handshake"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
-            client_info = mcp.types.Implementation(
-                name="test-client",
-                version="2.0.0"
-            )
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
+            client_info = mcp.types.Implementation(name="test-client", version="2.0.0")
 
             client = Client("http://localhost:8000", client_info=client_info)
 
@@ -555,13 +590,16 @@ class TestSecurity:
 # MESSAGE SERIALIZATION TESTS
 # =========================================================================
 
+
 class TestMessageSerialization:
     """Test message serialization - JSON, large payloads, special chars"""
 
     @pytest.mark.asyncio
     async def test_json_serialization_correct(self, mock_transport):
         """Test JSON serialization works correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -570,20 +608,15 @@ class TestMessageSerialization:
                     content=[
                         mcp.types.TextContent(
                             type="text",
-                            text=json.dumps({"nested": {"data": [1, 2, 3]}})
+                            text=json.dumps({"nested": {"data": [1, 2, 3]}}),
                         )
                     ],
-                    isError=False
+                    isError=False,
                 )
                 client._session.call_tool = AsyncMock(return_value=call_result)
 
                 # Call with nested parameters
-                params = {
-                    "nested": {
-                        "array": [1, 2, 3],
-                        "object": {"key": "value"}
-                    }
-                }
+                params = {"nested": {"array": [1, 2, 3], "object": {"key": "value"}}}
                 result = await client.call_tool("test", params)
 
                 # Verify serialization worked
@@ -592,7 +625,9 @@ class TestMessageSerialization:
     @pytest.mark.asyncio
     async def test_large_payloads_handled(self, mock_transport):
         """Test large payloads are handled correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -600,10 +635,8 @@ class TestMessageSerialization:
                 large_text = "x" * (1024 * 1024)
 
                 call_result = mcp.types.CallToolResult(
-                    content=[
-                        mcp.types.TextContent(type="text", text=large_text)
-                    ],
-                    isError=False
+                    content=[mcp.types.TextContent(type="text", text=large_text)],
+                    isError=False,
                 )
                 client._session.call_tool = AsyncMock(return_value=call_result)
 
@@ -616,7 +649,9 @@ class TestMessageSerialization:
     @pytest.mark.asyncio
     async def test_special_characters_in_messages(self, mock_transport):
         """Test special characters are handled correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -624,10 +659,8 @@ class TestMessageSerialization:
                 special_chars = "Hello 世界 🌍 \n\t\r \"quoted\" 'apostrophe'"
 
                 call_result = mcp.types.CallToolResult(
-                    content=[
-                        mcp.types.TextContent(type="text", text=special_chars)
-                    ],
-                    isError=False
+                    content=[mcp.types.TextContent(type="text", text=special_chars)],
+                    isError=False,
                 )
                 client._session.call_tool = AsyncMock(return_value=call_result)
 
@@ -642,13 +675,16 @@ class TestMessageSerialization:
 # CONNECTION STATE MANAGEMENT TESTS
 # =========================================================================
 
+
 class TestConnectionStateManagement:
     """Test connection state tracking and transitions"""
 
     @pytest.mark.asyncio
     async def test_is_connected_returns_correct_state(self, mock_transport):
         """Test is_connected() returns correct state"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             # Initially disconnected
@@ -664,7 +700,9 @@ class TestConnectionStateManagement:
     @pytest.mark.asyncio
     async def test_connection_state_transitions_valid(self, mock_transport):
         """Test all connection state transitions are valid"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             # Transition: disconnected -> connecting -> connected
@@ -688,7 +726,9 @@ class TestConnectionStateManagement:
     @pytest.mark.asyncio
     async def test_state_preserved_across_operations(self, mock_transport):
         """Test connection state is preserved during operations"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -705,7 +745,9 @@ class TestConnectionStateManagement:
     @pytest.mark.asyncio
     async def test_force_disconnect(self, mock_transport):
         """Test force disconnect resets nesting counter"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -724,13 +766,16 @@ class TestConnectionStateManagement:
 # ADDITIONAL MCP PROTOCOL TESTS
 # =========================================================================
 
+
 class TestMCPProtocolMethods:
     """Test all MCP protocol methods"""
 
     @pytest.mark.asyncio
     async def test_ping_method(self, mock_transport):
         """Test ping method works correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -740,7 +785,9 @@ class TestMCPProtocolMethods:
     @pytest.mark.asyncio
     async def test_cancel_notification(self, mock_transport):
         """Test cancel notification is sent correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -752,7 +799,9 @@ class TestMCPProtocolMethods:
     @pytest.mark.asyncio
     async def test_progress_notification(self, mock_transport):
         """Test progress notification is sent correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -766,7 +815,9 @@ class TestMCPProtocolMethods:
     @pytest.mark.asyncio
     async def test_set_logging_level(self, mock_transport):
         """Test set logging level works correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -779,7 +830,9 @@ class TestMCPProtocolMethods:
     @pytest.mark.asyncio
     async def test_send_roots_list_changed(self, mock_transport):
         """Test send roots list changed notification"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -791,15 +844,16 @@ class TestMCPProtocolMethods:
     @pytest.mark.asyncio
     async def test_list_prompts(self, mock_transport):
         """Test list prompts works correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
                 prompts_result = mcp.types.ListPromptsResult(
                     prompts=[
                         mcp.types.Prompt(
-                            name="test_prompt",
-                            description="A test prompt"
+                            name="test_prompt", description="A test prompt"
                         )
                     ]
                 )
@@ -813,7 +867,9 @@ class TestMCPProtocolMethods:
     @pytest.mark.asyncio
     async def test_get_prompt(self, mock_transport):
         """Test get prompt works correctly"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             async with client:
@@ -825,11 +881,10 @@ class TestMCPProtocolMethods:
                         mcp.types.PromptMessage(
                             role="user",  # Use string literal
                             content=mcp.types.TextContent(
-                                type="text",
-                                text="Test message"
-                            )
+                                type="text", text="Test message"
+                            ),
                         )
-                    ]
+                    ],
                 )
                 client._session.get_prompt = AsyncMock(return_value=prompt_result)
 
@@ -843,24 +898,31 @@ class TestMCPProtocolMethods:
 # TIMEOUT AND CONFIGURATION TESTS
 # =========================================================================
 
+
 class TestTimeoutsAndConfiguration:
     """Test timeout configuration and handling"""
 
     @pytest.mark.asyncio
     async def test_request_timeout_configuration(self, mock_transport):
         """Test request timeout can be configured"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             # Create client with timeout
             client = Client("http://localhost:8000", timeout=30.0)
 
             async with client:
                 # Verify timeout was set in session kwargs
-                assert client._session_kwargs["read_timeout_seconds"] == timedelta(seconds=30.0)
+                assert client._session_kwargs["read_timeout_seconds"] == timedelta(
+                    seconds=30.0
+                )
 
     @pytest.mark.asyncio
     async def test_init_timeout_configuration(self, mock_transport):
         """Test init timeout can be configured"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             # Create client with init timeout
             client = Client("http://localhost:8000", init_timeout=5.0)
 
@@ -869,7 +931,9 @@ class TestTimeoutsAndConfiguration:
     @pytest.mark.asyncio
     async def test_init_timeout_disabled(self, mock_transport):
         """Test init timeout can be disabled"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             # Create client with timeout disabled
             client = Client("http://localhost:8000", init_timeout=0)
 
@@ -879,6 +943,7 @@ class TestTimeoutsAndConfiguration:
 # =========================================================================
 # HANDLER CONFIGURATION TESTS
 # =========================================================================
+
 
 class TestHandlerConfiguration:
     """Test various handler configurations"""
@@ -890,7 +955,9 @@ class TestHandlerConfiguration:
 
         custom_handler: LogHandler = Mock()
 
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000", log_handler=custom_handler)
 
             async with client:
@@ -904,16 +971,22 @@ class TestHandlerConfiguration:
 
         custom_handler: ProgressHandler = Mock()
 
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000", progress_handler=custom_handler)
 
             assert client._progress_handler == custom_handler
 
-    @pytest.mark.skip(reason="RootsList validation requires file:// URLs - covered by integration tests")
+    @pytest.mark.skip(
+        reason="RootsList validation requires file:// URLs - covered by integration tests"
+    )
     @pytest.mark.asyncio
     async def test_set_roots(self, mock_transport):
         """Test set_roots method with proper Path objects"""
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             import tempfile
             from pathlib import Path
 
@@ -940,7 +1013,9 @@ class TestHandlerConfiguration:
 
         custom_handler: SamplingHandler = Mock()
 
-        with patch('fastmcp.client.client.infer_transport', return_value=mock_transport):
+        with patch(
+            "fastmcp.client.client.infer_transport", return_value=mock_transport
+        ):
             client = Client("http://localhost:8000")
 
             # Set sampling callback

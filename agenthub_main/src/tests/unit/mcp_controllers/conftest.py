@@ -90,10 +90,7 @@ def sample_project_data(sample_project_id, current_timestamp):
         "git_branches": [],
         "tasks_count": 0,
         "health_status": "healthy",
-        "settings": {
-            "auto_cleanup": True,
-            "retention_days": 30
-        }
+        "settings": {"auto_cleanup": True, "retention_days": 30},
     }
 
 
@@ -114,8 +111,8 @@ def sample_git_branch_data(sample_git_branch_id, sample_project_id, current_time
         "statistics": {
             "total_tasks": 0,
             "completed_tasks": 0,
-            "progress_percentage": 0
-        }
+            "progress_percentage": 0,
+        },
     }
 
 
@@ -140,7 +137,7 @@ def sample_task_data(sample_task_id, sample_git_branch_id, current_timestamp):
         "updated_at": current_timestamp.isoformat(),
         "progress_percentage": 0,
         "completion_summary": None,
-        "testing_notes": None
+        "testing_notes": None,
     }
 
 
@@ -160,7 +157,7 @@ def sample_subtask_data(sample_subtask_id, sample_task_id, current_timestamp):
         "blockers": [],
         "insights_found": [],
         "created_at": current_timestamp.isoformat(),
-        "updated_at": current_timestamp.isoformat()
+        "updated_at": current_timestamp.isoformat(),
     }
 
 
@@ -174,9 +171,11 @@ def mock_facade_service():
     # Helper function to safely create mocks with spec
     def create_mock_with_spec(spec_class):
         # Check if the class is actually a Mock or has been patched
-        if (hasattr(spec_class, '_mock_name') or
-            hasattr(spec_class, '_spec_class') or
-            hasattr(spec_class, '_mock_methods')):
+        if (
+            hasattr(spec_class, "_mock_name")
+            or hasattr(spec_class, "_spec_class")
+            or hasattr(spec_class, "_mock_methods")
+        ):
             # It's already a Mock, don't use spec
             return Mock()
         else:
@@ -190,7 +189,7 @@ def mock_facade_service():
     task_facade = create_mock_with_spec(TaskApplicationFacade)
     project_facade = create_mock_with_spec(ProjectApplicationFacade)
     git_branch_facade = create_mock_with_spec(GitBranchApplicationFacade)
-    
+
     # Configure all facade methods as async mocks
     # Task facade methods
     task_facade.create_task = AsyncMock()
@@ -203,7 +202,7 @@ def mock_facade_service():
     task_facade.add_dependency = AsyncMock()
     task_facade.remove_dependency = AsyncMock()
     task_facade.get_next_task = AsyncMock()
-    
+
     # Project facade methods
     project_facade.create_project = AsyncMock()
     project_facade.get_project = AsyncMock()
@@ -214,7 +213,7 @@ def mock_facade_service():
     project_facade.cleanup_obsolete = AsyncMock()
     project_facade.validate_integrity = AsyncMock()
     project_facade.rebalance_agents = AsyncMock()
-    
+
     # Git branch facade methods
     git_branch_facade.create_git_branch = AsyncMock()
     git_branch_facade.get_git_branch = AsyncMock()
@@ -226,55 +225,80 @@ def mock_facade_service():
     git_branch_facade.get_statistics = AsyncMock()
     git_branch_facade.archive = AsyncMock()
     git_branch_facade.restore = AsyncMock()
-    
+
     # Configure facade service to return appropriate facades
     mock_service.get_task_facade.return_value = task_facade
     mock_service.get_project_facade.return_value = project_facade
     mock_service.get_git_branch_facade.return_value = git_branch_facade
-    
+
     return mock_service, {
         "task": task_facade,
         "project": project_facade,
-        "git_branch": git_branch_facade
+        "git_branch": git_branch_facade,
     }
 
 
 @pytest.fixture
 def mock_authentication(sample_user_id):
     """Mock authentication functions for all controllers."""
+
     def create_auth_mock(controller_module_path):
         """Create authentication mock for specific controller module."""
-        return patch(f'{controller_module_path}.get_authenticated_user_id'), \
-               patch(f'{controller_module_path}.log_authentication_details')
-    
+        return patch(f"{controller_module_path}.get_authenticated_user_id"), patch(
+            f"{controller_module_path}.log_authentication_details"
+        )
+
     return create_auth_mock
 
 
 @pytest.fixture
 def mock_permissions():
     """Mock permission system for all controllers."""
+
     def create_permission_mock(controller_module_path, permissions=None):
         """Create permission mock for specific controller module with given permissions."""
         if permissions is None:
             # Default permissions for all operations
             permissions = [
-                "tasks:read", "tasks:write", "tasks:create", "tasks:update", "tasks:delete",
-                "projects:read", "projects:write", "projects:create", "projects:update", "projects:delete",
-                "branches:read", "branches:write", "branches:create", "branches:update", "branches:delete",
-                "contexts:read", "contexts:write", "contexts:create", "contexts:update", "contexts:delete",
-                "agents:read", "agents:write", "agents:create", "agents:update", "agents:delete"
+                "tasks:read",
+                "tasks:write",
+                "tasks:create",
+                "tasks:update",
+                "tasks:delete",
+                "projects:read",
+                "projects:write",
+                "projects:create",
+                "projects:update",
+                "projects:delete",
+                "branches:read",
+                "branches:write",
+                "branches:create",
+                "branches:update",
+                "branches:delete",
+                "contexts:read",
+                "contexts:write",
+                "contexts:create",
+                "contexts:update",
+                "contexts:delete",
+                "agents:read",
+                "agents:write",
+                "agents:create",
+                "agents:update",
+                "agents:delete",
             ]
-        
+
         def configure_mock_context():
             mock_request_context = Mock()
             mock_user = Mock()
             mock_user.token = {"sub": "test-user", "permissions": permissions}
             mock_request_context.user = mock_user
             return mock_request_context
-        
-        return patch(f'{controller_module_path}.get_current_request_context', 
-                    return_value=configure_mock_context())
-    
+
+        return patch(
+            f"{controller_module_path}.get_current_request_context",
+            return_value=configure_mock_context(),
+        )
+
     return create_permission_mock
 
 
@@ -288,13 +312,14 @@ def response_formatter():
 @pytest.fixture
 def create_test_task():
     """Factory function to create test task data with variations."""
+
     def _create_task(
         task_id: str | None = None,
         git_branch_id: str | None = None,
         title: str = "Test Task",
         status: str = "todo",
         priority: str = "medium",
-        assignees: list[str | None] = None
+        assignees: list[str | None] = None,
     ) -> dict[str, Any]:
         return {
             "task_id": task_id or str(uuid.uuid4()),
@@ -306,18 +331,20 @@ def create_test_task():
             "assignees": assignees or ["coding-agent"],
             "labels": ["test"],
             "created_at": datetime.now(UTC).isoformat(),
-            "updated_at": datetime.now(UTC).isoformat()
+            "updated_at": datetime.now(UTC).isoformat(),
         }
+
     return _create_task
 
 
 @pytest.fixture
 def create_test_project():
     """Factory function to create test project data with variations."""
+
     def _create_project(
         project_id: str | None = None,
         name: str = "Test Project",
-        status: str = "active"
+        status: str = "active",
     ) -> dict[str, Any]:
         return {
             "project_id": project_id or str(uuid.uuid4()),
@@ -325,8 +352,9 @@ def create_test_project():
             "description": f"Description for {name}",
             "status": status,
             "created_at": datetime.now(UTC).isoformat(),
-            "updated_at": datetime.now(UTC).isoformat()
+            "updated_at": datetime.now(UTC).isoformat(),
         }
+
     return _create_project
 
 
@@ -334,24 +362,24 @@ def create_test_project():
 @pytest.fixture
 def create_success_response():
     """Factory to create successful API responses."""
-    def _create_response(data: Any = None, message: str = "Operation successful") -> dict[str, Any]:
-        return {
-            "success": True,
-            "data": data,
-            "message": message
-        }
+
+    def _create_response(
+        data: Any = None, message: str = "Operation successful"
+    ) -> dict[str, Any]:
+        return {"success": True, "data": data, "message": message}
+
     return _create_response
 
 
 @pytest.fixture
 def create_error_response():
     """Factory to create error API responses."""
-    def _create_response(error: str, error_code: str = "OPERATION_FAILED") -> dict[str, Any]:
-        return {
-            "success": False,
-            "error": error,
-            "error_code": error_code
-        }
+
+    def _create_response(
+        error: str, error_code: str = "OPERATION_FAILED"
+    ) -> dict[str, Any]:
+        return {"success": False, "error": error, "error_code": error_code}
+
     return _create_response
 
 
@@ -359,17 +387,18 @@ def create_error_response():
 @pytest.fixture
 def assert_response_structure():
     """Utility to validate response structure."""
+
     def _assert_structure(response: dict[str, Any], expect_success: bool = True):
         """Validate that response has proper structure."""
         assert "success" in response
         assert response["success"] is expect_success
-        
+
         if expect_success:
             assert "data" in response or "message" in response
         else:
             assert "error" in response
             assert "error_code" in response
-    
+
     return _assert_structure
 
 
@@ -390,9 +419,13 @@ def valid_priorities():
 def valid_agent_types():
     """List of valid agent types for parametrized tests."""
     return [
-        "coding-agent", "@test-orchestrator-agent", "code-reviewer-agent",
-        "@security-auditor-agent", "@performance-load-tester-agent", 
-        "devops-agent", "documentation-agent"
+        "coding-agent",
+        "@test-orchestrator-agent",
+        "code-reviewer-agent",
+        "@security-auditor-agent",
+        "@performance-load-tester-agent",
+        "devops-agent",
+        "documentation-agent",
     ]
 
 
@@ -400,9 +433,11 @@ def valid_agent_types():
 @pytest.fixture
 def run_async():
     """Helper to run async functions in tests."""
+
     def _run_async(coro):
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(coro)
+
     return _run_async
 
 
@@ -410,10 +445,12 @@ def run_async():
 @pytest.fixture
 def inject_facade_error():
     """Utility to inject errors in facade methods for testing error handling."""
+
     def _inject_error(facade_mock, method_name: str, error: Exception):
         """Configure facade method to raise specified error."""
         method = getattr(facade_mock, method_name)
         method.side_effect = error
+
     return _inject_error
 
 
@@ -426,7 +463,7 @@ def mock_database_state():
         "git_branches": {},
         "tasks": {},
         "subtasks": {},
-        "contexts": {}
+        "contexts": {},
     }
 
 

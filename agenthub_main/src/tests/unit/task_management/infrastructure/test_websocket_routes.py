@@ -29,7 +29,7 @@ from fastmcp.server.routes.websocket_routes import (
     WebSocketConnection,  # Updated: connection state dataclass
     broadcast_data_change,
     connections,  # Updated: unified connections dictionary
-    )
+)
 
 
 class TestBroadcastDataChange:
@@ -66,7 +66,7 @@ class TestBroadcastDataChange:
             client_id="client-1",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
         connections[mock_websocket2] = WebSocketConnection(
             websocket=mock_websocket2,
@@ -74,11 +74,14 @@ class TestBroadcastDataChange:
             client_id="client-2",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
         # Mock authorization to always return True for this test
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act: Broadcast a task creation event
             await broadcast_data_change(
                 event_type="created",
@@ -86,7 +89,7 @@ class TestBroadcastDataChange:
                 entity_id="task-123",
                 user_id="user-123",
                 data={"title": "Test Task"},
-                metadata={"git_branch_id": "branch-123"}
+                metadata={"git_branch_id": "branch-123"},
             )
 
         # Assert: Both clients received the message
@@ -113,10 +116,13 @@ class TestBroadcastDataChange:
             client_id="client-1",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act
             await broadcast_data_change(
                 event_type="created",
@@ -124,7 +130,7 @@ class TestBroadcastDataChange:
                 entity_id="task-123",
                 user_id="user-123",
                 data={"title": "Test Task", "status": "todo"},
-                metadata={"git_branch_id": "branch-123", "project_id": "project-123"}
+                metadata={"git_branch_id": "branch-123", "project_id": "project-123"},
             )
 
         # Assert: Message structure matches v2.0 spec
@@ -175,19 +181,24 @@ class TestBroadcastDataChange:
             client_id="client-1",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
         cascade_data = {
-            "branches": [{
-                "id": "branch-123",
-                "task_count": 5,
-                "completed_tasks": 2,
-                "progress_percentage": 40.0
-            }]
+            "branches": [
+                {
+                    "id": "branch-123",
+                    "task_count": 5,
+                    "completed_tasks": 2,
+                    "progress_percentage": 40.0,
+                }
+            ]
         }
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act: Send notification with cascade data in metadata
             await broadcast_data_change(
                 event_type="created",
@@ -195,23 +206,22 @@ class TestBroadcastDataChange:
                 entity_id="task-123",
                 user_id="user-123",
                 data={"title": "Test Task"},
-                metadata={
-                    "git_branch_id": "branch-123",
-                    "cascade": cascade_data
-                }
+                metadata={"git_branch_id": "branch-123", "cascade": cascade_data},
             )
 
         # Assert: Cascade data moved to payload.data
         sent_message = mock_websocket.send_json.call_args[0][0]
 
         # Cascade data should be in payload.data (for frontend consumption)
-        assert "cascade" in sent_message["payload"]["data"], \
+        assert "cascade" in sent_message["payload"]["data"], (
             "Cascade data should be in payload.data for frontend"
+        )
         assert sent_message["payload"]["data"]["cascade"] == cascade_data
 
         # Cascade data should NOT be in metadata (to avoid duplication)
-        assert "cascade" not in sent_message["metadata"], \
+        assert "cascade" not in sent_message["metadata"], (
             "Cascade data should be removed from metadata to avoid duplication"
+        )
 
     @pytest.mark.asyncio
     async def test_broadcast_respects_authorization(self):
@@ -235,7 +245,7 @@ class TestBroadcastDataChange:
             client_id="client-authorized",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
         connections[mock_websocket_unauthorized] = WebSocketConnection(
             websocket=mock_websocket_unauthorized,
@@ -243,15 +253,22 @@ class TestBroadcastDataChange:
             client_id="client-unauthorized",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
         # Mock authorization to return True only for authorized user
-        async def mock_authorization(websocket, entity_type, entity_id, user_id, metadata):
-            connection = connections.get(websocket)  # Updated: use unified connections dict
+        async def mock_authorization(
+            websocket, entity_type, entity_id, user_id, metadata
+        ):
+            connection = connections.get(
+                websocket
+            )  # Updated: use unified connections dict
             return connection and connection.user.id == user_id
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', side_effect=mock_authorization):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            side_effect=mock_authorization,
+        ):
             # Act: Broadcast task event for user-123
             await broadcast_data_change(
                 event_type="created",
@@ -259,24 +276,28 @@ class TestBroadcastDataChange:
                 entity_id="task-123",
                 user_id="user-123",  # Owner is user-123
                 data={"title": "Test Task"},
-                metadata={"git_branch_id": "branch-123"}
+                metadata={"git_branch_id": "branch-123"},
             )
 
         # Assert: Only authorized user received the data message
-        assert mock_websocket_authorized.send_json.called, \
+        assert mock_websocket_authorized.send_json.called, (
             "Authorized user should receive message"
+        )
 
         # Unauthorized user receives error message, not data message (updated expectation)
-        assert mock_websocket_unauthorized.send_json.called, \
+        assert mock_websocket_unauthorized.send_json.called, (
             "Unauthorized user should receive error notification"
+        )
 
         # Verify unauthorized user got error message, not data
         unauthorized_message = mock_websocket_unauthorized.send_json.call_args[0][0]
-        assert unauthorized_message["type"] == "error", \
+        assert unauthorized_message["type"] == "error", (
             "Unauthorized user should receive error type message"
-        assert "authorization" in unauthorized_message["payload"]["entity"] or \
-               unauthorized_message["payload"]["entity"] == "system", \
-            "Unauthorized message should be system/authorization error"
+        )
+        assert (
+            "authorization" in unauthorized_message["payload"]["entity"]
+            or unauthorized_message["payload"]["entity"] == "system"
+        ), "Unauthorized message should be system/authorization error"
 
     @pytest.mark.asyncio
     async def test_broadcast_cleans_up_disconnected_clients(self):
@@ -297,7 +318,7 @@ class TestBroadcastDataChange:
             client_id="client-disconnected",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
         connections[mock_websocket_active] = WebSocketConnection(
             websocket=mock_websocket_active,
@@ -305,26 +326,31 @@ class TestBroadcastDataChange:
             client_id="client-active",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act: Broadcast message
             await broadcast_data_change(
                 event_type="created",
                 entity_type="task",
                 entity_id="task-123",
                 user_id="user-123",
-                data={"title": "Test Task"}
+                data={"title": "Test Task"},
             )
 
         # Assert: Disconnected client removed from tracking (updated architecture)
-        assert mock_websocket_disconnected not in connections, \
+        assert mock_websocket_disconnected not in connections, (
             "Disconnected client should be removed from connections dictionary"
+        )
 
         # Active client should still be tracked (updated architecture)
-        assert mock_websocket_active in connections, \
+        assert mock_websocket_active in connections, (
             "Active client should still be in connections dictionary"
+        )
 
     @pytest.mark.asyncio
     async def test_broadcast_handles_empty_connections(self):
@@ -339,7 +365,7 @@ class TestBroadcastDataChange:
                 entity_type="task",
                 entity_id="task-123",
                 user_id="user-123",
-                data={"title": "Test Task"}
+                data={"title": "Test Task"},
             )
             success = True
         except Exception:
@@ -378,10 +404,13 @@ class TestMessageFormatting:
             client_id="client-1",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act
             await broadcast_data_change(
                 event_type="updated",
@@ -389,23 +418,41 @@ class TestMessageFormatting:
                 entity_id="task-123",
                 user_id="user-123",
                 data={"status": "in_progress"},
-                metadata={"git_branch_id": "branch-123"}
+                metadata={"git_branch_id": "branch-123"},
             )
 
         # Assert: All required fields present
         sent_message = mock_websocket.send_json.call_args[0][0]
 
-        required_top_level_fields = ["id", "version", "type", "timestamp", "sequence", "payload", "metadata"]
+        required_top_level_fields = [
+            "id",
+            "version",
+            "type",
+            "timestamp",
+            "sequence",
+            "payload",
+            "metadata",
+        ]
         for field in required_top_level_fields:
             assert field in sent_message, f"Message must include '{field}' field"
 
         required_payload_fields = ["entity", "action", "data"]
         for field in required_payload_fields:
-            assert field in sent_message["payload"], f"Payload must include '{field}' field"
+            assert field in sent_message["payload"], (
+                f"Payload must include '{field}' field"
+            )
 
-        required_metadata_fields = ["source", "userId", "entity_type", "entity_id", "event_type"]
+        required_metadata_fields = [
+            "source",
+            "userId",
+            "entity_type",
+            "entity_id",
+            "event_type",
+        ]
         for field in required_metadata_fields:
-            assert field in sent_message["metadata"], f"Metadata must include '{field}' field"
+            assert field in sent_message["metadata"], (
+                f"Metadata must include '{field}' field"
+            )
 
     @pytest.mark.asyncio
     async def test_message_timestamp_is_iso_8601_format(self):
@@ -423,16 +470,19 @@ class TestMessageFormatting:
             client_id="client-1",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act
             await broadcast_data_change(
                 event_type="deleted",
                 entity_type="task",
                 entity_id="task-123",
-                user_id="user-123"
+                user_id="user-123",
             )
 
         # Assert: Timestamp is ISO 8601
@@ -441,7 +491,7 @@ class TestMessageFormatting:
 
         # Should be parseable as ISO 8601
         try:
-            datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
             is_valid_iso = True
         except ValueError:
             is_valid_iso = False
@@ -464,17 +514,20 @@ class TestMessageFormatting:
             client_id="client-1",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act
             await broadcast_data_change(
                 event_type="completed",
                 entity_type="task",
                 entity_id="task-123",
                 user_id="user-123",
-                data={"completion_summary": "Done"}
+                data={"completion_summary": "Done"},
             )
 
         # Assert: Entity and event info present
@@ -519,7 +572,7 @@ class TestMultiTenantIsolation:
             client_id="client-a",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
         connections[websocket_user_b] = WebSocketConnection(
             websocket=websocket_user_b,
@@ -527,53 +580,75 @@ class TestMultiTenantIsolation:
             client_id="client-b",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
         # Mock authorization to only allow matching user IDs
-        async def strict_authorization(websocket, entity_type, entity_id, user_id, metadata):
-            connection = connections.get(websocket)  # Updated: use unified connections dict
+        async def strict_authorization(
+            websocket, entity_type, entity_id, user_id, metadata
+        ):
+            connection = connections.get(
+                websocket
+            )  # Updated: use unified connections dict
             return connection and connection.user.id == user_id
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', side_effect=strict_authorization):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            side_effect=strict_authorization,
+        ):
             # Act: Broadcast User A's task creation
             await broadcast_data_change(
                 event_type="created",
                 entity_type="task",
                 entity_id="task-a",
                 user_id="user-a",  # This is User A's task
-                data={"title": "User A's Task"}
+                data={"title": "User A's Task"},
             )
 
         # Assert: User A received data, User B received error (updated expectation)
-        assert websocket_user_a.send_json.called, "User A should receive their own notification"
-        assert websocket_user_b.send_json.called, "User B should receive error notification"
+        assert websocket_user_a.send_json.called, (
+            "User A should receive their own notification"
+        )
+        assert websocket_user_b.send_json.called, (
+            "User B should receive error notification"
+        )
 
         # Verify User B got error message, not data
         user_b_message = websocket_user_b.send_json.call_args[0][0]
-        assert user_b_message["type"] == "error", "User B should receive error type message"
+        assert user_b_message["type"] == "error", (
+            "User B should receive error type message"
+        )
 
         # Reset mocks for next test
         websocket_user_a.send_json.reset_mock()
         websocket_user_b.send_json.reset_mock()
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', side_effect=strict_authorization):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            side_effect=strict_authorization,
+        ):
             # Act: Broadcast User B's task creation
             await broadcast_data_change(
                 event_type="created",
                 entity_type="task",
                 entity_id="task-b",
                 user_id="user-b",  # This is User B's task
-                data={"title": "User B's Task"}
+                data={"title": "User B's Task"},
             )
 
         # Assert: User B received data, User A received error (updated expectation)
-        assert websocket_user_a.send_json.called, "User A should receive error notification"
-        assert websocket_user_b.send_json.called, "User B should receive their own notification"
+        assert websocket_user_a.send_json.called, (
+            "User A should receive error notification"
+        )
+        assert websocket_user_b.send_json.called, (
+            "User B should receive their own notification"
+        )
 
         # Verify User A got error message, not data
         user_a_message = websocket_user_a.send_json.call_args[0][0]
-        assert user_a_message["type"] == "error", "User A should receive error type message"
+        assert user_a_message["type"] == "error", (
+            "User A should receive error type message"
+        )
 
     @pytest.mark.asyncio
     async def test_same_user_multiple_connections_all_receive_notification(self):
@@ -594,7 +669,7 @@ class TestMultiTenantIsolation:
             client_id="client-1",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
         connections[websocket2] = WebSocketConnection(
             websocket=websocket2,
@@ -602,7 +677,7 @@ class TestMultiTenantIsolation:
             client_id="client-2",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
         connections[websocket3] = WebSocketConnection(
             websocket=websocket3,
@@ -610,17 +685,20 @@ class TestMultiTenantIsolation:
             client_id="client-3",
             subscription={"scope": "all"},
             connected_at=datetime.now(),
-            last_activity=datetime.now()
+            last_activity=datetime.now(),
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act: Broadcast notification for this user
             await broadcast_data_change(
                 event_type="updated",
                 entity_type="task",
                 entity_id="task-123",
                 user_id="user-123",
-                data={"status": "in_progress"}
+                data={"status": "in_progress"},
             )
 
         # Assert: All 3 connections received the notification

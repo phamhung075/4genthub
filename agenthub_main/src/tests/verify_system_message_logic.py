@@ -4,6 +4,7 @@ Verification script for WebSocket system message authorization logic.
 This verifies the logical flow without requiring database connectivity.
 """
 
+
 def verify_authorization_logic():
     """Verify the authorization logic flow is correct."""
 
@@ -11,7 +12,9 @@ def verify_authorization_logic():
     print("=" * 60)
 
     # Simulate the authorization logic from our implementation
-    def simulate_is_user_authorized_for_message(connection_user_id, triggering_user_id, entity_type, owns_resource=False):
+    def simulate_is_user_authorized_for_message(
+        connection_user_id, triggering_user_id, entity_type, owns_resource=False
+    ):
         """Simulate the authorization logic without database dependencies."""
 
         # Rule 1: Users always receive messages about their own actions
@@ -38,7 +41,7 @@ def verify_authorization_logic():
             "triggering_user_id": "user123",
             "entity_type": "task",
             "owns_resource": True,  # Not used for own messages
-            "expected": True
+            "expected": True,
         },
         {
             "name": "User blocked from other user's messages",
@@ -46,7 +49,7 @@ def verify_authorization_logic():
             "triggering_user_id": "user456",
             "entity_type": "task",
             "owns_resource": False,
-            "expected": False
+            "expected": False,
         },
         {
             "name": "System message to resource owner",
@@ -54,7 +57,7 @@ def verify_authorization_logic():
             "triggering_user_id": "system",
             "entity_type": "task",
             "owns_resource": True,
-            "expected": True
+            "expected": True,
         },
         {
             "name": "System message blocked from non-owner",
@@ -62,8 +65,8 @@ def verify_authorization_logic():
             "triggering_user_id": "system",
             "entity_type": "task",
             "owns_resource": False,
-            "expected": False
-        }
+            "expected": False,
+        },
     ]
 
     all_passed = True
@@ -72,16 +75,18 @@ def verify_authorization_logic():
         print(f"\nTest {i}: {test_case['name']}")
 
         result, reason = simulate_is_user_authorized_for_message(
-            connection_user_id=test_case['connection_user_id'],
-            triggering_user_id=test_case['triggering_user_id'],
-            entity_type=test_case['entity_type'],
-            owns_resource=test_case['owns_resource']
+            connection_user_id=test_case["connection_user_id"],
+            triggering_user_id=test_case["triggering_user_id"],
+            entity_type=test_case["entity_type"],
+            owns_resource=test_case["owns_resource"],
         )
 
-        expected = test_case['expected']
+        expected = test_case["expected"]
         status = "✅ PASSED" if result == expected else "❌ FAILED"
 
-        print(f"  Input: user={test_case['connection_user_id']}, trigger={test_case['triggering_user_id']}, owns={test_case['owns_resource']}")
+        print(
+            f"  Input: user={test_case['connection_user_id']}, trigger={test_case['triggering_user_id']}, owns={test_case['owns_resource']}"
+        )
         print(f"  Result: {result} (Expected: {expected})")
         print(f"  Reason: {reason}")
         print(f"  Status: {status}")
@@ -112,6 +117,7 @@ def verify_authorization_logic():
         print("❌ Some logic tests failed!")
 
     return all_passed
+
 
 if __name__ == "__main__":
     verify_authorization_logic()

@@ -42,12 +42,14 @@ from fastmcp.task_management.application.use_cases.create_task import CreateTask
 # - git_branch_id: created from UUID and stored in database
 # - user_id: "default_id"
 
+
 @pytest.fixture
 def task_repository(shared_test_db, user_id):
     """Create real task repository for integration tests."""
     from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
         ORMTaskRepository,
     )
+
     return ORMTaskRepository(session=None, user_id=user_id)
 
 
@@ -57,6 +59,7 @@ def subtask_repository(shared_test_db, user_id):
     from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
         ORMSubtaskRepository,
     )
+
     return ORMSubtaskRepository(session=None, user_id=user_id)
 
 
@@ -66,6 +69,7 @@ def git_branch_repository(shared_test_db, user_id):
     from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
         ORMGitBranchRepository,
     )
+
     return ORMGitBranchRepository(session=None, user_id=user_id)
 
 
@@ -75,6 +79,7 @@ def create_task_use_case(task_repository):
     from fastmcp.task_management.application.use_cases.create_task import (
         CreateTaskUseCase,
     )
+
     return CreateTaskUseCase(task_repository=task_repository)
 
 
@@ -84,9 +89,9 @@ def add_subtask_use_case(task_repository, subtask_repository):
     from fastmcp.task_management.application.use_cases.add_subtask import (
         AddSubtaskUseCase,
     )
+
     return AddSubtaskUseCase(
-        task_repository=task_repository,
-        subtask_repository=subtask_repository
+        task_repository=task_repository, subtask_repository=subtask_repository
     )
 
 
@@ -110,7 +115,7 @@ def sample_task(
         due_date="2025-12-31",
     )
     result = create_task_use_case.execute(request)
-    return result.task if hasattr(result, 'task') else result
+    return result.task if hasattr(result, "task") else result
 
 
 @pytest.fixture
@@ -124,8 +129,8 @@ def task_with_subtasks(
     for i in range(3):
         request = AddSubtaskRequest(
             task_id=sample_task.id,
-            title=f"Subtask {i+1}",
-            description=f"Test subtask {i+1}",
+            title=f"Subtask {i + 1}",
+            description=f"Test subtask {i + 1}",
             user_id=user_id,
         )
         add_subtask_use_case.execute(request)
@@ -147,7 +152,9 @@ class TestTaskAPIContractBasicFields:
         # Verify it's a valid UUID format
         try:
             uuid4_obj = uuid4()
-            uuid4_obj = type(uuid4_obj)(sample_task.id)  # Will raise ValueError if invalid
+            uuid4_obj = type(uuid4_obj)(
+                sample_task.id
+            )  # Will raise ValueError if invalid
         except ValueError:
             pytest.fail(f"Task id '{sample_task.id}' is not a valid UUID")
 
@@ -237,17 +244,25 @@ class TestTaskAPIContractTimestamps:
         if isinstance(sample_task.created_at, datetime):
             # If it's a datetime object, verify it can be serialized to ISO format
             iso_string = sample_task.created_at.isoformat()
-            assert "T" in iso_string, "created_at datetime must serialize to ISO 8601 format"
+            assert "T" in iso_string, (
+                "created_at datetime must serialize to ISO 8601 format"
+            )
         elif isinstance(sample_task.created_at, str):
             # If it's already a string, verify ISO 8601 format
-            assert "T" in sample_task.created_at, "created_at must be ISO 8601 format (contains 'T')"
+            assert "T" in sample_task.created_at, (
+                "created_at must be ISO 8601 format (contains 'T')"
+            )
             # Try to parse it to verify it's valid
             try:
                 datetime.fromisoformat(sample_task.created_at.replace("Z", "+00:00"))
             except (ValueError, AttributeError):
-                pytest.fail(f"created_at '{sample_task.created_at}' is not valid ISO 8601 format")
+                pytest.fail(
+                    f"created_at '{sample_task.created_at}' is not valid ISO 8601 format"
+                )
         else:
-            pytest.fail(f"created_at must be datetime or string, got {type(sample_task.created_at)}")
+            pytest.fail(
+                f"created_at must be datetime or string, got {type(sample_task.created_at)}"
+            )
 
     def test_task_updated_at_is_iso8601_string(self, sample_task: TaskResponse):
         """
@@ -263,17 +278,25 @@ class TestTaskAPIContractTimestamps:
         if isinstance(sample_task.updated_at, datetime):
             # If it's a datetime object, verify it can be serialized to ISO format
             iso_string = sample_task.updated_at.isoformat()
-            assert "T" in iso_string, "updated_at datetime must serialize to ISO 8601 format"
+            assert "T" in iso_string, (
+                "updated_at datetime must serialize to ISO 8601 format"
+            )
         elif isinstance(sample_task.updated_at, str):
             # If it's already a string, verify ISO 8601 format
-            assert "T" in sample_task.updated_at, "updated_at must be ISO 8601 format (contains 'T')"
+            assert "T" in sample_task.updated_at, (
+                "updated_at must be ISO 8601 format (contains 'T')"
+            )
             # Try to parse it to verify it's valid
             try:
                 datetime.fromisoformat(sample_task.updated_at.replace("Z", "+00:00"))
             except (ValueError, AttributeError):
-                pytest.fail(f"updated_at '{sample_task.updated_at}' is not valid ISO 8601 format")
+                pytest.fail(
+                    f"updated_at '{sample_task.updated_at}' is not valid ISO 8601 format"
+                )
         else:
-            pytest.fail(f"updated_at must be datetime or string, got {type(sample_task.updated_at)}")
+            pytest.fail(
+                f"updated_at must be datetime or string, got {type(sample_task.updated_at)}"
+            )
 
 
 class TestTaskAPIContractAssigneeFormat:
@@ -302,7 +325,9 @@ class TestTaskAPIContractMissingFields:
     These tests document what the backend SHOULD return but currently doesn't.
     """
 
-    @pytest.mark.xfail(reason="MISMATCH #1: project_id not returned by backend (see comparison matrix)")
+    @pytest.mark.xfail(
+        reason="MISMATCH #1: project_id not returned by backend (see comparison matrix)"
+    )
     def test_task_has_project_id_field(self, sample_task: TaskResponse):
         """
         Verify task response includes project_id field.
@@ -325,9 +350,13 @@ class TestTaskAPIContractMissingFields:
             uuid4_obj = uuid4()
             uuid4_obj = type(uuid4_obj)(sample_task.project_id)
         except ValueError:
-            pytest.fail(f"Task project_id '{sample_task.project_id}' is not a valid UUID")
+            pytest.fail(
+                f"Task project_id '{sample_task.project_id}' is not a valid UUID"
+            )
 
-    @pytest.mark.xfail(reason="MISMATCH #2: subtask_count not returned by backend (see comparison matrix)")
+    @pytest.mark.xfail(
+        reason="MISMATCH #2: subtask_count not returned by backend (see comparison matrix)"
+    )
     def test_task_has_subtask_count_field(self, task_with_subtasks: TaskResponse):
         """
         Verify task response includes computed subtask_count field.
@@ -349,12 +378,16 @@ class TestTaskAPIContractMissingFields:
         )
         # Verify count matches actual subtasks
         if hasattr(task_with_subtasks, "subtasks") and task_with_subtasks.subtasks:
-            assert task_with_subtasks.subtask_count == len(task_with_subtasks.subtasks), (
+            assert task_with_subtasks.subtask_count == len(
+                task_with_subtasks.subtasks
+            ), (
                 f"subtask_count ({task_with_subtasks.subtask_count}) must match "
                 f"actual subtasks length ({len(task_with_subtasks.subtasks)})"
             )
 
-    @pytest.mark.xfail(reason="MISMATCH #3: completed_subtasks not returned by backend (see comparison matrix)")
+    @pytest.mark.xfail(
+        reason="MISMATCH #3: completed_subtasks not returned by backend (see comparison matrix)"
+    )
     def test_task_has_completed_subtasks_field(self, task_with_subtasks: TaskResponse):
         """
         Verify task response includes computed completed_subtasks field.
@@ -374,7 +407,11 @@ class TestTaskAPIContractMissingFields:
         assert isinstance(task_with_subtasks.completed_subtasks, int), (
             "Task completed_subtasks must be integer"
         )
-        assert 0 <= task_with_subtasks.completed_subtasks <= task_with_subtasks.subtask_count, (
+        assert (
+            0
+            <= task_with_subtasks.completed_subtasks
+            <= task_with_subtasks.subtask_count
+        ), (
             f"completed_subtasks ({task_with_subtasks.completed_subtasks}) must be "
             f"between 0 and subtask_count ({task_with_subtasks.subtask_count})"
         )
@@ -386,7 +423,9 @@ class TestTaskAPIContractFieldNaming:
     Backend uses camelCase in JSON but snake_case in Python types.
     """
 
-    @pytest.mark.xfail(reason="MISMATCH #4: Field naming inconsistency (see comparison matrix)")
+    @pytest.mark.xfail(
+        reason="MISMATCH #4: Field naming inconsistency (see comparison matrix)"
+    )
     def test_task_uses_snake_case_for_estimated_effort(self, sample_task: TaskResponse):
         """
         Verify estimated_effort field uses snake_case naming consistently.
@@ -404,7 +443,11 @@ class TestTaskAPIContractFieldNaming:
         Reference: ai_docs/testing-qa/backend-frontend-type-comparison-matrix.md#mismatch-5
         """
         # Serialize to dict to check JSON field names
-        task_dict = sample_task.to_dict() if hasattr(sample_task, "to_dict") else sample_task.__dict__
+        task_dict = (
+            sample_task.to_dict()
+            if hasattr(sample_task, "to_dict")
+            else sample_task.__dict__
+        )
 
         # Should use snake_case for Python/TypeScript consistency
         assert "estimated_effort" in task_dict, (
@@ -414,7 +457,9 @@ class TestTaskAPIContractFieldNaming:
             "Task JSON should NOT use 'estimatedEffort' (camelCase)"
         )
 
-    @pytest.mark.xfail(reason="MISMATCH #5: Field naming inconsistency (see comparison matrix)")
+    @pytest.mark.xfail(
+        reason="MISMATCH #5: Field naming inconsistency (see comparison matrix)"
+    )
     def test_task_uses_snake_case_for_due_date(self, sample_task: TaskResponse):
         """
         Verify due_date field uses snake_case naming consistently.
@@ -432,7 +477,11 @@ class TestTaskAPIContractFieldNaming:
         Reference: ai_docs/testing-qa/backend-frontend-type-comparison-matrix.md#mismatch-6
         """
         # Serialize to dict to check JSON field names
-        task_dict = sample_task.to_dict() if hasattr(sample_task, "to_dict") else sample_task.__dict__
+        task_dict = (
+            sample_task.to_dict()
+            if hasattr(sample_task, "to_dict")
+            else sample_task.__dict__
+        )
 
         # Should use snake_case for Python/TypeScript consistency
         assert "due_date" in task_dict, (
@@ -451,25 +500,35 @@ class TestTaskAPIContractOptionalFields:
         assert hasattr(sample_task, "description"), "Task must have 'description' field"
         # Description is optional but should be string when present
         if sample_task.description is not None:
-            assert isinstance(sample_task.description, str), "Task description must be string"
+            assert isinstance(sample_task.description, str), (
+                "Task description must be string"
+            )
 
     def test_task_has_git_branch_id(self, sample_task: TaskResponse):
         """Verify git_branch_id is included (required for task creation)."""
-        assert hasattr(sample_task, "git_branch_id"), "Task must have 'git_branch_id' field"
-        assert isinstance(sample_task.git_branch_id, str), "Task git_branch_id must be string"
+        assert hasattr(sample_task, "git_branch_id"), (
+            "Task must have 'git_branch_id' field"
+        )
+        assert isinstance(sample_task.git_branch_id, str), (
+            "Task git_branch_id must be string"
+        )
 
     def test_task_has_context_id_when_context_exists(self, sample_task: TaskResponse):
         """Verify context_id is included when task has context."""
         assert hasattr(sample_task, "context_id"), "Task must have 'context_id' field"
         # context_id is optional but should be string when present
         if sample_task.context_id is not None:
-            assert isinstance(sample_task.context_id, str), "Task context_id must be string"
+            assert isinstance(sample_task.context_id, str), (
+                "Task context_id must be string"
+            )
 
 
 class TestTaskAPIContractCompleteResponse:
     """Test that task response matches complete frontend Task interface."""
 
-    def test_task_response_matches_frontend_task_interface(self, sample_task: TaskResponse):
+    def test_task_response_matches_frontend_task_interface(
+        self, sample_task: TaskResponse
+    ):
         """
         Verify task response includes ALL fields expected by frontend Task interface.
 
@@ -507,15 +566,20 @@ class TestTaskAPIContractCompleteResponse:
 
         # Verify required fields
         for field in required_fields:
-            assert hasattr(sample_task, field), f"Task MUST have required field '{field}'"
+            assert hasattr(sample_task, field), (
+                f"Task MUST have required field '{field}'"
+            )
 
         # Verify optional fields exist (even if None)
         for field in optional_fields:
-            assert hasattr(sample_task, field), f"Task should have optional field '{field}'"
+            assert hasattr(sample_task, field), (
+                f"Task should have optional field '{field}'"
+            )
 
         # Document missing fields (these will cause test to fail until implemented)
         missing_fields = [
-            field for field in expected_but_missing_fields
+            field
+            for field in expected_but_missing_fields
             if not hasattr(sample_task, field)
         ]
 

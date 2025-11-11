@@ -763,9 +763,7 @@ class TestFastMCPOpenAPI:
         # Should create a tool by default
         assert len(server._tool_manager._tools) > 0
 
-    def test_fastmcp_openapi_generate_default_name_with_operation_id(
-        self, mock_client
-    ):
+    def test_fastmcp_openapi_generate_default_name_with_operation_id(self, mock_client):
         """Test name generation from operation ID."""
         with patch("fastmcp.utilities.openapi.parse_openapi_to_http_routes") as mock:
             mock.return_value = []

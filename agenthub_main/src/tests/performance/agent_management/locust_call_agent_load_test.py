@@ -38,12 +38,16 @@ import time
 try:
     from locust import HttpUser, LoadTestShape, between, events, task
     from locust.runners import MasterRunner
+
     LOCUST_AVAILABLE = True
 except ImportError:
     # Locust not installed - this file can't be run as a load test
     # Set flag for pytest to skip collection
     import pytest
-    pytestmark = pytest.mark.skip(reason="locust not installed (optional dependency for load testing)")
+
+    pytestmark = pytest.mark.skip(
+        reason="locust not installed (optional dependency for load testing)"
+    )
     LOCUST_AVAILABLE = False
 
     # Define dummy classes and objects with nested attributes so the file doesn't crash during import
@@ -58,6 +62,7 @@ except ImportError:
 
     class HttpUser:
         wait_time = None
+
     class MasterRunner:
         pass
 
@@ -68,11 +73,13 @@ except ImportError:
     def task(weight_or_func=1):
         def decorator(func):
             return func
+
         if callable(weight_or_func):
             return weight_or_func
         return decorator
 
-    def between(*args): return lambda: 1
+    def between(*args):
+        return lambda: 1
 
     events = DummyEvents()
 
@@ -81,23 +88,23 @@ except ImportError:
 # ============================================================================
 
 AGENT_SLUGS = [
-    'coding-agent',
-    'test-orchestrator-agent',
-    'debugger-agent',
-    'system-architect-agent',
-    'shadcn-ui-expert-agent',
-    'security-auditor-agent',
-    'documentation-agent',
-    'devops-agent',
+    "coding-agent",
+    "test-orchestrator-agent",
+    "debugger-agent",
+    "system-architect-agent",
+    "shadcn-ui-expert-agent",
+    "security-auditor-agent",
+    "documentation-agent",
+    "devops-agent",
 ]
 
 # Performance metrics tracking
 metrics = {
-    'first_call_latencies': [],
-    'cached_call_latencies': [],
-    'total_requests': 0,
-    'successful_requests': 0,
-    'failed_requests': 0,
+    "first_call_latencies": [],
+    "cached_call_latencies": [],
+    "total_requests": 0,
+    "successful_requests": 0,
+    "failed_requests": 0,
 }
 
 
@@ -105,23 +112,24 @@ metrics = {
 # CUSTOM METRICS TRACKING
 # ============================================================================
 
+
 @events.request.add_listener
 def on_request(request_type, name, response_time, response_length, exception, **kwargs):
     """Track custom metrics for each request"""
     global metrics
 
-    metrics['total_requests'] += 1
+    metrics["total_requests"] += 1
 
     if exception:
-        metrics['failed_requests'] += 1
+        metrics["failed_requests"] += 1
     else:
-        metrics['successful_requests'] += 1
+        metrics["successful_requests"] += 1
 
         # Track latency by call type
-        if 'first_call' in name:
-            metrics['first_call_latencies'].append(response_time)
-        elif 'cached_call' in name:
-            metrics['cached_call_latencies'].append(response_time)
+        if "first_call" in name:
+            metrics["first_call_latencies"].append(response_time)
+        elif "cached_call" in name:
+            metrics["cached_call_latencies"].append(response_time)
 
 
 @events.test_stop.add_listener
@@ -131,9 +139,9 @@ def on_test_stop(environment, **kwargs):
     print("PERFORMANCE TEST SUMMARY")
     print("=" * 80)
 
-    total = metrics['total_requests']
-    success = metrics['successful_requests']
-    failed = metrics['failed_requests']
+    total = metrics["total_requests"]
+    success = metrics["successful_requests"]
+    failed = metrics["failed_requests"]
     success_rate = (success / total * 100) if total > 0 else 0
 
     print(f"\nTotal Requests: {total}")
@@ -141,33 +149,37 @@ def on_test_stop(environment, **kwargs):
     print(f"Failed: {failed} ({(100 - success_rate):.2f}%)")
 
     # Calculate percentiles
-    if metrics['first_call_latencies']:
-        first_call_sorted = sorted(metrics['first_call_latencies'])
+    if metrics["first_call_latencies"]:
+        first_call_sorted = sorted(metrics["first_call_latencies"])
         p50_first = percentile(first_call_sorted, 50)
         p95_first = percentile(first_call_sorted, 95)
         p99_first = percentile(first_call_sorted, 99)
 
         print("\nFirst Call Latency:")
         print(f"  P50: {p50_first:.2f}ms")
-        print(f"  P95: {p95_first:.2f}ms {'✅' if p95_first < 500 else '❌'} (target: <500ms)")
+        print(
+            f"  P95: {p95_first:.2f}ms {'✅' if p95_first < 500 else '❌'} (target: <500ms)"
+        )
         print(f"  P99: {p99_first:.2f}ms")
 
-    if metrics['cached_call_latencies']:
-        cached_sorted = sorted(metrics['cached_call_latencies'])
+    if metrics["cached_call_latencies"]:
+        cached_sorted = sorted(metrics["cached_call_latencies"])
         p50_cached = percentile(cached_sorted, 50)
         p95_cached = percentile(cached_sorted, 95)
         p99_cached = percentile(cached_sorted, 99)
 
         print("\nCached Call Latency:")
         print(f"  P50: {p50_cached:.2f}ms")
-        print(f"  P95: {p95_cached:.2f}ms {'✅' if p95_cached < 100 else '❌'} (target: <100ms)")
+        print(
+            f"  P95: {p95_cached:.2f}ms {'✅' if p95_cached < 100 else '❌'} (target: <100ms)"
+        )
         print(f"  P99: {p99_cached:.2f}ms")
 
     # Performance targets check
     targets_met = []
-    if metrics['first_call_latencies']:
+    if metrics["first_call_latencies"]:
         targets_met.append(p95_first < 500)
-    if metrics['cached_call_latencies']:
+    if metrics["cached_call_latencies"]:
         targets_met.append(p95_cached < 100)
     targets_met.append(success_rate > 99)
 
@@ -191,6 +203,7 @@ def percentile(sorted_list, p):
 # LOAD TEST USER CLASS
 # ============================================================================
 
+
 class AgentManagementUser(HttpUser):
     """
     Simulates a user calling the call_agent MCP tool repeatedly
@@ -208,9 +221,9 @@ class AgentManagementUser(HttpUser):
         """Initialize user session"""
         self.user_id = f"perftest-user-{random.randint(1, 1000)}"
         self.headers = {
-            'Content-Type': 'application/json',
-            'X-User-ID': self.user_id,
-            'Authorization': f'Bearer mock-token-{self.user_id}',
+            "Content-Type": "application/json",
+            "X-User-ID": self.user_id,
+            "Authorization": f"Bearer mock-token-{self.user_id}",
         }
 
     @task(3)
@@ -219,28 +232,28 @@ class AgentManagementUser(HttpUser):
         agent_slug = random.choice(AGENT_SLUGS)
 
         payload = {
-            'jsonrpc': '2.0',
-            'id': int(time.time() * 1000),
-            'method': 'tools/call',
-            'params': {
-                'name': 'call_agent',
-                'arguments': {
-                    'name_agent': agent_slug,
+            "jsonrpc": "2.0",
+            "id": int(time.time() * 1000),
+            "method": "tools/call",
+            "params": {
+                "name": "call_agent",
+                "arguments": {
+                    "name_agent": agent_slug,
                 },
             },
         }
 
         with self.client.post(
-            '/mcp',
+            "/mcp",
             json=payload,
             headers=self.headers,
             catch_response=True,
-            name=f"call_agent_first_call_{agent_slug}"
+            name=f"call_agent_first_call_{agent_slug}",
         ) as response:
             if response.status_code == 200:
                 try:
                     data = response.json()
-                    if 'result' in data:
+                    if "result" in data:
                         response.success()
                     else:
                         response.failure("Missing result in response")
@@ -255,33 +268,35 @@ class AgentManagementUser(HttpUser):
         agent_slug = random.choice(AGENT_SLUGS)
 
         payload = {
-            'jsonrpc': '2.0',
-            'id': int(time.time() * 1000),
-            'method': 'tools/call',
-            'params': {
-                'name': 'call_agent',
-                'arguments': {
-                    'name_agent': agent_slug,
+            "jsonrpc": "2.0",
+            "id": int(time.time() * 1000),
+            "method": "tools/call",
+            "params": {
+                "name": "call_agent",
+                "arguments": {
+                    "name_agent": agent_slug,
                 },
             },
         }
 
         with self.client.post(
-            '/mcp',
+            "/mcp",
             json=payload,
             headers=self.headers,
             catch_response=True,
-            name=f"call_agent_cached_call_{agent_slug}"
+            name=f"call_agent_cached_call_{agent_slug}",
         ) as response:
             if response.status_code == 200:
                 try:
                     data = response.json()
-                    if 'result' in data:
+                    if "result" in data:
                         # Check response time
                         if response.elapsed.total_seconds() * 1000 < 100:
                             response.success()
                         else:
-                            response.failure(f"Cached call too slow: {response.elapsed.total_seconds() * 1000:.2f}ms")
+                            response.failure(
+                                f"Cached call too slow: {response.elapsed.total_seconds() * 1000:.2f}ms"
+                            )
                     else:
                         response.failure("Missing result in response")
                 except json.JSONDecodeError:
@@ -295,6 +310,7 @@ class AgentManagementUser(HttpUser):
 # ============================================================================
 
 # LoadTestShape is imported at the top of the file
+
 
 class StepLoadShape(LoadTestShape):
     """
@@ -337,31 +353,32 @@ class StepLoadShape(LoadTestShape):
 # PERFORMANCE REPORT GENERATOR
 # ============================================================================
 
+
 def generate_performance_report(stats):
     """Generate comprehensive performance report"""
     report = {
-        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
-        'summary': {
-            'total_requests': stats.total.num_requests,
-            'num_failures': stats.total.num_failures,
-            'average_response_time': stats.total.avg_response_time,
-            'min_response_time': stats.total.min_response_time,
-            'max_response_time': stats.total.max_response_time,
-            'requests_per_second': stats.total.total_rps,
-            'failure_rate': stats.total.fail_ratio,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "summary": {
+            "total_requests": stats.total.num_requests,
+            "num_failures": stats.total.num_failures,
+            "average_response_time": stats.total.avg_response_time,
+            "min_response_time": stats.total.min_response_time,
+            "max_response_time": stats.total.max_response_time,
+            "requests_per_second": stats.total.total_rps,
+            "failure_rate": stats.total.fail_ratio,
         },
-        'endpoints': {},
+        "endpoints": {},
     }
 
     for name, stat in stats.entries.items():
-        report['endpoints'][name] = {
-            'num_requests': stat.num_requests,
-            'num_failures': stat.num_failures,
-            'avg_response_time': stat.avg_response_time,
-            'median_response_time': stat.median_response_time,
-            'percentile_95': stat.get_response_time_percentile(0.95),
-            'percentile_99': stat.get_response_time_percentile(0.99),
-            'requests_per_second': stat.total_rps,
+        report["endpoints"][name] = {
+            "num_requests": stat.num_requests,
+            "num_failures": stat.num_failures,
+            "avg_response_time": stat.avg_response_time,
+            "median_response_time": stat.median_response_time,
+            "percentile_95": stat.get_response_time_percentile(0.95),
+            "percentile_99": stat.get_response_time_percentile(0.99),
+            "requests_per_second": stat.total_rps,
         }
 
     return report

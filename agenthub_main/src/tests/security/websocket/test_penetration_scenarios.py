@@ -54,7 +54,7 @@ class AttackSimulator:
             "aud": "authenticated",
             "exp": datetime.now(UTC) + timedelta(minutes=expires_in_minutes),
             "iat": datetime.now(UTC),
-            **extra_claims
+            **extra_claims,
         }
         return jwt.encode(payload, self.secret_key, algorithm="HS256")
 
@@ -64,7 +64,7 @@ class AttackSimulator:
             id=user_id,
             email=email or f"{user_id}@test.com",
             username=user_id,
-            password_hash="dummy_hash_for_testing"
+            password_hash="dummy_hash_for_testing",
         )
 
     def log_attack_result(self, attack_name: str, success: bool, details: str):
@@ -73,10 +73,12 @@ class AttackSimulator:
             "attack": attack_name,
             "success": success,
             "timestamp": datetime.now(UTC).isoformat(),
-            "details": details
+            "details": details,
         }
         self.attack_results.append(result)
-        logger.info(f"ATTACK [{attack_name}]: {'SUCCESS' if success else 'BLOCKED'} - {details}")
+        logger.info(
+            f"ATTACK [{attack_name}]: {'SUCCESS' if success else 'BLOCKED'} - {details}"
+        )
 
 
 @pytest.fixture
@@ -112,7 +114,9 @@ class TestTokenExpiryPersistenceAttack:
         mock_websocket = AsyncMock()
         mock_websocket.query_params = {"token": valid_token}
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token"
+        ) as mock_validate:
             mock_validate.return_value = victim_user
 
             # Simulate connection establishment
@@ -133,7 +137,7 @@ class TestTokenExpiryPersistenceAttack:
                     entity_type="task",
                     entity_id="sensitive_task_123",
                     user_id="admin_user",  # Different user's data
-                    data={"classified": "secret_data"}
+                    data={"classified": "secret_data"},
                 )
 
                 # Check if expired connection received the data
@@ -141,22 +145,24 @@ class TestTokenExpiryPersistenceAttack:
                     attacker.log_attack_result(
                         "Token Expiry Persistence",
                         True,  # Attack succeeded
-                        "Expired connection received sensitive data"
+                        "Expired connection received sensitive data",
                     )
                     # This indicates a vulnerability
-                    pytest.fail("SECURITY BREACH: Expired connection received sensitive data")
+                    pytest.fail(
+                        "SECURITY BREACH: Expired connection received sensitive data"
+                    )
                 else:
                     attacker.log_attack_result(
                         "Token Expiry Persistence",
                         False,  # Attack blocked
-                        "Expired connection properly rejected"
+                        "Expired connection properly rejected",
                     )
 
             except Exception as e:
                 attacker.log_attack_result(
                     "Token Expiry Persistence",
                     False,
-                    f"Connection properly terminated: {e}"
+                    f"Connection properly terminated: {e}",
                 )
 
     @pytest.mark.asyncio
@@ -175,7 +181,9 @@ class TestTokenExpiryPersistenceAttack:
         connection_users[mock_websocket] = victim_user
 
         # Simulate refresh failure
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token"
+        ) as mock_validate:
             # First call succeeds, second fails (refresh failure)
             mock_validate.side_effect = [victim_user, None]
 
@@ -185,7 +193,7 @@ class TestTokenExpiryPersistenceAttack:
             attacker.log_attack_result(
                 "Token Refresh Failure",
                 False,  # Assuming fix is implemented
-                "Connection terminated on refresh failure"
+                "Connection terminated on refresh failure",
             )
 
 
@@ -218,7 +226,7 @@ class TestLogoutBypassAttack:
             entity_type="task",
             entity_id="task_after_logout",
             user_id=victim_id,
-            data={"should_not_receive": "this_data"}
+            data={"should_not_receive": "this_data"},
         )
 
         # Check if logged-out connection received data
@@ -226,14 +234,14 @@ class TestLogoutBypassAttack:
             attacker.log_attack_result(
                 "Logout Bypass",
                 True,  # Attack succeeded - vulnerability
-                "Logged-out user received data"
+                "Logged-out user received data",
             )
             # This indicates the fix needs to be implemented
         else:
             attacker.log_attack_result(
                 "Logout Bypass",
                 False,  # Attack blocked - fix working
-                "Logged-out user properly disconnected"
+                "Logged-out user properly disconnected",
             )
 
 
@@ -258,7 +266,9 @@ class TestSessionHijackingAttack:
         attacker_websocket = AsyncMock()
         attacker_websocket.query_params = {"token": stolen_token}
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token"
+        ) as mock_validate:
             # Token is technically valid but from wrong source
             victim_user = attacker.create_user(victim_id)
             mock_validate.return_value = victim_user
@@ -270,7 +280,7 @@ class TestSessionHijackingAttack:
             attacker.log_attack_result(
                 "Token Theft and Replay",
                 True,  # Currently possible without additional measures
-                "Stolen token accepted (requires additional security layers)"
+                "Stolen token accepted (requires additional security layers)",
             )
 
     @pytest.mark.asyncio
@@ -294,21 +304,25 @@ class TestSessionHijackingAttack:
         active_connections[f"{victim_id}_attacker"] = {attacker_ws}
 
         # Now there are 2 connections for same user
-        user_connections = sum(1 for client_id, ws_set in active_connections.items()
-                              if client_id.startswith(victim_id) for _ in ws_set)
+        user_connections = sum(
+            1
+            for client_id, ws_set in active_connections.items()
+            if client_id.startswith(victim_id)
+            for _ in ws_set
+        )
 
         if user_connections > 1:
             attacker.log_attack_result(
                 "Concurrent Session Hijacking",
                 True,  # Multiple sessions allowed
-                f"User has {user_connections} concurrent sessions"
+                f"User has {user_connections} concurrent sessions",
             )
             # This may or may not be a security issue depending on requirements
         else:
             attacker.log_attack_result(
                 "Concurrent Session Hijacking",
                 False,
-                "System blocks concurrent sessions"
+                "System blocks concurrent sessions",
             )
 
 
@@ -329,12 +343,16 @@ class TestPermissionEscalationAttack:
         connection_users[low_priv_ws] = low_priv_user
 
         # Mock database to simulate admin-only data
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
+        with patch(
+            "fastmcp.task_management.infrastructure.database.database_config.get_session"
+        ) as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
             # Admin task exists but not accessible to low_priv_user
-            mock_session.query.return_value.filter.return_value.first.return_value = None
+            mock_session.query.return_value.filter.return_value.first.return_value = (
+                None
+            )
 
             # Test authorization
             is_authorized = await is_user_authorized_for_message(
@@ -342,21 +360,21 @@ class TestPermissionEscalationAttack:
                 entity_type="task",
                 entity_id="admin_task_123",
                 triggering_user_id="admin_user",
-                metadata={}
+                metadata={},
             )
 
             if is_authorized:
                 attacker.log_attack_result(
                     "Permission Escalation",
                     True,  # Attack succeeded - vulnerability
-                    "Low-privilege user accessed admin data"
+                    "Low-privilege user accessed admin data",
                 )
                 pytest.fail("SECURITY BREACH: Unauthorized data access")
             else:
                 attacker.log_attack_result(
                     "Permission Escalation",
                     False,  # Attack blocked - security working
-                    "Authorization properly blocked unauthorized access"
+                    "Authorization properly blocked unauthorized access",
                 )
 
     @pytest.mark.asyncio
@@ -384,21 +402,21 @@ class TestPermissionEscalationAttack:
                 attacker.log_attack_result(
                     "Role Manipulation",
                     True,  # Attack succeeded - major vulnerability
-                    "Modified token with escalated privileges accepted"
+                    "Modified token with escalated privileges accepted",
                 )
                 pytest.fail("CRITICAL SECURITY BREACH: Modified token accepted")
             else:
                 attacker.log_attack_result(
                     "Role Manipulation",
                     False,  # Attack blocked
-                    "Modified token properly rejected"
+                    "Modified token properly rejected",
                 )
 
         except jwt.InvalidSignatureError:
             attacker.log_attack_result(
                 "Role Manipulation",
                 False,  # Attack blocked
-                "Token modification detected and rejected"
+                "Token modification detected and rejected",
             )
 
 
@@ -419,12 +437,16 @@ class TestCrossTenantAttack:
         connection_users[tenant_a_ws] = tenant_a_user
 
         # Mock tenant isolation
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
+        with patch(
+            "fastmcp.task_management.infrastructure.database.database_config.get_session"
+        ) as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
             # Tenant B data not accessible to tenant A user
-            mock_session.query.return_value.filter.return_value.first.return_value = None
+            mock_session.query.return_value.filter.return_value.first.return_value = (
+                None
+            )
 
             # Test cross-tenant authorization
             is_authorized = await is_user_authorized_for_message(
@@ -432,21 +454,21 @@ class TestCrossTenantAttack:
                 entity_type="task",
                 entity_id="tenant_b_task",
                 triggering_user_id="tenant_b_user",
-                metadata={"tenant_id": "tenant_b"}
+                metadata={"tenant_id": "tenant_b"},
             )
 
             if is_authorized:
                 attacker.log_attack_result(
                     "Cross-Tenant Data Access",
                     True,  # Attack succeeded - critical vulnerability
-                    "Tenant A user accessed Tenant B data"
+                    "Tenant A user accessed Tenant B data",
                 )
                 pytest.fail("CRITICAL SECURITY BREACH: Cross-tenant data access")
             else:
                 attacker.log_attack_result(
                     "Cross-Tenant Data Access",
                     False,  # Attack blocked
-                    "Tenant isolation properly enforced"
+                    "Tenant isolation properly enforced",
                 )
 
 
@@ -481,13 +503,13 @@ class TestPerformanceAttacks:
             attacker.log_attack_result(
                 "Connection Flooding",
                 True,  # Attack succeeded - no rate limiting
-                f"Created {connections_created} connections without limits"
+                f"Created {connections_created} connections without limits",
             )
         else:
             attacker.log_attack_result(
                 "Connection Flooding",
                 False,  # Attack mitigated
-                f"Connection limit enforced at {connections_created}"
+                f"Connection limit enforced at {connections_created}",
             )
 
     @pytest.mark.asyncio
@@ -511,7 +533,7 @@ class TestPerformanceAttacks:
                     entity_type="task",
                     entity_id=f"spam_{i}",
                     user_id="message_flooder",
-                    data={"spam": f"message_{i}"}
+                    data={"spam": f"message_{i}"},
                 )
                 messages_sent += 1
 
@@ -520,19 +542,19 @@ class TestPerformanceAttacks:
             pass
 
         duration = time.time() - start_time
-        rate = messages_sent / duration if duration > 0 else float('inf')
+        rate = messages_sent / duration if duration > 0 else float("inf")
 
         if rate > 100:  # More than 100 messages per second
             attacker.log_attack_result(
                 "Message Flooding",
                 True,  # No rate limiting
-                f"Sent {messages_sent} messages at {rate:.2f} msg/sec"
+                f"Sent {messages_sent} messages at {rate:.2f} msg/sec",
             )
         else:
             attacker.log_attack_result(
                 "Message Flooding",
                 False,  # Rate limiting working
-                f"Rate limited to {rate:.2f} msg/sec"
+                f"Rate limited to {rate:.2f} msg/sec",
             )
 
 
@@ -570,13 +592,13 @@ class TestSecurityHeadersBypass:
             attacker.log_attack_result(
                 "Header Injection",
                 False,  # All attacks blocked
-                "All header injection attempts blocked"
+                "All header injection attempts blocked",
             )
         else:
             attacker.log_attack_result(
                 "Header Injection",
                 True,  # Some attacks succeeded
-                f"{len(malicious_headers) - attacks_blocked} header injections succeeded"
+                f"{len(malicious_headers) - attacks_blocked} header injections succeeded",
             )
 
 

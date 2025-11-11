@@ -37,7 +37,7 @@ class TestParameterTypeCoercionError:
             "Test error",
             parameter="test_param",
             value="invalid_value",
-            expected_type="integer"
+            expected_type="integer",
         )
         assert str(error) == "Test error"
         assert error.parameter == "test_param"
@@ -88,7 +88,7 @@ class TestParameterTypeCoercer:
         """Test integer coercion with empty string."""
         with pytest.raises(ParameterTypeCoercionError) as exc_info:
             self.coercer.coerce_to_int("", "test_param")
-        
+
         assert "cannot be empty string" in str(exc_info.value)
         assert exc_info.value.parameter == "test_param"
         assert exc_info.value.expected_type == "integer"
@@ -97,7 +97,7 @@ class TestParameterTypeCoercer:
         """Test integer coercion with invalid string."""
         with pytest.raises(ParameterTypeCoercionError) as exc_info:
             self.coercer.coerce_to_int("not_a_number", "test_param")
-        
+
         assert "cannot be converted to integer" in str(exc_info.value)
         assert exc_info.value.parameter == "test_param"
         assert exc_info.value.value == "not_a_number"
@@ -113,7 +113,7 @@ class TestParameterTypeCoercer:
         """Test integer coercion with invalid type."""
         with pytest.raises(ParameterTypeCoercionError) as exc_info:
             self.coercer.coerce_to_int([], "test_param")
-        
+
         assert "cannot be converted to integer" in str(exc_info.value)
         assert exc_info.value.parameter == "test_param"
 
@@ -125,11 +125,11 @@ class TestParameterTypeCoercer:
     def test_coerce_to_bool_with_true_strings(self):
         """Test boolean coercion with true string values."""
         true_values = ["true", "1", "yes", "on", "enabled", "active", "y", "t"]
-        
+
         for value in true_values:
             result = self.coercer.coerce_to_bool(value, "test_param")
             assert result is True, f"Failed for value: {value}"
-            
+
             # Test case insensitive
             result = self.coercer.coerce_to_bool(value.upper(), "test_param")
             assert result is True, f"Failed for uppercase value: {value.upper()}"
@@ -137,11 +137,11 @@ class TestParameterTypeCoercer:
     def test_coerce_to_bool_with_false_strings(self):
         """Test boolean coercion with false string values."""
         false_values = ["false", "0", "no", "off", "disabled", "inactive", "n", "f"]
-        
+
         for value in false_values:
             result = self.coercer.coerce_to_bool(value, "test_param")
             assert result is False, f"Failed for value: {value}"
-            
+
             # Test case insensitive
             result = self.coercer.coerce_to_bool(value.upper(), "test_param")
             assert result is False, f"Failed for uppercase value: {value.upper()}"
@@ -155,7 +155,7 @@ class TestParameterTypeCoercer:
         """Test boolean coercion with invalid string."""
         with pytest.raises(ParameterTypeCoercionError) as exc_info:
             self.coercer.coerce_to_bool("maybe", "test_param")
-        
+
         assert "not a valid boolean string" in str(exc_info.value)
         assert exc_info.value.parameter == "test_param"
         assert exc_info.value.value == "maybe"
@@ -201,37 +201,36 @@ class TestParameterTypeCoercer:
             "limit": "10",
             "include_context": "true",
             "query": "search term",
-            "force": "false"
+            "force": "false",
         }
-        
+
         result = self.coercer.coerce_parameters(params)
-        
+
         expected = {
             "limit": 10,
             "include_context": True,
             "query": "search term",
-            "force": False
+            "force": False,
         }
-        
+
         assert result == expected
 
     def test_coerce_parameters_with_error(self):
         """Test coercing parameters with error."""
-        params = {
-            "limit": "invalid_number",
-            "include_context": "true"
-        }
-        
+        params = {"limit": "invalid_number", "include_context": "true"}
+
         with pytest.raises(ParameterTypeCoercionError):
             self.coercer.coerce_parameters(params)
 
     def test_coerce_parameters_unexpected_error(self):
         """Test coercing parameters with unexpected error."""
         params = {"limit": "5"}
-        
-        with patch.object(self.coercer, 'coerce_parameter', side_effect=ValueError("Unexpected error")):
+
+        with patch.object(
+            self.coercer, "coerce_parameter", side_effect=ValueError("Unexpected error")
+        ):
             result = self.coercer.coerce_parameters(params)
-            
+
             # Should keep original value when unexpected error occurs
             assert result == {"limit": "5"}
 
@@ -239,7 +238,7 @@ class TestParameterTypeCoercer:
         """Test class method for parameter coercion."""
         params = {"limit": "5", "include_context": "true"}
         result = ParameterTypeCoercer.coerce_parameter_types(params)
-        
+
         expected = {"limit": 5, "include_context": True}
         assert result == expected
 
@@ -272,39 +271,40 @@ class TestFlexibleSchemaValidator:
         """Test creating flexible schema with integer property."""
         original_schema = {
             "type": "object",
-            "properties": {
-                "limit": {"type": "integer"}
-            }
+            "properties": {"limit": {"type": "integer"}},
         }
-        
+
         result = self.validator.create_flexible_schema(original_schema)
-        
+
         assert "properties" in result
         assert "limit" in result["properties"]
         assert "anyOf" in result["properties"]["limit"]
-        
+
         any_of = result["properties"]["limit"]["anyOf"]
         assert {"type": "integer"} in any_of
-        assert any([schema.get("type") == "string" and "pattern" in schema for schema in any_of])
+        assert any(
+            [
+                schema.get("type") == "string" and "pattern" in schema
+                for schema in any_of
+            ]
+        )
 
     def test_create_flexible_schema_boolean(self):
         """Test creating flexible schema with boolean property."""
         original_schema = {
             "type": "object",
-            "properties": {
-                "enabled": {"type": "boolean"}
-            }
+            "properties": {"enabled": {"type": "boolean"}},
         }
-        
+
         result = self.validator.create_flexible_schema(original_schema)
-        
+
         assert "properties" in result
         assert "enabled" in result["properties"]
         assert "anyOf" in result["properties"]["enabled"]
-        
+
         any_of = result["properties"]["enabled"]["anyOf"]
         assert {"type": "boolean"} in any_of
-        
+
         # Check for string enum alternative
         string_schema = next((s for s in any_of if s.get("type") == "string"), None)
         assert string_schema is not None
@@ -317,18 +317,18 @@ class TestFlexibleSchemaValidator:
             "properties": {
                 "limit": {"type": "integer"},
                 "enabled": {"type": "boolean"},
-                "name": {"type": "string"}
-            }
+                "name": {"type": "string"},
+            },
         }
-        
+
         result = self.validator.create_flexible_schema(original_schema)
-        
+
         # Integer property should have anyOf
         assert "anyOf" in result["properties"]["limit"]
-        
+
         # Boolean property should have anyOf
         assert "anyOf" in result["properties"]["enabled"]
-        
+
         # String property should remain unchanged
         assert result["properties"]["name"] == {"type": "string"}
 
@@ -350,7 +350,7 @@ class TestEnhancedParameterValidator:
         """Test successful parameter validation."""
         params = {"limit": "5", "include_context": "true"}
         result = self.validator.validate_parameters("search", params)
-        
+
         assert result["success"] is True
         assert result["action"] == "search"
         assert result["original_params"] == params
@@ -361,7 +361,7 @@ class TestEnhancedParameterValidator:
         """Test parameter validation when no coercion is needed."""
         params = {"query": "search term"}
         result = self.validator.validate_parameters("search", params)
-        
+
         assert result["success"] is True
         assert result["coercion_applied"] is False
 
@@ -369,7 +369,7 @@ class TestEnhancedParameterValidator:
         """Test parameter validation with coercion error."""
         params = {"limit": "invalid"}
         result = self.validator.validate_parameters("search", params)
-        
+
         assert result["success"] is False
         assert result["error_code"] == "PARAMETER_COERCION_ERROR"
         assert result["parameter"] == "limit"
@@ -379,10 +379,14 @@ class TestEnhancedParameterValidator:
     def test_validate_parameters_unexpected_error(self):
         """Test parameter validation with unexpected error."""
         params = {"limit": "5"}
-        
-        with patch.object(self.validator.coercer, 'coerce_parameters', side_effect=ValueError("Unexpected")):
+
+        with patch.object(
+            self.validator.coercer,
+            "coerce_parameters",
+            side_effect=ValueError("Unexpected"),
+        ):
             result = self.validator.validate_parameters("search", params)
-            
+
             assert result["success"] is False
             assert result["error_code"] == "VALIDATION_ERROR"
             assert "hint" in result
@@ -395,7 +399,7 @@ class TestPublicAPI:
         """Test public coerce_parameter_types function."""
         params = {"limit": "5", "include_context": "true"}
         result = coerce_parameter_types(params)
-        
+
         expected = {"limit": 5, "include_context": True}
         assert result == expected
 
@@ -403,20 +407,16 @@ class TestPublicAPI:
         """Test public validate_parameters function."""
         params = {"limit": "10"}
         result = validate_parameters("search", params)
-        
+
         assert result["success"] is True
         assert result["coerced_params"] == {"limit": 10}
 
     def test_create_flexible_schema(self):
         """Test public create_flexible_schema function."""
-        original_schema = {
-            "properties": {
-                "limit": {"type": "integer"}
-            }
-        }
-        
+        original_schema = {"properties": {"limit": {"type": "integer"}}}
+
         result = create_flexible_schema(original_schema)
-        
+
         assert "anyOf" in result["properties"]["limit"]
 
     def test_module_exports(self):
@@ -424,7 +424,7 @@ class TestPublicAPI:
         from fastmcp.task_management.interface.utils.parameter_validation_fix import (
             __all__,
         )
-        
+
         expected_exports = [
             "ParameterTypeCoercer",
             "FlexibleSchemaValidator",
@@ -432,9 +432,9 @@ class TestPublicAPI:
             "ParameterTypeCoercionError",
             "coerce_parameter_types",
             "validate_parameters",
-            "create_flexible_schema"
+            "create_flexible_schema",
         ]
-        
+
         for symbol in expected_exports:
             assert symbol in __all__
 
@@ -442,15 +442,15 @@ class TestPublicAPI:
 class TestDemoFunction:
     """Test suite for demo function."""
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_demo_function(self, mock_print):
         """Test the demo function runs without error."""
         from fastmcp.task_management.interface.utils.parameter_validation_fix import (
             _demo,
         )
-        
+
         _demo()
-        
+
         # Verify print was called (demo should print results)
         assert mock_print.called
 
@@ -458,11 +458,12 @@ class TestDemoFunction:
         """Test running demo as main module."""
         import sys
         from unittest.mock import patch
-        
+
         # Mock sys.argv to simulate running as main
-        with patch.object(sys, 'argv', ['parameter_validation_fix.py']), \
-             patch('builtins.print'):
-            
+        with (
+            patch.object(sys, "argv", ["parameter_validation_fix.py"]),
+            patch("builtins.print"),
+        ):
             # Import the module - this should trigger the if __name__ == "__main__" block
             # Note: This test is more for coverage than functional testing
             # since we can't easily test the main execution in isolation
@@ -486,7 +487,7 @@ class TestEdgeCases:
         # Test with mixed case
         assert self.coercer.coerce_to_bool("True", "test_param") is True
         assert self.coercer.coerce_to_bool("FALSE", "test_param") is False
-        
+
         # Test with extra whitespace
         assert self.coercer.coerce_to_bool("  yes  ", "test_param") is True
         assert self.coercer.coerce_to_bool("  no  ", "test_param") is False
@@ -497,7 +498,7 @@ class TestEdgeCases:
         assert "limit" in ParameterTypeCoercer.INTEGER_PARAMETERS
         assert "timeout" in ParameterTypeCoercer.INTEGER_PARAMETERS
         assert "progress_percentage" in ParameterTypeCoercer.INTEGER_PARAMETERS
-        
+
         # Test boolean parameters
         assert "force" in ParameterTypeCoercer.BOOLEAN_PARAMETERS
         assert "include_context" in ParameterTypeCoercer.BOOLEAN_PARAMETERS
@@ -507,10 +508,10 @@ class TestEdgeCases:
         """Test that boolean value sets are comprehensive."""
         true_values = ParameterTypeCoercer.TRUE_VALUES
         false_values = ParameterTypeCoercer.FALSE_VALUES
-        
+
         # No overlap between true and false values
         assert len(true_values.intersection(false_values)) == 0
-        
+
         # Common values are included
         assert "true" in true_values
         assert "false" in false_values

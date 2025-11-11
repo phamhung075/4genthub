@@ -21,11 +21,7 @@ def mock_task_repository():
     repository = Mock()
 
     # Create a mock task
-    task = Task(
-        title="Parent Task",
-        description="Test parent task",
-        assignees=[]
-    )
+    task = Task(title="Parent Task", description="Test parent task", assignees=[])
     task.id = TaskId.from_string("test-task-id")
     task.subtasks = []
     # subtask_count is now a computed property from len(subtasks), no need to set it
@@ -49,8 +45,7 @@ def mock_subtask_repository():
 def add_subtask_use_case(mock_task_repository, mock_subtask_repository):
     """Create AddSubtaskUseCase instance with mocked dependencies."""
     return AddSubtaskUseCase(
-        task_repository=mock_task_repository,
-        subtask_repository=mock_subtask_repository
+        task_repository=mock_task_repository, subtask_repository=mock_subtask_repository
     )
 
 
@@ -63,7 +58,7 @@ class TestAddSubtaskWithStatusAndProgress:
             task_id="test-task-id",
             title="Test Subtask",
             description="Test description",
-            status="in_progress"
+            status="in_progress",
         )
 
         response = add_subtask_use_case.execute(request)
@@ -78,7 +73,7 @@ class TestAddSubtaskWithStatusAndProgress:
             task_id="test-task-id",
             title="Test Subtask",
             description="Test description",
-            progress_percentage=45
+            progress_percentage=45,
         )
 
         response = add_subtask_use_case.execute(request)
@@ -88,13 +83,15 @@ class TestAddSubtaskWithStatusAndProgress:
         # Should auto-set status to in_progress
         assert response.subtask["status"] == "in_progress"
 
-    def test_create_subtask_with_progress_percentage_100_auto_sets_done(self, add_subtask_use_case):
+    def test_create_subtask_with_progress_percentage_100_auto_sets_done(
+        self, add_subtask_use_case
+    ):
         """Test creating subtask with progress_percentage=100 auto-sets status to 'done'."""
         request = AddSubtaskRequest(
             task_id="test-task-id",
             title="Test Subtask",
             description="Test description",
-            progress_percentage=100
+            progress_percentage=100,
         )
 
         response = add_subtask_use_case.execute(request)
@@ -111,7 +108,7 @@ class TestAddSubtaskWithStatusAndProgress:
             title="Test Subtask",
             description="Test description",
             status="in_progress",
-            progress_percentage=75
+            progress_percentage=75,
         )
 
         response = add_subtask_use_case.execute(request)
@@ -123,9 +120,7 @@ class TestAddSubtaskWithStatusAndProgress:
     def test_create_subtask_without_status_defaults_to_todo(self, add_subtask_use_case):
         """Test creating subtask without status defaults to 'todo'."""
         request = AddSubtaskRequest(
-            task_id="test-task-id",
-            title="Test Subtask",
-            description="Test description"
+            task_id="test-task-id", title="Test Subtask", description="Test description"
         )
 
         response = add_subtask_use_case.execute(request)
@@ -134,13 +129,15 @@ class TestAddSubtaskWithStatusAndProgress:
         assert response.subtask["status"] == "todo"
         assert response.subtask["progress_percentage"] == 0
 
-    def test_create_subtask_with_progress_0_keeps_todo_status(self, add_subtask_use_case):
+    def test_create_subtask_with_progress_0_keeps_todo_status(
+        self, add_subtask_use_case
+    ):
         """Test creating subtask with progress_percentage=0 keeps status as 'todo'."""
         request = AddSubtaskRequest(
             task_id="test-task-id",
             title="Test Subtask",
             description="Test description",
-            progress_percentage=0
+            progress_percentage=0,
         )
 
         response = add_subtask_use_case.execute(request)
@@ -149,13 +146,15 @@ class TestAddSubtaskWithStatusAndProgress:
         assert response.subtask["status"] == "todo"
         assert response.subtask["progress_percentage"] == 0
 
-    def test_create_subtask_with_invalid_status_raises_error(self, add_subtask_use_case):
+    def test_create_subtask_with_invalid_status_raises_error(
+        self, add_subtask_use_case
+    ):
         """Test creating subtask with invalid status raises an error."""
         request = AddSubtaskRequest(
             task_id="test-task-id",
             title="Test Subtask",
             description="Test description",
-            status="invalid_status"
+            status="invalid_status",
         )
 
         with pytest.raises(ValueError):
@@ -170,7 +169,7 @@ class TestAddSubtaskWithStatusAndProgress:
             status="in_progress",
             progress_percentage=50,
             priority="high",
-            assignees=["coding-agent"]
+            assignees=["coding-agent"],
         )
 
         response = add_subtask_use_case.execute(request)

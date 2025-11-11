@@ -19,19 +19,12 @@ class TestWebSocketV2Integration:
         # Create a test message
         cascade = CascadeData(
             branches=[{"id": "branch-1", "name": "test"}],
-            tasks=[{"id": "task-1", "title": "test task"}]
+            tasks=[{"id": "task-1", "title": "test task"}],
         )
 
-        data = WSData(
-            primary={"id": "test-1", "value": "test"},
-            cascade=cascade
-        )
+        data = WSData(primary={"id": "test-1", "value": "test"}, cascade=cascade)
 
-        payload = WSPayload(
-            entity="task",
-            action="update",
-            data=data
-        )
+        payload = WSPayload(entity="task", action="update", data=data)
 
         message = WSMessage(
             id="msg-1",
@@ -40,7 +33,7 @@ class TestWebSocketV2Integration:
             timestamp=datetime.now().isoformat(),
             sequence=1,
             payload=payload,
-            metadata={"source": "mcp-ai"}
+            metadata={"source": "mcp-ai"},
         )
 
         # Verify structure
@@ -58,7 +51,7 @@ class TestWebSocketV2Integration:
         # Create mock dependencies
         mock_manager = Mock()
         mock_session_factory = Mock()
-        
+
         processor = BatchProcessor(mock_manager, mock_session_factory)
         messages = []
 
@@ -71,12 +64,9 @@ class TestWebSocketV2Integration:
                 "payload": {
                     "entity": "task",
                     "action": "update",
-                    "data": {
-                        "primary": {"id": f"task-{i}"},
-                        "cascade": {}
-                    }
+                    "data": {"primary": {"id": f"task-{i}"}, "cascade": {}},
                 },
-                "metadata": {"source": "mcp-ai"}
+                "metadata": {"source": "mcp-ai"},
             }
             messages.append(msg)
 
@@ -85,7 +75,7 @@ class TestWebSocketV2Integration:
         assert processor.max_batch_size == 50
         assert not processor.is_running
         assert processor.current_batch == []
-        
+
         # Test that processor can be created successfully
         assert processor is not None
         assert processor.manager == mock_manager
@@ -109,7 +99,7 @@ class TestWebSocketV2Integration:
         assert manager.session_factory == mock_session_factory
         # cascade_calculator is initialized to None and set during connect
         assert manager.cascade_calculator is None
-        
+
         # Test that the manager was created successfully
         assert manager is not None
 
@@ -122,13 +112,13 @@ class TestWebSocketV2Integration:
             branches=[
                 {"id": "branch-1", "name": "test"},
                 {"id": "branch-1", "name": "test"},  # Duplicate
-                {"id": "branch-2", "name": "test2"}
+                {"id": "branch-2", "name": "test2"},
             ],
             tasks=[
                 {"id": "task-1", "title": "task1"},
                 {"id": "task-1", "title": "task1"},  # Duplicate
-                {"id": "task-2", "title": "task2"}
-            ]
+                {"id": "task-2", "title": "task2"},
+            ],
         )
 
         # Deduplicate (this would be done in the batch processor)
@@ -158,7 +148,7 @@ class TestWebSocketV2Integration:
         mock_response = {
             "branch": {"id": "branch-1", "name": "test"},
             "tasks": [{"id": "task-1", "title": "test"}],
-            "summary": {"total_tasks": 1, "completed": 0}
+            "summary": {"total_tasks": 1, "completed": 0},
         }
 
         # Verify response structure
@@ -168,7 +158,7 @@ class TestWebSocketV2Integration:
 
         # Check if this replaces 3 calls
         old_api_calls = 3  # getBranch, getTasks, getSummary
-        new_api_calls = 1   # getBulkData
+        new_api_calls = 1  # getBulkData
 
         reduction = ((old_api_calls - new_api_calls) / old_api_calls) * 100
         assert reduction >= 66  # At least 66% reduction
@@ -186,13 +176,13 @@ class TestWebSocketV2Integration:
         # Test AI message (should be buffered)
         ai_message = {
             "metadata": {"source": "mcp-ai"},
-            "payload": {"entity": "task", "action": "update"}
+            "payload": {"entity": "task", "action": "update"},
         }
 
         # Test user message (should be immediate)
         user_message = {
             "metadata": {"source": "user"},
-            "payload": {"entity": "task", "action": "create"}
+            "payload": {"entity": "task", "action": "create"},
         }
 
         # Check routing logic (simplified)
@@ -208,7 +198,7 @@ class TestWebSocketV2Integration:
             "agenthub-frontend/src/services/websocketService.ts",
             "agenthub-frontend/src/utils/websocketDebug.ts",
             "agenthub-frontend/src/utils/websocketTest.ts",
-            "agenthub-frontend/src/hooks/useWebSocket.ts"  # old version
+            "agenthub-frontend/src/hooks/useWebSocket.ts",  # old version
         ]
 
         project_root = "/home/daihungpham/__projects__/4genthub"
@@ -221,7 +211,7 @@ class TestWebSocketV2Integration:
 if __name__ == "__main__":
     # Run tests
     print("🚀 Running WebSocket v2.0 Integration Tests")
-    print("="*50)
+    print("=" * 50)
 
     test = TestWebSocketV2Integration()
 
@@ -232,7 +222,7 @@ if __name__ == "__main__":
         ("Connection Manager", test.test_connection_manager),
         ("Cascade Deduplication", test.test_cascade_data_deduplication),
         ("Dual-track Routing", test.test_dual_track_routing),
-        ("No Legacy Code", test.test_no_legacy_code)
+        ("No Legacy Code", test.test_no_legacy_code),
     ]
 
     passed = 0
@@ -249,9 +239,9 @@ if __name__ == "__main__":
             failed += 1
 
     # Summary
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("📊 TEST SUMMARY")
-    print("="*50)
+    print("=" * 50)
     print(f"✅ Passed: {passed}/{len(tests)}")
     print(f"❌ Failed: {failed}/{len(tests)}")
 

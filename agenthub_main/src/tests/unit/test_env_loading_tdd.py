@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 @pytest.fixture
 def temp_env_file():
     """Create a temporary .env file for testing."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.env', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
         f.write("DATABASE_TYPE=postgresql\n")
         f.write("DATABASE_HOST=localhost\n")
         f.write("DATABASE_PORT=5432\n")
@@ -52,6 +52,7 @@ def mock_project_root_with_env(tmp_path, monkeypatch):
 
     # Patch the Settings class to use this temp directory
     from fastmcp import settings as settings_module
+
     original_project_root = settings_module.Settings._project_root
     settings_module.Settings._project_root = tmp_path
     settings_module.Settings._env_path = tmp_path / ".env"
@@ -76,8 +77,8 @@ class TestEnvironmentLoading:
         settings = Settings()
 
         # Should use env file from project root
-        env_file = settings.model_config.get('env_file')
-        assert '.env' in env_file
+        env_file = settings.model_config.get("env_file")
+        assert ".env" in env_file
         assert Path(env_file).exists()
 
     def test_settings_should_not_use_complex_path_resolution(self):
@@ -95,21 +96,24 @@ class TestEnvironmentLoading:
     def test_env_should_load_database_variables(self):
         """Environment should provide all required database variables."""
         # For unit tests, test the loading mechanism with mocks
-        with patch.dict(os.environ, {
-            'DATABASE_TYPE': 'postgresql',
-            'DATABASE_HOST': 'test-host',
-            'DATABASE_PORT': '5432',
-            'DATABASE_NAME': 'test-db',
-            'DATABASE_USER': 'test-user',
-            'DATABASE_PASSWORD': 'test-pass'
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "test-host",
+                "DATABASE_PORT": "5432",
+                "DATABASE_NAME": "test-db",
+                "DATABASE_USER": "test-user",
+                "DATABASE_PASSWORD": "test-pass",
+            },
+        ):
             required_vars = [
-                'DATABASE_TYPE',
-                'DATABASE_HOST',
-                'DATABASE_PORT',
-                'DATABASE_NAME',
-                'DATABASE_USER',
-                'DATABASE_PASSWORD'
+                "DATABASE_TYPE",
+                "DATABASE_HOST",
+                "DATABASE_PORT",
+                "DATABASE_NAME",
+                "DATABASE_USER",
+                "DATABASE_PASSWORD",
             ]
 
             for var in required_vars:
@@ -131,10 +135,10 @@ class TestEnvironmentLoading:
         assert config is not None
 
         # Should have a database type (postgresql or sqlite)
-        assert config.get('type') in ['postgresql', 'sqlite', 'supabase']
+        assert config.get("type") in ["postgresql", "sqlite", "supabase"]
 
         # Should have engine URL
-        engine_url = config.get('engine')
+        engine_url = config.get("engine")
         assert engine_url is not None
 
     def test_env_dev_should_not_interfere(self, mock_project_root_with_env):
@@ -143,10 +147,10 @@ class TestEnvironmentLoading:
 
         # Settings should work with either .env.dev or .env
         settings = Settings()
-        env_file = settings.model_config.get('env_file')
+        env_file = settings.model_config.get("env_file")
 
         # Should use one of the env files
-        assert '.env' in env_file
+        assert ".env" in env_file
         assert Path(env_file).exists()
 
     def test_application_should_connect_to_database(self):
@@ -158,12 +162,13 @@ class TestEnvironmentLoading:
     def test_env_should_override_defaults(self):
         """Environment variables should override default settings."""
         # Set a test env variable
-        original_port = os.environ.get('FASTMCP_PORT')
+        original_port = os.environ.get("FASTMCP_PORT")
 
         try:
-            os.environ['FASTMCP_PORT'] = '9999'
+            os.environ["FASTMCP_PORT"] = "9999"
 
             from fastmcp.settings import Settings
+
             settings = Settings()
 
             # Should use env value instead of default
@@ -171,19 +176,20 @@ class TestEnvironmentLoading:
         finally:
             # Cleanup - restore original value or delete
             if original_port is not None:
-                os.environ['FASTMCP_PORT'] = original_port
-            elif 'FASTMCP_PORT' in os.environ:
-                del os.environ['FASTMCP_PORT']
+                os.environ["FASTMCP_PORT"] = original_port
+            elif "FASTMCP_PORT" in os.environ:
+                del os.environ["FASTMCP_PORT"]
 
     def test_missing_env_file_should_use_defaults(self):
         """If .env file is missing, should still work with defaults."""
         # Skip this test in test mode since conftest.py sets test environment
         import sys
-        is_test_mode = 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ
+
+        is_test_mode = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
         if is_test_mode:
             pytest.skip("Test environment setup overrides env file loading")
 
-        with patch('pathlib.Path.exists', return_value=False):
+        with patch("pathlib.Path.exists", return_value=False):
             from fastmcp.settings import Settings
 
             # Should not crash
@@ -196,15 +202,17 @@ class TestEnvironmentLoading:
     def test_malformed_env_should_not_crash(self):
         """Malformed .env file should not crash the application."""
         # Create temp .env with malformed content
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.env', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
             f.write("INVALID LINE WITHOUT EQUALS\n")
             f.write("=VALUE_WITHOUT_KEY\n")
             f.write("VALID_KEY=valid_value\n")
             temp_env = f.name
 
         try:
-            with patch('fastmcp.settings.Settings.model_config',
-                      {'env_file': temp_env, 'env_prefixes': ['FASTMCP_']}):
+            with patch(
+                "fastmcp.settings.Settings.model_config",
+                {"env_file": temp_env, "env_prefixes": ["FASTMCP_"]},
+            ):
                 from fastmcp.settings import Settings
 
                 # Should not crash
@@ -216,20 +224,19 @@ class TestEnvironmentLoading:
     def test_env_loading_should_be_consistent(self):
         """Environment loading should be consistent across modules."""
         # Test environment consistency - verify test environment variables are accessible
-        with patch.dict(os.environ, {
-            'TEST_VAR': 'test_value'
-        }):
+        with patch.dict(os.environ, {"TEST_VAR": "test_value"}):
             # Test environment consistency for dynamically set vars
-            assert os.getenv('TEST_VAR') == 'test_value'
+            assert os.getenv("TEST_VAR") == "test_value"
 
             from fastmcp.task_management.infrastructure.database.database_config import (
                 DatabaseConfig,
             )
+
             db_config = DatabaseConfig()
             config = db_config.get_database_info()
 
             # DATABASE_TYPE is loaded from .env.dev at import time, so verify it works
-            assert config.get('type') in ['postgresql', 'sqlite', 'supabase']
+            assert config.get("type") in ["postgresql", "sqlite", "supabase"]
             # Config should be valid and usable
             assert config is not None
 
@@ -244,25 +251,25 @@ class TestEnvironmentPriority:
         from fastmcp.settings import Settings
 
         settings = Settings()
-        env_file = settings.model_config.get('env_file')
+        env_file = settings.model_config.get("env_file")
 
         project_root = Path(__file__).parent.parent.parent.parent.parent
         env_dev_file = project_root / ".env.dev"
 
         # If .env.dev exists, it should be used
         if env_dev_file.exists():
-            assert '.env.dev' in env_file
+            assert ".env.dev" in env_file
         else:
-            assert '.env' in env_file
+            assert ".env" in env_file
 
     def test_explicit_env_vars_override_file(self):
         """Explicitly set environment variables should override .env file."""
         # Save original value
-        original_host = os.environ.get('DATABASE_HOST')
+        original_host = os.environ.get("DATABASE_HOST")
 
         try:
             # Set explicit env var
-            os.environ['DATABASE_HOST'] = 'explicit-host'
+            os.environ["DATABASE_HOST"] = "explicit-host"
 
             from dotenv import load_dotenv
 
@@ -272,25 +279,26 @@ class TestEnvironmentPriority:
             load_dotenv(env_file, override=False)
 
             # Should keep explicit value
-            assert os.getenv('DATABASE_HOST') == 'explicit-host'
+            assert os.getenv("DATABASE_HOST") == "explicit-host"
         finally:
             # Cleanup - restore original value
             if original_host is not None:
-                os.environ['DATABASE_HOST'] = original_host
-            elif 'DATABASE_HOST' in os.environ:
-                del os.environ['DATABASE_HOST']
+                os.environ["DATABASE_HOST"] = original_host
+            elif "DATABASE_HOST" in os.environ:
+                del os.environ["DATABASE_HOST"]
 
     def test_env_var_types_conversion(self):
         """Test that env variables are correctly converted to appropriate types."""
         # Save original values
-        original_port = os.environ.get('FASTMCP_PORT')
-        original_debug = os.environ.get('FASTMCP_DEBUG')
+        original_port = os.environ.get("FASTMCP_PORT")
+        original_debug = os.environ.get("FASTMCP_DEBUG")
 
         try:
-            os.environ['FASTMCP_PORT'] = '8888'
-            os.environ['FASTMCP_DEBUG'] = 'true'
+            os.environ["FASTMCP_PORT"] = "8888"
+            os.environ["FASTMCP_DEBUG"] = "true"
 
             from fastmcp.settings import Settings
+
             settings = Settings()
 
             # Should convert to int
@@ -303,14 +311,14 @@ class TestEnvironmentPriority:
         finally:
             # Cleanup - restore original values
             if original_port is not None:
-                os.environ['FASTMCP_PORT'] = original_port
-            elif 'FASTMCP_PORT' in os.environ:
-                del os.environ['FASTMCP_PORT']
+                os.environ["FASTMCP_PORT"] = original_port
+            elif "FASTMCP_PORT" in os.environ:
+                del os.environ["FASTMCP_PORT"]
 
             if original_debug is not None:
-                os.environ['FASTMCP_DEBUG'] = original_debug
-            elif 'FASTMCP_DEBUG' in os.environ:
-                del os.environ['FASTMCP_DEBUG']
+                os.environ["FASTMCP_DEBUG"] = original_debug
+            elif "FASTMCP_DEBUG" in os.environ:
+                del os.environ["FASTMCP_DEBUG"]
 
 
 @pytest.mark.unit
@@ -320,13 +328,17 @@ class TestDatabaseConnection:
     def test_postgresql_connection_string_format(self):
         """Test PostgreSQL connection string is correctly formatted."""
         import sys
-        is_test_mode = 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ
+
+        is_test_mode = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
 
         if is_test_mode:
             # Test mode: skip PostgreSQL specific test
-            pytest.skip("PostgreSQL connection test skipped in test mode (using SQLite)")
+            pytest.skip(
+                "PostgreSQL connection test skipped in test mode (using SQLite)"
+            )
 
         from dotenv import load_dotenv
+
         project_root = Path(__file__).parent.parent.parent.parent.parent
         env_file = project_root / ".env"
         load_dotenv(env_file, override=True)
@@ -337,26 +349,28 @@ class TestDatabaseConnection:
 
         db_config = DatabaseConfig()
         config = db_config.get_database_info()
-        db_url = config.get('url') or config.get('database_url')
+        db_url = config.get("url") or config.get("database_url")
 
         # Should have PostgreSQL prefix
-        assert db_url.startswith('postgresql://') or db_url.startswith('postgresql+')
+        assert db_url.startswith("postgresql://") or db_url.startswith("postgresql+")
 
         # Should contain all components
-        assert '@' in db_url  # user:pass@host
-        assert ':' in db_url.split('@')[1]  # host:port
-        assert '/' in db_url.split('@')[1]  # port/database
+        assert "@" in db_url  # user:pass@host
+        assert ":" in db_url.split("@")[1]  # host:port
+        assert "/" in db_url.split("@")[1]  # port/database
 
     def test_database_pool_configuration(self):
         """Test database connection pool is properly configured."""
         import sys
-        is_test_mode = 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ
+
+        is_test_mode = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
 
         if is_test_mode:
             # Test mode: skip PostgreSQL pool test
             pytest.skip("PostgreSQL pool test skipped in test mode (using SQLite)")
 
         from dotenv import load_dotenv
+
         project_root = Path(__file__).parent.parent.parent.parent.parent
         env_file = project_root / ".env"
         load_dotenv(env_file, override=True)
@@ -369,13 +383,13 @@ class TestDatabaseConnection:
         config = db_config.get_database_info()
 
         # Should have pool settings
-        if 'pool_size' in config:
-            assert isinstance(config['pool_size'], int)
-            assert config['pool_size'] > 0
+        if "pool_size" in config:
+            assert isinstance(config["pool_size"], int)
+            assert config["pool_size"] > 0
 
-        if 'max_overflow' in config:
-            assert isinstance(config['max_overflow'], int)
-            assert config['max_overflow'] >= 0
+        if "max_overflow" in config:
+            assert isinstance(config["max_overflow"], int)
+            assert config["max_overflow"] >= 0
 
 
 @pytest.mark.unit
@@ -390,32 +404,36 @@ class TestErrorHandling:
         from fastmcp.task_management.infrastructure.database.database_config import (
             DatabaseConfig,
         )
+
         DatabaseConfig.reset_instance()
 
         # Clear environment and set only DATABASE_TYPE
         with patch.dict(os.environ, {}, clear=True):
-            os.environ['DATABASE_TYPE'] = 'postgresql'
-            os.environ['PYTEST_CURRENT_TEST'] = 'test'
+            os.environ["DATABASE_TYPE"] = "postgresql"
+            os.environ["PYTEST_CURRENT_TEST"] = "test"
             # Missing DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME
 
             # PostgreSQL requires connection details - should raise ValueError
-            with pytest.raises(ValueError, match="configuration missing|Required|DATABASE"):
+            with pytest.raises(
+                ValueError, match="configuration missing|Required|DATABASE"
+            ):
                 DatabaseConfig()
 
     def test_invalid_port_number(self):
         """Test handling of invalid port numbers."""
         import sys
-        is_test_mode = 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ
+
+        is_test_mode = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
 
         if is_test_mode:
             # Test mode: skip port validation for SQLite
             pytest.skip("Port validation test skipped in test mode (using SQLite)")
 
         # Save original port value
-        original_port = os.environ.get('DATABASE_PORT')
+        original_port = os.environ.get("DATABASE_PORT")
 
         try:
-            os.environ['DATABASE_PORT'] = 'not-a-number'
+            os.environ["DATABASE_PORT"] = "not-a-number"
 
             from fastmcp.task_management.infrastructure.database.database_config import (
                 DatabaseConfig,
@@ -431,9 +449,9 @@ class TestErrorHandling:
         finally:
             # Restore original port value
             if original_port is not None:
-                os.environ['DATABASE_PORT'] = original_port
-            elif 'DATABASE_PORT' in os.environ:
-                del os.environ['DATABASE_PORT']
+                os.environ["DATABASE_PORT"] = original_port
+            elif "DATABASE_PORT" in os.environ:
+                del os.environ["DATABASE_PORT"]
 
 
 if __name__ == "__main__":

@@ -25,10 +25,10 @@ class TestTemplateIdCreation:
     def test_create_from_uuid_without_hyphens(self):
         """Should accept UUID without hyphens and add them"""
         uuid_obj = uuid.uuid4()
-        uuid_no_hyphens = str(uuid_obj).replace('-', '')
+        uuid_no_hyphens = str(uuid_obj).replace("-", "")
         template_id = TemplateId(uuid_no_hyphens)
         assert template_id.value == str(uuid_obj)
-        assert '-' in template_id.value
+        assert "-" in template_id.value
 
     def test_reject_none_value(self):
         """Should raise ValueError when value is None"""
@@ -37,12 +37,16 @@ class TestTemplateIdCreation:
 
     def test_reject_empty_string(self):
         """Should raise ValueError when value is empty string"""
-        with pytest.raises(ValueError, match="TemplateId cannot be empty or whitespace"):
+        with pytest.raises(
+            ValueError, match="TemplateId cannot be empty or whitespace"
+        ):
             TemplateId("")
 
     def test_reject_whitespace_only(self):
         """Should raise ValueError when value is whitespace only"""
-        with pytest.raises(ValueError, match="TemplateId cannot be empty or whitespace"):
+        with pytest.raises(
+            ValueError, match="TemplateId cannot be empty or whitespace"
+        ):
             TemplateId("   ")
 
     def test_reject_non_string_value(self):
@@ -153,17 +157,17 @@ class TestTemplateIdStringRepresentation:
         template_id = TemplateId.generate_new()
         canonical = template_id.to_canonical_format()
         assert canonical == template_id.value
-        assert '-' in canonical
+        assert "-" in canonical
         assert len(canonical) == 36
 
     def test_to_hex_format(self):
         """Should return hex format without hyphens"""
         template_id = TemplateId.generate_new()
         hex_format = template_id.to_hex_format()
-        assert '-' not in hex_format
+        assert "-" not in hex_format
         assert len(hex_format) == 32
         # Verify it's the same UUID
-        assert hex_format == template_id.value.replace('-', '')
+        assert hex_format == template_id.value.replace("-", "")
 
 
 class TestTemplateIdImmutability:
@@ -178,5 +182,7 @@ class TestTemplateIdImmutability:
     def test_frozen_dataclass(self):
         """Should be a frozen dataclass"""
         template_id = TemplateId.generate_new()
-        assert template_id.__dataclass_fields__['value'].metadata.get('frozen', False) or \
-               getattr(template_id.__class__, '__dataclass_params__').frozen
+        assert (
+            template_id.__dataclass_fields__["value"].metadata.get("frozen", False)
+            or getattr(template_id.__class__, "__dataclass_params__").frozen
+        )

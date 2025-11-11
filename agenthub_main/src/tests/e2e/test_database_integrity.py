@@ -67,10 +67,14 @@ def mock_auth_context(user_id):
     Uses side_effect instead of return_value to ensure mock works correctly
     in ThreadPoolExecutor worker threads during concurrent operations.
     """
+
     def get_user_id(*args, **kwargs):
         return user_id
 
-    with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id', side_effect=get_user_id):
+    with patch(
+        "fastmcp.auth.middleware.request_context_middleware.get_current_user_id",
+        side_effect=get_user_id,
+    ):
         yield
 
 
@@ -98,6 +102,7 @@ def git_branch_repository(user_id):
     from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
         ORMGitBranchRepository,
     )
+
     return ORMGitBranchRepository(user_id=user_id)
 
 
@@ -105,8 +110,7 @@ def git_branch_repository(user_id):
 def task_facade(task_repository, git_branch_repository):
     """Create task facade with git branch repository for auto-creation support."""
     return TaskApplicationFacade(
-        task_repository=task_repository,
-        git_branch_repository=git_branch_repository
+        task_repository=task_repository, git_branch_repository=git_branch_repository
     )
 
 
@@ -114,8 +118,7 @@ def task_facade(task_repository, git_branch_repository):
 def subtask_facade(task_repository, subtask_repository):
     """Create subtask facade."""
     return SubtaskApplicationFacade(
-        task_repository=task_repository,
-        subtask_repository=subtask_repository
+        task_repository=task_repository, subtask_repository=subtask_repository
     )
 
 
@@ -125,9 +128,7 @@ def subtask_facade(task_repository, subtask_repository):
 class TestDatabaseIntegrityConstraints:
     """Test that database constraints are properly enforced."""
 
-    def test_cannot_create_task_with_invalid_git_branch_id(
-        self, task_facade
-    ):
+    def test_cannot_create_task_with_invalid_git_branch_id(self, task_facade):
         """
         DEPRECATED: This test is no longer valid due to context auto-creation.
 
@@ -141,22 +142,24 @@ class TestDatabaseIntegrityConstraints:
         invalid_git_branch_id = str(uuid4())
 
         # With auto-creation, this should now SUCCEED
-        result = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=invalid_git_branch_id,
-            title="Task with auto-created branch context",
-            description="E2E test for context auto-creation with invalid branch ID",
-            assignees=["@test-agent"]
-        ))
+        result = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=invalid_git_branch_id,
+                title="Task with auto-created branch context",
+                description="E2E test for context auto-creation with invalid branch ID",
+                assignees=["@test-agent"],
+            )
+        )
 
         # Should succeed due to context auto-creation
-        assert result["success"] is True, \
+        assert result["success"] is True, (
             "Task creation should succeed with auto-created branch context"
-        assert result["task"]["git_branch_id"] == invalid_git_branch_id, \
+        )
+        assert result["task"]["git_branch_id"] == invalid_git_branch_id, (
             "Task should have the specified git_branch_id"
+        )
 
-    def test_cannot_create_subtask_for_non_existent_parent(
-        self, subtask_facade
-    ):
+    def test_cannot_create_subtask_for_non_existent_parent(self, subtask_facade):
         """
         Verify cannot create subtask if parent task doesn't exist.
         """
@@ -164,15 +167,17 @@ class TestDatabaseIntegrityConstraints:
 
         # Try to create subtask for non-existent parent
         with pytest.raises(Exception) as exc_info:
-            subtask_facade.create_subtask(CreateSubtaskRequest(
-                task_id=fake_task_id,
-                title="Orphan subtask"
-            ))
+            subtask_facade.create_subtask(
+                CreateSubtaskRequest(task_id=fake_task_id, title="Orphan subtask")
+            )
 
         # Should fail due to missing parent
         error_message = str(exc_info.value).lower()
-        assert "not found" in error_message or "does not exist" in error_message or "invalid" in error_message, \
-            "Should reject subtask creation for non-existent parent"
+        assert (
+            "not found" in error_message
+            or "does not exist" in error_message
+            or "invalid" in error_message
+        ), "Should reject subtask creation for non-existent parent"
 
     def test_deleting_task_cascades_to_subtasks(
         self, task_facade, subtask_facade, git_branch_id, db_config
@@ -182,27 +187,28 @@ class TestDatabaseIntegrityConstraints:
         """
 
         # Create parent with subtasks
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Parent to test cascade",
-            description="E2E test for cascade deletion of subtasks",
-            assignees=["@test-agent"]
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Parent to test cascade",
+                description="E2E test for cascade deletion of subtasks",
+                assignees=["@test-agent"],
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
         # Create 3 subtasks
         for i in range(3):
-            subtask_facade.create_subtask(CreateSubtaskRequest(
-                task_id=task_id,
-                title=f"Subtask {i}"
-            ))
+            subtask_facade.create_subtask(
+                CreateSubtaskRequest(task_id=task_id, title=f"Subtask {i}")
+            )
 
         # Verify subtasks exist
         with db_config.get_session() as session:
             result = session.execute(
                 text("SELECT COUNT(*) FROM subtasks WHERE task_id = :task_id"),
-                {"task_id": task_id}
+                {"task_id": task_id},
             )
             assert result.scalar() == 3
 
@@ -213,10 +219,11 @@ class TestDatabaseIntegrityConstraints:
         with db_config.get_session() as session:
             result = session.execute(
                 text("SELECT COUNT(*) FROM subtasks WHERE task_id = :task_id"),
-                {"task_id": task_id}
+                {"task_id": task_id},
             )
-            assert result.scalar() == 0, \
+            assert result.scalar() == 0, (
                 "Subtasks should be cascade deleted with parent"
+            )
 
     def test_database_counts_match_application_counts(
         self, task_facade, subtask_facade, git_branch_id, db_config
@@ -231,22 +238,24 @@ class TestDatabaseIntegrityConstraints:
         """
 
         # Create task with 5 subtasks
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Count consistency test",
-            description="E2E test for database and application count consistency",
-            assignees=["@test-agent"]
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Count consistency test",
+                description="E2E test for database and application count consistency",
+                assignees=["@test-agent"],
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
         subtask_ids = []
         for i in range(5):
-            result = subtask_facade.create_subtask(CreateSubtaskRequest(
-                task_id=task_id,
-                title=f"Subtask {i}",
-                status="todo"
-            ))
+            result = subtask_facade.create_subtask(
+                CreateSubtaskRequest(
+                    task_id=task_id, title=f"Subtask {i}", status="todo"
+                )
+            )
             subtask_ids.append(result["subtask"]["id"])
 
         # Complete 3 subtasks
@@ -254,7 +263,7 @@ class TestDatabaseIntegrityConstraints:
             subtask_facade.complete_subtask(
                 task_id=task_id,
                 subtask_id=subtask_ids[i],
-                completion_summary=f"Done {i}"
+                completion_summary=f"Done {i}",
             )
 
         # Get application counts
@@ -272,21 +281,21 @@ class TestDatabaseIntegrityConstraints:
                     FROM subtasks
                     WHERE task_id = :task_id
                 """),
-                {"task_id": task_id}
+                {"task_id": task_id},
             )
             row = result.fetchone()
             db_total = row[0]
             db_completed = row[1] if row[1] is not None else 0
 
         # CRITICAL: Application and database must match
-        assert app_total == db_total, \
+        assert app_total == db_total, (
             f"Application shows {app_total} subtasks, database shows {db_total}"
-        assert app_completed == db_completed, \
+        )
+        assert app_completed == db_completed, (
             f"Application shows {app_completed} completed, database shows {db_completed}"
+        )
 
-    def test_context_auto_creation_on_task_creation(
-        self, task_facade, db_config
-    ):
+    def test_context_auto_creation_on_task_creation(self, task_facade, db_config):
         """
         Verify that branch context is automatically created when creating a task
         with a git_branch_id that has no existing context.
@@ -300,23 +309,26 @@ class TestDatabaseIntegrityConstraints:
         with db_config.get_session() as session:
             result = session.execute(
                 text("SELECT COUNT(*) FROM branch_contexts WHERE id = :id"),
-                {"id": new_branch_id}
+                {"id": new_branch_id},
             )
             assert result.scalar() == 0, "Context should not exist before task creation"
 
         # Create task - should auto-create branch context
-        task_result = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=new_branch_id,
-            title="Task triggering context auto-creation",
-            description="Testing context auto-creation when creating task with non-existent git_branch_id",
-            assignees=["@test-agent"]
-        ))
+        task_result = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=new_branch_id,
+                title="Task triggering context auto-creation",
+                description="Testing context auto-creation when creating task with non-existent git_branch_id",
+                assignees=["@test-agent"],
+            )
+        )
 
         # Verify task created successfully
         if not task_result["success"]:
             print(f"Task creation failed: {task_result}")
-        assert task_result["success"] is True, \
+        assert task_result["success"] is True, (
             f"Task creation should succeed with auto-created context. Error: {task_result.get('error', 'Unknown')}"
+        )
         assert task_result["task"]["git_branch_id"] == new_branch_id
 
         # Verify branch context was auto-created
@@ -327,7 +339,7 @@ class TestDatabaseIntegrityConstraints:
                     FROM branch_contexts
                     WHERE id = :id
                 """),
-                {"id": new_branch_id}
+                {"id": new_branch_id},
             )
             row = result.fetchone()
 
@@ -336,38 +348,42 @@ class TestDatabaseIntegrityConstraints:
 
             # Verify auto-creation metadata
             import json
-            context_data = json.loads(row[1]) if isinstance(row[1], str) else row[1]
-            assert context_data.get("auto_created") is True, \
-                "Context should be marked as auto-created"
-            assert context_data.get("source") == "task_creation_auto_create", \
-                "Context should have correct source metadata"
 
-    def test_context_auto_creation_includes_metadata(
-        self, task_facade, db_config
-    ):
+            context_data = json.loads(row[1]) if isinstance(row[1], str) else row[1]
+            assert context_data.get("auto_created") is True, (
+                "Context should be marked as auto-created"
+            )
+            assert context_data.get("source") == "task_creation_auto_create", (
+                "Context should have correct source metadata"
+            )
+
+    def test_context_auto_creation_includes_metadata(self, task_facade, db_config):
         """
         Verify auto-created contexts include proper metadata for traceability.
         """
         new_branch_id = str(uuid4())
 
         # Create task to trigger auto-creation
-        task_facade.create_task(CreateTaskRequest(
-            git_branch_id=new_branch_id,
-            title="Metadata test task",
-            description="E2E test for auto-created context metadata",
-            assignees=["@test-agent"]
-        ))
+        task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=new_branch_id,
+                title="Metadata test task",
+                description="E2E test for auto-created context metadata",
+                assignees=["@test-agent"],
+            )
+        )
 
         # Retrieve auto-created context
         with db_config.get_session() as session:
             result = session.execute(
                 text("SELECT data FROM branch_contexts WHERE id = :id"),
-                {"id": new_branch_id}
+                {"id": new_branch_id},
             )
             row = result.fetchone()
             assert row is not None
 
             import json
+
             context_data = json.loads(row[0]) if isinstance(row[0], str) else row[0]
 
             # Verify required metadata fields
@@ -390,35 +406,36 @@ class TestDatabaseIntegrityConstraints:
         with db_config.get_session() as session:
             result = session.execute(
                 text("SELECT created_at FROM branch_contexts WHERE id = :id"),
-                {"id": git_branch_id}
+                {"id": git_branch_id},
             )
             row = result.fetchone()
             initial_created_at = row[0] if row else None
 
         # Create task with existing branch context
-        task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Task with existing context",
-            description="E2E test for existing context preservation",
-            assignees=["@test-agent"]
-        ))
+        task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Task with existing context",
+                description="E2E test for existing context preservation",
+                assignees=["@test-agent"],
+            )
+        )
 
         # Verify context creation time unchanged
         with db_config.get_session() as session:
             result = session.execute(
                 text("SELECT created_at FROM branch_contexts WHERE id = :id"),
-                {"id": git_branch_id}
+                {"id": git_branch_id},
             )
             row = result.fetchone()
             final_created_at = row[0] if row else None
 
             if initial_created_at:
-                assert final_created_at == initial_created_at, \
+                assert final_created_at == initial_created_at, (
                     "Existing context should not be recreated"
+                )
 
-    def test_multiple_tasks_share_auto_created_context(
-        self, task_facade
-    ):
+    def test_multiple_tasks_share_auto_created_context(self, task_facade):
         """
         Verify multiple tasks can be created with the same auto-created branch context.
         """
@@ -427,20 +444,23 @@ class TestDatabaseIntegrityConstraints:
         # Create 3 tasks with same branch ID
         task_ids = []
         for i in range(3):
-            result = task_facade.create_task(CreateTaskRequest(
-                git_branch_id=shared_branch_id,
-                title=f"Task {i} sharing context",
-                description=f"E2E test for shared context - task {i}",
-                assignees=["@test-agent"]
-            ))
+            result = task_facade.create_task(
+                CreateTaskRequest(
+                    git_branch_id=shared_branch_id,
+                    title=f"Task {i} sharing context",
+                    description=f"E2E test for shared context - task {i}",
+                    assignees=["@test-agent"],
+                )
+            )
             assert result["success"] is True
             task_ids.append(result["task"]["id"])
 
         # Verify all tasks have same branch ID
         for task_id in task_ids:
             task_data = task_facade.get_task(task_id)["task"]
-            assert task_data["git_branch_id"] == shared_branch_id, \
+            assert task_data["git_branch_id"] == shared_branch_id, (
                 "All tasks should share the same git_branch_id"
+            )
 
     def test_context_auto_creation_preserves_foreign_key_integrity(
         self, task_facade, db_config
@@ -452,12 +472,14 @@ class TestDatabaseIntegrityConstraints:
         new_branch_id = str(uuid4())
 
         # Create task with auto-created context
-        task_result = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=new_branch_id,
-            title="Foreign key integrity test",
-            description="E2E test for foreign key integrity with auto-created context",
-            assignees=["@test-agent"]
-        ))
+        task_result = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=new_branch_id,
+                title="Foreign key integrity test",
+                description="E2E test for foreign key integrity with auto-created context",
+                assignees=["@test-agent"],
+            )
+        )
         task_id = task_result["task"]["id"]
 
         # Verify foreign key relationship exists
@@ -470,12 +492,14 @@ class TestDatabaseIntegrityConstraints:
                     LEFT JOIN branch_contexts bc ON t.git_branch_id = bc.id
                     WHERE t.id = :task_id
                 """),
-                {"task_id": task_id}
+                {"task_id": task_id},
             )
             row = result.fetchone()
 
             assert row is not None, "Task should exist"
-            assert str(row[0]) == new_branch_id, "Task should have correct git_branch_id"
+            assert str(row[0]) == new_branch_id, (
+                "Task should have correct git_branch_id"
+            )
             assert str(row[1]) == new_branch_id, "Context should exist with matching ID"
 
 
@@ -495,12 +519,14 @@ class TestConcurrentOperations:
         """
 
         # Create parent
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Concurrent creation test",
-            description="E2E test for concurrent subtask creation",
-            assignees=["@test-agent"]
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Concurrent creation test",
+                description="E2E test for concurrent subtask creation",
+                assignees=["@test-agent"],
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
@@ -515,15 +541,18 @@ class TestConcurrentOperations:
             will handle them. We track if the operation eventually succeeds.
             """
             try:
-                result = subtask_facade.create_subtask(CreateSubtaskRequest(
-                    task_id=task_id,
-                    title=f"Concurrent subtask {index}"
-                ))
+                result = subtask_facade.create_subtask(
+                    CreateSubtaskRequest(
+                        task_id=task_id, title=f"Concurrent subtask {index}"
+                    )
+                )
                 return result["success"]
             except Exception as e:
                 # Don't fail test immediately - log and return False
                 # The real test is whether correct count ends up in database
-                print(f"Exception on subtask {index} (may have succeeded via retry): {e}")
+                print(
+                    f"Exception on subtask {index} (may have succeeded via retry): {e}"
+                )
                 return False
 
         # Use ThreadPoolExecutor for concurrent creation
@@ -546,7 +575,7 @@ class TestConcurrentOperations:
         with db_config.get_session() as session:
             result = session.execute(
                 text("SELECT COUNT(*) FROM subtasks WHERE task_id = :task_id"),
-                {"task_id": task_id}
+                {"task_id": task_id},
             )
             db_count = result.scalar()
 
@@ -556,15 +585,19 @@ class TestConcurrentOperations:
         # Accept 80%+ success rate as passing to validate concurrent operation resilience.
         min_expected = int(num_subtasks * 0.8)  # 80% success rate minimum
 
-        assert final_count >= min_expected, \
+        assert final_count >= min_expected, (
             f"Expected at least {min_expected} subtasks ({min_expected}/{num_subtasks}), got {final_count}"
+        )
 
-        assert db_count >= min_expected, \
+        assert db_count >= min_expected, (
             f"Database shows {db_count} subtasks, expected at least {min_expected}"
+        )
 
         # Log actual success rate for monitoring
         success_rate = (final_count / num_subtasks) * 100
-        print(f"Concurrent creation success rate: {success_rate:.1f}% ({final_count}/{num_subtasks})")
+        print(
+            f"Concurrent creation success rate: {success_rate:.1f}% ({final_count}/{num_subtasks})"
+        )
 
     def test_concurrent_subtask_completion_maintains_accurate_completed_count(
         self, task_facade, subtask_facade, git_branch_id
@@ -574,22 +607,24 @@ class TestConcurrentOperations:
         """
 
         # Create parent with 10 subtasks
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Concurrent completion test",
-            description="E2E test for concurrent subtask completion",
-            assignees=["@test-agent"]
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Concurrent completion test",
+                description="E2E test for concurrent subtask completion",
+                assignees=["@test-agent"],
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
         subtask_ids = []
         for i in range(10):
-            result = subtask_facade.create_subtask(CreateSubtaskRequest(
-                task_id=task_id,
-                title=f"Subtask {i}",
-                status="todo"
-            ))
+            result = subtask_facade.create_subtask(
+                CreateSubtaskRequest(
+                    task_id=task_id, title=f"Subtask {i}", status="todo"
+                )
+            )
             subtask_ids.append(result["subtask"]["id"])
 
         # Complete all subtasks concurrently
@@ -601,17 +636,21 @@ class TestConcurrentOperations:
             will handle them. We track if the operation eventually succeeds.
             """
             try:
-                result = subtask_facade.complete_subtask({
-                    "task_id": task_id,
-                    "subtask_id": subtask_id,
-                    "completion_summary": f"Completed {index}",
-                    "action": "complete"
-                })
+                result = subtask_facade.complete_subtask(
+                    {
+                        "task_id": task_id,
+                        "subtask_id": subtask_id,
+                        "completion_summary": f"Completed {index}",
+                        "action": "complete",
+                    }
+                )
                 return result["success"]
             except Exception as e:
                 # Don't fail test immediately - log and return False
                 # The real test is whether correct completion count ends up in database
-                print(f"Exception completing subtask {index} (may have succeeded via retry): {e}")
+                print(
+                    f"Exception completing subtask {index} (may have succeeded via retry): {e}"
+                )
                 return False
 
         with ThreadPoolExecutor(max_workers=5) as executor:
@@ -637,12 +676,15 @@ class TestConcurrentOperations:
         # Session lifecycle management under high concurrency is complex.
         min_expected = int(10 * 0.8)  # 80% success rate minimum
 
-        assert completed_count >= min_expected, \
+        assert completed_count >= min_expected, (
             f"Expected at least {min_expected} completed subtasks ({min_expected}/10), got {completed_count}"
+        )
 
         # Log actual success rate for monitoring
         success_rate = (completed_count / 10) * 100
-        print(f"Concurrent completion success rate: {success_rate:.1f}% ({completed_count}/10)")
+        print(
+            f"Concurrent completion success rate: {success_rate:.1f}% ({completed_count}/10)"
+        )
 
     def test_concurrent_task_updates_dont_corrupt_data(
         self, task_facade, git_branch_id
@@ -654,14 +696,16 @@ class TestConcurrentOperations:
         """
 
         # Create task
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Concurrent update test",
-            description="E2E test for concurrent task updates",
-            status="todo",
-            priority="low",
-            assignees=["@test-agent"]
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Concurrent update test",
+                description="E2E test for concurrent task updates",
+                status="todo",
+                priority="low",
+                assignees=["@test-agent"],
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
@@ -672,27 +716,26 @@ class TestConcurrentOperations:
         def update_task(update_num):
             """Update the task."""
             try:
-                result = task_facade.update_task(UpdateTaskRequest(
-                    task_id=task_id,
-                    title=f"Updated by thread {update_num}",
-                    status="in_progress" if update_num % 2 == 0 else "todo",
-                    priority="high" if update_num > 5 else "medium",
-                    details=f"Update #{update_num}"
-                ))
+                result = task_facade.update_task(
+                    UpdateTaskRequest(
+                        task_id=task_id,
+                        title=f"Updated by thread {update_num}",
+                        status="in_progress" if update_num % 2 == 0 else "todo",
+                        priority="high" if update_num > 5 else "medium",
+                        details=f"Update #{update_num}",
+                    )
+                )
                 with lock:
-                    update_results.append({
-                        "success": result["success"],
-                        "update_num": update_num
-                    })
+                    update_results.append(
+                        {"success": result["success"], "update_num": update_num}
+                    )
                 return result["success"]
             except Exception as e:
                 print(f"Error in update {update_num}: {e}")
                 with lock:
-                    update_results.append({
-                        "success": False,
-                        "update_num": update_num,
-                        "error": str(e)
-                    })
+                    update_results.append(
+                        {"success": False, "update_num": update_num, "error": str(e)}
+                    )
                 return False
 
         # Perform 20 concurrent updates
@@ -701,24 +744,26 @@ class TestConcurrentOperations:
             [f.result() for f in as_completed(futures)]
 
         # All updates should complete (even if some fail due to conflicts)
-        assert len(update_results) == 20, \
-            "All update attempts should complete"
+        assert len(update_results) == 20, "All update attempts should complete"
 
         # At least some should succeed
         successful_updates = sum(1 for r in update_results if r["success"])
-        assert successful_updates > 0, \
-            "At least some concurrent updates should succeed"
+        assert successful_updates > 0, "At least some concurrent updates should succeed"
 
         # Final task should be in valid state (not corrupted)
         final_task = task_facade.get_task(task_id)["task"]
 
         # Verify critical fields are not corrupted
         assert final_task["id"] == task_id, "Task ID should not change"
-        assert final_task["git_branch_id"] == git_branch_id, "Branch ID should not change"
-        assert final_task["status"] in ["todo", "in_progress", "done"], \
+        assert final_task["git_branch_id"] == git_branch_id, (
+            "Branch ID should not change"
+        )
+        assert final_task["status"] in ["todo", "in_progress", "done"], (
             "Status should be valid value"
-        assert final_task["priority"] in ["low", "medium", "high", "critical"], \
+        )
+        assert final_task["priority"] in ["low", "medium", "high", "critical"], (
             "Priority should be valid value"
+        )
 
     def test_rapid_subtask_add_delete_maintains_consistency(
         self, task_facade, subtask_facade, git_branch_id
@@ -730,12 +775,14 @@ class TestConcurrentOperations:
         """
 
         # Create parent
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Rapid operations test",
-            description="E2E test for rapid add/delete operations consistency",
-            assignees=["@test-agent"]
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Rapid operations test",
+                description="E2E test for rapid add/delete operations consistency",
+                assignees=["@test-agent"],
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
@@ -744,46 +791,52 @@ class TestConcurrentOperations:
             # Create 5 subtasks
             subtask_ids = []
             for i in range(5):
-                result = subtask_facade.create_subtask(CreateSubtaskRequest(
-                    task_id=task_id,
-                    title=f"Cycle {cycle} Subtask {i}"
-                ))
+                result = subtask_facade.create_subtask(
+                    CreateSubtaskRequest(
+                        task_id=task_id, title=f"Cycle {cycle} Subtask {i}"
+                    )
+                )
                 subtask_ids.append(result["subtask"]["id"])
 
             # Verify count is 5
             check1 = task_facade.get_task(task_id)["task"]
-            assert check1["subtask_count"] == 5, \
+            assert check1["subtask_count"] == 5, (
                 f"Cycle {cycle}: Expected 5 subtasks after creation"
+            )
 
             # Delete 3 subtasks
             for i in range(3):
-                subtask_facade.delete_subtask({
-                    "task_id": task_id,
-                    "subtask_id": subtask_ids[i],
-                    "action": "delete"
-                })
+                subtask_facade.delete_subtask(
+                    {
+                        "task_id": task_id,
+                        "subtask_id": subtask_ids[i],
+                        "action": "delete",
+                    }
+                )
 
             # Verify count is 2
             check2 = task_facade.get_task(task_id)["task"]
-            assert check2["subtask_count"] == 2, \
+            assert check2["subtask_count"] == 2, (
                 f"Cycle {cycle}: Expected 2 subtasks after deletion"
+            )
 
             # Delete remaining
             for i in range(3, 5):
-                subtask_facade.delete_subtask({
-                    "task_id": task_id,
-                    "subtask_id": subtask_ids[i],
-                    "action": "delete"
-                })
+                subtask_facade.delete_subtask(
+                    {
+                        "task_id": task_id,
+                        "subtask_id": subtask_ids[i],
+                        "action": "delete",
+                    }
+                )
 
             # Verify count is 0
             check3 = task_facade.get_task(task_id)["task"]
-            assert check3["subtask_count"] == 0, \
+            assert check3["subtask_count"] == 0, (
                 f"Cycle {cycle}: Expected 0 subtasks after all deleted"
+            )
 
         # Final verification
         final = task_facade.get_task(task_id)["task"]
-        assert final["subtask_count"] == 0, \
-            "Final count should be 0 after all cycles"
-        assert final["completed_subtasks"] == 0, \
-            "Final completed count should be 0"
+        assert final["subtask_count"] == 0, "Final count should be 0 after all cycles"
+        assert final["completed_subtasks"] == 0, "Final completed count should be 0"

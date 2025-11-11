@@ -31,7 +31,7 @@ class MockRedisClient:
         ex: int | None = None,
         px: int | None = None,
         nx: bool = False,
-        xx: bool = False
+        xx: bool = False,
     ) -> bool:
         """Set a key-value pair with optional expiry.
 
@@ -259,10 +259,7 @@ class MockRedisClient:
     def _cleanup_expired(self):
         """Remove expired keys."""
         now = datetime.now(UTC)
-        expired_keys = [
-            key for key, expiry in self._expiry.items()
-            if expiry <= now
-        ]
+        expired_keys = [key for key, expiry in self._expiry.items() if expiry <= now]
 
         for key in expired_keys:
             if key in self._data:

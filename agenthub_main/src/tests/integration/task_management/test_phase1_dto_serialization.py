@@ -44,21 +44,25 @@ class TestPhase1TaskDTOSerialization:
             git_branch_id=uuid.uuid4(),
             status=TaskStatus.in_progress(),
             priority=Priority.high(),
-            assignees=["coding-agent"]
+            assignees=["coding-agent"],
         )
 
         # Serialize to dict
         task_dict = task.to_dict()
 
         # Should NOT have emoji fields
-        assert 'priority_emoji' not in task_dict, "priority_emoji should be removed in Phase 1"
-        assert 'status_emoji' not in task_dict, "status_emoji should be removed in Phase 1"
+        assert "priority_emoji" not in task_dict, (
+            "priority_emoji should be removed in Phase 1"
+        )
+        assert "status_emoji" not in task_dict, (
+            "status_emoji should be removed in Phase 1"
+        )
 
         # Should have base string fields
-        assert 'priority' in task_dict
-        assert task_dict['priority'] == 'high'
-        assert 'status' in task_dict
-        assert task_dict['status'] == 'in_progress'
+        assert "priority" in task_dict
+        assert task_dict["priority"] == "high"
+        assert "status" in task_dict
+        assert task_dict["status"] == "in_progress"
 
     def test_task_to_dict_excludes_count_fields(self):
         """
@@ -80,29 +84,35 @@ class TestPhase1TaskDTOSerialization:
             priority=Priority.medium(),
             assignees=["coding-agent", "debugger-agent", "test-orchestrator-agent"],
             subtasks=subtask_ids,
-            dependencies=dependency_ids
+            dependencies=dependency_ids,
         )
 
         # Serialize to dict
         task_dict = task.to_dict()
 
         # Should NOT have count fields
-        assert 'subtask_count' not in task_dict, "subtask_count should be removed in Phase 1"
-        assert 'assignees_count' not in task_dict, "assignees_count should be removed in Phase 1"
-        assert 'dependency_count' not in task_dict, "dependency_count should be removed in Phase 1"
+        assert "subtask_count" not in task_dict, (
+            "subtask_count should be removed in Phase 1"
+        )
+        assert "assignees_count" not in task_dict, (
+            "assignees_count should be removed in Phase 1"
+        )
+        assert "dependency_count" not in task_dict, (
+            "dependency_count should be removed in Phase 1"
+        )
 
         # Should have actual arrays
-        assert 'subtasks' in task_dict
-        assert isinstance(task_dict['subtasks'], list)
-        assert len(task_dict['subtasks']) == 3
+        assert "subtasks" in task_dict
+        assert isinstance(task_dict["subtasks"], list)
+        assert len(task_dict["subtasks"]) == 3
 
-        assert 'assignees' in task_dict
-        assert isinstance(task_dict['assignees'], list)
-        assert len(task_dict['assignees']) == 3
+        assert "assignees" in task_dict
+        assert isinstance(task_dict["assignees"], list)
+        assert len(task_dict["assignees"]) == 3
 
-        assert 'dependencies' in task_dict
-        assert isinstance(task_dict['dependencies'], list)
-        assert len(task_dict['dependencies']) == 2
+        assert "dependencies" in task_dict
+        assert isinstance(task_dict["dependencies"], list)
+        assert len(task_dict["dependencies"]) == 2
 
     def test_task_to_dict_includes_context_id(self):
         """
@@ -119,16 +129,16 @@ class TestPhase1TaskDTOSerialization:
             status=TaskStatus.todo(),
             priority=Priority.low(),
             assignees=["coding-agent"],
-            context_id=context_id
+            context_id=context_id,
         )
 
         # Serialize to dict
         task_dict = task.to_dict()
 
         # Should have context_id (might be UUID or string depending on serialization)
-        assert 'context_id' in task_dict
+        assert "context_id" in task_dict
         # Context ID could be UUID object or string - both are valid
-        assert str(task_dict['context_id']) == str(context_id)
+        assert str(task_dict["context_id"]) == str(context_id)
 
     def test_task_empty_arrays_serialize_correctly(self):
         """
@@ -143,20 +153,20 @@ class TestPhase1TaskDTOSerialization:
             git_branch_id=uuid.uuid4(),
             status=TaskStatus.todo(),
             priority=Priority.medium(),
-            assignees=["coding-agent"]
+            assignees=["coding-agent"],
         )
 
         # Serialize to dict
         task_dict = task.to_dict()
 
         # Should have empty arrays, not count fields
-        assert 'subtasks' in task_dict
-        assert task_dict['subtasks'] == []
-        assert 'subtask_count' not in task_dict
+        assert "subtasks" in task_dict
+        assert task_dict["subtasks"] == []
+        assert "subtask_count" not in task_dict
 
-        assert 'dependencies' in task_dict
-        assert task_dict['dependencies'] == []
-        assert 'dependency_count' not in task_dict
+        assert "dependencies" in task_dict
+        assert task_dict["dependencies"] == []
+        assert "dependency_count" not in task_dict
 
 
 class TestPhase1SubtaskDTOSerialization:
@@ -175,19 +185,23 @@ class TestPhase1SubtaskDTOSerialization:
             parent_task_id=TaskId(str(uuid.uuid4())),
             status=TaskStatus.in_progress(),
             priority=Priority.high(),
-            assignees=["coding-agent"]
+            assignees=["coding-agent"],
         )
 
         # Serialize to dict
         subtask_dict = subtask.to_dict()
 
         # Should NOT have emoji fields
-        assert 'priority_emoji' not in subtask_dict, "priority_emoji should be removed in Phase 1"
-        assert 'status_emoji' not in subtask_dict, "status_emoji should be removed in Phase 1"
+        assert "priority_emoji" not in subtask_dict, (
+            "priority_emoji should be removed in Phase 1"
+        )
+        assert "status_emoji" not in subtask_dict, (
+            "status_emoji should be removed in Phase 1"
+        )
 
         # Should have base string fields
-        assert 'priority' in subtask_dict
-        assert 'status' in subtask_dict
+        assert "priority" in subtask_dict
+        assert "status" in subtask_dict
 
     def test_subtask_serialization_consistency_with_task(self):
         """
@@ -204,7 +218,7 @@ class TestPhase1SubtaskDTOSerialization:
             parent_task_id=parent_task_id,
             status=TaskStatus.done(),
             priority=Priority.critical(),
-            assignees=["test-orchestrator-agent"]
+            assignees=["test-orchestrator-agent"],
         )
 
         # Serialize
@@ -212,19 +226,19 @@ class TestPhase1SubtaskDTOSerialization:
 
         # Same rules as Task:
         # 1. No emoji fields
-        assert 'priority_emoji' not in subtask_dict
-        assert 'status_emoji' not in subtask_dict
+        assert "priority_emoji" not in subtask_dict
+        assert "status_emoji" not in subtask_dict
 
         # 2. Base fields present
-        assert 'priority' in subtask_dict
-        assert 'status' in subtask_dict
-        assert 'title' in subtask_dict
-        assert 'description' in subtask_dict
+        assert "priority" in subtask_dict
+        assert "status" in subtask_dict
+        assert "title" in subtask_dict
+        assert "description" in subtask_dict
 
         # 3. Assignees is an array
-        assert 'assignees' in subtask_dict
-        assert isinstance(subtask_dict['assignees'], list)
-        assert len(subtask_dict['assignees']) == 1
+        assert "assignees" in subtask_dict
+        assert isinstance(subtask_dict["assignees"], list)
+        assert len(subtask_dict["assignees"]) == 1
 
 
 class TestPhase1IntegrationSummary:

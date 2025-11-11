@@ -21,15 +21,17 @@ class TestContextDelegationServiceInit:
     def test_initialization_with_defaults(self):
         """Test service initialization with default values."""
         service = ContextDelegationService()
-        
+
         assert service.repository is None
         assert service._user_id is None
 
     def test_initialization_with_parameters(self):
         """Test service initialization with custom parameters."""
         mock_repo = Mock()
-        service = ContextDelegationService(repository=mock_repo, user_id="test_user_123")
-        
+        service = ContextDelegationService(
+            repository=mock_repo, user_id="test_user_123"
+        )
+
         assert service.repository == mock_repo
         assert service._user_id == "test_user_123"
 
@@ -37,9 +39,9 @@ class TestContextDelegationServiceInit:
         """Test with_user method creates new instance with user context."""
         original_service = ContextDelegationService()
         user_id = "test_user_456"
-        
+
         user_scoped_service = original_service.with_user(user_id)
-        
+
         assert user_scoped_service._user_id == user_id
         assert user_scoped_service is not original_service
         assert isinstance(user_scoped_service, ContextDelegationService)
@@ -50,20 +52,19 @@ class TestContextDelegationServiceInit:
         mock_repo = Mock()
         mock_user_scoped_repo = Mock()
         mock_repo.with_user.return_value = mock_user_scoped_repo
-        
+
         result = service._get_user_scoped_repository(mock_repo)
-        
+
         assert result == mock_user_scoped_repo
         mock_repo.with_user.assert_called_once_with("test_user")
-
 
     def test_get_user_scoped_repository_no_user_context(self):
         """Test _get_user_scoped_repository returns original repo when no user context."""
         service = ContextDelegationService()  # No user_id
         mock_repo = Mock()
-        
+
         result = service._get_user_scoped_repository(mock_repo)
-        
+
         assert result == mock_repo
 
 
@@ -80,9 +81,9 @@ class TestDelegationDataClasses:
             delegated_data={"pattern": "auth_flow"},
             reason="Reusable authentication pattern",
             trigger_type="manual",
-            confidence_score=0.8
+            confidence_score=0.8,
         )
-        
+
         assert request.source_level == "task"
         assert request.source_id == "task_123"
         assert request.target_level == "project"
@@ -100,9 +101,9 @@ class TestDelegationDataClasses:
             target_level="project",
             target_id="proj_456",
             delegated_data={"data": "test"},
-            reason="Test reason"
+            reason="Test reason",
         )
-        
+
         assert request.trigger_type == "manual"  # Default value
         assert request.confidence_score is None  # Default value
 
@@ -113,9 +114,9 @@ class TestDelegationDataClasses:
             delegation_id="del_789",
             processed=True,
             approved=True,
-            impact_assessment={"score": 85}
+            impact_assessment={"score": 85},
         )
-        
+
         assert result.success is True
         assert result.delegation_id == "del_789"
         assert result.processed is True
@@ -124,11 +125,8 @@ class TestDelegationDataClasses:
 
     def test_delegation_result_defaults(self):
         """Test DelegationResult with default values."""
-        result = DelegationResult(
-            success=False,
-            delegation_id="del_fail"
-        )
-        
+        result = DelegationResult(success=False, delegation_id="del_fail")
+
         assert result.processed is False  # Default value
         assert result.approved is None  # Default value
         assert result.error_message is None  # Default value
@@ -141,43 +139,45 @@ class TestSyncDelegateContextMethod:
     def test_delegate_context_sync_wrapper_no_loop(self):
         """Test synchronous delegate_context wrapper when no event loop exists."""
         service = ContextDelegationService()
-        
+
         request = {
             "source_level": "task",
             "source_id": "task_123",
             "target_level": "project",
             "data": {"pattern": "test"},
-            "reason": "Test delegation"
+            "reason": "Test delegation",
         }
-        
-        with patch('asyncio.get_event_loop', side_effect=RuntimeError("No loop")):
-            with patch('asyncio.run') as mock_run:
+
+        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No loop")):
+            with patch("asyncio.run") as mock_run:
                 expected_result = {"success": True, "delegation_id": "del_123"}
                 mock_run.return_value = expected_result
-                
+
                 result = service.delegate_context(request)
-                
+
                 assert result == expected_result
                 mock_run.assert_called_once()
 
     def test_delegate_context_sync_wrapper_running_loop(self):
         """Test synchronous delegate_context wrapper when event loop is running."""
         service = ContextDelegationService()
-        
+
         request = {
             "source_level": "task",
             "source_id": "task_123",
             "target_level": "project",
-            "data": {"pattern": "test"}
+            "data": {"pattern": "test"},
         }
-        
+
         mock_loop = Mock()
         mock_loop.is_running.return_value = True
-        
-        with patch('asyncio.get_event_loop', return_value=mock_loop):
-            with patch('fastmcp.task_management.application.services.context_delegation_service.logger') as mock_logger:
+
+        with patch("asyncio.get_event_loop", return_value=mock_loop):
+            with patch(
+                "fastmcp.task_management.application.services.context_delegation_service.logger"
+            ) as mock_logger:
                 result = service.delegate_context(request)
-                
+
                 # Should return mock response when loop is running
                 assert result["success"] is True
                 assert "delegation_id" in result
@@ -186,16 +186,16 @@ class TestSyncDelegateContextMethod:
     def test_delegate_context_sync_wrapper_exception(self):
         """Test synchronous delegate_context wrapper exception handling."""
         service = ContextDelegationService()
-        
+
         request = {
             "source_level": "task",
             "source_id": "task_123",
-            "target_level": "project"
+            "target_level": "project",
         }
-        
-        with patch('asyncio.get_event_loop', side_effect=Exception("Unexpected error")):
+
+        with patch("asyncio.get_event_loop", side_effect=Exception("Unexpected error")):
             result = service.delegate_context(request)
-            
+
             assert result["success"] is False
             assert "error" in result
             assert result["status"] == "failed"
@@ -203,22 +203,22 @@ class TestSyncDelegateContextMethod:
     def test_delegate_context_target_id_resolution(self):
         """Test delegate_context resolves target_id correctly."""
         service = ContextDelegationService()
-        
+
         # Test global target
         request = {
             "source_level": "task",
             "source_id": "task_123",
             "target_level": "global",
-            "data": {"pattern": "test"}
+            "data": {"pattern": "test"},
         }
-        
-        with patch('asyncio.get_event_loop', side_effect=RuntimeError("No loop")):
-            with patch('asyncio.run') as mock_run:
-                with patch.object(service, 'process_delegation'):
+
+        with patch("asyncio.get_event_loop", side_effect=RuntimeError("No loop")):
+            with patch("asyncio.run") as mock_run:
+                with patch.object(service, "process_delegation"):
                     mock_run.return_value = {"success": True}
-                    
+
                     service.delegate_context(request)
-                    
+
                     # Should resolve global target_id to singleton
                     mock_run.assert_called_once()
 
@@ -231,28 +231,40 @@ class TestAsyncDelegationProcessing:
         """Test successful delegation processing."""
         mock_repo = AsyncMock()
         service = ContextDelegationService(repository=mock_repo)
-        
+
         # Mock successful validation
-        with patch.object(service, '_validate_delegation_request') as mock_validate:
+        with patch.object(service, "_validate_delegation_request") as mock_validate:
             mock_validate.return_value = {"valid": True, "errors": []}
-            
-            with patch.object(service, '_store_delegation_request') as mock_store:
+
+            with patch.object(service, "_store_delegation_request") as mock_store:
                 mock_store.return_value = "del_123"
-                
-                with patch.object(service, '_assess_delegation_impact') as mock_assess:
-                    mock_assess.return_value = {"score": 85, "recommendation": "auto_approve"}
-                    
-                    with patch.object(service, '_should_auto_approve') as mock_approve:
+
+                with patch.object(service, "_assess_delegation_impact") as mock_assess:
+                    mock_assess.return_value = {
+                        "score": 85,
+                        "recommendation": "auto_approve",
+                    }
+
+                    with patch.object(service, "_should_auto_approve") as mock_approve:
                         mock_approve.return_value = True
-                        
-                        with patch.object(service, '_execute_delegation') as mock_execute:
-                            mock_execute.return_value = {"success": True, "implemented": True}
-                            
+
+                        with patch.object(
+                            service, "_execute_delegation"
+                        ) as mock_execute:
+                            mock_execute.return_value = {
+                                "success": True,
+                                "implemented": True,
+                            }
+
                             result = await service.process_delegation(
-                                "task", "task_123", "project", "proj_456",
-                                {"pattern": "auth"}, "Reusable pattern"
+                                "task",
+                                "task_123",
+                                "project",
+                                "proj_456",
+                                {"pattern": "auth"},
+                                "Reusable pattern",
                             )
-        
+
         assert result["success"] is True
         assert result["delegation_id"] == "del_123"
         assert result["auto_approved"] is True
@@ -261,15 +273,22 @@ class TestAsyncDelegationProcessing:
     async def test_process_delegation_validation_failure(self):
         """Test delegation processing with validation failure."""
         service = ContextDelegationService()
-        
-        with patch.object(service, '_validate_delegation_request') as mock_validate:
-            mock_validate.return_value = {"valid": False, "errors": ["Invalid source level"]}
-            
+
+        with patch.object(service, "_validate_delegation_request") as mock_validate:
+            mock_validate.return_value = {
+                "valid": False,
+                "errors": ["Invalid source level"],
+            }
+
             result = await service.process_delegation(
-                "invalid", "task_123", "project", "proj_456",
-                {"data": "test"}, "Test reason"
+                "invalid",
+                "task_123",
+                "project",
+                "proj_456",
+                {"data": "test"},
+                "Test reason",
             )
-        
+
         assert result["success"] is False
         assert "Invalid delegation request" in result["error"]
         assert result["delegation_id"] is None
@@ -279,27 +298,37 @@ class TestAsyncDelegationProcessing:
         """Test delegation processing that requires manual review."""
         mock_repo = AsyncMock()
         service = ContextDelegationService(repository=mock_repo)
-        
-        with patch.object(service, '_validate_delegation_request') as mock_validate:
+
+        with patch.object(service, "_validate_delegation_request") as mock_validate:
             mock_validate.return_value = {"valid": True, "errors": []}
-            
-            with patch.object(service, '_store_delegation_request') as mock_store:
+
+            with patch.object(service, "_store_delegation_request") as mock_store:
                 mock_store.return_value = "del_456"
-                
-                with patch.object(service, '_assess_delegation_impact') as mock_assess:
-                    mock_assess.return_value = {"score": 50, "recommendation": "manual_review"}
-                    
-                    with patch.object(service, '_should_auto_approve') as mock_approve:
+
+                with patch.object(service, "_assess_delegation_impact") as mock_assess:
+                    mock_assess.return_value = {
+                        "score": 50,
+                        "recommendation": "manual_review",
+                    }
+
+                    with patch.object(service, "_should_auto_approve") as mock_approve:
                         mock_approve.return_value = False
-                        
-                        with patch.object(service, '_queue_for_review') as mock_queue:
-                            mock_queue.return_value = {"queued": True, "review_required": True}
-                            
+
+                        with patch.object(service, "_queue_for_review") as mock_queue:
+                            mock_queue.return_value = {
+                                "queued": True,
+                                "review_required": True,
+                            }
+
                             result = await service.process_delegation(
-                                "task", "task_123", "project", "proj_456",
-                                {"pattern": "complex"}, "Complex pattern"
+                                "task",
+                                "task_123",
+                                "project",
+                                "proj_456",
+                                {"pattern": "complex"},
+                                "Complex pattern",
                             )
-        
+
         assert result["success"] is True
         assert result["delegation_id"] == "del_456"
         assert result["auto_approved"] is False
@@ -308,13 +337,21 @@ class TestAsyncDelegationProcessing:
     async def test_process_delegation_exception(self):
         """Test delegation processing exception handling."""
         service = ContextDelegationService()
-        
-        with patch.object(service, '_validate_delegation_request', side_effect=Exception("Validation error")):
+
+        with patch.object(
+            service,
+            "_validate_delegation_request",
+            side_effect=Exception("Validation error"),
+        ):
             result = await service.process_delegation(
-                "task", "task_123", "project", "proj_456",
-                {"data": "test"}, "Test reason"
+                "task",
+                "task_123",
+                "project",
+                "proj_456",
+                {"data": "test"},
+                "Test reason",
             )
-        
+
         assert result["success"] is False
         assert "error" in result
         assert result["delegation_id"] is None
@@ -326,66 +363,66 @@ class TestDelegationValidation:
     def test_validate_delegation_request_valid(self):
         """Test validation of valid delegation request."""
         service = ContextDelegationService()
-        
+
         result = service._validate_delegation_request(
             "task", "task_123", "project", "proj_456", {"data": "test"}
         )
-        
+
         assert result["valid"] is True
         assert len(result["errors"]) == 0
 
     def test_validate_delegation_request_invalid_source_level(self):
         """Test validation with invalid source level."""
         service = ContextDelegationService()
-        
+
         result = service._validate_delegation_request(
             "invalid_level", "task_123", "project", "proj_456", {"data": "test"}
         )
-        
+
         assert result["valid"] is False
         assert any("Invalid source level" in error for error in result["errors"])
 
     def test_validate_delegation_request_invalid_target_level(self):
         """Test validation with invalid target level."""
         service = ContextDelegationService()
-        
+
         result = service._validate_delegation_request(
             "task", "task_123", "invalid_level", "proj_456", {"data": "test"}
         )
-        
+
         assert result["valid"] is False
         assert any("Invalid target level" in error for error in result["errors"])
 
     def test_validate_delegation_request_wrong_direction(self):
         """Test validation with wrong delegation direction (downward)."""
         service = ContextDelegationService()
-        
+
         result = service._validate_delegation_request(
             "project", "proj_123", "task", "task_456", {"data": "test"}
         )
-        
+
         assert result["valid"] is False
         assert any("must delegate upward" in error for error in result["errors"])
 
     def test_validate_delegation_request_no_data(self):
         """Test validation with no delegated data."""
         service = ContextDelegationService()
-        
+
         result = service._validate_delegation_request(
             "task", "task_123", "project", "proj_456", {}
         )
-        
+
         assert result["valid"] is False
         assert any("No data provided" in error for error in result["errors"])
 
     def test_validate_delegation_request_same_level(self):
         """Test validation with same source and target level."""
         service = ContextDelegationService()
-        
+
         result = service._validate_delegation_request(
             "project", "proj_123", "project", "proj_456", {"data": "test"}
         )
-        
+
         assert result["valid"] is False
         assert any("must delegate upward" in error for error in result["errors"])
 
@@ -396,69 +433,69 @@ class TestPatternMatching:
     def test_matches_pattern_security_discovery(self):
         """Test pattern matching for security discovery."""
         service = ContextDelegationService()
-        
+
         changes = {
             "findings": "Found security vulnerability in authentication",
-            "details": "SQL injection risk identified"
+            "details": "SQL injection risk identified",
         }
-        
+
         result = service._matches_pattern(changes, "security_discovery")
         assert result is True
 
     def test_matches_pattern_team_improvement(self):
         """Test pattern matching for team improvement."""
         service = ContextDelegationService()
-        
+
         changes = {
             "process_improvement": "Updated team workflow for better collaboration",
-            "details": "New process reduces handoff time"
+            "details": "New process reduces handoff time",
         }
-        
+
         result = service._matches_pattern(changes, "team_improvement")
         assert result is True
 
     def test_matches_pattern_reusable_utility(self):
         """Test pattern matching for reusable utility."""
         service = ContextDelegationService()
-        
+
         changes = {
             "component": "Created reusable authentication utility",
-            "features": "Helper functions for JWT validation"
+            "features": "Helper functions for JWT validation",
         }
-        
+
         result = service._matches_pattern(changes, "reusable_utility")
         assert result is True
 
     def test_matches_pattern_no_match(self):
         """Test pattern matching with no match."""
         service = ContextDelegationService()
-        
+
         changes = {
             "routine_update": "Updated documentation formatting",
-            "details": "Fixed typos in README"
+            "details": "Fixed typos in README",
         }
-        
+
         result = service._matches_pattern(changes, "security_discovery")
         assert result is False
 
     def test_matches_pattern_unknown_pattern(self):
         """Test pattern matching with unknown pattern."""
         service = ContextDelegationService()
-        
+
         changes = {"test": "data"}
-        
+
         result = service._matches_pattern(changes, "unknown_pattern")
         assert result is False
 
     def test_extract_pattern_data(self):
         """Test extracting data for pattern-based delegation."""
         service = ContextDelegationService()
-        
+
         changes = {"security": "vulnerability found"}
         pattern = "security_discovery"
-        
+
         result = service._extract_pattern_data(changes, pattern)
-        
+
         assert result["pattern"] == pattern
         assert result["extracted_data"] == changes
         assert result["extraction_method"] == "pattern_matching"
@@ -471,14 +508,16 @@ class TestAIConfidenceCalculation:
     def test_calculate_ai_delegation_confidence_high_pattern(self):
         """Test AI confidence calculation for high-confidence patterns."""
         service = ContextDelegationService()
-        
+
         changes = {
             "security": "documented vulnerability with tested fix",
-            "validation": "pattern validated with best practice implementation"
+            "validation": "pattern validated with best practice implementation",
         }
-        
-        confidence = service._calculate_ai_delegation_confidence(changes, "security_insight")
-        
+
+        confidence = service._calculate_ai_delegation_confidence(
+            changes, "security_insight"
+        )
+
         # Should be high due to security pattern + quality indicators
         assert confidence >= 0.9
         assert confidence <= 1.0
@@ -486,39 +525,45 @@ class TestAIConfidenceCalculation:
     def test_calculate_ai_delegation_confidence_low_pattern(self):
         """Test AI confidence calculation for unknown patterns."""
         service = ContextDelegationService()
-        
+
         changes = {"routine": "simple update"}
-        
-        confidence = service._calculate_ai_delegation_confidence(changes, "unknown_pattern")
-        
+
+        confidence = service._calculate_ai_delegation_confidence(
+            changes, "unknown_pattern"
+        )
+
         # Should use default confidence for unknown patterns
         assert confidence == 0.5
 
     def test_calculate_ai_delegation_confidence_with_quality_boost(self):
         """Test AI confidence with quality indicators boost."""
         service = ContextDelegationService()
-        
+
         changes = {
             "component": "reusable authentication component",
             "documentation": "well documented implementation",
             "testing": "thoroughly tested with unit tests",
-            "validation": "pattern validated"
+            "validation": "pattern validated",
         }
-        
-        confidence = service._calculate_ai_delegation_confidence(changes, "reusable_component")
-        
+
+        confidence = service._calculate_ai_delegation_confidence(
+            changes, "reusable_component"
+        )
+
         # Base confidence + quality boosts should be high
         assert confidence > 0.8
 
     def test_calculate_ai_delegation_confidence_exception(self):
         """Test AI confidence calculation exception handling."""
         service = ContextDelegationService()
-        
+
         # Create changes that might cause exception
         changes = None
-        
-        confidence = service._calculate_ai_delegation_confidence(changes, "test_pattern")
-        
+
+        confidence = service._calculate_ai_delegation_confidence(
+            changes, "test_pattern"
+        )
+
         # Should return default confidence on exception
         assert confidence == 0.5
 
@@ -532,16 +577,16 @@ class TestQueueManagement:
         mock_repo = AsyncMock()
         mock_repo.get_delegations.return_value = [
             {"delegation_id": "del_1", "source_level": "task"},
-            {"delegation_id": "del_2", "source_level": "project"}
+            {"delegation_id": "del_2", "source_level": "project"},
         ]
-        
+
         service = ContextDelegationService(repository=mock_repo)
-        
+
         delegations = await service.get_pending_delegations()
-        
+
         assert len(delegations) == 2
         assert delegations[0]["delegation_id"] == "del_1"
-        
+
         # Should call repository with correct filters
         mock_repo.get_delegations.assert_called_once_with({"processed": False})
 
@@ -550,16 +595,16 @@ class TestQueueManagement:
         """Test retrieving pending delegations with filters."""
         mock_repo = AsyncMock()
         mock_repo.get_delegations.return_value = []
-        
+
         service = ContextDelegationService(repository=mock_repo)
-        
+
         await service.get_pending_delegations("project", "proj_123")
-        
+
         # Should apply additional filters
         expected_filters = {
             "processed": False,
             "target_level": "project",
-            "target_id": "proj_123"
+            "target_id": "proj_123",
         }
         mock_repo.get_delegations.assert_called_once_with(expected_filters)
 
@@ -568,11 +613,11 @@ class TestQueueManagement:
         """Test get pending delegations exception handling."""
         mock_repo = AsyncMock()
         mock_repo.get_delegations.side_effect = Exception("Query failed")
-        
+
         service = ContextDelegationService(repository=mock_repo)
-        
+
         delegations = await service.get_pending_delegations()
-        
+
         assert len(delegations) == 0
 
     @pytest.mark.asyncio
@@ -588,21 +633,21 @@ class TestQueueManagement:
             "delegated_data": {"pattern": "auth"},
             "delegation_reason": "Reusable pattern",
             "trigger_type": "manual",
-            "processed": False
+            "processed": False,
         }
         mock_repo.get_delegation.return_value = mock_delegation_data
         mock_repo.update_delegation = AsyncMock()
-        
+
         service = ContextDelegationService(repository=mock_repo)
-        
-        with patch.object(service, '_assess_delegation_impact') as mock_assess:
+
+        with patch.object(service, "_assess_delegation_impact") as mock_assess:
             mock_assess.return_value = {"score": 90}
-            
-            with patch.object(service, '_execute_delegation') as mock_execute:
+
+            with patch.object(service, "_execute_delegation") as mock_execute:
                 mock_execute.return_value = {"success": True, "implemented": True}
-                
+
                 result = await service.approve_delegation("del_123", "admin")
-        
+
         assert result["success"] is True
         mock_repo.update_delegation.assert_called_once()
 
@@ -611,11 +656,11 @@ class TestQueueManagement:
         """Test delegation approval when delegation not found."""
         mock_repo = AsyncMock()
         mock_repo.get_delegation.return_value = None
-        
+
         service = ContextDelegationService(repository=mock_repo)
-        
+
         result = await service.approve_delegation("nonexistent", "test_approver")
-        
+
         assert result["success"] is False
         assert "not found" in result["error"]
 
@@ -625,14 +670,14 @@ class TestQueueManagement:
         mock_repo = AsyncMock()
         mock_delegation_data = {
             "delegation_id": "del_123",
-            "processed": True  # Already processed
+            "processed": True,  # Already processed
         }
         mock_repo.get_delegation.return_value = mock_delegation_data
-        
+
         service = ContextDelegationService(repository=mock_repo)
-        
+
         result = await service.approve_delegation("del_123", "test_approver")
-        
+
         assert result["success"] is False
         assert "already processed" in result["error"]
 
@@ -641,24 +686,29 @@ class TestQueueManagement:
         """Test successful delegation rejection."""
         mock_repo = AsyncMock()
         mock_repo.update_delegation = AsyncMock()
-        
+
         service = ContextDelegationService(repository=mock_repo)
-        
+
         result = await service.reject_delegation("del_123", "Not suitable", "reviewer")
-        
+
         assert result["success"] is True
         assert result["delegation_id"] == "del_123"
         assert result["rejected"] is True
-        
+
         # Should update delegation with rejection details
         mock_repo.update_delegation.assert_called_once()
         # Check if args are passed positionally or as kwargs
         call_args = mock_repo.update_delegation.call_args
         if call_args.args:
             # Positional arguments - check the data structure
-            update_data = call_args.args[1] if len(call_args.args) > 1 else call_args.args[0]
+            update_data = (
+                call_args.args[1] if len(call_args.args) > 1 else call_args.args[0]
+            )
             if isinstance(update_data, dict):
-                assert update_data.get("approved") is False or update_data.get("status") == "rejected"
+                assert (
+                    update_data.get("approved") is False
+                    or update_data.get("status") == "rejected"
+                )
                 assert "Not suitable" in str(update_data)
         else:
             # Keyword arguments
@@ -671,11 +721,13 @@ class TestQueueManagement:
         """Test delegation rejection exception handling."""
         mock_repo = AsyncMock()
         mock_repo.update_delegation.side_effect = Exception("Update failed")
-        
+
         service = ContextDelegationService(repository=mock_repo)
-        
-        result = await service.reject_delegation("del_123", "Test reason", "test_rejector")
-        
+
+        result = await service.reject_delegation(
+            "del_123", "Test reason", "test_rejector"
+        )
+
         assert result["success"] is False
         assert "error" in result
 
@@ -687,12 +739,12 @@ class TestQueueStatus:
     async def test_get_queue_status_healthy(self):
         """Test queue status when healthy."""
         service = ContextDelegationService()
-        
-        with patch.object(service, 'get_pending_delegations') as mock_pending:
+
+        with patch.object(service, "get_pending_delegations") as mock_pending:
             mock_pending.return_value = ["del1", "del2"]  # 2 pending items
-            
+
             status = await service.get_queue_status()
-        
+
         assert status["status"] == "healthy"
         assert status["pending_delegations"] == 2
         assert status["queue_healthy"] is True
@@ -701,13 +753,13 @@ class TestQueueStatus:
     async def test_get_queue_status_unhealthy(self):
         """Test queue status when unhealthy (too many pending)."""
         service = ContextDelegationService()
-        
-        with patch.object(service, 'get_pending_delegations') as mock_pending:
+
+        with patch.object(service, "get_pending_delegations") as mock_pending:
             # Return more than 100 pending items
             mock_pending.return_value = ["del" + str(i) for i in range(150)]
-            
+
             status = await service.get_queue_status()
-        
+
         assert status["status"] == "healthy"  # Overall status still healthy
         assert status["pending_delegations"] == 150
         assert status["queue_healthy"] is False  # Queue health is poor
@@ -716,10 +768,12 @@ class TestQueueStatus:
     async def test_get_queue_status_exception(self):
         """Test queue status exception handling."""
         service = ContextDelegationService()
-        
-        with patch.object(service, 'get_pending_delegations', side_effect=Exception("Queue error")):
+
+        with patch.object(
+            service, "get_pending_delegations", side_effect=Exception("Queue error")
+        ):
             status = await service.get_queue_status()
-        
+
         assert status["status"] == "error"
         assert "error" in status
 
@@ -731,9 +785,9 @@ class TestUtilityMethods:
     async def test_resolve_target_id_global(self):
         """Test resolving target ID for global level."""
         service = ContextDelegationService()
-        
+
         target_id = await service._resolve_target_id("task_123", "task", "global")
-        
+
         assert target_id == "global_singleton"
 
     @pytest.mark.asyncio
@@ -741,13 +795,13 @@ class TestUtilityMethods:
         """Test resolving target ID for project level from task."""
         mock_repo = AsyncMock()
         service = ContextDelegationService(repository=mock_repo)
-        
+
         # Mock task context with parent project ID
-        with patch.object(service, '_get_context') as mock_get_context:
+        with patch.object(service, "_get_context") as mock_get_context:
             mock_get_context.return_value = {"parent_project_id": "proj_789"}
-            
+
             target_id = await service._resolve_target_id("task_123", "task", "project")
-        
+
         assert target_id == "proj_789"
 
     @pytest.mark.asyncio
@@ -755,81 +809,89 @@ class TestUtilityMethods:
         """Test resolving target ID for project level with default fallback."""
         mock_repo = AsyncMock()
         service = ContextDelegationService(repository=mock_repo)
-        
+
         # Mock task context without parent project ID
-        with patch.object(service, '_get_context') as mock_get_context:
+        with patch.object(service, "_get_context") as mock_get_context:
             mock_get_context.return_value = {"other_data": "value"}
-            
+
             target_id = await service._resolve_target_id("task_123", "task", "project")
-        
+
         assert target_id == "agenthub"  # Default project
 
     @pytest.mark.asyncio
     async def test_resolve_target_id_exception(self):
         """Test target ID resolution exception handling."""
         service = ContextDelegationService()
-        
-        with patch.object(service, '_get_context', side_effect=Exception("Context error")):
+
+        with patch.object(
+            service, "_get_context", side_effect=Exception("Context error")
+        ):
             target_id = await service._resolve_target_id("task_123", "task", "project")
-        
+
         # Should return safe default
         assert target_id == "agenthub"
 
     def test_exceeds_threshold_count_type(self):
         """Test threshold checking with count type."""
         service = ContextDelegationService()
-        
+
         context_data = {"key": "value"}
         changes = {"description": "security issue found in security module"}
         threshold_config = {"type": "count", "value": 2, "pattern": "security"}
-        
-        result = service._exceeds_threshold(context_data, changes, "security_count", threshold_config)
-        
+
+        result = service._exceeds_threshold(
+            context_data, changes, "security_count", threshold_config
+        )
+
         assert result is True  # "security" appears twice
 
     def test_exceeds_threshold_percentage_type(self):
         """Test threshold checking with percentage type."""
         service = ContextDelegationService()
-        
+
         context_data = {"completion_rate": 85}
         changes = {"update": "progress updated"}
         threshold_config = {"type": "percentage", "value": 80}
-        
-        result = service._exceeds_threshold(context_data, changes, "completion_rate", threshold_config)
-        
+
+        result = service._exceeds_threshold(
+            context_data, changes, "completion_rate", threshold_config
+        )
+
         assert result is True  # 85 >= 80
 
     def test_exceeds_threshold_not_exceeded(self):
         """Test threshold checking when threshold not exceeded."""
         service = ContextDelegationService()
-        
+
         context_data = {"error_count": 3}
         changes = {"update": "minor fix"}
         threshold_config = {"type": "percentage", "value": 10}
-        
-        result = service._exceeds_threshold(context_data, changes, "error_count", threshold_config)
-        
+
+        result = service._exceeds_threshold(
+            context_data, changes, "error_count", threshold_config
+        )
+
         assert result is False  # 3 < 10
 
     def test_exceeds_threshold_exception(self):
         """Test threshold checking exception handling."""
         service = ContextDelegationService()
-        
+
         # Invalid threshold config
         threshold_config = {"type": "invalid_type"}
-        
+
         result = service._exceeds_threshold({}, {}, "test", threshold_config)
-        
+
         assert result is False
 
     def test_extract_threshold_data(self):
         """Test extracting threshold data."""
         service = ContextDelegationService()
-        
+
         context_data = {"error_rate": 15, "other_data": "value"}
-        
+
         result = service._extract_threshold_data(context_data, "error_rate")
-        
+
         assert result["threshold_name"] == "error_rate"
         assert result["threshold_data"] == 15
         assert result["extraction_method"] == "threshold_trigger"
@@ -862,14 +924,22 @@ class TestAutoDelegationTriggers:
         context_data = {
             "delegation_triggers": {
                 "patterns": {"security_discovery": "global"},
-                "thresholds": {"error_count": {"type": "count", "value": 3, "delegate_to": "project"}}
+                "thresholds": {
+                    "error_count": {
+                        "type": "count",
+                        "value": 3,
+                        "delegate_to": "project",
+                    }
+                },
             }
         }
         changes = {"security": "vulnerability found in authentication"}
 
-        with patch.object(service, '_evaluate_pattern_triggers') as mock_pattern:
-            with patch.object(service, '_evaluate_threshold_triggers') as mock_threshold:
-                with patch.object(service, '_evaluate_ai_triggers') as mock_ai:
+        with patch.object(service, "_evaluate_pattern_triggers") as mock_pattern:
+            with patch.object(
+                service, "_evaluate_threshold_triggers"
+            ) as mock_threshold:
+                with patch.object(service, "_evaluate_ai_triggers") as mock_ai:
                     mock_pattern.return_value = [Mock()]
                     mock_threshold.return_value = [Mock()]
                     mock_ai.return_value = [Mock()]
@@ -891,7 +961,9 @@ class TestAutoDelegationTriggers:
         context_data = {"project_info": "test"}
         changes = {"security": "security policy updated"}
 
-        with patch.object(service, '_evaluate_project_to_global_triggers') as mock_project:
+        with patch.object(
+            service, "_evaluate_project_to_global_triggers"
+        ) as mock_project:
             mock_project.return_value = [Mock(), Mock()]
 
             results = await service.evaluate_auto_delegation_triggers(
@@ -906,7 +978,11 @@ class TestAutoDelegationTriggers:
         """Test auto-delegation trigger evaluation exception handling."""
         service = ContextDelegationService()
 
-        with patch.object(service, '_evaluate_pattern_triggers', side_effect=Exception("Evaluation error")):
+        with patch.object(
+            service,
+            "_evaluate_pattern_triggers",
+            side_effect=Exception("Evaluation error"),
+        ):
             results = await service.evaluate_auto_delegation_triggers(
                 "task", "task_123", {}, {}
             )
@@ -921,10 +997,16 @@ class TestAutoDelegationTriggers:
         changes = {"security": "vulnerability discovered"}
         patterns = {"security_discovery": "global"}
 
-        with patch.object(service, '_matches_pattern', return_value=True):
-            with patch.object(service, '_resolve_target_id', return_value="global_singleton"):
-                with patch.object(service, '_extract_pattern_data', return_value={"data": "test"}):
-                    results = await service._evaluate_pattern_triggers("task_123", changes, patterns)
+        with patch.object(service, "_matches_pattern", return_value=True):
+            with patch.object(
+                service, "_resolve_target_id", return_value="global_singleton"
+            ):
+                with patch.object(
+                    service, "_extract_pattern_data", return_value={"data": "test"}
+                ):
+                    results = await service._evaluate_pattern_triggers(
+                        "task_123", changes, patterns
+                    )
 
         assert len(results) == 1
         assert results[0].source_level == "task"
@@ -939,16 +1021,16 @@ class TestAutoDelegationTriggers:
         context_data = {"error_count": 5}
         changes = {"errors": "increased"}
         thresholds = {
-            "error_threshold": {
-                "type": "count",
-                "value": 3,
-                "delegate_to": "project"
-            }
+            "error_threshold": {"type": "count", "value": 3, "delegate_to": "project"}
         }
 
-        with patch.object(service, '_exceeds_threshold', return_value=True):
-            with patch.object(service, '_resolve_target_id', return_value="proj_456"):
-                with patch.object(service, '_extract_threshold_data', return_value={"threshold_data": 5}):
+        with patch.object(service, "_exceeds_threshold", return_value=True):
+            with patch.object(service, "_resolve_target_id", return_value="proj_456"):
+                with patch.object(
+                    service,
+                    "_extract_threshold_data",
+                    return_value={"threshold_data": 5},
+                ):
                     results = await service._evaluate_threshold_triggers(
                         "task_123", context_data, changes, thresholds
                     )
@@ -965,10 +1047,20 @@ class TestAutoDelegationTriggers:
         context_data = {}
         changes = {"component": "reusable security utility"}
 
-        with patch.object(service, '_calculate_ai_delegation_confidence', return_value=0.95):
-            with patch.object(service, '_resolve_target_id', return_value="global_singleton"):
-                with patch.object(service, '_extract_ai_pattern_data', return_value={"ai_data": "test"}):
-                    results = await service._evaluate_ai_triggers("task_123", context_data, changes)
+        with patch.object(
+            service, "_calculate_ai_delegation_confidence", return_value=0.95
+        ):
+            with patch.object(
+                service, "_resolve_target_id", return_value="global_singleton"
+            ):
+                with patch.object(
+                    service,
+                    "_extract_ai_pattern_data",
+                    return_value={"ai_data": "test"},
+                ):
+                    results = await service._evaluate_ai_triggers(
+                        "task_123", context_data, changes
+                    )
 
         assert len(results) >= 1
         for result in results:
@@ -981,9 +1073,14 @@ class TestAutoDelegationTriggers:
         service = ContextDelegationService()
 
         context_data = {}
-        changes = {"security_policy": "new authentication policy", "coding_standard": "updated"}
+        changes = {
+            "security_policy": "new authentication policy",
+            "coding_standard": "updated",
+        }
 
-        results = await service._evaluate_project_to_global_triggers("proj_123", context_data, changes)
+        results = await service._evaluate_project_to_global_triggers(
+            "proj_123", context_data, changes
+        )
 
         # Should find at least the security pattern
         assert len(results) >= 1
@@ -1001,7 +1098,9 @@ class TestAutoDelegationTriggers:
         context_data = {}
         changes = {"routine_update": "minor documentation fix"}
 
-        results = await service._evaluate_project_to_global_triggers("proj_123", context_data, changes)
+        results = await service._evaluate_project_to_global_triggers(
+            "proj_123", context_data, changes
+        )
 
         # Should return empty list when no patterns match
         assert len(results) == 0
@@ -1023,17 +1122,23 @@ class TestDelegationExecution:
             target_id="proj_456",
             delegated_data={"pattern": "auth"},
             reason="Reusable pattern",
-            trigger_type="manual"
+            trigger_type="manual",
         )
         impact_assessment = {"score": 85}
 
         target_context = {"existing_data": "value"}
 
-        with patch.object(service, '_get_context', return_value=target_context):
-            with patch.object(service, '_merge_delegated_data', return_value={"merged": "data"}):
-                with patch.object(service, '_update_context', return_value=True):
-                    with patch.object(service, '_mark_delegation_implemented', return_value=True):
-                        result = await service._execute_delegation("del_123", request, impact_assessment)
+        with patch.object(service, "_get_context", return_value=target_context):
+            with patch.object(
+                service, "_merge_delegated_data", return_value={"merged": "data"}
+            ):
+                with patch.object(service, "_update_context", return_value=True):
+                    with patch.object(
+                        service, "_mark_delegation_implemented", return_value=True
+                    ):
+                        result = await service._execute_delegation(
+                            "del_123", request, impact_assessment
+                        )
 
         assert result["success"] is True
         assert result["delegation_id"] == "del_123"
@@ -1050,11 +1155,13 @@ class TestDelegationExecution:
             target_level="project",
             target_id="proj_456",
             delegated_data={"data": "test"},
-            reason="Test"
+            reason="Test",
         )
 
-        with patch.object(service, '_get_context', side_effect=Exception("Context error")):
-            with patch.object(service, '_mark_delegation_failed', return_value=True):
+        with patch.object(
+            service, "_get_context", side_effect=Exception("Context error")
+        ):
+            with patch.object(service, "_mark_delegation_failed", return_value=True):
                 result = await service._execute_delegation("del_123", request, {})
 
         assert result["success"] is False
@@ -1073,10 +1180,12 @@ class TestDelegationExecution:
             target_level="global",
             target_id="global_singleton",
             delegated_data=delegated_data,
-            reason="Security best practices"
+            reason="Security best practices",
         )
 
-        result = await service._merge_delegated_data(target_context, delegated_data, request)
+        result = await service._merge_delegated_data(
+            target_context, delegated_data, request
+        )
 
         assert "security_policies" in result
         assert "delegated_insights" in result
@@ -1094,10 +1203,12 @@ class TestDelegationExecution:
             target_level="project",
             target_id="proj_456",
             delegated_data=delegated_data,
-            reason="Team collaboration improvement"
+            reason="Team collaboration improvement",
         )
 
-        result = await service._merge_delegated_data(target_context, delegated_data, request)
+        result = await service._merge_delegated_data(
+            target_context, delegated_data, request
+        )
 
         assert "team_preferences" in result
         assert "delegated_insights" in result
@@ -1114,10 +1225,12 @@ class TestDelegationExecution:
             target_level="global",
             target_id="global_singleton",
             delegated_data=delegated_data,
-            reason="Security vulnerability discovered"
+            reason="Security vulnerability discovered",
         )
 
-        result = service._merge_to_global_context(global_context, delegated_data, request)
+        result = service._merge_to_global_context(
+            global_context, delegated_data, request
+        )
 
         assert "security_policies" in result
         assert "delegated_insights" in result
@@ -1135,10 +1248,12 @@ class TestDelegationExecution:
             target_level="global",
             target_id="global_singleton",
             delegated_data=delegated_data,
-            reason="Coding standard improvement"
+            reason="Coding standard improvement",
         )
 
-        result = service._merge_to_global_context(global_context, delegated_data, request)
+        result = service._merge_to_global_context(
+            global_context, delegated_data, request
+        )
 
         assert "coding_standards" in result
         assert "delegated_insights" in result
@@ -1155,10 +1270,12 @@ class TestDelegationExecution:
             target_level="global",
             target_id="global_singleton",
             delegated_data=delegated_data,
-            reason="Workflow optimization"
+            reason="Workflow optimization",
         )
 
-        result = service._merge_to_global_context(global_context, delegated_data, request)
+        result = service._merge_to_global_context(
+            global_context, delegated_data, request
+        )
 
         assert "workflow_templates" in result
         assert "delegated_insights" in result
@@ -1175,10 +1292,12 @@ class TestDelegationExecution:
             target_level="project",
             target_id="proj_456",
             delegated_data=delegated_data,
-            reason="Team efficiency improvement"
+            reason="Team efficiency improvement",
         )
 
-        result = service._merge_to_project_context(project_context, delegated_data, request)
+        result = service._merge_to_project_context(
+            project_context, delegated_data, request
+        )
 
         assert "team_preferences" in result
         assert "delegated_insights" in result
@@ -1195,10 +1314,12 @@ class TestDelegationExecution:
             target_level="project",
             target_id="proj_456",
             delegated_data=delegated_data,
-            reason="Technology stack update"
+            reason="Technology stack update",
         )
 
-        result = service._merge_to_project_context(project_context, delegated_data, request)
+        result = service._merge_to_project_context(
+            project_context, delegated_data, request
+        )
 
         assert "technology_stack" in result
         assert "delegated_insights" in result
@@ -1215,10 +1336,12 @@ class TestDelegationExecution:
             target_level="project",
             target_id="proj_456",
             delegated_data=delegated_data,
-            reason="Workflow improvement"
+            reason="Workflow improvement",
         )
 
-        result = service._merge_to_project_context(project_context, delegated_data, request)
+        result = service._merge_to_project_context(
+            project_context, delegated_data, request
+        )
 
         assert "project_workflow" in result
         assert "delegated_insights" in result
@@ -1290,7 +1413,9 @@ class TestRepositoryInteractions:
         mock_repo.update_global_context.return_value = True
         service = ContextDelegationService(repository=mock_repo)
 
-        result = await service._update_context("global", "global_singleton", {"data": "updated"})
+        result = await service._update_context(
+            "global", "global_singleton", {"data": "updated"}
+        )
 
         assert result is True
         mock_repo.update_global_context.assert_called_once()
@@ -1302,7 +1427,9 @@ class TestRepositoryInteractions:
         mock_repo.update_project_context.return_value = True
         service = ContextDelegationService(repository=mock_repo)
 
-        result = await service._update_context("project", "proj_123", {"data": "updated"})
+        result = await service._update_context(
+            "project", "proj_123", {"data": "updated"}
+        )
 
         assert result is True
         mock_repo.update_project_context.assert_called_once()
@@ -1354,7 +1481,7 @@ class TestRepositoryInteractions:
             delegated_data={"data": "test"},
             reason="Test reason",
             trigger_type="manual",
-            confidence_score=0.8
+            confidence_score=0.8,
         )
 
         delegation_id = await service._store_delegation_request(request)
@@ -1375,7 +1502,7 @@ class TestRepositoryInteractions:
             target_level="project",
             target_id="proj_456",
             delegated_data={"data": "test"},
-            reason="Test"
+            reason="Test",
         )
 
         with pytest.raises(Exception):
@@ -1398,7 +1525,7 @@ class TestDelegationApproval:
             delegated_data={"data": "test"},
             reason="Security improvement",
             trigger_type="manual",
-            confidence_score=0.9
+            confidence_score=0.9,
         )
 
         result = await service._assess_delegation_impact(request)
@@ -1422,7 +1549,7 @@ class TestDelegationApproval:
             delegated_data={"test": "data"},
             reason="Test",
             trigger_type="unknown",  # Non-standard trigger type
-            confidence_score=0.3  # Low confidence
+            confidence_score=0.3,  # Low confidence
         )
 
         result = await service._assess_delegation_impact(request)
@@ -1445,7 +1572,7 @@ class TestDelegationApproval:
             target_id="proj_456",
             delegated_data={"data": "test"},
             reason="Test",
-            confidence_score=0.9
+            confidence_score=0.9,
         )
         impact_assessment = {"recommendation": "auto_approve"}
 
@@ -1465,7 +1592,7 @@ class TestDelegationApproval:
             target_id="proj_456",
             delegated_data={"data": "test"},
             reason="Test",
-            confidence_score=0.5
+            confidence_score=0.5,
         )
         impact_assessment = {"recommendation": "auto_approve"}
 
@@ -1485,7 +1612,7 @@ class TestDelegationApproval:
             target_id="global_singleton",
             delegated_data={"security_discovery": "vulnerability found"},
             reason="Security",
-            confidence_score=0.8
+            confidence_score=0.8,
         )
         impact_assessment = {"recommendation": "manual_review"}
 
@@ -1504,10 +1631,12 @@ class TestDelegationApproval:
             target_level="project",
             target_id="proj_456",
             delegated_data=None,
-            reason="Test"
+            reason="Test",
         )
 
-        with patch('fastmcp.task_management.application.services.context_delegation_service.logger'):
+        with patch(
+            "fastmcp.task_management.application.services.context_delegation_service.logger"
+        ):
             result = await service._should_auto_approve(request, {})
 
         assert result is False
@@ -1523,7 +1652,7 @@ class TestDelegationApproval:
             target_level="project",
             target_id="proj_456",
             delegated_data={"data": "test"},
-            reason="Test"
+            reason="Test",
         )
         impact_assessment = {"score": 50}
 
@@ -1544,11 +1673,14 @@ class TestDelegationApproval:
             target_level="project",
             target_id="proj_456",
             delegated_data={"data": "test"},
-            reason="Test"
+            reason="Test",
         )
 
         # Cause exception by patching logger to raise
-        with patch('fastmcp.task_management.application.services.context_delegation_service.logger.error', side_effect=Exception("Log error")):
+        with patch(
+            "fastmcp.task_management.application.services.context_delegation_service.logger.error",
+            side_effect=Exception("Log error"),
+        ):
             result = await service._queue_for_review("del_123", request, {})
 
         # Should still return a result (exception caught internally)
@@ -1563,10 +1695,12 @@ class TestDelegationApproval:
 
         implementation_data = {
             "implemented_at": datetime.now(UTC).isoformat(),
-            "implementation_details": {"merged_fields": ["field1", "field2"]}
+            "implementation_details": {"merged_fields": ["field1", "field2"]},
         }
 
-        result = await service._mark_delegation_implemented("del_123", implementation_data)
+        result = await service._mark_delegation_implemented(
+            "del_123", implementation_data
+        )
 
         assert result is True
         mock_repo.update_delegation.assert_called_once()
@@ -1580,10 +1714,12 @@ class TestDelegationApproval:
 
         implementation_data = {
             "implemented_at": datetime.now(UTC).isoformat(),
-            "implementation_details": {}
+            "implementation_details": {},
         }
 
-        result = await service._mark_delegation_implemented("del_123", implementation_data)
+        result = await service._mark_delegation_implemented(
+            "del_123", implementation_data
+        )
 
         assert result is False
 
@@ -1618,5 +1754,5 @@ class TestDataClassCreation:
         """Test ContextDelegationService model can be created."""
         service = ContextDelegationService()
         assert service is not None
-        assert hasattr(service, 'repository')
-        assert hasattr(service, '_user_id')
+        assert hasattr(service, "repository")
+        assert hasattr(service, "_user_id")

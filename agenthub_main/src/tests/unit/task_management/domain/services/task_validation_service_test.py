@@ -34,14 +34,12 @@ class TestTaskValidationService:
 
     @pytest.fixture
     def validation_service_with_repos(
-        self, 
-        mock_git_branch_repository: Mock, 
-        mock_project_repository: Mock
+        self, mock_git_branch_repository: Mock, mock_project_repository: Mock
     ) -> TaskValidationService:
         """Create TaskValidationService instance with repositories."""
         return TaskValidationService(
             git_branch_repository=mock_git_branch_repository,
-            project_repository=mock_project_repository
+            project_repository=mock_project_repository,
         )
 
     @pytest.fixture
@@ -52,7 +50,7 @@ class TestTaskValidationService:
             title="Implement user authentication",
             description="Add JWT-based authentication to the system",
             status="todo",
-            priority="medium"
+            priority="medium",
         )
         task.git_branch_id = "550e8400-e29b-41d4-a716-446655440000"
         task.project_id = "550e8400-e29b-41d4-a716-446655440001"
@@ -70,7 +68,7 @@ class TestTaskValidationService:
             title="",  # Invalid: empty title
             description="",
             status="invalid_status",  # Invalid status
-            priority="invalid_priority"  # Invalid priority
+            priority="invalid_priority",  # Invalid priority
         )
         task.assignees = [""] * 10  # Invalid: too many empty assignees
         task.labels = [""] * 15  # Invalid: too many empty labels
@@ -99,7 +97,7 @@ class TestTaskValidationService:
                 title="Valid title",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             # Modify after creation to create invalid state
             task.id = None
@@ -127,7 +125,7 @@ class TestTaskValidationService:
                 title="Valid title",  # Create valid task first
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             task.title = "A" * 250  # Modify after creation to bypass entity validation
 
@@ -148,7 +146,7 @@ class TestTaskValidationService:
                 title="AB",  # Invalid: too short
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
 
             # Act
@@ -156,7 +154,9 @@ class TestTaskValidationService:
 
             # Assert
             assert len(errors) > 0
-            assert any("must be at least 3 characters long" in error for error in errors)
+            assert any(
+                "must be at least 3 characters long" in error for error in errors
+            )
 
         def test_task_creation_with_placeholder_title(
             self, validation_service: TaskValidationService
@@ -168,7 +168,7 @@ class TestTaskValidationService:
                 title="TODO: Fix this test placeholder",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
 
             # Act
@@ -188,7 +188,7 @@ class TestTaskValidationService:
                 title="Valid task title",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             task.assignees = [f"user{i}" for i in range(6)]  # Invalid: too many
 
@@ -209,7 +209,7 @@ class TestTaskValidationService:
                 title="Valid task title",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             task.labels = [f"label{i}" for i in range(11)]  # Invalid: too many
 
@@ -230,7 +230,7 @@ class TestTaskValidationService:
                 title="Valid task title",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             # Set due date 3 years in the future (invalid)
             task.due_date = datetime.now(UTC) + timedelta(days=365 * 3)
@@ -240,7 +240,9 @@ class TestTaskValidationService:
 
             # Assert
             assert len(errors) > 0
-            assert any("cannot be more than 2 years in the future" in error for error in errors)
+            assert any(
+                "cannot be more than 2 years in the future" in error for error in errors
+            )
 
         def test_task_creation_with_similar_title_context(
             self, validation_service: TaskValidationService
@@ -252,12 +254,12 @@ class TestTaskValidationService:
                 title="Implement user authentication",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
-            
+
             context = {
-                'similar_tasks': [
-                    {'title': 'Implement user authentication', 'id': 'other-task-id'}
+                "similar_tasks": [
+                    {"title": "Implement user authentication", "id": "other-task-id"}
                 ]
             }
 
@@ -300,7 +302,7 @@ class TestTaskValidationService:
                 title="Updated: Implement user authentication",
                 description="Updated description",
                 status="in_progress",
-                priority="high"
+                priority="high",
             )
             updated_task.git_branch_id = current_task.git_branch_id
 
@@ -321,7 +323,7 @@ class TestTaskValidationService:
                 title=current_task.title,
                 description=current_task.description,
                 status=current_task.status,
-                priority=current_task.priority
+                priority=current_task.priority,
             )
 
             # Act
@@ -338,13 +340,13 @@ class TestTaskValidationService:
             # Arrange
             current_task = valid_task
             current_task.status = "done"
-            
+
             updated_task = Task(
                 id=current_task.id,
                 title=current_task.title,
                 description=current_task.description,
                 status="todo",  # Invalid transition from 'done' to 'todo'
-                priority=current_task.priority
+                priority=current_task.priority,
             )
 
             # Act
@@ -361,13 +363,13 @@ class TestTaskValidationService:
             # Test todo -> in_progress
             current_task = valid_task
             current_task.status = "todo"
-            
+
             updated_task = Task(
                 id=current_task.id,
                 title=current_task.title,
                 description=current_task.description,
                 status="in_progress",
-                priority=current_task.priority
+                priority=current_task.priority,
             )
             updated_task.git_branch_id = current_task.git_branch_id
 
@@ -377,7 +379,7 @@ class TestTaskValidationService:
             # Test in_progress -> review
             current_task.status = "in_progress"
             updated_task.status = "review"
-            
+
             errors = validation_service.validate_task_update(current_task, updated_task)
             assert errors == []
 
@@ -389,28 +391,40 @@ class TestTaskValidationService:
         ):
             """Test validation of valid relationships."""
             # Arrange
-            validation_service_with_repos._git_branch_repository.exists.return_value = True
+            validation_service_with_repos._git_branch_repository.exists.return_value = (
+                True
+            )
             validation_service_with_repos._project_repository.exists.return_value = True
 
             # Act
-            is_valid, errors = validation_service_with_repos.validate_task_relationships(valid_task)
+            is_valid, errors = (
+                validation_service_with_repos.validate_task_relationships(valid_task)
+            )
 
             # Assert
             assert is_valid is True
             assert errors == []
-            validation_service_with_repos._git_branch_repository.exists.assert_called_once_with(valid_task.git_branch_id)
-            validation_service_with_repos._project_repository.exists.assert_called_once_with(valid_task.project_id)
+            validation_service_with_repos._git_branch_repository.exists.assert_called_once_with(
+                valid_task.git_branch_id
+            )
+            validation_service_with_repos._project_repository.exists.assert_called_once_with(
+                valid_task.project_id
+            )
 
         def test_missing_git_branch(
             self, validation_service_with_repos: TaskValidationService, valid_task: Task
         ):
             """Test validation when git branch doesn't exist."""
             # Arrange
-            validation_service_with_repos._git_branch_repository.exists.return_value = False
+            validation_service_with_repos._git_branch_repository.exists.return_value = (
+                False
+            )
             validation_service_with_repos._project_repository.exists.return_value = True
 
             # Act
-            is_valid, errors = validation_service_with_repos.validate_task_relationships(valid_task)
+            is_valid, errors = (
+                validation_service_with_repos.validate_task_relationships(valid_task)
+            )
 
             # Assert
             assert is_valid is False
@@ -425,12 +439,17 @@ class TestTaskValidationService:
             valid_task.git_branch_id = None
 
             # Act
-            is_valid, errors = validation_service.validate_task_relationships(valid_task)
+            is_valid, errors = validation_service.validate_task_relationships(
+                valid_task
+            )
 
             # Assert
             assert is_valid is False
             assert len(errors) > 0
-            assert any("must be associated with a valid git branch" in error for error in errors)
+            assert any(
+                "must be associated with a valid git branch" in error
+                for error in errors
+            )
 
         def test_too_many_dependencies(
             self, validation_service: TaskValidationService, valid_task: Task
@@ -440,12 +459,16 @@ class TestTaskValidationService:
             valid_task.dependencies = [f"dep-{i}" for i in range(11)]  # Too many
 
             # Act
-            is_valid, errors = validation_service.validate_task_relationships(valid_task)
+            is_valid, errors = validation_service.validate_task_relationships(
+                valid_task
+            )
 
             # Assert
             assert is_valid is False
             assert len(errors) > 0
-            assert any("cannot have more than 10 dependencies" in error for error in errors)
+            assert any(
+                "cannot have more than 10 dependencies" in error for error in errors
+            )
 
         def test_self_dependency(
             self, validation_service: TaskValidationService, valid_task: Task
@@ -455,7 +478,9 @@ class TestTaskValidationService:
             valid_task.dependencies = [str(valid_task.id)]
 
             # Act
-            is_valid, errors = validation_service.validate_task_relationships(valid_task)
+            is_valid, errors = validation_service.validate_task_relationships(
+                valid_task
+            )
 
             # Assert
             assert is_valid is False
@@ -467,10 +492,14 @@ class TestTaskValidationService:
         ):
             """Test exception handling in relationship validation."""
             # Arrange
-            validation_service_with_repos._git_branch_repository.exists.side_effect = Exception("DB error")
+            validation_service_with_repos._git_branch_repository.exists.side_effect = (
+                Exception("DB error")
+            )
 
             # Act
-            is_valid, errors = validation_service_with_repos.validate_task_relationships(valid_task)
+            is_valid, errors = (
+                validation_service_with_repos.validate_task_relationships(valid_task)
+            )
 
             # Assert
             assert is_valid is False
@@ -490,7 +519,7 @@ class TestTaskValidationService:
                 title="Valid title",  # Create valid task first
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             task.title = ""  # Modify after creation to bypass entity validation
 
@@ -511,7 +540,7 @@ class TestTaskValidationService:
                 title="Valid title",  # Create valid task first
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             task.title = "   "  # Modify after creation to bypass entity validation
 
@@ -532,9 +561,11 @@ class TestTaskValidationService:
                 title="Valid title",
                 description="Valid description",  # Create valid task first
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
-            task.description = "A" * 2001  # Modify after creation to bypass entity validation
+            task.description = (
+                "A" * 2001
+            )  # Modify after creation to bypass entity validation
 
             # Act
             errors = validation_service.validate_business_constraints(task)
@@ -553,7 +584,7 @@ class TestTaskValidationService:
                 title="Valid title",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             task.assignees = ["", "   ", "valid_user"]  # Contains empty assignees
 
@@ -574,7 +605,7 @@ class TestTaskValidationService:
                 title="Valid title",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             task.assignees = ["A" * 51]  # Too long
 
@@ -595,11 +626,11 @@ class TestTaskValidationService:
                 title="Critical task",
                 description="Valid description",
                 status="todo",
-                priority="critical"
+                priority="critical",
             )
 
             # Act
-            errors = validation_service.validate_business_constraints(task, 'create')
+            errors = validation_service.validate_business_constraints(task, "create")
 
             # Assert
             assert len(errors) > 0
@@ -615,12 +646,12 @@ class TestTaskValidationService:
                 title="Urgent task",
                 description="Valid description",
                 status="done",
-                priority="urgent"
+                priority="urgent",
             )
             # No completion summary
 
             # Act
-            errors = validation_service.validate_business_constraints(task, 'update')
+            errors = validation_service.validate_business_constraints(task, "update")
 
             # Assert
             assert len(errors) > 0
@@ -639,7 +670,7 @@ class TestTaskValidationService:
                 title="test test test test",  # Too much repetition
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
 
             # Act
@@ -659,7 +690,7 @@ class TestTaskValidationService:
                 title="Valid task title",
                 description="Brief",  # Too brief
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
 
             # Act
@@ -679,7 +710,7 @@ class TestTaskValidationService:
                 title="Valid task title",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
             task.estimated_effort = "sometime"  # Invalid format
 
@@ -700,15 +731,23 @@ class TestTaskValidationService:
                 title="Valid task title",
                 description="Valid description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
-            
-            valid_efforts = ["2 hours", "1 day", "3 weeks", "1 month", "5 minutes", "2 sprints", "3 story points"]
-            
+
+            valid_efforts = [
+                "2 hours",
+                "1 day",
+                "3 weeks",
+                "1 month",
+                "5 minutes",
+                "2 sprints",
+                "3 story points",
+            ]
+
             for effort in valid_efforts:
                 task.estimated_effort = effort
                 errors = validation_service.validate_content_appropriateness(task)
-                
+
                 # Should not have effort-related errors
                 effort_errors = [e for e in errors if "time units" in e]
                 assert len(effort_errors) == 0
@@ -723,15 +762,15 @@ class TestTaskValidationService:
                 title="Valid task title",
                 description="Initial description",
                 status="todo",
-                priority="medium"
+                priority="medium",
             )
-            
+
             acceptable_brief_descriptions = ["", "n/a", "na", "none"]
-            
+
             for desc in acceptable_brief_descriptions:
                 task.description = desc
                 errors = validation_service.validate_content_appropriateness(task)
-                
+
                 # Should not have description-related errors
                 desc_errors = [e for e in errors if "too brief" in e]
                 assert len(desc_errors) == 0
@@ -770,52 +809,55 @@ class TestTaskValidationServiceIntegration:
     def test_comprehensive_task_validation_workflow(self, integration_service):
         """Test a comprehensive task validation workflow."""
         service, git_repo, project_repo = integration_service
-        
+
         # Setup repository responses
         git_repo.exists.return_value = True
         git_repo.get_branch_info.return_value = {"name": "feature/auth"}
         project_repo.exists.return_value = True
-        
+
         # Create a realistic task for validation
         task = Task(
             id=TaskId.generate(),
             title="Implement JWT-based authentication system",
             description="Design and implement a comprehensive JWT authentication system with token refresh, role-based access control, and secure session management. Include unit tests and documentation.",
             status="todo",
-            priority="high"
+            priority="high",
         )
         task.git_branch_id = "550e8400-e29b-41d4-a716-446655440002"
         task.project_id = "550e8400-e29b-41d4-a716-446655440003"
-        task.assignees = ["senior.developer@company.com", "security.engineer@company.com"]
+        task.assignees = [
+            "senior.developer@company.com",
+            "security.engineer@company.com",
+        ]
         task.labels = ["feature", "authentication", "security", "high-priority"]
         task.dependencies = []
         task.estimated_effort = "2 weeks"
         task.due_date = datetime.now(UTC) + timedelta(days=30)
-        
+
         # Test creation validation
         creation_errors = service.validate_task_creation(task)
         assert creation_errors == []
-        
+
         # Test relationship validation
         is_valid, relationship_errors = service.validate_task_relationships(task)
         assert is_valid is True
         assert relationship_errors == []
-        
+
         # Test business constraints
-        business_errors = service.validate_business_constraints(task, 'create')
+        business_errors = service.validate_business_constraints(task, "create")
         assert business_errors == []
-        
+
         # Test content appropriateness
         content_errors = service.validate_content_appropriateness(task)
         assert content_errors == []
-        
+
         # Test task update scenario
         updated_task = Task(
             id=task.id,  # Same ID
             title=task.title + " - Updated",
             description=task.description + " Updated with additional requirements.",
             status="in_progress",  # Valid transition from 'todo'
-            priority="urgent"  # Changed priority
+            priority="urgent",  # Changed priority
         )
         updated_task.git_branch_id = task.git_branch_id
         updated_task.project_id = task.project_id
@@ -823,25 +865,25 @@ class TestTaskValidationServiceIntegration:
         updated_task.labels = task.labels
         updated_task.dependencies = task.dependencies
         updated_task.estimated_effort = "3 weeks"  # Updated estimate
-        
+
         update_errors = service.validate_task_update(task, updated_task)
         assert update_errors == []
 
     def test_multiple_validation_failures(self, integration_service):
         """Test handling of multiple validation failures simultaneously."""
         service, git_repo, project_repo = integration_service
-        
+
         # Setup repository responses for failures
         git_repo.exists.return_value = False  # Git branch doesn't exist
         project_repo.exists.return_value = False  # Project doesn't exist
-        
+
         # Create a task with multiple validation issues
         task = Task(
             id=TaskId.generate(),
             title="Valid title",  # Create valid task first
             description="Valid description",
             status="todo",
-            priority="medium"
+            priority="medium",
         )
         # Modify after creation to create invalid state
         task.title = "TODO"  # Placeholder title
@@ -854,16 +896,18 @@ class TestTaskValidationServiceIntegration:
         task.dependencies = [str(task.id)]  # Self-dependency
         task.estimated_effort = "sometime"  # Invalid format
         task.due_date = datetime.now(UTC) + timedelta(days=365 * 3)  # Too far in future
-        
+
         # Test that all validation types catch their respective errors
         creation_errors = service.validate_task_creation(task)
         is_valid, relationship_errors = service.validate_task_relationships(task)
-        business_errors = service.validate_business_constraints(task, 'create')
+        business_errors = service.validate_business_constraints(task, "create")
         content_errors = service.validate_content_appropriateness(task)
-        
+
         # Should have multiple types of errors
-        all_errors = creation_errors + relationship_errors + business_errors + content_errors
-        
+        all_errors = (
+            creation_errors + relationship_errors + business_errors + content_errors
+        )
+
         # Verify specific error categories are present
         assert any("placeholder text" in error for error in all_errors)
         assert any("does not exist" in error for error in all_errors)
@@ -872,5 +916,5 @@ class TestTaskValidationServiceIntegration:
         assert any("should be started immediately" in error for error in all_errors)
         assert any("time units" in error for error in all_errors)
         assert any("2 years in the future" in error for error in all_errors)
-        
+
         assert len(all_errors) >= 7  # At least 7 different types of errors

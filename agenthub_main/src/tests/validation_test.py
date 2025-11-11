@@ -39,6 +39,7 @@ async def test_project_name_validation():
                         def __init__(self):
                             self.id = "test-id"
                             self.name = name
+
                     return MockProject()
                 return None
 
@@ -74,7 +75,9 @@ async def test_project_name_validation():
         # Test 4: Name with forbidden characters should fail
         try:
             await validator.validate_project_name("Test<Project>", "user123")
-            logger.error("❌ Test 4 failed: Name with forbidden chars should have been rejected")
+            logger.error(
+                "❌ Test 4 failed: Name with forbidden chars should have been rejected"
+            )
         except ValidationException as e:
             logger.info(f"✅ Test 4 passed: Forbidden characters rejected - {e}")
         except Exception as e:
@@ -105,6 +108,7 @@ async def test_branch_name_validation():
             async def find_all_by_project(self, project_id: str):
                 # Mock branches for project123
                 if project_id == "project123":
+
                     class MockBranch:
                         def __init__(self, name):
                             self.id = f"branch-{name}"
@@ -127,7 +131,9 @@ async def test_branch_name_validation():
         # Test 2: Duplicate branch name should fail
         try:
             await validator.validate_branch_name("main", "project123")
-            logger.error("❌ Test 2 failed: Duplicate branch name should have been rejected")
+            logger.error(
+                "❌ Test 2 failed: Duplicate branch name should have been rejected"
+            )
         except ValidationException as e:
             logger.info(f"✅ Test 2 passed: Duplicate branch name rejected - {e}")
         except Exception as e:
@@ -136,7 +142,9 @@ async def test_branch_name_validation():
         # Test 3: Branch name with spaces should fail
         try:
             await validator.validate_branch_name("my feature", "project123")
-            logger.error("❌ Test 3 failed: Branch name with spaces should have been rejected")
+            logger.error(
+                "❌ Test 3 failed: Branch name with spaces should have been rejected"
+            )
         except ValidationException as e:
             logger.info(f"✅ Test 3 passed: Branch name with spaces rejected - {e}")
         except Exception as e:
@@ -145,7 +153,9 @@ async def test_branch_name_validation():
         # Test 4: Branch name with forbidden git characters should fail
         try:
             await validator.validate_branch_name("feature~with~tildes", "project123")
-            logger.error("❌ Test 4 failed: Branch name with forbidden chars should have been rejected")
+            logger.error(
+                "❌ Test 4 failed: Branch name with forbidden chars should have been rejected"
+            )
         except ValidationException as e:
             logger.info(f"✅ Test 4 passed: Forbidden git characters rejected - {e}")
         except Exception as e:

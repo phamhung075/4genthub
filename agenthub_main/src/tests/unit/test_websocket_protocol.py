@@ -61,14 +61,9 @@ class TestMessageValidation:
             "payload": {
                 "entity": "task",
                 "action": "create",
-                "data": {
-                    "primary": {"id": "123", "title": "Test Task"}
-                }
+                "data": {"primary": {"id": "123", "title": "Test Task"}},
             },
-            "metadata": {
-                "source": "user",
-                "immediate": True
-            }
+            "metadata": {"source": "user", "immediate": True},
         }
 
         result = validate_message(message)
@@ -78,11 +73,7 @@ class TestMessageValidation:
 
     def test_validate_message_rejects_v1(self):
         """Test that v1.0 messages are rejected"""
-        message = {
-            "version": "1.0",
-            "type": "update",
-            "data": {"test": "data"}
-        }
+        message = {"version": "1.0", "type": "update", "data": {"test": "data"}}
 
         with pytest.raises(InvalidVersionError) as exc_info:
             validate_message(message)
@@ -91,10 +82,7 @@ class TestMessageValidation:
 
     def test_validate_message_rejects_no_version(self):
         """Test that messages without version are rejected"""
-        message = {
-            "type": "update",
-            "data": {"test": "data"}
-        }
+        message = {"type": "update", "data": {"test": "data"}}
 
         with pytest.raises(InvalidVersionError):
             validate_message(message)
@@ -104,7 +92,7 @@ class TestMessageValidation:
         message = {
             "version": "2.0",
             "type": "invalid_type",  # Invalid message type
-            "sequence": "not_a_number"  # Invalid sequence type
+            "sequence": "not_a_number",  # Invalid sequence type
         }
 
         with pytest.raises(ProtocolError):
@@ -121,14 +109,9 @@ class TestMessageValidation:
             "payload": {
                 "entity": "task",
                 "action": "create",
-                "data": {
-                    "primary": large_data
-                }
+                "data": {"primary": large_data},
             },
-            "metadata": {
-                "source": "user",
-                "immediate": True
-            }
+            "metadata": {"source": "user", "immediate": True},
         }
 
         with pytest.raises(MessageSizeError) as exc_info:
@@ -143,18 +126,13 @@ class TestWSMessageModels:
     def test_ws_message_creation(self):
         """Test basic WSMessage creation with all required fields"""
         payload = WSPayload(
-            entity="task",
-            action="create",
-            data=WSData(primary={"id": "123"})
+            entity="task", action="create", data=WSData(primary={"id": "123"})
         )
 
         metadata = WSMetadata(source="user")
 
         message = WSMessage(
-            type="update",
-            sequence=1,
-            payload=payload,
-            metadata=metadata
+            type="update", sequence=1, payload=payload, metadata=metadata
         )
 
         assert message.version == "2.0"
@@ -168,7 +146,7 @@ class TestWSMessageModels:
         cascade = CascadeData(
             tasks=[{"id": "task1"}, {"id": "task2"}],
             branches=[{"id": "branch1"}],
-            projects=[{"id": "project1"}]
+            projects=[{"id": "project1"}],
         )
 
         assert cascade.get_total_entities() == 4
@@ -181,18 +159,12 @@ class TestWSMessageModels:
     def test_user_update_message_defaults(self):
         """Test UserUpdateMessage enforces correct defaults"""
         payload = WSPayload(
-            entity="task",
-            action="create",
-            data=WSData(primary={"id": "123"})
+            entity="task", action="create", data=WSData(primary={"id": "123"})
         )
 
         metadata = WSMetadata(source="system")  # Will be overridden
 
-        message = UserUpdateMessage(
-            sequence=1,
-            payload=payload,
-            metadata=metadata
-        )
+        message = UserUpdateMessage(sequence=1, payload=payload, metadata=metadata)
 
         assert message.type == "update"
         assert message.metadata.source == "user"
@@ -203,16 +175,12 @@ class TestWSMessageModels:
         payload = WSPayload(
             entity="multiple",
             action="batch",
-            data=WSData(primary=[{"id": "123"}, {"id": "456"}])
+            data=WSData(primary=[{"id": "123"}, {"id": "456"}]),
         )
 
         metadata = WSMetadata(source="system")  # Will be overridden
 
-        message = AIBatchMessage(
-            sequence=1,
-            payload=payload,
-            metadata=metadata
-        )
+        message = AIBatchMessage(sequence=1, payload=payload, metadata=metadata)
 
         assert message.type == "bulk"
         assert message.metadata.source == "mcp-ai"
@@ -221,37 +189,23 @@ class TestWSMessageModels:
     def test_system_message_types(self):
         """Test system message types (heartbeat, error, sync)"""
         payload = WSPayload(
-            entity="multiple",
-            action="update",
-            data=WSData(primary={"status": "test"})
+            entity="multiple", action="update", data=WSData(primary={"status": "test"})
         )
 
         metadata = WSMetadata(source="user")  # Will be overridden
 
         # Test HeartbeatMessage
-        heartbeat = HeartbeatMessage(
-            sequence=1,
-            payload=payload,
-            metadata=metadata
-        )
+        heartbeat = HeartbeatMessage(sequence=1, payload=payload, metadata=metadata)
         assert heartbeat.type == "heartbeat"
         assert heartbeat.metadata.source == "system"
 
         # Test ErrorMessage
-        error = ErrorMessage(
-            sequence=2,
-            payload=payload,
-            metadata=metadata
-        )
+        error = ErrorMessage(sequence=2, payload=payload, metadata=metadata)
         assert error.type == "error"
         assert error.metadata.source == "system"
 
         # Test SyncMessage
-        sync = SyncMessage(
-            sequence=3,
-            payload=payload,
-            metadata=metadata
-        )
+        sync = SyncMessage(sequence=3, payload=payload, metadata=metadata)
         assert sync.type == "sync"
         assert sync.metadata.source == "system"
 
@@ -268,7 +222,7 @@ class TestProtocolHelpers:
             primary_data={"id": "123", "title": "Test Task"},
             user_id="user123",
             session_id="session123",
-            sequence=1
+            sequence=1,
         )
 
         assert isinstance(message, UserUpdateMessage)
@@ -294,7 +248,7 @@ class TestProtocolHelpers:
             affected_branches={"branch123"},
             affected_projects={"project123"},
             affected_contexts=set(),
-            calculation_time_ms=25.0
+            calculation_time_ms=25.0,
         )
         mock_calculator.calculate_cascade.return_value = mock_result
 
@@ -304,7 +258,7 @@ class TestProtocolHelpers:
             primary_data={"id": "task123", "title": "Updated Task"},
             cascade_calculator=mock_calculator,
             entity_id="task123",
-            sequence=1
+            sequence=1,
         )
 
         assert isinstance(message, UserUpdateMessage)
@@ -316,8 +270,7 @@ class TestProtocolHelpers:
 
         # Verify cascade calculator was called correctly
         mock_calculator.calculate_cascade.assert_called_once_with(
-            entity_id="task123",
-            entity_type=CascadeEntityType.TASK
+            entity_id="task123", entity_type=CascadeEntityType.TASK
         )
 
     @pytest.mark.asyncio
@@ -325,14 +278,11 @@ class TestProtocolHelpers:
         """Test creating AI batch message"""
         updates = [
             {"entity_id": "task1", "entity_type": "task", "action": "update"},
-            {"entity_id": "task2", "entity_type": "task", "action": "create"}
+            {"entity_id": "task2", "entity_type": "task", "action": "create"},
         ]
 
         message = await create_ai_batch(
-            updates=updates,
-            batch_id="batch_456",
-            user_id="user123",
-            sequence=5
+            updates=updates, batch_id="batch_456", user_id="user123", sequence=5
         )
 
         assert isinstance(message, AIBatchMessage)
@@ -346,10 +296,7 @@ class TestProtocolHelpers:
 
     def test_create_heartbeat(self):
         """Test creating heartbeat message"""
-        message = create_heartbeat(
-            session_id="session123",
-            sequence=10
-        )
+        message = create_heartbeat(session_id="session123", sequence=10)
 
         assert isinstance(message, HeartbeatMessage)
         assert message.type == "heartbeat"
@@ -366,7 +313,7 @@ class TestProtocolHelpers:
             error_details={"field": "invalid_value"},
             session_id="session123",
             correlation_id="corr_456",
-            sequence=15
+            sequence=15,
         )
 
         assert isinstance(message, ErrorMessage)
@@ -385,14 +332,11 @@ class TestProtocolHelpers:
         """Test creating sync message"""
         sync_data = {
             "user_state": {"tasks": [], "branches": []},
-            "server_time": "2023-01-01T00:00:00Z"
+            "server_time": "2023-01-01T00:00:00Z",
         }
 
         message = create_sync(
-            sync_data=sync_data,
-            session_id="session123",
-            user_id="user456",
-            sequence=20
+            sync_data=sync_data, session_id="session123", user_id="user456", sequence=20
         )
 
         assert isinstance(message, SyncMessage)
@@ -411,16 +355,13 @@ class TestMessageSizing:
         payload = WSPayload(
             entity="task",
             action="create",
-            data=WSData(primary={"id": "123", "title": "Test"})
+            data=WSData(primary={"id": "123", "title": "Test"}),
         )
 
         metadata = WSMetadata(source="user")
 
         message = WSMessage(
-            type="update",
-            sequence=1,
-            payload=payload,
-            metadata=metadata
+            type="update", sequence=1, payload=payload, metadata=metadata
         )
 
         size = get_message_size(message)
@@ -430,18 +371,13 @@ class TestMessageSizing:
     def test_is_message_size_valid_small_message(self):
         """Test size validation for small message"""
         payload = WSPayload(
-            entity="task",
-            action="create",
-            data=WSData(primary={"id": "123"})
+            entity="task", action="create", data=WSData(primary={"id": "123"})
         )
 
         metadata = WSMetadata(source="user")
 
         message = WSMessage(
-            type="update",
-            sequence=1,
-            payload=payload,
-            metadata=metadata
+            type="update", sequence=1, payload=payload, metadata=metadata
         )
 
         assert is_message_size_valid(message) is True
@@ -452,18 +388,13 @@ class TestMessageSizing:
         large_data = {"data": "x" * 70000}  # Over 64KB
 
         payload = WSPayload(
-            entity="task",
-            action="create",
-            data=WSData(primary=large_data)
+            entity="task", action="create", data=WSData(primary=large_data)
         )
 
         metadata = WSMetadata(source="user")
 
         message = WSMessage(
-            type="update",
-            sequence=1,
-            payload=payload,
-            metadata=metadata
+            type="update", sequence=1, payload=payload, metadata=metadata
         )
 
         assert is_message_size_valid(message) is False
@@ -480,23 +411,15 @@ class TestJSONSerialization:
             data=WSData(
                 primary={"id": "123", "title": "Test Task"},
                 cascade=CascadeData(
-                    tasks=[{"id": "task1"}],
-                    branches=[{"id": "branch1"}]
-                )
-            )
+                    tasks=[{"id": "task1"}], branches=[{"id": "branch1"}]
+                ),
+            ),
         )
 
-        metadata = WSMetadata(
-            source="user",
-            user_id="user123",
-            session_id="session456"
-        )
+        metadata = WSMetadata(source="user", user_id="user123", session_id="session456")
 
         message = WSMessage(
-            type="update",
-            sequence=1,
-            payload=payload,
-            metadata=metadata
+            type="update", sequence=1, payload=payload, metadata=metadata
         )
 
         # Test serialization
@@ -519,11 +442,9 @@ class TestJSONSerialization:
             type="update",
             sequence=1,
             payload=WSPayload(
-                entity="task",
-                action="create",
-                data=WSData(primary={"id": "123"})
+                entity="task", action="create", data=WSData(primary={"id": "123"})
             ),
-            metadata=WSMetadata(source="user")
+            metadata=WSMetadata(source="user"),
         )
 
         json_data = json.loads(message.model_dump_json())
@@ -557,7 +478,7 @@ class TestErrorHandling:
             primary_data={"id": "task123"},
             cascade_calculator=mock_calculator,
             entity_id="task123",
-            sequence=1
+            sequence=1,
         )
 
         assert isinstance(message, UserUpdateMessage)
@@ -570,7 +491,7 @@ class TestErrorHandling:
             WSMessage(
                 type="update",
                 sequence=1,
-                metadata=WSMetadata(source="user")
+                metadata=WSMetadata(source="user"),
                 # Missing payload
             )
 
@@ -580,10 +501,8 @@ class TestErrorHandling:
                 type="update",
                 sequence=1,
                 payload=WSPayload(
-                    entity="task",
-                    action="create",
-                    data=WSData(primary={"id": "123"})
-                )
+                    entity="task", action="create", data=WSData(primary={"id": "123"})
+                ),
                 # Missing metadata
             )
 
@@ -596,11 +515,9 @@ class TestDualTrackMessaging:
         message = UserUpdateMessage(
             sequence=1,
             payload=WSPayload(
-                entity="task",
-                action="update",
-                data=WSData(primary={"id": "123"})
+                entity="task", action="update", data=WSData(primary={"id": "123"})
             ),
-            metadata=WSMetadata(source="system")  # Will be overridden to "user"
+            metadata=WSMetadata(source="system"),  # Will be overridden to "user"
         )
 
         assert message.type == "update"
@@ -615,12 +532,12 @@ class TestDualTrackMessaging:
             payload=WSPayload(
                 entity="multiple",
                 action="batch",
-                data=WSData(primary=[{"id": "123"}, {"id": "456"}])
+                data=WSData(primary=[{"id": "123"}, {"id": "456"}]),
             ),
             metadata=WSMetadata(
                 source="user",  # Will be overridden to "mcp-ai"
-                batch_id="batch_123"
-            )
+                batch_id="batch_123",
+            ),
         )
 
         assert message.type == "bulk"
@@ -635,9 +552,9 @@ class TestDualTrackMessaging:
             payload=WSPayload(
                 entity="multiple",
                 action="update",
-                data=WSData(primary={"status": "alive"})
+                data=WSData(primary={"status": "alive"}),
             ),
-            metadata=WSMetadata(source="system")  # Will be overridden to "user"
+            metadata=WSMetadata(source="system"),  # Will be overridden to "user"
         )
 
         assert message.type == "heartbeat"
@@ -662,7 +579,7 @@ class TestProtocolIntegration:
             affected_branches={"branch123"},
             affected_projects={"project123"},
             affected_contexts=set(),
-            calculation_time_ms=15.0
+            calculation_time_ms=15.0,
         )
         mock_calculator.calculate_cascade.return_value = mock_result
 
@@ -670,13 +587,17 @@ class TestProtocolIntegration:
         message = await create_user_update(
             entity_type="task",
             action="update",
-            primary_data={"id": "task123", "title": "Updated Task", "status": "in_progress"},
+            primary_data={
+                "id": "task123",
+                "title": "Updated Task",
+                "status": "in_progress",
+            },
             cascade_calculator=mock_calculator,
             entity_id="task123",
             user_id="user456",
             session_id="session789",
             correlation_id="corr_123",
-            sequence=42
+            sequence=42,
         )
 
         # Validate message structure

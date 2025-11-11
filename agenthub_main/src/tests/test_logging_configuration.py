@@ -23,9 +23,7 @@ class TestLoggingConfiguration:
         """Test that logging setup works without errors."""
         # Setup logging
         setup_comprehensive_logging(
-            log_level="DEBUG",
-            app_name="LoggingTest",
-            enable_file_logging=True
+            log_level="DEBUG", app_name="LoggingTest", enable_file_logging=True
         )
 
         # Get loggers
@@ -43,8 +41,12 @@ class TestLoggingConfiguration:
         env_info = get_environment_info()
 
         required_keys = [
-            'environment_type', 'log_directory', 'log_directory_exists',
-            'platform', 'hostname', 'docker_env_exists'
+            "environment_type",
+            "log_directory",
+            "log_directory_exists",
+            "platform",
+            "hostname",
+            "docker_env_exists",
         ]
 
         for key in required_keys:
@@ -55,17 +57,15 @@ class TestLoggingConfiguration:
     def test_logging_info(self):
         """Test that logging info can be retrieved."""
         setup_comprehensive_logging(
-            log_level="INFO",
-            app_name="LoggingTest",
-            enable_file_logging=True
+            log_level="INFO", app_name="LoggingTest", enable_file_logging=True
         )
 
         logging_info = get_logging_info()
 
-        assert 'environment' in logging_info
-        assert 'loggers' in logging_info
-        assert 'FastMCP' in logging_info['loggers']
-        assert 'root' in logging_info['loggers']
+        assert "environment" in logging_info
+        assert "loggers" in logging_info
+        assert "FastMCP" in logging_info["loggers"]
+        assert "root" in logging_info["loggers"]
 
         print(f"Logging info: {logging_info}")
 
@@ -78,9 +78,7 @@ def manual_test_logging():
 
     # Setup logging
     setup_comprehensive_logging(
-        log_level="DEBUG",
-        app_name="LoggingTest",
-        enable_file_logging=True
+        log_level="DEBUG", app_name="LoggingTest", enable_file_logging=True
     )
 
     # Get loggers
@@ -103,16 +101,20 @@ def manual_test_logging():
     try:
         logging_info = get_logging_info()
         print("\n📝 Logging Configuration:")
-        fastmcp_handlers = logging_info['loggers']['FastMCP']['handlers']
-        root_handlers = logging_info['loggers']['root']['handlers']
+        fastmcp_handlers = logging_info["loggers"]["FastMCP"]["handlers"]
+        root_handlers = logging_info["loggers"]["root"]["handlers"]
 
         print(f"   FastMCP Logger Handlers: {len(fastmcp_handlers)}")
         for i, handler in enumerate(fastmcp_handlers):
-            print(f"     Handler {i+1}: {handler['type']} (Level: {handler['level']})")
+            print(
+                f"     Handler {i + 1}: {handler['type']} (Level: {handler['level']})"
+            )
 
         print(f"   Root Logger Handlers: {len(root_handlers)}")
         for i, handler in enumerate(root_handlers):
-            print(f"     Handler {i+1}: {handler['type']} (Level: {handler['level']})")
+            print(
+                f"     Handler {i + 1}: {handler['type']} (Level: {handler['level']})"
+            )
     except Exception as e:
         print(f"   Error getting logging info: {e}")
 
@@ -143,6 +145,7 @@ def manual_test_logging():
 
     # Check if log files exist
     from fastmcp.utilities.environment import get_log_directory
+
     log_dir = get_log_directory()
 
     print("\n📁 Log Files Status:")
@@ -157,7 +160,7 @@ def manual_test_logging():
                 # Show last few lines of log file
                 if size > 0:
                     try:
-                        with open(log_file, encoding='utf-8') as f:
+                        with open(log_file, encoding="utf-8") as f:
                             lines = f.readlines()
                             if lines:
                                 print(f"       Last line: {lines[-1].strip()}")

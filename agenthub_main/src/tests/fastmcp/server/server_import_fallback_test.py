@@ -21,6 +21,7 @@ import pytest
 # Test 1: TYPE_CHECKING Conditional Imports (Lines 102-108)
 # ============================================================================
 
+
 def test_type_checking_imports_not_executed_at_runtime():
     """
     Test that TYPE_CHECKING imports are only for type hints, not runtime.
@@ -37,14 +38,14 @@ def test_type_checking_imports_not_executed_at_runtime():
 
     # These should be imported conditionally only for type checking
     conditional_imports = [
-        'Client',
-        'ClientTransport',
-        'ClientTransportT',
-        'OpenAPIComponentFn',
-        'FastMCPOpenAPI',
-        'RouteMap',
-        'OpenAPIRouteMapFn',
-        'FastMCPProxy'
+        "Client",
+        "ClientTransport",
+        "ClientTransportT",
+        "OpenAPIComponentFn",
+        "FastMCPOpenAPI",
+        "RouteMap",
+        "OpenAPIRouteMapFn",
+        "FastMCPProxy",
     ]
 
     for import_name in conditional_imports:
@@ -79,16 +80,19 @@ def test_type_checking_imports_structure():
         "from fastmcp.client import Client",
         "from fastmcp.client.transports import ClientTransport",
         "from fastmcp.server.openapi import",
-        "from fastmcp.server.proxy import FastMCPProxy"
+        "from fastmcp.server.proxy import FastMCPProxy",
     ]
 
     for expected_import in expected_in_type_checking:
-        assert expected_import in source, f"Expected import not found: {expected_import}"
+        assert expected_import in source, (
+            f"Expected import not found: {expected_import}"
+        )
 
 
 # ============================================================================
 # Test 2: Lifespan Wrapper Error Recovery (Lines 140-142)
 # ============================================================================
+
 
 @pytest.mark.asyncio
 async def test_lifespan_wrapper_async_exit_stack_error_handling():
@@ -161,6 +165,7 @@ async def test_lifespan_wrapper_async_exit_stack_cleanup():
 # Test 3: Deprecation Warning Configuration (Lines 341-347)
 # ============================================================================
 
+
 def test_handle_deprecated_settings_with_warnings_disabled():
     """
     Test handling deprecated settings when warnings are disabled.
@@ -179,20 +184,20 @@ def test_handle_deprecated_settings_with_warnings_disabled():
 
         # Create server with deprecated parameters
         # Should not raise warnings when deprecation_warnings is False
-        with patch('warnings.warn') as mock_warn:
+        with patch("warnings.warn") as mock_warn:
             server = FastMCP(
                 name="test_deprecated",
                 log_level="DEBUG",
                 debug=True,
                 host="localhost",
-                port=8080
+                port=8080,
             )
 
             # No warnings should be issued
             mock_warn.assert_not_called()
 
             # But settings should still be stored
-            assert hasattr(server, '_deprecated_settings')
+            assert hasattr(server, "_deprecated_settings")
             assert server._deprecated_settings.host == "localhost"
             assert server._deprecated_settings.port == 8080
 
@@ -215,7 +220,7 @@ def test_handle_deprecated_settings_fallback_configuration():
         name="test_fallback",
         port=9000,  # deprecated
         sse_path="/custom/sse",  # deprecated
-        cache_expiration_seconds=60  # valid
+        cache_expiration_seconds=60,  # valid
     )
 
     # Verify deprecated settings were captured
@@ -224,12 +229,13 @@ def test_handle_deprecated_settings_fallback_configuration():
 
     # Verify the merge happened (combined_settings = _settings.model_dump() | deprecated_settings)
     # The deprecated settings should override defaults
-    assert hasattr(server, '_deprecated_settings')
+    assert hasattr(server, "_deprecated_settings")
 
 
 # ============================================================================
 # Test 4: Task Management Import Error Recovery (Lines 218-253)
 # ============================================================================
+
 
 def test_task_management_import_error_graceful_handling():
     """
@@ -241,14 +247,13 @@ def test_task_management_import_error_graceful_handling():
     from fastmcp.server.server import FastMCP
 
     # Mock the import to fail - need to patch where it's used (inside __init__)
-    import_path = 'fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'
+    import_path = (
+        "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+    )
     with patch(import_path, side_effect=ImportError("Mock import failure")):
-        with patch('fastmcp.server.server.logger') as mock_logger:
+        with patch("fastmcp.server.server.logger") as mock_logger:
             # Should not raise, should continue without task management
-            server = FastMCP(
-                name="test_import_error",
-                enable_task_management=True
-            )
+            server = FastMCP(name="test_import_error", enable_task_management=True)
 
             # Verify error was logged
             mock_logger.error.assert_called()
@@ -256,7 +261,9 @@ def test_task_management_import_error_graceful_handling():
             assert "Failed to initialize task management tools" in str(error_call)
 
             # Verify warning was logged
-            mock_logger.warning.assert_called_with("Continuing without task management tools")
+            mock_logger.warning.assert_called_with(
+                "Continuing without task management tools"
+            )
 
             # Verify consolidated_tools is None
             assert server._consolidated_tools is None
@@ -273,15 +280,14 @@ def test_task_management_initialization_exception_handling():
 
     # Mock DDDCompliantMCPTools to raise during initialization
     mock_tools_class = Mock(side_effect=Exception("Initialization error"))
-    import_path = 'fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'
+    import_path = (
+        "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+    )
 
     with patch(import_path, mock_tools_class):
-        with patch('fastmcp.server.server.logger') as mock_logger:
+        with patch("fastmcp.server.server.logger") as mock_logger:
             # Should handle exception gracefully
-            server = FastMCP(
-                name="test_init_exception",
-                enable_task_management=True
-            )
+            server = FastMCP(name="test_init_exception", enable_task_management=True)
 
             # Verify error logging
             assert mock_logger.error.called
@@ -295,6 +301,7 @@ def test_task_management_initialization_exception_handling():
 # ============================================================================
 # Test 5: Environment Variable Configuration Fallback
 # ============================================================================
+
 
 def test_task_management_env_var_fallback():
     """
@@ -323,22 +330,19 @@ def test_task_management_env_var_fallback():
             mock_instance.register_tools = Mock()
             return mock_instance
 
-        import_path = 'fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'
+        import_path = "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
         with patch(import_path, side_effect=mock_init):
-            FastMCP(
-                name="test_env_fallback",
-                enable_task_management=True
-            )
+            FastMCP(name="test_env_fallback", enable_task_management=True)
 
             # Verify config_overrides were passed
-            assert 'config_overrides' in captured_config
-            config = captured_config['config_overrides']
+            assert "config_overrides" in captured_config
+            config = captured_config["config_overrides"]
 
             # Verify cursor tools are disabled
-            assert 'enabled_tools' in config
-            enabled = config['enabled_tools']
-            assert enabled['update_auto_rule'] is False
-            assert enabled['validate_rules'] is False
+            assert "enabled_tools" in config
+            enabled = config["enabled_tools"]
+            assert enabled["update_auto_rule"] is False
+            assert enabled["validate_rules"] is False
 
     finally:
         # Restore original env var
@@ -361,18 +365,21 @@ def test_task_management_tools_registration_failure():
     mock_tools = Mock()
     mock_tools.register_tools = Mock(side_effect=Exception("Registration failed"))
 
-    import_path = 'fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'
+    import_path = (
+        "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+    )
     with patch(import_path, return_value=mock_tools):
-        with patch('fastmcp.server.server.logger') as mock_logger:
+        with patch("fastmcp.server.server.logger") as mock_logger:
             # Should handle registration failure gracefully
             server = FastMCP(
-                name="test_registration_failure",
-                enable_task_management=True
+                name="test_registration_failure", enable_task_management=True
             )
 
             # Verify error was logged
-            assert any("Failed to register consolidated MCP tools" in str(call)
-                      for call in mock_logger.error.call_args_list)
+            assert any(
+                "Failed to register consolidated MCP tools" in str(call)
+                for call in mock_logger.error.call_args_list
+            )
 
             # Server should still exist
             assert server is not None
@@ -383,6 +390,7 @@ def test_task_management_tools_registration_failure():
 # ============================================================================
 # Test 6: AsyncExitStack Context Manager Integration
 # ============================================================================
+
 
 @pytest.mark.asyncio
 async def test_async_exit_stack_multiple_contexts():

@@ -60,7 +60,24 @@ class TestCreateTaskNotificationFlow:
         branch.id = "branch-123"
         branch.name = "Test Branch"
         # Configure mock to return None for any other attribute access to avoid Mock object serialization
-        branch.configure_mock(**{attr: None for attr in dir(branch) if not attr.startswith('_') and attr not in ['project_id', 'task_count', 'completed_tasks', 'in_progress_tasks', 'todo_tasks', 'progress_percentage', 'id', 'name']})
+        branch.configure_mock(
+            **{
+                attr: None
+                for attr in dir(branch)
+                if not attr.startswith("_")
+                and attr
+                not in [
+                    "project_id",
+                    "task_count",
+                    "completed_tasks",
+                    "in_progress_tasks",
+                    "todo_tasks",
+                    "progress_percentage",
+                    "id",
+                    "name",
+                ]
+            }
+        )
         repo.get = Mock(return_value=branch)
         return repo
 
@@ -70,9 +87,10 @@ class TestCreateTaskNotificationFlow:
         from fastmcp.task_management.application.use_cases.create_task import (
             CreateTaskUseCase,
         )
+
         return CreateTaskUseCase(
             task_repository=mock_task_repository,
-            git_branch_repository=mock_git_branch_repository
+            git_branch_repository=mock_git_branch_repository,
         )
 
     @pytest.fixture(autouse=True)
@@ -83,6 +101,7 @@ class TestCreateTaskNotificationFlow:
             connection_subscriptions,
             connection_users,
         )
+
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -97,6 +116,7 @@ class TestCreateTaskNotificationFlow:
         from fastmcp.task_management.application.services import (
             websocket_notification_service,
         )
+
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -136,11 +156,14 @@ class TestCreateTaskNotificationFlow:
             priority=PriorityLevel.HIGH.label,
             git_branch_id="branch-123",
             assignees=["test-agent"],
-            user_id="test-user-123"
+            user_id="test-user-123",
         )
 
         # Arrange: Mock authorization to always return True
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act: Create task (triggers full flow)
             response = create_task_use_case.execute(request)
 
@@ -198,10 +221,13 @@ class TestCreateTaskNotificationFlow:
             priority=PriorityLevel.MEDIUM.label,
             git_branch_id="branch-456",
             assignees=["test-agent"],
-            user_id="test-user-123"
+            user_id="test-user-123",
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             create_task_use_case.execute(request)
             await asyncio.sleep(0.1)
 
@@ -209,7 +235,15 @@ class TestCreateTaskNotificationFlow:
         sent_message = mock_websocket.send_json.call_args[0][0]
 
         # Top-level required fields
-        required_fields = ["id", "version", "type", "timestamp", "sequence", "payload", "metadata"]
+        required_fields = [
+            "id",
+            "version",
+            "type",
+            "timestamp",
+            "sequence",
+            "payload",
+            "metadata",
+        ]
         for field in required_fields:
             assert field in sent_message, f"Missing required field: {field}"
 
@@ -268,10 +302,13 @@ class TestCreateTaskNotificationFlow:
             priority=PriorityLevel.LOW.label,
             git_branch_id="branch-789",
             assignees=["test-agent"],
-            user_id="test-user-123"
+            user_id="test-user-123",
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             create_task_use_case.execute(request)
             await asyncio.sleep(0.1)
 
@@ -325,7 +362,24 @@ class TestUpdateTaskNotificationFlow:
         branch.id = "branch-update-123"
         branch.name = "Update Test Branch"
         # Configure mock to return None for any other attribute access to avoid Mock object serialization
-        branch.configure_mock(**{attr: None for attr in dir(branch) if not attr.startswith('_') and attr not in ['project_id', 'task_count', 'completed_tasks', 'in_progress_tasks', 'todo_tasks', 'progress_percentage', 'id', 'name']})
+        branch.configure_mock(
+            **{
+                attr: None
+                for attr in dir(branch)
+                if not attr.startswith("_")
+                and attr
+                not in [
+                    "project_id",
+                    "task_count",
+                    "completed_tasks",
+                    "in_progress_tasks",
+                    "todo_tasks",
+                    "progress_percentage",
+                    "id",
+                    "name",
+                ]
+            }
+        )
         repo.get = Mock(return_value=branch)
         return repo
 
@@ -335,9 +389,10 @@ class TestUpdateTaskNotificationFlow:
         from fastmcp.task_management.application.use_cases.update_task import (
             UpdateTaskUseCase,
         )
+
         return UpdateTaskUseCase(
             task_repository=mock_task_repository,
-            git_branch_repository=mock_git_branch_repository
+            git_branch_repository=mock_git_branch_repository,
         )
 
     @pytest.fixture(autouse=True)
@@ -348,6 +403,7 @@ class TestUpdateTaskNotificationFlow:
             connection_subscriptions,
             connection_users,
         )
+
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -362,6 +418,7 @@ class TestUpdateTaskNotificationFlow:
         from fastmcp.task_management.application.services import (
             websocket_notification_service,
         )
+
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -395,12 +452,17 @@ class TestUpdateTaskNotificationFlow:
         request = UpdateTaskRequest(
             title="Updated Title",
             description="Updated Description",
-            status=TaskStatusEnum.IN_PROGRESS.value
+            status=TaskStatusEnum.IN_PROGRESS.value,
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act
-            response = update_task_use_case.execute("task-update-123", request, "test-user-456")
+            response = update_task_use_case.execute(
+                "task-update-123", request, "test-user-456"
+            )
             await asyncio.sleep(0.1)
 
         # Assert
@@ -425,6 +487,7 @@ class TestDeleteTaskNotificationFlow:
             connection_subscriptions,
             connection_users,
         )
+
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -439,6 +502,7 @@ class TestDeleteTaskNotificationFlow:
         from fastmcp.task_management.application.services import (
             websocket_notification_service,
         )
+
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -486,11 +550,13 @@ class TestDeleteTaskNotificationFlow:
         mock_git_branch_repo.get = Mock(return_value=branch)
 
         delete_use_case = DeleteTaskUseCase(
-            task_repository=mock_task_repo,
-            git_branch_repository=mock_git_branch_repo
+            task_repository=mock_task_repo, git_branch_repository=mock_git_branch_repo
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act
             response = delete_use_case.execute("task-delete-123", "test-user-789")
             await asyncio.sleep(0.1)
@@ -517,6 +583,7 @@ class TestMultiTenantNotificationIsolation:
             connection_subscriptions,
             connection_users,
         )
+
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -531,6 +598,7 @@ class TestMultiTenantNotificationIsolation:
         from fastmcp.task_management.application.services import (
             websocket_notification_service,
         )
+
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -567,7 +635,9 @@ class TestMultiTenantNotificationIsolation:
         connection_users[websocket_user_b] = user_b
 
         # Mock authorization: Only allow user who owns the task
-        async def strict_authorization(websocket, entity_type, entity_id, user_id, metadata):
+        async def strict_authorization(
+            websocket, entity_type, entity_id, user_id, metadata
+        ):
             connection_user = connection_users.get(websocket)
             return connection_user and connection_user.id == user_id
 
@@ -588,8 +658,7 @@ class TestMultiTenantNotificationIsolation:
         mock_git_branch_repo.get = Mock(return_value=branch)
 
         create_use_case = CreateTaskUseCase(
-            task_repository=mock_task_repo,
-            git_branch_repository=mock_git_branch_repo
+            task_repository=mock_task_repo, git_branch_repository=mock_git_branch_repo
         )
 
         request = CreateTaskRequest(
@@ -599,10 +668,13 @@ class TestMultiTenantNotificationIsolation:
             priority=PriorityLevel.HIGH.label,
             git_branch_id="shared-branch-123",
             assignees=["test-agent"],
-            user_id="user-b-456"
+            user_id="user-b-456",
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', side_effect=strict_authorization):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            side_effect=strict_authorization,
+        ):
             # Act: User B creates task
             create_use_case.execute(request)
             await asyncio.sleep(0.1)
@@ -656,8 +728,7 @@ class TestMultiTenantNotificationIsolation:
         mock_git_branch_repo.get = Mock(return_value=branch)
 
         create_use_case = CreateTaskUseCase(
-            task_repository=mock_task_repo,
-            git_branch_repository=mock_git_branch_repo
+            task_repository=mock_task_repo, git_branch_repository=mock_git_branch_repo
         )
 
         request = CreateTaskRequest(
@@ -667,10 +738,13 @@ class TestMultiTenantNotificationIsolation:
             priority=PriorityLevel.MEDIUM.label,
             git_branch_id="multi-tab-branch",
             assignees=["test-agent"],
-            user_id="multi-tab-user-123"
+            user_id="multi-tab-user-123",
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act
             create_use_case.execute(request)
             await asyncio.sleep(0.1)
@@ -694,6 +768,7 @@ class TestNotificationDeduplicationFlow:
             connection_subscriptions,
             connection_users,
         )
+
         active_connections.clear()
         connection_users.clear()
         connection_subscriptions.clear()
@@ -708,6 +783,7 @@ class TestNotificationDeduplicationFlow:
         from fastmcp.task_management.application.services import (
             websocket_notification_service,
         )
+
         websocket_notification_service._notification_cache.clear()
         yield
         websocket_notification_service._notification_cache.clear()
@@ -762,19 +838,27 @@ class TestNotificationDeduplicationFlow:
         mock_git_branch_repo.get = Mock(return_value=branch)
 
         update_use_case = UpdateTaskUseCase(
-            task_repository=mock_task_repo,
-            git_branch_repository=mock_git_branch_repo
+            task_repository=mock_task_repo, git_branch_repository=mock_git_branch_repo
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.is_user_authorized_for_message', return_value=True):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.is_user_authorized_for_message",
+            return_value=True,
+        ):
             # Act: Rapid updates
-            update_use_case.execute("task-dedup-123", UpdateTaskRequest(title="Update 1"), "dedup-user-123")
+            update_use_case.execute(
+                "task-dedup-123", UpdateTaskRequest(title="Update 1"), "dedup-user-123"
+            )
             await asyncio.sleep(0.05)
 
-            update_use_case.execute("task-dedup-123", UpdateTaskRequest(title="Update 2"), "dedup-user-123")
+            update_use_case.execute(
+                "task-dedup-123", UpdateTaskRequest(title="Update 2"), "dedup-user-123"
+            )
             await asyncio.sleep(0.05)
 
-            update_use_case.execute("task-dedup-123", UpdateTaskRequest(title="Update 3"), "dedup-user-123")
+            update_use_case.execute(
+                "task-dedup-123", UpdateTaskRequest(title="Update 3"), "dedup-user-123"
+            )
             await asyncio.sleep(0.1)
 
         # Assert: Only 1 notification sent (deduplication working)

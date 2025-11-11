@@ -6,7 +6,7 @@ including token management, cache functionality, client implementations, and hoo
 
 Test Categories:
 - Token Management (JWT authentication)
-- Cache Management (Session context caching)  
+- Cache Management (Session context caching)
 - MCP Client (HTTP client implementations)
 - Session Hooks (Context injection)
 - Performance Monitoring (Metrics and optimization)
@@ -19,6 +19,8 @@ import sys
 from pathlib import Path
 
 # Add hooks directory to Python path for testing
-hooks_path = Path(__file__).parent.parent.parent.parent.parent.parent / ".claude" / "hooks"
+hooks_path = (
+    Path(__file__).parent.parent.parent.parent.parent.parent / ".claude" / "hooks"
+)
 if str(hooks_path) not in sys.path:
     sys.path.insert(0, str(hooks_path))

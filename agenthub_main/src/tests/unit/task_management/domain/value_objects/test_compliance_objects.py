@@ -20,7 +20,7 @@ class TestDocumentInfo:
         """Test creating document info with valid data."""
         now = datetime.now(UTC)
         metadata = {"author": "test_user", "version": "1.0"}
-        
+
         doc_info = DocumentInfo(
             path="/docs/test.md",
             type=DocumentType.DOCUMENT,
@@ -28,9 +28,9 @@ class TestDocumentInfo:
             metadata=metadata,
             created_at=now,
             updated_at=now,
-            hash="abc123"
+            hash="abc123",
         )
-        
+
         assert doc_info.path == "/docs/test.md"
         assert doc_info.type == DocumentType.DOCUMENT
         assert doc_info.content == "Test content"
@@ -42,15 +42,15 @@ class TestDocumentInfo:
     def test_create_document_info_minimal(self):
         """Test creating document info with minimal required fields."""
         now = datetime.now(UTC)
-        
+
         doc_info = DocumentInfo(
             path="/config/settings.json",
             type=DocumentType.CONFIG,
             content='{"key": "value"}',
             metadata={},
-            created_at=now
+            created_at=now,
         )
-        
+
         assert doc_info.path == "/config/settings.json"
         assert doc_info.type == DocumentType.CONFIG
         assert doc_info.content == '{"key": "value"}'
@@ -67,7 +67,7 @@ class TestDocumentInfo:
                 type=DocumentType.DOCUMENT,
                 content="Content",
                 metadata={},
-                created_at=datetime.now(UTC)
+                created_at=datetime.now(UTC),
             )
 
     def test_document_info_empty_content_validation(self):
@@ -78,7 +78,7 @@ class TestDocumentInfo:
                 type=DocumentType.DOCUMENT,
                 content="",
                 metadata={},
-                created_at=datetime.now(UTC)
+                created_at=datetime.now(UTC),
             )
 
     def test_document_type_enum_values(self):
@@ -96,12 +96,12 @@ class TestDocumentInfo:
             type=DocumentType.DOCUMENT,
             content="Test",
             metadata={},
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(UTC),
         )
-        
+
         with pytest.raises(AttributeError):
             doc_info.path = "/new/path.md"
-        
+
         with pytest.raises(AttributeError):
             doc_info.content = "New content"
 
@@ -114,15 +114,15 @@ class TestComplianceStatus:
         now = datetime.now(UTC)
         issues = ["Missing signature", "Outdated template"]
         metadata = {"reviewed_by": "auditor1", "review_type": "quarterly"}
-        
+
         status = ComplianceStatus(
             is_compliant=False,
             validation_date=now,
             validator="compliance_system",
             issues=issues,
-            metadata=metadata
+            metadata=metadata,
         )
-        
+
         assert status.is_compliant is False
         assert status.validation_date == now
         assert status.validator == "compliance_system"
@@ -137,9 +137,9 @@ class TestComplianceStatus:
             validation_date=datetime.now(UTC),
             validator="auto_validator",
             issues=[],
-            metadata={"status": "approved"}
+            metadata={"status": "approved"},
         )
-        
+
         assert status.is_compliant is True
         assert len(status.issues) == 0
         assert status.metadata["status"] == "approved"
@@ -151,9 +151,9 @@ class TestComplianceStatus:
             validation_date=datetime.now(UTC),
             validator="test",
             issues=[],
-            metadata={}
+            metadata={},
         )
-        
+
         with pytest.raises(AttributeError):
             status.is_compliant = False
 
@@ -166,14 +166,11 @@ class TestValidationResult:
         errors = ["Field 'name' is required", "Invalid date format"]
         warnings = ["Field 'description' is recommended"]
         metadata = {"validator_version": "2.0", "rules_applied": 5}
-        
+
         result = ValidationResult(
-            is_valid=False,
-            errors=errors,
-            warnings=warnings,
-            metadata=metadata
+            is_valid=False, errors=errors, warnings=warnings, metadata=metadata
         )
-        
+
         assert result.is_valid is False
         assert len(result.errors) == 2
         assert len(result.warnings) == 1
@@ -185,9 +182,9 @@ class TestValidationResult:
             is_valid=True,
             errors=[],
             warnings=["Consider adding more documentation"],
-            metadata={"confidence": 0.95}
+            metadata={"confidence": 0.95},
         )
-        
+
         assert result.is_valid is True
         assert len(result.errors) == 0
         assert len(result.warnings) == 1
@@ -195,13 +192,8 @@ class TestValidationResult:
 
     def test_validation_result_immutable(self):
         """Test that ValidationResult is immutable."""
-        result = ValidationResult(
-            is_valid=True,
-            errors=[],
-            warnings=[],
-            metadata={}
-        )
-        
+        result = ValidationResult(is_valid=True, errors=[], warnings=[], metadata={})
+
         with pytest.raises(AttributeError):
             result.is_valid = False
 
@@ -212,34 +204,31 @@ class TestValidationReport:
     def test_create_validation_report(self):
         """Test creating validation report with multiple results."""
         now = datetime.now(UTC)
-        
+
         results = [
             ValidationResult(
                 is_valid=False,
                 errors=["Error 1", "Error 2"],
                 warnings=["Warning 1"],
-                metadata={}
+                metadata={},
             ),
             ValidationResult(
                 is_valid=True,
                 errors=[],
                 warnings=["Warning 2", "Warning 3"],
-                metadata={}
+                metadata={},
             ),
             ValidationResult(
-                is_valid=False,
-                errors=["Error 3"],
-                warnings=[],
-                metadata={}
-            )
+                is_valid=False, errors=["Error 3"], warnings=[], metadata={}
+            ),
         ]
-        
+
         recommendations = [
             "Fix all validation errors",
             "Review warning messages",
-            "Update documentation"
+            "Update documentation",
         ]
-        
+
         report = ValidationReport(
             validation_id="val-123",
             entity_id="entity-456",
@@ -249,9 +238,9 @@ class TestValidationReport:
             overall_status=False,
             summary="3 validation checks performed, 2 failed",
             recommendations=recommendations,
-            metadata={"validator": "doc_validator_v2"}
+            metadata={"validator": "doc_validator_v2"},
         )
-        
+
         assert report.validation_id == "val-123"
         assert report.entity_id == "entity-456"
         assert report.entity_type == "document"
@@ -266,9 +255,9 @@ class TestValidationReport:
         results = [
             ValidationResult(False, ["E1", "E2"], [], {}),
             ValidationResult(False, ["E3"], [], {}),
-            ValidationResult(True, [], ["W1"], {})
+            ValidationResult(True, [], ["W1"], {}),
         ]
-        
+
         report = ValidationReport(
             validation_id="val-1",
             entity_id="ent-1",
@@ -278,9 +267,9 @@ class TestValidationReport:
             overall_status=False,
             summary="Validation failed",
             recommendations=[],
-            metadata={}
+            metadata={},
         )
-        
+
         assert report.total_errors == 3
 
     def test_validation_report_total_warnings(self):
@@ -288,9 +277,9 @@ class TestValidationReport:
         results = [
             ValidationResult(True, [], ["W1", "W2"], {}),
             ValidationResult(True, [], ["W3"], {}),
-            ValidationResult(False, ["E1"], ["W4", "W5"], {})
+            ValidationResult(False, ["E1"], ["W4", "W5"], {}),
         ]
-        
+
         report = ValidationReport(
             validation_id="val-2",
             entity_id="ent-2",
@@ -300,9 +289,9 @@ class TestValidationReport:
             overall_status=True,
             summary="Validation passed with warnings",
             recommendations=[],
-            metadata={}
+            metadata={},
         )
-        
+
         assert report.total_warnings == 5
 
     def test_validation_report_has_issues(self):
@@ -317,11 +306,11 @@ class TestValidationReport:
             overall_status=False,
             summary="Has errors",
             recommendations=[],
-            metadata={}
+            metadata={},
         )
-        
+
         assert report_with_errors.has_issues is True
-        
+
         # Report with warnings only
         report_with_warnings = ValidationReport(
             validation_id="val-4",
@@ -332,11 +321,11 @@ class TestValidationReport:
             overall_status=True,
             summary="Has warnings",
             recommendations=[],
-            metadata={}
+            metadata={},
         )
-        
+
         assert report_with_warnings.has_issues is True
-        
+
         # Clean report
         clean_report = ValidationReport(
             validation_id="val-5",
@@ -347,9 +336,9 @@ class TestValidationReport:
             overall_status=True,
             summary="All clear",
             recommendations=[],
-            metadata={}
+            metadata={},
         )
-        
+
         assert clean_report.has_issues is False
 
     def test_validation_report_empty_results(self):
@@ -363,9 +352,9 @@ class TestValidationReport:
             overall_status=True,
             summary="No validations performed",
             recommendations=[],
-            metadata={}
+            metadata={},
         )
-        
+
         assert report.total_errors == 0
         assert report.total_warnings == 0
         assert report.has_issues is False
@@ -381,11 +370,11 @@ class TestValidationReport:
             overall_status=True,
             summary="Test",
             recommendations=[],
-            metadata={}
+            metadata={},
         )
-        
+
         with pytest.raises(AttributeError):
             report.validation_id = "new-id"
-        
+
         with pytest.raises(AttributeError):
             report.overall_status = False

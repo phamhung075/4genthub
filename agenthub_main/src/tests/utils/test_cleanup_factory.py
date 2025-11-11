@@ -175,7 +175,11 @@ class TestCleanupFactory:
 
     @staticmethod
     @contextmanager
-    def combined_cleanup(env_vars: list[str], cleanup_database: bool = True, cleanup_db_config: bool = True):
+    def combined_cleanup(
+        env_vars: list[str],
+        cleanup_database: bool = True,
+        cleanup_db_config: bool = True,
+    ):
         """Combined cleanup factory for environment, database, and config
 
         Convenience method that combines multiple cleanup operations in a single
@@ -229,7 +233,7 @@ class TestCleanupFactory:
 
     @staticmethod
     @contextmanager
-    def singleton_cleanup(singleton_class, reset_method: str = 'reset_instance'):
+    def singleton_cleanup(singleton_class, reset_method: str = "reset_instance"):
         """Generic cleanup factory for any singleton pattern
 
         Provides a generic way to reset any singleton class that follows the
@@ -274,9 +278,13 @@ class TestCleanupFactory:
                     reset_fn = getattr(singleton_class, reset_method)
                     reset_fn()
                 else:
-                    print(f"Warning: {singleton_class.__name__} does not have {reset_method} method")
+                    print(
+                        f"Warning: {singleton_class.__name__} does not have {reset_method} method"
+                    )
             except Exception as e:
-                print(f"Warning: Singleton cleanup for {singleton_class.__name__} encountered error: {e}")
+                print(
+                    f"Warning: Singleton cleanup for {singleton_class.__name__} encountered error: {e}"
+                )
 
     @staticmethod
     @contextmanager
@@ -344,6 +352,7 @@ def create_env_cleanup_fixture(env_vars: list[str]):
         cleanup_db_env = create_env_cleanup_fixture(['DATABASE_TYPE', 'DATABASE_URL'])
         ```
     """
+
     def fixture_function():
         with TestCleanupFactory.environment_cleanup(env_vars):
             yield
@@ -352,7 +361,9 @@ def create_env_cleanup_fixture(env_vars: list[str]):
     return fixture_function
 
 
-def create_combined_cleanup_fixture(env_vars: list[str], cleanup_db: bool = True, cleanup_config: bool = True):
+def create_combined_cleanup_fixture(
+    env_vars: list[str], cleanup_db: bool = True, cleanup_config: bool = True
+):
     """Create a pytest fixture function for combined cleanup
 
     Factory function that generates a pytest fixture with combined cleanup.
@@ -375,6 +386,7 @@ def create_combined_cleanup_fixture(env_vars: list[str], cleanup_db: bool = True
         )
         ```
     """
+
     def fixture_function():
         with TestCleanupFactory.combined_cleanup(env_vars, cleanup_db, cleanup_config):
             yield

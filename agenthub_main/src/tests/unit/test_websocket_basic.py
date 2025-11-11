@@ -32,14 +32,9 @@ class TestBasicValidation:
             "payload": {
                 "entity": "task",
                 "action": "create",
-                "data": {
-                    "primary": {"id": "123", "title": "Test Task"}
-                }
+                "data": {"primary": {"id": "123", "title": "Test Task"}},
             },
-            "metadata": {
-                "source": "user",
-                "immediate": True
-            }
+            "metadata": {"source": "user", "immediate": True},
         }
 
         result = validate_message(message)
@@ -49,11 +44,7 @@ class TestBasicValidation:
 
     def test_validate_message_rejects_v1(self):
         """Test that v1.0 messages are rejected"""
-        message = {
-            "version": "1.0",
-            "type": "update",
-            "data": {"test": "data"}
-        }
+        message = {"version": "1.0", "type": "update", "data": {"test": "data"}}
 
         with pytest.raises(InvalidVersionError) as exc_info:
             validate_message(message)
@@ -62,10 +53,7 @@ class TestBasicValidation:
 
     def test_validate_message_rejects_no_version(self):
         """Test that messages without version are rejected"""
-        message = {
-            "type": "update",
-            "data": {"test": "data"}
-        }
+        message = {"type": "update", "data": {"test": "data"}}
 
         with pytest.raises(InvalidVersionError):
             validate_message(message)
@@ -79,7 +67,7 @@ class TestModels:
         cascade = CascadeData(
             tasks=[{"id": "task1"}, {"id": "task2"}],
             branches=[{"id": "branch1"}],
-            projects=[{"id": "project1"}]
+            projects=[{"id": "project1"}],
         )
 
         assert cascade.get_total_entities() == 4
@@ -92,18 +80,13 @@ class TestModels:
     def test_ws_message_creation(self):
         """Test basic WSMessage creation"""
         payload = WSPayload(
-            entity="task",
-            action="create",
-            data=WSData(primary={"id": "123"})
+            entity="task", action="create", data=WSData(primary={"id": "123"})
         )
 
         metadata = WSMetadata(source="user")
 
         message = WSMessage(
-            type="update",
-            sequence=1,
-            payload=payload,
-            metadata=metadata
+            type="update", sequence=1, payload=payload, metadata=metadata
         )
 
         assert message.version == "2.0"
@@ -115,18 +98,13 @@ class TestModels:
     def test_json_serialization(self):
         """Test basic JSON serialization"""
         payload = WSPayload(
-            entity="task",
-            action="create",
-            data=WSData(primary={"id": "123"})
+            entity="task", action="create", data=WSData(primary={"id": "123"})
         )
 
         metadata = WSMetadata(source="user")
 
         message = WSMessage(
-            type="update",
-            sequence=1,
-            payload=payload,
-            metadata=metadata
+            type="update", sequence=1, payload=payload, metadata=metadata
         )
 
         # Test serialization

@@ -55,13 +55,19 @@ class MockWebSocketConnection:
         """Mock sending JSON message - just store it"""
         if self.connected:
             self.received_messages.append(message)
-            logger.info(f"✅ Mock WebSocket received message: {message['type']} - {message['payload']['action']}")
+            logger.info(
+                f"✅ Mock WebSocket received message: {message['type']} - {message['payload']['action']}"
+            )
         else:
             raise Exception("WebSocket not connected")
 
     def get_messages_by_type(self, event_type: str) -> list[dict[str, Any]]:
         """Get messages filtered by event type"""
-        return [msg for msg in self.received_messages if msg['payload']['action'] == event_type]
+        return [
+            msg
+            for msg in self.received_messages
+            if msg["payload"]["action"] == event_type
+        ]
 
     def clear_messages(self):
         """Clear received messages"""
@@ -71,6 +77,7 @@ class MockWebSocketConnection:
 # ============================================================================
 # Pytest Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def user_id():
@@ -82,15 +89,23 @@ def user_id():
 def mock_auth(user_id):
     """Mock authentication context"""
     mock_auth_info = {
-        'user_id': user_id,
-        'email': 'test@example.com',
-        'sub': user_id,
-        'realm_roles': ['admin', 'user'],
-        'resource_access': {}
+        "user_id": user_id,
+        "email": "test@example.com",
+        "sub": user_id,
+        "realm_roles": ["admin", "user"],
+        "resource_access": {},
     }
 
-    with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info), \
-         patch('fastmcp.auth.middleware.request_context_middleware.is_authenticated', return_value=True):
+    with (
+        patch(
+            "fastmcp.auth.middleware.request_context_middleware.get_current_auth_info",
+            return_value=mock_auth_info,
+        ),
+        patch(
+            "fastmcp.auth.middleware.request_context_middleware.is_authenticated",
+            return_value=True,
+        ),
+    ):
         yield mock_auth_info
 
 
@@ -101,7 +116,7 @@ def user(user_id):
         id=user_id,
         email="test@example.com",
         username="testuser",
-        password_hash="test_hash"
+        password_hash="test_hash",
     )
 
 
@@ -141,6 +156,7 @@ def mock_websocket(user_id, user):
 # E2E TESTS - Critical Reliability Scenarios
 # ============================================================================
 
+
 @pytest.mark.asyncio
 async def test_task_create_notification_reaches_frontend(
     task_facade, mock_websocket, user_id
@@ -165,7 +181,7 @@ async def test_task_create_notification_reaches_frontend(
         assignees=["agent-1"],
         status="todo",
         priority="high",
-        user_id=user_id
+        user_id=user_id,
     )
 
     mock_websocket.clear_messages()
@@ -183,10 +199,11 @@ async def test_task_create_notification_reaches_frontend(
     # Assert 2: Notification received by frontend
     create_notifications = mock_websocket.get_messages_by_type("created")
 
-    assert len(create_notifications) > 0, \
-        f"❌ RELIABILITY ISSUE: NO NOTIFICATION RECEIVED! " \
-        f"This is the 'some time i no see it not trigger' problem. " \
+    assert len(create_notifications) > 0, (
+        f"❌ RELIABILITY ISSUE: NO NOTIFICATION RECEIVED! "
+        f"This is the 'some time i no see it not trigger' problem. "
         f"Messages received: {[msg['payload']['action'] for msg in mock_websocket.received_messages]}"
+    )
 
     notification = create_notifications[0]
 
@@ -199,7 +216,9 @@ async def test_task_create_notification_reaches_frontend(
     try:
         datetime.fromisoformat(notification["timestamp"].replace("Z", "+00:00"))
     except ValueError as e:
-        pytest.fail(f"Invalid timestamp format: {notification['timestamp']}, error: {e}")
+        pytest.fail(
+            f"Invalid timestamp format: {notification['timestamp']}, error: {e}"
+        )
 
     # Assert 4: Payload structure (TypeScript interface)
     payload = notification["payload"]
@@ -212,12 +231,15 @@ async def test_task_create_notification_reaches_frontend(
     task_data = payload["data"]["primary"]
     assert "id" in task_data, "Missing task ID"
     assert "title" in task_data, "Missing title"
-    assert task_data["title"] == request.title, \
+    assert task_data["title"] == request.title, (
         f"Title mismatch: expected '{request.title}', got '{task_data['title']}'"
+    )
     assert "status" in task_data, "Missing status"
     assert "priority" in task_data, "Missing priority"
 
-    logger.info("✅ E2E TEST 1 PASSED: Task create notification reached frontend reliably")
+    logger.info(
+        "✅ E2E TEST 1 PASSED: Task create notification reached frontend reliably"
+    )
 
 
 @pytest.mark.asyncio
@@ -241,7 +263,7 @@ async def test_task_update_notification_reaches_frontend(
         description="Testing update notifications",
         git_branch_id=git_branch_id,
         assignees=["agent-1"],
-        user_id=user_id
+        user_id=user_id,
     )
 
     create_response = task_facade.create_task(create_request, user_id, session=None)
@@ -254,11 +276,12 @@ async def test_task_update_notification_reaches_frontend(
     # Act: Update task
     logger.info("🎬 E2E TEST 2: Updating task to test notification...")
     update_request = UpdateTaskRequest(
-        title="UPDATED - E2E Test Task",
-        status="in_progress"
+        title="UPDATED - E2E Test Task", status="in_progress"
     )
 
-    update_response = task_facade.update_task(task_id, update_request, user_id, session=None)
+    update_response = task_facade.update_task(
+        task_id, update_request, user_id, session=None
+    )
 
     await asyncio.sleep(0.2)
 
@@ -268,23 +291,28 @@ async def test_task_update_notification_reaches_frontend(
     # Assert 2: Update notification received
     update_notifications = mock_websocket.get_messages_by_type("updated")
 
-    assert len(update_notifications) > 0, \
-        f"❌ RELIABILITY ISSUE: NO UPDATE NOTIFICATION! " \
+    assert len(update_notifications) > 0, (
+        f"❌ RELIABILITY ISSUE: NO UPDATE NOTIFICATION! "
         f"Messages: {[msg['payload']['action'] for msg in mock_websocket.received_messages]}"
+    )
 
     notification = update_notifications[0]
 
     # Assert 3: Updated data correct (no stale data)
     task_data = notification["payload"]["data"]["primary"]
-    assert task_data["title"] == "UPDATED - E2E Test Task", \
+    assert task_data["title"] == "UPDATED - E2E Test Task", (
         f"❌ STALE DATA: Title not updated! Expected 'UPDATED - E2E Test Task', got '{task_data['title']}'"
+    )
 
     # Status can be in different formats depending on serialization
     status_str = str(task_data.get("status", ""))
-    assert "in_progress" in status_str.lower() or "in progress" in status_str.lower(), \
+    assert "in_progress" in status_str.lower() or "in progress" in status_str.lower(), (
         f"❌ STALE DATA: Status not updated! Got: {task_data.get('status')}"
+    )
 
-    logger.info("✅ E2E TEST 2 PASSED: Task update notification with correct data reached frontend")
+    logger.info(
+        "✅ E2E TEST 2 PASSED: Task update notification with correct data reached frontend"
+    )
 
 
 @pytest.mark.asyncio
@@ -308,7 +336,7 @@ async def test_task_delete_notification_reaches_frontend(
         description="Testing delete notifications",
         git_branch_id=git_branch_id,
         assignees=["agent-1"],
-        user_id=user_id
+        user_id=user_id,
     )
 
     create_response = task_facade.create_task(create_request, user_id, session=None)
@@ -328,28 +356,36 @@ async def test_task_delete_notification_reaches_frontend(
     assert delete_response.success, f"Task deletion failed: {delete_response.error}"
 
     # Assert 2: API response does NOT contain notification data (WebSocket only requirement)
-    response_dict = delete_response.__dict__ if hasattr(delete_response, "__dict__") else {}
-    assert "notification_sent" not in response_dict, \
+    response_dict = (
+        delete_response.__dict__ if hasattr(delete_response, "__dict__") else {}
+    )
+    assert "notification_sent" not in response_dict, (
         "❌ VIOLATION: API response contains notification metadata! Should be WebSocket only"
-    assert "websocket_message" not in response_dict, \
+    )
+    assert "websocket_message" not in response_dict, (
         "❌ VIOLATION: API response contains WebSocket data! Should be separate"
+    )
 
     # Assert 3: Delete notification received via WebSocket (separate from API)
     delete_notifications = mock_websocket.get_messages_by_type("deleted")
 
-    assert len(delete_notifications) > 0, \
-        f"❌ RELIABILITY ISSUE: NO DELETE NOTIFICATION! " \
+    assert len(delete_notifications) > 0, (
+        f"❌ RELIABILITY ISSUE: NO DELETE NOTIFICATION! "
         f"Messages: {[msg['payload']['action'] for msg in mock_websocket.received_messages]}"
+    )
 
     notification = delete_notifications[0]
 
     # Assert 4: Deleted task ID included (for frontend to remove from UI)
     task_data = notification["payload"]["data"]["primary"]
     assert "id" in task_data, "Missing task ID in delete notification"
-    assert task_data["id"] == task_id, \
+    assert task_data["id"] == task_id, (
         f"Task ID mismatch: expected '{task_id}', got '{task_data['id']}'"
+    )
 
-    logger.info("✅ E2E TEST 3 PASSED: Task delete notification via WebSocket only, API response clean")
+    logger.info(
+        "✅ E2E TEST 3 PASSED: Task delete notification via WebSocket only, API response clean"
+    )
 
 
 # ============================================================================

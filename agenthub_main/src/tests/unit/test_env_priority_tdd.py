@@ -33,6 +33,7 @@ def mock_project_root_with_env(tmp_path):
 
     # Patch the Settings class to use this temp directory
     from fastmcp import settings as settings_module
+
     original_project_root = settings_module.Settings._project_root
     original_env_path = settings_module.Settings._env_path
     original_env_dev_path = settings_module.Settings._env_dev_path
@@ -79,6 +80,7 @@ def mock_project_root_with_both_env(tmp_path):
 
     # Patch the Settings class to use this temp directory
     from fastmcp import settings as settings_module
+
     original_project_root = settings_module.Settings._project_root
     original_env_path = settings_module.Settings._env_path
     original_env_dev_path = settings_module.Settings._env_dev_path
@@ -112,10 +114,10 @@ class TestEnvFilePriority:
         settings = Settings()
 
         # Should use .env.dev when it exists
-        env_file_used = settings.model_config.get('env_file')
+        env_file_used = settings.model_config.get("env_file")
 
         # The env_file should contain .env (either .env or .env.dev)
-        assert '.env' in str(env_file_used)
+        assert ".env" in str(env_file_used)
 
     def test_env_fallback_when_env_dev_missing(self, mock_project_root_with_env):
         """When .env.dev doesn't exist, should fall back to .env"""
@@ -123,10 +125,10 @@ class TestEnvFilePriority:
 
         # Test with temp directory where only .env exists (no .env.dev)
         settings = Settings()
-        env_file_used = settings.model_config.get('env_file')
+        env_file_used = settings.model_config.get("env_file")
 
         # Should use .env when .env.dev doesn't exist
-        assert '.env' in env_file_used
+        assert ".env" in env_file_used
 
         # Verify the file actually exists
         assert Path(env_file_used).exists()
@@ -136,13 +138,17 @@ class TestEnvFilePriority:
         from dotenv import load_dotenv
 
         # Create temporary files for testing
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.env', delete=False) as env_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".env", delete=False
+        ) as env_file:
             env_file.write("TEST_VAR=from_env\n")
             env_file.write("COMMON_VAR=env_value\n")
             env_file.write("DATABASE_HOST=prod-host\n")
             env_temp = env_file.name
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.env.dev', delete=False) as env_dev_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".env.dev", delete=False
+        ) as env_dev_file:
             env_dev_file.write("TEST_VAR=from_env_dev\n")
             env_dev_file.write("DEV_ONLY_VAR=dev_value\n")
             env_dev_file.write("DATABASE_HOST=localhost\n")
@@ -150,7 +156,7 @@ class TestEnvFilePriority:
 
         try:
             # Clear existing vars
-            for var in ['TEST_VAR', 'COMMON_VAR', 'DEV_ONLY_VAR', 'DATABASE_HOST']:
+            for var in ["TEST_VAR", "COMMON_VAR", "DEV_ONLY_VAR", "DATABASE_HOST"]:
                 os.environ.pop(var, None)
 
             # Load .env first, then .env.dev (dev should override)
@@ -158,18 +164,18 @@ class TestEnvFilePriority:
             load_dotenv(env_dev_temp, override=True)
 
             # .env.dev values should win
-            assert os.getenv('TEST_VAR') == 'from_env_dev'
-            assert os.getenv('DEV_ONLY_VAR') == 'dev_value'
-            assert os.getenv('DATABASE_HOST') == 'localhost'
+            assert os.getenv("TEST_VAR") == "from_env_dev"
+            assert os.getenv("DEV_ONLY_VAR") == "dev_value"
+            assert os.getenv("DATABASE_HOST") == "localhost"
 
             # Value only in .env should still be available
-            assert os.getenv('COMMON_VAR') == 'env_value'
+            assert os.getenv("COMMON_VAR") == "env_value"
 
         finally:
             os.unlink(env_temp)
             os.unlink(env_dev_temp)
             # Clean up env vars
-            for var in ['TEST_VAR', 'COMMON_VAR', 'DEV_ONLY_VAR', 'DATABASE_HOST']:
+            for var in ["TEST_VAR", "COMMON_VAR", "DEV_ONLY_VAR", "DATABASE_HOST"]:
                 os.environ.pop(var, None)
 
     def test_settings_should_check_env_dev_first(self):
@@ -190,7 +196,7 @@ class TestEnvFilePriority:
             # For now, just check Settings loads correctly
             settings = Settings()
             assert settings is not None
-            assert hasattr(settings, 'model_config')
+            assert hasattr(settings, "model_config")
 
     def test_database_config_uses_env_dev_values(self):
         """Database configuration should use values from .env.dev when available"""
@@ -204,11 +210,11 @@ class TestEnvFilePriority:
             load_dotenv(env_dev_file, override=True)
 
             # Database vars should be from .env.dev
-            db_host = os.getenv('DATABASE_HOST')
-            db_port = os.getenv('DATABASE_PORT')
+            db_host = os.getenv("DATABASE_HOST")
+            db_port = os.getenv("DATABASE_PORT")
 
             # In dev, typically localhost
-            assert db_host in ['localhost', '127.0.0.1', 'agenthub-postgres']
+            assert db_host in ["localhost", "127.0.0.1", "agenthub-postgres"]
             assert db_port is not None
 
     def test_explicit_env_file_parameter(self):
@@ -217,9 +223,9 @@ class TestEnvFilePriority:
 
         # Should be able to explicitly specify which env file to use
         # This allows for testing and different environments
-        with patch.object(Settings, 'model_config', {'env_file': '.env.test'}):
+        with patch.object(Settings, "model_config", {"env_file": ".env.test"}):
             settings = Settings()
-            assert settings.model_config.get('env_file') == '.env.test'
+            assert settings.model_config.get("env_file") == ".env.test"
 
     def test_env_file_priority_with_dotenv_load(self, mock_project_root_with_both_env):
         """Direct dotenv loading should respect priority"""
@@ -230,7 +236,7 @@ class TestEnvFilePriority:
         env_file = mock_project_root_with_both_env / ".env"
 
         # Clear test variables
-        for key in ['DATABASE_TYPE', 'DATABASE_HOST']:
+        for key in ["DATABASE_TYPE", "DATABASE_HOST"]:
             os.environ.pop(key, None)
 
         # Load files in priority order (dev takes priority)
@@ -240,15 +246,17 @@ class TestEnvFilePriority:
             load_dotenv(env_file, override=True)
 
         # Should have loaded database type from .env.dev
-        assert os.getenv('DATABASE_TYPE') is not None
-        assert os.getenv('DATABASE_HOST') == 'localhost'  # from .env.dev, not prod-host from .env
+        assert os.getenv("DATABASE_TYPE") is not None
+        assert (
+            os.getenv("DATABASE_HOST") == "localhost"
+        )  # from .env.dev, not prod-host from .env
 
     def test_settings_logs_which_env_file_used(self):
         """Settings should log which environment file is being used"""
 
         from fastmcp.settings import Settings
 
-        with patch('fastmcp.utilities.logging.get_logger') as mock_logger:
+        with patch("fastmcp.utilities.logging.get_logger") as mock_logger:
             mock_log_instance = MagicMock()
             mock_logger.return_value = mock_log_instance
 
@@ -257,7 +265,7 @@ class TestEnvFilePriority:
             env_dev_file = project_root / ".env.dev"
 
             if env_dev_file.exists():
-                with patch('pathlib.Path.exists', return_value=True):
+                with patch("pathlib.Path.exists", return_value=True):
                     Settings()
                     # Should have logged about using .env.dev
                     # Check if info was called (exact message may vary)
@@ -270,11 +278,11 @@ class TestEnvFilePriority:
 
         # Test that settings loads an environment file
         settings = Settings()
-        env_file_used = settings.model_config.get('env_file')
+        env_file_used = settings.model_config.get("env_file")
 
         # Should have some env file configured
         assert env_file_used is not None
-        assert '.env' in str(env_file_used)
+        assert ".env" in str(env_file_used)
 
 
 @pytest.mark.unit
@@ -289,12 +297,12 @@ class TestEnvPriorityImplementation:
         settings = Settings()
 
         # Get the env file being used
-        env_file = settings.model_config.get('env_file')
+        env_file = settings.model_config.get("env_file")
 
         # With both files present, should use .env.dev
         env_dev_file = mock_project_root_with_both_env / ".env.dev"
         assert env_dev_file.exists()
-        assert '.env.dev' in env_file or str(env_dev_file) == env_file
+        assert ".env.dev" in env_file or str(env_dev_file) == env_file
 
     def test_database_config_with_env_priority(self, mock_project_root_with_both_env):
         """Database config should use the prioritized env file"""
@@ -324,7 +332,7 @@ class TestEnvPriorityImplementation:
         # Should have valid config
         assert info is not None
         # Should have database type
-        assert info.get('type') in ['postgresql', 'sqlite', 'supabase']
+        assert info.get("type") in ["postgresql", "sqlite", "supabase"]
 
     def test_env_loading_consistency_across_modules(self):
         """All modules should load the same prioritized env file"""
@@ -343,12 +351,12 @@ class TestEnvPriorityImplementation:
         load_dotenv(env_to_load, override=True)
 
         # Get a value
-        db_host_1 = os.getenv('DATABASE_HOST')
+        db_host_1 = os.getenv("DATABASE_HOST")
 
         # Clear and reload to test consistency
-        os.environ.pop('DATABASE_HOST', None)
+        os.environ.pop("DATABASE_HOST", None)
         load_dotenv(env_to_load, override=True)
-        db_host_2 = os.getenv('DATABASE_HOST')
+        db_host_2 = os.getenv("DATABASE_HOST")
 
         # Should be consistent
         assert db_host_1 == db_host_2
@@ -356,21 +364,24 @@ class TestEnvPriorityImplementation:
     def test_docker_dev_uses_env_dev(self):
         """Docker development mode should use .env.dev values"""
         # For unit tests, mock the expected Docker dev environment
-        with patch.dict(os.environ, {
-            'DATABASE_HOST': 'localhost',
-            'DATABASE_PORT': '5432',  # Use standard postgres port for test
-            'DATABASE_TYPE': 'postgresql',
-            'DATABASE_USER': 'test_user',
-            'DATABASE_PASSWORD': 'test_password',
-            'PYTEST_CURRENT_TEST': 'test'
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_HOST": "localhost",
+                "DATABASE_PORT": "5432",  # Use standard postgres port for test
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_USER": "test_user",
+                "DATABASE_PASSWORD": "test_password",
+                "PYTEST_CURRENT_TEST": "test",
+            },
+        ):
             # Check Docker-related database config
-            db_host = os.getenv('DATABASE_HOST')
-            db_port = os.getenv('DATABASE_PORT')
+            db_host = os.getenv("DATABASE_HOST")
+            db_port = os.getenv("DATABASE_PORT")
 
             # Dev typically uses localhost and numeric ports
             assert db_port.isdigit(), f"Port should be numeric, got: {db_port}"
-            assert db_host in ['localhost', '127.0.0.1', 'agenthub-postgres']
+            assert db_host in ["localhost", "127.0.0.1", "agenthub-postgres"]
 
 
 if __name__ == "__main__":

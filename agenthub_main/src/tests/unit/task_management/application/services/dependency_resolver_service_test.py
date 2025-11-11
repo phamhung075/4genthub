@@ -72,30 +72,34 @@ class TestDependencyResolverService:
         repo = service._get_user_scoped_repository()
         assert repo == service.task_repository
 
-    def test_get_user_scoped_repository_with_user_method(self, service, mock_task_repository):
+    def test_get_user_scoped_repository_with_user_method(
+        self, service, mock_task_repository
+    ):
         """Test getting repository with with_user method"""
         service._user_id = "user-789"
         mock_task_repository.with_user = Mock(return_value=mock_task_repository)
-        
+
         repo = service._get_user_scoped_repository()
-        
+
         mock_task_repository.with_user.assert_called_once_with("user-789")
         assert repo == mock_task_repository
 
     def test_resolve_dependencies_task_not_found(self, service, mock_task_repository):
         """Test resolve_dependencies when task is not found"""
         mock_task_repository.find_by_id.return_value = None
-        
+
         with pytest.raises(TaskNotFoundError, match="Task task-999 not found"):
             service.resolve_dependencies("task-999")
 
-    def test_resolve_dependencies_simple_task(self, service, mock_task_repository, mock_task):
+    def test_resolve_dependencies_simple_task(
+        self, service, mock_task_repository, mock_task
+    ):
         """Test resolve_dependencies for task with no dependencies"""
         mock_task_repository.find_by_id.return_value = mock_task
         mock_task_repository.find_all.return_value = []
-        
+
         result = service.resolve_dependencies("task-1")
-        
+
         assert isinstance(result, DependencyRelationships)
         assert result.task_id == "task-1"
         assert result.depends_on == []
@@ -107,13 +111,15 @@ class TestDependencyResolverService:
         assert result.is_blocked is False
         assert result.is_blocking_others is False
 
-    def test_resolve_dependencies_with_dependencies(self, service, mock_task_repository):
+    def test_resolve_dependencies_with_dependencies(
+        self, service, mock_task_repository
+    ):
         """Test resolve_dependencies for task with dependencies"""
         # Create main task
         main_task = Mock(spec=Task)
         main_task.id = TaskId("task-1")
         main_task.get_dependency_ids = Mock(return_value=["dep-1", "dep-2"])
-        
+
         # Create dependency tasks
         dep1 = Mock(spec=Task)
         dep1.id = TaskId("dep-1")
@@ -125,7 +131,7 @@ class TestDependencyResolverService:
         dep1.assignees = ["user1"]
         dep1.updated_at = datetime.now()
         dep1.get_dependency_ids = Mock(return_value=[])
-        
+
         dep2 = Mock(spec=Task)
         dep2.id = TaskId("dep-2")
         dep2.title = "Dependency 2"
@@ -136,7 +142,7 @@ class TestDependencyResolverService:
         dep2.assignees = ["user2"]
         dep2.updated_at = datetime.now()
         dep2.get_dependency_ids = Mock(return_value=[])
-        
+
         # Setup repository mock
         def find_by_id_side_effect(task_id):
             if str(task_id) == "task-1":
@@ -146,12 +152,12 @@ class TestDependencyResolverService:
             elif str(task_id) == "dep-2":
                 return dep2
             return None
-            
+
         mock_task_repository.find_by_id.side_effect = find_by_id_side_effect
         mock_task_repository.find_all.return_value = []
-        
+
         result = service.resolve_dependencies("task-1")
-        
+
         assert result.task_id == "task-1"
         assert len(result.depends_on) == 2
         assert result.total_dependencies == 2
@@ -161,13 +167,15 @@ class TestDependencyResolverService:
         assert result.is_blocked is False
         assert result.is_blocking_others is False
 
-    def test_resolve_dependencies_with_blocking_tasks(self, service, mock_task_repository):
+    def test_resolve_dependencies_with_blocking_tasks(
+        self, service, mock_task_repository
+    ):
         """Test resolve_dependencies when task blocks other tasks"""
         # Create main task
         main_task = Mock(spec=Task)
         main_task.id = TaskId("task-1")
         main_task.get_dependency_ids = Mock(return_value=[])
-        
+
         # Create blocked task
         blocked_task = Mock(spec=Task)
         blocked_task.id = TaskId("blocked-1")
@@ -179,13 +187,13 @@ class TestDependencyResolverService:
         blocked_task.assignees = ["user3"]
         blocked_task.updated_at = datetime.now()
         blocked_task.get_dependency_ids = Mock(return_value=["task-1"])
-        
+
         # Setup repository mock
         mock_task_repository.find_by_id.return_value = main_task
         mock_task_repository.find_all.return_value = [blocked_task]
-        
+
         result = service.resolve_dependencies("task-1")
-        
+
         assert result.task_id == "task-1"
         assert len(result.blocks) == 1
         assert result.blocks[0].task_id == "blocked-1"
@@ -195,9 +203,9 @@ class TestDependencyResolverService:
     def test_resolve_dependencies_error_handling(self, service, mock_task_repository):
         """Test resolve_dependencies error handling"""
         mock_task_repository.find_by_id.side_effect = Exception("Database error")
-        
+
         result = service.resolve_dependencies("task-1")
-        
+
         # Should return empty relationships on error
         assert result.task_id == "task-1"
         assert result.depends_on == []
@@ -211,59 +219,58 @@ class TestDependencyResolverService:
         # Create tasks with dependencies
         task1 = Mock(spec=Task)
         task1.get_dependency_ids = Mock(return_value=["task-2", "task-3"])
-        
+
         task2 = Mock(spec=Task)
         task2.get_dependency_ids = Mock(return_value=["task-4"])
-        
+
         task3 = Mock(spec=Task)
         task3.get_dependency_ids = Mock(return_value=[])
-        
+
         task4 = Mock(spec=Task)
         task4.get_dependency_ids = Mock(return_value=[])
-        
+
         # Setup repository mock
         def find_by_id_side_effect(task_id):
             task_map = {
                 "task-1": task1,
                 "task-2": task2,
                 "task-3": task3,
-                "task-4": task4
+                "task-4": task4,
             }
             return task_map.get(str(task_id))
-            
+
         mock_task_repository.find_by_id.side_effect = find_by_id_side_effect
-        
+
         graph = service._build_dependency_graph("task-1")
-        
+
         assert graph == {
             "task-1": ["task-2", "task-3"],
             "task-2": ["task-4"],
             "task-3": [],
-            "task-4": []
+            "task-4": [],
         }
 
-    def test_build_dependency_graph_circular_dependency(self, service, mock_task_repository):
+    def test_build_dependency_graph_circular_dependency(
+        self, service, mock_task_repository
+    ):
         """Test building dependency graph with circular dependencies"""
         # Create circular dependency
         task1 = Mock(spec=Task)
         task1.get_dependency_ids = Mock(return_value=["task-2"])
-        
+
         task2 = Mock(spec=Task)
         task2.get_dependency_ids = Mock(return_value=["task-1"])
-        
+
         # Setup repository mock
         def find_by_id_side_effect(task_id):
-            task_map = {
-                "task-1": task1,
-                "task-2": task2
-            }
+            task_map = {"task-1": task1, "task-2": task2}
             return task_map.get(str(task_id))
-            
+
         mock_task_repository.find_by_id.side_effect = find_by_id_side_effect
-        
+
         # Should handle circular dependencies gracefully
         graph = service._build_dependency_graph("task-1")
-        
+
         # Should visit each task only once
         assert "task-1" in graph
         assert "task-2" in graph
@@ -272,18 +279,42 @@ class TestDependencyResolverService:
         """Test _can_task_start logic"""
         # All dependencies done
         deps_done = [
-            DependencyInfo(task_id="1", title="Dep 1", status="done", priority="high", completion_percentage=100),
-            DependencyInfo(task_id="2", title="Dep 2", status="done", priority="medium", completion_percentage=100)
+            DependencyInfo(
+                task_id="1",
+                title="Dep 1",
+                status="done",
+                priority="high",
+                completion_percentage=100,
+            ),
+            DependencyInfo(
+                task_id="2",
+                title="Dep 2",
+                status="done",
+                priority="medium",
+                completion_percentage=100,
+            ),
         ]
         assert service._can_task_start(deps_done) is True
-        
+
         # Some dependencies not done
         deps_mixed = [
-            DependencyInfo(task_id="1", title="Dep 1", status="done", priority="high", completion_percentage=100),
-            DependencyInfo(task_id="2", title="Dep 2", status="in_progress", priority="medium", completion_percentage=50)
+            DependencyInfo(
+                task_id="1",
+                title="Dep 1",
+                status="done",
+                priority="high",
+                completion_percentage=100,
+            ),
+            DependencyInfo(
+                task_id="2",
+                title="Dep 2",
+                status="in_progress",
+                priority="medium",
+                completion_percentage=50,
+            ),
         ]
         assert service._can_task_start(deps_mixed) is False
-        
+
         # No dependencies
         assert service._can_task_start([]) is True
 
@@ -291,15 +322,39 @@ class TestDependencyResolverService:
         """Test _is_task_blocked logic"""
         # No blocked dependencies
         deps_not_blocked = [
-            DependencyInfo(task_id="1", title="Dep 1", status="done", priority="high", completion_percentage=100),
-            DependencyInfo(task_id="2", title="Dep 2", status="in_progress", priority="medium", completion_percentage=50)
+            DependencyInfo(
+                task_id="1",
+                title="Dep 1",
+                status="done",
+                priority="high",
+                completion_percentage=100,
+            ),
+            DependencyInfo(
+                task_id="2",
+                title="Dep 2",
+                status="in_progress",
+                priority="medium",
+                completion_percentage=50,
+            ),
         ]
         assert service._is_task_blocked(deps_not_blocked) is False
-        
+
         # Has blocked dependency
         deps_blocked = [
-            DependencyInfo(task_id="1", title="Dep 1", status="done", priority="high", completion_percentage=100),
-            DependencyInfo(task_id="2", title="Dep 2", status="blocked", priority="medium", completion_percentage=0)
+            DependencyInfo(
+                task_id="1",
+                title="Dep 1",
+                status="done",
+                priority="high",
+                completion_percentage=100,
+            ),
+            DependencyInfo(
+                task_id="2",
+                title="Dep 2",
+                status="blocked",
+                priority="medium",
+                completion_percentage=0,
+            ),
         ]
         assert service._is_task_blocked(deps_blocked) is True
 
@@ -308,22 +363,40 @@ class TestDependencyResolverService:
         # No dependencies
         summary = service._generate_dependency_summary([], [])
         assert summary == "No dependencies"
-        
+
         # Only depends on
         deps = [
-            DependencyInfo(task_id="1", title="Dep 1", status="done", priority="high", completion_percentage=100),
-            DependencyInfo(task_id="2", title="Dep 2", status="todo", priority="medium", completion_percentage=0)
+            DependencyInfo(
+                task_id="1",
+                title="Dep 1",
+                status="done",
+                priority="high",
+                completion_percentage=100,
+            ),
+            DependencyInfo(
+                task_id="2",
+                title="Dep 2",
+                status="todo",
+                priority="medium",
+                completion_percentage=0,
+            ),
         ]
         summary = service._generate_dependency_summary(deps, [])
         assert summary == "Depends on 2 task(s) (1/2 completed)"
-        
+
         # Only blocks
         blocks = [
-            DependencyInfo(task_id="3", title="Task 3", status="todo", priority="high", completion_percentage=0)
+            DependencyInfo(
+                task_id="3",
+                title="Task 3",
+                status="todo",
+                priority="high",
+                completion_percentage=0,
+            )
         ]
         summary = service._generate_dependency_summary([], blocks)
         assert summary == "Blocks 1 task(s)"
-        
+
         # Both depends on and blocks
         summary = service._generate_dependency_summary(deps, blocks)
         assert summary == "Depends on 2 task(s) (1/2 completed) | Blocks 1 task(s)"
@@ -333,37 +406,87 @@ class TestDependencyResolverService:
         # Can start
         actions = service._generate_next_actions([], [], True)
         assert "✅ Ready to start - no blocking dependencies" in actions
-        
+
         # Cannot start with incomplete dependencies
         incomplete_deps = [
-            DependencyInfo(task_id="1", title="Dep 1", status="in_progress", priority="high", completion_percentage=50),
-            DependencyInfo(task_id="2", title="Dep 2", status="todo", priority="medium", completion_percentage=0)
+            DependencyInfo(
+                task_id="1",
+                title="Dep 1",
+                status="in_progress",
+                priority="high",
+                completion_percentage=50,
+            ),
+            DependencyInfo(
+                task_id="2",
+                title="Dep 2",
+                status="todo",
+                priority="medium",
+                completion_percentage=0,
+            ),
         ]
         actions = service._generate_next_actions(incomplete_deps, [], False)
-        assert any("⏳ Wait for 2 dependencies to complete" in action for action in actions)
-        assert any("💡 Consider working on 1 unstarted dependencies" in action for action in actions)
-        
+        assert any(
+            "⏳ Wait for 2 dependencies to complete" in action for action in actions
+        )
+        assert any(
+            "💡 Consider working on 1 unstarted dependencies" in action
+            for action in actions
+        )
+
         # Blocking other tasks
         blocks = [
-            DependencyInfo(task_id="3", title="Task 3", status="todo", priority="high", completion_percentage=0)
+            DependencyInfo(
+                task_id="3",
+                title="Task 3",
+                status="todo",
+                priority="high",
+                completion_percentage=0,
+            )
         ]
         actions = service._generate_next_actions([], blocks, True)
-        assert any("🚧 Completing this task will unblock 1 other task(s)" in action for action in actions)
+        assert any(
+            "🚧 Completing this task will unblock 1 other task(s)" in action
+            for action in actions
+        )
 
     def test_generate_blocking_reasons(self, service):
         """Test blocking reasons generation"""
         # No blocking dependencies
         deps_done = [
-            DependencyInfo(task_id="1", title="Dep 1", status="done", priority="high", completion_percentage=100)
+            DependencyInfo(
+                task_id="1",
+                title="Dep 1",
+                status="done",
+                priority="high",
+                completion_percentage=100,
+            )
         ]
         reasons = service._generate_blocking_reasons(deps_done)
         assert reasons == []
-        
+
         # Has blocking dependencies
         deps_incomplete = [
-            DependencyInfo(task_id="1", title="Dep 1", status="done", priority="high", completion_percentage=100),
-            DependencyInfo(task_id="2", title="Dep 2", status="in_progress", priority="medium", completion_percentage=50),
-            DependencyInfo(task_id="3", title="Dep 3", status="todo", priority="low", completion_percentage=0)
+            DependencyInfo(
+                task_id="1",
+                title="Dep 1",
+                status="done",
+                priority="high",
+                completion_percentage=100,
+            ),
+            DependencyInfo(
+                task_id="2",
+                title="Dep 2",
+                status="in_progress",
+                priority="medium",
+                completion_percentage=50,
+            ),
+            DependencyInfo(
+                task_id="3",
+                title="Dep 3",
+                status="todo",
+                priority="low",
+                completion_percentage=0,
+            ),
         ]
         reasons = service._generate_blocking_reasons(deps_incomplete)
         assert len(reasons) == 2
@@ -383,7 +506,7 @@ class TestDependencyResolverService:
         task1.assignees = []
         task1.updated_at = datetime.now()
         task1.get_dependency_ids = Mock(return_value=["dep-1"])
-        
+
         dep1 = Mock(spec=Task)
         dep1.id = TaskId("dep-1")
         dep1.title = "Dependency 1"
@@ -394,22 +517,19 @@ class TestDependencyResolverService:
         dep1.assignees = ["user1"]
         dep1.updated_at = datetime.now()
         dep1.get_dependency_ids = Mock(return_value=[])
-        
+
         # Setup repository mock
         def find_by_id_side_effect(task_id):
-            task_map = {
-                "task-1": task1,
-                "dep-1": dep1
-            }
+            task_map = {"task-1": task1, "dep-1": dep1}
             return task_map.get(str(task_id))
-            
+
         mock_task_repository.find_by_id.side_effect = find_by_id_side_effect
-        
+
         # Build dependency graph
         graph = {"task-1": ["dep-1"], "dep-1": []}
-        
+
         chains = service._build_upstream_chains("task-1", graph)
-        
+
         assert len(chains) == 1
         assert chains[0].chain_id == "upstream_dep-1"
         assert chains[0].total_tasks == 1
@@ -429,7 +549,7 @@ class TestDependencyResolverService:
         task1.assignees = []
         task1.updated_at = datetime.now()
         task1.get_dependency_ids = Mock(return_value=[])
-        
+
         blocked_task = Mock(spec=Task)
         blocked_task.id = TaskId("blocked-1")
         blocked_task.title = "Blocked Task"
@@ -440,22 +560,19 @@ class TestDependencyResolverService:
         blocked_task.assignees = ["user2"]
         blocked_task.updated_at = datetime.now()
         blocked_task.get_dependency_ids = Mock(return_value=["task-1"])
-        
+
         # Setup repository mock
         def find_by_id_side_effect(task_id):
-            task_map = {
-                "task-1": task1,
-                "blocked-1": blocked_task
-            }
+            task_map = {"task-1": task1, "blocked-1": blocked_task}
             return task_map.get(str(task_id))
-            
+
         mock_task_repository.find_by_id.side_effect = find_by_id_side_effect
-        
+
         # Build dependency graph
         graph = {"task-1": [], "blocked-1": ["task-1"]}
-        
+
         chains = service._build_downstream_chains("task-1", graph)
-        
+
         assert len(chains) == 1
         assert chains[0].chain_id == "downstream_blocked-1"
         assert chains[0].total_tasks == 1

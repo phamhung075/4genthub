@@ -24,35 +24,95 @@ class TestDDDCompliantMCPTools:
         mock_session_factory = Mock()
         mock_db_config = Mock()
         mock_db_config.SessionLocal = mock_session_factory
-        
+
         with ExitStack() as stack:
             # Patch all dependencies using ExitStack to avoid nesting limits
-            stack.enter_context(patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config', return_value=mock_db_config))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ToolConfig'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.PathResolver'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskRepositoryFactory'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskRepositoryFactory'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.FacadeService'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController'))
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.infrastructure.database.database_config.get_db_config",
+                    return_value=mock_db_config,
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.ToolConfig"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.PathResolver"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskRepositoryFactory"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskRepositoryFactory"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.FacadeService"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
+                )
+            )
             # Claude agent controller removed
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
-            
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer"
+                )
+            )
+
             from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
                 DDDCompliantMCPTools,
             )
-            
+
             tools = DDDCompliantMCPTools(
-                config_overrides=self.config_overrides,
-                enable_vision_system=False
+                config_overrides=self.config_overrides, enable_vision_system=False
             )
-            
+
             # Verify initialization
             assert tools is not None
 
@@ -60,29 +120,90 @@ class TestDDDCompliantMCPTools:
         """Test initialization without database connection."""
         with ExitStack() as stack:
             # Patch all dependencies, database config raises exception
-            stack.enter_context(patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config', side_effect=Exception("No database")))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ToolConfig'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.PathResolver'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskRepositoryFactory'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskRepositoryFactory'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.FacadeService'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController'))
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.infrastructure.database.database_config.get_db_config",
+                    side_effect=Exception("No database"),
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.ToolConfig"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.PathResolver"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskRepositoryFactory"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskRepositoryFactory"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.FacadeService"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
+                )
+            )
             # Claude agent controller removed
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
-            
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer"
+                )
+            )
+
             from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
                 DDDCompliantMCPTools,
             )
-            
+
             tools = DDDCompliantMCPTools(enable_vision_system=False)
-            
+
             # Verify initialization without database
             assert tools is not None
             assert tools._session_factory is None
@@ -91,30 +212,91 @@ class TestDDDCompliantMCPTools:
         """Test basic tool registration."""
         with ExitStack() as stack:
             # Setup minimal patching for basic functionality test
-            stack.enter_context(patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config', side_effect=Exception("No database")))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ToolConfig'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.PathResolver'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskRepositoryFactory'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskRepositoryFactory'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.FacadeService'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController'))
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.infrastructure.database.database_config.get_db_config",
+                    side_effect=Exception("No database"),
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.ToolConfig"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.PathResolver"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskRepositoryFactory"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskRepositoryFactory"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.FacadeService"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
+                )
+            )
             # Claude agent controller removed
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
-            
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer"
+                )
+            )
+
             from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
                 DDDCompliantMCPTools,
             )
-            
+
             mock_mcp = Mock()
             tools = DDDCompliantMCPTools(enable_vision_system=False)
-            
+
             # Mock controllers to avoid AttributeError
             tools._task_controller = Mock()
             tools._subtask_controller = Mock()
@@ -123,10 +305,10 @@ class TestDDDCompliantMCPTools:
             tools._git_branch_controller = Mock()
             tools._agent_controller = Mock()
             tools._call_agent_controller = Mock()
-            
+
             # Test registration
             tools.register_tools(mock_mcp)
-            
+
             # Verify some controllers were called
             tools._task_controller.register_tools.assert_called_once_with(mock_mcp)
             tools._subtask_controller.register_tools.assert_called_once_with(mock_mcp)
@@ -136,34 +318,97 @@ class TestDDDCompliantMCPTools:
         """Test basic wrapper methods."""
         with ExitStack() as stack:
             # Setup minimal patching for basic functionality test
-            stack.enter_context(patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config', side_effect=Exception("No database")))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ToolConfig'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.PathResolver'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskRepositoryFactory'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskRepositoryFactory'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.FacadeService'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController'))
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.infrastructure.database.database_config.get_db_config",
+                    side_effect=Exception("No database"),
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.ToolConfig"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.PathResolver"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskRepositoryFactory"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskRepositoryFactory"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.FacadeService"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.TaskMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.SubtaskMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase"
+                )
+            )
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
+                )
+            )
             # Claude agent controller removed
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
-            
+            stack.enter_context(
+                patch(
+                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer"
+                )
+            )
+
             from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
                 DDDCompliantMCPTools,
             )
-            
+
             tools = DDDCompliantMCPTools(enable_vision_system=False)
-            
+
             # Mock controllers
             mock_task_controller = Mock()
+
             # Mock the async method to return a coroutine
             async def mock_manage_task(**kwargs):
                 return {"success": True}
+
             mock_task_controller.manage_task = mock_manage_task
             tools._task_controller = mock_task_controller
 

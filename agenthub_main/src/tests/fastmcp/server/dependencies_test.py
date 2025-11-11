@@ -88,13 +88,15 @@ class TestGetHttpHeaders:
         from fastmcp.server.http_server import _current_http_request
 
         # Create mock request with various headers
-        mock_headers = Headers({
-            "authorization": "Bearer token123",
-            "content-type": "application/json",
-            "host": "localhost:8000",  # Should be excluded
-            "content-length": "1234",  # Should be excluded
-            "x-custom-header": "custom-value",
-        })
+        mock_headers = Headers(
+            {
+                "authorization": "Bearer token123",
+                "content-type": "application/json",
+                "host": "localhost:8000",  # Should be excluded
+                "content-length": "1234",  # Should be excluded
+                "x-custom-header": "custom-value",
+            }
+        )
         mock_request = MagicMock(spec=Request)
         mock_request.headers = mock_headers
 
@@ -123,11 +125,13 @@ class TestGetHttpHeaders:
         from fastmcp.server.http_server import _current_http_request
 
         # Create mock request with excluded headers
-        mock_headers = Headers({
-            "host": "localhost:8000",
-            "content-length": "1234",
-            "connection": "keep-alive",
-        })
+        mock_headers = Headers(
+            {
+                "host": "localhost:8000",
+                "content-length": "1234",
+                "connection": "keep-alive",
+            }
+        )
         mock_request = MagicMock(spec=Request)
         mock_request.headers = mock_headers
 
@@ -173,11 +177,13 @@ class TestGetHttpHeaders:
         from fastmcp.server.http_server import _current_http_request
 
         # Create mock request with mixed-case headers
-        mock_headers = Headers({
-            "Host": "localhost:8000",  # Mixed case - should still be excluded
-            "Content-Length": "1234",  # Mixed case - should still be excluded
-            "Authorization": "Bearer token",  # Mixed case - should be included
-        })
+        mock_headers = Headers(
+            {
+                "Host": "localhost:8000",  # Mixed case - should still be excluded
+                "Content-Length": "1234",  # Mixed case - should still be excluded
+                "Authorization": "Bearer token",  # Mixed case - should be included
+            }
+        )
         mock_request = MagicMock(spec=Request)
         mock_request.headers = mock_headers
 
@@ -200,12 +206,14 @@ class TestGetHttpHeaders:
         from fastmcp.server.http_server import _current_http_request
 
         # Create mock request with proxy headers
-        mock_headers = Headers({
-            "proxy-authenticate": "value1",
-            "proxy-authorization": "value2",
-            "proxy-connection": "value3",
-            "x-forwarded-for": "192.168.1.1",  # Should be included
-        })
+        mock_headers = Headers(
+            {
+                "proxy-authenticate": "value1",
+                "proxy-authorization": "value2",
+                "proxy-connection": "value3",
+                "x-forwarded-for": "192.168.1.1",  # Should be included
+            }
+        )
         mock_request = MagicMock(spec=Request)
         mock_request.headers = mock_headers
 
@@ -233,13 +241,24 @@ class TestGetHttpHeaders:
 
         # Get the actual excluded headers set from the code
         excluded = {
-            "host", "content-length", "connection", "transfer-encoding",
-            "upgrade", "te", "keep-alive", "expect", "accept",
-            "proxy-authenticate", "proxy-authorization", "proxy-connection"
+            "host",
+            "content-length",
+            "connection",
+            "transfer-encoding",
+            "upgrade",
+            "te",
+            "keep-alive",
+            "expect",
+            "accept",
+            "proxy-authenticate",
+            "proxy-authorization",
+            "proxy-connection",
         }
 
         # Verify all are lowercase (this is what the code checks)
-        assert all(h.lower() == h for h in excluded), "All excluded headers must be lowercase"
+        assert all(h.lower() == h for h in excluded), (
+            "All excluded headers must be lowercase"
+        )
 
 
 class TestHeaderValueConversion:
@@ -250,10 +269,12 @@ class TestHeaderValueConversion:
         from fastmcp.server.http_server import _current_http_request
 
         # Create mock request with non-string header value
-        mock_headers = Headers({
-            "x-request-id": "12345",
-            "content-type": "application/json",
-        })
+        mock_headers = Headers(
+            {
+                "x-request-id": "12345",
+                "content-type": "application/json",
+            }
+        )
         mock_request = MagicMock(spec=Request)
         mock_request.headers = mock_headers
 
@@ -294,11 +315,13 @@ class TestEdgeCases:
         from fastmcp.server.http_server import _current_http_request
 
         # Create mock request with only excluded headers
-        mock_headers = Headers({
-            "host": "localhost",
-            "content-length": "100",
-            "connection": "close",
-        })
+        mock_headers = Headers(
+            {
+                "host": "localhost",
+                "content-length": "100",
+                "connection": "close",
+            }
+        )
         mock_request = MagicMock(spec=Request)
         mock_request.headers = mock_headers
 

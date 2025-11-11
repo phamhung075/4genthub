@@ -62,8 +62,7 @@ def context_service():
 def task_facade(task_repository, context_service):
     """Create task facade."""
     return TaskApplicationFacade(
-        task_repository=task_repository,
-        context_service=context_service
+        task_repository=task_repository, context_service=context_service
     )
 
 
@@ -73,7 +72,7 @@ def subtask_facade(task_repository, subtask_repository, context_service):
     return SubtaskApplicationFacade(
         task_repository=task_repository,
         subtask_repository=subtask_repository,
-        context_service=context_service
+        context_service=context_service,
     )
 
 
@@ -93,9 +92,7 @@ class TestIssue1SubtaskCountMatchesActualSubtasks:
         # Create parent task
         parent_result = await task_facade.create_task(
             CreateTaskRequest(
-                git_branch_id=str(uuid4()),
-                title="Parent Task",
-                assignees="test-agent"
+                git_branch_id=str(uuid4()), title="Parent Task", assignees="test-agent"
             )
         )
         parent_id = parent_result["task"]["id"]
@@ -103,17 +100,16 @@ class TestIssue1SubtaskCountMatchesActualSubtasks:
         # Create 3 subtasks
         for i in range(3):
             await subtask_facade.create_subtask(
-                task_id=parent_id,
-                title=f"Subtask {i+1}",
-                assignees="subtask-agent"
+                task_id=parent_id, title=f"Subtask {i + 1}", assignees="subtask-agent"
             )
 
         # REGRESSION TEST: context_data should show 3, not 0
         parent = task_repository.find_by_id(TaskId(parent_id))
         subtasks_data = parent.context_data.get("subtasks", {})
 
-        assert subtasks_data["total_count"] == 3, \
+        assert subtasks_data["total_count"] == 3, (
             "REGRESSION: Subtask count not synced to context_data (Issue #1)"
+        )
 
     async def test_deleting_subtasks_updates_count_in_context(
         self, task_facade, subtask_facade, task_repository
@@ -122,34 +118,28 @@ class TestIssue1SubtaskCountMatchesActualSubtasks:
         # Create parent and 2 subtasks
         parent_result = await task_facade.create_task(
             CreateTaskRequest(
-                git_branch_id=str(uuid4()),
-                title="Parent Task",
-                assignees="test-agent"
+                git_branch_id=str(uuid4()), title="Parent Task", assignees="test-agent"
             )
         )
         parent_id = parent_result["task"]["id"]
 
         subtask1 = await subtask_facade.create_subtask(
-            task_id=parent_id,
-            title="Subtask 1",
-            assignees="agent"
+            task_id=parent_id, title="Subtask 1", assignees="agent"
         )
         await subtask_facade.create_subtask(
-            task_id=parent_id,
-            title="Subtask 2",
-            assignees="agent"
+            task_id=parent_id, title="Subtask 2", assignees="agent"
         )
 
         # Delete one subtask
         await subtask_facade.delete_subtask(
-            task_id=parent_id,
-            subtask_id=subtask1["subtask"]["id"]
+            task_id=parent_id, subtask_id=subtask1["subtask"]["id"]
         )
 
         # REGRESSION TEST: count should be 1, not 2 or 0
         parent = task_repository.find_by_id(TaskId(parent_id))
-        assert parent.context_data["subtasks"]["total_count"] == 1, \
+        assert parent.context_data["subtasks"]["total_count"] == 1, (
             "REGRESSION: Subtask deletion not reflected in context_data (Issue #1)"
+        )
 
 
 @pytest.mark.asyncio
@@ -161,9 +151,7 @@ class TestIssue2StatusStaysSynced:
     FIX: Added sync_task_status() calls in update and complete operations.
     """
 
-    async def test_updating_status_syncs_to_context(
-        self, task_facade, task_repository
-    ):
+    async def test_updating_status_syncs_to_context(self, task_facade, task_repository):
         """Verify status changes sync to context_data.metadata.status."""
         # Create task
         result = await task_facade.create_task(
@@ -171,26 +159,23 @@ class TestIssue2StatusStaysSynced:
                 git_branch_id=str(uuid4()),
                 title="Status Sync Test",
                 status="todo",
-                assignees="test-agent"
+                assignees="test-agent",
             )
         )
         task_id = result["task"]["id"]
 
         # Update status
         await task_facade.update_task(
-            UpdateTaskRequest(
-                task_id=task_id,
-                status="in_progress"
-            )
+            UpdateTaskRequest(task_id=task_id, status="in_progress")
         )
 
         # REGRESSION TEST: Both should show 'in_progress'
         task = task_repository.find_by_id(TaskId(task_id))
 
-        assert task.status.value == "in_progress", \
-            "Task.status not updated"
-        assert task.context_data["metadata"]["status"] == "in_progress", \
+        assert task.status.value == "in_progress", "Task.status not updated"
+        assert task.context_data["metadata"]["status"] == "in_progress", (
             "REGRESSION: Status not synced to context_data (Issue #2)"
+        )
 
     async def test_completing_task_syncs_done_status(
         self, task_facade, task_repository
@@ -201,23 +186,21 @@ class TestIssue2StatusStaysSynced:
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Complete Test",
-                assignees="test-agent"
+                assignees="test-agent",
             )
         )
         task_id = result["task"]["id"]
 
         # Complete task
-        await task_facade.complete_task(
-            task_id=task_id,
-            completion_summary="All done"
-        )
+        await task_facade.complete_task(task_id=task_id, completion_summary="All done")
 
         # REGRESSION TEST: Both should be 'done'
         task = task_repository.find_by_id(TaskId(task_id))
 
         assert task.status.value == "done"
-        assert task.context_data["metadata"]["status"] == "done", \
+        assert task.context_data["metadata"]["status"] == "done", (
             "REGRESSION: Completion status not synced to context_data (Issue #2)"
+        )
 
 
 @pytest.mark.asyncio
@@ -238,7 +221,7 @@ class TestIssue3ProjectIdPopulated:
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Project ID Test",
-                assignees="test-agent"
+                assignees="test-agent",
             )
         )
         task_id = result["task"]["id"]
@@ -249,8 +232,9 @@ class TestIssue3ProjectIdPopulated:
 
         # Note: In this test environment, project_id might not be derivable
         # The important part is the sync mechanism exists, not the actual value
-        assert "project_id" in metadata or task.project_id is not None, \
+        assert "project_id" in metadata or task.project_id is not None, (
             "REGRESSION: project_id not included in sync mechanism (Issue #3)"
+        )
 
 
 @pytest.mark.asyncio
@@ -262,16 +246,14 @@ class TestIssue4TimestampsSyncedToContext:
     FIX: Added timestamp fields to metadata sync.
     """
 
-    async def test_created_at_synced_to_context(
-        self, task_facade, task_repository
-    ):
+    async def test_created_at_synced_to_context(self, task_facade, task_repository):
         """Verify created_at timestamp is synced to context_data."""
         # Create task
         result = await task_facade.create_task(
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Timestamp Test",
-                assignees="test-agent"
+                assignees="test-agent",
             )
         )
         task_id = result["task"]["id"]
@@ -284,16 +266,14 @@ class TestIssue4TimestampsSyncedToContext:
         # The sync mechanism should preserve timestamps in context
         # (exact location may vary: metadata or dedicated section)
 
-    async def test_updated_at_synced_on_update(
-        self, task_facade, task_repository
-    ):
+    async def test_updated_at_synced_on_update(self, task_facade, task_repository):
         """Verify updated_at timestamp updates in context_data."""
         # Create task
         result = await task_facade.create_task(
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Update Timestamp Test",
-                assignees="test-agent"
+                assignees="test-agent",
             )
         )
         task_id = result["task"]["id"]
@@ -304,18 +284,16 @@ class TestIssue4TimestampsSyncedToContext:
 
         # Update task
         await task_facade.update_task(
-            UpdateTaskRequest(
-                task_id=task_id,
-                title="Updated Title"
-            )
+            UpdateTaskRequest(task_id=task_id, title="Updated Title")
         )
 
         # REGRESSION TEST: updated_at should be newer than created_at
         task_after = await task_repository.find_by_id(TaskId(task_id))
 
         assert task_after.updated_at is not None
-        assert task_after.updated_at >= created_at_before, \
+        assert task_after.updated_at >= created_at_before, (
             "REGRESSION: updated_at timestamp not synced (Issue #4)"
+        )
 
 
 @pytest.mark.asyncio
@@ -337,7 +315,7 @@ class TestIssue5EstimatedEffortBidirectionalSync:
                 git_branch_id=str(uuid4()),
                 title="Effort Estimation Test",
                 estimated_effort="3 hours",
-                assignees="test-agent"
+                assignees="test-agent",
             )
         )
         task_id = result["task"]["id"]
@@ -346,8 +324,9 @@ class TestIssue5EstimatedEffortBidirectionalSync:
         task = task_repository.find_by_id(TaskId(task_id))
         objective = task.context_data.get("objective", {})
 
-        assert objective.get("estimated_effort") == "3 hours", \
+        assert objective.get("estimated_effort") == "3 hours", (
             "REGRESSION: estimated_effort not synced to context (Issue #5)"
+        )
 
     async def test_estimated_effort_synced_on_update(
         self, task_facade, task_repository
@@ -359,25 +338,23 @@ class TestIssue5EstimatedEffortBidirectionalSync:
                 git_branch_id=str(uuid4()),
                 title="Update Effort Test",
                 estimated_effort="2 hours",
-                assignees="test-agent"
+                assignees="test-agent",
             )
         )
         task_id = result["task"]["id"]
 
         # Update estimated effort
         await task_facade.update_task(
-            UpdateTaskRequest(
-                task_id=task_id,
-                estimated_effort="4 hours"
-            )
+            UpdateTaskRequest(task_id=task_id, estimated_effort="4 hours")
         )
 
         # REGRESSION TEST: updated effort in context
         task = task_repository.find_by_id(TaskId(task_id))
         objective = task.context_data.get("objective", {})
 
-        assert objective.get("estimated_effort") == "4 hours", \
+        assert objective.get("estimated_effort") == "4 hours", (
             "REGRESSION: estimated_effort update not synced to context (Issue #5)"
+        )
 
 
 @pytest.mark.asyncio
@@ -399,7 +376,7 @@ class TestIssue6AssigneesFormatConsistent:
                 git_branch_id=str(uuid4()),
                 title="Assignee Format Test",
                 assignees="coding-agent,test-agent",  # No @ prefix
-                priority="high"
+                priority="high",
             )
         )
         task_id = result["task"]["id"]
@@ -410,12 +387,11 @@ class TestIssue6AssigneesFormatConsistent:
         assignees = metadata.get("assignees", [])
 
         for assignee in assignees:
-            assert assignee.startswith("@"), \
+            assert assignee.startswith("@"), (
                 f"REGRESSION: Assignee '{assignee}' missing @ prefix (Issue #6)"
+            )
 
-    async def test_assignees_no_double_prefix(
-        self, task_facade, task_repository
-    ):
+    async def test_assignees_no_double_prefix(self, task_facade, task_repository):
         """Verify @ prefix not duplicated if already present."""
         # Create task with assignees that already have @ prefix
         result = await task_facade.create_task(
@@ -423,7 +399,7 @@ class TestIssue6AssigneesFormatConsistent:
                 git_branch_id=str(uuid4()),
                 title="No Double Prefix Test",
                 assignees="@coding-agent,@test-agent",  # Already have @ prefix
-                priority="high"
+                priority="high",
             )
         )
         task_id = result["task"]["id"]
@@ -434,10 +410,12 @@ class TestIssue6AssigneesFormatConsistent:
         assignees = metadata.get("assignees", [])
 
         for assignee in assignees:
-            assert not assignee.startswith("@@"), \
+            assert not assignee.startswith("@@"), (
                 f"REGRESSION: Assignee '{assignee}' has double @ prefix (Issue #6)"
-            assert assignee.startswith("@"), \
+            )
+            assert assignee.startswith("@"), (
                 f"Assignee '{assignee}' should have single @ prefix"
+            )
 
     async def test_updating_assignees_maintains_format(
         self, task_facade, task_repository
@@ -449,7 +427,7 @@ class TestIssue6AssigneesFormatConsistent:
                 git_branch_id=str(uuid4()),
                 title="Update Assignees Test",
                 assignees="original-agent",
-                priority="medium"
+                priority="medium",
             )
         )
         task_id = result["task"]["id"]
@@ -458,7 +436,7 @@ class TestIssue6AssigneesFormatConsistent:
         await task_facade.update_task(
             UpdateTaskRequest(
                 task_id=task_id,
-                assignees="new-agent,another-agent"  # No @ prefix
+                assignees="new-agent,another-agent",  # No @ prefix
             )
         )
 
@@ -469,8 +447,9 @@ class TestIssue6AssigneesFormatConsistent:
 
         assert len(assignees) > 0, "Assignees should be present"
         for assignee in assignees:
-            assert assignee.startswith("@"), \
+            assert assignee.startswith("@"), (
                 f"REGRESSION: Updated assignee '{assignee}' missing @ prefix (Issue #6)"
+            )
 
 
 @pytest.mark.asyncio
@@ -492,7 +471,7 @@ class TestAllIssuesRemainsFixed:
                 status="todo",
                 priority="high",
                 estimated_effort="5 hours",
-                assignees="coding-agent,test-agent"  # Issue #6
+                assignees="coding-agent,test-agent",  # Issue #6
             )
         )
         task_id = result["task"]["id"]
@@ -500,25 +479,17 @@ class TestAllIssuesRemainsFixed:
         # Create subtasks (Issue #1)
         for i in range(3):
             await subtask_facade.create_subtask(
-                task_id=task_id,
-                title=f"Subtask {i+1}",
-                assignees="subtask-agent"
+                task_id=task_id, title=f"Subtask {i + 1}", assignees="subtask-agent"
             )
 
         # Update status (Issue #2)
         await task_facade.update_task(
-            UpdateTaskRequest(
-                task_id=task_id,
-                status="in_progress"
-            )
+            UpdateTaskRequest(task_id=task_id, status="in_progress")
         )
 
         # Update estimated effort (Issue #5)
         await task_facade.update_task(
-            UpdateTaskRequest(
-                task_id=task_id,
-                estimated_effort="6 hours"
-            )
+            UpdateTaskRequest(task_id=task_id, estimated_effort="6 hours")
         )
 
         # COMPREHENSIVE REGRESSION TEST
@@ -526,29 +497,36 @@ class TestAllIssuesRemainsFixed:
         context_data = task.context_data
 
         # Issue #1: Subtask count synced
-        assert context_data["subtasks"]["total_count"] == 3, \
+        assert context_data["subtasks"]["total_count"] == 3, (
             "Issue #1 REGRESSED: Subtask count not synced"
+        )
 
         # Issue #2: Status synced
-        assert context_data["metadata"]["status"] == "in_progress", \
+        assert context_data["metadata"]["status"] == "in_progress", (
             "Issue #2 REGRESSED: Status not synced"
+        )
 
         # Issue #3: project_id present (mechanism exists)
-        assert "project_id" in context_data.get("metadata", {}), \
+        assert "project_id" in context_data.get("metadata", {}), (
             "Issue #3 REGRESSED: project_id sync mechanism broken"
+        )
 
         # Issue #4: Timestamps present
-        assert task.created_at is not None, \
+        assert task.created_at is not None, (
             "Issue #4 REGRESSED: Timestamps not maintained"
-        assert task.updated_at is not None, \
+        )
+        assert task.updated_at is not None, (
             "Issue #4 REGRESSED: updated_at not maintained"
+        )
 
         # Issue #5: Estimated effort synced
-        assert context_data["objective"]["estimated_effort"] == "6 hours", \
+        assert context_data["objective"]["estimated_effort"] == "6 hours", (
             "Issue #5 REGRESSED: estimated_effort not synced"
+        )
 
         # Issue #6: Assignees have @ prefix
         assignees = context_data["metadata"]["assignees"]
         for assignee in assignees:
-            assert assignee.startswith("@"), \
+            assert assignee.startswith("@"), (
                 f"Issue #6 REGRESSED: Assignee '{assignee}' missing @ prefix"
+            )

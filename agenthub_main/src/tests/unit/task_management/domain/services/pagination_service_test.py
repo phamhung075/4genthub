@@ -23,6 +23,7 @@ from fastmcp.task_management.domain.services.pagination_service import Paginatio
 @dataclass
 class _MockPaginationEntity:
     """Simple mock entity for pagination testing (underscore prefix prevents pytest collection)."""
+
     id: int
     name: str
 
@@ -39,9 +40,7 @@ class TestPaginationServiceBasicOperations:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=total_count,
-            pagination=pagination
+            items=items, total_count=total_count, pagination=pagination
         )
 
         # Assert
@@ -63,9 +62,7 @@ class TestPaginationServiceBasicOperations:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=total_count,
-            pagination=pagination
+            items=items, total_count=total_count, pagination=pagination
         )
 
         # Assert
@@ -85,9 +82,7 @@ class TestPaginationServiceBasicOperations:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=total_count,
-            pagination=pagination
+            items=items, total_count=total_count, pagination=pagination
         )
 
         # Assert
@@ -107,9 +102,7 @@ class TestPaginationServiceBasicOperations:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=total_count,
-            pagination=pagination
+            items=items, total_count=total_count, pagination=pagination
         )
 
         # Assert
@@ -133,9 +126,7 @@ class TestPaginationServiceEdgeCases:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=total_count,
-            pagination=pagination
+            items=items, total_count=total_count, pagination=pagination
         )
 
         # Assert
@@ -156,9 +147,7 @@ class TestPaginationServiceEdgeCases:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=total_count,
-            pagination=pagination
+            items=items, total_count=total_count, pagination=pagination
         )
 
         # Assert
@@ -176,9 +165,7 @@ class TestPaginationServiceEdgeCases:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=total_count,
-            pagination=pagination
+            items=items, total_count=total_count, pagination=pagination
         )
 
         # Assert
@@ -195,9 +182,7 @@ class TestPaginationServiceEdgeCases:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=total_count,
-            pagination=pagination
+            items=items, total_count=total_count, pagination=pagination
         )
 
         # Assert
@@ -217,9 +202,7 @@ class TestPaginationServiceEdgeCases:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=total_count,
-            pagination=pagination
+            items=items, total_count=total_count, pagination=pagination
         )
 
         # Assert
@@ -373,9 +356,7 @@ class TestPaginationServiceFeatureFlag:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=25,
-            pagination=pagination
+            items=items, total_count=25, pagination=pagination
         )
 
         # Assert - Service should work normally
@@ -391,9 +372,7 @@ class TestPaginationServiceFeatureFlag:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=25,
-            pagination=pagination
+            items=items, total_count=25, pagination=pagination
         )
 
         # Assert - Service should work normally
@@ -415,9 +394,7 @@ class TestPaginationServiceTypeCompatibility:
 
         # Act
         result = PaginationService[str].create_pagination_result(
-            items=items,
-            total_count=3,
-            pagination=pagination
+            items=items, total_count=3, pagination=pagination
         )
 
         # Assert
@@ -432,9 +409,7 @@ class TestPaginationServiceTypeCompatibility:
 
         # Act
         result = PaginationService[dict].create_pagination_result(
-            items=items,
-            total_count=3,
-            pagination=pagination
+            items=items, total_count=3, pagination=pagination
         )
 
         # Assert
@@ -449,9 +424,7 @@ class TestPaginationServiceTypeCompatibility:
 
         # Act
         result = PaginationService[_MockPaginationEntity].create_pagination_result(
-            items=items,
-            total_count=5,
-            pagination=pagination
+            items=items, total_count=5, pagination=pagination
         )
 
         # Assert
@@ -468,7 +441,7 @@ class TestPaginationServiceBusinessRules:
             (25, 10, 3),  # (25 + 10 - 1) // 10 = 34 // 10 = 3
             (30, 10, 3),  # (30 + 10 - 1) // 10 = 39 // 10 = 3
             (31, 10, 4),  # (31 + 10 - 1) // 10 = 40 // 10 = 4
-            (1, 10, 1),   # (1 + 10 - 1) // 10 = 10 // 10 = 1
+            (1, 10, 1),  # (1 + 10 - 1) // 10 = 10 // 10 = 1
             (10, 10, 1),  # (10 + 10 - 1) // 10 = 19 // 10 = 1
             (11, 10, 2),  # (11 + 10 - 1) // 10 = 20 // 10 = 2
         ]
@@ -479,21 +452,20 @@ class TestPaginationServiceBusinessRules:
 
             # Act
             result = PaginationService[_MockPaginationEntity].create_pagination_result(
-                items=[],
-                total_count=total_count,
-                pagination=pagination
+                items=[], total_count=total_count, pagination=pagination
             )
 
             # Assert
-            assert result.total_pages == expected_pages, \
+            assert result.total_pages == expected_pages, (
                 f"Failed for total_count={total_count}, page_size={page_size}"
+            )
 
     def test_has_next_logic(self):
         """Test has_next flag is set correctly."""
         # Test cases: (page, total_pages, expected_has_next)
         test_cases = [
-            (1, 3, True),   # First page, has next
-            (2, 3, True),   # Middle page, has next
+            (1, 3, True),  # First page, has next
+            (2, 3, True),  # Middle page, has next
             (3, 3, False),  # Last page, no next
             (1, 1, False),  # Single page, no next
             (1, 0, False),  # Empty results, no next
@@ -508,22 +480,21 @@ class TestPaginationServiceBusinessRules:
 
             # Act
             result = PaginationService[_MockPaginationEntity].create_pagination_result(
-                items=[],
-                total_count=total_count,
-                pagination=pagination
+                items=[], total_count=total_count, pagination=pagination
             )
 
             # Assert
-            assert result.has_next == expected_has_next, \
+            assert result.has_next == expected_has_next, (
                 f"Failed for page={page}, total_pages={total_pages}"
+            )
 
     def test_has_previous_logic(self):
         """Test has_previous flag is set correctly."""
         # Test cases: (page, expected_has_previous)
         test_cases = [
             (1, False),  # First page, no previous
-            (2, True),   # Second page, has previous
-            (3, True),   # Third page, has previous
+            (2, True),  # Second page, has previous
+            (3, True),  # Third page, has previous
             (10, True),  # Any page > 1, has previous
         ]
 
@@ -535,9 +506,10 @@ class TestPaginationServiceBusinessRules:
             result = PaginationService[_MockPaginationEntity].create_pagination_result(
                 items=[],
                 total_count=100,  # Arbitrary large count
-                pagination=pagination
+                pagination=pagination,
             )
 
             # Assert
-            assert result.has_previous == expected_has_previous, \
+            assert result.has_previous == expected_has_previous, (
                 f"Failed for page={page}"
+            )

@@ -35,11 +35,9 @@ class QueryCounter:
     def _count_query(self, conn, cursor, statement, parameters, context, executemany):
         """SQLAlchemy event handler to count queries"""
         self.count += 1
-        self.queries.append({
-            'sql': statement,
-            'params': parameters,
-            'timestamp': time.time()
-        })
+        self.queries.append(
+            {"sql": statement, "params": parameters, "timestamp": time.time()}
+        )
 
     def __enter__(self):
         """Start counting queries"""
@@ -56,26 +54,20 @@ class QueryCounter:
 
     def get_query_breakdown(self) -> dict:
         """Get breakdown of query types"""
-        breakdown = {
-            'SELECT': 0,
-            'INSERT': 0,
-            'UPDATE': 0,
-            'DELETE': 0,
-            'OTHER': 0
-        }
+        breakdown = {"SELECT": 0, "INSERT": 0, "UPDATE": 0, "DELETE": 0, "OTHER": 0}
 
         for query in self.queries:
-            sql = query['sql'].strip().upper()
-            if sql.startswith('SELECT'):
-                breakdown['SELECT'] += 1
-            elif sql.startswith('INSERT'):
-                breakdown['INSERT'] += 1
-            elif sql.startswith('UPDATE'):
-                breakdown['UPDATE'] += 1
-            elif sql.startswith('DELETE'):
-                breakdown['DELETE'] += 1
+            sql = query["sql"].strip().upper()
+            if sql.startswith("SELECT"):
+                breakdown["SELECT"] += 1
+            elif sql.startswith("INSERT"):
+                breakdown["INSERT"] += 1
+            elif sql.startswith("UPDATE"):
+                breakdown["UPDATE"] += 1
+            elif sql.startswith("DELETE"):
+                breakdown["DELETE"] += 1
             else:
-                breakdown['OTHER'] += 1
+                breakdown["OTHER"] += 1
 
         return breakdown
 
@@ -111,7 +103,7 @@ def create_test_project_and_branch(session) -> tuple[str, str]:
         status="active",
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
-        metadata={}
+        metadata={},
     )
     session.add(project)
 
@@ -128,7 +120,7 @@ def create_test_project_and_branch(session) -> tuple[str, str]:
         updated_at=datetime.now(UTC),
         metadata={},
         task_count=0,
-        completed_task_count=0
+        completed_task_count=0,
     )
     session.add(branch)
     session.commit()
@@ -136,7 +128,9 @@ def create_test_project_and_branch(session) -> tuple[str, str]:
     return project_id, git_branch_id
 
 
-def create_tasks_bulk(git_branch_id: str, count: int, user_id: str = None) -> tuple[list[str], str]:
+def create_tasks_bulk(
+    git_branch_id: str, count: int, user_id: str = None
+) -> tuple[list[str], str]:
     """
     Create multiple tasks in bulk for testing using repository.
 
@@ -169,15 +163,15 @@ def create_tasks_bulk(git_branch_id: str, count: int, user_id: str = None) -> tu
         # Create task entity - use string values for enums
         task = TaskEntity(
             id=TaskId(str(uuid.uuid4())),
-            title=f"Test Task {i+1}",
-            description=f"Description for task {i+1}",
+            title=f"Test Task {i + 1}",
+            description=f"Description for task {i + 1}",
             status=TaskStatus("todo"),  # Use string value, not method
             priority=Priority("medium"),  # Use string value, not method
             git_branch_id=git_branch_id,
             assignees=["@coding-agent"],
             labels=[],
             dependencies=[],
-            subtasks=[]
+            subtasks=[],
         )
 
         # Save task
@@ -218,6 +212,7 @@ class TestTaskListNPlusOneQuery:
             from fastmcp.task_management.application.services.repository_provider_service import (
                 RepositoryProviderService,
             )
+
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -237,11 +232,15 @@ class TestTaskListNPlusOneQuery:
             print(f"Total queries executed: {counter.count}")
             print(f"Query breakdown: {query_breakdown}")
             print(f"Tasks returned: {len(response.tasks)}")
-            print("Expected queries: 3 (1 for tasks + 1 for batch branches + 1 for connection health)")
+            print(
+                "Expected queries: 3 (1 for tasks + 1 for batch branches + 1 for connection health)"
+            )
             print(f"Actual queries: {counter.count}")
             print(f"N+1 problem detected: {counter.count > 3}")
 
-            assert len(response.tasks) == task_count, f"Should return all {task_count} tasks"
+            assert len(response.tasks) == task_count, (
+                f"Should return all {task_count} tasks"
+            )
 
             # CRITICAL ASSERTION - WILL FAIL INITIALLY
             assert counter.count <= 3, (
@@ -273,6 +272,7 @@ class TestTaskListNPlusOneQuery:
             from fastmcp.task_management.application.services.repository_provider_service import (
                 RepositoryProviderService,
             )
+
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -290,11 +290,13 @@ class TestTaskListNPlusOneQuery:
             print("\n=== Performance Benchmark Results ===")
             print(f"Task count: {task_count}")
             print(f"Execution time: {duration:.3f} seconds")
-            print(f"Tasks per second: {task_count/duration:.1f}")
+            print(f"Tasks per second: {task_count / duration:.1f}")
             print("Performance target: < 1.0 second")
             print(f"Performance issue: {duration > 1.0}")
 
-            assert len(response.tasks) == task_count, f"Should return all {task_count} tasks"
+            assert len(response.tasks) == task_count, (
+                f"Should return all {task_count} tasks"
+            )
 
             # CRITICAL ASSERTION - WILL FAIL INITIALLY
             assert duration < 1.0, (
@@ -326,6 +328,7 @@ class TestTaskListNPlusOneQuery:
             from fastmcp.task_management.application.services.repository_provider_service import (
                 RepositoryProviderService,
             )
+
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -347,12 +350,16 @@ class TestTaskListNPlusOneQuery:
             for i, task in enumerate(response.tasks):
                 if task.project_id is None:
                     null_count += 1
-                    print(f"Task {i+1}: project_id is NULL (ERROR)")
+                    print(f"Task {i + 1}: project_id is NULL (ERROR)")
                 elif task.project_id != project_id:
-                    mismatches.append((i+1, task.project_id))
-                    print(f"Task {i+1}: project_id mismatch - expected {project_id}, got {task.project_id}")
+                    mismatches.append((i + 1, task.project_id))
+                    print(
+                        f"Task {i + 1}: project_id mismatch - expected {project_id}, got {task.project_id}"
+                    )
 
-            assert len(response.tasks) == task_count, f"Should return all {task_count} tasks"
+            assert len(response.tasks) == task_count, (
+                f"Should return all {task_count} tasks"
+            )
 
             # CRITICAL ASSERTIONS - Verify data integrity
             assert null_count == 0, (
@@ -390,6 +397,7 @@ class TestTaskListNPlusOneQuery:
                 from fastmcp.task_management.application.services.repository_provider_service import (
                     RepositoryProviderService,
                 )
+
                 provider = RepositoryProviderService.get_instance()
                 task_repo = provider.get_task_repository()
 
@@ -401,11 +409,13 @@ class TestTaskListNPlusOneQuery:
                 with query_counter as counter:
                     use_case.execute(request)
 
-                results.append({
-                    'task_count': task_count,
-                    'query_count': counter.count,
-                    'ratio': counter.count / task_count if task_count > 0 else 0
-                })
+                results.append(
+                    {
+                        "task_count": task_count,
+                        "query_count": counter.count,
+                        "ratio": counter.count / task_count if task_count > 0 else 0,
+                    }
+                )
 
                 # Cleanup for next iteration
                 session.rollback()
@@ -417,10 +427,12 @@ class TestTaskListNPlusOneQuery:
 
         for result in results:
             expected = 2  # Should always be 2 with batch loading
-            print(f"{result['task_count']:<10} {result['query_count']:<10} {result['ratio']:<10.2f} {expected:<10}")
+            print(
+                f"{result['task_count']:<10} {result['query_count']:<10} {result['ratio']:<10.2f} {expected:<10}"
+            )
 
         # CRITICAL ASSERTION - Query count should be constant
-        query_counts = [r['query_count'] for r in results]
+        query_counts = [r["query_count"] for r in results]
         max_queries = max(query_counts)
         min(query_counts)
 
@@ -434,7 +446,7 @@ class TestTaskListNPlusOneQuery:
 
         # Additional check: query count should not scale linearly with task count
         # If ratio stays close to 1.0, it means N+1 problem exists
-        high_task_ratio = results[-1]['ratio']  # Ratio for highest task count
+        high_task_ratio = results[-1]["ratio"]  # Ratio for highest task count
         assert high_task_ratio < 0.1, (
             f"Query-to-task ratio too high: {high_task_ratio:.3f} (expected < 0.1). "
             f"This indicates queries are scaling with task count (N+1 problem). "
@@ -460,6 +472,7 @@ class TestTaskListNPlusOneQuery:
             from fastmcp.task_management.application.services.repository_provider_service import (
                 RepositoryProviderService,
             )
+
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -479,21 +492,25 @@ class TestTaskListNPlusOneQuery:
             # Calculate expected improvement with batch loading
             expected_queries = 2  # 1 for tasks + 1 for batch branches
             expected_improvement_ratio = current_queries / expected_queries
-            expected_time_improvement = current_duration * (expected_queries / current_queries)
+            expected_time_improvement = current_duration * (
+                expected_queries / current_queries
+            )
 
             print("\n=== Performance Comparison ===")
             print(f"Task count: {task_count}")
             print("\nCurrent Implementation (N+1):")
             print(f"  Queries: {current_queries}")
             print(f"  Duration: {current_duration:.3f}s")
-            print(f"  Queries per task: {current_queries/task_count:.2f}")
+            print(f"  Queries per task: {current_queries / task_count:.2f}")
             print("\nExpected with Batch Loading:")
             print(f"  Queries: {expected_queries}")
             print(f"  Duration: ~{expected_time_improvement:.3f}s (estimated)")
-            print(f"  Queries per task: {expected_queries/task_count:.2f}")
+            print(f"  Queries per task: {expected_queries / task_count:.2f}")
             print("\nExpected Improvement:")
             print(f"  Query reduction: {expected_improvement_ratio:.1f}x fewer queries")
-            print(f"  Speed improvement: {current_duration/expected_time_improvement:.1f}x faster")
+            print(
+                f"  Speed improvement: {current_duration / expected_time_improvement:.1f}x faster"
+            )
 
             # Document baseline for future comparison
             assert len(response.tasks) == task_count
@@ -527,6 +544,7 @@ class TestTaskListPerformanceRegression:
             from fastmcp.task_management.application.services.repository_provider_service import (
                 RepositoryProviderService,
             )
+
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -553,6 +571,7 @@ class TestTaskListPerformanceRegression:
             from fastmcp.task_management.application.services.repository_provider_service import (
                 RepositoryProviderService,
             )
+
             provider = RepositoryProviderService.get_instance()
             task_repo = provider.get_task_repository().with_user(user_id)
 
@@ -568,7 +587,9 @@ class TestTaskListPerformanceRegression:
                 assert task.priority is not None, "Task missing priority"
                 assert task.git_branch_id is not None, "Task missing git_branch_id"
                 # project_id should be populated via batch loading
-                assert task.project_id is not None, "Task missing project_id (batch loading failed)"
+                assert task.project_id is not None, (
+                    "Task missing project_id (batch loading failed)"
+                )
 
 
 if __name__ == "__main__":

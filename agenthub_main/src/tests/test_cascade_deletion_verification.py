@@ -45,7 +45,7 @@ async def test_cascade_deletion():
             id=project_id,
             name="Test Project for Cascade Deletion",
             description="Testing cascade deletion functionality",
-            user_id="test-user-123"
+            user_id="test-user-123",
         )
         session.add(project)
         session.commit()
@@ -58,7 +58,7 @@ async def test_cascade_deletion():
             project_id=project_id,
             name="test-cascade-branch",
             description="Test branch for cascade deletion",
-            user_id="test-user-123"
+            user_id="test-user-123",
         )
         session.add(git_branch)
         session.commit()
@@ -73,7 +73,7 @@ async def test_cascade_deletion():
             git_branch_id=branch_id,
             status="in_progress",
             priority="medium",
-            user_id="test-user-123"
+            user_id="test-user-123",
         )
         session.add(task)
         session.commit()
@@ -86,13 +86,13 @@ async def test_cascade_deletion():
             subtask = Subtask(
                 id=subtask_id,
                 task_id=task_id,
-                title=f"Test Subtask {i+1}",
-                description=f"Subtask {i+1} that should be cascade deleted",
+                title=f"Test Subtask {i + 1}",
+                description=f"Subtask {i + 1} that should be cascade deleted",
                 status="todo",
                 priority="medium",
-                assignees=[f"agent-{i+1}"],
+                assignees=[f"agent-{i + 1}"],
                 progress_percentage=0,
-                user_id="test-user-123"
+                user_id="test-user-123",
             )
             session.add(subtask)
             subtask_ids.append(subtask_id)
@@ -103,7 +103,9 @@ async def test_cascade_deletion():
         # 5. Verify subtasks exist before deletion
         subtask_count_before = session.query(Subtask).filter_by(task_id=task_id).count()
         print(f"📊 Subtasks before deletion: {subtask_count_before}")
-        assert subtask_count_before == 3, f"Expected 3 subtasks, found {subtask_count_before}"
+        assert subtask_count_before == 3, (
+            f"Expected 3 subtasks, found {subtask_count_before}"
+        )
 
         # 6. Delete the parent task (this should cascade to delete subtasks)
         print("🗑️ Deleting parent task...")
@@ -125,10 +127,14 @@ async def test_cascade_deletion():
 
         if subtask_count_after == 0:
             print("🎉 SUCCESS: Cascade deletion is working correctly!")
-            print("✅ All subtasks were automatically deleted when parent task was deleted")
+            print(
+                "✅ All subtasks were automatically deleted when parent task was deleted"
+            )
             return True
         else:
-            print(f"❌ FAILURE: {subtask_count_after} subtasks still exist after parent deletion")
+            print(
+                f"❌ FAILURE: {subtask_count_after} subtasks still exist after parent deletion"
+            )
             print("❌ Cascade deletion is NOT working correctly")
 
             # Show remaining subtasks for debugging

@@ -42,9 +42,7 @@ class JWKSKeyPair:
     def __init__(self):
         """Generate RSA key pair for JWT signing and validation."""
         self.private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048,
-            backend=default_backend()
+            public_exponent=65537, key_size=2048, backend=default_backend()
         )
         self.public_key = self.private_key.public_key()
         self.kid = str(uuid.uuid4())  # Key ID for JWKS
@@ -54,14 +52,14 @@ class JWKSKeyPair:
         return self.private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=serialization.NoEncryption()
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
     def get_public_pem(self) -> bytes:
         """Get public key in PEM format for validation."""
         return self.public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
     def get_jwks(self) -> dict[str, Any]:
@@ -71,22 +69,25 @@ class JWKSKeyPair:
 
         # Convert to base64url encoding
         import base64
+
         def int_to_base64url(num: int) -> str:
             # Convert integer to bytes (big-endian)
             byte_length = (num.bit_length() + 7) // 8
-            num_bytes = num.to_bytes(byte_length, byteorder='big')
+            num_bytes = num.to_bytes(byte_length, byteorder="big")
             # Base64url encode (no padding)
-            return base64.urlsafe_b64encode(num_bytes).rstrip(b'=').decode('utf-8')
+            return base64.urlsafe_b64encode(num_bytes).rstrip(b"=").decode("utf-8")
 
         return {
-            "keys": [{
-                "kty": "RSA",
-                "use": "sig",
-                "kid": self.kid,
-                "alg": "RS256",
-                "n": int_to_base64url(public_numbers.n),
-                "e": int_to_base64url(public_numbers.e)
-            }]
+            "keys": [
+                {
+                    "kty": "RSA",
+                    "use": "sig",
+                    "kid": self.kid,
+                    "alg": "RS256",
+                    "n": int_to_base64url(public_numbers.n),
+                    "e": int_to_base64url(public_numbers.e),
+                }
+            ]
         }
 
 
@@ -222,15 +223,9 @@ class AuthTokenBuilder:
             "nbf": int(self.not_before.timestamp()),
             "email": self.email,
             "preferred_username": self.username,
-            "realm_access": {
-                "roles": self.roles
-            },
-            "resource_access": {
-                self.audience: {
-                    "roles": self.permissions
-                }
-            },
-            **self.custom_claims
+            "realm_access": {"roles": self.roles},
+            "resource_access": {self.audience: {"roles": self.permissions}},
+            **self.custom_claims,
         }
 
         # Sign the token
@@ -238,7 +233,7 @@ class AuthTokenBuilder:
             payload,
             self.key_pair.get_private_pem(),
             algorithm="RS256",
-            headers={"kid": self.key_pair.kid}
+            headers={"kid": self.key_pair.kid},
         )
 
         return token
@@ -254,7 +249,7 @@ class AuthTokenBuilder:
             self.key_pair.get_public_pem(),
             algorithms=["RS256"],
             audience=self.audience,
-            options={"verify_exp": False}  # Don't verify expiry for testing
+            options={"verify_exp": False},  # Don't verify expiry for testing
         )
         return token, payload
 
@@ -275,13 +270,16 @@ class AuthTokenBuilder:
         if reason == "bad_signature":
             # Create a valid token but modify it slightly to break the signature
             valid_token = AuthTokenBuilder().build()
-            parts = valid_token.split('.')
+            parts = valid_token.split(".")
             # Modify the payload slightly
             import base64
-            payload = base64.urlsafe_b64decode(parts[1] + '==')
-            modified_payload = payload.replace(b'test@example.com', b'fake@example.com')
-            parts[1] = base64.urlsafe_b64encode(modified_payload).decode('utf-8').rstrip('=')
-            return '.'.join(parts)
+
+            payload = base64.urlsafe_b64decode(parts[1] + "==")
+            modified_payload = payload.replace(b"test@example.com", b"fake@example.com")
+            parts[1] = (
+                base64.urlsafe_b64encode(modified_payload).decode("utf-8").rstrip("=")
+            )
+            return ".".join(parts)
 
         elif reason == "malformed":
             return "this.is.not.a.valid.jwt.token.structure"
@@ -301,7 +299,7 @@ class AuthTokenBuilder:
                 "sub": "test-user",
                 "iss": "test-issuer",
                 "aud": "test-audience",
-                "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
+                "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
             }
             return jwt.encode(payload, "secret-key", algorithm="HS256")
 
@@ -325,13 +323,10 @@ class AuthTokenBuilder:
                 token,
                 key_pair.get_public_pem(),
                 algorithms=["RS256"],
-                options={"verify_exp": False}
+                options={"verify_exp": False},
             )
         else:
-            return jwt.decode(
-                token,
-                options={"verify_signature": False}
-            )
+            return jwt.decode(token, options={"verify_signature": False})
 
 
 class MockKeycloakJWKS:
@@ -358,12 +353,13 @@ class MockKeycloakJWKS:
 
 # Convenience functions for quick token generation
 
+
 def create_test_token(
     user_id: str | None = None,
     email: str = "test@example.com",
     roles: list[str] | None = None,
     permissions: list[str] | None = None,
-    expired: bool = False
+    expired: bool = False,
 ) -> str:
     """Quick helper to create a test token with common parameters.
 

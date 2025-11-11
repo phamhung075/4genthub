@@ -29,10 +29,13 @@ def test_agent_template_repository_save_and_find():
     configuration = AgentConfiguration(
         system_prompt="Test system prompt for coding agent",
         tools=["Read", "Write", "Edit", "Bash"],
-        capabilities={"languages": ["Python", "JavaScript"], "frameworks": ["FastAPI", "React"]},
+        capabilities={
+            "languages": ["Python", "JavaScript"],
+            "frameworks": ["FastAPI", "React"],
+        },
         rules=["Write clean code", "Follow DRY principles"],
         output_format={"format": "markdown"},
-        metadata={"author": "test", "version": "1.0.0"}
+        metadata={"author": "test", "version": "1.0.0"},
     )
 
     template = AgentTemplate(
@@ -45,7 +48,7 @@ def test_agent_template_repository_save_and_find():
         default_configuration=configuration,
         metadata={"source": "test"},
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
     # Act - Save
@@ -64,7 +67,10 @@ def test_agent_template_repository_save_and_find():
     assert found_by_id.id == template_id
     assert found_by_id.slug == "test-coding-agent"
     assert found_by_id.name == "Test Coding Agent"
-    assert found_by_id.default_configuration.system_prompt == "Test system prompt for coding agent"
+    assert (
+        found_by_id.default_configuration.system_prompt
+        == "Test system prompt for coding agent"
+    )
     assert len(found_by_id.default_configuration.tools) == 4
 
     # Act - Find by slug
@@ -90,7 +96,7 @@ def test_user_agent_instance_repository_save_and_find():
     template_config = AgentConfiguration(
         system_prompt="Template system prompt",
         tools=["Read", "Write"],
-        capabilities={"test": "capability"}
+        capabilities={"test": "capability"},
     )
 
     template = AgentTemplate(
@@ -101,7 +107,7 @@ def test_user_agent_instance_repository_save_and_find():
         category="testing",
         version="1.0.0",
         default_configuration=template_config,
-        metadata={"source": "test"}
+        metadata={"source": "test"},
     )
     template_repo.save(template)
 
@@ -111,7 +117,7 @@ def test_user_agent_instance_repository_save_and_find():
     instance_config = AgentConfiguration(
         system_prompt="Customized system prompt",
         tools=["Read", "Write", "Edit"],  # Added Edit tool
-        capabilities={"test": "capability", "custom": "feature"}
+        capabilities={"test": "capability", "custom": "feature"},
     )
 
     instance = UserAgentInstance(
@@ -124,7 +130,7 @@ def test_user_agent_instance_repository_save_and_find():
         configuration=instance_config,
         visibility="private",
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
     # Act - Save instance
@@ -148,7 +154,9 @@ def test_user_agent_instance_repository_save_and_find():
     assert len(found_by_id.configuration.tools) == 3
 
     # Act - Find by user and template
-    found_by_user_template = instance_repo.find_by_user_and_template(user_id, template_id)
+    found_by_user_template = instance_repo.find_by_user_and_template(
+        user_id, template_id
+    )
 
     # Assert - Found by user and template
     assert found_by_user_template is not None
@@ -183,11 +191,9 @@ def test_user_agent_instance_sharing():
         category="testing",
         version="1.0.0",
         default_configuration=AgentConfiguration(
-            system_prompt="Shareable prompt",
-            tools=["Read"],
-            capabilities={}
+            system_prompt="Shareable prompt", tools=["Read"], capabilities={}
         ),
-        metadata={"source": "test"}
+        metadata={"source": "test"},
     )
     template_repo.save(template)
 
@@ -205,7 +211,7 @@ def test_user_agent_instance_sharing():
         configuration=template.default_configuration,
         visibility="public",
         share_token=share_token,
-        share_created_at=datetime.now(UTC)
+        share_created_at=datetime.now(UTC),
     )
 
     # Act - Save and find by share token
@@ -246,11 +252,9 @@ def test_count_by_agent_name():
         category="testing",
         version="1.0.0",
         default_configuration=AgentConfiguration(
-            system_prompt="Count test prompt",
-            tools=["Read"],
-            capabilities={}
+            system_prompt="Count test prompt", tools=["Read"], capabilities={}
         ),
-        metadata={"source": "test"}
+        metadata={"source": "test"},
     )
     template_repo.save(template)
 
@@ -265,7 +269,7 @@ def test_count_by_agent_name():
         agent_name="Imported Agent",
         is_customized=False,
         configuration=template.default_configuration,
-        visibility="private"
+        visibility="private",
     )
     instance_repo.save(instance1)
 
@@ -294,4 +298,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Test failed: {e}\n")
         import traceback
+
         traceback.print_exc()

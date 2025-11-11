@@ -37,7 +37,9 @@ class TestIDValidatorPerformance:
         elapsed_time = end_time - start_time
 
         # Should complete very quickly (< 1ms for single validation)
-        assert elapsed_time < 0.001, f"Single validation took too long: {elapsed_time:.6f}s"
+        assert elapsed_time < 0.001, (
+            f"Single validation took too long: {elapsed_time:.6f}s"
+        )
         assert result.is_valid is True
 
     def test_batch_validation_performance(self):
@@ -61,10 +63,14 @@ class TestIDValidatorPerformance:
         assert all(results), "Some valid UUIDs were rejected"
 
         # Average time per validation should be very fast (< 50μs - adjusted for CI environment)
-        assert avg_time_per_validation < 0.00005, f"Average validation time too slow: {avg_time_per_validation:.8f}s"
+        assert avg_time_per_validation < 0.00005, (
+            f"Average validation time too slow: {avg_time_per_validation:.8f}s"
+        )
 
-        print(f"Batch validation: {batch_size} UUIDs in {elapsed_time:.6f}s "
-              f"({avg_time_per_validation*1000000:.2f}μs avg)")
+        print(
+            f"Batch validation: {batch_size} UUIDs in {elapsed_time:.6f}s "
+            f"({avg_time_per_validation * 1000000:.2f}μs avg)"
+        )
 
     def test_large_scale_validation_performance(self):
         """Test performance with large-scale validations."""
@@ -97,10 +103,14 @@ class TestIDValidatorPerformance:
         assert valid_count == batch_size - expected_invalid
 
         # Should complete within reasonable time (< 1 second for 10k validations)
-        assert elapsed_time < 1.0, f"Large scale validation took too long: {elapsed_time:.3f}s"
+        assert elapsed_time < 1.0, (
+            f"Large scale validation took too long: {elapsed_time:.3f}s"
+        )
 
-        print(f"Large scale: {batch_size} validations in {elapsed_time:.3f}s "
-              f"({(elapsed_time/batch_size)*1000000:.2f}μs avg)")
+        print(
+            f"Large scale: {batch_size} validations in {elapsed_time:.3f}s "
+            f"({(elapsed_time / batch_size) * 1000000:.2f}μs avg)"
+        )
 
     def test_concurrent_validation_performance(self):
         """Test performance under concurrent load."""
@@ -155,8 +165,12 @@ class TestIDValidatorPerformance:
         max_thread_time = max(times)
         avg_thread_time = sum(times) / len(times)
 
-        print(f"Concurrent: {total_validations} validations across {num_threads} threads")
-        print(f"Total time: {total_elapsed:.3f}s, Max thread time: {max_thread_time:.3f}s")
+        print(
+            f"Concurrent: {total_validations} validations across {num_threads} threads"
+        )
+        print(
+            f"Total time: {total_elapsed:.3f}s, Max thread time: {max_thread_time:.3f}s"
+        )
         print(f"Avg thread time: {avg_thread_time:.3f}s")
 
         # Should complete concurrently (total time should be less than sequential time)
@@ -164,7 +178,9 @@ class TestIDValidatorPerformance:
         # Expect minimal or no speedup in CI environment - mainly testing thread safety
         sequential_estimate = sum(times)
         # Relaxed threshold for CI: threads may not show speedup due to GIL
-        assert total_elapsed < sequential_estimate * 1.5, f"Thread overhead too high: {total_elapsed:.3f}s vs sequential estimate {sequential_estimate:.3f}s"
+        assert total_elapsed < sequential_estimate * 1.5, (
+            f"Thread overhead too high: {total_elapsed:.3f}s vs sequential estimate {sequential_estimate:.3f}s"
+        )
 
     def test_memory_usage_stability(self):
         """Test memory usage remains stable during extended operations."""
@@ -193,8 +209,10 @@ class TestIDValidatorPerformance:
         final_memory = process.memory_info().rss / 1024 / 1024  # MB
         memory_increase = final_memory - initial_memory
 
-        print(f"Memory usage: {initial_memory:.1f}MB -> {final_memory:.1f}MB "
-              f"(+{memory_increase:.1f}MB) for {iterations} validations")
+        print(
+            f"Memory usage: {initial_memory:.1f}MB -> {final_memory:.1f}MB "
+            f"(+{memory_increase:.1f}MB) for {iterations} validations"
+        )
 
         # Memory increase should be minimal (< 10MB for 5000 validations)
         assert memory_increase < 10, f"Excessive memory usage: +{memory_increase:.1f}MB"
@@ -236,12 +254,14 @@ class TestIDValidatorPerformance:
         num_tests = 1000
         test_data = []
         for _ in range(num_tests):
-            test_data.append({
-                'task_id': str(uuid4()),
-                'git_branch_id': str(uuid4()),
-                'project_id': str(uuid4()),
-                'user_id': str(uuid4())
-            })
+            test_data.append(
+                {
+                    "task_id": str(uuid4()),
+                    "git_branch_id": str(uuid4()),
+                    "project_id": str(uuid4()),
+                    "user_id": str(uuid4()),
+                }
+            )
 
         # Test performance
         start_time = time.perf_counter()
@@ -260,15 +280,22 @@ class TestIDValidatorPerformance:
         # Should be reasonably fast (< 500μs per validation - adjusted for CI environment)
         assert avg_time < 0.0005, f"Parameter mapping too slow: {avg_time:.8f}s avg"
 
-        print(f"Parameter mapping: {num_tests} validations in {elapsed_time:.6f}s "
-              f"({avg_time*1000000:.2f}μs avg)")
+        print(
+            f"Parameter mapping: {num_tests} validations in {elapsed_time:.6f}s "
+            f"({avg_time * 1000000:.2f}μs avg)"
+        )
 
     def test_context_detection_performance(self):
         """Test performance of context detection."""
         test_uuid = str(uuid4())
         context_hints = [
-            "task_id", "git_branch_id", "project_id", "user_id",
-            "mcp_task_id", "context_id", "subtask_id"
+            "task_id",
+            "git_branch_id",
+            "project_id",
+            "user_id",
+            "mcp_task_id",
+            "context_id",
+            "subtask_id",
         ]
 
         num_iterations = 1000
@@ -284,8 +311,10 @@ class TestIDValidatorPerformance:
         elapsed_time = end_time - start_time
         avg_time = elapsed_time / total_detections
 
-        print(f"Context detection: {total_detections} detections in {elapsed_time:.6f}s "
-              f"({avg_time*1000000:.2f}μs avg)")
+        print(
+            f"Context detection: {total_detections} detections in {elapsed_time:.6f}s "
+            f"({avg_time * 1000000:.2f}μs avg)"
+        )
 
         # Should be very fast (< 50μs per detection - adjusted for CI environment)
         assert avg_time < 0.00005, f"Context detection too slow: {avg_time:.8f}s avg"
@@ -314,8 +343,10 @@ class TestIDValidatorPerformance:
         elapsed_time = end_time - start_time
         avg_time = elapsed_time / total_validations
 
-        print(f"Error path validation: {total_validations} validations in {elapsed_time:.6f}s "
-              f"({avg_time*1000000:.2f}μs avg)")
+        print(
+            f"Error path validation: {total_validations} validations in {elapsed_time:.6f}s "
+            f"({avg_time * 1000000:.2f}μs avg)"
+        )
 
         # Error paths should not be significantly slower than success paths (< 100μs - adjusted for CI)
         assert avg_time < 0.0001, f"Error path validation too slow: {avg_time:.8f}s avg"
@@ -342,7 +373,10 @@ class TestIDValidatorPerformance:
 
         # Split into batches
         batch_size = validations_per_worker
-        batches = [test_uuids[i:i+batch_size] for i in range(0, len(test_uuids), batch_size)]
+        batches = [
+            test_uuids[i : i + batch_size]
+            for i in range(0, len(test_uuids), batch_size)
+        ]
 
         # Test with ThreadPoolExecutor
         start_time = time.perf_counter()
@@ -361,14 +395,20 @@ class TestIDValidatorPerformance:
         assert len(all_results) == len(test_uuids)
         assert all(all_results), "Some thread pool validations failed"
 
-        print(f"Thread pool: {len(test_uuids)} validations in {elapsed_time:.3f}s "
-              f"using {num_workers} workers")
+        print(
+            f"Thread pool: {len(test_uuids)} validations in {elapsed_time:.3f}s "
+            f"using {num_workers} workers"
+        )
 
         # Should complete in reasonable time (allowing for GIL overhead in CI)
         # Use realistic estimate based on observed performance (about 50μs per validation in CI)
-        single_thread_estimate = len(test_uuids) * 0.00005  # 50μs per validation estimate
+        single_thread_estimate = (
+            len(test_uuids) * 0.00005
+        )  # 50μs per validation estimate
         # Thread pool adds overhead and GIL prevents true parallelism for CPU-bound tasks
-        assert elapsed_time < single_thread_estimate * 2, f"Thread pool performance unacceptable: {elapsed_time:.3f}s vs estimate {single_thread_estimate * 2:.3f}s"
+        assert elapsed_time < single_thread_estimate * 2, (
+            f"Thread pool performance unacceptable: {elapsed_time:.3f}s vs estimate {single_thread_estimate * 2:.3f}s"
+        )
 
 
 class TestConvenienceFunctionPerformance:
@@ -380,12 +420,16 @@ class TestConvenienceFunctionPerformance:
 
         # Test strict mode
         start_time = time.perf_counter()
-        strict_results = [validate_uuid(uuid_val, strict=True) for uuid_val in test_uuids]
+        strict_results = [
+            validate_uuid(uuid_val, strict=True) for uuid_val in test_uuids
+        ]
         strict_time = time.perf_counter() - start_time
 
         # Test relaxed mode
         start_time = time.perf_counter()
-        relaxed_results = [validate_uuid(uuid_val, strict=False) for uuid_val in test_uuids]
+        relaxed_results = [
+            validate_uuid(uuid_val, strict=False) for uuid_val in test_uuids
+        ]
         relaxed_time = time.perf_counter() - start_time
 
         # All should be valid
@@ -397,18 +441,22 @@ class TestConvenienceFunctionPerformance:
 
         # Should be reasonably fast
         assert strict_time < 0.1, f"validate_uuid strict too slow: {strict_time:.6f}s"
-        assert relaxed_time < 0.1, f"validate_uuid relaxed too slow: {relaxed_time:.6f}s"
+        assert relaxed_time < 0.1, (
+            f"validate_uuid relaxed too slow: {relaxed_time:.6f}s"
+        )
 
     def test_prevent_id_confusion_performance(self):
         """Test performance of prevent_id_confusion function."""
         test_data = []
         for _ in range(1000):
-            test_data.append({
-                'task_id': str(uuid4()),
-                'git_branch_id': str(uuid4()),
-                'project_id': str(uuid4()),
-                'user_id': str(uuid4())
-            })
+            test_data.append(
+                {
+                    "task_id": str(uuid4()),
+                    "git_branch_id": str(uuid4()),
+                    "project_id": str(uuid4()),
+                    "user_id": str(uuid4()),
+                }
+            )
 
         start_time = time.perf_counter()
         for data in test_data:
@@ -418,8 +466,10 @@ class TestConvenienceFunctionPerformance:
         elapsed_time = end_time - start_time
         avg_time = elapsed_time / len(test_data)
 
-        print(f"prevent_id_confusion: {len(test_data)} calls in {elapsed_time:.6f}s "
-              f"({avg_time*1000000:.2f}μs avg)")
+        print(
+            f"prevent_id_confusion: {len(test_data)} calls in {elapsed_time:.6f}s "
+            f"({avg_time * 1000000:.2f}μs avg)"
+        )
 
         # Should be fast (< 250μs per call - adjusted for CI environment)
         assert avg_time < 0.00025, f"prevent_id_confusion too slow: {avg_time:.8f}s avg"
@@ -470,8 +520,10 @@ class TestStressScenarios:
         assert all(results), "Some stress test validations failed"
 
         elapsed_time = end_time - start_time
-        print(f"Extreme concurrent load: {expected_results} validations across "
-              f"{num_threads} threads in {elapsed_time:.3f}s")
+        print(
+            f"Extreme concurrent load: {expected_results} validations across "
+            f"{num_threads} threads in {elapsed_time:.3f}s"
+        )
 
     def test_rapid_validator_creation(self):
         """Test rapid creation and destruction of validator instances."""
@@ -494,7 +546,9 @@ class TestStressScenarios:
         end_time = time.perf_counter()
         elapsed_time = end_time - start_time
 
-        print(f"Rapid validator creation: {num_instances} instances in {elapsed_time:.3f}s")
+        print(
+            f"Rapid validator creation: {num_instances} instances in {elapsed_time:.3f}s"
+        )
 
         # Should complete reasonably quickly
         assert elapsed_time < 1.0, f"Validator creation too slow: {elapsed_time:.3f}s"

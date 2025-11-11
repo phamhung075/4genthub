@@ -25,10 +25,10 @@ class TestGitBranchIdCreation:
     def test_create_from_uuid_without_hyphens(self):
         """Should accept UUID without hyphens and add them"""
         uuid_obj = uuid.uuid4()
-        uuid_no_hyphens = str(uuid_obj).replace('-', '')
+        uuid_no_hyphens = str(uuid_obj).replace("-", "")
         git_branch_id = GitBranchId(uuid_no_hyphens)
         assert git_branch_id.value == str(uuid_obj)
-        assert '-' in git_branch_id.value
+        assert "-" in git_branch_id.value
 
     def test_reject_none_value(self):
         """Should raise ValueError when value is None"""
@@ -37,12 +37,16 @@ class TestGitBranchIdCreation:
 
     def test_reject_empty_string(self):
         """Should raise ValueError when value is empty string"""
-        with pytest.raises(ValueError, match="GitBranchId cannot be empty or whitespace"):
+        with pytest.raises(
+            ValueError, match="GitBranchId cannot be empty or whitespace"
+        ):
             GitBranchId("")
 
     def test_reject_whitespace_only(self):
         """Should raise ValueError when value is whitespace only"""
-        with pytest.raises(ValueError, match="GitBranchId cannot be empty or whitespace"):
+        with pytest.raises(
+            ValueError, match="GitBranchId cannot be empty or whitespace"
+        ):
             GitBranchId("   ")
 
     def test_reject_non_string_value(self):
@@ -153,17 +157,17 @@ class TestGitBranchIdStringRepresentation:
         git_branch_id = GitBranchId.generate_new()
         canonical = git_branch_id.to_canonical_format()
         assert canonical == git_branch_id.value
-        assert '-' in canonical
+        assert "-" in canonical
         assert len(canonical) == 36
 
     def test_to_hex_format(self):
         """Should return hex format without hyphens"""
         git_branch_id = GitBranchId.generate_new()
         hex_format = git_branch_id.to_hex_format()
-        assert '-' not in hex_format
+        assert "-" not in hex_format
         assert len(hex_format) == 32
         # Verify it's the same UUID
-        assert hex_format == git_branch_id.value.replace('-', '')
+        assert hex_format == git_branch_id.value.replace("-", "")
 
 
 class TestGitBranchIdImmutability:
@@ -178,5 +182,7 @@ class TestGitBranchIdImmutability:
     def test_frozen_dataclass(self):
         """Should be a frozen dataclass"""
         git_branch_id = GitBranchId.generate_new()
-        assert git_branch_id.__dataclass_fields__['value'].metadata.get('frozen', False) or \
-               getattr(git_branch_id.__class__, '__dataclass_params__').frozen
+        assert (
+            git_branch_id.__dataclass_fields__["value"].metadata.get("frozen", False)
+            or getattr(git_branch_id.__class__, "__dataclass_params__").frozen
+        )

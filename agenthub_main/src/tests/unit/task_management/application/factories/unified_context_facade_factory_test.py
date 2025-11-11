@@ -34,8 +34,8 @@ EXPECTED_GLOBAL_DATA = {
         "security_policies": {},
         "coding_standards": {},
         "workflow_templates": {},
-        "delegation_rules": {}
-    }
+        "delegation_rules": {},
+    },
 }
 
 
@@ -65,7 +65,9 @@ class TestUnifiedContextFacadeFactory:
     def test_singleton_pattern(self):
         """Test that factory implements singleton pattern correctly"""
         # Arrange & Act
-        factory1 = UnifiedContextFacadeFactory(None)  # Pass None to trigger mock service
+        factory1 = UnifiedContextFacadeFactory(
+            None
+        )  # Pass None to trigger mock service
         factory2 = UnifiedContextFacadeFactory(None)
 
         # Assert
@@ -86,7 +88,9 @@ class TestUnifiedContextFacadeFactory:
         assert isinstance(factory.unified_service, UnifiedContextService)
         assert UnifiedContextFacadeFactory._initialized is True
 
-    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.GlobalContextRepository')
+    @patch(
+        "fastmcp.task_management.application.factories.unified_context_facade_factory.GlobalContextRepository"
+    )
     def test_initialization_without_database_falls_back_to_mock(self, mock_global_repo):
         """Test fallback to mock service when database is unavailable"""
         # Arrange - Make repository initialization fail to trigger mock service
@@ -102,6 +106,7 @@ class TestUnifiedContextFacadeFactory:
         from fastmcp.task_management.application.services.mock_unified_context_service import (
             MockUnifiedContextService,
         )
+
         assert isinstance(factory.unified_service, MockUnifiedContextService)
         assert UnifiedContextFacadeFactory._initialized is True
 
@@ -126,9 +131,7 @@ class TestUnifiedContextFacadeFactory:
 
         # Act
         facade = factory.create_facade(
-            user_id=None,
-            project_id=TEST_PROJECT_ID,
-            git_branch_id=TEST_BRANCH_ID
+            user_id=None, project_id=TEST_PROJECT_ID, git_branch_id=TEST_BRANCH_ID
         )
 
         # Assert
@@ -147,7 +150,7 @@ class TestUnifiedContextFacadeFactory:
         facade = factory.create_facade(
             user_id=TEST_USER_ID,
             project_id=TEST_PROJECT_ID,
-            git_branch_id=TEST_BRANCH_ID
+            git_branch_id=TEST_BRANCH_ID,
         )
 
         # Assert - facade should be created with correct user scoping
@@ -178,9 +181,9 @@ class TestUnifiedContextFacadeFactory:
         # Arrange
         mock_session_factory = Mock(spec=sessionmaker)
         factory = UnifiedContextFacadeFactory(mock_session_factory)
-        
+
         # Mock facade creation result
-        with patch.object(factory, 'create_facade') as mock_create_facade:
+        with patch.object(factory, "create_facade") as mock_create_facade:
             mock_facade = Mock()
             # Mock get_context to simulate context doesn't exist
             mock_facade.get_context.side_effect = Exception("Not found")
@@ -198,20 +201,22 @@ class TestUnifiedContextFacadeFactory:
             mock_facade.create_context.assert_called_once()
             call_args = mock_facade.create_context.call_args
             # Check called with kwargs
-            assert call_args[1]['level'] == "global"
+            assert call_args[1]["level"] == "global"
             # The context_id will be a generated UUID, not 'global_singleton'
-            context_id = call_args[1]['context_id']
-            assert self._validate_uuid(context_id), f"Expected valid UUID, got: {context_id}"
-            assert call_args[1]['data'] == EXPECTED_GLOBAL_DATA
+            context_id = call_args[1]["context_id"]
+            assert self._validate_uuid(context_id), (
+                f"Expected valid UUID, got: {context_id}"
+            )
+            assert call_args[1]["data"] == EXPECTED_GLOBAL_DATA
 
     def test_auto_create_global_context_already_exists(self):
         """Test auto-creation when global context already exists"""
         # Arrange
         mock_session_factory = Mock(spec=sessionmaker)
         factory = UnifiedContextFacadeFactory(mock_session_factory)
-        
+
         # Mock facade creation result
-        with patch.object(factory, 'create_facade') as mock_create_facade:
+        with patch.object(factory, "create_facade") as mock_create_facade:
             mock_facade = Mock()
             # Mock get_context to simulate context already exists
             mock_facade.get_context.return_value = {"success": True}
@@ -225,24 +230,29 @@ class TestUnifiedContextFacadeFactory:
             # The actual implementation generates a user-specific UUID for global context
             mock_facade.get_context.assert_called_once()
             call_args = mock_facade.get_context.call_args
-            assert call_args[1]['level'] == "global"
+            assert call_args[1]["level"] == "global"
             # The context_id will be a generated UUID, not 'global_singleton'
-            context_id = call_args[1]['context_id']
-            assert self._validate_uuid(context_id), f"Expected valid UUID, got: {context_id}"
+            context_id = call_args[1]["context_id"]
+            assert self._validate_uuid(context_id), (
+                f"Expected valid UUID, got: {context_id}"
+            )
 
     def test_auto_create_global_context_failure(self):
         """Test auto-creation failure handling"""
         # Arrange
         mock_session_factory = Mock(spec=sessionmaker)
         factory = UnifiedContextFacadeFactory(mock_session_factory)
-        
+
         # Mock global repository to simulate context doesn't exist
         factory.global_repo.get = Mock(side_effect=Exception("Not found"))
-        
+
         # Mock facade creation to fail
-        with patch.object(factory, 'create_facade') as mock_create_facade:
+        with patch.object(factory, "create_facade") as mock_create_facade:
             mock_facade = Mock()
-            mock_facade.create_context.return_value = {"success": False, "error": "Creation failed"}
+            mock_facade.create_context.return_value = {
+                "success": False,
+                "error": "Creation failed",
+            }
             mock_create_facade.return_value = mock_facade
 
             # Act
@@ -272,16 +282,18 @@ class TestUnifiedContextFacadeFactory:
         factory = UnifiedContextFacadeFactory(mock_session_factory)
 
         # Assert - Repository attributes should exist when database initialization succeeds
-        assert hasattr(factory, 'global_repo')
-        assert hasattr(factory, 'project_repo')
-        assert hasattr(factory, 'branch_repo')
-        assert hasattr(factory, 'task_repo')
-        assert hasattr(factory, 'cache_service')
-        assert hasattr(factory, 'inheritance_service')
-        assert hasattr(factory, 'delegation_service')
-        assert hasattr(factory, 'validation_service')
+        assert hasattr(factory, "global_repo")
+        assert hasattr(factory, "project_repo")
+        assert hasattr(factory, "branch_repo")
+        assert hasattr(factory, "task_repo")
+        assert hasattr(factory, "cache_service")
+        assert hasattr(factory, "inheritance_service")
+        assert hasattr(factory, "delegation_service")
+        assert hasattr(factory, "validation_service")
 
-    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config')
+    @patch(
+        "fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config"
+    )
     def test_create_mock_service_when_database_fails(self, mock_get_db_config):
         """Test creation of mock service when database initialization fails"""
         # Arrange - Mock get_db_config to raise exception
@@ -298,22 +310,26 @@ class TestUnifiedContextFacadeFactory:
     def test_repository_attributes_not_created_with_mock_service(self):
         """Test that repository attributes are NOT created when database initialization fails"""
         # Arrange - Mock get_db_config to fail, forcing mock service
-        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config') as mock_get_db_config:
+        with patch(
+            "fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config"
+        ) as mock_get_db_config:
             mock_get_db_config.side_effect = Exception("Database not available")
-            
+
             # Act
             factory = UnifiedContextFacadeFactory(None)
 
             # Assert - Repository attributes should NOT exist when using mock service
-            assert not hasattr(factory, 'global_repo')
-            assert not hasattr(factory, 'project_repo')
-            assert not hasattr(factory, 'branch_repo')
-            assert not hasattr(factory, 'task_repo')
+            assert not hasattr(factory, "global_repo")
+            assert not hasattr(factory, "project_repo")
+            assert not hasattr(factory, "branch_repo")
+            assert not hasattr(factory, "task_repo")
             # But unified_service should exist (as mock)
             assert factory.unified_service is not None
             assert UnifiedContextFacadeFactory._initialized is True
 
-    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config')
+    @patch(
+        "fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config"
+    )
     def test_logging_behavior(self, mock_get_db_config):
         """Test that appropriate logging occurs during initialization"""
         # This test validates that logging occurs during initialization
@@ -322,13 +338,19 @@ class TestUnifiedContextFacadeFactory:
         mock_get_db_config.side_effect = Exception("Database not available")
 
         # Act
-        factory = UnifiedContextFacadeFactory(None)  # This should trigger database fallback
+        factory = UnifiedContextFacadeFactory(
+            None
+        )  # This should trigger database fallback
 
         # Assert
         assert factory.unified_service is not None  # Service was created successfully
-        assert UnifiedContextFacadeFactory._initialized is True  # Factory was initialized
+        assert (
+            UnifiedContextFacadeFactory._initialized is True
+        )  # Factory was initialized
 
-    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config')
+    @patch(
+        "fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config"
+    )
     def test_multiple_create_facade_calls_use_same_service(self, mock_get_db_config):
         """Test that multiple create_facade calls use the same unified service"""
         # Arrange - Mock get_db_config to raise exception for mock service
@@ -399,7 +421,9 @@ class TestUnifiedContextFacadeFactoryIntegration:
         assert isinstance(facade, UnifiedContextFacade)
         assert facade._user_id == TEST_USER_ID
 
-    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config')
+    @patch(
+        "fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config"
+    )
     def test_facade_user_scoping_behavior(self, mock_get_db_config):
         """Test that facade correctly handles user scoping"""
         # Arrange - Mock get_db_config to raise exception for mock service

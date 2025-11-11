@@ -29,9 +29,4 @@ from .project_builder import ProjectBuilder
 from .task_builder import TaskBuilder
 from .context_builder import ContextBuilder
 
-__all__ = [
-    'UserBuilder',
-    'ProjectBuilder',
-    'TaskBuilder',
-    'ContextBuilder'
-]
+__all__ = ["UserBuilder", "ProjectBuilder", "TaskBuilder", "ContextBuilder"]

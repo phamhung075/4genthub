@@ -1,6 +1,5 @@
 """Unit tests for Rule Domain Entities - Domain Entities for Rule Management"""
 
-
 import pytest
 
 from fastmcp.task_management.domain.entities.rule_entity import (
@@ -32,7 +31,7 @@ class TestRuleMetadata:
             version="1.0",
             author="security_team",
             description="JWT authentication and authorization rules",
-            tags=["auth", "security", "jwt"]
+            tags=["auth", "security", "jwt"],
         )
 
     @pytest.fixture
@@ -45,7 +44,7 @@ class TestRuleMetadata:
             size=512,
             modified=1640995200.0,
             checksum="simple123",
-            dependencies=[]
+            dependencies=[],
         )
 
     def test_rule_metadata_creation(self, sample_metadata: RuleMetadata):
@@ -60,7 +59,9 @@ class TestRuleMetadata:
         assert sample_metadata.dependencies == ["base_auth.yml", "token_validation.yml"]
         assert sample_metadata.version == "1.0"
         assert sample_metadata.author == "security_team"
-        assert sample_metadata.description == "JWT authentication and authorization rules"
+        assert (
+            sample_metadata.description == "JWT authentication and authorization rules"
+        )
         assert sample_metadata.tags == ["auth", "security", "jwt"]
 
     def test_rule_metadata_minimal_creation(self, minimal_metadata: RuleMetadata):
@@ -86,7 +87,7 @@ class TestRuleMetadata:
             checksum="test123",
             dependencies=[],
             author="test_user",
-            tags=None
+            tags=None,
         )
 
         # Assert
@@ -108,7 +109,7 @@ class TestRuleMetadata:
             """Test adding a duplicate tag doesn't create duplicates."""
             # Arrange
             original_tags = sample_metadata.tags.copy()
-            
+
             # Act
             sample_metadata.add_tag("auth")  # Already exists
 
@@ -130,7 +131,7 @@ class TestRuleMetadata:
             """Test removing a non-existent tag doesn't raise error."""
             # Arrange
             original_tags = sample_metadata.tags.copy()
-            
+
             # Act
             sample_metadata.remove_tag("nonexistent")
 
@@ -163,7 +164,7 @@ class TestRuleMetadata:
             """Test adding a duplicate dependency doesn't create duplicates."""
             # Arrange
             original_deps = sample_metadata.dependencies.copy()
-            
+
             # Act
             sample_metadata.add_dependency("base_auth.yml")  # Already exists
 
@@ -185,7 +186,7 @@ class TestRuleMetadata:
             """Test removing a non-existent dependency doesn't raise error."""
             # Arrange
             original_deps = sample_metadata.dependencies.copy()
-            
+
             # Act
             sample_metadata.remove_dependency("nonexistent.yml")
 
@@ -217,7 +218,7 @@ class TestRuleContent:
             modified=1640995200.0,
             checksum="test123",
             dependencies=[],
-            author="test_user"
+            author="test_user",
         )
 
     @pytest.fixture
@@ -226,27 +227,23 @@ class TestRuleContent:
         return RuleContent(
             metadata=sample_metadata,
             raw_content="version: 1.0\nrules:\n  - name: test_rule",
-            parsed_content={
-                "version": "1.0",
-                "rules": [{"name": "test_rule"}]
-            },
+            parsed_content={"version": "1.0", "rules": [{"name": "test_rule"}]},
             sections={
                 "header": "version: 1.0",
                 "rules": "rules:\n  - name: test_rule",
-                "footer": "# End of rules"
+                "footer": "# End of rules",
             },
             references=["common_rules.yml", "validation_rules.yml"],
-            variables={
-                "max_attempts": 3,
-                "timeout_seconds": 30,
-                "enabled": True
-            }
+            variables={"max_attempts": 3, "timeout_seconds": 30, "enabled": True},
         )
 
     def test_rule_content_creation(self, sample_rule_content: RuleContent):
         """Test RuleContent creation with all fields."""
         # Assert
-        assert sample_rule_content.raw_content == "version: 1.0\nrules:\n  - name: test_rule"
+        assert (
+            sample_rule_content.raw_content
+            == "version: 1.0\nrules:\n  - name: test_rule"
+        )
         assert sample_rule_content.parsed_content["version"] == "1.0"
         assert len(sample_rule_content.sections) == 3
         assert len(sample_rule_content.references) == 2
@@ -266,7 +263,10 @@ class TestRuleContent:
             """Test getting an existing section."""
             # Act & Assert
             assert sample_rule_content.get_section("header") == "version: 1.0"
-            assert sample_rule_content.get_section("rules") == "rules:\n  - name: test_rule"
+            assert (
+                sample_rule_content.get_section("rules")
+                == "rules:\n  - name: test_rule"
+            )
 
         def test_get_nonexistent_section(self, sample_rule_content: RuleContent):
             """Test getting a non-existent section returns None."""
@@ -309,12 +309,18 @@ class TestRuleContent:
             assert sample_rule_content.get_variable("max_attempts") == 3
             assert sample_rule_content.get_variable("enabled") is True
 
-        def test_get_nonexistent_variable_with_default(self, sample_rule_content: RuleContent):
+        def test_get_nonexistent_variable_with_default(
+            self, sample_rule_content: RuleContent
+        ):
             """Test getting a non-existent variable with default."""
             # Act & Assert
-            assert sample_rule_content.get_variable("nonexistent", "default") == "default"
+            assert (
+                sample_rule_content.get_variable("nonexistent", "default") == "default"
+            )
 
-        def test_get_nonexistent_variable_without_default(self, sample_rule_content: RuleContent):
+        def test_get_nonexistent_variable_without_default(
+            self, sample_rule_content: RuleContent
+        ):
             """Test getting a non-existent variable without default returns None."""
             # Act & Assert
             assert sample_rule_content.get_variable("nonexistent") is None
@@ -362,7 +368,7 @@ class TestRuleContent:
             """Test adding a duplicate reference doesn't create duplicates."""
             # Arrange
             original_refs = sample_rule_content.references.copy()
-            
+
             # Act
             sample_rule_content.add_reference("common_rules.yml")  # Already exists
 
@@ -378,13 +384,15 @@ class TestRuleContent:
             # Assert
             assert "validation_rules.yml" not in sample_rule_content.references
             assert not sample_rule_content.has_reference("validation_rules.yml")
-            assert "common_rules.yml" in sample_rule_content.references  # Other refs remain
+            assert (
+                "common_rules.yml" in sample_rule_content.references
+            )  # Other refs remain
 
         def test_remove_nonexistent_reference(self, sample_rule_content: RuleContent):
             """Test removing a non-existent reference doesn't raise error."""
             # Arrange
             original_refs = sample_rule_content.references.copy()
-            
+
             # Act
             sample_rule_content.remove_reference("nonexistent.yml")
 
@@ -414,13 +422,9 @@ class TestRuleInheritance:
             inheritance_type=InheritanceType.FULL,
             inherited_sections=["validation", "common_rules"],
             overridden_sections=["auth_rules"],
-            merged_variables={
-                "timeout": 30,
-                "max_retries": 3,
-                "debug_mode": False
-            },
+            merged_variables={"timeout": 30, "max_retries": 3, "debug_mode": False},
             inheritance_depth=2,
-            conflicts=["conflicting_rule_1"]
+            conflicts=["conflicting_rule_1"],
         )
 
     @pytest.fixture
@@ -429,7 +433,7 @@ class TestRuleInheritance:
         return RuleInheritance(
             parent_path="/rules/parent.yml",
             child_path="/rules/child.yml",
-            inheritance_type=InheritanceType.SELECTIVE
+            inheritance_type=InheritanceType.SELECTIVE,
         )
 
     def test_rule_inheritance_creation(self, sample_inheritance: RuleInheritance):
@@ -444,7 +448,9 @@ class TestRuleInheritance:
         assert sample_inheritance.inheritance_depth == 2
         assert sample_inheritance.conflicts == ["conflicting_rule_1"]
 
-    def test_rule_inheritance_minimal_creation(self, minimal_inheritance: RuleInheritance):
+    def test_rule_inheritance_minimal_creation(
+        self, minimal_inheritance: RuleInheritance
+    ):
         """Test RuleInheritance creation with minimal fields."""
         # Assert
         assert minimal_inheritance.parent_path == "/rules/parent.yml"
@@ -468,11 +474,13 @@ class TestRuleInheritance:
             assert "new_section" in minimal_inheritance.inherited_sections
             assert minimal_inheritance.is_section_inherited("new_section")
 
-        def test_add_duplicate_inherited_section(self, sample_inheritance: RuleInheritance):
+        def test_add_duplicate_inherited_section(
+            self, sample_inheritance: RuleInheritance
+        ):
             """Test adding a duplicate inherited section doesn't create duplicates."""
             # Arrange
             original_sections = sample_inheritance.inherited_sections.copy()
-            
+
             # Act
             sample_inheritance.add_inherited_section("validation")  # Already exists
 
@@ -480,12 +488,16 @@ class TestRuleInheritance:
             assert sample_inheritance.inherited_sections == original_sections
             assert sample_inheritance.inherited_sections.count("validation") == 1
 
-        def test_is_section_inherited_existing(self, sample_inheritance: RuleInheritance):
+        def test_is_section_inherited_existing(
+            self, sample_inheritance: RuleInheritance
+        ):
             """Test is_section_inherited returns True for existing inherited section."""
             # Act & Assert
             assert sample_inheritance.is_section_inherited("validation") is True
 
-        def test_is_section_inherited_nonexistent(self, sample_inheritance: RuleInheritance):
+        def test_is_section_inherited_nonexistent(
+            self, sample_inheritance: RuleInheritance
+        ):
             """Test is_section_inherited returns False for non-existent inherited section."""
             # Act & Assert
             assert sample_inheritance.is_section_inherited("nonexistent") is False
@@ -502,11 +514,13 @@ class TestRuleInheritance:
             assert "new_override" in minimal_inheritance.overridden_sections
             assert minimal_inheritance.is_section_overridden("new_override")
 
-        def test_add_duplicate_overridden_section(self, sample_inheritance: RuleInheritance):
+        def test_add_duplicate_overridden_section(
+            self, sample_inheritance: RuleInheritance
+        ):
             """Test adding a duplicate overridden section doesn't create duplicates."""
             # Arrange
             original_sections = sample_inheritance.overridden_sections.copy()
-            
+
             # Act
             sample_inheritance.add_overridden_section("auth_rules")  # Already exists
 
@@ -514,12 +528,16 @@ class TestRuleInheritance:
             assert sample_inheritance.overridden_sections == original_sections
             assert sample_inheritance.overridden_sections.count("auth_rules") == 1
 
-        def test_is_section_overridden_existing(self, sample_inheritance: RuleInheritance):
+        def test_is_section_overridden_existing(
+            self, sample_inheritance: RuleInheritance
+        ):
             """Test is_section_overridden returns True for existing overridden section."""
             # Act & Assert
             assert sample_inheritance.is_section_overridden("auth_rules") is True
 
-        def test_is_section_overridden_nonexistent(self, sample_inheritance: RuleInheritance):
+        def test_is_section_overridden_nonexistent(
+            self, sample_inheritance: RuleInheritance
+        ):
             """Test is_section_overridden returns False for non-existent overridden section."""
             # Act & Assert
             assert sample_inheritance.is_section_overridden("nonexistent") is False
@@ -540,7 +558,7 @@ class TestRuleInheritance:
             """Test adding a duplicate conflict doesn't create duplicates."""
             # Arrange
             original_conflicts = sample_inheritance.conflicts.copy()
-            
+
             # Act
             sample_inheritance.add_conflict("conflicting_rule_1")  # Already exists
 
@@ -577,18 +595,27 @@ class TestRuleInheritance:
             # Assert
             assert sample_inheritance.get_merged_variable("timeout") == 60
 
-        def test_get_merged_variable_existing(self, sample_inheritance: RuleInheritance):
+        def test_get_merged_variable_existing(
+            self, sample_inheritance: RuleInheritance
+        ):
             """Test getting an existing merged variable."""
             # Act & Assert
             assert sample_inheritance.get_merged_variable("max_retries") == 3
             assert sample_inheritance.get_merged_variable("debug_mode") is False
 
-        def test_get_merged_variable_with_default(self, sample_inheritance: RuleInheritance):
+        def test_get_merged_variable_with_default(
+            self, sample_inheritance: RuleInheritance
+        ):
             """Test getting a non-existent merged variable with default."""
             # Act & Assert
-            assert sample_inheritance.get_merged_variable("nonexistent", "default") == "default"
+            assert (
+                sample_inheritance.get_merged_variable("nonexistent", "default")
+                == "default"
+            )
 
-        def test_get_merged_variable_without_default(self, sample_inheritance: RuleInheritance):
+        def test_get_merged_variable_without_default(
+            self, sample_inheritance: RuleInheritance
+        ):
             """Test getting a non-existent merged variable without default returns None."""
             # Act & Assert
             assert sample_inheritance.get_merged_variable("nonexistent") is None
@@ -609,7 +636,7 @@ class TestRuleEntitiesIntegration:
             modified=1640995200.0,
             checksum="parent123",
             dependencies=[],
-            author="test_user"
+            author="test_user",
         )
 
         parent_content = RuleContent(
@@ -618,7 +645,7 @@ class TestRuleEntitiesIntegration:
             parsed_content={"base": "rules"},
             sections={"common": "shared rules"},
             references=[],
-            variables={"base_timeout": 30}
+            variables={"base_timeout": 30},
         )
 
         child_metadata = RuleMetadata(
@@ -629,7 +656,7 @@ class TestRuleEntitiesIntegration:
             modified=1640995300.0,
             checksum="child123",
             dependencies=["base.yml"],
-            author="test_user"
+            author="test_user",
         )
 
         child_content = RuleContent(
@@ -638,21 +665,25 @@ class TestRuleEntitiesIntegration:
             parsed_content={"child": "specific rules"},
             sections={"specific": "child rules"},
             references=["base.yml"],
-            variables={"child_timeout": 60}
+            variables={"child_timeout": 60},
         )
 
         inheritance = RuleInheritance(
             parent_path=parent_content.rule_path,
             child_path=child_content.rule_path,
             inheritance_type=InheritanceType.FULL,
-            inheritance_depth=1
+            inheritance_depth=1,
         )
 
         # Act - Simulate inheritance processing
         inheritance.add_inherited_section("common")
         inheritance.add_overridden_section("specific")
-        inheritance.merge_variable("base_timeout", parent_content.get_variable("base_timeout"))
-        inheritance.merge_variable("child_timeout", child_content.get_variable("child_timeout"))
+        inheritance.merge_variable(
+            "base_timeout", parent_content.get_variable("base_timeout")
+        )
+        inheritance.merge_variable(
+            "child_timeout", child_content.get_variable("child_timeout")
+        )
 
         # Assert
         assert inheritance.is_section_inherited("common")
@@ -666,8 +697,12 @@ class TestRuleEntitiesIntegration:
         # Arrange - Create a 3-level hierarchy
         rules_data = [
             ("/rules/global.yml", "global", {"global_var": "global_value"}),
-            ("/rules/domain/auth.yml", "auth", {"auth_var": "auth_value", "global_var": "overridden"}),
-            ("/rules/domain/auth/jwt.yml", "jwt", {"jwt_var": "jwt_value"})
+            (
+                "/rules/domain/auth.yml",
+                "auth",
+                {"auth_var": "auth_value", "global_var": "overridden"},
+            ),
+            ("/rules/domain/auth/jwt.yml", "jwt", {"jwt_var": "jwt_value"}),
         ]
 
         rule_contents = []
@@ -683,7 +718,7 @@ class TestRuleEntitiesIntegration:
                 modified=1640995200.0,
                 checksum=f"checksum_{content_type}",
                 dependencies=[],
-                author="test_user"
+                author="test_user",
             )
 
             rule_content = RuleContent(
@@ -692,7 +727,7 @@ class TestRuleEntitiesIntegration:
                 parsed_content={content_type: "rules"},
                 sections={content_type: f"{content_type} rules"},
                 references=[],
-                variables=variables
+                variables=variables,
             )
             rule_contents.append(rule_content)
 
@@ -702,7 +737,7 @@ class TestRuleEntitiesIntegration:
             parent_path=rule_contents[0].rule_path,
             child_path=rule_contents[1].rule_path,
             inheritance_type=InheritanceType.FULL,
-            inheritance_depth=1
+            inheritance_depth=1,
         )
         auth_inheritance.add_inherited_section("global")
         auth_inheritance.merge_variable("global_var", "overridden")  # Override
@@ -714,7 +749,7 @@ class TestRuleEntitiesIntegration:
             parent_path=rule_contents[1].rule_path,
             child_path=rule_contents[2].rule_path,
             inheritance_type=InheritanceType.FULL,
-            inheritance_depth=2
+            inheritance_depth=2,
         )
         jwt_inheritance.add_inherited_section("global")
         jwt_inheritance.add_inherited_section("auth")

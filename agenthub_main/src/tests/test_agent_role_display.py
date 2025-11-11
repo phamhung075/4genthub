@@ -40,14 +40,14 @@ def test_agent_role_mapping():
 
     # Test different agent types
     test_cases = [
-        ('coding-agent', 'Coding'),
-        ('debugger-agent', 'Debugging'),
-        ('test-orchestrator-agent', 'Testing'),
-        ('master-orchestrator-agent', 'Orchestrating'),
-        ('shadcn-ui-expert-agent', 'UI/UX'),
-        ('security-auditor-agent', 'Security'),
-        ('documentation-agent', 'Documentation'),
-        ('unknown-agent', 'Assistant')  # Should default to Assistant
+        ("coding-agent", "Coding"),
+        ("debugger-agent", "Debugging"),
+        ("test-orchestrator-agent", "Testing"),
+        ("master-orchestrator-agent", "Orchestrating"),
+        ("shadcn-ui-expert-agent", "UI/UX"),
+        ("security-auditor-agent", "Security"),
+        ("documentation-agent", "Documentation"),
+        ("unknown-agent", "Assistant"),  # Should default to Assistant
     ]
 
     for agent_name, expected_role in test_cases:
@@ -71,6 +71,7 @@ def test_agent_role_mapping():
         else:
             print(f"❌ FAIL: {agent_name} expected {expected_role}, got {role}")
 
+
 def test_status_line_integration():
     """Test the status line integration."""
     print("\n\nTesting status line integration...")
@@ -81,32 +82,28 @@ def test_status_line_integration():
 
     # Create test input data
     test_session = str(uuid.uuid4())
-    set_current_agent(test_session, 'coding-agent')
+    set_current_agent(test_session, "coding-agent")
 
-    input_data = {
-        'session_id': test_session,
-        'model': {
-            'display_name': 'Claude'
-        }
-    }
+    input_data = {"session_id": test_session, "model": {"display_name": "Claude"}}
 
     # Generate status line
     status_line = generate_status_line(input_data)
     print(f"Generated status line: {status_line}")
 
     # Check if it contains the expected role display
-    if '[Agent] [Coding]' in status_line:
+    if "[Agent] [Coding]" in status_line:
         print("✅ PASS: Status line contains dynamic agent role display")
     else:
         print("❌ FAIL: Status line missing dynamic agent role display")
 
     # Check if it contains the active agent display
-    if '🎯 Active: coding-agent' in status_line:
+    if "🎯 Active: coding-agent" in status_line:
         print("✅ PASS: Status line contains active agent display")
     else:
         print("❌ FAIL: Status line missing active agent display")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     print("=== Testing Dynamic Agent Role Display ===\n")
 
     try:
@@ -117,4 +114,5 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"❌ Test failed with error: {e}")
         import traceback
+
         traceback.print_exc()

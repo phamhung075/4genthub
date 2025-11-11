@@ -14,9 +14,9 @@ from .redis_mock import MockRedisClient
 from .smtp_mock import MockSMTPServer, MockEmailCapture
 
 __all__ = [
-    'MockKeycloakServer',
-    'MockKeycloakClient',
-    'MockRedisClient',
-    'MockSMTPServer',
-    'MockEmailCapture'
+    "MockKeycloakServer",
+    "MockKeycloakClient",
+    "MockRedisClient",
+    "MockSMTPServer",
+    "MockEmailCapture",
 ]

@@ -30,6 +30,7 @@ from fastmcp.task_management.domain.services.pagination_service import Paginatio
 # Test entity for demonstration
 class PaginationEntity:
     """Simple entity for testing pagination"""
+
     def __init__(self, id: str, name: str):
         self.id = id
         self.name = name
@@ -113,7 +114,9 @@ class ExampleRepositoryWithPagination(BaseRepository[PaginationEntity]):
         for entity_id in entity_ids:
             self.delete(entity_id)
 
-    def list_with_pagination(self, pagination: PaginationRequest) -> PaginationResult[PaginationEntity]:
+    def list_with_pagination(
+        self, pagination: PaginationRequest
+    ) -> PaginationResult[PaginationEntity]:
         """
         ✅ CORRECT PATTERN: Using PaginationService for pagination
 
@@ -142,15 +145,11 @@ class ExampleRepositoryWithPagination(BaseRepository[PaginationEntity]):
         # ✅ CORRECT: Use PaginationService.create_pagination_result()
         # NOT: self.create_pagination_result() (deprecated)
         return PaginationService[PaginationEntity].create_pagination_result(
-            items=page_items,
-            total_count=total_count,
-            pagination=pagination
+            items=page_items, total_count=total_count, pagination=pagination
         )
 
     def search_with_pagination(
-        self,
-        name_filter: str,
-        pagination: PaginationRequest
+        self, name_filter: str, pagination: PaginationRequest
     ) -> PaginationResult[PaginationEntity]:
         """
         ✅ CORRECT PATTERN: Pagination with filtering
@@ -163,7 +162,8 @@ class ExampleRepositoryWithPagination(BaseRepository[PaginationEntity]):
         """
         # Apply filter
         filtered_items = [
-            entity for entity in self._storage
+            entity
+            for entity in self._storage
             if name_filter.lower() in entity.name.lower()
         ]
 
@@ -175,9 +175,7 @@ class ExampleRepositoryWithPagination(BaseRepository[PaginationEntity]):
 
         # ✅ CORRECT: Use PaginationService
         return PaginationService[PaginationEntity].create_pagination_result(
-            items=page_items,
-            total_count=total_count,
-            pagination=pagination
+            items=page_items, total_count=total_count, pagination=pagination
         )
 
 
@@ -193,10 +191,7 @@ class TestPaginationServiceIntegration:
 
         # Add 25 test entities
         for i in range(25):
-            repo.add(PaginationEntity(
-                id=str(uuid4()),
-                name=f"Entity {i+1}"
-            ))
+            repo.add(PaginationEntity(id=str(uuid4()), name=f"Entity {i + 1}"))
 
         return repo
 
@@ -270,7 +265,7 @@ class TestPaginationServiceIntegration:
         # Arrange
         small_repo = ExampleRepositoryWithPagination()
         for i in range(5):
-            small_repo.add(PaginationEntity(id=str(uuid4()), name=f"Entity {i+1}"))
+            small_repo.add(PaginationEntity(id=str(uuid4()), name=f"Entity {i + 1}"))
 
         pagination = PaginationRequest(page=1, page_size=10)
 
@@ -302,28 +297,50 @@ class TestPaginationServiceIntegration:
     def test_pagination_service_calculate_offset(self):
         """Test: PaginationService.calculate_offset() helper works correctly"""
         # Test different pages
-        assert PaginationService.calculate_offset(PaginationRequest(page=1, page_size=10)) == 0
-        assert PaginationService.calculate_offset(PaginationRequest(page=2, page_size=10)) == 10
-        assert PaginationService.calculate_offset(PaginationRequest(page=3, page_size=10)) == 20
-        assert PaginationService.calculate_offset(PaginationRequest(page=5, page_size=20)) == 80
+        assert (
+            PaginationService.calculate_offset(PaginationRequest(page=1, page_size=10))
+            == 0
+        )
+        assert (
+            PaginationService.calculate_offset(PaginationRequest(page=2, page_size=10))
+            == 10
+        )
+        assert (
+            PaginationService.calculate_offset(PaginationRequest(page=3, page_size=10))
+            == 20
+        )
+        assert (
+            PaginationService.calculate_offset(PaginationRequest(page=5, page_size=20))
+            == 80
+        )
 
     def test_pagination_service_validation(self):
         """Test: PaginationService validates pagination requests"""
         # Valid requests should not raise
-        PaginationService.validate_pagination_request(PaginationRequest(page=1, page_size=10))
-        PaginationService.validate_pagination_request(PaginationRequest(page=5, page_size=50))
+        PaginationService.validate_pagination_request(
+            PaginationRequest(page=1, page_size=10)
+        )
+        PaginationService.validate_pagination_request(
+            PaginationRequest(page=5, page_size=50)
+        )
 
         # Invalid page number
         with pytest.raises(ValueError, match="Page must be >= 1"):
-            PaginationService.validate_pagination_request(PaginationRequest(page=0, page_size=10))
+            PaginationService.validate_pagination_request(
+                PaginationRequest(page=0, page_size=10)
+            )
 
         # Invalid page size (zero)
         with pytest.raises(ValueError, match="Page size must be > 0"):
-            PaginationService.validate_pagination_request(PaginationRequest(page=1, page_size=0))
+            PaginationService.validate_pagination_request(
+                PaginationRequest(page=1, page_size=0)
+            )
 
         # Invalid page size (too large)
         with pytest.raises(ValueError, match="Page size must be <= 100"):
-            PaginationService.validate_pagination_request(PaginationRequest(page=1, page_size=200))
+            PaginationService.validate_pagination_request(
+                PaginationRequest(page=1, page_size=200)
+            )
 
     def test_feature_flag_compatibility(self, repository):
         """
@@ -382,7 +399,7 @@ class TestRepositoryPaginationDocumentation:
         # Verify the example compiles and works
         repo = ExampleRepositoryWithPagination()
         for i in range(5):
-            repo.add(PaginationEntity(id=str(uuid4()), name=f"Entity {i+1}"))
+            repo.add(PaginationEntity(id=str(uuid4()), name=f"Entity {i + 1}"))
 
         pagination = PaginationRequest(page=1, page_size=10)
         result = repo.list_with_pagination(pagination)

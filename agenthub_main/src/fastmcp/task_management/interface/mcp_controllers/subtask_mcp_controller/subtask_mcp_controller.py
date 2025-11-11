@@ -346,15 +346,30 @@ class SubtaskMCPController(ContextPropagationMixin):
 
                     # Extract fields that go into subtask_data
                     data_fields = [
-                        "title", "description", "status", "priority",
-                        "assignees", "progress_percentage", "progress_notes",
-                        "completion_summary", "testing_notes", "insights_found",
-                        "challenges_overcome", "skills_learned", "next_recommendations",
-                        "deliverables", "completion_quality", "impact_on_parent", "blockers"
+                        "title",
+                        "description",
+                        "status",
+                        "priority",
+                        "assignees",
+                        "progress_percentage",
+                        "progress_notes",
+                        "completion_summary",
+                        "testing_notes",
+                        "insights_found",
+                        "challenges_overcome",
+                        "skills_learned",
+                        "next_recommendations",
+                        "deliverables",
+                        "completion_quality",
+                        "impact_on_parent",
+                        "blockers",
                     ]
 
                     for field in data_fields:
-                        if field in coerced_kwargs and coerced_kwargs[field] is not None:
+                        if (
+                            field in coerced_kwargs
+                            and coerced_kwargs[field] is not None
+                        ):
                             subtask_data[field] = coerced_kwargs[field]
 
                     # For complete action, ensure status is set to 'done'
@@ -363,6 +378,7 @@ class SubtaskMCPController(ContextPropagationMixin):
                         subtask_data["progress_percentage"] = 100
                         if "completed_at" not in subtask_data:
                             from datetime import UTC, datetime
+
                             subtask_data["completed_at"] = datetime.now(UTC).isoformat()
 
                     # Extract subtask_id if present

@@ -10,7 +10,7 @@ from fastmcp.task_management.domain.value_objects.task_id import TaskId
 
 class TestTaskMinimumAgentRequirement:
     """Test suite for task minimum agent requirement validation"""
-    
+
     def test_task_creation_requires_at_least_one_agent(self):
         """Test that task creation accepts empty agents at domain layer"""
         # Domain entities allow empty assignees for intermediate operations
@@ -19,11 +19,11 @@ class TestTaskMinimumAgentRequirement:
             id=TaskId(str(uuid4())),
             title="Task without agents",
             description="This task has no agents assigned",
-            assignees=[]  # Empty assignees list allowed at domain layer
+            assignees=[],  # Empty assignees list allowed at domain layer
         )
         assert task.assignees == []
         assert task.title == "Task without agents"
-    
+
     def test_task_creation_with_none_assignees_defaults_to_empty(self):
         """Test that task creation with None assignees defaults to empty list"""
         # Domain layer handles None assignees by defaulting to empty list
@@ -31,57 +31,61 @@ class TestTaskMinimumAgentRequirement:
             id=TaskId(str(uuid4())),
             title="Task with None agents",
             description="This task has None for assignees",
-            assignees=None  # None assignees defaults to empty list
+            assignees=None,  # None assignees defaults to empty list
         )
         assert task.assignees == []
-    
+
     def test_task_creation_succeeds_with_one_agent(self):
         """Test that task creation succeeds with exactly one agent"""
         task = Task(
             id=TaskId(str(uuid4())),
             title="Task with one agent",
             description="This task has one agent assigned",
-            assignees=["coding-agent"]
+            assignees=["coding-agent"],
         )
-        
+
         assert len(task.assignees) == 1
         assert "coding-agent" in task.assignees
-    
+
     def test_task_creation_succeeds_with_multiple_agents(self):
         """Test that task creation succeeds with multiple agents"""
         task = Task(
             id=TaskId(str(uuid4())),
             title="Task with multiple agents",
             description="This task has multiple agents assigned",
-            assignees=["coding-agent", "@test-orchestrator-agent", "code-reviewer-agent"]
+            assignees=[
+                "coding-agent",
+                "@test-orchestrator-agent",
+                "code-reviewer-agent",
+            ],
         )
-        
+
         assert len(task.assignees) == 3
         assert "coding-agent" in task.assignees
         assert "@test-orchestrator-agent" in task.assignees
         assert "code-reviewer-agent" in task.assignees
-    
+
     def test_task_update_can_change_agents_but_not_remove_all(self):
         """Test that task update can change agents but cannot remove all"""
         task = Task(
             id=TaskId(str(uuid4())),
             title="Task to update",
             description="This task will have its agents updated",
-            assignees=["coding-agent", "@test-orchestrator-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent"],
         )
-        
+
         # Update to different agents - should succeed
         task.update_assignees(["@security-auditor-agent", "debugger-agent"])
         assert len(task.assignees) == 2
         # Note: @ prefix is added to agents
         assert "@security-auditor-agent" in task.assignees
         assert "@debugger-agent" in task.assignees
-        
+
         # Update to single agent - should succeed
         task.update_assignees(["coding-agent"])
         assert len(task.assignees) == 1
         assert "@coding-agent" in task.assignees  # @ prefix is added
-    
+
     def test_task_creation_with_invalid_agent_format_but_not_empty(self):
         """Test that task creation succeeds even with non-standard agent format as long as not empty"""
         # The validation at domain level only requires non-empty assignees
@@ -90,12 +94,12 @@ class TestTaskMinimumAgentRequirement:
             id=TaskId(str(uuid4())),
             title="Task with custom agent",
             description="This task has a custom agent format",
-            assignees=["custom-agent-name"]  # No @ prefix, not in enum
+            assignees=["custom-agent-name"],  # No @ prefix, not in enum
         )
-        
+
         assert len(task.assignees) == 1
         assert "custom-agent-name" in task.assignees
-    
+
     def test_task_creation_validates_other_fields_before_agents(self):
         """Test that other validations run before agent validation"""
         # Title validation should fail first
@@ -104,7 +108,7 @@ class TestTaskMinimumAgentRequirement:
                 id=TaskId(str(uuid4())),
                 title="",  # Empty title
                 description="Valid description",
-                assignees=[]  # Empty assignees allowed at domain layer
+                assignees=[],  # Empty assignees allowed at domain layer
             )
 
         # Description validation should fail after title passes
@@ -113,9 +117,9 @@ class TestTaskMinimumAgentRequirement:
                 id=TaskId(str(uuid4())),
                 title="Valid title",
                 description="",  # Empty description
-                assignees=[]  # Empty assignees allowed at domain layer
+                assignees=[],  # Empty assignees allowed at domain layer
             )
-    
+
     def test_task_factory_method_allows_empty_agents(self):
         """Test that Task.create factory method allows empty assignees"""
         # When using the factory method without assignees
@@ -128,16 +132,16 @@ class TestTaskMinimumAgentRequirement:
         )
         assert task.assignees == []
         assert task.title == "Task via factory"
-    
+
     def test_task_factory_method_with_agents_succeeds(self):
         """Test that Task.create factory method works with agents"""
         task = Task.create(
             id=TaskId(str(uuid4())),
             title="Task via factory",
             description="Created using factory method",
-            assignees=["coding-agent", "@test-orchestrator-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent"],
         )
-        
+
         assert len(task.assignees) == 2
         assert "coding-agent" in task.assignees
         assert "@test-orchestrator-agent" in task.assignees

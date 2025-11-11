@@ -8,7 +8,6 @@ Tests the business logic methods added to Project entity:
 Rich Domain Model implementation with business logic methods.
 """
 
-
 from fastmcp.task_management.domain.entities.agent import Agent
 from fastmcp.task_management.domain.entities.project import Project
 
@@ -18,10 +17,7 @@ class TestProjectFeatureFlag:
 
     def test_rich_domain_model_is_active(self):
         """Test that rich domain model is always active (feature flag removed)."""
-        project = Project.create(
-            name="Test Project",
-            description="Test description"
-        )
+        project = Project.create(name="Test Project", description="Test description")
 
         # Rich domain model is now the default and only behavior
         # Feature flag has been removed - this test verifies the entity can be created
@@ -41,8 +37,7 @@ class TestValidateAgentAssignment:
         project.register_agent(agent)
 
         branch = project.create_git_branch(
-            git_branch_name="test-branch",
-            name="Test Branch"
+            git_branch_name="test-branch", name="Test Branch"
         )
 
         # Valid assignment
@@ -63,8 +58,7 @@ class TestValidateAgentAssignment:
         project.register_agent(agent)
 
         branch = project.create_git_branch(
-            git_branch_name="feature-branch",
-            name="Feature Branch"
+            git_branch_name="feature-branch", name="Feature Branch"
         )
 
         # Should be valid
@@ -76,8 +70,7 @@ class TestValidateAgentAssignment:
         project = Project.create(name="Test Project")
 
         branch = project.create_git_branch(
-            git_branch_name="test-branch",
-            name="Test Branch"
+            git_branch_name="test-branch", name="Test Branch"
         )
 
         # Unregistered agent should fail
@@ -107,8 +100,7 @@ class TestValidateAgentAssignment:
         branches = []
         for i in range(4):
             branch = project.create_git_branch(
-                git_branch_name=f"branch-{i}",
-                name=f"Branch {i}"
+                git_branch_name=f"branch-{i}", name=f"Branch {i}"
             )
             branches.append(branch)
 
@@ -133,8 +125,7 @@ class TestValidateAgentAssignment:
 
         # Create branch and assign to agent1
         branch = project.create_git_branch(
-            git_branch_name="test-branch",
-            name="Test Branch"
+            git_branch_name="test-branch", name="Test Branch"
         )
         project.assign_agent_to_tree("agent-1", branch.id)
 
@@ -150,8 +141,7 @@ class TestValidateAgentAssignment:
         project.register_agent(agent)
 
         branch = project.create_git_branch(
-            git_branch_name="test-branch",
-            name="Test Branch"
+            git_branch_name="test-branch", name="Test Branch"
         )
         project.assign_agent_to_tree("agent-1", branch.id)
 
@@ -171,10 +161,7 @@ class TestCalculateProjectHealth:
         agent = Agent(id="agent-1", name="Test Agent")
         project.register_agent(agent)
 
-        branch = project.create_git_branch(
-            git_branch_name="branch-1",
-            name="Branch 1"
-        )
+        branch = project.create_git_branch(git_branch_name="branch-1", name="Branch 1")
         project.assign_agent_to_tree("agent-1", branch.id)
 
         health = project.calculate_project_health()
@@ -184,7 +171,13 @@ class TestCalculateProjectHealth:
         assert "overall_health_score" in health
         assert "health_status" in health
         assert isinstance(health["overall_health_score"], (int, float))
-        assert health["health_status"] in ["excellent", "good", "fair", "poor", "critical"]
+        assert health["health_status"] in [
+            "excellent",
+            "good",
+            "fair",
+            "poor",
+            "critical",
+        ]
 
     def test_health_empty_project(self):
         """Health calculation for empty project."""
@@ -209,8 +202,7 @@ class TestCalculateProjectHealth:
             project.register_agent(agent)
 
             branch = project.create_git_branch(
-                git_branch_name=f"branch-{i}",
-                name=f"Branch {i}"
+                git_branch_name=f"branch-{i}", name=f"Branch {i}"
             )
             project.assign_agent_to_tree(f"agent-{i}", branch.id)
 
@@ -218,7 +210,13 @@ class TestCalculateProjectHealth:
 
         # Project with branches but no tasks: branches show 0% completion (not 100%)
         # Validates that health calculation produces valid results
-        assert health["health_status"] in ["excellent", "good", "fair", "poor", "critical"]
+        assert health["health_status"] in [
+            "excellent",
+            "good",
+            "fair",
+            "poor",
+            "critical",
+        ]
         assert 0 <= health["overall_health_score"] <= 100
         assert health["metrics"]["agent_utilization"] == 100.0
 
@@ -228,10 +226,7 @@ class TestCalculateProjectHealth:
 
         # Create branches but no agent assignments
         for i in range(3):
-            project.create_git_branch(
-                git_branch_name=f"branch-{i}",
-                name=f"Branch {i}"
-            )
+            project.create_git_branch(git_branch_name=f"branch-{i}", name=f"Branch {i}")
 
         health = project.calculate_project_health()
 
@@ -251,8 +246,7 @@ class TestCalculateProjectHealth:
         # Create 3 branches, assign 3 agents (60% utilization)
         for i in range(3):
             branch = project.create_git_branch(
-                git_branch_name=f"branch-{i}",
-                name=f"Branch {i}"
+                git_branch_name=f"branch-{i}", name=f"Branch {i}"
             )
             project.assign_agent_to_tree(f"agent-{i}", branch.id)
 
@@ -268,14 +262,8 @@ class TestCalculateProjectHealth:
         project = Project.create(name="Test Project")
 
         # Create branches
-        project.create_git_branch(
-            git_branch_name="branch-1",
-            name="Branch 1"
-        )
-        project.create_git_branch(
-            git_branch_name="branch-2",
-            name="Branch 2"
-        )
+        project.create_git_branch(git_branch_name="branch-1", name="Branch 1")
+        project.create_git_branch(git_branch_name="branch-2", name="Branch 2")
 
         # Add cross-tree dependency (task2 depends on task1)
         project.cross_tree_dependencies["task-2-id"] = {"task-1-id"}
@@ -315,10 +303,7 @@ class TestCheckDeadlineRisk:
         project = Project.create(name="Test Project")
 
         # Create branch with no tasks
-        project.create_git_branch(
-            git_branch_name="empty-branch",
-            name="Empty Branch"
-        )
+        project.create_git_branch(git_branch_name="empty-branch", name="Empty Branch")
 
         risk = project.check_deadline_risk()
 
@@ -331,10 +316,7 @@ class TestCheckDeadlineRisk:
 
         # Create branches (simulating stalled project)
         for i in range(3):
-            project.create_git_branch(
-                git_branch_name=f"branch-{i}",
-                name=f"Branch {i}"
-            )
+            project.create_git_branch(git_branch_name=f"branch-{i}", name=f"Branch {i}")
 
         # Note: In real scenario, branches would have tasks with low completion
         # For this test, we're checking the risk assessment structure
@@ -356,8 +338,7 @@ class TestCheckDeadlineRisk:
 
         # Create branch
         branch = project.create_git_branch(
-            git_branch_name="test-branch",
-            name="Test Branch"
+            git_branch_name="test-branch", name="Test Branch"
         )
         project.assign_agent_to_tree("agent-1", branch.id)
 
@@ -387,8 +368,7 @@ class TestProjectRichDomainIntegration:
         """Test complete workflow with all rich domain features enabled."""
         # Create project
         project = Project.create(
-            name="Integration Test Project",
-            description="Testing rich domain model"
+            name="Integration Test Project", description="Testing rich domain model"
         )
 
         # Register agents
@@ -399,12 +379,10 @@ class TestProjectRichDomainIntegration:
 
         # Create branches
         dev_branch = project.create_git_branch(
-            git_branch_name="feature/new-feature",
-            name="New Feature"
+            git_branch_name="feature/new-feature", name="New Feature"
         )
         test_branch = project.create_git_branch(
-            git_branch_name="test/feature-tests",
-            name="Feature Tests"
+            git_branch_name="test/feature-tests", name="Feature Tests"
         )
 
         # Validate agent assignments
@@ -418,12 +396,24 @@ class TestProjectRichDomainIntegration:
         # Calculate project health
         health = project.calculate_project_health()
         assert health["overall_health_score"] > 0
-        assert health["health_status"] in ["excellent", "good", "fair", "poor", "critical"]
+        assert health["health_status"] in [
+            "excellent",
+            "good",
+            "fair",
+            "poor",
+            "critical",
+        ]
         assert health["metrics"]["agent_utilization"] == 100.0  # All agents assigned
 
         # Check deadline risk
         risk = project.check_deadline_risk()
-        assert risk["risk_level"] in ["no_risk", "low_risk", "medium_risk", "high_risk", "critical_risk"]
+        assert risk["risk_level"] in [
+            "no_risk",
+            "low_risk",
+            "medium_risk",
+            "high_risk",
+            "critical_risk",
+        ]
         assert "assessment" in risk
         assert "recommendation" in risk
 
@@ -436,8 +426,7 @@ class TestProjectRichDomainIntegration:
         project.register_agent(agent)
 
         branch = project.create_git_branch(
-            git_branch_name="test-branch",
-            name="Test Branch"
+            git_branch_name="test-branch", name="Test Branch"
         )
 
         # Validation always uses rich business logic
@@ -480,14 +469,15 @@ class TestProjectRichDomainIntegration:
         branches = []
         for i in range(5):
             branch = project.create_git_branch(
-                git_branch_name=f"branch-{i}",
-                name=f"Branch {i}"
+                git_branch_name=f"branch-{i}", name=f"Branch {i}"
             )
             branches.append(branch)
 
         # Assign to first 3 branches (should succeed)
         for i in range(3):
-            assert project.validate_agent_assignment("busy-agent", branches[i].id) is True
+            assert (
+                project.validate_agent_assignment("busy-agent", branches[i].id) is True
+            )
             project.assign_agent_to_tree("busy-agent", branches[i].id)
 
         # 4th assignment should fail (agent overloaded) - rich domain model enforces this
