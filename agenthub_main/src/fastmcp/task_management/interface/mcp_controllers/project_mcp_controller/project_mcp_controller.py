@@ -137,7 +137,7 @@ class ProjectMCPController(ContextPropagationMixin):
 
         logger.info("ProjectMCPController initialized with modular architecture")
 
-    def register_tools(self, mcp: FastMCP):
+    def register_tools(self, mcp: "FastMCP"):
         """Register MCP tools with the server."""
 
         @mcp.tool(description=get_manage_project_description())

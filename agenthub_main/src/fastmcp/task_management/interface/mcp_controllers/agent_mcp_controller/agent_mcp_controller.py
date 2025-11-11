@@ -100,7 +100,7 @@ class AgentMCPController:
         self._operation_factory = AgentOperationFactory(self._response_formatter)
         self._response_factory = AgentResponseFactory(self._response_formatter)
 
-    def register_tools(self, mcp: FastMCP):
+    def register_tools(self, mcp: "FastMCP"):
         """Register agent management MCP tools with the FastMCP server"""
 
         @mcp.tool(name="manage_agent", description=get_manage_agent_description())

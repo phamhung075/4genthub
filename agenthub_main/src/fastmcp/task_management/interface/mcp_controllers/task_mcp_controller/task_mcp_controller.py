@@ -200,7 +200,7 @@ class TaskMCPController(ContextPropagationMixin):
         # Store last known git_branch_id for context operations
         self._last_git_branch_id = None
 
-    def register_tools(self, mcp: FastMCP):
+    def register_tools(self, mcp: "FastMCP"):
         """Register MCP tools with the server."""
 
         # Load description and parameters
