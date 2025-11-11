@@ -60,25 +60,28 @@ Fixed remaining 2 asyncio WebSocket tests in project payload validation suite:
 - `agenthub_main/src/tests/unit/task_management/application/services/test_project_websocket_payload.py`
 
 **Impact**: Completes WebSocket async test migration (subtask 50% → 100%)
-**BaseORMRepository Import Errors** (2025-11-11)
+**BaseORMRepository Import Errors - Complete Fix** (2025-11-11)
 
-Fixed 12 test failures in `supabase_optimized_repository_test.py` caused by `BaseORMRepository` not being properly exported from `task_repository.py`.
+Fixed 12 test failures in `supabase_optimized_repository_test.py` caused by `BaseORMRepository` not being properly imported and exported from `task_repository.py`.
 
 **Root Cause**:
-- `BaseORMRepository` was imported for "backward compatibility" but not included in `__all__` export list
-- Python's import system doesn't automatically re-export imported names without explicit `__all__` declaration
+- `task_repository.py` had `__all__ = ["ORMTaskRepository", "BaseORMRepository"]` export list
+- But `BaseORMRepository` was never actually imported into the module
+- Python's import system cannot export a name that doesn't exist in the module namespace
 - Tests failed with: `AttributeError: module 'task_repository' has no attribute 'BaseORMRepository'`
 
-**Fix**:
-- Added explicit `__all__ = ["ORMTaskRepository", "BaseORMRepository"]` to `task_repository.py:54`
-- Properly exports both the main repository class and the base class for backward compatibility
+**Fix Applied in Two Stages**:
+1. First fix (faf3cd4): Added `__all__` export list - incomplete, didn't solve the error
+2. Complete fix (5921146): Added missing import statement `from ..base_orm_repository import BaseORMRepository`
 
 **Files Modified**:
-- `agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py:54` - Added __all__ export list
+- `agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py:45` - Added import statement
+- `agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py:54` - __all__ export list (previous commit)
 
 **Impact**:
 - ✅ Fixes 12 failing tests in supabase_optimized_repository_test.py
 - ✅ Restores backward compatibility for code importing BaseORMRepository from task_repository module
+- ✅ Complete solution: both import and export now properly configured
 
 **Subtask Description Character Limit Increased** (2025-11-11)
 
