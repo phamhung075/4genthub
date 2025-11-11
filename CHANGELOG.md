@@ -49,6 +49,29 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**CI/CD Test Coverage Workflow - Missing Editable Package Install** (2025-11-11)
+
+Fixed test collection errors caused by missing editable package installation in CI environment.
+
+**Issue**:
+- 15 test files failing with `NameError: name 'TaskApplicationFacade' is not defined`
+- Root cause: `uv sync` only installs dependencies, not the package itself in editable mode
+- conftest.py files couldn't import from `fastmcp.*` modules
+- Blocked 7,968 tests from executing (15 collection errors)
+
+**Solution**:
+- Added `uv pip install -e .` after `uv sync --group dev` in test workflow
+- Package now installed in editable mode, making all `fastmcp.*` imports work
+- Aligns with production-deployment.yml which already had editable install
+
+**Files Modified**:
+- `.github/workflows/test_coverage.yml:96-97` - Added editable install step
+
+**Impact**:
+- ✅ All 7,968 tests now collect successfully (0 errors)
+- ✅ conftest.py imports resolve correctly in CI
+- ✅ Test workflow matches production workflow pattern
+
 **CI/CD Test Coverage Workflow - Database Setup Import Error** (2025-11-10)
 
 Fixed ModuleNotFoundError preventing GitHub Actions test suite from running database migrations.

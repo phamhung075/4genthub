@@ -93,6 +93,9 @@ jobs:
         # Install dependencies using uv (includes all dev dependencies from pyproject.toml)
         uv sync --group dev
 
+        # Install package in editable mode so imports work
+        uv pip install -e .
+
     - name: Setup test environment
       working-directory: agenthub_main
       run: |
