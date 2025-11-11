@@ -62,6 +62,7 @@ class SearchHandler:
                         "title": task.get("title"),
                         "status": task.get("status"),
                         "priority": task.get("priority"),
+                        "git_branch_id": task.get("git_branch_id"),  # Include git_branch_id for filtering tests
                         # CRITICAL: Include dependency info for frontend display (no manual refresh needed)
                         "dependencies": task.get("dependencies", []),
                         "has_dependencies": task.get("has_dependencies", False),
