@@ -22,22 +22,23 @@ CLIENT_AVAILABLE = False
 try:
     # Try to patch the problematic oauth_callback module before importing Client
     with patch('fastmcp.client.auth.oauth'):
-        import fastmcp.client
+        import fastmcp.client  # noqa: F401 - Import used to test availability, CLIENT_AVAILABLE flag set
         CLIENT_AVAILABLE = True
 except (ImportError, AttributeError, ModuleNotFoundError):
     CLIENT_AVAILABLE = False
 
-# Import the module under test
-from fastmcp.server.server import (
+# Import the module under test - comes after availability check
+from fastmcp.server.server import (  # noqa: E402 - Import after client availability check
     FastMCP,
     MountedServer,
     add_resource_prefix,
     remove_resource_prefix,
 )
 
-# Import related components for testing
+# Import related components for testing - intentional order to group test dependencies
+# ruff: noqa: I001
 try:
-    from mcp.server.lowlevel.server import Server as MCPServer
+    from mcp.server.lowlevel.server import Server as MCPServer  # noqa: F401 - Used in test assertions
     from fastmcp.settings import Settings
 except ImportError as e:
     pytest.skip(f"Required imports not available: {e}", allow_module_level=True)

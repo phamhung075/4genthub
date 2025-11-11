@@ -37,7 +37,7 @@ os.environ['KEYCLOAK_CLIENT_ID'] = 'mcp-client'
 os.environ['KEYCLOAK_CLIENT_SECRET'] = 'test-secret'
 
 # Mock numpy globally for tests when not available
-import importlib.util
+import importlib.util  # noqa: E402 - Import after environment variable setup required
 
 if importlib.util.find_spec("numpy") is None:
     # Create a comprehensive numpy mock
