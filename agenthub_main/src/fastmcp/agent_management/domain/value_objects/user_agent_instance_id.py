@@ -29,4 +29,5 @@ class UserAgentInstanceId(EntityId):
         if instance_id == another_instance_id:
             print("Same instance")
     """
+
     pass

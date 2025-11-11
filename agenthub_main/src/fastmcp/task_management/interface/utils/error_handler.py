@@ -125,7 +125,11 @@ class UserFriendlyErrorHandler:
         error_str = str(exception).lower()
 
         # Enhanced label-specific error handling
-        if "label" in error_str and ("timestamp" in error_str or "created_at" in error_str or "updated_at" in error_str):
+        if "label" in error_str and (
+            "timestamp" in error_str
+            or "created_at" in error_str
+            or "updated_at" in error_str
+        ):
             return {
                 "success": False,
                 "error": "Label creation failed: Timestamp constraint violation.",

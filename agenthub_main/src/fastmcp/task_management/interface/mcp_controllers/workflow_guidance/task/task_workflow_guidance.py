@@ -708,7 +708,9 @@ class TaskWorkflowGuidance(WorkflowGuidanceInterface):
                 "details",
             ],
             "add_dependency": ["task_id"],  # After adding dependency -> continue work
-            "remove_dependency": ["task_id"],  # After removing dependency -> continue work
+            "remove_dependency": [
+                "task_id"
+            ],  # After removing dependency -> continue work
         }
 
         guidance["applicable_parameters"] = next_action_params.get(action, [])

@@ -606,9 +606,11 @@ class BranchAPIController:
 
             # Step 1: Find the branch using direct DB query (no repository restrictions)
             # This is necessary because we need project_id but don't have it yet
-            branch = session.query(ProjectGitBranch).filter(
-                ProjectGitBranch.id == branch_id
-            ).first()
+            branch = (
+                session.query(ProjectGitBranch)
+                .filter(ProjectGitBranch.id == branch_id)
+                .first()
+            )
 
             if not branch:
                 logger.warning(f"Branch {branch_id} not found for deletion")
@@ -623,10 +625,11 @@ class BranchAPIController:
             project_id = branch.project_id
 
             # Step 2: Verify user owns the PROJECT (security check)
-            project = session.query(Project).filter(
-                Project.id == project_id,
-                Project.user_id == user_id
-            ).first()
+            project = (
+                session.query(Project)
+                .filter(Project.id == project_id, Project.user_id == user_id)
+                .first()
+            )
 
             if not project:
                 logger.warning(f"User {user_id} does not own project {project_id}")

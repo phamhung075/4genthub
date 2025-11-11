@@ -37,19 +37,43 @@ params = get_manage_unified_context_parameters()
 
 # Pre-compute Field descriptors to avoid annotation evaluation issues
 ActionField = Field(description="[OPTIONAL] " + params["action"]["description"])
-LevelField = Field(description="[REQUIRED for all actions except 'list'] " + params["level"]["description"])
-ContextIdField = Field(description="[REQUIRED for all actions except 'list'] " + params["context_id"]["description"])
+LevelField = Field(
+    description="[REQUIRED for all actions except 'list'] "
+    + params["level"]["description"]
+)
+ContextIdField = Field(
+    description="[REQUIRED for all actions except 'list'] "
+    + params["context_id"]["description"]
+)
 DataField = Field(description="[OPTIONAL] " + params["data"]["description"])
 UserIdField = Field(description="[OPTIONAL] " + params["user_id"]["description"])
 ProjectIdField = Field(description="[OPTIONAL] " + params["project_id"]["description"])
-GitBranchIdField = Field(description="[OPTIONAL] " + params["git_branch_id"]["description"])
-ForceRefreshField = Field(description="[OPTIONAL] " + params["force_refresh"]["description"])
-IncludeInheritedField = Field(description="[OPTIONAL] " + params["include_inherited"]["description"])
-PropagateChangesField = Field(description="[OPTIONAL] " + params["propagate_changes"]["description"])
-DelegateToField = Field(description="[REQUIRED for 'delegate' action] " + params["delegate_to"]["description"])
-DelegateDataField = Field(description="[OPTIONAL] " + params["delegate_data"]["description"])
-DelegationReasonField = Field(description="[OPTIONAL] " + params["delegation_reason"]["description"])
-ContentField = Field(description="[REQUIRED for 'add_insight' and 'add_progress' actions] " + params["content"]["description"])
+GitBranchIdField = Field(
+    description="[OPTIONAL] " + params["git_branch_id"]["description"]
+)
+ForceRefreshField = Field(
+    description="[OPTIONAL] " + params["force_refresh"]["description"]
+)
+IncludeInheritedField = Field(
+    description="[OPTIONAL] " + params["include_inherited"]["description"]
+)
+PropagateChangesField = Field(
+    description="[OPTIONAL] " + params["propagate_changes"]["description"]
+)
+DelegateToField = Field(
+    description="[REQUIRED for 'delegate' action] "
+    + params["delegate_to"]["description"]
+)
+DelegateDataField = Field(
+    description="[OPTIONAL] " + params["delegate_data"]["description"]
+)
+DelegationReasonField = Field(
+    description="[OPTIONAL] " + params["delegation_reason"]["description"]
+)
+ContentField = Field(
+    description="[REQUIRED for 'add_insight' and 'add_progress' actions] "
+    + params["content"]["description"]
+)
 CategoryField = Field(description="[OPTIONAL] " + params["category"]["description"])
 ImportanceField = Field(description="[OPTIONAL] " + params["importance"]["description"])
 AgentField = Field(description="[OPTIONAL] " + params["agent"]["description"])
@@ -83,57 +107,23 @@ class UnifiedContextMCPController:
         @mcp.tool(description=get_manage_unified_context_description())
         def manage_context(
             action: Annotated[str, ActionField],
-            level: Annotated[
-                str, LevelField
-            ] = None,
-            context_id: Annotated[
-                str, ContextIdField
-            ] = None,
-            data: Annotated[
-                str, DataField
-            ] = None,
-            user_id: Annotated[
-                str, UserIdField
-            ] = None,
-            project_id: Annotated[
-                str, ProjectIdField
-            ] = None,
-            git_branch_id: Annotated[
-                str, GitBranchIdField
-            ] = None,
-            force_refresh: Annotated[
-                str, ForceRefreshField
-            ] = None,
-            include_inherited: Annotated[
-                str, IncludeInheritedField
-            ] = None,
-            propagate_changes: Annotated[
-                str, PropagateChangesField
-            ] = None,
-            delegate_to: Annotated[
-                str, DelegateToField
-            ] = None,
-            delegate_data: Annotated[
-                str, DelegateDataField
-            ] = None,
-            delegation_reason: Annotated[
-                str, DelegationReasonField
-            ] = None,
-            content: Annotated[
-                str, ContentField
-            ] = None,
-            category: Annotated[
-                str, CategoryField
-            ] = None,
-            importance: Annotated[
-                str, ImportanceField
-            ] = None,
-            agent: Annotated[
-                str, AgentField
-            ] = None,
-            filters: Annotated[
-                str, FiltersField
-            ] = None,
+            level: Annotated[str, LevelField] = None,
+            context_id: Annotated[str, ContextIdField] = None,
+            data: Annotated[str, DataField] = None,
+            user_id: Annotated[str, UserIdField] = None,
+            project_id: Annotated[str, ProjectIdField] = None,
+            git_branch_id: Annotated[str, GitBranchIdField] = None,
+            force_refresh: Annotated[str, ForceRefreshField] = None,
+            include_inherited: Annotated[str, IncludeInheritedField] = None,
+            propagate_changes: Annotated[str, PropagateChangesField] = None,
+            delegate_to: Annotated[str, DelegateToField] = None,
+            delegate_data: Annotated[str, DelegateDataField] = None,
+            delegation_reason: Annotated[str, DelegationReasonField] = None,
+            content: Annotated[str, ContentField] = None,
+            category: Annotated[str, CategoryField] = None,
+            importance: Annotated[str, ImportanceField] = None,
+            agent: Annotated[str, AgentField] = None,
+            filters: Annotated[str, FiltersField] = None,
         ) -> dict[str, Any]:
             """Main unified context management function with two-stage validation pattern:
             - Schema level: Only 'action' is required (MCP compatibility)

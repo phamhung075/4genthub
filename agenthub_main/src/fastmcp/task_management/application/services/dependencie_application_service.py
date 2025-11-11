@@ -14,8 +14,10 @@ from fastmcp.task_management.domain.repositories.task_repository import TaskRepo
 if TYPE_CHECKING:
     pass
 
+
 class DependencieApplicationService:
     """Application service for dependency operations"""
+
     def __init__(self, task_repository: TaskRepository, user_id: str | None = None):
         self._task_repository = task_repository
         self._user_id = user_id  # Store user context
@@ -30,12 +32,12 @@ class DependencieApplicationService:
         """Get a user-scoped version of the repository if it supports user context."""
         if not repository:
             return repository
-        if hasattr(repository, 'with_user') and self._user_id:
+        if hasattr(repository, "with_user") and self._user_id:
             return repository.with_user(self._user_id)
-        elif hasattr(repository, 'user_id'):
+        elif hasattr(repository, "user_id"):
             if self._user_id and repository.user_id != self._user_id:
                 repo_class = type(repository)
-                if hasattr(repository, 'session'):
+                if hasattr(repository, "session"):
                     return repo_class(repository.session, user_id=self._user_id)
         return repository
 
@@ -48,6 +50,7 @@ class DependencieApplicationService:
             from fastmcp.task_management.application.use_cases.add_dependency import (
                 AddDependencyUseCase,
             )
+
             repo = self._get_user_scoped_repository(self._task_repository)
             self._add_dependency_use_case = AddDependencyUseCase(repo)
         return self._add_dependency_use_case.execute(request)
@@ -57,6 +60,7 @@ class DependencieApplicationService:
             from fastmcp.task_management.application.use_cases.remove_dependency import (
                 RemoveDependencyUseCase,
             )
+
             repo = self._get_user_scoped_repository(self._task_repository)
             self._remove_dependency_use_case = RemoveDependencyUseCase(repo)
         return self._remove_dependency_use_case.execute(task_id, dependency_id)
@@ -66,6 +70,7 @@ class DependencieApplicationService:
             from fastmcp.task_management.application.use_cases.get_dependencies import (
                 GetDependenciesUseCase,
             )
+
             repo = self._get_user_scoped_repository(self._task_repository)
             self._get_dependencies_use_case = GetDependenciesUseCase(repo)
         return self._get_dependencies_use_case.execute(task_id)
@@ -75,6 +80,7 @@ class DependencieApplicationService:
             from fastmcp.task_management.application.use_cases.clear_dependencies import (
                 ClearDependenciesUseCase,
             )
+
             repo = self._get_user_scoped_repository(self._task_repository)
             self._clear_dependencies_use_case = ClearDependenciesUseCase(repo)
         return self._clear_dependencies_use_case.execute(task_id)
@@ -84,6 +90,7 @@ class DependencieApplicationService:
             from fastmcp.task_management.application.use_cases.get_blocking_tasks import (
                 GetBlockingTasksUseCase,
             )
+
             repo = self._get_user_scoped_repository(self._task_repository)
             self._get_blocking_tasks_use_case = GetBlockingTasksUseCase(repo)
-        return self._get_blocking_tasks_use_case.execute(task_id) 
+        return self._get_blocking_tasks_use_case.execute(task_id)

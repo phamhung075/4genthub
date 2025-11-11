@@ -178,7 +178,11 @@ class ProjectAPIController:
 
             # Check if response is successful and contains project data
             if not project_response or not project_response.get("success"):
-                error_msg = project_response.get("error", "Project not found") if project_response else "Project not found"
+                error_msg = (
+                    project_response.get("error", "Project not found")
+                    if project_response
+                    else "Project not found"
+                )
                 return ProjectResponse(
                     success=False,
                     project=None,

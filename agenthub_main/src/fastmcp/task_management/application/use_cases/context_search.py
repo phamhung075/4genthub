@@ -23,38 +23,41 @@ logger = logging.getLogger(__name__)
 
 class SearchScope(Enum):
     """Search scope options"""
-    CURRENT_LEVEL = "current"      # Search only in specified level
-    WITH_CHILDREN = "children"      # Include child levels
-    WITH_PARENTS = "parents"        # Include parent levels
-    ALL_LEVELS = "all"              # Search all levels
+
+    CURRENT_LEVEL = "current"  # Search only in specified level
+    WITH_CHILDREN = "children"  # Include child levels
+    WITH_PARENTS = "parents"  # Include parent levels
+    ALL_LEVELS = "all"  # Search all levels
 
 
 class SearchMode(Enum):
     """Search mode options"""
-    EXACT = "exact"                 # Exact match
-    CONTAINS = "contains"           # Contains substring
-    FUZZY = "fuzzy"                 # Fuzzy matching
-    REGEX = "regex"                 # Regular expression
-    SEMANTIC = "semantic"           # Semantic similarity (future)
+
+    EXACT = "exact"  # Exact match
+    CONTAINS = "contains"  # Contains substring
+    FUZZY = "fuzzy"  # Fuzzy matching
+    REGEX = "regex"  # Regular expression
+    SEMANTIC = "semantic"  # Semantic similarity (future)
 
 
 @dataclass
 class SearchQuery:
     """Search query parameters"""
-    query: str                      # Search query string
-    levels: list[ContextLevel]      # Levels to search
+
+    query: str  # Search query string
+    levels: list[ContextLevel]  # Levels to search
     scope: SearchScope = SearchScope.CURRENT_LEVEL
     mode: SearchMode = SearchMode.CONTAINS
     user_id: str | None = None
     project_id: str | None = None
     git_branch_id: str | None = None
-    
+
     # Filters
     created_after: datetime | None = None
     created_before: datetime | None = None
     updated_after: datetime | None = None
     updated_before: datetime | None = None
-    
+
     # Result options
     limit: int = 50
     offset: int = 0
@@ -66,282 +69,260 @@ class SearchQuery:
 @dataclass
 class SearchResult:
     """Single search result"""
+
     level: ContextLevel
     context_id: str
     data: dict[str, Any]
-    score: float                    # Relevance score (0-1)
-    matches: list[dict[str, Any]]   # Match details
-    metadata: dict[str, Any]        # Additional metadata
+    score: float  # Relevance score (0-1)
+    matches: list[dict[str, Any]]  # Match details
+    metadata: dict[str, Any]  # Additional metadata
 
 
 class ContextSearchEngine:
     """
     Advanced search engine for context data with multiple search strategies.
     """
-    
+
     def __init__(self, context_service: UnifiedContextService):
         self.context_service = context_service
         self.cache = get_context_cache()
-    
+
     async def search(self, query: SearchQuery) -> list[SearchResult]:
         """
         Execute search across context hierarchy.
-        
+
         Args:
             query: Search query parameters
-        
+
         Returns:
             List of search results sorted by relevance
         """
         results = []
-        
+
         # Return empty results for empty query (but allow '*' for wildcard)
         if not query.query or query.query.strip() == "":
             # Only return empty if it's not a wildcard search
             if query.mode != SearchMode.REGEX or query.query != "*":
                 return results
-        
+
         # Determine levels to search
         search_levels = self._expand_search_levels(query.levels, query.scope)
-        
+
         # Search each level
         for level in search_levels:
-            level_results = await self._search_level(
-                level=level,
-                query=query
-            )
+            level_results = await self._search_level(level=level, query=query)
             results.extend(level_results)
-        
+
         # Sort by relevance score
         results.sort(key=lambda x: x.score, reverse=True)
-        
+
         # Apply pagination
         start = query.offset
         end = query.offset + query.limit
         results = results[start:end]
-        
+
         # Highlight matches if requested
         if query.highlight_matches:
             results = self._highlight_matches(results, query.query)
-        
+
         return results
-    
+
     def _expand_search_levels(
-        self, 
-        levels: list[ContextLevel], 
-        scope: SearchScope
+        self, levels: list[ContextLevel], scope: SearchScope
     ) -> set[ContextLevel]:
         """Expand search levels based on scope"""
-        
+
         search_levels = set(levels)
-        
+
         if scope == SearchScope.WITH_CHILDREN:
             # Add child levels
             for level in levels:
                 if level == ContextLevel.GLOBAL:
-                    search_levels.update([
-                        ContextLevel.PROJECT,
-                        ContextLevel.BRANCH,
-                        ContextLevel.TASK
-                    ])
+                    search_levels.update(
+                        [ContextLevel.PROJECT, ContextLevel.BRANCH, ContextLevel.TASK]
+                    )
                 elif level == ContextLevel.PROJECT:
-                    search_levels.update([
-                        ContextLevel.BRANCH,
-                        ContextLevel.TASK
-                    ])
+                    search_levels.update([ContextLevel.BRANCH, ContextLevel.TASK])
                 elif level == ContextLevel.BRANCH:
                     search_levels.add(ContextLevel.TASK)
-        
+
         elif scope == SearchScope.WITH_PARENTS:
             # Add parent levels
             for level in levels:
                 if level == ContextLevel.TASK:
-                    search_levels.update([
-                        ContextLevel.BRANCH,
-                        ContextLevel.PROJECT,
-                        ContextLevel.GLOBAL
-                    ])
+                    search_levels.update(
+                        [ContextLevel.BRANCH, ContextLevel.PROJECT, ContextLevel.GLOBAL]
+                    )
                 elif level == ContextLevel.BRANCH:
-                    search_levels.update([
-                        ContextLevel.PROJECT,
-                        ContextLevel.GLOBAL
-                    ])
+                    search_levels.update([ContextLevel.PROJECT, ContextLevel.GLOBAL])
                 elif level == ContextLevel.PROJECT:
                     search_levels.add(ContextLevel.GLOBAL)
-        
+
         elif scope == SearchScope.ALL_LEVELS:
             # Search all levels
             search_levels = set(ContextLevel)
-        
+
         return search_levels
-    
+
     async def _search_level(
-        self, 
-        level: ContextLevel, 
-        query: SearchQuery
+        self, level: ContextLevel, query: SearchQuery
     ) -> list[SearchResult]:
         """Search within a specific level"""
-        
+
         # Get all contexts at this level
         # Note: This would need repository method to list contexts
         contexts = await self._get_contexts_for_level(
             level=level,
             user_id=query.user_id,
             project_id=query.project_id,
-            git_branch_id=query.git_branch_id
+            git_branch_id=query.git_branch_id,
         )
-        
+
         results = []
         for context_id, context_data in contexts:
             # Apply filters
             if not self._passes_filters(context_data, query):
                 continue
-            
+
             # Calculate relevance score
             score, matches = self._calculate_relevance(
-                data=context_data,
-                query=query.query,
-                mode=query.mode
+                data=context_data, query=query.query, mode=query.mode
             )
-            
+
             if score > 0:
-                results.append(SearchResult(
-                    level=level,
-                    context_id=context_id,
-                    data=context_data,
-                    score=score,
-                    matches=matches,
-                    metadata={
-                        'created_at': context_data.get('created_at'),
-                        'updated_at': context_data.get('updated_at'),
-                        'user_id': query.user_id
-                    }
-                ))
-        
+                results.append(
+                    SearchResult(
+                        level=level,
+                        context_id=context_id,
+                        data=context_data,
+                        score=score,
+                        matches=matches,
+                        metadata={
+                            "created_at": context_data.get("created_at"),
+                            "updated_at": context_data.get("updated_at"),
+                            "user_id": query.user_id,
+                        },
+                    )
+                )
+
         return results
-    
+
     def _passes_filters(self, context_data: dict, query: SearchQuery) -> bool:
         """Check if context passes date filters"""
-        
+
         if query.created_after:
-            created = context_data.get('created_at')
+            created = context_data.get("created_at")
             if created and created < query.created_after:
                 return False
-        
+
         if query.created_before:
-            created = context_data.get('created_at')
+            created = context_data.get("created_at")
             if created and created > query.created_before:
                 return False
-        
+
         if query.updated_after:
-            updated = context_data.get('updated_at')
+            updated = context_data.get("updated_at")
             if updated and updated < query.updated_after:
                 return False
-        
+
         if query.updated_before:
-            updated = context_data.get('updated_at')
+            updated = context_data.get("updated_at")
             if updated and updated > query.updated_before:
                 return False
-        
+
         return True
-    
+
     def _calculate_relevance(
-        self, 
-        data: dict[str, Any], 
-        query: str, 
-        mode: SearchMode
+        self, data: dict[str, Any], query: str, mode: SearchMode
     ) -> tuple[float, list[dict]]:
         """Calculate relevance score and find matches"""
-        
+
         score = 0.0
         matches = []
-        
+
         # Convert data to searchable text
         text_content = self._extract_text(data)
-        
+
         if mode == SearchMode.EXACT:
             # Exact match
             if query.lower() in text_content.lower():
                 score = 1.0
-                matches.append({
-                    'type': 'exact',
-                    'field': 'full_content',
-                    'matched': query
-                })
-        
+                matches.append(
+                    {"type": "exact", "field": "full_content", "matched": query}
+                )
+
         elif mode == SearchMode.CONTAINS:
             # Contains substring
             query_lower = query.lower()
             text_lower = text_content.lower()
-            
+
             count = text_lower.count(query_lower)
             if count > 0:
                 # Score based on frequency
                 score = min(1.0, count * 0.2)
-                
+
                 # Find all occurrences
                 start = 0
                 while True:
                     index = text_lower.find(query_lower, start)
                     if index == -1:
                         break
-                    
-                    matches.append({
-                        'type': 'contains',
-                        'position': index,
-                        'matched': text_content[index:index+len(query)]
-                    })
+
+                    matches.append(
+                        {
+                            "type": "contains",
+                            "position": index,
+                            "matched": text_content[index : index + len(query)],
+                        }
+                    )
                     start = index + 1
-        
+
         elif mode == SearchMode.FUZZY:
             # Fuzzy matching (simple implementation)
             score = self._fuzzy_score(query.lower(), text_content.lower())
             if score > 0.5:
-                matches.append({
-                    'type': 'fuzzy',
-                    'score': score
-                })
-        
+                matches.append({"type": "fuzzy", "score": score})
+
         elif mode == SearchMode.REGEX:
             # Regular expression matching
             try:
                 # Special handling for wildcard
                 if query == "*":
                     score = 0.5  # Base score for wildcard match
-                    matches.append({
-                        'type': 'regex',
-                        'matched': 'all',
-                        'wildcard': True
-                    })
+                    matches.append(
+                        {"type": "regex", "matched": "all", "wildcard": True}
+                    )
                 else:
                     pattern = re.compile(query, re.IGNORECASE)
                     # Use finditer to get all match objects with positions
                     found_matches = list(pattern.finditer(text_content))
-                    
+
                     if found_matches:
                         score = min(1.0, len(found_matches) * 0.2)
                         for match_obj in found_matches[:10]:  # Limit matches
-                            matches.append({
-                                'type': 'regex',
-                                'matched': match_obj.group(0),
-                                'position': match_obj.start()
-                            })
+                            matches.append(
+                                {
+                                    "type": "regex",
+                                    "matched": match_obj.group(0),
+                                    "position": match_obj.start(),
+                                }
+                            )
             except re.error:
                 logger.warning(f"Invalid regex pattern: {query}")
-        
+
         elif mode == SearchMode.SEMANTIC:
             # Placeholder for semantic search
             # Would require embeddings and vector similarity
             logger.info("Semantic search not yet implemented")
-        
+
         # Boost score for matches in important fields
         score = self._apply_field_boosts(data, query, score)
-        
+
         return score, matches
-    
+
     def _extract_text(self, data: dict) -> str:
         """Extract searchable text from context data"""
-        
+
         def extract_recursive(obj, parts=[]):
             if isinstance(obj, dict):
                 for key, value in obj.items():
@@ -353,45 +334,45 @@ class ContextSearchEngine:
             else:
                 parts.append(str(obj))
             return parts
-        
+
         text_parts = extract_recursive(data)
         return " ".join(text_parts)
-    
+
     def _fuzzy_score(self, query: str, text: str) -> float:
         """Calculate fuzzy matching score (Levenshtein-based)"""
-        
+
         # Simple implementation - check substrings
         words = text.split()
         max_score = 0.0
-        
+
         for word in words:
             # Calculate similarity
             score = self._string_similarity(query, word)
             max_score = max(max_score, score)
-        
+
         return max_score
-    
+
     def _string_similarity(self, s1: str, s2: str) -> float:
         """Calculate string similarity (0-1)"""
-        
+
         # Handle empty strings
         if not s1 and not s2:
             return 1.0  # Both empty strings are considered identical
         if not s1 or not s2:
             return 0.0
-        
+
         # Exact match should return 1.0
         if s1 == s2:
             return 1.0
-        
+
         # Case insensitive comparison
         s1_lower = s1.lower()
         s2_lower = s2.lower()
-        
+
         # Exact match case insensitive
         if s1_lower == s2_lower:
             return 1.0
-        
+
         # For short strings, use character set overlap
         if len(s1) <= 5 or len(s2) <= 5:
             # Check if one is substring of other
@@ -399,88 +380,81 @@ class ContextSearchEngine:
                 shorter = min(len(s1), len(s2))
                 longer = max(len(s1), len(s2))
                 return shorter / longer
-                
+
             # Character set overlap
             common = len(set(s1_lower) & set(s2_lower))
             total = len(set(s1_lower) | set(s2_lower))
             return common / total if total > 0 else 0.0
-        
+
         # For longer strings, use bigram similarity
-        s1_bigrams = {s1_lower[i:i+2] for i in range(len(s1_lower)-1)}
-        s2_bigrams = {s2_lower[i:i+2] for i in range(len(s2_lower)-1)}
-        
+        s1_bigrams = {s1_lower[i : i + 2] for i in range(len(s1_lower) - 1)}
+        s2_bigrams = {s2_lower[i : i + 2] for i in range(len(s2_lower) - 1)}
+
         # Handle strings with no valid bigrams
         if not s1_bigrams or not s2_bigrams:
             common = len(set(s1_lower) & set(s2_lower))
             total = len(set(s1_lower) | set(s2_lower))
             return common / total if total > 0 else 0.0
-        
+
         intersection = len(s1_bigrams & s2_bigrams)
         union = len(s1_bigrams | s2_bigrams)
-        
+
         return intersection / union if union > 0 else 0.0
-    
-    def _apply_field_boosts(
-        self, 
-        data: dict, 
-        query: str, 
-        base_score: float
-    ) -> float:
+
+    def _apply_field_boosts(self, data: dict, query: str, base_score: float) -> float:
         """Apply field-specific score boosts"""
-        
+
         boost = 1.0
         query_lower = query.lower()
-        
+
         # Boost for matches in important fields
-        important_fields = ['title', 'name', 'description', 'summary']
+        important_fields = ["title", "name", "description", "summary"]
         for field in important_fields:
             if field in data:
                 field_value = str(data[field]).lower()
                 if query_lower in field_value:
                     boost *= 1.5
-        
+
         # Boost for recent updates
-        updated = data.get('updated_at')
+        updated = data.get("updated_at")
         if updated:
             if isinstance(updated, str):
                 updated = datetime.fromisoformat(updated)
-            
+
             age = datetime.now(UTC) - updated
             if age < timedelta(days=1):
                 boost *= 1.3
             elif age < timedelta(days=7):
                 boost *= 1.1
-        
+
         return min(1.0, base_score * boost)
-    
+
     def _highlight_matches(
-        self, 
-        results: list[SearchResult], 
-        query: str
+        self, results: list[SearchResult], query: str
     ) -> list[SearchResult]:
         """Add highlighting to matched text"""
-        
+
         for result in results:
             # Add highlight markers to matched text
             for match in result.matches:
-                if 'matched' in match:
-                    match['highlighted'] = f"**{match['matched']}**"
-        
+                if "matched" in match:
+                    match["highlighted"] = f"**{match['matched']}**"
+
         return results
-    
+
     async def _get_contexts_for_level(
         self,
         level: ContextLevel,
         user_id: str,
         project_id: str | None = None,
-        git_branch_id: str | None = None
+        git_branch_id: str | None = None,
     ) -> list[tuple[str, dict]]:
         """Get all contexts at a specific level"""
-        
+
         # This would need to be implemented in the repository layer
         # For now, returning empty list as placeholder
         logger.info(f"Fetching contexts for level {level}")
-        
+
         # Would call repository method like:
         # contexts = await self.context_service.list_contexts(
         #     level=level,
@@ -488,65 +462,52 @@ class ContextSearchEngine:
         #     project_id=project_id,
         #     git_branch_id=git_branch_id
         # )
-        
+
         return []
-    
+
     # Advanced search methods
-    
+
     async def search_by_pattern(
-        self,
-        pattern: str,
-        levels: list[ContextLevel],
-        user_id: str
+        self, pattern: str, levels: list[ContextLevel], user_id: str
     ) -> list[SearchResult]:
         """Search for contexts matching a specific pattern"""
-        
+
         query = SearchQuery(
             query=pattern,
             levels=levels,
             mode=SearchMode.REGEX,
             user_id=user_id,
-            scope=SearchScope.CURRENT_LEVEL
+            scope=SearchScope.CURRENT_LEVEL,
         )
-        
+
         return await self.search(query)
-    
+
     async def search_recent(
-        self,
-        levels: list[ContextLevel],
-        user_id: str,
-        days: int = 7,
-        limit: int = 20
+        self, levels: list[ContextLevel], user_id: str, days: int = 7, limit: int = 20
     ) -> list[SearchResult]:
         """Search for recently updated contexts"""
-        
+
         query = SearchQuery(
             query="*",  # Match all
             levels=levels,
             mode=SearchMode.REGEX,
             user_id=user_id,
             updated_after=datetime.now(UTC) - timedelta(days=days),
-            limit=limit
+            limit=limit,
         )
-        
+
         return await self.search(query)
-    
+
     async def search_by_tags(
-        self,
-        tags: list[str],
-        levels: list[ContextLevel],
-        user_id: str
+        self, tags: list[str], levels: list[ContextLevel], user_id: str
     ) -> list[SearchResult]:
         """Search for contexts with specific tags"""
-        
+
         # Build query for tags
         tag_query = " OR ".join(tags)
-        
+
         query = SearchQuery(
-            query=tag_query,
-            levels=levels,
-            mode=SearchMode.CONTAINS,
-            user_id=user_id
+            query=tag_query, levels=levels, mode=SearchMode.CONTAINS, user_id=user_id
         )
-        
+
         return await self.search(query)

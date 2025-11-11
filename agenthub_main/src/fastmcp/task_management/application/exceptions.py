@@ -12,8 +12,13 @@ from typing import Any
 
 class TaskManagementException(Exception):
     """Base exception for all task management application errors."""
-    
-    def __init__(self, message: str, code: str | None = None, details: dict[str, Any] | None = None):
+
+    def __init__(
+        self,
+        message: str,
+        code: str | None = None,
+        details: dict[str, Any] | None = None,
+    ):
         super().__init__(message)
         self.message = message
         self.code = code or self.__class__.__name__
@@ -22,7 +27,7 @@ class TaskManagementException(Exception):
 
 class TaskNotFoundError(TaskManagementException):
     """Raised when a requested task cannot be found."""
-    
+
     def __init__(self, task_id: str | int, details: dict[str, Any] | None = None):
         message = f"Task with ID '{task_id}' not found"
         super().__init__(message, "TASK_NOT_FOUND", details)
@@ -31,8 +36,13 @@ class TaskNotFoundError(TaskManagementException):
 
 class SubtaskNotFoundError(TaskManagementException):
     """Raised when a requested subtask cannot be found."""
-    
-    def __init__(self, subtask_id: str | int, task_id: str | int | None = None, details: dict[str, Any] | None = None):
+
+    def __init__(
+        self,
+        subtask_id: str | int,
+        task_id: str | int | None = None,
+        details: dict[str, Any] | None = None,
+    ):
         if task_id:
             message = f"Subtask with ID '{subtask_id}' not found in task '{task_id}'"
         else:
@@ -44,8 +54,14 @@ class SubtaskNotFoundError(TaskManagementException):
 
 class ValidationError(TaskManagementException):
     """Raised when input data fails validation."""
-    
-    def __init__(self, message: str, field: str | None = None, value: Any = None, details: dict[str, Any] | None = None):
+
+    def __init__(
+        self,
+        message: str,
+        field: str | None = None,
+        value: Any = None,
+        details: dict[str, Any] | None = None,
+    ):
         super().__init__(message, "VALIDATION_ERROR", details)
         self.field = field
         self.value = value
@@ -53,8 +69,13 @@ class ValidationError(TaskManagementException):
 
 class DuplicateError(TaskManagementException):
     """Raised when attempting to create a duplicate resource."""
-    
-    def __init__(self, resource: str, identifier: str | int, details: dict[str, Any] | None = None):
+
+    def __init__(
+        self,
+        resource: str,
+        identifier: str | int,
+        details: dict[str, Any] | None = None,
+    ):
         message = f"Duplicate {resource} with identifier '{identifier}'"
         super().__init__(message, "DUPLICATE_ERROR", details)
         self.resource = resource
@@ -63,8 +84,13 @@ class DuplicateError(TaskManagementException):
 
 class AuthorizationError(TaskManagementException):
     """Raised when user lacks permission for the requested operation."""
-    
-    def __init__(self, operation: str, resource: str | None = None, details: dict[str, Any] | None = None):
+
+    def __init__(
+        self,
+        operation: str,
+        resource: str | None = None,
+        details: dict[str, Any] | None = None,
+    ):
         if resource:
             message = f"Not authorized to {operation} {resource}"
         else:
@@ -76,7 +102,7 @@ class AuthorizationError(TaskManagementException):
 
 class BusinessRuleViolationError(TaskManagementException):
     """Raised when an operation violates business rules."""
-    
+
     def __init__(self, rule: str, message: str, details: dict[str, Any] | None = None):
         super().__init__(message, "BUSINESS_RULE_VIOLATION", details)
         self.rule = rule
@@ -85,8 +111,16 @@ class BusinessRuleViolationError(TaskManagementException):
 class ExternalServiceError(TaskManagementException):
     """Raised when an external service call fails."""
 
-    def __init__(self, service: str, operation: str, message: str, details: dict[str, Any] | None = None):
-        full_message = f"External service '{service}' failed during '{operation}': {message}"
+    def __init__(
+        self,
+        service: str,
+        operation: str,
+        message: str,
+        details: dict[str, Any] | None = None,
+    ):
+        full_message = (
+            f"External service '{service}' failed during '{operation}': {message}"
+        )
         super().__init__(full_message, "EXTERNAL_SERVICE_ERROR", details)
         self.service = service
         self.operation = operation

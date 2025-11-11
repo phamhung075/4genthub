@@ -121,7 +121,9 @@ def ensure_log_directory_exists(log_dir: Path | None = None) -> Path:
     return log_dir
 
 
-def get_log_file_path(filename: str = "agenthub.log", log_dir: Path | None = None) -> Path:
+def get_log_file_path(
+    filename: str = "agenthub.log", log_dir: Path | None = None
+) -> Path:
     """
     Get the full path for a log file.
 
@@ -152,7 +154,9 @@ def get_environment_info() -> dict:
         "environment_type": env_type,
         "log_directory": str(log_dir),
         "log_directory_exists": log_dir.exists(),
-        "log_directory_writable": log_dir.is_dir() and os.access(log_dir, os.W_OK) if log_dir.exists() else False,
+        "log_directory_writable": log_dir.is_dir() and os.access(log_dir, os.W_OK)
+        if log_dir.exists()
+        else False,
         "platform": platform.platform(),
         "hostname": platform.node(),
         "python_version": platform.python_version(),
@@ -160,7 +164,8 @@ def get_environment_info() -> dict:
         "docker_env_exists": os.path.exists("/.dockerenv"),
         "container_env_var": os.environ.get("CONTAINER_ENV"),
         "relevant_env_vars": {
-            key: value for key, value in os.environ.items()
+            key: value
+            for key, value in os.environ.items()
             if any(keyword in key.lower() for keyword in ["docker", "container", "log"])
-        }
+        },
     }

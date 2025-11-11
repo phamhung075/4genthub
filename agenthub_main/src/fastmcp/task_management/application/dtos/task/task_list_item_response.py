@@ -9,6 +9,7 @@ from datetime import datetime
 @dataclass
 class TaskListItemResponse:
     """Minimal task response for list operations - optimized for performance"""
+
     id: str
     title: str
     status: str
@@ -19,7 +20,7 @@ class TaskListItemResponse:
     updated_at: datetime | None = None
     has_dependencies: bool = False
     is_blocked: bool = False
-    
+
     def __init__(
         self,
         id: str,
@@ -31,7 +32,7 @@ class TaskListItemResponse:
         labels: list[str] = None,
         due_date: str | None = None,
         updated_at: datetime | None = None,
-        dependencies: list[str] = None
+        dependencies: list[str] = None,
     ):
         """Initialize minimal task list item"""
         self.id = id
@@ -44,7 +45,7 @@ class TaskListItemResponse:
         self.updated_at = updated_at
         self.has_dependencies = bool(dependencies) if dependencies else False
         self.is_blocked = False  # Will be set based on dependency resolution if needed
-    
+
     @classmethod
     def from_task_response(cls, task) -> TaskListItemResponse:
         """Create minimal response from full task response"""
@@ -53,14 +54,14 @@ class TaskListItemResponse:
             title=task.title,
             status=task.status,
             priority=task.priority,
-            progress_percentage=getattr(task, 'progress_percentage', 0),
-            assignees=getattr(task, 'assignees', []),
-            labels=getattr(task, 'labels', []),
-            due_date=getattr(task, 'due_date', None),
-            updated_at=getattr(task, 'updated_at', None),
-            dependencies=getattr(task, 'dependencies', [])
+            progress_percentage=getattr(task, "progress_percentage", 0),
+            assignees=getattr(task, "assignees", []),
+            labels=getattr(task, "labels", []),
+            due_date=getattr(task, "due_date", None),
+            updated_at=getattr(task, "updated_at", None),
+            dependencies=getattr(task, "dependencies", []),
         )
-    
+
     def to_dict(self):
         """Convert to dictionary for JSON serialization"""
         return {
@@ -73,5 +74,5 @@ class TaskListItemResponse:
             "due_date": self.due_date,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "has_dependencies": self.has_dependencies,
-            "is_blocked": self.is_blocked
+            "is_blocked": self.is_blocked,
         }

@@ -5,13 +5,7 @@ from .cache_manager import (
     get_cache,
     cached,
     CachedRepository,
-    cached_method
+    cached_method,
 )
 
-__all__ = [
-    'CacheManager',
-    'get_cache',
-    'cached',
-    'CachedRepository',
-    'cached_method'
-]
+__all__ = ["CacheManager", "get_cache", "cached", "CachedRepository", "cached_method"]

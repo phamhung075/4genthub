@@ -219,37 +219,44 @@ class FastMCP(Generic[LifespanResultT]):
         if enable_task_management:
             try:
                 logger.info("Initializing task management tools...")
-                
+
                 # Check environment variables for tool configuration
                 import os
-                disable_cursor_tools = os.environ.get("AGENTHUB_DISABLE_CURSOR_TOOLS", "false").lower() == "true"
-                
+
+                disable_cursor_tools = (
+                    os.environ.get("AGENTHUB_DISABLE_CURSOR_TOOLS", "false").lower()
+                    == "true"
+                )
+
                 # Create configuration that respects environment variables
                 config_overrides = {}
                 if disable_cursor_tools:
-                    logger.info("AGENTHUB_DISABLE_CURSOR_TOOLS=true - disabling cursor tools")
+                    logger.info(
+                        "AGENTHUB_DISABLE_CURSOR_TOOLS=true - disabling cursor tools"
+                    )
                     config_overrides = {
                         "enabled_tools": {
                             "manage_project": True,
-                            "manage_task": True, 
+                            "manage_task": True,
                             "manage_subtask": True,
                             "manage_agent": True,
                             "call_agent": True,
                             "update_auto_rule": False,
                             "validate_rules": False,
                             "regenerate_auto_rule": False,
-                            "validate_tasks_json": False
+                            "validate_tasks_json": False,
                         }
                     }
-                
+
                 # Vision System removed - using standard controllers only
                 from ..task_management.interface.ddd_compliant_mcp_tools import (
                     DDDCompliantMCPTools,
                 )
+
                 self._consolidated_tools = DDDCompliantMCPTools(
                     projects_file_path=projects_file_path,
                     config_overrides=config_overrides,
-                    enable_vision_system=False  # Vision System permanently disabled
+                    enable_vision_system=False,  # Vision System permanently disabled
                 )
                 logger.info("Task management tools initialized successfully")
             except Exception as e:
@@ -377,53 +384,61 @@ class FastMCP(Generic[LifespanResultT]):
         """Access to the consolidated MCP tools instance."""
         return self._consolidated_tools
 
-    def register_task_management_tools(self, task_repository=None, projects_file_path: str | None = None) -> bool:
+    def register_task_management_tools(
+        self, task_repository=None, projects_file_path: str | None = None
+    ) -> bool:
         """Manually register task management tools if not already done.
-        
+
         Args:
             task_repository: Optional task repository to use
             projects_file_path: Optional path to projects file
-            
+
         Returns:
             True if tools were registered successfully, False otherwise
         """
         if self._consolidated_tools is not None:
             logger.warning("Task management tools are already registered")
             return True
-            
+
         try:
             logger.info("Manually initializing task management tools...")
-            
+
             # Check environment variables for tool configuration
             import os
-            disable_cursor_tools = os.environ.get("AGENTHUB_DISABLE_CURSOR_TOOLS", "false").lower() == "true"
-            
+
+            disable_cursor_tools = (
+                os.environ.get("AGENTHUB_DISABLE_CURSOR_TOOLS", "false").lower()
+                == "true"
+            )
+
             # Create configuration that respects environment variables
             config_overrides = {}
             if disable_cursor_tools:
-                logger.info("AGENTHUB_DISABLE_CURSOR_TOOLS=true - disabling cursor tools")
+                logger.info(
+                    "AGENTHUB_DISABLE_CURSOR_TOOLS=true - disabling cursor tools"
+                )
                 config_overrides = {
                     "enabled_tools": {
                         "manage_project": True,
-                        "manage_task": True, 
+                        "manage_task": True,
                         "manage_subtask": True,
                         "manage_agent": True,
                         "call_agent": True,
                         "update_auto_rule": False,
                         "validate_rules": False,
                         "regenerate_auto_rule": False,
-                        "validate_tasks_json": False
+                        "validate_tasks_json": False,
                     }
                 }
-            
+
             from ..task_management.interface.ddd_compliant_mcp_tools import (
                 DDDCompliantMCPTools,
             )
+
             self._consolidated_tools = DDDCompliantMCPTools(
-                projects_file_path=projects_file_path,
-                config_overrides=config_overrides
+                projects_file_path=projects_file_path, config_overrides=config_overrides
             )
-            
+
             logger.info("Registering consolidated MCP tools...")
             self._consolidated_tools.register_tools(self)
             logger.info("Task management tools registered successfully")
@@ -730,7 +745,9 @@ class FastMCP(Generic[LifespanResultT]):
         with context.Context(fastmcp=self) as fastmcp_ctx:
             # Create the middleware context.
             mw_context = MiddlewareContext(
-                message=mcp.types.ListPromptsRequest(method="prompts/list", params=None),
+                message=mcp.types.ListPromptsRequest(
+                    method="prompts/list", params=None
+                ),
                 source="client",
                 type="request",
                 method="prompts/list",
@@ -1435,7 +1452,12 @@ class FastMCP(Generic[LifespanResultT]):
             log_level or self._deprecated_settings.log_level
         ).lower()
 
-        app = self.http_app(path=path, transport=transport, middleware=middleware, cors_origins=cors_origins)
+        app = self.http_app(
+            path=path,
+            transport=transport,
+            middleware=middleware,
+            cors_origins=cors_origins,
+        )
 
         _uvicorn_config_from_user = uvicorn_config or {}
 
@@ -1563,14 +1585,16 @@ class FastMCP(Generic[LifespanResultT]):
             import asyncio
 
             from .session_store import MemoryEventStore
-            
+
             # Get or create the global event store
             try:
                 # Check if we're in an async context
                 try:
                     asyncio.get_running_loop()
                     # We're in an async context, use memory fallback to avoid event loop issues
-                    logger.info("Using memory-based EventStore (async context detected)")
+                    logger.info(
+                        "Using memory-based EventStore (async context detected)"
+                    )
                     event_store = MemoryEventStore()
                 except RuntimeError:
                     # No running event loop, we can safely initialize Redis
@@ -1578,33 +1602,38 @@ class FastMCP(Generic[LifespanResultT]):
                     import threading
 
                     from .session_store import get_global_event_store
+
                     result = None
                     exception = None
-                    
+
                     def run_in_new_loop():
                         nonlocal result, exception
                         try:
                             new_loop = asyncio.new_event_loop()
                             asyncio.set_event_loop(new_loop)
                             try:
-                                result = new_loop.run_until_complete(get_global_event_store())
+                                result = new_loop.run_until_complete(
+                                    get_global_event_store()
+                                )
                             finally:
                                 new_loop.close()
                                 asyncio.set_event_loop(None)
                         except Exception as e:
                             exception = e
-                    
+
                     thread = threading.Thread(target=run_in_new_loop)
                     thread.start()
                     thread.join()
-                    
+
                     if exception:
                         raise exception
                     event_store = result
             except Exception as e:
-                logger.warning(f"Failed to initialize Redis EventStore, using memory fallback: {e}")
+                logger.warning(
+                    f"Failed to initialize Redis EventStore, using memory fallback: {e}"
+                )
                 event_store = MemoryEventStore()
-            
+
             return create_streamable_http_app(
                 server=self,
                 streamable_http_path=path
@@ -1623,7 +1652,8 @@ class FastMCP(Generic[LifespanResultT]):
                 ),
                 debug=self._deprecated_settings.debug,
                 middleware=middleware,
-                cors_origins=cors_origins or ["*"],  # Use passed origins or wildcard for MCP
+                cors_origins=cors_origins
+                or ["*"],  # Use passed origins or wildcard for MCP
             )
         elif transport == "sse":
             return create_sse_app(
@@ -1633,7 +1663,8 @@ class FastMCP(Generic[LifespanResultT]):
                 auth=self.auth,
                 debug=self._deprecated_settings.debug,
                 middleware=middleware,
-                cors_origins=cors_origins or ["*"],  # Use passed origins or wildcard for MCP
+                cors_origins=cors_origins
+                or ["*"],  # Use passed origins or wildcard for MCP
             )
 
     async def run_streamable_http_async(

@@ -19,21 +19,27 @@ from ...domain.value_objects.task_id import TaskId
 class DeleteTaskUseCase:
     """Use case for deleting a task with cascade deletion"""
 
-    def __init__(self,
-                 task_repository: TaskRepository,
-                 subtask_repository: SubtaskRepository | None = None,
-                 branch_repository=None,
-                 project_repository=None,
-                 context_repository=None,
-                 db_session_factory: IDatabaseSessionFactory | None = None,
-                 logging_service: ILoggingService | None = None):
+    def __init__(
+        self,
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository | None = None,
+        branch_repository=None,
+        project_repository=None,
+        context_repository=None,
+        db_session_factory: IDatabaseSessionFactory | None = None,
+        logging_service: ILoggingService | None = None,
+    ):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
         self._branch_repository = branch_repository
         self._project_repository = project_repository
         self._context_repository = context_repository
         self._db_session_factory = db_session_factory
-        self._logger = logging.getLogger(__name__) if not logging_service else logging_service.get_logger(__name__)
+        self._logger = (
+            logging.getLogger(__name__)
+            if not logging_service
+            else logging_service.get_logger(__name__)
+        )
 
         # Initialize cascade deletion service
         self._cascade_service = CascadeDeletionService(
@@ -41,10 +47,12 @@ class DeleteTaskUseCase:
             subtask_repository=subtask_repository,
             branch_repository=branch_repository,
             project_repository=project_repository,
-            context_repository=context_repository
+            context_repository=context_repository,
         )
 
-    def execute(self, task_id: str | int, cascade: bool = True, user_id: str = None) -> dict[str, Any]:
+    def execute(
+        self, task_id: str | int, cascade: bool = True, user_id: str = None
+    ) -> dict[str, Any]:
         """
         Execute the delete task use case with cascade deletion.
 
@@ -71,11 +79,11 @@ class DeleteTaskUseCase:
             return {
                 "success": False,
                 "task_deleted": False,
-                "message": f"Task {task_id} not found"
+                "message": f"Task {task_id} not found",
             }
 
         # Store task info for WebSocket notification
-        git_branch_id = task.git_branch_id if hasattr(task, 'git_branch_id') else None
+        git_branch_id = task.git_branch_id if hasattr(task, "git_branch_id") else None
         task_title = task.title
 
         # Use cascade deletion service
@@ -97,10 +105,12 @@ class DeleteTaskUseCase:
                         status="deleted",
                         title=task_title,
                         aggregate_id=task_id_str,
-                        aggregate_type="Task"
+                        aggregate_type="Task",
                     )
                     dispatch_domain_event(event)
-                    self._logger.info(f"Dispatched TaskDeletedEvent for task {task_id_str}")
+                    self._logger.info(
+                        f"Dispatched TaskDeletedEvent for task {task_id_str}"
+                    )
             except Exception as e:
                 self._logger.warning(f"Failed to dispatch TaskDeletedEvent: {e}")
 
@@ -113,5 +123,5 @@ class DeleteTaskUseCase:
         return {
             "success": stats["task_deleted"],
             "title": task_title,  # ✅ FIX: Include title for WebSocket notification
-            **stats
-        } 
+            **stats,
+        }

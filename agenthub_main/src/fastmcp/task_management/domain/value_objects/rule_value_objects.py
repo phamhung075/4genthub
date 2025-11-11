@@ -24,6 +24,7 @@ from ..value_objects import (
 @dataclass
 class ClientConfig:
     """Client configuration for synchronization - Value Object"""
+
     client_id: str
     client_name: str
     auth_method: ClientAuthMethod
@@ -77,6 +78,7 @@ class ClientConfig:
 @dataclass
 class SyncRequest:
     """Synchronization request - Value Object"""
+
     request_id: str
     client_id: str
     operation: SyncOperation
@@ -103,6 +105,7 @@ class SyncRequest:
 @dataclass
 class SyncResult:
     """Result of synchronization operation - Value Object"""
+
     request_id: str
     client_id: str
     status: SyncStatus
@@ -157,6 +160,7 @@ class SyncResult:
 @dataclass
 class RuleConflict:
     """Rule conflict information - Value Object"""
+
     rule_path: str
     client_version: str
     server_version: str
@@ -182,6 +186,7 @@ class RuleConflict:
 @dataclass
 class CompositionResult:
     """Result of rule composition operation - Value Object"""
+
     composed_content: str
     source_rules: list[str]
     inheritance_chain: list[RuleInheritance]
@@ -214,6 +219,7 @@ class CompositionResult:
 @dataclass
 class CacheEntry:
     """Cache entry for rule content - Value Object"""
+
     content: RuleContent
     timestamp: float
     access_count: int
@@ -230,6 +236,7 @@ class CacheEntry:
     def is_expired(self) -> bool:
         """Check if cache entry is expired"""
         import time
+
         return time.time() > (self.timestamp + self.ttl)
 
     def increment_access(self) -> None:
@@ -239,12 +246,14 @@ class CacheEntry:
     def update_timestamp(self) -> None:
         """Update timestamp to current time"""
         import time
+
         self.timestamp = time.time()
 
 
 @dataclass
 class RuleHierarchyInfo:
     """Information about rule hierarchy - Value Object"""
+
     total_rules: int
     max_depth: int
     inheritance_relationships: int
@@ -267,4 +276,4 @@ class RuleHierarchyInfo:
     @property
     def is_healthy(self) -> bool:
         """Check if hierarchy is healthy (no circular dependencies)"""
-        return not self.has_circular_dependencies 
+        return not self.has_circular_dependencies

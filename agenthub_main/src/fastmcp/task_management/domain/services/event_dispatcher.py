@@ -31,7 +31,9 @@ class EventDispatcher:
 
         if handler not in self._handlers[event_type]:
             self._handlers[event_type].append(handler)
-            logger.debug(f"Registered handler {handler.__name__} for event {event_type}")
+            logger.debug(
+                f"Registered handler {handler.__name__} for event {event_type}"
+            )
 
     def unregister_handler(self, event_type: str, handler: Callable) -> None:
         """
@@ -43,7 +45,9 @@ class EventDispatcher:
         """
         if event_type in self._handlers and handler in self._handlers[event_type]:
             self._handlers[event_type].remove(handler)
-            logger.debug(f"Unregistered handler {handler.__name__} for event {event_type}")
+            logger.debug(
+                f"Unregistered handler {handler.__name__} for event {event_type}"
+            )
 
     def dispatch(self, event_type: str, event_data: Any) -> None:
         """
@@ -67,7 +71,7 @@ class EventDispatcher:
             except Exception as e:
                 logger.error(
                     f"Handler {handler.__name__} failed processing {event_type}: {e}",
-                    exc_info=True
+                    exc_info=True,
                 )
 
     def clear_handlers(self, event_type: str = None) -> None:

@@ -9,27 +9,26 @@ from dataclasses import dataclass
 @dataclass
 class RegisterAgentRequest:
     """Request DTO for registering an agent"""
-    
+
     project_id: str
     agent_id: str | None = None  # Now optional, will auto-generate if not provided
     name: str = None
     call_agent: str | None = None
-    
+
     def __post_init__(self):
         """Validate the request after initialization"""
         if not self.project_id or not self.project_id.strip():
             raise ValueError("Project ID is required")
-        
+
         # Agent ID validation - auto-generate if not provided
         self.agent_id = self._validate_and_normalize_agent_id(self.agent_id)
-        
+
         if not self.name or not self.name.strip():
             raise ValueError("Agent name is required")
-        
-        
+
         # Validate project_id is a valid UUID
         self._validate_uuid(self.project_id, "Project ID")
-    
+
     def _validate_and_normalize_agent_id(self, agent_id: str | None) -> str:
         """
         Validate and normalize agent ID to ensure it's a valid UUID.
@@ -40,7 +39,7 @@ class RegisterAgentRequest:
             # Auto-generate UUID if not provided
             new_id = str(uuid.uuid4())
             return new_id
-        
+
         # Check if it's already a valid UUID
         try:
             uuid.UUID(agent_id)
@@ -68,7 +67,7 @@ class RegisterAgentRequest:
                 f"  • Online: https://www.uuidgenerator.net/\n"
                 f"  • Command line: uuidgen (macOS/Linux)"
             )
-    
+
     def _validate_uuid(self, value: str, field_name: str) -> None:
         """Validate that a value is a valid UUID"""
         try:

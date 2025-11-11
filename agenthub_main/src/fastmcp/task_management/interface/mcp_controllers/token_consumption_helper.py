@@ -54,10 +54,7 @@ class TokenConsumptionHelper:
         return self._token_service
 
     async def consume_tokens(
-        self,
-        operation: str,
-        user_id: str | None = None,
-        custom_cost: int | None = None
+        self, operation: str, user_id: str | None = None, custom_cost: int | None = None
     ) -> tuple[bool, dict[str, Any] | None]:
         """
         Consume tokens for an MCP operation
@@ -75,15 +72,16 @@ class TokenConsumptionHelper:
         try:
             # Get authenticated user ID
             authenticated_user_id = get_authenticated_user_id(
-                provided_user_id=user_id,
-                operation_name=operation
+                provided_user_id=user_id, operation_name=operation
             )
 
             # Consume tokens
-            result: TokenConsumptionResult = await self.token_service.consume_tokens_for_operation(
-                user_id=authenticated_user_id,
-                operation=operation,
-                custom_cost=custom_cost
+            result: TokenConsumptionResult = (
+                await self.token_service.consume_tokens_for_operation(
+                    user_id=authenticated_user_id,
+                    operation=operation,
+                    custom_cost=custom_cost,
+                )
             )
 
             if not result.success:
@@ -92,7 +90,7 @@ class TokenConsumptionHelper:
                     "success": False,
                     "error": result.error_message,
                     "error_code": result.error_code or "TOKEN_CONSUMPTION_FAILED",
-                    "operation": operation
+                    "operation": operation,
                 }
 
                 if result.error_code == "INSUFFICIENT_TOKENS":
@@ -116,15 +114,12 @@ class TokenConsumptionHelper:
                 "success": False,
                 "error": f"Token consumption error: {str(e)}",
                 "error_code": "TOKEN_SYSTEM_ERROR",
-                "operation": operation
+                "operation": operation,
             }
             return (False, error_response)
 
     async def get_token_info(
-        self,
-        operation: str,
-        user_id: str | None = None,
-        custom_cost: int | None = None
+        self, operation: str, user_id: str | None = None, custom_cost: int | None = None
     ) -> dict[str, Any]:
         """
         Get token consumption info for adding to successful responses
@@ -148,8 +143,7 @@ class TokenConsumptionHelper:
         try:
             # Get authenticated user ID
             authenticated_user_id = get_authenticated_user_id(
-                provided_user_id=user_id,
-                operation_name=operation
+                provided_user_id=user_id, operation_name=operation
             )
 
             # Get current balance
@@ -158,32 +152,34 @@ class TokenConsumptionHelper:
             if not balance_result.success:
                 return {
                     "operation": operation,
-                    "error": "Could not retrieve balance info"
+                    "error": "Could not retrieve balance info",
                 }
 
             # Get operation cost
             from ....auth.config.token_costs import get_operation_cost
-            cost = custom_cost if custom_cost is not None else get_operation_cost(operation, default=1)
+
+            cost = (
+                custom_cost
+                if custom_cost is not None
+                else get_operation_cost(operation, default=1)
+            )
 
             return {
                 "consumed": cost,
                 "remaining_balance": balance_result.balance.get("available_tokens", 0),
-                "operation": operation
+                "operation": operation,
             }
 
         except Exception as e:
             logger.error(f"Error getting token info for {operation}: {e}")
-            return {
-                "operation": operation,
-                "error": str(e)
-            }
+            return {"operation": operation, "error": str(e)}
 
     async def consume_and_add_info(
         self,
         operation: str,
         response: dict[str, Any],
         user_id: str | None = None,
-        custom_cost: int | None = None
+        custom_cost: int | None = None,
     ) -> tuple[bool, dict[str, Any]]:
         """
         Consume tokens and add token_info to response in one step
@@ -202,7 +198,9 @@ class TokenConsumptionHelper:
             - If success=False, response is the error response
         """
         # Try to consume tokens
-        success, error_response = await self.consume_tokens(operation, user_id, custom_cost)
+        success, error_response = await self.consume_tokens(
+            operation, user_id, custom_cost
+        )
 
         if not success:
             return (False, error_response)
@@ -221,7 +219,7 @@ async def consume_tokens_for_operation(
     session: Session,
     operation: str,
     user_id: str | None = None,
-    custom_cost: int | None = None
+    custom_cost: int | None = None,
 ) -> tuple[bool, dict[str, Any] | None]:
     """
     Standalone function for consuming tokens (no class instance needed)

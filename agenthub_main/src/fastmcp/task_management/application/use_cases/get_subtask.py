@@ -9,7 +9,11 @@ from ...domain.repositories.subtask_repository import SubtaskRepository
 
 
 class GetSubtaskUseCase:
-    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository = None):
+    def __init__(
+        self,
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository = None,
+    ):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
 
@@ -18,7 +22,7 @@ class GetSubtaskUseCase:
         task = self._task_repository.find_by_id(task_id_obj)
         if not task:
             raise TaskNotFoundError(f"Task {task_id} not found")
-        
+
         # Use dedicated subtask repository if available
         if self._subtask_repository:
             subtask = self._subtask_repository.find_by_id(id)
@@ -32,15 +36,15 @@ class GetSubtaskUseCase:
             subtask_data = task.get_subtask(id)
             if not subtask_data:
                 raise ValueError(f"Subtask {id} not found in task {task_id}")
-        
+
         return {
             "task_id": str(task_id),
             "subtask": subtask_data,
-            "progress": task.get_subtask_progress()
+            "progress": task.get_subtask_progress(),
         }
 
     def _convert_to_task_id(self, task_id: str | int) -> TaskId:
         if isinstance(task_id, int):
             return TaskId.from_int(task_id)
         else:
-            return TaskId.from_string(str(task_id)) 
+            return TaskId.from_string(str(task_id))

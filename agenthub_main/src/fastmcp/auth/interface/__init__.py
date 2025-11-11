@@ -8,7 +8,7 @@ from .fastapi_auth import (
     require_roles,
     require_admin,
     get_optional_user,
-    get_db
+    get_db,
 )
 
 

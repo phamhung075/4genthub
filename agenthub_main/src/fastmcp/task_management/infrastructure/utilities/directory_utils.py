@@ -14,28 +14,28 @@ from pathlib import Path
 def _find_project_root() -> Path:
     """Find project root by looking for agenthub_main directory"""
     current_path = Path(__file__).resolve()
-    
+
     # Walk up the directory tree looking for agenthub_main
     while current_path.parent != current_path:
         if (current_path / "agenthub_main").exists():
             return current_path
         current_path = current_path.parent
-    
+
     # If not found, use current working directory as fallback
     cwd = Path.cwd()
     if (cwd / "agenthub_main").exists():
         return cwd
-        
+
     # Last resort - use the directory containing agenthub_main
     current_path = Path(__file__).resolve()
     while current_path.parent != current_path:
         if current_path.name == "agenthub_main":
             return current_path.parent
         current_path = current_path.parent
-    
+
     # Absolute fallback
     # Use environment variable or default data path
-    data_path = os.environ.get('AGENTHUB_DATA_PATH', '/data')
+    data_path = os.environ.get("AGENTHUB_DATA_PATH", "/data")
     # If running in development, try to find project root
     if not os.path.exists(data_path):
         # Try current working directory
@@ -56,13 +56,13 @@ def _find_project_root() -> Path:
 def ensure_brain_dir(brain_dir: str | None = None) -> Path:
     """
     Ensure brain directory exists.
-    
+
     This is an infrastructure utility function that handles file system paths
     and directory creation concerns.
-    
+
     Args:
         brain_dir: Optional path to brain directory
-        
+
     Returns:
         Path to the brain directory
     """
@@ -71,6 +71,6 @@ def ensure_brain_dir(brain_dir: str | None = None) -> Path:
         brain_dir = project_root / ".cursor" / "brain"
     else:
         brain_dir = Path(brain_dir)
-    
+
     brain_dir.mkdir(parents=True, exist_ok=True)
     return brain_dir

@@ -48,24 +48,58 @@ params = get_manage_subtask_parameters()
 
 # Pre-compute Field descriptors to avoid annotation evaluation issues
 ActionField = Field(description="[OPTIONAL] " + params["action"]["description"])
-TaskIdField = Field(description="[REQUIRED for 'create', 'update', 'delete', 'get', 'list', 'complete' actions] " + params["task_id"]["description"])
-SubtaskIdField = Field(description="[REQUIRED for 'update', 'delete', 'get', 'complete' actions] " + params["subtask_id"]["description"])
-TitleField = Field(description="[REQUIRED for 'create' action] " + params["title"]["description"])
-DescriptionField = Field(description="[OPTIONAL] " + params["description"]["description"])
+TaskIdField = Field(
+    description="[REQUIRED for 'create', 'update', 'delete', 'get', 'list', 'complete' actions] "
+    + params["task_id"]["description"]
+)
+SubtaskIdField = Field(
+    description="[REQUIRED for 'update', 'delete', 'get', 'complete' actions] "
+    + params["subtask_id"]["description"]
+)
+TitleField = Field(
+    description="[REQUIRED for 'create' action] " + params["title"]["description"]
+)
+DescriptionField = Field(
+    description="[OPTIONAL] " + params["description"]["description"]
+)
 StatusField = Field(description="[OPTIONAL] " + params["status"]["description"])
 PriorityField = Field(description="[OPTIONAL] " + params["priority"]["description"])
 AssigneesField = Field(description="[OPTIONAL] " + params["assignees"]["description"])
-ProgressPercentageField = Field(description="[OPTIONAL] " + params["progress_percentage"]["description"])
-ProgressNotesField = Field(description="[REQUIRED for 'update' and 'complete' actions] " + params["progress_notes"]["description"])
-CompletionSummaryField = Field(description="[REQUIRED for 'complete' action] " + params["completion_summary"]["description"])
-TestingNotesField = Field(description="[OPTIONAL] " + params["testing_notes"]["description"])
-InsightsFoundField = Field(description="[OPTIONAL] " + params["insights_found"]["description"])
-ChallengesOvercomeField = Field(description="[OPTIONAL] " + params["challenges_overcome"]["description"])
-SkillsLearnedField = Field(description="[OPTIONAL] " + params["skills_learned"]["description"])
-NextRecommendationsField = Field(description="[OPTIONAL] " + params["next_recommendations"]["description"])
-DeliverablesField = Field(description="[OPTIONAL] " + params["deliverables"]["description"])
-CompletionQualityField = Field(description="[OPTIONAL] " + params["completion_quality"]["description"])
-ImpactOnParentField = Field(description="[OPTIONAL] " + params["impact_on_parent"]["description"])
+ProgressPercentageField = Field(
+    description="[OPTIONAL] " + params["progress_percentage"]["description"]
+)
+ProgressNotesField = Field(
+    description="[REQUIRED for 'update' and 'complete' actions] "
+    + params["progress_notes"]["description"]
+)
+CompletionSummaryField = Field(
+    description="[REQUIRED for 'complete' action] "
+    + params["completion_summary"]["description"]
+)
+TestingNotesField = Field(
+    description="[OPTIONAL] " + params["testing_notes"]["description"]
+)
+InsightsFoundField = Field(
+    description="[OPTIONAL] " + params["insights_found"]["description"]
+)
+ChallengesOvercomeField = Field(
+    description="[OPTIONAL] " + params["challenges_overcome"]["description"]
+)
+SkillsLearnedField = Field(
+    description="[OPTIONAL] " + params["skills_learned"]["description"]
+)
+NextRecommendationsField = Field(
+    description="[OPTIONAL] " + params["next_recommendations"]["description"]
+)
+DeliverablesField = Field(
+    description="[OPTIONAL] " + params["deliverables"]["description"]
+)
+CompletionQualityField = Field(
+    description="[OPTIONAL] " + params["completion_quality"]["description"]
+)
+ImpactOnParentField = Field(
+    description="[OPTIONAL] " + params["impact_on_parent"]["description"]
+)
 BlockersField = Field(description="[OPTIONAL] " + params["blockers"]["description"])
 UserIdField = Field(description="[OPTIONAL] " + params["user_id"]["description"])
 
@@ -169,10 +203,14 @@ class SubtaskMCPController(ContextPropagationMixin):
         # Initialize workflow guidance only if enabled
         if self._config.is_workflow_guidance_enabled():
             self._workflow_guidance = SubtaskWorkflowFactory.create()
-            logger.info("SubtaskMCPController initialized with workflow guidance enabled")
+            logger.info(
+                "SubtaskMCPController initialized with workflow guidance enabled"
+            )
         else:
             self._workflow_guidance = None
-            logger.info("SubtaskMCPController initialized with workflow guidance disabled (token optimization)")
+            logger.info(
+                "SubtaskMCPController initialized with workflow guidance disabled (token optimization)"
+            )
 
     def _run_async(self, coro):
         """Run coroutine in async context with proper event loop management."""
@@ -190,7 +228,9 @@ class SubtaskMCPController(ContextPropagationMixin):
             # No event loop, create one
             return asyncio.run(coro)
 
-    def register_tools(self, mcp: FastMCP):  # Type string quotes removed (annotations from __future__)
+    def register_tools(
+        self, mcp: FastMCP
+    ):  # Type string quotes removed (annotations from __future__)
         """Register MCP tools with the server."""
 
         @mcp.tool(description=get_manage_subtask_description())

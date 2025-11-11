@@ -10,6 +10,7 @@ from enum import Enum
 
 class ProgressState(Enum):
     """Progress state enum for stepper visualization"""
+
     INITIAL = "INITIAL"
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETE = "COMPLETE"
@@ -59,7 +60,7 @@ class ProgressState(Enum):
         state_to_step = {
             ProgressState.INITIAL: 1,
             ProgressState.IN_PROGRESS: 2,
-            ProgressState.COMPLETE: 3
+            ProgressState.COMPLETE: 3,
         }
         return state_to_step[self]
 

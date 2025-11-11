@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 try:
     from fastapi import WebSocket, WebSocketDisconnect
     from fastapi.websockets import WebSocketState
+
     WEBSOCKET_AVAILABLE = True
 except ImportError:
     WEBSOCKET_AVAILABLE = False
@@ -37,6 +38,7 @@ except ImportError:
 
 class EventType(Enum):
     """Types of context events"""
+
     CREATED = "context.created"
     UPDATED = "context.updated"
     DELETED = "context.deleted"
@@ -48,16 +50,18 @@ class EventType(Enum):
 
 class SubscriptionScope(Enum):
     """Subscription scope levels"""
-    GLOBAL = "global"           # All context changes
-    USER = "user"               # User-specific changes
-    PROJECT = "project"         # Project-specific changes
-    BRANCH = "branch"           # Branch-specific changes
-    TASK = "task"              # Task-specific changes
+
+    GLOBAL = "global"  # All context changes
+    USER = "user"  # User-specific changes
+    PROJECT = "project"  # Project-specific changes
+    BRANCH = "branch"  # Branch-specific changes
+    TASK = "task"  # Task-specific changes
 
 
 @dataclass
 class ContextEvent:
     """Context change event"""
+
     event_type: EventType
     level: str
     context_id: str
@@ -65,59 +69,60 @@ class ContextEvent:
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     data: dict[str, Any] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary"""
         return {
-            'event_type': self.event_type.value,
-            'level': self.level,
-            'context_id': self.context_id,
-            'user_id': self.user_id,
-            'timestamp': self.timestamp.isoformat(),
-            'data': self.data,
-            'metadata': self.metadata
+            "event_type": self.event_type.value,
+            "level": self.level,
+            "context_id": self.context_id,
+            "user_id": self.user_id,
+            "timestamp": self.timestamp.isoformat(),
+            "data": self.data,
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class Subscription:
     """WebSocket subscription"""
+
     client_id: str
     websocket: Any  # WebSocket connection
     scope: SubscriptionScope
     filters: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     last_activity: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
+
     def matches(self, event: ContextEvent) -> bool:
         """Check if event matches subscription filters"""
-        
+
         # Check scope
         if self.scope == SubscriptionScope.GLOBAL:
             # Global scope receives all events
             pass
         elif self.scope == SubscriptionScope.USER:
-            if event.user_id != self.filters.get('user_id'):
+            if event.user_id != self.filters.get("user_id"):
                 return False
         elif self.scope == SubscriptionScope.PROJECT:
-            if event.metadata.get('project_id') != self.filters.get('project_id'):
+            if event.metadata.get("project_id") != self.filters.get("project_id"):
                 return False
         elif self.scope == SubscriptionScope.BRANCH:
-            if event.metadata.get('git_branch_id') != self.filters.get('git_branch_id'):
+            if event.metadata.get("git_branch_id") != self.filters.get("git_branch_id"):
                 return False
         elif self.scope == SubscriptionScope.TASK:
-            if event.context_id != self.filters.get('task_id'):
+            if event.context_id != self.filters.get("task_id"):
                 return False
-        
+
         # Check additional filters
-        if 'event_types' in self.filters:
-            if event.event_type not in self.filters['event_types']:
+        if "event_types" in self.filters:
+            if event.event_type not in self.filters["event_types"]:
                 return False
-        
-        if 'levels' in self.filters:
-            if event.level not in self.filters['levels']:
+
+        if "levels" in self.filters:
+            if event.level not in self.filters["levels"]:
                 return False
-        
+
         return True
 
 
@@ -125,155 +130,153 @@ class ContextNotificationService:
     """
     Service for managing real-time context change notifications.
     """
-    
+
     def __init__(self):
         self.subscriptions: dict[str, Subscription] = {}
         self.event_queue: asyncio.Queue = asyncio.Queue()
         self.event_handlers: list[Callable] = []
         self._running = False
         self._task = None
-        
+
         # Statistics
         self.stats = {
-            'events_sent': 0,
-            'events_queued': 0,
-            'active_connections': 0,
-            'total_connections': 0,
-            'errors': 0
+            "events_sent": 0,
+            "events_queued": 0,
+            "active_connections": 0,
+            "total_connections": 0,
+            "errors": 0,
         }
-    
+
     async def start(self):
         """Start the notification service"""
         if self._running:
             return
-        
+
         self._running = True
         self._task = asyncio.create_task(self._process_events())
         logger.info("Context notification service started")
-    
+
     async def stop(self):
         """Stop the notification service"""
         self._running = False
         if self._task:
             await self._task
         logger.info("Context notification service stopped")
-    
+
     async def _process_events(self):
         """Process event queue and send notifications"""
         while self._running:
             try:
                 # Get event from queue (with timeout)
-                event = await asyncio.wait_for(
-                    self.event_queue.get(),
-                    timeout=1.0
-                )
-                
+                event = await asyncio.wait_for(self.event_queue.get(), timeout=1.0)
+
                 # Send to matching subscriptions
                 await self._broadcast_event(event)
-                
+
                 # Call event handlers
                 for handler in self.event_handlers:
                     try:
                         await handler(event)
                     except Exception as e:
                         logger.error(f"Event handler error: {e}")
-                
+
             except TimeoutError:
                 # No events, continue
                 continue
             except Exception as e:
                 logger.error(f"Error processing event: {e}")
-                self.stats['errors'] += 1
-    
+                self.stats["errors"] += 1
+
     async def _broadcast_event(self, event: ContextEvent):
         """Broadcast event to matching subscriptions"""
-        
+
         disconnected = []
-        
+
         for client_id, subscription in self.subscriptions.items():
             try:
                 # Check if subscription matches
                 if not subscription.matches(event):
                     continue
-                
+
                 # Send event
                 if WEBSOCKET_AVAILABLE:
                     websocket = subscription.websocket
                     # Check if we have a real WebSocket with proper methods
-                    if hasattr(websocket, 'client_state') and hasattr(websocket, 'send_json'):
+                    if hasattr(websocket, "client_state") and hasattr(
+                        websocket, "send_json"
+                    ):
                         if websocket.client_state == WebSocketState.CONNECTED:
                             await websocket.send_json(event.to_dict())
                             subscription.last_activity = datetime.now(UTC)
-                            self.stats['events_sent'] += 1
+                            self.stats["events_sent"] += 1
                         else:
                             disconnected.append(client_id)
                 else:
                     # Fallback for testing without WebSocket
                     logger.info(f"Would send event to {client_id}: {event.event_type}")
-                    
+
             except Exception as e:
                 logger.error(f"Error sending to {client_id}: {e}")
                 disconnected.append(client_id)
-                self.stats['errors'] += 1
-        
+                self.stats["errors"] += 1
+
         # Remove disconnected clients
         for client_id in disconnected:
             await self.unsubscribe(client_id)
-    
+
     async def subscribe(
         self,
         websocket: Any,
         client_id: str,
         scope: SubscriptionScope,
-        filters: dict[str, Any] | None = None
+        filters: dict[str, Any] | None = None,
     ) -> Subscription:
         """
         Subscribe to context notifications.
-        
+
         Args:
             websocket: WebSocket connection
             client_id: Unique client identifier
             scope: Subscription scope
             filters: Additional filters
-        
+
         Returns:
             Subscription object
         """
-        
+
         subscription = Subscription(
-            client_id=client_id,
-            websocket=websocket,
-            scope=scope,
-            filters=filters or {}
+            client_id=client_id, websocket=websocket, scope=scope, filters=filters or {}
         )
-        
+
         self.subscriptions[client_id] = subscription
-        self.stats['active_connections'] = len(self.subscriptions)
-        self.stats['total_connections'] += 1
-        
+        self.stats["active_connections"] = len(self.subscriptions)
+        self.stats["total_connections"] += 1
+
         logger.info(f"Client {client_id} subscribed with scope {scope}")
-        
+
         # Send welcome message
         if WEBSOCKET_AVAILABLE:
             # Only send welcome message if we have real FastAPI WebSocket
-            if hasattr(websocket, 'send_json'):
-                await websocket.send_json({
-                    'type': 'welcome',
-                    'client_id': client_id,
-                    'scope': scope.value,
-                    'timestamp': datetime.now(UTC).isoformat()
-                })
-        
+            if hasattr(websocket, "send_json"):
+                await websocket.send_json(
+                    {
+                        "type": "welcome",
+                        "client_id": client_id,
+                        "scope": scope.value,
+                        "timestamp": datetime.now(UTC).isoformat(),
+                    }
+                )
+
         return subscription
-    
+
     async def unsubscribe(self, client_id: str):
         """Unsubscribe from notifications"""
-        
+
         if client_id in self.subscriptions:
             del self.subscriptions[client_id]
-            self.stats['active_connections'] = len(self.subscriptions)
+            self.stats["active_connections"] = len(self.subscriptions)
             logger.info(f"Client {client_id} unsubscribed")
-    
+
     async def notify(
         self,
         event_type: EventType,
@@ -281,11 +284,11 @@ class ContextNotificationService:
         context_id: str,
         user_id: str,
         data: dict[str, Any] | None = None,
-        metadata: dict[str, Any] | None = None
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Send notification for context change.
-        
+
         Args:
             event_type: Type of event
             level: Context level
@@ -294,60 +297,64 @@ class ContextNotificationService:
             data: Event data
             metadata: Additional metadata
         """
-        
+
         event = ContextEvent(
             event_type=event_type,
             level=level,
             context_id=context_id,
             user_id=user_id,
             data=data,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
-        
+
         await self.event_queue.put(event)
-        self.stats['events_queued'] += 1
-    
+        self.stats["events_queued"] += 1
+
     def add_event_handler(self, handler: Callable):
         """Add custom event handler"""
         self.event_handlers.append(handler)
-    
+
     def get_stats(self) -> dict[str, Any]:
         """Get service statistics"""
         return {
             **self.stats,
-            'queue_size': self.event_queue.qsize(),
-            'subscriptions': [
+            "queue_size": self.event_queue.qsize(),
+            "subscriptions": [
                 {
-                    'client_id': sub.client_id,
-                    'scope': sub.scope.value,
-                    'created_at': sub.created_at.isoformat(),
-                    'last_activity': sub.last_activity.isoformat()
+                    "client_id": sub.client_id,
+                    "scope": sub.scope.value,
+                    "created_at": sub.created_at.isoformat(),
+                    "last_activity": sub.last_activity.isoformat(),
                 }
                 for sub in self.subscriptions.values()
-            ]
+            ],
         }
-    
+
     async def heartbeat(self):
         """Send heartbeat to all connections"""
-        
+
         disconnected = []
-        
+
         for client_id, subscription in self.subscriptions.items():
             try:
                 if WEBSOCKET_AVAILABLE:
                     websocket = subscription.websocket
                     # Check if we have a real WebSocket with proper methods
-                    if hasattr(websocket, 'client_state') and hasattr(websocket, 'send_json'):
+                    if hasattr(websocket, "client_state") and hasattr(
+                        websocket, "send_json"
+                    ):
                         if websocket.client_state == WebSocketState.CONNECTED:
-                            await websocket.send_json({
-                                'type': 'heartbeat',
-                                'timestamp': datetime.now(UTC).isoformat()
-                            })
+                            await websocket.send_json(
+                                {
+                                    "type": "heartbeat",
+                                    "timestamp": datetime.now(UTC).isoformat(),
+                                }
+                            )
                         else:
                             disconnected.append(client_id)
             except Exception:
                 disconnected.append(client_id)
-        
+
         for client_id in disconnected:
             await self.unsubscribe(client_id)
 
@@ -356,78 +363,65 @@ class WebSocketManager:
     """
     Manager for WebSocket connections and routing.
     """
-    
+
     def __init__(self, notification_service: ContextNotificationService):
         self.notification_service = notification_service
         self.active_connections: set[WebSocket] = set()
-    
+
     async def connect(self, websocket: WebSocket, client_id: str):
         """Accept WebSocket connection"""
         await websocket.accept()
         self.active_connections.add(websocket)
-        
+
         # Default subscription to user scope
         await self.notification_service.subscribe(
             websocket=websocket,
             client_id=client_id,
             scope=SubscriptionScope.USER,
-            filters={'user_id': client_id}
+            filters={"user_id": client_id},
         )
-    
+
     async def disconnect(self, websocket: WebSocket, client_id: str):
         """Handle WebSocket disconnection"""
         self.active_connections.discard(websocket)
         await self.notification_service.unsubscribe(client_id)
-    
+
     async def handle_message(
-        self,
-        websocket: WebSocket,
-        client_id: str,
-        message: dict[str, Any]
+        self, websocket: WebSocket, client_id: str, message: dict[str, Any]
     ):
         """Handle incoming WebSocket message"""
-        
-        msg_type = message.get('type')
-        
-        if msg_type == 'subscribe':
+
+        msg_type = message.get("type")
+
+        if msg_type == "subscribe":
             # Update subscription
-            scope = SubscriptionScope(message.get('scope', 'user'))
-            filters = message.get('filters', {})
-            
+            scope = SubscriptionScope(message.get("scope", "user"))
+            filters = message.get("filters", {})
+
             await self.notification_service.subscribe(
-                websocket=websocket,
-                client_id=client_id,
-                scope=scope,
-                filters=filters
+                websocket=websocket, client_id=client_id, scope=scope, filters=filters
             )
-            
-            await websocket.send_json({
-                'type': 'subscribed',
-                'scope': scope.value,
-                'filters': filters
-            })
-        
-        elif msg_type == 'ping':
+
+            await websocket.send_json(
+                {"type": "subscribed", "scope": scope.value, "filters": filters}
+            )
+
+        elif msg_type == "ping":
             # Respond to ping
-            await websocket.send_json({
-                'type': 'pong',
-                'timestamp': datetime.now(UTC).isoformat()
-            })
-        
-        elif msg_type == 'get_stats':
+            await websocket.send_json(
+                {"type": "pong", "timestamp": datetime.now(UTC).isoformat()}
+            )
+
+        elif msg_type == "get_stats":
             # Send statistics
             stats = self.notification_service.get_stats()
-            await websocket.send_json({
-                'type': 'stats',
-                'data': stats
-            })
-        
+            await websocket.send_json({"type": "stats", "data": stats})
+
         else:
             # Unknown message type
-            await websocket.send_json({
-                'type': 'error',
-                'message': f'Unknown message type: {msg_type}'
-            })
+            await websocket.send_json(
+                {"type": "error", "message": f"Unknown message type: {msg_type}"}
+            )
 
 
 # Global instance
@@ -456,39 +450,39 @@ def get_websocket_manager() -> WebSocketManager:
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     """
     Example WebSocket endpoint for FastAPI.
-    
+
     Usage in FastAPI:
     ```python
     from fastapi import FastAPI, WebSocket
-    
+
     app = FastAPI()
-    
+
     @app.websocket("/ws/context/{client_id}")
     async def websocket_route(websocket: WebSocket, client_id: str):
         await websocket_endpoint(websocket, client_id)
     ```
     """
-    
+
     if not WEBSOCKET_AVAILABLE:
         logger.error("WebSocket support not available")
         return
-    
+
     manager = get_websocket_manager()
-    
+
     try:
         await manager.connect(websocket, client_id)
-        
+
         while True:
             try:
                 # Receive message
                 data = await websocket.receive_json()
                 await manager.handle_message(websocket, client_id, data)
-                
+
             except WebSocketDisconnect:
                 break
             except Exception as e:
                 logger.error(f"WebSocket error: {e}")
                 break
-    
+
     finally:
         await manager.disconnect(websocket, client_id)

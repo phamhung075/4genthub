@@ -67,7 +67,9 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
         super().__init__(model_class)
         logger.debug(f"Initialized BaseTimestampRepository for {model_class.__name__}")
 
-    def save(self, entity: TimestampEntityType, flush: bool = True) -> TimestampEntityType:
+    def save(
+        self, entity: TimestampEntityType, flush: bool = True
+    ) -> TimestampEntityType:
         """Save entity with automatic timestamp management.
 
         This method handles both new entities (INSERT) and existing entities (UPDATE).
@@ -87,14 +89,16 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
         try:
             with self.get_db_session() as session:
                 # Check if this is a new entity or an update
-                is_new_entity = not hasattr(entity, 'id') or entity.id is None
+                is_new_entity = not hasattr(entity, "id") or entity.id is None
 
                 if is_new_entity:
                     logger.debug(f"Saving new {entity.__class__.__name__}")
                     # Entity timestamps will be set by SQLAlchemy events
                     session.add(entity)
                 else:
-                    logger.debug(f"Updating existing {entity.__class__.__name__} with id {entity.id}")
+                    logger.debug(
+                        f"Updating existing {entity.__class__.__name__} with id {entity.id}"
+                    )
                     # Touch the entity to update timestamp and fire events
                     entity.touch(f"repository_save_{entity.__class__.__name__.lower()}")
                     # Merge the entity with the session
@@ -113,7 +117,9 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
 
         except (IntegrityError, SQLAlchemyError) as e:
             logger.error(f"Database error saving {entity.__class__.__name__}: {e}")
-            raise DatabaseException(f"Failed to save {entity.__class__.__name__}: {str(e)}")
+            raise DatabaseException(
+                f"Failed to save {entity.__class__.__name__}: {str(e)}"
+            )
         except Exception as e:
             logger.error(f"Unexpected error saving {entity.__class__.__name__}: {e}")
             raise DatabaseException(f"Unexpected error saving entity: {str(e)}")
@@ -142,7 +148,9 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
             if hasattr(entity, key):
                 setattr(entity, key, value)
             else:
-                logger.warning(f"Attribute {key} not found on {entity.__class__.__name__}")
+                logger.warning(
+                    f"Attribute {key} not found on {entity.__class__.__name__}"
+                )
 
         # Touch entity to update timestamp (this will fire domain events)
         entity.touch(f"repository_update_{entity.__class__.__name__.lower()}")
@@ -162,7 +170,9 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
         """
         try:
             with self.get_db_session() as session:
-                logger.debug(f"Deleting {entity.__class__.__name__} with id {getattr(entity, 'id', 'unknown')}")
+                logger.debug(
+                    f"Deleting {entity.__class__.__name__} with id {getattr(entity, 'id', 'unknown')}"
+                )
 
                 # Collect domain events before deletion
                 events = entity.get_domain_events()
@@ -179,13 +189,15 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
 
         except (IntegrityError, SQLAlchemyError) as e:
             logger.error(f"Database error deleting {entity.__class__.__name__}: {e}")
-            raise DatabaseException(f"Failed to delete {entity.__class__.__name__}: {str(e)}")
+            raise DatabaseException(
+                f"Failed to delete {entity.__class__.__name__}: {str(e)}"
+            )
 
     def find_by_timestamp_range(
         self,
         start_time: datetime,
         end_time: datetime,
-        timestamp_field: str = "updated_at"
+        timestamp_field: str = "updated_at",
     ) -> list[TimestampEntityType]:
         """Find entities within a timestamp range.
 
@@ -223,7 +235,9 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
             logger.error(f"Database error finding entities by timestamp: {e}")
             raise DatabaseException(f"Failed to find entities by timestamp: {str(e)}")
 
-    def find_stale_entities(self, max_staleness_hours: int = 24) -> list[TimestampEntityType]:
+    def find_stale_entities(
+        self, max_staleness_hours: int = 24
+    ) -> list[TimestampEntityType]:
         """Find entities that haven't been updated recently.
 
         Args:
@@ -241,7 +255,9 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
 
         try:
             with self.get_db_session() as session:
-                logger.debug(f"Finding stale {self.model_class.__name__} entities older than {cutoff_time}")
+                logger.debug(
+                    f"Finding stale {self.model_class.__name__} entities older than {cutoff_time}"
+                )
 
                 query = session.query(self.model_class)
                 query = query.filter(self.model_class.updated_at < cutoff_time)
@@ -254,7 +270,9 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
             logger.error(f"Database error finding stale entities: {e}")
             raise DatabaseException(f"Failed to find stale entities: {str(e)}")
 
-    def touch_entity(self, entity_id: str, reason: str = "repository_touch") -> TimestampEntityType:
+    def touch_entity(
+        self, entity_id: str, reason: str = "repository_touch"
+    ) -> TimestampEntityType:
         """Touch an entity to update its timestamp.
 
         Args:
@@ -270,12 +288,16 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
         """
         entity = self.get_by_id(entity_id)
         if not entity:
-            raise ResourceNotFoundException(f"{self.model_class.__name__} with id {entity_id} not found")
+            raise ResourceNotFoundException(
+                f"{self.model_class.__name__} with id {entity_id} not found"
+            )
 
         entity.touch(reason)
         return self.save(entity)
 
-    def _publish_domain_events(self, entity: TimestampEntityType, session: Session) -> None:
+    def _publish_domain_events(
+        self, entity: TimestampEntityType, session: Session
+    ) -> None:
         """Publish domain events for the entity.
 
         Args:
@@ -293,7 +315,9 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
         entity.clear_domain_events()
         logger.debug(f"Published and cleared {len(events)} domain events")
 
-    def _log_timestamp_info(self, entity: TimestampEntityType, is_new_entity: bool) -> None:
+    def _log_timestamp_info(
+        self, entity: TimestampEntityType, is_new_entity: bool
+    ) -> None:
         """Log timestamp information for debugging.
 
         Args:
@@ -319,11 +343,11 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
                 from sqlalchemy import func
 
                 query = session.query(
-                    func.count(self.model_class.id).label('total_count'),
-                    func.min(self.model_class.created_at).label('oldest_created'),
-                    func.max(self.model_class.created_at).label('newest_created'),
-                    func.min(self.model_class.updated_at).label('oldest_updated'),
-                    func.max(self.model_class.updated_at).label('newest_updated'),
+                    func.count(self.model_class.id).label("total_count"),
+                    func.min(self.model_class.created_at).label("oldest_created"),
+                    func.max(self.model_class.created_at).label("newest_created"),
+                    func.min(self.model_class.updated_at).label("oldest_updated"),
+                    func.max(self.model_class.updated_at).label("newest_updated"),
                 )
 
                 result = query.one()
@@ -331,13 +355,23 @@ class BaseTimestampRepository(BaseORMRepository[TimestampEntityType]):
                 stats = {
                     "entity_type": self.model_class.__name__,
                     "total_count": result.total_count or 0,
-                    "oldest_created": result.oldest_created.isoformat() if result.oldest_created else None,
-                    "newest_created": result.newest_created.isoformat() if result.newest_created else None,
-                    "oldest_updated": result.oldest_updated.isoformat() if result.oldest_updated else None,
-                    "newest_updated": result.newest_updated.isoformat() if result.newest_updated else None,
+                    "oldest_created": result.oldest_created.isoformat()
+                    if result.oldest_created
+                    else None,
+                    "newest_created": result.newest_created.isoformat()
+                    if result.newest_created
+                    else None,
+                    "oldest_updated": result.oldest_updated.isoformat()
+                    if result.oldest_updated
+                    else None,
+                    "newest_updated": result.newest_updated.isoformat()
+                    if result.newest_updated
+                    else None,
                 }
 
-                logger.debug(f"Timestamp stats for {self.model_class.__name__}: {stats}")
+                logger.debug(
+                    f"Timestamp stats for {self.model_class.__name__}: {stats}"
+                )
                 return stats
 
         except SQLAlchemyError as e:

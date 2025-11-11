@@ -175,7 +175,9 @@ class SubtaskAPIController:
         Returns:
             List of subtasks
         """
-        logger.info(f"🟢 [CONTROLLER] list_subtasks called: task_id={task_id}, user_id={user_id}")
+        logger.info(
+            f"🟢 [CONTROLLER] list_subtasks called: task_id={task_id}, user_id={user_id}"
+        )
 
         try:
             # DDD Compliance: No hardcoded project IDs - derive from parent task
@@ -191,29 +193,39 @@ class SubtaskAPIController:
                 raise ValueError(f"Parent task {task_id} not found")
 
             parent_git_branch_id = parent_task["task"].get("git_branch_id")
-            logger.info(f"🟢 [CONTROLLER] Parent task found, git_branch_id={parent_git_branch_id}")
+            logger.info(
+                f"🟢 [CONTROLLER] Parent task found, git_branch_id={parent_git_branch_id}"
+            )
 
             if not parent_git_branch_id:
-                logger.error(f"🔴 [CONTROLLER] Parent task {task_id} missing git_branch_id")
+                logger.error(
+                    f"🔴 [CONTROLLER] Parent task {task_id} missing git_branch_id"
+                )
                 raise ValueError(f"Parent task {task_id} missing git_branch_id")
 
             # Get SUBTASK facade for listing operations
-            logger.info(f"🟢 [CONTROLLER] Getting subtask facade for git_branch_id={parent_git_branch_id}")
+            logger.info(
+                f"🟢 [CONTROLLER] Getting subtask facade for git_branch_id={parent_git_branch_id}"
+            )
             subtask_facade = self.facade_service.get_subtask_facade(
                 project_id=None, git_branch_id=parent_git_branch_id, user_id=user_id
             )
 
             # Delegate to SUBTASK facade
-            logger.info("🟢 [CONTROLLER] Calling subtask_facade.handle_manage_subtask(action='list')")
+            logger.info(
+                "🟢 [CONTROLLER] Calling subtask_facade.handle_manage_subtask(action='list')"
+            )
             result = subtask_facade.handle_manage_subtask(
                 action="list", task_id=task_id
             )
 
-            subtasks_count = len(result.get('subtasks', []))
+            subtasks_count = len(result.get("subtasks", []))
             logger.info(f"🟢 [CONTROLLER] Facade returned {subtasks_count} subtasks")
             if subtasks_count > 0:
-                subtasks_sample = result.get('subtasks', [])[:3]  # First 3 for logging
-                logger.info(f"🟢 [CONTROLLER] Sample subtasks: {[{'id': st.get('id'), 'title': st.get('title')} for st in subtasks_sample]}")
+                subtasks_sample = result.get("subtasks", [])[:3]  # First 3 for logging
+                logger.info(
+                    f"🟢 [CONTROLLER] Sample subtasks: {[{'id': st.get('id'), 'title': st.get('title')} for st in subtasks_sample]}"
+                )
 
             # Convert subtasks to DTOs
             subtasks_list = result.get("subtasks", [])
@@ -224,14 +236,20 @@ class SubtaskAPIController:
                     for key, value in data.items():
                         setattr(self, key, value)
 
-            logger.info(f"🟢 [CONTROLLER] Converting {len(subtasks_list)} subtasks to DTOs")
+            logger.info(
+                f"🟢 [CONTROLLER] Converting {len(subtasks_list)} subtasks to DTOs"
+            )
             subtask_dtos = [
                 subtask_summary_to_dto(SubtaskObj(st)) for st in subtasks_list
             ]
 
             logger.info(f"🐛 [CONTROLLER DEBUG] Created {len(subtask_dtos)} DTOs")
-            logger.info(f"🐛 [CONTROLLER DEBUG] DTO IDs: {[dto.id for dto in subtask_dtos]}")
-            logger.info(f"🟢 [CONTROLLER] Returning SubtasksResponse with {len(subtask_dtos)} DTOs")
+            logger.info(
+                f"🐛 [CONTROLLER DEBUG] DTO IDs: {[dto.id for dto in subtask_dtos]}"
+            )
+            logger.info(
+                f"🟢 [CONTROLLER] Returning SubtasksResponse with {len(subtask_dtos)} DTOs"
+            )
             return SubtasksResponse(
                 success=True,
                 subtasks=subtask_dtos,

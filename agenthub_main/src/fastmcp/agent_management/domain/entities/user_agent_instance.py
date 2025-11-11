@@ -1,6 +1,5 @@
 """UserAgentInstance Domain Entity - User-specific customizable agent instance"""
 
-
 from __future__ import annotations
 
 import logging
@@ -77,9 +76,7 @@ class UserAgentInstance(BaseTimestampEntity):
         # Ensure configuration is an AgentConfiguration instance
         if self.configuration is not None and isinstance(self.configuration, dict):
             object.__setattr__(
-                self,
-                'configuration',
-                AgentConfiguration.from_dict(self.configuration)
+                self, "configuration", AgentConfiguration.from_dict(self.configuration)
             )
 
         # Call parent initialization for timestamps
@@ -108,17 +105,17 @@ class UserAgentInstance(BaseTimestampEntity):
         if not self.agent_name or not self.agent_name.strip():
             raise ValueError("UserAgentInstance agent_name cannot be empty")
 
-        if self.visibility not in ('private', 'public'):
+        if self.visibility not in ("private", "public"):
             raise ValueError(
                 f"UserAgentInstance visibility must be 'private' or 'public', got '{self.visibility}'"
             )
 
-        if self.visibility == 'public' and not self.share_token:
+        if self.visibility == "public" and not self.share_token:
             raise ValueError(
                 "UserAgentInstance with visibility='public' must have a share_token"
             )
 
-        if self.visibility == 'private' and self.share_token:
+        if self.visibility == "private" and self.share_token:
             raise ValueError(
                 "UserAgentInstance with visibility='private' should not have a share_token"
             )
@@ -132,7 +129,7 @@ class UserAgentInstance(BaseTimestampEntity):
     def customize_configuration(
         self,
         new_configuration: AgentConfiguration,
-        customization_notes: str | None = None
+        customization_notes: str | None = None,
     ) -> None:
         """Customize the agent configuration.
 
@@ -150,19 +147,19 @@ class UserAgentInstance(BaseTimestampEntity):
             raise ValueError("new_configuration must be an AgentConfiguration instance")
 
         # Update configuration
-        object.__setattr__(self, 'configuration', new_configuration)
+        object.__setattr__(self, "configuration", new_configuration)
 
         # Mark as customized
-        object.__setattr__(self, 'is_customized', True)
+        object.__setattr__(self, "is_customized", True)
 
         # Update metadata with customization info
         if customization_notes:
             metadata_copy = self.metadata.copy()
-            metadata_copy['last_customization'] = {
-                'timestamp': datetime.now(UTC).isoformat(),
-                'notes': customization_notes
+            metadata_copy["last_customization"] = {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "notes": customization_notes,
             }
-            object.__setattr__(self, 'metadata', metadata_copy)
+            object.__setattr__(self, "metadata", metadata_copy)
 
         logger.info(
             f"Customized agent instance {self.id} for user {self.user_id}. "
@@ -176,10 +173,10 @@ class UserAgentInstance(BaseTimestampEntity):
         Called each time the agent is invoked via call_agent.
         """
         # Increment usage count
-        object.__setattr__(self, 'usage_count', self.usage_count + 1)
+        object.__setattr__(self, "usage_count", self.usage_count + 1)
 
         # Update last used timestamp
-        object.__setattr__(self, 'last_used_at', datetime.now(UTC))
+        object.__setattr__(self, "last_used_at", datetime.now(UTC))
 
         logger.debug(
             f"Tracked usage for instance {self.id}: count={self.usage_count}, "
@@ -227,15 +224,15 @@ class UserAgentInstance(BaseTimestampEntity):
         if not token or len(token) != 64:
             raise ValueError("Share token must be exactly 64 characters")
 
-        object.__setattr__(self, 'share_token', token)
-        object.__setattr__(self, 'visibility', 'public')
+        object.__setattr__(self, "share_token", token)
+        object.__setattr__(self, "visibility", "public")
 
         logger.info(f"Generated share token for instance {self.id}")
 
     def revoke_share_token(self) -> None:
         """Revoke the share token and make the instance private."""
-        object.__setattr__(self, 'share_token', None)
-        object.__setattr__(self, 'visibility', 'private')
+        object.__setattr__(self, "share_token", None)
+        object.__setattr__(self, "visibility", "private")
 
         logger.info(f"Revoked share token for instance {self.id}")
 
@@ -245,7 +242,7 @@ class UserAgentInstance(BaseTimestampEntity):
         Returns:
             bool: True if instance is public and has a share token
         """
-        return self.visibility == 'public' and self.share_token is not None
+        return self.visibility == "public" and self.share_token is not None
 
     def is_imported(self) -> bool:
         """Check if this instance was imported from another user.
@@ -267,35 +264,39 @@ class UserAgentInstance(BaseTimestampEntity):
         """
         # Parse IDs
         instance_id = None
-        if 'id' in data and data['id']:
+        if "id" in data and data["id"]:
             instance_id = (
-                data['id'] if isinstance(data['id'], UserAgentInstanceId)
-                else UserAgentInstanceId.from_string(str(data['id']))
+                data["id"]
+                if isinstance(data["id"], UserAgentInstanceId)
+                else UserAgentInstanceId.from_string(str(data["id"]))
             )
 
         user_id = None
-        if 'user_id' in data and data['user_id']:
+        if "user_id" in data and data["user_id"]:
             user_id = (
-                data['user_id'] if isinstance(data['user_id'], UserId)
-                else UserId.from_string(str(data['user_id']))
+                data["user_id"]
+                if isinstance(data["user_id"], UserId)
+                else UserId.from_string(str(data["user_id"]))
             )
 
         template_id = None
-        if 'template_id' in data and data['template_id']:
+        if "template_id" in data and data["template_id"]:
             template_id = (
-                data['template_id'] if isinstance(data['template_id'], AgentTemplateId)
-                else AgentTemplateId.from_string(str(data['template_id']))
+                data["template_id"]
+                if isinstance(data["template_id"], AgentTemplateId)
+                else AgentTemplateId.from_string(str(data["template_id"]))
             )
 
         original_creator_id = None
-        if 'original_creator_id' in data and data['original_creator_id']:
+        if "original_creator_id" in data and data["original_creator_id"]:
             original_creator_id = (
-                data['original_creator_id'] if isinstance(data['original_creator_id'], UserId)
-                else UserId.from_string(str(data['original_creator_id']))
+                data["original_creator_id"]
+                if isinstance(data["original_creator_id"], UserId)
+                else UserId.from_string(str(data["original_creator_id"]))
             )
 
         # Handle configuration
-        config = data.get('configuration')
+        config = data.get("configuration")
         if isinstance(config, dict):
             configuration = AgentConfiguration.from_dict(config)
         elif isinstance(config, AgentConfiguration):
@@ -305,42 +306,42 @@ class UserAgentInstance(BaseTimestampEntity):
 
         # Parse timestamps
         last_used_at = None
-        if 'last_used_at' in data and data['last_used_at']:
-            if isinstance(data['last_used_at'], str):
-                last_used_at = datetime.fromisoformat(data['last_used_at'])
+        if "last_used_at" in data and data["last_used_at"]:
+            if isinstance(data["last_used_at"], str):
+                last_used_at = datetime.fromisoformat(data["last_used_at"])
             else:
-                last_used_at = data['last_used_at']
+                last_used_at = data["last_used_at"]
 
         created_at = None
-        if 'created_at' in data and data['created_at']:
-            if isinstance(data['created_at'], str):
-                created_at = datetime.fromisoformat(data['created_at'])
+        if "created_at" in data and data["created_at"]:
+            if isinstance(data["created_at"], str):
+                created_at = datetime.fromisoformat(data["created_at"])
             else:
-                created_at = data['created_at']
+                created_at = data["created_at"]
 
         updated_at = None
-        if 'updated_at' in data and data['updated_at']:
-            if isinstance(data['updated_at'], str):
-                updated_at = datetime.fromisoformat(data['updated_at'])
+        if "updated_at" in data and data["updated_at"]:
+            if isinstance(data["updated_at"], str):
+                updated_at = datetime.fromisoformat(data["updated_at"])
             else:
-                updated_at = data['updated_at']
+                updated_at = data["updated_at"]
 
         return cls(
             id=instance_id,
             user_id=user_id,
             template_id=template_id,
-            agent_name=data.get('agent_name', ''),
-            is_customized=data.get('is_customized', False),
-            is_enabled=data.get('is_enabled', True),
+            agent_name=data.get("agent_name", ""),
+            is_customized=data.get("is_customized", False),
+            is_enabled=data.get("is_enabled", True),
             configuration=configuration,
-            visibility=data.get('visibility', 'private'),
-            share_token=data.get('share_token'),
+            visibility=data.get("visibility", "private"),
+            share_token=data.get("share_token"),
             original_creator_id=original_creator_id,
-            usage_count=data.get('usage_count', 0),
+            usage_count=data.get("usage_count", 0),
             last_used_at=last_used_at,
-            metadata=data.get('metadata', {}),
+            metadata=data.get("metadata", {}),
             created_at=created_at,
-            updated_at=updated_at
+            updated_at=updated_at,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -359,12 +360,16 @@ class UserAgentInstance(BaseTimestampEntity):
             "configuration": self.configuration.to_dict() if self.configuration else {},
             "visibility": self.visibility,
             "share_token": self.share_token,
-            "original_creator_id": str(self.original_creator_id) if self.original_creator_id else None,
+            "original_creator_id": str(self.original_creator_id)
+            if self.original_creator_id
+            else None,
             "usage_count": self.usage_count,
-            "last_used_at": self.last_used_at.isoformat() if self.last_used_at else None,
+            "last_used_at": self.last_used_at.isoformat()
+            if self.last_used_at
+            else None,
             "metadata": self.metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
     def __repr__(self) -> str:

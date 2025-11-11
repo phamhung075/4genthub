@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EmailConfig:
     """SMTP Email configuration"""
+
     smtp_host: str
     smtp_port: int
     smtp_username: str
@@ -52,6 +53,7 @@ class EmailConfig:
 @dataclass
 class EmailMessage:
     """Email message data"""
+
     to_email: str
     to_name: str | None = None
     subject: str = ""
@@ -65,6 +67,7 @@ class EmailMessage:
 @dataclass
 class EmailResult:
     """Result of email sending operation"""
+
     success: bool
     message_id: str | None = None
     error_message: str | None = None
@@ -73,59 +76,66 @@ class EmailResult:
 
 class TokenManager:
     """Manages email verification and password reset tokens"""
-    
+
     @staticmethod
     def generate_token(length: int = 32) -> str:
         """Generate a secure random token"""
         return secrets.token_urlsafe(length)
-    
+
     @staticmethod
-    def generate_verification_token(email: str, token_type: str = "verification") -> dict[str, Any]:
+    def generate_verification_token(
+        email: str, token_type: str = "verification"
+    ) -> dict[str, Any]:
         """Generate email verification token with metadata"""
         token = TokenManager.generate_token()
         expires_at = datetime.now(UTC) + timedelta(hours=24)  # 24 hour expiry
-        
+
         # Create a hash for validation
-        token_hash = hashlib.sha256(f"{email}:{token}:{token_type}".encode()).hexdigest()
-        
+        token_hash = hashlib.sha256(
+            f"{email}:{token}:{token_type}".encode()
+        ).hexdigest()
+
         return {
             "token": token,
             "email": email,
             "type": token_type,
             "expires_at": expires_at,
             "hash": token_hash,
-            "created_at": datetime.now(UTC)
+            "created_at": datetime.now(UTC),
         }
-    
+
     @staticmethod
-    def validate_token(token: str, email: str, token_hash: str, token_type: str = "verification") -> bool:
+    def validate_token(
+        token: str, email: str, token_hash: str, token_type: str = "verification"
+    ) -> bool:
         """Validate email verification token"""
-        expected_hash = hashlib.sha256(f"{email}:{token}:{token_type}".encode()).hexdigest()
+        expected_hash = hashlib.sha256(
+            f"{email}:{token}:{token_type}".encode()
+        ).hexdigest()
         return expected_hash == token_hash
 
 
 class EmailTemplateEngine:
     """Handles email template rendering with Jinja2"""
-    
+
     def __init__(self, templates_dir: str | None = None):
         if templates_dir is None:
             templates_dir = os.path.join(
-                os.path.dirname(__file__), 
-                "..", "..", "..", "..", "templates", "email"
+                os.path.dirname(__file__), "..", "..", "..", "..", "templates", "email"
             )
-        
+
         self.templates_dir = Path(templates_dir)
         self.templates_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Initialize Jinja2 environment
         self.env = Environment(
             loader=FileSystemLoader(str(self.templates_dir)),
-            autoescape=select_autoescape(['html', 'xml'])
+            autoescape=select_autoescape(["html", "xml"]),
         )
-        
+
         # Create default templates if they don't exist
         self._ensure_default_templates()
-    
+
     def _ensure_default_templates(self):
         """Create default email templates if they don't exist"""
         templates = {
@@ -133,15 +143,15 @@ class EmailTemplateEngine:
             "password_reset.html": self._get_password_reset_template(),
             "password_changed.html": self._get_password_changed_template(),
             "welcome.html": self._get_welcome_template(),
-            "base.html": self._get_base_template()
+            "base.html": self._get_base_template(),
         }
-        
+
         for template_name, template_content in templates.items():
             template_path = self.templates_dir / template_name
             if not template_path.exists():
-                template_path.write_text(template_content, encoding='utf-8')
+                template_path.write_text(template_content, encoding="utf-8")
                 logger.info(f"Created default email template: {template_name}")
-    
+
     def render_template(self, template_name: str, **context) -> str:
         """Render email template with context data"""
         try:
@@ -150,7 +160,7 @@ class EmailTemplateEngine:
         except Exception as e:
             logger.error(f"Template rendering error: {e}")
             raise
-    
+
     def _get_base_template(self) -> str:
         """Base email template"""
         return """<!DOCTYPE html>
@@ -191,7 +201,7 @@ class EmailTemplateEngine:
     </div>
 </body>
 </html>"""
-    
+
     def _get_verification_template(self) -> str:
         """Email verification template"""
         return """{% extends "base.html" %}
@@ -218,7 +228,7 @@ class EmailTemplateEngine:
 
 <p>Best regards,<br>The {{ company_name or "Oracle Server" }} Team</p>
 {% endblock %}"""
-    
+
     def _get_password_reset_template(self) -> str:
         """Password reset template"""
         return """{% extends "base.html" %}
@@ -247,7 +257,7 @@ class EmailTemplateEngine:
 
 <p>Best regards,<br>The {{ company_name or "Oracle Server" }} Team</p>
 {% endblock %}"""
-    
+
     def _get_password_changed_template(self) -> str:
         """Password changed confirmation template"""
         return """{% extends "base.html" %}
@@ -279,7 +289,7 @@ class EmailTemplateEngine:
 
 <p>Best regards,<br>The {{ company_name or "Oracle Server" }} Team</p>
 {% endblock %}"""
-    
+
     def _get_welcome_template(self) -> str:
         """Welcome email template"""
         return """{% extends "base.html" %}
@@ -311,21 +321,23 @@ class EmailTemplateEngine:
 
 class SMTPEmailService:
     """SMTP-based email service for authentication workflows"""
-    
+
     def __init__(self, config: EmailConfig | None = None):
         """Initialize email service with configuration"""
         if config is None:
             config = self._load_config_from_env()
-        
+
         self.config = config
         self.template_engine = EmailTemplateEngine()
         self.token_manager = TokenManager()
-        
+
         # Validate configuration
         self._validate_config()
-        
-        logger.info(f"SMTP Email Service initialized for {self.config.smtp_host}:{self.config.smtp_port}")
-    
+
+        logger.info(
+            f"SMTP Email Service initialized for {self.config.smtp_host}:{self.config.smtp_port}"
+        )
+
     def _load_config_from_env(self) -> EmailConfig:
         """Load SMTP configuration from environment variables"""
         return EmailConfig(
@@ -336,14 +348,16 @@ class SMTPEmailService:
             smtp_from=os.getenv("SMTP_FROM", "noreply@example.com"),
             smtp_from_name=os.getenv("SMTP_FROM_NAME", "Oracle Server"),
             smtp_tls=os.getenv("SMTP_TLS", "true").lower() in ("true", "1", "yes"),
-            smtp_secure=os.getenv("SMTP_SECURE", "false").lower() in ("true", "1", "yes"),
-            smtp_require_tls=os.getenv("SMTP_REQUIRE_TLS", "true").lower() in ("true", "1", "yes"),
+            smtp_secure=os.getenv("SMTP_SECURE", "false").lower()
+            in ("true", "1", "yes"),
+            smtp_require_tls=os.getenv("SMTP_REQUIRE_TLS", "true").lower()
+            in ("true", "1", "yes"),
             smtp_auth=os.getenv("SMTP_AUTH", "true").lower() in ("true", "1", "yes"),
             connection_timeout=int(os.getenv("SMTP_CONNECTION_TIMEOUT", "10000")),
             greeting_timeout=int(os.getenv("SMTP_GREETING_TIMEOUT", "5000")),
-            socket_timeout=int(os.getenv("SMTP_SOCKET_TIMEOUT", "10000"))
+            socket_timeout=int(os.getenv("SMTP_SOCKET_TIMEOUT", "10000")),
         )
-    
+
     def _validate_config(self):
         """Validate SMTP configuration"""
         if not self.config.smtp_host:
@@ -354,7 +368,7 @@ class SMTPEmailService:
             raise ValueError("SMTP_PASSWORD is required")
         if not self.config.smtp_from:
             raise ValueError("SMTP_FROM is required")
-    
+
     async def send_email(self, message: EmailMessage) -> EmailResult:
         """Send email message"""
         try:
@@ -362,109 +376,113 @@ class SMTPEmailService:
             if message.template and message.template_data:
                 try:
                     message.html_body = self.template_engine.render_template(
-                        message.template,
-                        **message.template_data
+                        message.template, **message.template_data
                     )
                 except Exception as e:
                     logger.error(f"Template rendering failed: {e}")
                     return EmailResult(
                         success=False,
                         error_message=f"Template rendering error: {str(e)}",
-                        recipient=message.to_email
+                        recipient=message.to_email,
                     )
-            
+
             # Create MIME message
             msg = MIMEMultipart("alternative")
             msg["From"] = f"{self.config.smtp_from_name} <{self.config.smtp_from}>"
             msg["To"] = f"{message.to_name or ''} <{message.to_email}>".strip()
             msg["Subject"] = message.subject
-            
+
             # Add text and HTML parts
             if message.text_body:
                 text_part = MIMEText(message.text_body, "plain", "utf-8")
                 msg.attach(text_part)
-            
+
             if message.html_body:
                 html_part = MIMEText(message.html_body, "html", "utf-8")
                 msg.attach(html_part)
-            
+
             # Add attachments if any
             if message.attachments:
                 for attachment in message.attachments:
                     self._add_attachment(msg, attachment)
-            
+
             # Send email
             result = await self._send_smtp_message(msg, message.to_email)
-            
+
             if result.success:
                 logger.info(f"Email sent successfully to {message.to_email}")
             else:
-                logger.error(f"Failed to send email to {message.to_email}: {result.error_message}")
-            
+                logger.error(
+                    f"Failed to send email to {message.to_email}: {result.error_message}"
+                )
+
             return result
-            
+
         except Exception as e:
             logger.error(f"Email sending error: {e}")
             return EmailResult(
-                success=False,
-                error_message=str(e),
-                recipient=message.to_email
+                success=False, error_message=str(e), recipient=message.to_email
             )
-    
-    async def _send_smtp_message(self, msg: MIMEMultipart, recipient: str) -> EmailResult:
+
+    async def _send_smtp_message(
+        self, msg: MIMEMultipart, recipient: str
+    ) -> EmailResult:
         """Send MIME message via SMTP"""
         try:
             # Create SSL context
             # Check if this is a self-hosted instance (IP address in host)
             import re
-            is_self_hosted = bool(re.search(r'\d+\.\d+\.\d+\.\d+', self.config.smtp_host))
-            
+
+            is_self_hosted = bool(
+                re.search(r"\d+\.\d+\.\d+\.\d+", self.config.smtp_host)
+            )
+
             if is_self_hosted:
                 # For self-hosted instances, disable certificate verification
                 context = ssl.create_default_context()
                 context.check_hostname = False
                 context.verify_mode = ssl.CERT_NONE
-                logger.info(f"Using SSL context with verification disabled for self-hosted SMTP: {self.config.smtp_host}")
+                logger.info(
+                    f"Using SSL context with verification disabled for self-hosted SMTP: {self.config.smtp_host}"
+                )
             else:
                 # For cloud SMTP providers, use default SSL verification
                 context = ssl.create_default_context()
-            
+
             # Connect to SMTP server
             if self.config.smtp_secure:
                 server = smtplib.SMTP_SSL(
                     self.config.smtp_host,
                     self.config.smtp_port,
                     context=context,
-                    timeout=self.config.connection_timeout / 1000
+                    timeout=self.config.connection_timeout / 1000,
                 )
             else:
                 server = smtplib.SMTP(
                     self.config.smtp_host,
                     self.config.smtp_port,
-                    timeout=self.config.connection_timeout / 1000
+                    timeout=self.config.connection_timeout / 1000,
                 )
-                
+
                 if self.config.smtp_tls or self.config.smtp_require_tls:
                     server.starttls(context=context)
-            
+
             # Authenticate
             if self.config.smtp_auth:
                 server.login(self.config.smtp_username, self.config.smtp_password)
-            
+
             # Send message
             server.send_message(msg, to_addrs=[recipient])
             server.quit()
-            
+
             return EmailResult(
-                success=True,
-                recipient=recipient,
-                message_id=msg.get("Message-ID")
+                success=True, recipient=recipient, message_id=msg.get("Message-ID")
             )
-            
+
         except Exception as e:
             error_msg = str(e)
             logger.error(f"SMTP sending error: {error_msg}")
-            
+
             # Provide user-friendly error messages
             if "authentication failed" in error_msg.lower():
                 error_msg = "SMTP authentication failed. Please check credentials."
@@ -472,47 +490,49 @@ class SMTPEmailService:
                 error_msg = "Cannot connect to SMTP server. Please check host and port."
             elif "timeout" in error_msg.lower():
                 error_msg = "SMTP connection timeout. Please try again."
-            
+
             return EmailResult(
-                success=False,
-                error_message=error_msg,
-                recipient=recipient
+                success=False, error_message=error_msg, recipient=recipient
             )
-    
+
     def _add_attachment(self, msg: MIMEMultipart, attachment: dict[str, Any]):
         """Add attachment to MIME message"""
         try:
             with open(attachment["path"], "rb") as f:
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(f.read())
-            
+
             encoders.encode_base64(part)
             part.add_header(
                 "Content-Disposition",
-                f'attachment; filename= {attachment.get("filename", "attachment")}'
+                f"attachment; filename= {attachment.get('filename', 'attachment')}",
             )
             msg.attach(part)
-            
+
         except Exception as e:
             logger.error(f"Attachment error: {e}")
-    
+
     # Authentication workflow methods
-    
+
     async def send_verification_email(
         self,
         email: str,
         user_name: str | None = None,
-        verification_url: str | None = None
+        verification_url: str | None = None,
     ) -> EmailResult:
         """Send email verification email"""
         # Generate verification token
-        token_data = self.token_manager.generate_verification_token(email, "verification")
-        
+        token_data = self.token_manager.generate_verification_token(
+            email, "verification"
+        )
+
         # Build verification URL if not provided
         if not verification_url:
             base_url = os.getenv("FRONTEND_URL", "http://localhost:3800")
-            verification_url = f"{base_url}/auth/verify?token={token_data['token']}&email={email}"
-        
+            verification_url = (
+                f"{base_url}/auth/verify?token={token_data['token']}&email={email}"
+            )
+
         message = EmailMessage(
             to_email=email,
             to_name=user_name,
@@ -522,27 +542,26 @@ class SMTPEmailService:
                 "user_name": user_name,
                 "verification_url": verification_url,
                 "company_name": os.getenv("SMTP_FROM_NAME", "Oracle Server"),
-                "current_year": datetime.now().year
-            }
+                "current_year": datetime.now().year,
+            },
         )
-        
+
         return await self.send_email(message)
-    
+
     async def send_password_reset_email(
-        self,
-        email: str,
-        user_name: str | None = None,
-        reset_url: str | None = None
+        self, email: str, user_name: str | None = None, reset_url: str | None = None
     ) -> EmailResult:
         """Send password reset email"""
         # Generate password reset token
-        token_data = self.token_manager.generate_verification_token(email, "password_reset")
-        
+        token_data = self.token_manager.generate_verification_token(
+            email, "password_reset"
+        )
+
         # Build reset URL if not provided
         if not reset_url:
             base_url = os.getenv("FRONTEND_URL", "http://localhost:3800")
             reset_url = f"{base_url}/auth/reset-password?token={token_data['token']}&email={email}"
-        
+
         message = EmailMessage(
             to_email=email,
             to_name=user_name,
@@ -552,18 +571,18 @@ class SMTPEmailService:
                 "user_name": user_name,
                 "reset_url": reset_url,
                 "company_name": os.getenv("SMTP_FROM_NAME", "Oracle Server"),
-                "current_year": datetime.now().year
-            }
+                "current_year": datetime.now().year,
+            },
         )
-        
+
         return await self.send_email(message)
-    
+
     async def send_password_changed_email(
         self,
         email: str,
         user_name: str | None = None,
         ip_address: str | None = None,
-        user_agent: str | None = None
+        user_agent: str | None = None,
     ) -> EmailResult:
         """Send password changed confirmation email"""
         message = EmailMessage(
@@ -577,22 +596,19 @@ class SMTPEmailService:
                 "ip_address": ip_address,
                 "user_agent": user_agent,
                 "company_name": os.getenv("SMTP_FROM_NAME", "Oracle Server"),
-                "current_year": datetime.now().year
-            }
+                "current_year": datetime.now().year,
+            },
         )
-        
+
         return await self.send_email(message)
-    
+
     async def send_welcome_email(
-        self,
-        email: str,
-        user_name: str | None = None,
-        dashboard_url: str | None = None
+        self, email: str, user_name: str | None = None, dashboard_url: str | None = None
     ) -> EmailResult:
         """Send welcome email after successful verification"""
         if not dashboard_url:
             dashboard_url = os.getenv("FRONTEND_URL", "http://localhost:3800")
-        
+
         message = EmailMessage(
             to_email=email,
             to_name=user_name,
@@ -602,66 +618,65 @@ class SMTPEmailService:
                 "user_name": user_name,
                 "dashboard_url": dashboard_url,
                 "company_name": os.getenv("SMTP_FROM_NAME", "Oracle Server"),
-                "current_year": datetime.now().year
-            }
+                "current_year": datetime.now().year,
+            },
         )
-        
+
         return await self.send_email(message)
-    
+
     async def test_connection(self) -> EmailResult:
         """Test SMTP connection"""
         try:
             # Create SSL context
             # Check if this is a self-hosted instance (IP address in host)
             import re
-            is_self_hosted = bool(re.search(r'\d+\.\d+\.\d+\.\d+', self.config.smtp_host))
-            
+
+            is_self_hosted = bool(
+                re.search(r"\d+\.\d+\.\d+\.\d+", self.config.smtp_host)
+            )
+
             if is_self_hosted:
                 # For self-hosted instances, disable certificate verification
                 context = ssl.create_default_context()
                 context.check_hostname = False
                 context.verify_mode = ssl.CERT_NONE
-                logger.info(f"Using SSL context with verification disabled for self-hosted SMTP test: {self.config.smtp_host}")
+                logger.info(
+                    f"Using SSL context with verification disabled for self-hosted SMTP test: {self.config.smtp_host}"
+                )
             else:
                 # For cloud SMTP providers, use default SSL verification
                 context = ssl.create_default_context()
-            
+
             # Test connection
             if self.config.smtp_secure:
                 server = smtplib.SMTP_SSL(
                     self.config.smtp_host,
                     self.config.smtp_port,
                     context=context,
-                    timeout=self.config.connection_timeout / 1000
+                    timeout=self.config.connection_timeout / 1000,
                 )
             else:
                 server = smtplib.SMTP(
                     self.config.smtp_host,
                     self.config.smtp_port,
-                    timeout=self.config.connection_timeout / 1000
+                    timeout=self.config.connection_timeout / 1000,
                 )
-                
+
                 if self.config.smtp_tls or self.config.smtp_require_tls:
                     server.starttls(context=context)
-            
+
             # Test authentication
             if self.config.smtp_auth:
                 server.login(self.config.smtp_username, self.config.smtp_password)
-            
+
             server.quit()
-            
+
             return EmailResult(
-                success=True,
-                message_id="connection_test",
-                recipient="test"
+                success=True, message_id="connection_test", recipient="test"
             )
-            
+
         except Exception as e:
-            return EmailResult(
-                success=False,
-                error_message=str(e),
-                recipient="test"
-            )
+            return EmailResult(success=False, error_message=str(e), recipient="test")
 
 
 # Global email service instance
@@ -677,19 +692,25 @@ def get_email_service() -> SMTPEmailService:
 
 
 # Convenience functions for common operations
-async def send_verification_email(email: str, user_name: str | None = None) -> EmailResult:
+async def send_verification_email(
+    email: str, user_name: str | None = None
+) -> EmailResult:
     """Send verification email using global service"""
     service = get_email_service()
     return await service.send_verification_email(email, user_name)
 
 
-async def send_password_reset_email(email: str, user_name: str | None = None) -> EmailResult:
+async def send_password_reset_email(
+    email: str, user_name: str | None = None
+) -> EmailResult:
     """Send password reset email using global service"""
     service = get_email_service()
     return await service.send_password_reset_email(email, user_name)
 
 
-async def send_password_changed_email(email: str, user_name: str | None = None) -> EmailResult:
+async def send_password_changed_email(
+    email: str, user_name: str | None = None
+) -> EmailResult:
     """Send password changed email using global service"""
     service = get_email_service()
     return await service.send_password_changed_email(email, user_name)

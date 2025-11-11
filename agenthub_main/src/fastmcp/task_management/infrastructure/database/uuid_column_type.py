@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 # Namespace UUID for deterministic user ID conversion
 # This ensures the same string input always generates the same UUID
-USER_ID_NAMESPACE = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
+USER_ID_NAMESPACE = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 
 class UnifiedUUID(TypeDecorator):
@@ -44,17 +44,17 @@ class UnifiedUUID(TypeDecorator):
     def __str__(self):
         """Return string representation matching PostgreSQL type."""
         return "UUID"
-    
+
     def load_dialect_impl(self, dialect):
         """Load the appropriate column type based on the database dialect."""
-        if dialect.name == 'postgresql':
+        if dialect.name == "postgresql":
             # Use native UUID type with as_uuid=True to properly match database schema
             # The process_result_value method will handle string conversion
             return dialect.type_descriptor(UUID(as_uuid=True))
         else:
             # SQLite and other databases - use String with VARCHAR(36)
             return dialect.type_descriptor(String(36))
-    
+
     def process_bind_param(self, value: Any, dialect):
         """
         Process value before storing in database.
@@ -68,12 +68,12 @@ class UnifiedUUID(TypeDecorator):
             return None
 
         # Handle value objects with a 'value' attribute (e.g., GitBranchId, TaskId)
-        if hasattr(value, 'value') and isinstance(value.value, str):
+        if hasattr(value, "value") and isinstance(value.value, str):
             value = value.value
 
         # Handle UUID objects
         if isinstance(value, uuid.UUID):
-            if dialect.name == 'postgresql':
+            if dialect.name == "postgresql":
                 return value  # PostgreSQL can accept UUID objects directly
             else:
                 return str(value)  # SQLite needs string representation
@@ -87,7 +87,7 @@ class UnifiedUUID(TypeDecorator):
             try:
                 # Try to parse as existing UUID first
                 uuid_obj = uuid.UUID(value)
-                if dialect.name == 'postgresql':
+                if dialect.name == "postgresql":
                     return uuid_obj  # Return UUID object for PostgreSQL
                 else:
                     return value  # Return string for SQLite
@@ -96,35 +96,37 @@ class UnifiedUUID(TypeDecorator):
                 # This handles cases like 'test-user-123' by converting to valid UUID
                 try:
                     converted_uuid = uuid.uuid5(USER_ID_NAMESPACE, value)
-                    if dialect.name == 'postgresql':
+                    if dialect.name == "postgresql":
                         return converted_uuid  # Return UUID object for PostgreSQL
                     else:
                         return str(converted_uuid)  # Return string for SQLite
                 except Exception as e:
                     raise ValueError(f"Cannot convert '{value}' to UUID: {str(e)}")
 
-        raise TypeError(f"Expected UUID, string, or value object with 'value' attribute, got {type(value)}")
-    
+        raise TypeError(
+            f"Expected UUID, string, or value object with 'value' attribute, got {type(value)}"
+        )
+
     def process_result_value(self, value: Any, dialect):
         """Process value when loading from database."""
         if value is None:
             return None
-        
+
         # Always return string representation for consistency
         if isinstance(value, uuid.UUID):
             return str(value)
-        
+
         return str(value)
 
 
 def create_uuid_column(primary_key: bool = False, nullable: bool = True):
     """
     Create a UUID column with proper constraints.
-    
+
     Args:
         primary_key: Whether this is a primary key column
         nullable: Whether NULL values are allowed
-        
+
     Returns:
         Configured UnifiedUUID column
     """
@@ -139,26 +141,26 @@ def generate_uuid_string() -> str:
 def normalize_user_id_to_uuid(user_id: str) -> str:
     """
     Convert any user ID string to a valid UUID string.
-    
+
     This function provides the same conversion logic used by UnifiedUUID
     for consistent user ID handling throughout the system.
-    
+
     Args:
         user_id: User ID string (can be UUID format or any string like 'test-user-123')
-        
+
     Returns:
         Valid UUID string (deterministic for the same input)
-        
+
     Raises:
         ValueError: If user_id is empty or None
     """
     if not user_id:
         raise ValueError("User ID cannot be empty")
-    
+
     user_id = str(user_id).strip()
     if not user_id:
         raise ValueError("User ID cannot be empty")
-    
+
     try:
         # Try to parse as existing UUID first
         uuid.UUID(user_id)

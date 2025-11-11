@@ -160,9 +160,7 @@ class ResponseFactory:
             metadata={"rule": rule_name, "hint": hint},
         )
 
-    def create_missing_field_error(
-        self, field: str, action: str
-    ) -> dict[str, Any]:
+    def create_missing_field_error(self, field: str, action: str) -> dict[str, Any]:
         """Create standardized missing field error response.
 
         Args:

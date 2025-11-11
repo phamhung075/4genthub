@@ -22,9 +22,7 @@ class ProjectResponseFactory:
         self._response_formatter = response_formatter
         logger.info("ProjectResponseFactory initialized")
 
-    def create_missing_field_error(
-        self, field: str, action: str
-    ) -> dict[str, Any]:
+    def create_missing_field_error(self, field: str, action: str) -> dict[str, Any]:
         """Create standardized missing field error response.
 
         Args:

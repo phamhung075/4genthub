@@ -50,7 +50,7 @@ class AgentEventHandlers:
         self,
         event_store: EventStore,
         agent_repository: Any | None = None,
-        coordination_service: Any | None = None
+        coordination_service: Any | None = None,
     ):
         self.event_store = event_store
         self.agent_repository = agent_repository
@@ -65,7 +65,7 @@ class AgentEventHandlers:
                 "handoffs_completed": 0,
                 "conflicts": 0,
                 "escalations": 0,
-                "communications": 0
+                "communications": 0,
             }
         )
 
@@ -97,10 +97,12 @@ class AgentEventHandlers:
             self.agent_workloads[str(event.agent_id)] = {
                 "active_tasks": [],
                 "total_assignments": 0,
-                "last_updated": datetime.now(UTC)
+                "last_updated": datetime.now(UTC),
             }
 
-        self.agent_workloads[str(event.agent_id)]["active_tasks"].append(str(event.task_id))
+        self.agent_workloads[str(event.agent_id)]["active_tasks"].append(
+            str(event.task_id)
+        )
         self.agent_workloads[str(event.agent_id)]["total_assignments"] += 1
         self.agent_workloads[str(event.agent_id)]["last_updated"] = event.occurred_at
 
@@ -109,7 +111,7 @@ class AgentEventHandlers:
             await self.coordination_service.notify_agent_assigned(
                 agent_id=event.agent_id,
                 task_id=event.task_id,
-                role=getattr(event, 'role', 'worker')
+                role=getattr(event, "role", "worker"),
             )
 
     async def handle_agent_unassigned(self, event: AgentUnassigned) -> None:
@@ -136,8 +138,7 @@ class AgentEventHandlers:
         # Notify coordination service
         if self.coordination_service:
             await self.coordination_service.notify_agent_freed(
-                agent_id=event.agent_id,
-                task_id=event.task_id
+                agent_id=event.agent_id, task_id=event.task_id
             )
 
     async def handle_agent_workload_changed(self, event: AgentWorkloadChanged) -> None:
@@ -155,8 +156,8 @@ class AgentEventHandlers:
         self.agent_workloads[str(event.agent_id)] = {
             "workload_level": event.new_workload_level,
             "previous_level": event.previous_workload_level,
-            "active_tasks": getattr(event, 'active_tasks', []),
-            "last_updated": event.occurred_at
+            "active_tasks": getattr(event, "active_tasks", []),
+            "last_updated": event.occurred_at,
         }
 
         # Check if rebalancing is needed
@@ -167,7 +168,7 @@ class AgentEventHandlers:
             if self.coordination_service:
                 await self.coordination_service.trigger_workload_rebalancing(
                     overloaded_agent=event.agent_id,
-                    workload_level=event.new_workload_level
+                    workload_level=event.new_workload_level,
                 )
 
     async def handle_work_handoff_requested(self, event: WorkHandoffRequested) -> None:
@@ -191,7 +192,7 @@ class AgentEventHandlers:
                 to_agent=event.to_agent_id,
                 task_id=event.task_id,
                 reason=event.reason,
-                context=getattr(event, 'handoff_context', {})
+                context=getattr(event, "handoff_context", {}),
             )
 
     async def handle_work_handoff_accepted(self, event: WorkHandoffAccepted) -> None:
@@ -209,7 +210,7 @@ class AgentEventHandlers:
             await self.coordination_service.complete_handoff(
                 from_agent=event.from_agent_id,
                 to_agent=event.to_agent_id,
-                task_id=event.task_id
+                task_id=event.task_id,
             )
 
     async def handle_work_handoff_rejected(self, event: WorkHandoffRejected) -> None:
@@ -228,7 +229,7 @@ class AgentEventHandlers:
                 from_agent=event.from_agent_id,
                 rejected_by=event.to_agent_id,
                 task_id=event.task_id,
-                reason=event.rejection_reason
+                reason=event.rejection_reason,
             )
 
     async def handle_work_handoff_completed(self, event: WorkHandoffCompleted) -> None:
@@ -265,7 +266,7 @@ class AgentEventHandlers:
             await self.coordination_service.initiate_conflict_resolution(
                 agents=event.involved_agents,
                 conflict_type=event.conflict_type,
-                description=event.conflict_description
+                description=event.conflict_description,
             )
 
     async def handle_conflict_resolved(self, event: ConflictResolved) -> None:
@@ -285,10 +286,12 @@ class AgentEventHandlers:
                 agents=event.involved_agents,
                 conflict_id=event.conflict_id,
                 strategy=event.resolution_strategy,
-                outcome=getattr(event, 'outcome', 'resolved')
+                outcome=getattr(event, "outcome", "resolved"),
             )
 
-    async def handle_agent_collaboration_started(self, event: AgentCollaborationStarted) -> None:
+    async def handle_agent_collaboration_started(
+        self, event: AgentCollaborationStarted
+    ) -> None:
         """
         Handle agent collaboration started event.
 
@@ -309,10 +312,12 @@ class AgentEventHandlers:
             await self.coordination_service.setup_collaboration(
                 agents=event.participating_agents,
                 task_id=event.task_id,
-                collaboration_type=event.collaboration_type
+                collaboration_type=event.collaboration_type,
             )
 
-    async def handle_agent_collaboration_ended(self, event: AgentCollaborationEnded) -> None:
+    async def handle_agent_collaboration_ended(
+        self, event: AgentCollaborationEnded
+    ) -> None:
         """
         Handle agent collaboration ended event.
 
@@ -332,7 +337,7 @@ class AgentEventHandlers:
             await self.coordination_service.finalize_collaboration(
                 agents=event.participating_agents,
                 task_id=event.task_id,
-                outcome=event.outcome
+                outcome=event.outcome,
             )
 
     async def handle_agent_status_broadcast(self, event: AgentStatusBroadcast) -> None:
@@ -341,16 +346,18 @@ class AgentEventHandlers:
 
         Updates agent availability and status tracking.
         """
-        logger.debug(
-            f"Agent status broadcast: {event.agent_id} - {event.status}"
-        )
+        logger.debug(f"Agent status broadcast: {event.agent_id} - {event.status}")
 
         # Update agent status
         if str(event.agent_id) in self.agent_workloads:
             self.agent_workloads[str(event.agent_id)]["status"] = event.status
-            self.agent_workloads[str(event.agent_id)]["last_broadcast"] = event.occurred_at
+            self.agent_workloads[str(event.agent_id)]["last_broadcast"] = (
+                event.occurred_at
+            )
 
-    async def handle_agent_workload_rebalanced(self, event: AgentWorkloadRebalanced) -> None:
+    async def handle_agent_workload_rebalanced(
+        self, event: AgentWorkloadRebalanced
+    ) -> None:
         """
         Handle agent workload rebalanced event.
 
@@ -365,10 +372,12 @@ class AgentEventHandlers:
             await self.coordination_service.record_rebalancing(
                 agents=event.affected_agents,
                 strategy=event.rebalancing_strategy,
-                tasks_moved=getattr(event, 'tasks_moved', [])
+                tasks_moved=getattr(event, "tasks_moved", []),
             )
 
-    async def handle_agent_escalation_raised(self, event: AgentEscalationRaised) -> None:
+    async def handle_agent_escalation_raised(
+        self, event: AgentEscalationRaised
+    ) -> None:
         """
         Handle agent escalation raised event.
 
@@ -386,12 +395,14 @@ class AgentEventHandlers:
         if self.coordination_service:
             await self.coordination_service.handle_escalation(
                 raised_by=event.raised_by_agent_id,
-                task_id=getattr(event, 'task_id', None),
+                task_id=getattr(event, "task_id", None),
                 reason=event.escalation_reason,
-                severity=event.severity
+                severity=event.severity,
             )
 
-    async def handle_agent_escalation_resolved(self, event: AgentEscalationResolved) -> None:
+    async def handle_agent_escalation_resolved(
+        self, event: AgentEscalationResolved
+    ) -> None:
         """
         Handle agent escalation resolved event.
 
@@ -406,10 +417,12 @@ class AgentEventHandlers:
             await self.coordination_service.record_escalation_resolution(
                 escalation_id=event.escalation_id,
                 resolution=event.resolution_summary,
-                resolved_by=event.resolved_by_agent_id
+                resolved_by=event.resolved_by_agent_id,
             )
 
-    async def handle_agent_communication_sent(self, event: AgentCommunicationSent) -> None:
+    async def handle_agent_communication_sent(
+        self, event: AgentCommunicationSent
+    ) -> None:
         """
         Handle agent communication sent event.
 
@@ -423,7 +436,9 @@ class AgentEventHandlers:
         # Update statistics
         self.agent_stats[str(event.sender_agent_id)]["communications"] += 1
 
-    async def handle_agent_performance_evaluated(self, event: AgentPerformanceEvaluated) -> None:
+    async def handle_agent_performance_evaluated(
+        self, event: AgentPerformanceEvaluated
+    ) -> None:
         """
         Handle agent performance evaluated event.
 
@@ -440,17 +455,19 @@ class AgentEventHandlers:
             "score": event.performance_score,
             "metrics": event.performance_metrics,
             "period": event.evaluation_period,
-            "timestamp": event.occurred_at.isoformat()
+            "timestamp": event.occurred_at.isoformat(),
         }
         self.performance_history[str(event.agent_id)].append(performance_record)
 
         # Keep only last 30 evaluations per agent
         if len(self.performance_history[str(event.agent_id)]) > 30:
-            self.performance_history[str(event.agent_id)] = (
-                self.performance_history[str(event.agent_id)][-30:]
-            )
+            self.performance_history[str(event.agent_id)] = self.performance_history[
+                str(event.agent_id)
+            ][-30:]
 
-    async def get_agent_statistics(self, agent_id: UUID | None = None) -> dict[str, Any]:
+    async def get_agent_statistics(
+        self, agent_id: UUID | None = None
+    ) -> dict[str, Any]:
         """
         Get agent statistics for a specific agent or all agents.
 
@@ -470,7 +487,7 @@ class AgentEventHandlers:
                 "agent_id": agent_key,
                 "statistics": dict(stats),
                 "workload": workload,
-                "performance_history": performance[-5:] if performance else []
+                "performance_history": performance[-5:] if performance else [],
             }
 
         # Aggregate across all agents
@@ -480,13 +497,19 @@ class AgentEventHandlers:
             "statistics_by_agent": {k: dict(v) for k, v in self.agent_stats.items()},
             "workload_summary": {
                 "total_active_tasks": sum(
-                    len(w.get("active_tasks", [])) for w in self.agent_workloads.values()
+                    len(w.get("active_tasks", []))
+                    for w in self.agent_workloads.values()
                 ),
                 "average_workload": (
-                    sum(w.get("workload_level", 0) for w in self.agent_workloads.values()) /
-                    max(len(self.agent_workloads), 1)
-                ) if self.agent_workloads else 0.0
-            }
+                    sum(
+                        w.get("workload_level", 0)
+                        for w in self.agent_workloads.values()
+                    )
+                    / max(len(self.agent_workloads), 1)
+                )
+                if self.agent_workloads
+                else 0.0,
+            },
         }
 
     async def process_event(self, event: BaseDomainEvent) -> None:

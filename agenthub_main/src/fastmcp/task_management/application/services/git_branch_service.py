@@ -1,6 +1,7 @@
 """
 Service for managing Git Branches
 """
+
 from __future__ import annotations
 
 import logging
@@ -12,13 +13,17 @@ from .unified_context_service import UnifiedContextService
 
 logger = logging.getLogger(__name__)
 
+
 class GitBranchService:
-    def __init__(self, project_repo: ProjectRepository | None = None,
-                 git_branch_repo: GitBranchRepository | None = None,
-                 hierarchical_context_service: UnifiedContextService | None = None,
-                 user_id: str | None = None):
+    def __init__(
+        self,
+        project_repo: ProjectRepository | None = None,
+        git_branch_repo: GitBranchRepository | None = None,
+        hierarchical_context_service: UnifiedContextService | None = None,
+        user_id: str | None = None,
+    ):
         self._user_id = user_id  # Store user context
-        
+
         # Repositories should be injected, not created here
         # This maintains DDD boundaries
         if project_repo:
@@ -26,7 +31,7 @@ class GitBranchService:
         else:
             # Project repository must be provided
             raise ValueError("Project repository is required")
-        
+
         # Git branch repository must be injected
         if git_branch_repo:
             self._git_branch_repo = git_branch_repo
@@ -37,34 +42,51 @@ class GitBranchService:
             self._hierarchical_context_service = hierarchical_context_service
         else:
             from .facade_service import FacadeService
-            self._hierarchical_context_service = FacadeService.get_unified_context_facade(user_id=user_id)
+
+            self._hierarchical_context_service = (
+                FacadeService.get_unified_context_facade(user_id=user_id)
+            )
 
     def with_user(self, user_id: str) -> GitBranchService:
         """Create a new service instance scoped to a specific user."""
-        return GitBranchService(self._project_repo, self._git_branch_repo, self._hierarchical_context_service, user_id)
+        return GitBranchService(
+            self._project_repo,
+            self._git_branch_repo,
+            self._hierarchical_context_service,
+            user_id,
+        )
 
     def _get_user_scoped_repository(self, repository):
         """Get user-scoped repository if user_id is available."""
-        if self._user_id and hasattr(repository, 'with_user'):
+        if self._user_id and hasattr(repository, "with_user"):
             return repository.with_user(self._user_id)
         return repository
 
-    async def create_git_branch(self, project_id: str, branch_name: str, description: str = "") -> dict[str, Any]:
+    async def create_git_branch(
+        self, project_id: str, branch_name: str, description: str = ""
+    ) -> dict[str, Any]:
         try:
             project_repo = self._get_user_scoped_repository(self._project_repo)
             project = await project_repo.find_by_id(project_id)
             if not project:
                 return {"success": False, "error": f"Project {project_id} not found"}
-                
+
             # Check if branch already exists using the repository
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
-            existing_branch = await git_branch_repo.find_by_name(project_id, branch_name)
+            existing_branch = await git_branch_repo.find_by_name(
+                project_id, branch_name
+            )
             if existing_branch:
-                return {"success": False, "error": f"Git branch '{branch_name}' already exists in project {project_id}"}
+                return {
+                    "success": False,
+                    "error": f"Git branch '{branch_name}' already exists in project {project_id}",
+                }
 
             # Create branch using the repository which properly persists it
-            git_branch = await git_branch_repo.create_branch(project_id, branch_name, description)
-            
+            git_branch = await git_branch_repo.create_branch(
+                project_id, branch_name, description
+            )
+
             # Create corresponding branch context in hierarchical context system
             try:
                 # Prepare branch context data compatible with UnifiedContextService
@@ -77,37 +99,45 @@ class GitBranchService:
                         "testing_strategy": {},
                         "deployment_config": {},
                         "collaboration_settings": {},
-                        "agent_assignments": {}
+                        "agent_assignments": {},
                     },
                     "metadata": {
                         "branch_description": description,
                         "auto_created": True,
-                        "created_by": "git_branch_service"
-                    }
+                        "created_by": "git_branch_service",
+                    },
                 }
-                
+
                 # Use synchronous create_context method
-                branch_context_result = self._hierarchical_context_service.create_context(
-                    level="branch",
-                    context_id=git_branch.id,
-                    data=branch_context_data
+                branch_context_result = (
+                    self._hierarchical_context_service.create_context(
+                        level="branch",
+                        context_id=git_branch.id,
+                        data=branch_context_data,
+                    )
                 )
-                
+
                 if branch_context_result.get("success", False):
-                    logger.info(f"Successfully created branch context for git branch {git_branch.id} in project {project_id}")
+                    logger.info(
+                        f"Successfully created branch context for git branch {git_branch.id} in project {project_id}"
+                    )
                 else:
-                    logger.warning(f"Branch context creation returned non-success: {branch_context_result.get('error', 'Unknown error')}")
-                
+                    logger.warning(
+                        f"Branch context creation returned non-success: {branch_context_result.get('error', 'Unknown error')}"
+                    )
+
             except Exception as context_error:
                 # Log the error but don't fail the git branch creation
-                logger.error(f"Failed to create branch context for git branch {git_branch.id}: {context_error}")
+                logger.error(
+                    f"Failed to create branch context for git branch {git_branch.id}: {context_error}"
+                )
                 # Note: We continue with git branch creation even if context creation fails
                 # This ensures backward compatibility and prevents git branch creation from failing
-        
+
             # Also add to project entity for consistency
             project.add_git_branch(git_branch)
             await project_repo.update(project)
-            
+
             # Return format expected by integration test
             return {
                 "success": True,
@@ -116,9 +146,9 @@ class GitBranchService:
                     "name": git_branch.name,
                     "git_branch_name": git_branch.name,  # Add this line for frontend compatibility
                     "description": git_branch.description,
-                    "project_id": git_branch.project_id
+                    "project_id": git_branch.project_id,
                 },
-                "message": f"Git branch '{branch_name}' created successfully"
+                "message": f"Git branch '{branch_name}' created successfully",
             }
         except Exception as e:
             logger.error(f"Failed to create git branch: {e}")
@@ -129,11 +159,14 @@ class GitBranchService:
         project = await project_repo.find_by_id(project_id)
         if not project:
             return {"success": False, "error": f"Project {project_id} not found"}
-        
+
         git_branch = project.get_git_branch(branch_name)
         if not git_branch:
-            return {"success": False, "error": f"Git branch '{branch_name}' not found in project {project_id}"}
-            
+            return {
+                "success": False,
+                "error": f"Git branch '{branch_name}' not found in project {project_id}",
+            }
+
         return {"success": True, "git_branch": git_branch.to_dict()}
 
     async def list_git_branchs(self, project_id: str) -> dict[str, Any]:
@@ -142,19 +175,23 @@ class GitBranchService:
             project = await project_repo.find_by_id(project_id)
             if not project:
                 return {"success": False, "error": f"Project {project_id} not found"}
-            
-            git_branchs_list = [branch.to_dict() for branch in project.git_branchs.values()]
+
+            git_branchs_list = [
+                branch.to_dict() for branch in project.git_branchs.values()
+            ]
             return {
-                "success": True, 
+                "success": True,
                 "project_id": project_id,
                 "count": len(git_branchs_list),
-                "git_branchs": git_branchs_list
+                "git_branchs": git_branchs_list,
             }
         except Exception as e:
             logger.error(f"Failed to list git branches: {e}")
             return {"success": False, "error": str(e)}
 
-    async def delete_git_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
+    async def delete_git_branch(
+        self, project_id: str, git_branch_id: str
+    ) -> dict[str, Any]:
         """Delete a git branch and its associated data."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
@@ -162,7 +199,11 @@ class GitBranchService:
             # Fetch branch data BEFORE deletion for WebSocket notification
             git_branch = await git_branch_repo.find_by_id(git_branch_id)
             if not git_branch:
-                return {"success": False, "error": f"Git branch with ID {git_branch_id} not found", "error_code": "DELETE_FAILED"}
+                return {
+                    "success": False,
+                    "error": f"Git branch with ID {git_branch_id} not found",
+                    "error_code": "DELETE_FAILED",
+                }
 
             # Store branch data before deletion
             branch_name = git_branch.name
@@ -174,22 +215,31 @@ class GitBranchService:
             # - Returns False if unauthorized
             success = await git_branch_repo.delete_branch(git_branch_id)
             if not success:
-                return {"success": False, "error": f"Git branch with ID {git_branch_id} not found or you don't have permission", "error_code": "DELETE_FAILED"}
-            
+                return {
+                    "success": False,
+                    "error": f"Git branch with ID {git_branch_id} not found or you don't have permission",
+                    "error_code": "DELETE_FAILED",
+                }
+
             # Delete associated branch context
             try:
                 delete_result = self._hierarchical_context_service.delete_context(
-                    level="branch",
-                    context_id=git_branch_id
+                    level="branch", context_id=git_branch_id
                 )
                 if delete_result.get("success", False):
-                    logger.info(f"Successfully deleted branch context for git branch {git_branch_id}")
+                    logger.info(
+                        f"Successfully deleted branch context for git branch {git_branch_id}"
+                    )
                 else:
-                    logger.warning(f"Branch context deletion returned non-success: {delete_result.get('error', 'Unknown error')}")
+                    logger.warning(
+                        f"Branch context deletion returned non-success: {delete_result.get('error', 'Unknown error')}"
+                    )
             except Exception as context_error:
                 # Log the error but don't fail the deletion
-                logger.warning(f"Failed to delete branch context for git branch {git_branch_id}: {context_error}")
-            
+                logger.warning(
+                    f"Failed to delete branch context for git branch {git_branch_id}: {context_error}"
+                )
+
             # Remove from project entity
             project_repo = self._get_user_scoped_repository(self._project_repo)
             project = await project_repo.find_by_id(project_id)
@@ -212,25 +262,31 @@ class GitBranchService:
                 # Pydantic will raise ValidationError if required fields are missing
                 try:
                     payload = BranchDeletePayload(
-                        id=git_branch_id,
-                        name=branch_name,
-                        project_id=branch_project_id
+                        id=git_branch_id, name=branch_name, project_id=branch_project_id
                     )
                     branch_data = payload.model_dump()
                     logger.info(f"✅ Branch delete payload validated: {branch_data}")
                 except Exception as validation_error:
-                    logger.error(f"❌ Branch delete payload validation failed: {validation_error}")
+                    logger.error(
+                        f"❌ Branch delete payload validation failed: {validation_error}"
+                    )
                     # Fallback to dict (maintains backward compatibility during migration)
-                    branch_data = {"id": git_branch_id, "name": branch_name, "project_id": branch_project_id}
+                    branch_data = {
+                        "id": git_branch_id,
+                        "name": branch_name,
+                        "project_id": branch_project_id,
+                    }
 
                 WebSocketNotificationService.sync_broadcast_branch_event(
                     event_type="deleted",
                     branch_id=git_branch_id,
                     project_id=branch_project_id,
                     user_id=self._user_id,
-                    branch_data=branch_data
+                    branch_data=branch_data,
                 )
-                logger.info(f"Sent synchronous WebSocket notification for branch {git_branch_id} deletion")
+                logger.info(
+                    f"Sent synchronous WebSocket notification for branch {git_branch_id} deletion"
+                )
             except Exception as ws_error:
                 logger.warning(f"Failed to send WebSocket notification: {ws_error}")
 
@@ -238,14 +294,20 @@ class GitBranchService:
 
             return {
                 "success": True,
-                "message": f"Git branch {git_branch_id} deleted successfully"
+                "message": f"Git branch {git_branch_id} deleted successfully",
             }
-            
+
         except Exception as e:
             logger.error(f"Failed to delete git branch {git_branch_id}: {e}")
             return {"success": False, "error": str(e), "error_code": "DELETE_FAILED"}
 
-    async def create_missing_branch_context(self, branch_id: str, project_id: str = None, branch_name: str = "", description: str = "") -> dict[str, Any]:
+    async def create_missing_branch_context(
+        self,
+        branch_id: str,
+        project_id: str = None,
+        branch_name: str = "",
+        description: str = "",
+    ) -> dict[str, Any]:
         """
         Create branch context for existing git branch that doesn't have one.
         This is a helper method to fix existing branches without contexts.
@@ -256,14 +318,16 @@ class GitBranchService:
             git_branch = await git_branch_repo.find_by_id(branch_id)
             if not git_branch:
                 return {"success": False, "error": f"Git branch {branch_id} not found"}
-            
+
             # Use branch data from the git branch
             actual_project_id = project_id or git_branch.project_id
             if not branch_name:
                 branch_name = git_branch.name
             if not description:
-                description = git_branch.description or f"Branch context for {git_branch.name}"
-            
+                description = (
+                    git_branch.description or f"Branch context for {git_branch.name}"
+                )
+
             # Create branch context data compatible with UnifiedContextService
             branch_context_data = {
                 "project_id": actual_project_id,  # Required for BranchContext
@@ -274,40 +338,47 @@ class GitBranchService:
                     "testing_strategy": {},
                     "deployment_config": {},
                     "collaboration_settings": {},
-                    "agent_assignments": {}
+                    "agent_assignments": {},
                 },
                 "metadata": {
                     "branch_description": description,
                     "auto_created": True,
-                    "created_by": "git_branch_service_missing_context_fix"
-                }
+                    "created_by": "git_branch_service_missing_context_fix",
+                },
             }
-            
+
             # Create the branch context using synchronous method
             branch_context_result = self._hierarchical_context_service.create_context(
                 level="branch",
                 context_id=branch_id,
                 data=branch_context_data,
-                project_id=actual_project_id
+                project_id=actual_project_id,
             )
-            
+
             if branch_context_result.get("success", False):
-                logger.info(f"Successfully created missing branch context for branch {branch_id}")
+                logger.info(
+                    f"Successfully created missing branch context for branch {branch_id}"
+                )
                 return {
                     "success": True,
                     "branch_context": branch_context_result.get("context"),
-                    "message": f"Branch context created for branch {branch_id}"
+                    "message": f"Branch context created for branch {branch_id}",
                 }
             else:
-                logger.error(f"Failed to create missing branch context for branch {branch_id}: {branch_context_result.get('error', 'Unknown error')}")
+                logger.error(
+                    f"Failed to create missing branch context for branch {branch_id}: {branch_context_result.get('error', 'Unknown error')}"
+                )
                 return {
                     "success": False,
-                    "error": f"Failed to create branch context: {branch_context_result.get('error', 'Unknown error')}"
+                    "error": f"Failed to create branch context: {branch_context_result.get('error', 'Unknown error')}",
                 }
-            
+
         except Exception as e:
             logger.error(f"Failed to create branch context for branch {branch_id}: {e}")
-            return {"success": False, "error": f"Failed to create branch context: {str(e)}"}
+            return {
+                "success": False,
+                "error": f"Failed to create branch context: {str(e)}",
+            }
 
     async def get_git_branch_by_id(self, git_branch_id: str) -> dict[str, Any]:
         """Get a git branch by its ID."""
@@ -320,22 +391,30 @@ class GitBranchService:
                 if branch.id == git_branch_id:
                     git_branch = branch
                     break
-            
+
             if not git_branch:
-                return {"success": False, "error": f"Git branch {git_branch_id} not found"}
-                
+                return {
+                    "success": False,
+                    "error": f"Git branch {git_branch_id} not found",
+                }
+
             # Return format expected by test
             return {
                 "success": True,
                 "project_id": git_branch.project_id,
                 "branch_name": git_branch.name,
-                "git_branch": git_branch.to_dict()
+                "git_branch": git_branch.to_dict(),
             }
         except Exception as e:
             logger.error(f"Failed to get git branch by id: {e}")
             return {"success": False, "error": str(e)}
 
-    async def update_git_branch(self, git_branch_id: str, branch_name: str | None = None, description: str | None = None) -> dict[str, Any]:
+    async def update_git_branch(
+        self,
+        git_branch_id: str,
+        branch_name: str | None = None,
+        description: str | None = None,
+    ) -> dict[str, Any]:
         """Update a git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
@@ -346,17 +425,23 @@ class GitBranchService:
                 if branch.id == git_branch_id:
                     git_branch = branch
                     break
-            
+
             if not git_branch:
-                return {"success": False, "error": f"Git branch with ID {git_branch_id} not found"}
-                
+                return {
+                    "success": False,
+                    "error": f"Git branch with ID {git_branch_id} not found",
+                }
+
             # No updates provided
             if branch_name is None and description is None:
-                return {"success": False, "error": "No fields to update. Provide branch_name and/or description."}
-                
+                return {
+                    "success": False,
+                    "error": "No fields to update. Provide branch_name and/or description.",
+                }
+
             # Track which fields were updated
             updated_fields = []
-            
+
             # Update fields
             if branch_name is not None:
                 git_branch.name = branch_name
@@ -364,114 +449,171 @@ class GitBranchService:
             if description is not None:
                 git_branch.description = description
                 updated_fields.append("description")
-                
+
             # Save the updated branch
             success = await git_branch_repo.update(git_branch)
             if not success:
                 return {"success": False, "error": "Failed to update git branch"}
-                
-            return {"success": True, "git_branch": git_branch.to_dict(), "updated_fields": updated_fields}
+
+            return {
+                "success": True,
+                "git_branch": git_branch.to_dict(),
+                "updated_fields": updated_fields,
+            }
         except Exception as e:
             logger.error(f"Failed to update git branch: {e}")
             return {"success": False, "error": str(e)}
 
-    async def assign_agent_to_branch(self, project_id: str, agent_id: str, branch_name: str) -> dict[str, Any]:
+    async def assign_agent_to_branch(
+        self, project_id: str, agent_id: str, branch_name: str
+    ) -> dict[str, Any]:
         """Assign an agent to a git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
             git_branch = await git_branch_repo.find_by_name(project_id, branch_name)
             if not git_branch:
-                return {"success": False, "error": f"Git branch {branch_name} not found in project {project_id}"}
-                
+                return {
+                    "success": False,
+                    "error": f"Git branch {branch_name} not found in project {project_id}",
+                }
+
             # Add agent assignment logic here - ensure assigned_agents is a list
-            if not hasattr(git_branch, 'assigned_agents') or git_branch.assigned_agents is None:
+            if (
+                not hasattr(git_branch, "assigned_agents")
+                or git_branch.assigned_agents is None
+            ):
                 git_branch.assigned_agents = []
-            
+
             if agent_id not in git_branch.assigned_agents:
                 git_branch.assigned_agents.append(agent_id)
-                
+
             # Call the repository's assign_agent method if it exists, otherwise use update
-            if hasattr(git_branch_repo, 'assign_agent'):
-                success = await git_branch_repo.assign_agent(project_id, git_branch.id, agent_id)
+            if hasattr(git_branch_repo, "assign_agent"):
+                success = await git_branch_repo.assign_agent(
+                    project_id, git_branch.id, agent_id
+                )
             else:
                 success = await git_branch_repo.update(git_branch)
-                
+
             if not success:
-                return {"success": False, "error": f"Failed to assign agent {agent_id} to git branch {branch_name}"}
-                
-            return {"success": True, "message": f"Agent {agent_id} assigned to git branch {branch_name}"}
+                return {
+                    "success": False,
+                    "error": f"Failed to assign agent {agent_id} to git branch {branch_name}",
+                }
+
+            return {
+                "success": True,
+                "message": f"Agent {agent_id} assigned to git branch {branch_name}",
+            }
         except Exception as e:
             logger.error(f"Failed to assign agent to branch: {e}")
             return {"success": False, "error": str(e)}
 
-    async def unassign_agent_from_branch(self, project_id: str, agent_id: str, branch_name: str) -> dict[str, Any]:
+    async def unassign_agent_from_branch(
+        self, project_id: str, agent_id: str, branch_name: str
+    ) -> dict[str, Any]:
         """Unassign an agent from a git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
             git_branch = await git_branch_repo.find_by_name(project_id, branch_name)
             if not git_branch:
-                return {"success": False, "error": f"Git branch {branch_name} not found in project {project_id}"}
-                
+                return {
+                    "success": False,
+                    "error": f"Git branch {branch_name} not found in project {project_id}",
+                }
+
             # Remove agent assignment logic here
-            if hasattr(git_branch, 'assigned_agents') and git_branch.assigned_agents and agent_id in git_branch.assigned_agents:
+            if (
+                hasattr(git_branch, "assigned_agents")
+                and git_branch.assigned_agents
+                and agent_id in git_branch.assigned_agents
+            ):
                 git_branch.assigned_agents.remove(agent_id)
-                
+
             # Call the repository's unassign_agent method if it exists, otherwise use update
-            if hasattr(git_branch_repo, 'unassign_agent'):
-                success = await git_branch_repo.unassign_agent(project_id, git_branch.id)  # Test expects only project_id and branch_id
+            if hasattr(git_branch_repo, "unassign_agent"):
+                success = await git_branch_repo.unassign_agent(
+                    project_id, git_branch.id
+                )  # Test expects only project_id and branch_id
             else:
                 success = await git_branch_repo.update(git_branch)
-                
+
             if not success:
-                return {"success": False, "error": f"Failed to unassign agent {agent_id} from git branch {branch_name}"}
-                
-            return {"success": True, "message": f"Agent {agent_id} unassigned from git branch {branch_name}"}
+                return {
+                    "success": False,
+                    "error": f"Failed to unassign agent {agent_id} from git branch {branch_name}",
+                }
+
+            return {
+                "success": True,
+                "message": f"Agent {agent_id} unassigned from git branch {branch_name}",
+            }
         except Exception as e:
             logger.error(f"Failed to unassign agent from branch: {e}")
             return {"success": False, "error": str(e)}
 
-    async def get_branch_statistics(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
+    async def get_branch_statistics(
+        self, project_id: str, git_branch_id: str
+    ) -> dict[str, Any]:
         """Get statistics for a git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
             # Call the repository method that the test expects
-            statistics = await git_branch_repo.get_branch_statistics(project_id, git_branch_id)
-            
+            statistics = await git_branch_repo.get_branch_statistics(
+                project_id, git_branch_id
+            )
+
             # Check if repository returned an error
             if isinstance(statistics, dict) and "error" in statistics:
                 return {"success": False, "error": statistics["error"]}
-                
+
             return {"success": True, "statistics": statistics}
         except Exception as e:
             logger.error(f"Failed to get branch statistics: {e}")
             return {"success": False, "error": str(e)}
 
-    async def archive_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
+    async def archive_branch(
+        self, project_id: str, git_branch_id: str
+    ) -> dict[str, Any]:
         """Archive a git branch by marking it as archived."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
             # Call repository method as expected by tests
             success = await git_branch_repo.archive_branch(project_id, git_branch_id)
-            
+
             if not success:
-                return {"success": False, "error": f"Failed to archive git branch {git_branch_id}"}
-                
-            return {"success": True, "message": f"Git branch {git_branch_id} archived successfully"}
+                return {
+                    "success": False,
+                    "error": f"Failed to archive git branch {git_branch_id}",
+                }
+
+            return {
+                "success": True,
+                "message": f"Git branch {git_branch_id} archived successfully",
+            }
         except Exception as e:
             logger.error(f"Failed to archive branch: {e}")
             return {"success": False, "error": str(e)}
 
-    async def restore_branch(self, project_id: str, git_branch_id: str) -> dict[str, Any]:
+    async def restore_branch(
+        self, project_id: str, git_branch_id: str
+    ) -> dict[str, Any]:
         """Restore an archived git branch."""
         try:
             git_branch_repo = self._get_user_scoped_repository(self._git_branch_repo)
             # Call repository method as expected by tests
             success = await git_branch_repo.restore_branch(project_id, git_branch_id)
-            
+
             if not success:
-                return {"success": False, "error": f"Failed to restore git branch {git_branch_id}"}
-                
-            return {"success": True, "message": f"Git branch {git_branch_id} restored successfully"}
+                return {
+                    "success": False,
+                    "error": f"Failed to restore git branch {git_branch_id}",
+                }
+
+            return {
+                "success": True,
+                "message": f"Git branch {git_branch_id} restored successfully",
+            }
         except Exception as e:
             logger.error(f"Failed to restore branch: {e}")
-            return {"success": False, "error": str(e)} 
+            return {"success": False, "error": str(e)}

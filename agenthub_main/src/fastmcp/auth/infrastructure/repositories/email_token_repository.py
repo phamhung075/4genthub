@@ -24,8 +24,9 @@ Base = declarative_base()
 
 class EmailTokenModel(Base):
     """SQLAlchemy model for email tokens"""
+
     __tablename__ = "email_tokens"
-    
+
     token = Column(String(255), primary_key=True)
     email = Column(String(255), nullable=False, index=True)
     token_type = Column(String(50), nullable=False)  # 'verification', 'password_reset'
@@ -43,6 +44,7 @@ class EmailTokenModel(Base):
 @dataclass
 class EmailToken:
     """Email token data class"""
+
     token: str
     email: str
     token_type: str
@@ -59,24 +61,23 @@ class EmailToken:
 
 class EmailTokenRepository:
     """Repository for managing email tokens"""
-    
+
     def __init__(self, database_url: str | None = None):
         """Initialize repository with database connection"""
         if database_url is None:
             # Use database URL from environment or default to SQLite
-            database_url = os.getenv(
-                "DATABASE_URL", 
-                "sqlite:///./email_tokens.db"
-            )
-        
+            database_url = os.getenv("DATABASE_URL", "sqlite:///./email_tokens.db")
+
         self.engine = create_engine(database_url)
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        
+        self.SessionLocal = sessionmaker(
+            autocommit=False, autoflush=False, bind=self.engine
+        )
+
         # Create tables if they don't exist
         Base.metadata.create_all(bind=self.engine)
-        
+
         logger.info("Email token repository initialized")
-    
+
     def _model_to_token(self, model: EmailTokenModel) -> EmailToken:
         """Convert SQLAlchemy model to EmailToken"""
         metadata = None
@@ -85,7 +86,7 @@ class EmailTokenRepository:
                 metadata = json.loads(model.token_metadata)
             except json.JSONDecodeError:
                 logger.warning(f"Invalid JSON metadata for token {model.token}")
-        
+
         return EmailToken(
             token=model.token,
             email=model.email,
@@ -98,9 +99,9 @@ class EmailTokenRepository:
             metadata=metadata,
             user_id=model.user_id,
             ip_address=model.ip_address,
-            user_agent=model.user_agent
+            user_agent=model.user_agent,
         )
-    
+
     def _token_to_model(self, token: EmailToken) -> EmailTokenModel:
         """Convert EmailToken to SQLAlchemy model"""
         metadata_json = None
@@ -109,7 +110,7 @@ class EmailTokenRepository:
                 metadata_json = json.dumps(token.metadata)
             except (TypeError, ValueError):
                 logger.warning(f"Cannot serialize metadata for token {token.token}")
-        
+
         return EmailTokenModel(
             token=token.token,
             email=token.email,
@@ -122,9 +123,9 @@ class EmailTokenRepository:
             token_metadata=metadata_json,
             user_id=token.user_id,
             ip_address=token.ip_address,
-            user_agent=token.user_agent
+            user_agent=token.user_agent,
         )
-    
+
     def save_token(self, token: EmailToken) -> bool:
         """Save email token to database"""
         try:
@@ -132,12 +133,14 @@ class EmailTokenRepository:
                 model = self._token_to_model(token)
                 session.add(model)
                 session.commit()
-                logger.info(f"Saved email token for {token.email} (type: {token.token_type})")
+                logger.info(
+                    f"Saved email token for {token.email} (type: {token.token_type})"
+                )
                 return True
         except SQLAlchemyError as e:
             logger.error(f"Failed to save email token: {e}")
             return False
-    
+
     def get_token(self, token: str) -> EmailToken | None:
         """Get email token by token string"""
         try:
@@ -149,48 +152,44 @@ class EmailTokenRepository:
         except SQLAlchemyError as e:
             logger.error(f"Failed to get email token: {e}")
             return None
-    
+
     def get_tokens_by_email(
-        self, 
-        email: str, 
-        token_type: str | None = None,
-        include_used: bool = False
+        self, email: str, token_type: str | None = None, include_used: bool = False
     ) -> list[EmailToken]:
         """Get email tokens by email address"""
         try:
             with self.SessionLocal() as session:
                 query = session.query(EmailTokenModel).filter_by(email=email)
-                
+
                 if token_type:
                     query = query.filter_by(token_type=token_type)
-                
+
                 if not include_used:
                     query = query.filter_by(is_used=False)
-                
+
                 models = query.order_by(EmailTokenModel.created_at.desc()).all()
                 return [self._model_to_token(model) for model in models]
         except SQLAlchemyError as e:
             logger.error(f"Failed to get email tokens: {e}")
             return []
-    
+
     def mark_token_used(self, token: str, used_at: datetime | None = None) -> bool:
         """Mark token as used"""
         if used_at is None:
             used_at = datetime.now(UTC)
-        
+
         try:
             with self.SessionLocal() as session:
-                session.query(EmailTokenModel).filter_by(token=token).update({
-                    'is_used': True,
-                    'used_at': used_at
-                })
+                session.query(EmailTokenModel).filter_by(token=token).update(
+                    {"is_used": True, "used_at": used_at}
+                )
                 session.commit()
                 logger.info(f"Marked token as used: {token}")
                 return True
         except SQLAlchemyError as e:
             logger.error(f"Failed to mark token as used: {e}")
             return False
-    
+
     def delete_token(self, token: str) -> bool:
         """Delete email token"""
         try:
@@ -203,53 +202,53 @@ class EmailTokenRepository:
         except SQLAlchemyError as e:
             logger.error(f"Failed to delete email token: {e}")
             return False
-    
+
     def cleanup_expired_tokens(self, older_than_days: int = 7) -> int:
         """Clean up expired and old tokens"""
         cutoff_date = datetime.now(UTC) - timedelta(days=older_than_days)
-        
+
         try:
             with self.SessionLocal() as session:
                 # Delete tokens that are either expired or older than cutoff
-                deleted = session.query(EmailTokenModel).filter(
-                    (EmailTokenModel.expires_at < datetime.now(UTC)) |
-                    (EmailTokenModel.created_at < cutoff_date)
-                ).delete(synchronize_session=False)
-                
+                deleted = (
+                    session.query(EmailTokenModel)
+                    .filter(
+                        (EmailTokenModel.expires_at < datetime.now(UTC))
+                        | (EmailTokenModel.created_at < cutoff_date)
+                    )
+                    .delete(synchronize_session=False)
+                )
+
                 session.commit()
                 logger.info(f"Cleaned up {deleted} expired/old email tokens")
                 return deleted
         except SQLAlchemyError as e:
             logger.error(f"Failed to cleanup expired tokens: {e}")
             return 0
-    
+
     def validate_token(
-        self, 
-        token: str, 
-        email: str, 
-        token_type: str,
-        mark_used: bool = True
+        self, token: str, email: str, token_type: str, mark_used: bool = True
     ) -> EmailToken | None:
         """Validate email token and optionally mark as used"""
         try:
             with self.SessionLocal() as session:
-                model = session.query(EmailTokenModel).filter_by(
-                    token=token,
-                    email=email,
-                    token_type=token_type
-                ).first()
-                
+                model = (
+                    session.query(EmailTokenModel)
+                    .filter_by(token=token, email=email, token_type=token_type)
+                    .first()
+                )
+
                 if not model:
                     logger.warning(f"Token not found: {token}")
                     return None
-                
+
                 token_obj = self._model_to_token(model)
-                
+
                 # Check if token is already used
                 if token_obj.is_used:
                     logger.warning(f"Token already used: {token}")
                     return None
-                
+
                 # Check if token is expired
                 # Handle both naive and aware datetimes
                 expires_at = token_obj.expires_at
@@ -259,7 +258,7 @@ class EmailTokenRepository:
                 if expires_at < datetime.now(UTC):
                     logger.warning(f"Token expired: {token}")
                     return None
-                
+
                 # Mark as used if requested
                 if mark_used:
                     model.is_used = True
@@ -267,32 +266,40 @@ class EmailTokenRepository:
                     session.commit()
                     token_obj.is_used = True
                     token_obj.used_at = model.used_at
-                
+
                 logger.info(f"Token validated successfully: {token}")
                 return token_obj
-                
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to validate token: {e}")
             return None
-    
+
     def get_token_stats(self) -> dict[str, Any]:
         """Get token usage statistics"""
         try:
             with self.SessionLocal() as session:
                 total_tokens = session.query(EmailTokenModel).count()
-                used_tokens = session.query(EmailTokenModel).filter_by(is_used=True).count()
-                expired_tokens = session.query(EmailTokenModel).filter(
-                    EmailTokenModel.expires_at < datetime.now(UTC)
-                ).count()
-                
+                used_tokens = (
+                    session.query(EmailTokenModel).filter_by(is_used=True).count()
+                )
+                expired_tokens = (
+                    session.query(EmailTokenModel)
+                    .filter(EmailTokenModel.expires_at < datetime.now(UTC))
+                    .count()
+                )
+
                 # Token counts by type
-                verification_tokens = session.query(EmailTokenModel).filter_by(
-                    token_type='verification'
-                ).count()
-                reset_tokens = session.query(EmailTokenModel).filter_by(
-                    token_type='password_reset'
-                ).count()
-                
+                verification_tokens = (
+                    session.query(EmailTokenModel)
+                    .filter_by(token_type="verification")
+                    .count()
+                )
+                reset_tokens = (
+                    session.query(EmailTokenModel)
+                    .filter_by(token_type="password_reset")
+                    .count()
+                )
+
                 return {
                     "total_tokens": total_tokens,
                     "used_tokens": used_tokens,
@@ -300,7 +307,9 @@ class EmailTokenRepository:
                     "active_tokens": total_tokens - used_tokens - expired_tokens,
                     "verification_tokens": verification_tokens,
                     "reset_tokens": reset_tokens,
-                    "usage_rate": (used_tokens / total_tokens * 100) if total_tokens > 0 else 0
+                    "usage_rate": (used_tokens / total_tokens * 100)
+                    if total_tokens > 0
+                    else 0,
                 }
         except SQLAlchemyError as e:
             logger.error(f"Failed to get token stats: {e}")

@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class UnregisterAgentRequest:
     """Request DTO for unregistering an agent"""
+
     project_id: str
     agent_id: str
 
@@ -20,6 +21,7 @@ class UnregisterAgentRequest:
 @dataclass
 class UnregisterAgentResponse:
     """Response DTO for agent unregistration"""
+
     success: bool
     agent_id: str
     agent_data: dict[str, Any] = None
@@ -30,38 +32,35 @@ class UnregisterAgentResponse:
 
 class UnregisterAgentUseCase:
     """Use case for unregistering an agent"""
-    
+
     def __init__(self, agent_repository: AgentRepository):
         self._agent_repository = agent_repository
-    
+
     def execute(self, request: UnregisterAgentRequest) -> UnregisterAgentResponse:
         """Execute the unregister agent use case"""
         try:
             # Execute domain operation
             result = self._agent_repository.unregister_agent(
-                request.project_id,
-                request.agent_id
+                request.project_id, request.agent_id
             )
-            
+
             return UnregisterAgentResponse(
                 success=True,
                 agent_id=request.agent_id,
                 agent_data=result.get("agent_data"),
                 removed_assignments=result.get("removed_assignments", []),
-                message=f"Agent {request.agent_id} unregistered from project {request.project_id}"
+                message=f"Agent {request.agent_id} unregistered from project {request.project_id}",
             )
-            
+
         except (AgentNotFoundError, ProjectNotFoundError) as e:
             logger.warning(f"Agent or project not found during unregistration: {e}")
             return UnregisterAgentResponse(
-                success=False,
-                agent_id=request.agent_id,
-                error=str(e)
+                success=False, agent_id=request.agent_id, error=str(e)
             )
         except Exception as e:
             logger.error(f"Unexpected error in unregister agent: {e}")
             return UnregisterAgentResponse(
                 success=False,
                 agent_id=request.agent_id,
-                error=f"Unexpected error: {str(e)}"
+                error=f"Unexpected error: {str(e)}",
             )

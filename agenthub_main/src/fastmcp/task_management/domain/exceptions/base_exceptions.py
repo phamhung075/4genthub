@@ -9,7 +9,7 @@ from ..value_objects import ErrorSeverity
 
 class TaskManagementException(Exception):
     """Base exception for all task management errors."""
-    
+
     def __init__(
         self,
         message: str,
@@ -17,11 +17,11 @@ class TaskManagementException(Exception):
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
         context: dict[str, Any] | None = None,
         recoverable: bool = True,
-        user_message: str | None = None
+        user_message: str | None = None,
     ):
         """
         Initialize base exception.
-        
+
         Args:
             message: Technical error message for logging
             error_code: Standardized error code for categorization
@@ -36,7 +36,7 @@ class TaskManagementException(Exception):
         self.context = context or {}
         self.recoverable = recoverable
         self.user_message = user_message or message
-        
+
     def to_dict(self) -> dict[str, Any]:
         """Convert exception to dictionary for serialization."""
         return {
@@ -46,19 +46,15 @@ class TaskManagementException(Exception):
             "severity": self.severity.value,
             "recoverable": self.recoverable,
             "context": self.context,
-            "type": self.__class__.__name__
+            "type": self.__class__.__name__,
         }
 
 
 class ValidationException(TaskManagementException):
     """Raised when input validation fails."""
-    
+
     def __init__(
-        self,
-        message: str,
-        field: str | None = None,
-        value: Any | None = None,
-        **kwargs
+        self, message: str, field: str | None = None, value: Any | None = None, **kwargs
     ):
         """Initialize validation exception with field details."""
         context = kwargs.get("context", {})
@@ -66,95 +62,74 @@ class ValidationException(TaskManagementException):
             context["field"] = field
         if value is not None:
             context["value"] = str(value)
-            
+
         super().__init__(
             message=message,
             error_code="VALIDATION_ERROR",
             severity=ErrorSeverity.LOW,
             recoverable=True,
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
 class ResourceNotFoundException(TaskManagementException):
     """Raised when a requested resource cannot be found."""
-    
+
     def __init__(
-        self,
-        resource_type: str,
-        resource_id: str,
-        message: str | None = None,
-        **kwargs
+        self, resource_type: str, resource_id: str, message: str | None = None, **kwargs
     ):
         """Initialize resource not found exception."""
         if not message:
             message = f"{resource_type} with id '{resource_id}' not found"
-            
+
         super().__init__(
             message=message,
             error_code=f"{resource_type.upper()}_NOT_FOUND",
             severity=ErrorSeverity.MEDIUM,
             recoverable=False,
-            context={
-                "resource_type": resource_type,
-                "resource_id": resource_id
-            },
-            **kwargs
+            context={"resource_type": resource_type, "resource_id": resource_id},
+            **kwargs,
         )
 
 
 class ResourceAlreadyExistsException(TaskManagementException):
     """Raised when attempting to create a resource that already exists."""
-    
+
     def __init__(
-        self,
-        resource_type: str,
-        resource_id: str,
-        message: str | None = None,
-        **kwargs
+        self, resource_type: str, resource_id: str, message: str | None = None, **kwargs
     ):
         """Initialize resource already exists exception."""
         if not message:
             message = f"{resource_type} with id '{resource_id}' already exists"
-            
+
         super().__init__(
             message=message,
             error_code=f"{resource_type.upper()}_ALREADY_EXISTS",
             severity=ErrorSeverity.LOW,
             recoverable=False,
-            context={
-                "resource_type": resource_type,
-                "resource_id": resource_id
-            },
-            **kwargs
+            context={"resource_type": resource_type, "resource_id": resource_id},
+            **kwargs,
         )
 
 
 class OperationNotPermittedException(TaskManagementException):
     """Raised when an operation is not permitted due to business rules."""
-    
+
     def __init__(
-        self,
-        operation: str,
-        reason: str,
-        message: str | None = None,
-        **kwargs
+        self, operation: str, reason: str, message: str | None = None, **kwargs
     ):
         """Initialize operation not permitted exception."""
         if not message:
             message = f"Operation '{operation}' not permitted: {reason}"
-            
+
         super().__init__(
             message=message,
             error_code="OPERATION_NOT_PERMITTED",
             severity=ErrorSeverity.MEDIUM,
             recoverable=False,
-            context={
-                "operation": operation,
-                "reason": reason
-            },
-            **kwargs
+            context={"operation": operation, "reason": reason},
+            **kwargs,
         )
 
 
@@ -166,7 +141,7 @@ class DatabaseException(TaskManagementException):
         message: str,
         operation: str | None = None,
         table: str | None = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize database exception."""
         context = kwargs.get("context", {})
@@ -176,10 +151,10 @@ class DatabaseException(TaskManagementException):
             context["table"] = table
 
         # Remove parameters that will be set explicitly to avoid conflicts
-        kwargs.pop('error_code', None)
-        kwargs.pop('severity', None)
-        kwargs.pop('recoverable', None)
-        kwargs.pop('context', None)
+        kwargs.pop("error_code", None)
+        kwargs.pop("severity", None)
+        kwargs.pop("recoverable", None)
+        kwargs.pop("context", None)
 
         super().__init__(
             message=message,
@@ -187,13 +162,13 @@ class DatabaseException(TaskManagementException):
             severity=ErrorSeverity.HIGH,
             recoverable=True,
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
 class DatabaseConnectionException(DatabaseException):
     """Raised when database connection fails."""
-    
+
     def __init__(self, message: str = "Failed to connect to database", **kwargs):
         """Initialize database connection exception."""
         super().__init__(
@@ -201,29 +176,24 @@ class DatabaseConnectionException(DatabaseException):
             error_code="DATABASE_CONNECTION_ERROR",
             severity=ErrorSeverity.CRITICAL,
             recoverable=True,
-            **kwargs
+            **kwargs,
         )
 
 
 class DatabaseIntegrityException(TaskManagementException):
     """Raised when database integrity constraints are violated."""
 
-    def __init__(
-        self,
-        message: str,
-        constraint: str | None = None,
-        **kwargs
-    ):
+    def __init__(self, message: str, constraint: str | None = None, **kwargs):
         """Initialize database integrity exception."""
         context = kwargs.get("context", {})
         if constraint:
             context["constraint"] = constraint
 
         # Remove conflicting kwargs that will be set explicitly
-        kwargs.pop('error_code', None)
-        kwargs.pop('severity', None)
-        kwargs.pop('recoverable', None)
-        kwargs.pop('context', None)
+        kwargs.pop("error_code", None)
+        kwargs.pop("severity", None)
+        kwargs.pop("recoverable", None)
+        kwargs.pop("context", None)
 
         super().__init__(
             message=message,
@@ -231,19 +201,19 @@ class DatabaseIntegrityException(TaskManagementException):
             severity=ErrorSeverity.MEDIUM,
             recoverable=False,
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
 class ConcurrencyException(TaskManagementException):
     """Raised when concurrent operations conflict."""
-    
+
     def __init__(
         self,
         message: str,
         resource_type: str | None = None,
         resource_id: str | None = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize concurrency exception."""
         context = kwargs.get("context", {})
@@ -251,97 +221,85 @@ class ConcurrencyException(TaskManagementException):
             context["resource_type"] = resource_type
         if resource_id:
             context["resource_id"] = resource_id
-            
+
         super().__init__(
             message=message,
             error_code="CONCURRENCY_ERROR",
             severity=ErrorSeverity.MEDIUM,
             recoverable=True,
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
 class ExternalServiceException(TaskManagementException):
     """Raised when external service calls fail."""
-    
+
     def __init__(
-        self,
-        service: str,
-        message: str,
-        status_code: int | None = None,
-        **kwargs
+        self, service: str, message: str, status_code: int | None = None, **kwargs
     ):
         """Initialize external service exception."""
         context = kwargs.get("context", {})
         context["service"] = service
         if status_code:
             context["status_code"] = status_code
-            
+
         super().__init__(
             message=message,
             error_code=f"{service.upper()}_SERVICE_ERROR",
             severity=ErrorSeverity.MEDIUM,
             recoverable=True,
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
 class ConfigurationException(TaskManagementException):
     """Raised when configuration is invalid or missing."""
-    
-    def __init__(
-        self,
-        message: str,
-        config_key: str | None = None,
-        **kwargs
-    ):
+
+    def __init__(self, message: str, config_key: str | None = None, **kwargs):
         """Initialize configuration exception."""
         context = kwargs.get("context", {})
         if config_key:
             context["config_key"] = config_key
-            
+
         super().__init__(
             message=message,
             error_code="CONFIGURATION_ERROR",
             severity=ErrorSeverity.CRITICAL,
             recoverable=False,
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
 class RepositoryError(DatabaseException):
     """Raised when repository operations fail."""
-    
-    def __init__(
-        self,
-        message: str,
-        repository: str | None = None,
-        **kwargs
-    ):
+
+    def __init__(self, message: str, repository: str | None = None, **kwargs):
         """Initialize repository exception."""
         context = kwargs.get("context", {})
         if repository:
             context["repository"] = repository
-            
+
         # Remove error_code from kwargs if present to avoid conflict
-        kwargs.pop('error_code', None)
-        
+        kwargs.pop("error_code", None)
+
         super().__init__(
             message=message,
             error_code="REPOSITORY_ERROR",
             operation="repository",
-            **kwargs
+            **kwargs,
         )
 
 
 class NotFoundError(ResourceNotFoundException):
     """Alias for ResourceNotFoundException for backward compatibility."""
+
     pass
 
 
 class ValidationError(ValidationException):
     """Alias for ValidationException for backward compatibility."""
+
     pass

@@ -19,11 +19,11 @@ class ConnectionDescriptionLoader:
     Utility class for loading connection management tool descriptions from separate files.
     Supports recursive/nested directory traversal for scalable tool documentation loading.
     """
-    
+
     def __init__(self, base_path: str | None = None):
         """
         Initialize the connection description loader.
-        
+
         Args:
             base_path: Base path for description files. If None, uses current directory.
         """
@@ -31,7 +31,7 @@ class ConnectionDescriptionLoader:
             self.base_path = Path(__file__).parent
         else:
             self.base_path = Path(base_path)
-    
+
     def _load_module(self, file_path: Path):
         spec = importlib.util.spec_from_file_location("desc_module", file_path)
         if spec is None or spec.loader is None:
@@ -85,6 +85,7 @@ class ConnectionDescriptionLoader:
                 if isinstance(sub, dict) and key in sub:
                     flat[key] = sub[key]
         return flat
+
 
 # Global instance for easy access
 connection_description_loader = ConnectionDescriptionLoader()

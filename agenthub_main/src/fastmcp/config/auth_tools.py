@@ -43,17 +43,21 @@ class AuthenticationTools:
                     "valid": True,
                     "message": "Authentication disabled or MVP mode",
                     "user_id": "mvp_user",
-                    "auth_enabled": self.auth_middleware.enabled
+                    "auth_enabled": self.auth_middleware.enabled,
                 }
 
             return {
                 "valid": True,
                 "user_id": token_info.user_id,
                 "created_at": token_info.created_at.isoformat(),
-                "expires_at": token_info.expires_at.isoformat() if token_info.expires_at else None,
+                "expires_at": token_info.expires_at.isoformat()
+                if token_info.expires_at
+                else None,
                 "usage_count": token_info.usage_count,
-                "last_used": token_info.last_used.isoformat() if token_info.last_used else None,
-                "auth_enabled": self.auth_middleware.enabled
+                "last_used": token_info.last_used.isoformat()
+                if token_info.last_used
+                else None,
+                "auth_enabled": self.auth_middleware.enabled,
             }
 
         except TokenValidationError as e:
@@ -61,14 +65,14 @@ class AuthenticationTools:
                 "valid": False,
                 "error": str(e),
                 "error_type": "validation_error",
-                "auth_enabled": self.auth_middleware.enabled
+                "auth_enabled": self.auth_middleware.enabled,
             }
         except RateLimitError as e:
             return {
                 "valid": False,
                 "error": str(e),
                 "error_type": "rate_limit_error",
-                "auth_enabled": self.auth_middleware.enabled
+                "auth_enabled": self.auth_middleware.enabled,
             }
         except Exception as e:
             logger.error(f"Token validation error: {e}")
@@ -76,7 +80,7 @@ class AuthenticationTools:
                 "valid": False,
                 "error": "Internal validation error",
                 "error_type": "internal_error",
-                "auth_enabled": self.auth_middleware.enabled
+                "auth_enabled": self.auth_middleware.enabled,
             }
 
     async def get_rate_limit_status(self, token: str) -> dict[str, Any]:
@@ -91,16 +95,10 @@ class AuthenticationTools:
         """
         try:
             status = await self.auth_middleware.get_rate_limit_status(token)
-            return {
-                "success": True,
-                "rate_limits": status
-            }
+            return {"success": True, "rate_limits": status}
         except Exception as e:
             logger.error(f"Rate limit status error: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     async def revoke_token(self, token: str) -> dict[str, Any]:
         """
@@ -116,14 +114,13 @@ class AuthenticationTools:
             success = await self.auth_middleware.revoke_token(token)
             return {
                 "success": success,
-                "message": "Token revoked successfully" if success else "Failed to revoke token"
+                "message": "Token revoked successfully"
+                if success
+                else "Failed to revoke token",
             }
         except Exception as e:
             logger.error(f"Token revocation error: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def get_auth_status(self) -> dict[str, Any]:
         """
@@ -156,8 +153,8 @@ class AuthenticationTools:
             "example": {
                 "name": "my-token",
                 "expires_in_days": 30,
-                "scopes": ["read", "write"]
-            }
+                "scopes": ["read", "write"],
+            },
         }
 
     def get_tool_functions(self) -> dict[str, callable]:
@@ -172,7 +169,7 @@ class AuthenticationTools:
             "get_rate_limit_status": self.get_rate_limit_status,
             "revoke_token": self.revoke_token,
             "get_auth_status": self.get_auth_status,
-            "generate_token": self.generate_token
+            "generate_token": self.generate_token,
         }
 
 

@@ -10,4 +10,4 @@ Architecture:
 - Interface Layer: MCP controllers and tools
 """
 
-__version__ = "2.0.2.dev" 
+__version__ = "2.0.2.dev"

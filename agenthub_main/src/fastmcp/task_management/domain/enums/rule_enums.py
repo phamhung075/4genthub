@@ -11,6 +11,7 @@ from enum import Enum
 
 class RuleFormat(Enum):
     """Supported rule file formats"""
+
     MDC = "mdc"
     MD = "md"
     JSON = "json"
@@ -30,12 +31,13 @@ class RuleFormat(Enum):
 
 class RuleType(Enum):
     """Rule classification types"""
-    CORE = "core"              # Essential system rules
-    WORKFLOW = "workflow"      # Development workflow rules
-    AGENT = "agent"           # Agent-specific rules
-    PROJECT = "project"       # Project-specific rules
-    CONTEXT = "context"       # Context management rules
-    CUSTOM = "custom"         # User-defined rules
+
+    CORE = "core"  # Essential system rules
+    WORKFLOW = "workflow"  # Development workflow rules
+    AGENT = "agent"  # Agent-specific rules
+    PROJECT = "project"  # Project-specific rules
+    CONTEXT = "context"  # Context management rules
+    CUSTOM = "custom"  # User-defined rules
 
     @classmethod
     def get_all_types(cls) -> list[str]:
@@ -50,10 +52,11 @@ class RuleType(Enum):
 
 class ConflictResolution(Enum):
     """Conflict resolution strategies"""
-    MERGE = "merge"           # Intelligent merging
-    OVERRIDE = "override"     # Last rule wins
-    APPEND = "append"         # Combine content
-    MANUAL = "manual"         # Require manual resolution
+
+    MERGE = "merge"  # Intelligent merging
+    OVERRIDE = "override"  # Last rule wins
+    APPEND = "append"  # Combine content
+    MANUAL = "manual"  # Require manual resolution
 
     @classmethod
     def get_all_strategies(cls) -> list[str]:
@@ -68,11 +71,12 @@ class ConflictResolution(Enum):
 
 class InheritanceType(Enum):
     """Types of rule inheritance"""
-    FULL = "full"             # Inherit all content and metadata
-    CONTENT = "content"       # Inherit only content sections
-    METADATA = "metadata"     # Inherit only metadata
-    VARIABLES = "variables"   # Inherit only variables
-    SELECTIVE = "selective"   # Inherit specific sections
+
+    FULL = "full"  # Inherit all content and metadata
+    CONTENT = "content"  # Inherit only content sections
+    METADATA = "metadata"  # Inherit only metadata
+    VARIABLES = "variables"  # Inherit only variables
+    SELECTIVE = "selective"  # Inherit specific sections
 
     @classmethod
     def get_all_inheritance_types(cls) -> list[str]:
@@ -87,10 +91,11 @@ class InheritanceType(Enum):
 
 class SyncOperation(Enum):
     """Types of synchronization operations"""
-    PUSH = "push"             # Client to server
-    PULL = "pull"             # Server to client
+
+    PUSH = "push"  # Client to server
+    PULL = "pull"  # Server to client
     BIDIRECTIONAL = "bidirectional"  # Both directions
-    MERGE = "merge"           # Intelligent merge
+    MERGE = "merge"  # Intelligent merge
 
     @classmethod
     def get_all_operations(cls) -> list[str]:
@@ -105,6 +110,7 @@ class SyncOperation(Enum):
 
 class ClientAuthMethod(Enum):
     """Client authentication methods"""
+
     API_KEY = "api_key"
     TOKEN = "token"
     OAUTH2 = "oauth2"
@@ -123,6 +129,7 @@ class ClientAuthMethod(Enum):
 
 class SyncStatus(Enum):
     """Synchronization status"""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -147,4 +154,4 @@ class SyncStatus(Enum):
     @property
     def is_active(self) -> bool:
         """Check if this status indicates active processing"""
-        return self in [SyncStatus.PENDING, SyncStatus.IN_PROGRESS] 
+        return self in [SyncStatus.PENDING, SyncStatus.IN_PROGRESS]

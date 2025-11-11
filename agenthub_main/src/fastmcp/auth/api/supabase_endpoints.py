@@ -27,6 +27,7 @@ supabase_service = SupabaseAuthService()
 # Request/Response Models
 class SignUpRequest(BaseModel):
     """Sign up request model"""
+
     email: EmailStr
     password: str = Field(..., min_length=6)
     username: str | None = None
@@ -35,27 +36,32 @@ class SignUpRequest(BaseModel):
 
 class SignInRequest(BaseModel):
     """Sign in request model"""
+
     email: EmailStr
     password: str
 
 
 class PasswordResetRequest(BaseModel):
     """Password reset request model"""
+
     email: EmailStr
 
 
 class UpdatePasswordRequest(BaseModel):
     """Update password request model"""
+
     new_password: str = Field(..., min_length=6)
 
 
 class ResendVerificationRequest(BaseModel):
     """Resend verification email request"""
+
     email: EmailStr
 
 
 class AuthResponse(BaseModel):
     """Standard auth response"""
+
     success: bool
     message: str
     user: dict[str, Any] | None = None
@@ -69,11 +75,13 @@ def get_bearer_token(authorization: str | None = Header(None)) -> str:
     """Extract bearer token from authorization header"""
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header missing")
-    
+
     parts = authorization.split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Invalid authorization header format")
-    
+        raise HTTPException(
+            status_code=401, detail="Invalid authorization header format"
+        )
+
     return parts[1]
 
 
@@ -82,9 +90,9 @@ def format_auth_response(result: SupabaseAuthResult) -> AuthResponse:
     response = AuthResponse(
         success=result.success,
         message=result.error_message or "Operation successful",
-        requires_email_verification=result.requires_email_verification
+        requires_email_verification=result.requires_email_verification,
     )
-    
+
     if result.user:
         # Extract user info safely
         response.user = {
@@ -92,14 +100,14 @@ def format_auth_response(result: SupabaseAuthResult) -> AuthResponse:
             "email": getattr(result.user, "email", None),
             "email_confirmed": getattr(result.user, "confirmed_at", None) is not None,
             "created_at": str(getattr(result.user, "created_at", "")),
-            "user_metadata": getattr(result.user, "user_metadata", {})
+            "user_metadata": getattr(result.user, "user_metadata", {}),
         }
-    
+
     if result.session:
         # Extract session tokens
         response.access_token = getattr(result.session, "access_token", None)
         response.refresh_token = getattr(result.session, "refresh_token", None)
-    
+
     return response
 
 
@@ -117,24 +125,24 @@ async def sign_up(request: SignUpRequest):
             metadata["username"] = request.username
         if request.full_name:
             metadata["full_name"] = request.full_name
-        
+
         # Sign up with Supabase
         result = await supabase_service.sign_up(
-            email=request.email,
-            password=request.password,
-            metadata=metadata
+            email=request.email, password=request.password, metadata=metadata
         )
-        
+
         if not result.success:
             raise HTTPException(status_code=400, detail=result.error_message)
-        
+
         return format_auth_response(result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Signup error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during signup")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during signup"
+        )
 
 
 @router.post("/signin", response_model=AuthResponse)
@@ -145,25 +153,25 @@ async def sign_in(request: SignInRequest):
     """
     try:
         result = await supabase_service.sign_in(
-            email=request.email,
-            password=request.password
+            email=request.email, password=request.password
         )
-        
+
         if not result.success:
             if result.requires_email_verification:
                 raise HTTPException(
-                    status_code=403,
-                    detail="Please verify your email before signing in"
+                    status_code=403, detail="Please verify your email before signing in"
                 )
             raise HTTPException(status_code=401, detail=result.error_message)
-        
+
         return format_auth_response(result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Signin error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during signin")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during signin"
+        )
 
 
 @router.post("/signout")
@@ -174,17 +182,19 @@ async def sign_out(token: str = Depends(get_bearer_token)):
     """
     try:
         success = await supabase_service.sign_out(access_token=token)
-        
+
         if not success:
             raise HTTPException(status_code=400, detail="Failed to sign out")
-        
+
         return {"success": True, "message": "Signed out successfully"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Signout error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during signout")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during signout"
+        )
 
 
 @router.post("/password-reset", response_model=AuthResponse)
@@ -195,23 +205,24 @@ async def request_password_reset(request: PasswordResetRequest):
     """
     try:
         result = await supabase_service.reset_password_request(email=request.email)
-        
+
         if not result.success:
             raise HTTPException(status_code=400, detail=result.error_message)
-        
+
         return format_auth_response(result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Password reset request error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during password reset")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during password reset"
+        )
 
 
 @router.post("/update-password", response_model=AuthResponse)
 async def update_password(
-    request: UpdatePasswordRequest,
-    token: str = Depends(get_bearer_token)
+    request: UpdatePasswordRequest, token: str = Depends(get_bearer_token)
 ):
     """
     Update user's password.
@@ -219,20 +230,21 @@ async def update_password(
     """
     try:
         result = await supabase_service.update_password(
-            access_token=token,
-            new_password=request.new_password
+            access_token=token, new_password=request.new_password
         )
-        
+
         if not result.success:
             raise HTTPException(status_code=400, detail=result.error_message)
-        
+
         return format_auth_response(result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Password update error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during password update")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during password update"
+        )
 
 
 @router.get("/verify-token", response_model=AuthResponse)
@@ -243,17 +255,19 @@ async def verify_token(token: str = Depends(get_bearer_token)):
     """
     try:
         result = await supabase_service.verify_token(access_token=token)
-        
+
         if not result.success:
             raise HTTPException(status_code=401, detail=result.error_message)
-        
+
         return format_auth_response(result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Token verification error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during token verification")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during token verification"
+        )
 
 
 @router.post("/resend-verification", response_model=AuthResponse)
@@ -264,17 +278,19 @@ async def resend_verification_email(request: ResendVerificationRequest):
     """
     try:
         result = await supabase_service.resend_verification_email(email=request.email)
-        
+
         if not result.success:
             raise HTTPException(status_code=400, detail=result.error_message)
-        
+
         return format_auth_response(result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Resend verification error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during resend verification")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during resend verification"
+        )
 
 
 @router.get("/oauth/{provider}")
@@ -285,21 +301,19 @@ async def get_oauth_url(provider: str):
     """
     try:
         result = await supabase_service.sign_in_with_provider(provider=provider)
-        
+
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
-        
-        return {
-            "success": True,
-            "url": result["url"],
-            "provider": result["provider"]
-        }
-        
+
+        return {"success": True, "url": result["url"], "provider": result["provider"]}
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"OAuth URL generation error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during OAuth URL generation")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during OAuth URL generation"
+        )
 
 
 @router.get("/me", response_model=AuthResponse)
@@ -310,12 +324,12 @@ async def get_current_user(token: str = Depends(get_bearer_token)):
     """
     try:
         result = await supabase_service.verify_token(access_token=token)
-        
+
         if not result.success:
             raise HTTPException(status_code=401, detail="Not authenticated")
-        
+
         return format_auth_response(result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -330,21 +344,13 @@ async def health_check():
     try:
         # Just check if service is initialized
         if supabase_service.supabase_url and supabase_service.supabase_anon_key:
-            return {
-                "status": "healthy",
-                "service": "Supabase Auth",
-                "configured": True
-            }
+            return {"status": "healthy", "service": "Supabase Auth", "configured": True}
         else:
             return {
                 "status": "unhealthy",
                 "service": "Supabase Auth",
                 "configured": False,
-                "error": "Missing configuration"
+                "error": "Missing configuration",
             }
     except Exception as e:
-        return {
-            "status": "unhealthy",
-            "service": "Supabase Auth",
-            "error": str(e)
-        }
+        return {"status": "unhealthy", "service": "Supabase Auth", "error": str(e)}

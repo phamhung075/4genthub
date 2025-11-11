@@ -26,14 +26,16 @@ class GetBlockingTasksUseCase:
         blocking_tasks = []
         for other_task in all_tasks:
             if other_task.has_dependency(task_id_obj):
-                blocking_tasks.append({
-                    "id": str(other_task.id),
-                    "title": other_task.title,
-                    "status": str(other_task.status),
-                    "priority": str(other_task.priority)
-                })
+                blocking_tasks.append(
+                    {
+                        "id": str(other_task.id),
+                        "title": other_task.title,
+                        "status": str(other_task.status),
+                        "priority": str(other_task.priority),
+                    }
+                )
         return {
             "task_id": str(task_id),
             "blocking_tasks": blocking_tasks,
-            "blocking_count": len(blocking_tasks)
-        } 
+            "blocking_count": len(blocking_tasks),
+        }

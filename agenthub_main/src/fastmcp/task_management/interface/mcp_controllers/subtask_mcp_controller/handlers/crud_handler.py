@@ -47,6 +47,7 @@ class SubtaskCRUDHandler:
             from fastmcp.auth.middleware.request_context_middleware import (
                 get_current_token_id,
             )
+
             token_id = get_current_token_id()
 
             if not token_id:
@@ -55,6 +56,7 @@ class SubtaskCRUDHandler:
 
             # Get database session
             from .....infrastructure.database.database_config import get_db_config
+
             db_config = get_db_config()
             session = db_config.get_session()
 
@@ -63,6 +65,7 @@ class SubtaskCRUDHandler:
                 from .....infrastructure.repositories.token_repository import (
                     TokenRepository,
                 )
+
                 repository = TokenRepository(session)
                 await repository.update_token_usage(token_id, operation=operation)
                 logger.info(f"✅ Tracked operation: {operation} for token: {token_id}")
@@ -70,7 +73,9 @@ class SubtaskCRUDHandler:
                 session.close()
 
         except Exception as e:
-            logger.warning(f"Failed to track token operation {operation}: {e}", exc_info=True)
+            logger.warning(
+                f"Failed to track token operation {operation}: {e}", exc_info=True
+            )
 
     def create_subtask(
         self,
@@ -193,8 +198,8 @@ class SubtaskCRUDHandler:
                     )
 
             # Track successful subtask creation (run in background)
-            if result.get('success', False):
-                asyncio.create_task(self._track_token_operation('subtask_create'))
+            if result.get("success", False):
+                asyncio.create_task(self._track_token_operation("subtask_create"))
 
             return result
 
@@ -243,8 +248,8 @@ class SubtaskCRUDHandler:
                 metadata={
                     "field": "progress_notes",
                     "requirement": "Minimum 10 characters describing what was done",
-                    "example": "Completed schema design, starting implementation"
-                }
+                    "example": "Completed schema design, starting implementation",
+                },
             )
 
         try:
@@ -298,8 +303,8 @@ class SubtaskCRUDHandler:
                     result["context_update_error"] = str(e)
 
             # Track successful subtask update (run in background)
-            if result.get('success', False):
-                asyncio.create_task(self._track_token_operation('subtask_update'))
+            if result.get("success", False):
+                asyncio.create_task(self._track_token_operation("subtask_update"))
 
             return result
 
@@ -362,8 +367,8 @@ class SubtaskCRUDHandler:
                     result["context_update_error"] = str(e)
 
             # Track successful subtask deletion (run in background)
-            if result.get('success', False):
-                asyncio.create_task(self._track_token_operation('subtask_delete'))
+            if result.get("success", False):
+                asyncio.create_task(self._track_token_operation("subtask_delete"))
 
             return result
 
@@ -446,18 +451,20 @@ class SubtaskCRUDHandler:
                 # Convert to minimal representation (only 4 essential fields)
                 minimal_subtasks = []
                 for subtask in subtasks:
-                    minimal_subtasks.append({
-                        "id": subtask.get("id"),
-                        "title": subtask.get("title"),
-                        "status": subtask.get("status"),
-                        "priority": subtask.get("priority")
-                    })
+                    minimal_subtasks.append(
+                        {
+                            "id": subtask.get("id"),
+                            "title": subtask.get("title"),
+                            "status": subtask.get("status"),
+                            "priority": subtask.get("priority"),
+                        }
+                    )
 
                 result["subtasks"] = minimal_subtasks
                 result["list_metadata"] = {
                     "task_id": task_id,
                     "total_results": len(minimal_subtasks),
-                    "tip": "Use manage_subtask(action='get', task_id='...', subtask_id='...') for full details"
+                    "tip": "Use manage_subtask(action='get', task_id='...', subtask_id='...') for full details",
                 }
 
             # Add parent progress information
@@ -507,8 +514,8 @@ class SubtaskCRUDHandler:
                 metadata={
                     "field": "completion_summary",
                     "requirement": "Minimum 20 characters describing what was accomplished",
-                    "example": "Feature implemented with tests passing, documented in README"
-                }
+                    "example": "Feature implemented with tests passing, documented in README",
+                },
             )
 
         try:
@@ -558,8 +565,8 @@ class SubtaskCRUDHandler:
                     result["context_update_error"] = str(e)
 
             # Track successful subtask completion (run in background)
-            if result.get('success', False):
-                asyncio.create_task(self._track_token_operation('subtask_complete'))
+            if result.get("success", False):
+                asyncio.create_task(self._track_token_operation("subtask_complete"))
 
             return result
 

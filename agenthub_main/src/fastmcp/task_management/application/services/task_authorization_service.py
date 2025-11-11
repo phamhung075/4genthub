@@ -92,7 +92,7 @@ class TaskAuthorizationService:
                     )
                 return False, {
                     "error": "No token payload found",
-                    "code": "AUTHENTICATION_ERROR"
+                    "code": "AUTHENTICATION_ERROR",
                 }
 
             # Check permissions using PermissionChecker
@@ -113,7 +113,7 @@ class TaskAuthorizationService:
                     )
                 return False, {
                     "error": f"Permission denied: requires tasks:{required_permission.value}",
-                    "code": "PERMISSION_DENIED"
+                    "code": "PERMISSION_DENIED",
                 }
 
             logger.debug(

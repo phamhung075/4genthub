@@ -188,12 +188,16 @@ class TaskSearchHandler:
             if result.get("success"):
                 tasks = result.get("tasks", [])
                 total = result.get("total", 0)
-                logger.info(f"📊 CONTROLLER: Listed {len(tasks)} task summaries for user {user_id}")
+                logger.info(
+                    f"📊 CONTROLLER: Listed {len(tasks)} task summaries for user {user_id}"
+                )
 
                 # Log first task for debugging
                 if tasks:
                     first_task = tasks[0]
-                    logger.info(f"🔍 CONTROLLER: First task subtask_count = {first_task.get('subtask_count', 'MISSING')}")
+                    logger.info(
+                        f"🔍 CONTROLLER: First task subtask_count = {first_task.get('subtask_count', 'MISSING')}"
+                    )
 
                 # Convert to DTOs
                 dtos = [task_summary_to_dto(t) for t in tasks]

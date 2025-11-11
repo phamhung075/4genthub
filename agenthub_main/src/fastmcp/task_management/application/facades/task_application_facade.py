@@ -43,43 +43,54 @@ class TaskApplicationFacade:
     Application Facade that orchestrates task-related use cases.
     Provides a unified interface for the Interface layer while maintaining
     proper DDD boundaries.
-    
+
     This facade coordinates multiple use cases and handles cross-cutting concerns
     like validation, error handling, and response formatting at the application boundary.
     """
-    
-    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository | None = None,
-                 context_service: Any | None = None,
-                 git_branch_repository: GitBranchRepository | None = None):
+
+    def __init__(
+        self,
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository | None = None,
+        context_service: Any | None = None,
+        git_branch_repository: GitBranchRepository | None = None,
+    ):
         """Initialize facade with required dependencies"""
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
         self._context_service = context_service
         self._git_branch_repository = git_branch_repository
-        
+
         # Initialize hierarchical context service with lazy import to avoid circular dependency
         from ...application.factories.unified_context_facade_factory import (
             UnifiedContextFacadeFactory,
         )
+
         factory = UnifiedContextFacadeFactory()
         self._hierarchical_context_service = factory.create_unified_service()
-        
+
         # Initialize use cases with git_branch_repository dependency injection
-        self._create_task_use_case = CreateTaskUseCase(task_repository, git_branch_repository)
-        self._update_task_use_case = UpdateTaskUseCase(task_repository, git_branch_repository)
+        self._create_task_use_case = CreateTaskUseCase(
+            task_repository, git_branch_repository
+        )
+        self._update_task_use_case = UpdateTaskUseCase(
+            task_repository, git_branch_repository
+        )
         # Use the hierarchical context service instead of the passed context service
         # The passed context service might not be configured correctly for the unified context system
-        self._get_task_use_case = GetTaskUseCase(task_repository, self._hierarchical_context_service, git_branch_repository)
+        self._get_task_use_case = GetTaskUseCase(
+            task_repository, self._hierarchical_context_service, git_branch_repository
+        )
 
         # Pass all repositories for cascade deletion support
         self._delete_task_use_case = DeleteTaskUseCase(
             task_repository,
             subtask_repository=subtask_repository,
             branch_repository=git_branch_repository,
-            project_repository=getattr(self, '_project_repository', None),
-            context_repository=None  # Will be set later if available
+            project_repository=getattr(self, "_project_repository", None),
+            context_repository=None,  # Will be set later if available
         )
-        
+
         # Initialize task context repository for unified context system
         task_context_repository = None
         try:
@@ -87,6 +98,7 @@ class TaskApplicationFacade:
             from ...infrastructure.repositories.task_context_repository import (
                 TaskContextRepository,
             )
+
             db_config = get_db_config()
             task_context_repository = TaskContextRepository(db_config.SessionLocal)
         except Exception as e:
@@ -95,35 +107,49 @@ class TaskApplicationFacade:
             from ...infrastructure.repositories.mock_task_context_repository import (
                 MockTaskContextRepository,
             )
+
             task_context_repository = MockTaskContextRepository()
-        
+
         # CompleteTaskUseCase now uses unified context system
         # Subtask repository is required for proper task completion
-        self._complete_task_use_case = CompleteTaskUseCase(task_repository, subtask_repository, task_context_repository)
-            
-        self._list_tasks_use_case = ListTasksUseCase(task_repository, git_branch_repository)
+        self._complete_task_use_case = CompleteTaskUseCase(
+            task_repository, subtask_repository, task_context_repository
+        )
+
+        self._list_tasks_use_case = ListTasksUseCase(
+            task_repository, git_branch_repository
+        )
         self._search_tasks_use_case = SearchTasksUseCase(task_repository)
         self._do_next_use_case = NextTaskUseCase(task_repository, context_service)
-        
+
         # Dedicated service for context creation & sync
         from ..services.task_context_sync_service import TaskContextSyncService
-        self._task_context_sync_service = TaskContextSyncService(task_repository, context_service)
-        
+
+        self._task_context_sync_service = TaskContextSyncService(
+            task_repository, context_service
+        )
+
         # Initialize dependency resolver service
         from ..services.dependency_resolver_service import DependencyResolverService
+
         self._dependency_resolver = DependencyResolverService(task_repository)
-        
+
         # Initialize agent inheritance service
         from ..services.agent_inheritance_service import AgentInheritanceService
+
         if subtask_repository:
-            self._agent_inheritance_service = AgentInheritanceService(task_repository, subtask_repository)
+            self._agent_inheritance_service = AgentInheritanceService(
+                task_repository, subtask_repository
+            )
         else:
             self._agent_inheritance_service = None
-        
+
         # Initialize dependency management use case
         self._manage_dependencies_use_case = ManageDependenciesUseCase(task_repository)
-    
-    async def _derive_context_from_git_branch_id(self, git_branch_id: str) -> dict[str, str | None]:
+
+    async def _derive_context_from_git_branch_id(
+        self, git_branch_id: str
+    ) -> dict[str, str | None]:
         """
         Derive project_id and git_branch_name from git_branch_id using git branch repository.
 
@@ -145,14 +171,12 @@ class TaskApplicationFacade:
             # Try to find the branch by ID directly
             branch = await self._git_branch_repository.find_by_id(git_branch_id)
             if branch:
-                return {
-                    "project_id": branch.project_id,
-                    "git_branch_name": branch.name
-                }
+                return {"project_id": branch.project_id, "git_branch_name": branch.name}
 
             # If not found, try the project manager as fallback
             # This provides backward compatibility
             from ..services.project_management_service import ProjectManagementService
+
             project_manager = ProjectManagementService()
             result = project_manager.get_git_branch_by_id(git_branch_id)
 
@@ -160,7 +184,7 @@ class TaskApplicationFacade:
                 git_branch_data = result.get("git_branch", {})
                 return {
                     "project_id": git_branch_data.get("project_id"),
-                    "git_branch_name": git_branch_data.get("name")
+                    "git_branch_name": git_branch_data.get("name"),
                 }
 
             # Git branch not found - raise validation error
@@ -173,7 +197,11 @@ class TaskApplicationFacade:
         except ValueError:
             # Re-raise ValueError (our validation error)
             raise
-        except (UserAuthenticationRequiredError, InvalidUserIdError, AuthenticationError) as auth_error:
+        except (
+            UserAuthenticationRequiredError,
+            InvalidUserIdError,
+            AuthenticationError,
+        ) as auth_error:
             # Authentication errors - provide clear message about missing user context
             raise ValueError(
                 f"Cannot validate git_branch_id '{git_branch_id}': {str(auth_error)}\n"
@@ -189,10 +217,7 @@ class TaskApplicationFacade:
             ) from e
 
     def _ensure_branch_context_exists(
-        self,
-        git_branch_id: str,
-        user_id: str,
-        project_id: str | None = None
+        self, git_branch_id: str, user_id: str, project_id: str | None = None
     ) -> dict[str, Any]:
         """
         Ensure branch context AND git branch entity exist, creating both automatically if needed.
@@ -227,7 +252,9 @@ class TaskApplicationFacade:
 
             # Step 1: Check if git branch entity exists
             if self._git_branch_repository:
-                logger.debug(f"Checking if git branch entity exists for git_branch_id={git_branch_id}")
+                logger.debug(
+                    f"Checking if git branch entity exists for git_branch_id={git_branch_id}"
+                )
 
                 # Try to get the git branch entity
                 branch_result = self._await_if_coroutine(
@@ -235,8 +262,12 @@ class TaskApplicationFacade:
                 )
 
                 # Step 2: If git branch doesn't exist, create it
-                if not branch_result.get("success") or not branch_result.get("git_branch"):
-                    logger.info(f"Git branch entity missing for git_branch_id={git_branch_id}, auto-creating...")
+                if not branch_result.get("success") or not branch_result.get(
+                    "git_branch"
+                ):
+                    logger.info(
+                        f"Git branch entity missing for git_branch_id={git_branch_id}, auto-creating..."
+                    )
 
                     from datetime import datetime
 
@@ -255,12 +286,18 @@ class TaskApplicationFacade:
                     # If no project_id provided, try to find ANY existing project in database
                     if not branch_project_id:
                         try:
-                            with self._git_branch_repository.get_db_session() as session:
-                                result = session.execute(text("SELECT id FROM projects LIMIT 1"))
+                            with (
+                                self._git_branch_repository.get_db_session() as session
+                            ):
+                                result = session.execute(
+                                    text("SELECT id FROM projects LIMIT 1")
+                                )
                                 row = result.fetchone()
                                 if row:
                                     branch_project_id = str(row[0])
-                                    logger.info(f"Using existing project_id={branch_project_id} for git branch auto-creation")
+                                    logger.info(
+                                        f"Using existing project_id={branch_project_id} for git branch auto-creation"
+                                    )
                         except Exception as e:
                             logger.warning(f"Could not find existing project: {e}")
 
@@ -282,7 +319,7 @@ class TaskApplicationFacade:
                             description="Auto-created for task creation",
                             project_id=branch_project_id,
                             created_at=now,
-                            updated_at=now
+                            updated_at=now,
                         )
 
                         # Save git branch entity using the repository
@@ -301,28 +338,34 @@ class TaskApplicationFacade:
                             )
 
             # Step 3: Try to get existing context
-            logger.debug(f"Checking if branch context exists for git_branch_id={git_branch_id}")
+            logger.debug(
+                f"Checking if branch context exists for git_branch_id={git_branch_id}"
+            )
 
             result = self._hierarchical_context_service.get_context(
                 level="branch",
                 context_id=git_branch_id,
                 include_inherited=False,
                 force_refresh=False,
-                user_id=user_id
+                user_id=user_id,
             )
 
             # Step 4: If context exists, return it
             if result.get("success") and result.get("context"):
-                logger.debug(f"Branch context already exists for git_branch_id={git_branch_id}")
+                logger.debug(
+                    f"Branch context already exists for git_branch_id={git_branch_id}"
+                )
                 return {
                     "success": True,
                     "context": result.get("context"),
                     "git_branch_created": git_branch_created,
-                    "context_created": False
+                    "context_created": False,
                 }
 
             # Step 5: Auto-create context if missing
-            logger.info(f"Branch context missing for git_branch_id={git_branch_id}, auto-creating...")
+            logger.info(
+                f"Branch context missing for git_branch_id={git_branch_id}, auto-creating..."
+            )
 
             from datetime import datetime
 
@@ -331,7 +374,7 @@ class TaskApplicationFacade:
                 "created_at": datetime.now(UTC).isoformat(),
                 "source": "task_creation_auto_create",
                 "created_by": user_id,
-                "git_branch_id": git_branch_id
+                "git_branch_id": git_branch_id,
             }
 
             # Add project_id if provided for hierarchy
@@ -342,7 +385,7 @@ class TaskApplicationFacade:
                 level="branch",
                 context_id=git_branch_id,
                 data=auto_create_data,
-                user_id=user_id
+                user_id=user_id,
             )
 
             # Step 6: Log auto-creation event
@@ -355,7 +398,7 @@ class TaskApplicationFacade:
                     "success": True,
                     "context": create_result.get("context", {}),
                     "git_branch_created": git_branch_created,
-                    "context_created": True
+                    "context_created": True,
                 }
             else:
                 # Auto-creation failed
@@ -367,20 +410,20 @@ class TaskApplicationFacade:
                     "success": False,
                     "error": f"Failed to create branch context: {error_msg}",
                     "git_branch_created": git_branch_created,
-                    "context_created": False
+                    "context_created": False,
                 }
 
         except Exception as e:
             logger.error(
                 f"❌ Unexpected error in _ensure_branch_context_exists for "
                 f"git_branch_id={git_branch_id}: {e}",
-                exc_info=True
+                exc_info=True,
             )
             return {
                 "success": False,
                 "error": f"Unexpected error ensuring branch context: {str(e)}",
                 "git_branch_created": False,
-                "context_created": False
+                "context_created": False,
             }
 
     def create_task(self, request: CreateTaskRequest) -> dict[str, Any]:
@@ -390,53 +433,68 @@ class TaskApplicationFacade:
             context = self._await_if_coroutine(
                 self._derive_context_from_git_branch_id(request.git_branch_id)
             )
-            
+
             # Set derived context as attributes for later use
             derived_project_id = context.get("project_id")
             # Note: We no longer raise an error if project_id is not found
             # The system should handle this case gracefully for DDD compliance
             # If project_id is missing, we'll try to get it from the request or use None
-            if not derived_project_id and hasattr(request, 'project_id'):
+            if not derived_project_id and hasattr(request, "project_id"):
                 derived_project_id = request.project_id
             derived_git_branch_name = context.get("git_branch_name") or "main"
             # Validate user authentication
             from ...domain.constants import validate_user_id
-            
+
             # Try to get user_id from authentication context (same approach as project facade)
             derived_user_id = None
             try:
                 from fastmcp.auth.middleware.request_context_middleware import (
                     get_current_user_id,
                 )
+
                 context_user_obj = get_current_user_id()
-                logger.info(f"🎯 TaskApplicationFacade: get_current_user_id() returned: {context_user_obj} (type: {type(context_user_obj)})")
-                
+                logger.info(
+                    f"🎯 TaskApplicationFacade: get_current_user_id() returned: {context_user_obj} (type: {type(context_user_obj)})"
+                )
+
                 # Extract user_id string from the context object (handles BackwardCompatUserContext objects)
                 if context_user_obj:
                     if isinstance(context_user_obj, str):
                         # Already a string
                         derived_user_id = context_user_obj
-                    elif hasattr(context_user_obj, 'user_id'):
+                    elif hasattr(context_user_obj, "user_id"):
                         # Extract user_id attribute from BackwardCompatUserContext
                         derived_user_id = context_user_obj.user_id
-                        logger.info(f"🔧 TaskApplicationFacade: Extracted user_id from context object: {derived_user_id}")
+                        logger.info(
+                            f"🔧 TaskApplicationFacade: Extracted user_id from context object: {derived_user_id}"
+                        )
                     else:
                         # Fallback: convert to string
-                        derived_user_id = str(context_user_obj) if context_user_obj else None
-                        logger.warning(f"⚠️ TaskApplicationFacade: Fallback string conversion: {derived_user_id}")
+                        derived_user_id = (
+                            str(context_user_obj) if context_user_obj else None
+                        )
+                        logger.warning(
+                            f"⚠️ TaskApplicationFacade: Fallback string conversion: {derived_user_id}"
+                        )
             except ImportError:
                 logger.warning("User context middleware not available - using fallback")
-            
+
             # Also check request for backward compatibility
             if derived_user_id is None:
-                derived_user_id = getattr(request, 'user_id', None)
-                logger.info(f"🔄 TaskApplicationFacade: Fallback to request.user_id: {derived_user_id}")
-            
+                derived_user_id = getattr(request, "user_id", None)
+                logger.info(
+                    f"🔄 TaskApplicationFacade: Fallback to request.user_id: {derived_user_id}"
+                )
+
             # Always call validate_user_id to handle MVP mode properly
             # This will return MVP default user if MVP mode is enabled and no user_id provided
-            logger.info(f"🔍 TaskApplicationFacade: Validating user_id: {derived_user_id}")
+            logger.info(
+                f"🔍 TaskApplicationFacade: Validating user_id: {derived_user_id}"
+            )
             derived_user_id = validate_user_id(derived_user_id, "Task creation")
-            logger.info(f"✅ TaskApplicationFacade: Final validated user_id: {derived_user_id}")
+            logger.info(
+                f"✅ TaskApplicationFacade: Final validated user_id: {derived_user_id}"
+            )
 
             # Validation will be performed by domain entity during creation
 
@@ -445,7 +503,7 @@ class TaskApplicationFacade:
             branch_context_result = self._ensure_branch_context_exists(
                 git_branch_id=request.git_branch_id,
                 user_id=derived_user_id,
-                project_id=derived_project_id
+                project_id=derived_project_id,
             )
 
             # Log the result of context auto-creation
@@ -468,7 +526,9 @@ class TaskApplicationFacade:
                 )
 
             # Check for recent duplicate creation attempts (following completion deduplication pattern)
-            was_already_created = self._check_for_duplicate_creation(request, derived_user_id)
+            was_already_created = self._check_for_duplicate_creation(
+                request, derived_user_id
+            )
 
             # Execute use case (clean relationship chain - only request needed)
             task_response = self._create_task_use_case.execute(request)
@@ -500,26 +560,49 @@ class TaskApplicationFacade:
                     if updated_task_response is not None:
                         # Context was successfully created and task response includes context data
                         # Convert updated task response to dict with minimal serialization (token optimized)
-                        if hasattr(updated_task_response, 'to_dict'):
-                            task_payload = MinimalResponseSerializer.serialize_task_minimal(updated_task_response, "create")
+                        if hasattr(updated_task_response, "to_dict"):
+                            task_payload = (
+                                MinimalResponseSerializer.serialize_task_minimal(
+                                    updated_task_response, "create"
+                                )
+                            )
                         else:
-                            task_payload = MinimalResponseSerializer.serialize_task_minimal(updated_task_response.task, "create")
+                            task_payload = (
+                                MinimalResponseSerializer.serialize_task_minimal(
+                                    updated_task_response.task, "create"
+                                )
+                            )
                         # Apply unified context format
-                        task_payload = ContextResponseFactory.apply_to_task_response(task_payload)
+                        task_payload = ContextResponseFactory.apply_to_task_response(
+                            task_payload
+                        )
                     else:
                         # Context creation failed - but don't rollback, just log warning
-                        logger.warning("Context creation failed for task %s, but task was created successfully", task_response.task.id)
+                        logger.warning(
+                            "Context creation failed for task %s, but task was created successfully",
+                            task_response.task.id,
+                        )
                         # Return task without context data (minimal serialization)
-                        task_payload = MinimalResponseSerializer.serialize_task_minimal(task_response.task, "create")
+                        task_payload = MinimalResponseSerializer.serialize_task_minimal(
+                            task_response.task, "create"
+                        )
                         warning_msg = "Task created without context synchronization"
 
                 except Exception as e:
-                    logger.error("Failed to create context for task %s: %s", task_response.task.id, e)
+                    logger.error(
+                        "Failed to create context for task %s: %s",
+                        task_response.task.id,
+                        e,
+                    )
                     # Don't rollback - task creation should succeed even without context
-                    logger.warning("Continuing with task creation despite context sync failure")
+                    logger.warning(
+                        "Continuing with task creation despite context sync failure"
+                    )
 
                     # Return task without context data (minimal serialization)
-                    task_payload = MinimalResponseSerializer.serialize_task_minimal(task_response.task, "create")
+                    task_payload = MinimalResponseSerializer.serialize_task_minimal(
+                        task_response.task, "create"
+                    )
                     warning_msg = f"Task created without context: {str(e)}"
 
                 # Broadcast task creation event ONLY if this was a new creation (not a duplicate)
@@ -531,19 +614,26 @@ class TaskApplicationFacade:
                         try:
                             payload = TaskCreatePayload(
                                 id=task_payload.get("id") or task_response.task.id,
-                                title=task_payload.get("title") or task_response.task.title,
+                                title=task_payload.get("title")
+                                or task_response.task.title,
                                 description=task_payload.get("description"),
-                                status=task_payload.get("status") or task_response.task.status,
-                                priority=task_payload.get("priority") or task_response.task.priority,
+                                status=task_payload.get("status")
+                                or task_response.task.status,
+                                priority=task_payload.get("priority")
+                                or task_response.task.priority,
                                 git_branch_id=request.git_branch_id,
                                 assignees=task_payload.get("assignees"),
                                 labels=task_payload.get("labels"),
-                                created_at=task_payload.get("created_at")
+                                created_at=task_payload.get("created_at"),
                             )
                             validated_task_data = payload.model_dump()
-                            logger.info(f"✅ Task create payload validated for {task_response.task.id}")
+                            logger.info(
+                                f"✅ Task create payload validated for {task_response.task.id}"
+                            )
                         except Exception as validation_error:
-                            logger.error(f"❌ Task create payload validation failed: {validation_error}")
+                            logger.error(
+                                f"❌ Task create payload validation failed: {validation_error}"
+                            )
                             # Fallback to dict (maintains backward compatibility)
                             validated_task_data = task_payload
 
@@ -553,13 +643,17 @@ class TaskApplicationFacade:
                             user_id=derived_user_id or "system",
                             task_data=validated_task_data,
                             git_branch_id=request.git_branch_id,
-                            project_id=derived_project_id
+                            project_id=derived_project_id,
                         )
-                        logger.info(f"Broadcasted task creation notification for NEW creation of task {task_response.task.id}")
+                        logger.info(
+                            f"Broadcasted task creation notification for NEW creation of task {task_response.task.id}"
+                        )
                     except Exception as e:
                         logger.warning(f"Failed to broadcast task creation: {e}")
                 elif was_already_created:
-                    logger.info("Skipped duplicate notification for recently created task with similar data")
+                    logger.info(
+                        "Skipped duplicate notification for recently created task with similar data"
+                    )
 
                 # Build and return response
                 result = {
@@ -575,16 +669,24 @@ class TaskApplicationFacade:
                 return {
                     "success": False,
                     "action": "create",
-                    "error": getattr(task_response, 'message', getattr(task_response, 'error', 'Unknown error occurred'))
+                    "error": getattr(
+                        task_response,
+                        "message",
+                        getattr(task_response, "error", "Unknown error occurred"),
+                    ),
                 }
-                
+
         except ValueError as e:
             logger.warning(f"Validation error in create_task: {e}")
             return {"success": False, "action": "create", "error": str(e)}
         except Exception as e:
             logger.error(f"Unexpected error in create_task: {e}")
-            return {"success": False, "action": "create", "error": f"Unexpected error: {str(e)}"}
-    
+            return {
+                "success": False,
+                "action": "create",
+                "error": f"Unexpected error: {str(e)}",
+            }
+
     def update_task(self, request: UpdateTaskRequest) -> dict[str, Any]:
         """Update an existing task"""
         try:
@@ -598,10 +700,16 @@ class TaskApplicationFacade:
             task_response = self._update_task_use_case.execute(request)
 
             # Check if task was actually updated with meaningful changes
-            was_actually_updated = self._check_for_meaningful_update(current_task, task_response.task if task_response and task_response.success else None, request)
+            was_actually_updated = self._check_for_meaningful_update(
+                current_task,
+                task_response.task if task_response and task_response.success else None,
+                request,
+            )
 
             if task_response and task_response.success:
-                task_dict = MinimalResponseSerializer.serialize_task_minimal(task_response.task, "update")
+                task_dict = MinimalResponseSerializer.serialize_task_minimal(
+                    task_response.task, "update"
+                )
 
                 # Broadcast task update event ONLY if this was a meaningful update (not a duplicate)
                 if was_actually_updated:
@@ -609,25 +717,33 @@ class TaskApplicationFacade:
                         from ...domain.websocket_protocol import TaskUpdatePayload
 
                         # Get user_id from request or use "system"
-                        user_id = getattr(request, 'user_id', None) or "system"
+                        user_id = getattr(request, "user_id", None) or "system"
 
                         # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
                         try:
                             payload = TaskUpdatePayload(
                                 id=task_dict.get("id") or task_id,
-                                title=task_dict.get("title") or task_response.task.title,
+                                title=task_dict.get("title")
+                                or task_response.task.title,
                                 description=task_dict.get("description"),
-                                status=task_dict.get("status") or task_response.task.status,
-                                priority=task_dict.get("priority") or task_response.task.priority,
-                                git_branch_id=task_dict.get("git_branch_id") or task_response.task.git_branch_id,
+                                status=task_dict.get("status")
+                                or task_response.task.status,
+                                priority=task_dict.get("priority")
+                                or task_response.task.priority,
+                                git_branch_id=task_dict.get("git_branch_id")
+                                or task_response.task.git_branch_id,
                                 assignees=task_dict.get("assignees"),
                                 labels=task_dict.get("labels"),
-                                updated_at=task_dict.get("updated_at")
+                                updated_at=task_dict.get("updated_at"),
                             )
                             validated_task_data = payload.model_dump()
-                            logger.info(f"✅ Task update payload validated for {task_id}")
+                            logger.info(
+                                f"✅ Task update payload validated for {task_id}"
+                            )
                         except Exception as validation_error:
-                            logger.error(f"❌ Task update payload validation failed: {validation_error}")
+                            logger.error(
+                                f"❌ Task update payload validation failed: {validation_error}"
+                            )
                             # Fallback to dict (maintains backward compatibility)
                             validated_task_data = task_dict
 
@@ -635,54 +751,78 @@ class TaskApplicationFacade:
                             event_type="updated",
                             task_id=task_id,
                             user_id=user_id,
-                            task_data=validated_task_data
+                            task_data=validated_task_data,
                         )
-                        logger.info(f"Broadcasted task update notification for MEANINGFUL update of task {task_id}")
+                        logger.info(
+                            f"Broadcasted task update notification for MEANINGFUL update of task {task_id}"
+                        )
 
                         # ✅ CRITICAL FIX: When task progress changes, broadcast branch update
                         # Sidebar displays branch progress, so it needs branch update events
-                        if hasattr(request, 'progress_percentage') and request.progress_percentage is not None:
+                        if (
+                            hasattr(request, "progress_percentage")
+                            and request.progress_percentage is not None
+                        ):
                             try:
-                                git_branch_id = task_dict.get('git_branch_id')
+                                git_branch_id = task_dict.get("git_branch_id")
                                 if git_branch_id:
                                     # Get updated branch statistics with new progress calculation
                                     from ..services.facade_service import FacadeService
+
                                     facade_service = FacadeService.get_instance()
-                                    git_branch_facade = facade_service.get_git_branch_facade(user_id=user_id)
+                                    git_branch_facade = (
+                                        facade_service.get_git_branch_facade(
+                                            user_id=user_id
+                                        )
+                                    )
 
                                     # Get branch info for WebSocket broadcast
-                                    branch_result = git_branch_facade.get_git_branch_by_id(git_branch_id)
+                                    branch_result = (
+                                        git_branch_facade.get_git_branch_by_id(
+                                            git_branch_id
+                                        )
+                                    )
                                     if branch_result.get("success"):
-                                        branch_data = branch_result.get("git_branch", {})
+                                        branch_data = branch_result.get(
+                                            "git_branch", {}
+                                        )
 
                                         # Broadcast branch update event with updated progress
                                         WebSocketNotificationService.sync_broadcast_branch_event(
                                             event_type="updated",
                                             branch_id=git_branch_id,
-                                            project_id=branch_data.get("project_id", ""),
+                                            project_id=branch_data.get(
+                                                "project_id", ""
+                                            ),
                                             user_id=user_id,
-                                            branch_data=branch_data
+                                            branch_data=branch_data,
                                         )
-                                        logger.info(f"✅ Broadcasted branch update for progress change in task {task_id}")
+                                        logger.info(
+                                            f"✅ Broadcasted branch update for progress change in task {task_id}"
+                                        )
                             except Exception as branch_error:
-                                logger.warning(f"Failed to broadcast branch update after task progress change: {branch_error}")
+                                logger.warning(
+                                    f"Failed to broadcast branch update after task progress change: {branch_error}"
+                                )
                     except Exception as e:
                         logger.warning(f"Failed to broadcast task update: {e}")
                 elif not was_actually_updated:
-                    logger.info(f"Skipped duplicate notification for non-meaningful update of task {task_id}")
+                    logger.info(
+                        f"Skipped duplicate notification for non-meaningful update of task {task_id}"
+                    )
 
-                return {
-                    "success": True,
-                    "action": "update",
-                    "task": task_dict
-                }
+                return {"success": True, "action": "update", "task": task_dict}
             else:
                 return {
                     "success": False,
                     "action": "update",
-                    "error": getattr(task_response, 'message', getattr(task_response, 'error', 'Unknown error occurred'))
+                    "error": getattr(
+                        task_response,
+                        "message",
+                        getattr(task_response, "error", "Unknown error occurred"),
+                    ),
                 }
-                
+
         except TaskNotFoundError as e:
             return {"success": False, "action": "update", "error": str(e)}
         except ValueError as e:
@@ -690,9 +830,18 @@ class TaskApplicationFacade:
             return {"success": False, "action": "update", "error": str(e)}
         except Exception as e:
             logger.error(f"Unexpected error in update_task: {e}")
-            return {"success": False, "action": "update", "error": f"Unexpected error: {str(e)}"}
-    
-    def get_task(self, task_id: str, include_context: bool = True, include_dependencies: bool = True) -> dict[str, Any]:
+            return {
+                "success": False,
+                "action": "update",
+                "error": f"Unexpected error: {str(e)}",
+            }
+
+    def get_task(
+        self,
+        task_id: str,
+        include_context: bool = True,
+        include_dependencies: bool = True,
+    ) -> dict[str, Any]:
         """Get a task by ID with optional context data (sync-friendly)."""
         try:
             # Validate input at application boundary
@@ -703,30 +852,33 @@ class TaskApplicationFacade:
             import inspect
 
             from ...domain.value_objects.task_id import TaskId
+
             domain_task_id = TaskId(task_id)
-            
+
             # Check if find_by_id is async and handle accordingly
-            find_by_id_result = self._get_task_use_case._task_repository.find_by_id(domain_task_id)
+            find_by_id_result = self._get_task_use_case._task_repository.find_by_id(
+                domain_task_id
+            )
             if inspect.iscoroutine(find_by_id_result):
                 # If it's a coroutine, we need to run it in an event loop
                 task_entity = self._await_if_coroutine(find_by_id_result)
             else:
                 task_entity = find_by_id_result
-            
+
             if not task_entity:
                 return {
                     "success": False,
                     "action": "get",
                     "error": f"Task with ID {task_id} not found",
                 }
-            
+
             # Use the repository's context for other info
             task_response = self._await_if_coroutine(
                 self._get_task_use_case.execute(
                     task_id,
                     True,  # generate_rules (default behaviour)
                     False,  # force_full_generation
-                    include_context=include_context
+                    include_context=include_context,
                 )
             )
 
@@ -735,10 +887,14 @@ class TaskApplicationFacade:
                 dependency_relationships = None
                 if include_dependencies:
                     try:
-                        dependency_relationships = self._dependency_resolver.resolve_dependencies(task_id)
+                        dependency_relationships = (
+                            self._dependency_resolver.resolve_dependencies(task_id)
+                        )
                     except Exception as e:
-                        logger.warning(f"Failed to resolve dependencies for task {task_id}: {e}")
-                
+                        logger.warning(
+                            f"Failed to resolve dependencies for task {task_id}: {e}"
+                        )
+
                 # Convert to dict and include dependency relationships
                 # Use custom to_dict() method instead of asdict() to properly handle context_data
                 task_dict = task_response.to_dict()
@@ -749,68 +905,162 @@ class TaskApplicationFacade:
                             "task_id": dependency_relationships.task_id,
                             "depends_on": [
                                 {
-                                    "task_id": getattr(dep, 'task_id', None),
-                                    "title": getattr(dep, 'title', ''),
-                                    "status": getattr(dep, 'status', ''),
-                                    "priority": getattr(dep, 'priority', ''),
-                                    "completion_percentage": getattr(dep, 'completion_percentage', 0),
-                                    "is_blocking": getattr(dep, 'is_blocking', False),
-                                    "is_blocked": getattr(dep, 'is_blocked', False),
-                                    "estimated_effort": getattr(dep, 'estimated_effort', ''),
-                                    "assignees": getattr(dep, 'assignees', []),
-                                    "updated_at": getattr(dep, 'updated_at', None).isoformat() if getattr(dep, 'updated_at', None) and hasattr(getattr(dep, 'updated_at', None), 'isoformat') else None
-                                } for dep in (dependency_relationships.depends_on or [])
+                                    "task_id": getattr(dep, "task_id", None),
+                                    "title": getattr(dep, "title", ""),
+                                    "status": getattr(dep, "status", ""),
+                                    "priority": getattr(dep, "priority", ""),
+                                    "completion_percentage": getattr(
+                                        dep, "completion_percentage", 0
+                                    ),
+                                    "is_blocking": getattr(dep, "is_blocking", False),
+                                    "is_blocked": getattr(dep, "is_blocked", False),
+                                    "estimated_effort": getattr(
+                                        dep, "estimated_effort", ""
+                                    ),
+                                    "assignees": getattr(dep, "assignees", []),
+                                    "updated_at": getattr(
+                                        dep, "updated_at", None
+                                    ).isoformat()
+                                    if getattr(dep, "updated_at", None)
+                                    and hasattr(
+                                        getattr(dep, "updated_at", None), "isoformat"
+                                    )
+                                    else None,
+                                }
+                                for dep in (dependency_relationships.depends_on or [])
                             ],
-                        "blocks": [
-                            {
-                                "task_id": getattr(dep, 'task_id', None),
-                                "title": getattr(dep, 'title', ''),
-                                "status": getattr(dep, 'status', ''),
-                                "priority": getattr(dep, 'priority', ''),
-                                "completion_percentage": getattr(dep, 'completion_percentage', 0),
-                                "is_blocking": getattr(dep, 'is_blocking', False),
-                                "is_blocked": getattr(dep, 'is_blocked', False),
-                                "estimated_effort": getattr(dep, 'estimated_effort', ''),
-                                "assignees": getattr(dep, 'assignees', []),
-                                "updated_at": getattr(dep, 'updated_at', None).isoformat() if getattr(dep, 'updated_at', None) and hasattr(getattr(dep, 'updated_at', None), 'isoformat') else None
-                            } for dep in (dependency_relationships.blocks or [])
-                        ],
-                        "dependency_chains": [
-                            {
-                                "chain_id": getattr(chain, 'chain_id', None),
-                                "chain_status": getattr(chain, 'chain_status', ''),
-                                "task_count": getattr(chain, 'task_count', 0),
-                                "completed_tasks": getattr(chain, 'completed_tasks', 0),
-                                "blocked_tasks": getattr(chain, 'blocked_tasks', 0),
-                                "completion_percentage": getattr(chain, 'completion_percentage', 0),
-                                "is_blocked": getattr(chain, 'is_blocked', False),
-                                "next_task": {
-                                    "task_id": getattr(getattr(chain, 'next_task', None), 'task_id', None),
-                                    "title": getattr(getattr(chain, 'next_task', None), 'title', ''),
-                                    "status": getattr(getattr(chain, 'next_task', None), 'status', '')
-                                } if getattr(chain, 'next_task', None) else None
-                            } for chain in (getattr(dependency_relationships, 'upstream_chains', None) or [])
-                        ],
-                        "summary": {
-                            "total_dependencies": getattr(dependency_relationships, 'total_dependencies', 0),
-                            "completed_dependencies": getattr(dependency_relationships, 'completed_dependencies', 0),
-                            "blocked_dependencies": getattr(dependency_relationships, 'blocked_dependencies', 0),
-                            "can_start": getattr(dependency_relationships, 'can_start', True),
-                            "is_blocked": getattr(dependency_relationships, 'is_blocked', False),
-                            "is_blocking_others": getattr(dependency_relationships, 'is_blocking_others', False),
-                            "dependency_summary": getattr(dependency_relationships, 'dependency_summary', ''),
-                            "dependency_completion_percentage": getattr(dependency_relationships, 'dependency_completion_percentage', 0)
-                        },
-                        "workflow": {
-                            "next_actions": getattr(dependency_relationships, 'next_actions', []),
-                            "blocking_reasons": getattr(dependency_relationships, 'blocking_reasons', []),
-                            "blocking_info": getattr(dependency_relationships, 'get_blocking_chain_info', lambda: {})() if hasattr(dependency_relationships, 'get_blocking_chain_info') else {},
-                            "workflow_guidance": getattr(dependency_relationships, 'get_workflow_guidance', lambda: {})() if hasattr(dependency_relationships, 'get_workflow_guidance') else {}
+                            "blocks": [
+                                {
+                                    "task_id": getattr(dep, "task_id", None),
+                                    "title": getattr(dep, "title", ""),
+                                    "status": getattr(dep, "status", ""),
+                                    "priority": getattr(dep, "priority", ""),
+                                    "completion_percentage": getattr(
+                                        dep, "completion_percentage", 0
+                                    ),
+                                    "is_blocking": getattr(dep, "is_blocking", False),
+                                    "is_blocked": getattr(dep, "is_blocked", False),
+                                    "estimated_effort": getattr(
+                                        dep, "estimated_effort", ""
+                                    ),
+                                    "assignees": getattr(dep, "assignees", []),
+                                    "updated_at": getattr(
+                                        dep, "updated_at", None
+                                    ).isoformat()
+                                    if getattr(dep, "updated_at", None)
+                                    and hasattr(
+                                        getattr(dep, "updated_at", None), "isoformat"
+                                    )
+                                    else None,
+                                }
+                                for dep in (dependency_relationships.blocks or [])
+                            ],
+                            "dependency_chains": [
+                                {
+                                    "chain_id": getattr(chain, "chain_id", None),
+                                    "chain_status": getattr(chain, "chain_status", ""),
+                                    "task_count": getattr(chain, "task_count", 0),
+                                    "completed_tasks": getattr(
+                                        chain, "completed_tasks", 0
+                                    ),
+                                    "blocked_tasks": getattr(chain, "blocked_tasks", 0),
+                                    "completion_percentage": getattr(
+                                        chain, "completion_percentage", 0
+                                    ),
+                                    "is_blocked": getattr(chain, "is_blocked", False),
+                                    "next_task": {
+                                        "task_id": getattr(
+                                            getattr(chain, "next_task", None),
+                                            "task_id",
+                                            None,
+                                        ),
+                                        "title": getattr(
+                                            getattr(chain, "next_task", None),
+                                            "title",
+                                            "",
+                                        ),
+                                        "status": getattr(
+                                            getattr(chain, "next_task", None),
+                                            "status",
+                                            "",
+                                        ),
+                                    }
+                                    if getattr(chain, "next_task", None)
+                                    else None,
+                                }
+                                for chain in (
+                                    getattr(
+                                        dependency_relationships,
+                                        "upstream_chains",
+                                        None,
+                                    )
+                                    or []
+                                )
+                            ],
+                            "summary": {
+                                "total_dependencies": getattr(
+                                    dependency_relationships, "total_dependencies", 0
+                                ),
+                                "completed_dependencies": getattr(
+                                    dependency_relationships,
+                                    "completed_dependencies",
+                                    0,
+                                ),
+                                "blocked_dependencies": getattr(
+                                    dependency_relationships, "blocked_dependencies", 0
+                                ),
+                                "can_start": getattr(
+                                    dependency_relationships, "can_start", True
+                                ),
+                                "is_blocked": getattr(
+                                    dependency_relationships, "is_blocked", False
+                                ),
+                                "is_blocking_others": getattr(
+                                    dependency_relationships,
+                                    "is_blocking_others",
+                                    False,
+                                ),
+                                "dependency_summary": getattr(
+                                    dependency_relationships, "dependency_summary", ""
+                                ),
+                                "dependency_completion_percentage": getattr(
+                                    dependency_relationships,
+                                    "dependency_completion_percentage",
+                                    0,
+                                ),
+                            },
+                            "workflow": {
+                                "next_actions": getattr(
+                                    dependency_relationships, "next_actions", []
+                                ),
+                                "blocking_reasons": getattr(
+                                    dependency_relationships, "blocking_reasons", []
+                                ),
+                                "blocking_info": getattr(
+                                    dependency_relationships,
+                                    "get_blocking_chain_info",
+                                    lambda: {},
+                                )()
+                                if hasattr(
+                                    dependency_relationships, "get_blocking_chain_info"
+                                )
+                                else {},
+                                "workflow_guidance": getattr(
+                                    dependency_relationships,
+                                    "get_workflow_guidance",
+                                    lambda: {},
+                                )()
+                                if hasattr(
+                                    dependency_relationships, "get_workflow_guidance"
+                                )
+                                else {},
+                            },
                         }
-                    }
                     except Exception as e:
                         # If dependency relationship processing fails, log error but continue with basic task data
-                        logger.warning(f"Failed to process dependency relationships for task {task_id}: {e}")
+                        logger.warning(
+                            f"Failed to process dependency relationships for task {task_id}: {e}"
+                        )
                         # Add minimal dependency info to indicate processing failed
                         task_dict["dependency_relationships_error"] = str(e)
 
@@ -822,21 +1072,30 @@ class TaskApplicationFacade:
                     )
 
                     # Get subtask repository (create new instance with same user context)
-                    subtask_repo = ORMSubtaskRepository(session=None, user_id=self._task_repository._user_id if hasattr(self._task_repository, '_user_id') else None)
+                    subtask_repo = ORMSubtaskRepository(
+                        session=None,
+                        user_id=self._task_repository._user_id
+                        if hasattr(self._task_repository, "_user_id")
+                        else None,
+                    )
 
                     # Load all subtasks for this task
                     subtasks = subtask_repo.find_by_parent_task_id(TaskId(task_id))
 
                     # Convert subtask entities to dicts
                     if subtasks:
-                        task_dict["subtasks"] = [subtask.to_dict() for subtask in subtasks]
+                        task_dict["subtasks"] = [
+                            subtask.to_dict() for subtask in subtasks
+                        ]
                     else:
                         task_dict["subtasks"] = []
 
                 except Exception as e:
                     logger.warning(f"Failed to load subtasks for task {task_id}: {e}")
                     # Keep the subtask IDs if loading fails
-                    if "subtasks" not in task_dict or not isinstance(task_dict["subtasks"], list):
+                    if "subtasks" not in task_dict or not isinstance(
+                        task_dict["subtasks"], list
+                    ):
                         task_dict["subtasks"] = []
 
                 # Apply unified context format
@@ -856,31 +1115,29 @@ class TaskApplicationFacade:
         except TaskNotFoundError as e:
             return {"success": False, "action": "get", "error": str(e)}
         except AutoRuleGenerationError as e:
-            logger.warning(
-                f"Auto rule generation failed for task {task_id}: {e}"
-            )
+            logger.warning(f"Auto rule generation failed for task {task_id}: {e}")
             try:
                 # Get task from repository to extract its own data
                 import inspect
 
                 from ...domain.value_objects.task_id import TaskId
+
                 domain_task_id = TaskId(task_id)
-                
+
                 # Check if find_by_id is async and handle accordingly
-                find_by_id_result = self._get_task_use_case._task_repository.find_by_id(domain_task_id)
+                find_by_id_result = self._get_task_use_case._task_repository.find_by_id(
+                    domain_task_id
+                )
                 if inspect.iscoroutine(find_by_id_result):
                     # If it's a coroutine, we need to run it in an event loop
                     task_entity = self._await_if_coroutine(find_by_id_result)
                 else:
                     task_entity = find_by_id_result
-                
+
                 if task_entity:
                     task_response = self._await_if_coroutine(
                         self._get_task_use_case.execute(
-                            task_id,
-                            False,
-                            False,
-                            include_context=include_context
+                            task_id, False, False, include_context=include_context
                         )
                     )
                 else:
@@ -900,21 +1157,30 @@ class TaskApplicationFacade:
                     )
 
                     # Get subtask repository (create new instance with same user context)
-                    subtask_repo = ORMSubtaskRepository(session=None, user_id=self._task_repository._user_id if hasattr(self._task_repository, '_user_id') else None)
+                    subtask_repo = ORMSubtaskRepository(
+                        session=None,
+                        user_id=self._task_repository._user_id
+                        if hasattr(self._task_repository, "_user_id")
+                        else None,
+                    )
 
                     # Load all subtasks for this task
                     subtasks = subtask_repo.find_by_parent_task_id(TaskId(task_id))
 
                     # Convert subtask entities to dicts
                     if subtasks:
-                        task_dict["subtasks"] = [subtask.to_dict() for subtask in subtasks]
+                        task_dict["subtasks"] = [
+                            subtask.to_dict() for subtask in subtasks
+                        ]
                     else:
                         task_dict["subtasks"] = []
 
                 except Exception as e:
                     logger.warning(f"Failed to load subtasks for task {task_id}: {e}")
                     # Keep the subtask IDs if loading fails
-                    if "subtasks" not in task_dict or not isinstance(task_dict["subtasks"], list):
+                    if "subtasks" not in task_dict or not isinstance(
+                        task_dict["subtasks"], list
+                    ):
                         task_dict["subtasks"] = []
 
                 # Apply unified context format
@@ -938,7 +1204,7 @@ class TaskApplicationFacade:
                 "action": "get",
                 "error": f"Unexpected error: {str(e)}",
             }
-    
+
     def delete_task(self, task_id: str, user_id: str = None) -> dict[str, Any]:
         """Delete a task"""
         try:
@@ -953,17 +1219,24 @@ class TaskApplicationFacade:
             try:
                 # Fetch complete task data before deletion for animation
                 from ...domain.value_objects.task_id import TaskId
+
                 domain_task_id = TaskId(task_id)
                 task_entity = self._task_repository.find_by_id(domain_task_id)
 
                 if task_entity:
                     # Get full task dict with all fields for frontend animation
                     task_data_snapshot = task_entity.to_dict()
-                    logger.info(f"✅ Pre-fetched task data before deletion: {task_data_snapshot.get('title', 'Unknown')}")
+                    logger.info(
+                        f"✅ Pre-fetched task data before deletion: {task_data_snapshot.get('title', 'Unknown')}"
+                    )
 
                 # Also get task context for metadata
-                task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
-                logger.info(f"✅ Pre-fetched task context before deletion: {task_context}")
+                task_context = WebSocketNotificationService._get_task_context(
+                    task_id, user_id
+                )
+                logger.info(
+                    f"✅ Pre-fetched task context before deletion: {task_context}"
+                )
             except Exception as e:
                 logger.warning(f"Failed to get task data/context before deletion: {e}")
                 # Use fallback context if pre-fetch fails
@@ -971,63 +1244,92 @@ class TaskApplicationFacade:
                     "task_title": f"Task {task_id[:8]}",
                     "parent_branch_id": None,
                     "parent_branch_title": "Unknown Branch",
-                    "task_user_id": None
+                    "task_user_id": None,
                 }
 
             # Execute use case with cascade deletion
-            result = self._delete_task_use_case.execute(task_id, cascade=True, user_id=user_id)
+            result = self._delete_task_use_case.execute(
+                task_id, cascade=True, user_id=user_id
+            )
             success = result.get("success", False)
 
             # ✅ FIX: If pre-fetch failed but use case succeeded, use title from use case result
             if success and not task_data_snapshot and result.get("title"):
                 task_data_snapshot = {
                     "id": task_id,
-                    "title": result.get("title"),  # From use case (fetched before deletion)
-                    "git_branch_id": task_context.get("parent_branch_id") if task_context else None
+                    "title": result.get(
+                        "title"
+                    ),  # From use case (fetched before deletion)
+                    "git_branch_id": task_context.get("parent_branch_id")
+                    if task_context
+                    else None,
                 }
-                logger.info(f"✅ Using title from use case result: {result.get('title')}")
+                logger.info(
+                    f"✅ Using title from use case result: {result.get('title')}"
+                )
 
             if success:
                 # Broadcast task deletion event with pre-fetched data snapshot
                 try:
                     # Use the task owner's user_id from pre-fetched context for proper authorization
                     # This ensures WebSocket clients receive notifications for tasks they own
-                    task_owner_user_id = task_context.get("task_user_id") if task_context else None
+                    task_owner_user_id = (
+                        task_context.get("task_user_id") if task_context else None
+                    )
                     notification_user_id = task_owner_user_id or user_id or "system"
 
-                    logger.info(f"🔔 DELETE: Broadcasting with user_id={notification_user_id} (task_owner={task_owner_user_id}, provided={user_id})")
+                    logger.info(
+                        f"🔔 DELETE: Broadcasting with user_id={notification_user_id} (task_owner={task_owner_user_id}, provided={user_id})"
+                    )
 
                     # Convert task_data_snapshot dict to TaskDeletePayload for type safety
                     from ...domain.websocket_protocol import convert_task_delete_legacy
 
                     if task_data_snapshot:
                         try:
-                            task_delete_payload = convert_task_delete_legacy(task_data_snapshot)
-                            logger.info(f"✅ Converted task_data_snapshot to TaskDeletePayload: id={task_delete_payload.id}, title={task_delete_payload.title}")
+                            task_delete_payload = convert_task_delete_legacy(
+                                task_data_snapshot
+                            )
+                            logger.info(
+                                f"✅ Converted task_data_snapshot to TaskDeletePayload: id={task_delete_payload.id}, title={task_delete_payload.title}"
+                            )
 
                             # Use typed payload dict for WebSocket broadcast
                             typed_task_data = task_delete_payload.model_dump()
                         except Exception as conversion_error:
-                            logger.warning(f"Failed to convert task_data_snapshot to TaskDeletePayload: {conversion_error}. Using original snapshot as fallback.")
-                            typed_task_data = task_data_snapshot  # Fallback to original dict
+                            logger.warning(
+                                f"Failed to convert task_data_snapshot to TaskDeletePayload: {conversion_error}. Using original snapshot as fallback."
+                            )
+                            typed_task_data = (
+                                task_data_snapshot  # Fallback to original dict
+                            )
                     else:
-                        logger.warning("task_data_snapshot is None, using minimal fallback payload")
+                        logger.warning(
+                            "task_data_snapshot is None, using minimal fallback payload"
+                        )
                         # Create minimal fallback payload when snapshot is unavailable
                         from ...domain.websocket_protocol import TaskDeletePayload
+
                         fallback_payload = TaskDeletePayload(
                             id=task_id,
-                            title=task_context.get('task_title', f"Task {task_id[:8]}") if task_context else f"Task {task_id[:8]}",
-                            git_branch_id=task_context.get('parent_branch_id') if task_context else None
+                            title=task_context.get("task_title", f"Task {task_id[:8]}")
+                            if task_context
+                            else f"Task {task_id[:8]}",
+                            git_branch_id=task_context.get("parent_branch_id")
+                            if task_context
+                            else None,
                         )
                         typed_task_data = fallback_payload.model_dump()
-                        logger.info(f"✅ Created fallback TaskDeletePayload: {typed_task_data}")
+                        logger.info(
+                            f"✅ Created fallback TaskDeletePayload: {typed_task_data}"
+                        )
 
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="deleted",
                         task_id=task_id,
                         user_id=notification_user_id,
                         task_data=typed_task_data,  # ✅ Now using typed payload dict
-                        pre_fetched_context=task_context
+                        pre_fetched_context=task_context,
                     )
                 except Exception as e:
                     logger.warning(f"Failed to broadcast task deletion: {e}")
@@ -1042,8 +1344,12 @@ class TaskApplicationFacade:
                 # - Total: count jumps by 3 instead of 1
                 #
                 # SOLUTION: Only broadcast task deletion event, let frontend handle branch refresh
-                logger.info("🔧 FIX: Skipped redundant branch update broadcast to prevent double-counting")
-                logger.info("🔧 FIX: Task deletion event will trigger frontend to refresh branch data automatically")
+                logger.info(
+                    "🔧 FIX: Skipped redundant branch update broadcast to prevent double-counting"
+                )
+                logger.info(
+                    "🔧 FIX: Task deletion event will trigger frontend to refresh branch data automatically"
+                )
 
                 # Log cascade statistics if available
                 if "subtasks_deleted" in result:
@@ -1059,55 +1365,70 @@ class TaskApplicationFacade:
                     "message": f"Task {task_id} deleted successfully",
                     "cascade_stats": {
                         "subtasks_deleted": result.get("subtasks_deleted", 0),
-                        "contexts_deleted": result.get("contexts_deleted", 0)
-                    }
+                        "contexts_deleted": result.get("contexts_deleted", 0),
+                    },
                 }
             else:
                 return {
                     "success": False,
                     "action": "delete",
-                    "error": result.get("message", f"Failed to delete task {task_id}")
+                    "error": result.get("message", f"Failed to delete task {task_id}"),
                 }
-                
+
         except TaskNotFoundError as e:
             return {"success": False, "action": "delete", "error": str(e)}
         except ValueError as e:
             return {"success": False, "action": "delete", "error": str(e)}
         except Exception as e:
             logger.error(f"Unexpected error in delete_task: {e}")
-            return {"success": False, "action": "delete", "error": f"Unexpected error: {str(e)}"}
-    
-    def complete_task(self, task_id: str, completion_summary: str | None = None,
-                      testing_notes: str | None = None, user_id: str = None) -> dict[str, Any]:
+            return {
+                "success": False,
+                "action": "delete",
+                "error": f"Unexpected error: {str(e)}",
+            }
+
+    def complete_task(
+        self,
+        task_id: str,
+        completion_summary: str | None = None,
+        testing_notes: str | None = None,
+        user_id: str = None,
+    ) -> dict[str, Any]:
         """Complete a task"""
         try:
             # Debug logging
             import logging
+
             logging.getLogger(__name__).info(f"Starting complete_task for {task_id}")
             # Validate input at application boundary
             if not task_id or not task_id.strip():
                 raise ValueError("Task ID is required")
-            
+
             # Execute use case with Vision System parameters
             try:
                 result = self._complete_task_use_case.execute(
-                    task_id, 
+                    task_id,
                     completion_summary=completion_summary,
-                    testing_notes=testing_notes
+                    testing_notes=testing_notes,
                 )
             except Exception as uc_error:
                 import traceback
-                logging.getLogger(__name__).error(f"Use case execution failed: {uc_error}")
-                logging.getLogger(__name__).error(f"Traceback: {traceback.format_exc()}")
+
+                logging.getLogger(__name__).error(
+                    f"Use case execution failed: {uc_error}"
+                )
+                logging.getLogger(__name__).error(
+                    f"Traceback: {traceback.format_exc()}"
+                )
                 raise
-            
+
             # Pass through all result fields for complete error information
             response = {
                 "success": result.get("success", False),
                 "action": "complete",
                 "task_id": task_id,
                 "message": result.get("message", ""),
-                "context": result.get("context", {})
+                "context": result.get("context", {}),
             }
 
             # Add all other fields from the use case result to preserve error details
@@ -1116,11 +1437,15 @@ class TaskApplicationFacade:
                     response[key] = value
 
             # Broadcast task completion event ONLY if this was a new completion (not an update to already completed task)
-            if response.get("success") and not response.get("was_already_completed", False):
+            if response.get("success") and not response.get(
+                "was_already_completed", False
+            ):
                 try:
                     # CRITICAL FIX: complete_task use case doesn't return task data, so we need to fetch it
                     # This ensures WebSocket metadata enrichment has access to completion_summary, testing_notes, etc.
-                    logger.info(f"Fetching full task data for completion broadcast of task {task_id}")
+                    logger.info(
+                        f"Fetching full task data for completion broadcast of task {task_id}"
+                    )
 
                     try:
                         # Fetch the completed task directly from repository
@@ -1130,17 +1455,33 @@ class TaskApplicationFacade:
                             # CLEAN CODE: to_dict() now includes completion_summary and testing_notes automatically
                             task_data = completed_task.to_dict()
 
-                            logger.info(f"✅ Fetched task data with completion_summary: {task_data.get('completion_summary', '')[:80]}...")
+                            logger.info(
+                                f"✅ Fetched task data with completion_summary: {task_data.get('completion_summary', '')[:80]}..."
+                            )
                         else:
-                            logger.warning("Could not fetch task from repository for completion broadcast")
+                            logger.warning(
+                                "Could not fetch task from repository for completion broadcast"
+                            )
                             # ✅ FIX: Include minimal title for toast notification (fallback will show Task ID if unavailable)
-                            task_data = {"task_id": task_id, "status": response.get("status", "done"), "title": response.get("title")}
+                            task_data = {
+                                "task_id": task_id,
+                                "status": response.get("status", "done"),
+                                "title": response.get("title"),
+                            }
                     except Exception as fetch_error:
-                        logger.warning(f"Error fetching task data for broadcast: {fetch_error}")
+                        logger.warning(
+                            f"Error fetching task data for broadcast: {fetch_error}"
+                        )
                         # ✅ FIX: Include minimal title for toast notification (fallback will show Task ID if unavailable)
-                        task_data = {"task_id": task_id, "status": response.get("status", "done"), "title": response.get("title")}
+                        task_data = {
+                            "task_id": task_id,
+                            "status": response.get("status", "done"),
+                            "title": response.get("title"),
+                        }
 
-                    git_branch_id = task_data.get("git_branch_id") if task_data else None
+                    git_branch_id = (
+                        task_data.get("git_branch_id") if task_data else None
+                    )
 
                     # Derive project_id from git_branch_id if possible
                     project_id = None
@@ -1151,7 +1492,9 @@ class TaskApplicationFacade:
                             )
                             project_id = context.get("project_id")
                         except Exception as e:
-                            logger.warning(f"Could not derive project_id from git_branch_id: {e}")
+                            logger.warning(
+                                f"Could not derive project_id from git_branch_id: {e}"
+                            )
 
                     # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
                     from ...domain.websocket_protocol import TaskCompletePayload
@@ -1160,34 +1503,43 @@ class TaskApplicationFacade:
                         payload = TaskCompletePayload(
                             id=task_data.get("id") or task_id,
                             title=task_data.get("title", f"Task {task_id[:8]}"),
-                            status='done',
+                            status="done",
                             completion_summary=task_data.get("completion_summary"),
                             testing_notes=task_data.get("testing_notes"),
-                            completed_at=task_data.get("completed_at")
+                            completed_at=task_data.get("completed_at"),
                         )
                         validated_task_data = payload.model_dump()
                         logger.info(f"✅ Task complete payload validated for {task_id}")
                     except Exception as validation_error:
-                        logger.error(f"❌ Task complete payload validation failed: {validation_error}")
+                        logger.error(
+                            f"❌ Task complete payload validation failed: {validation_error}"
+                        )
                         # Fallback to dict (maintains backward compatibility)
                         validated_task_data = task_data
 
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="completed",
                         task_id=task_id,
-                        user_id=user_id or "system",  # Use provided user_id or fallback to "system"
+                        user_id=user_id
+                        or "system",  # Use provided user_id or fallback to "system"
                         task_data=validated_task_data,
                         git_branch_id=git_branch_id,  # Add git_branch_id for filtering and cascade updates
-                        project_id=project_id  # Add project_id for filtering
+                        project_id=project_id,  # Add project_id for filtering
                     )
-                    logger.info(f"Broadcasted task completion notification for NEW completion of task {task_id}")
+                    logger.info(
+                        f"Broadcasted task completion notification for NEW completion of task {task_id}"
+                    )
                 except Exception as e:
                     logger.warning(f"Failed to broadcast task completion: {e}")
-            elif response.get("success") and response.get("was_already_completed", False):
-                logger.info(f"Skipped duplicate notification for already completed task {task_id}")
+            elif response.get("success") and response.get(
+                "was_already_completed", False
+            ):
+                logger.info(
+                    f"Skipped duplicate notification for already completed task {task_id}"
+                )
 
             return response
-            
+
         except TaskNotFoundError as e:
             return {"success": False, "action": "complete", "error": str(e)}
         except ValueError as e:
@@ -1198,10 +1550,19 @@ class TaskApplicationFacade:
             except Exception:
                 # If logger fails, use logging directly
                 import logging
-                logging.getLogger(__name__).error(f"Unexpected error in complete_task (logger failed): {e}")
-            return {"success": False, "action": "complete", "error": f"Unexpected error: {str(e)}"}
-    
-    def _add_context_to_task(self, task_dict: dict[str, Any], task_id: str) -> dict[str, Any]:
+
+                logging.getLogger(__name__).error(
+                    f"Unexpected error in complete_task (logger failed): {e}"
+                )
+            return {
+                "success": False,
+                "action": "complete",
+                "error": f"Unexpected error: {str(e)}",
+            }
+
+    def _add_context_to_task(
+        self, task_dict: dict[str, Any], task_id: str
+    ) -> dict[str, Any]:
         """Add context data to a task dictionary"""
         try:
             # Get context data for the task using existing get_task logic
@@ -1209,7 +1570,9 @@ class TaskApplicationFacade:
             if task_response.get("success") and task_response.get("task"):
                 task_data = task_response["task"]
                 task_dict["context_data"] = task_data.get("context_data")
-                task_dict["context_available"] = task_data.get("context_available", False)
+                task_dict["context_available"] = task_data.get(
+                    "context_available", False
+                )
             else:
                 task_dict["context_data"] = None
                 task_dict["context_available"] = False
@@ -1217,17 +1580,23 @@ class TaskApplicationFacade:
             logger.warning(f"Failed to fetch context for task {task_id}: {e}")
             task_dict["context_data"] = None
             task_dict["context_available"] = False
-        
+
         return task_dict
-    
-    def list_tasks(self, request: ListTasksRequest, include_dependencies: bool = False, minimal: bool = True, include_context: bool = False) -> dict[str, Any]:
+
+    def list_tasks(
+        self,
+        request: ListTasksRequest,
+        include_dependencies: bool = False,
+        minimal: bool = True,
+        include_context: bool = False,
+    ) -> dict[str, Any]:
         """List tasks with optional filtering - optimized for performance with minimal data by default"""
         try:
             # Check if we should use optimized repository for performance
             from ...infrastructure.performance.performance_config import (
                 PerformanceConfig,
             )
-            
+
             if PerformanceConfig.is_performance_mode() and minimal:
                 # Use enhanced main repository with performance mode enabled
                 from ...infrastructure.repositories.orm.task_repository import (
@@ -1236,89 +1605,125 @@ class TaskApplicationFacade:
 
                 # Create repository with performance mode enabled for optimization
                 optimized_repo = ORMTaskRepository(
-                    git_branch_id=request.git_branch_id if hasattr(request, 'git_branch_id') else None,
+                    git_branch_id=request.git_branch_id
+                    if hasattr(request, "git_branch_id")
+                    else None,
                     user_id=self._task_repository.user_id,  # CRITICAL FIX: Required for user isolation filtering
-                    performance_mode=True  # Enable performance optimizations
+                    performance_mode=True,  # Enable performance optimizations
                 )
 
                 # Use minimal list method for best performance
                 tasks_list = optimized_repo.list_tasks_minimal(
-                    status=request.status if hasattr(request, 'status') else None,
-                    priority=request.priority if hasattr(request, 'priority') else None,
-                    assignee_id=request.assignee_id if hasattr(request, 'assignee_id') else None,
-                    git_branch_id=request.git_branch_id if hasattr(request, 'git_branch_id') else None,  # FIX: Add git_branch_id filtering
-                    limit=request.limit if hasattr(request, 'limit') else 100,
-                    offset=request.offset if hasattr(request, 'offset') else 0
+                    status=request.status if hasattr(request, "status") else None,
+                    priority=request.priority if hasattr(request, "priority") else None,
+                    assignee_id=request.assignee_id
+                    if hasattr(request, "assignee_id")
+                    else None,
+                    git_branch_id=request.git_branch_id
+                    if hasattr(request, "git_branch_id")
+                    else None,  # FIX: Add git_branch_id filtering
+                    limit=request.limit if hasattr(request, "limit") else 100,
+                    offset=request.offset if hasattr(request, "offset") else 0,
                 )
-                
+
                 # If dependencies are requested, resolve them for blocked status
                 if include_dependencies:
                     for task in tasks_list:
                         try:
-                            dependency_relationships = self._dependency_resolver.resolve_dependencies(task['id'])
-                            task['is_blocked'] = dependency_relationships.is_blocked
+                            dependency_relationships = (
+                                self._dependency_resolver.resolve_dependencies(
+                                    task["id"]
+                                )
+                            )
+                            task["is_blocked"] = dependency_relationships.is_blocked
                         except Exception:
-                            task['is_blocked'] = False
-                
+                            task["is_blocked"] = False
+
                 return {
                     "success": True,
                     "action": "list",
                     "tasks": tasks_list,
                     "count": len(tasks_list),
                     "filters_applied": {
-                        "status": request.status if hasattr(request, 'status') else None,
-                        "priority": request.priority if hasattr(request, 'priority') else None,
-                        "git_branch_id": request.git_branch_id if hasattr(request, 'git_branch_id') else None
+                        "status": request.status
+                        if hasattr(request, "status")
+                        else None,
+                        "priority": request.priority
+                        if hasattr(request, "priority")
+                        else None,
+                        "git_branch_id": request.git_branch_id
+                        if hasattr(request, "git_branch_id")
+                        else None,
                     },
                     "minimal": minimal,
-                    "performance_mode": True
+                    "performance_mode": True,
                 }
-            
+
             # Fall back to standard implementation
             logger.debug("[FACADE] Using standard list implementation")
             logger.debug("[FACADE] ListTasksRequest details:")
-            logger.debug(f"  - git_branch_id: {request.git_branch_id if hasattr(request, 'git_branch_id') else 'NOT SET'}")
-            logger.debug(f"  - status: {request.status if hasattr(request, 'status') else None}")
-            logger.debug(f"  - priority: {request.priority if hasattr(request, 'priority') else None}")
-            logger.debug(f"  - assignees: {request.assignees if hasattr(request, 'assignees') else None}")
-            logger.debug(f"  - labels: {request.labels if hasattr(request, 'labels') else None}")
-            logger.debug(f"  - limit: {request.limit if hasattr(request, 'limit') else None}")
-            
+            logger.debug(
+                f"  - git_branch_id: {request.git_branch_id if hasattr(request, 'git_branch_id') else 'NOT SET'}"
+            )
+            logger.debug(
+                f"  - status: {request.status if hasattr(request, 'status') else None}"
+            )
+            logger.debug(
+                f"  - priority: {request.priority if hasattr(request, 'priority') else None}"
+            )
+            logger.debug(
+                f"  - assignees: {request.assignees if hasattr(request, 'assignees') else None}"
+            )
+            logger.debug(
+                f"  - labels: {request.labels if hasattr(request, 'labels') else None}"
+            )
+            logger.debug(
+                f"  - limit: {request.limit if hasattr(request, 'limit') else None}"
+            )
+
             # Execute use case
             response = self._list_tasks_use_case.execute(request)
-            logger.debug(f"[FACADE] Use case returned {len(response.tasks) if response.tasks else 0} tasks")
-            
+            logger.debug(
+                f"[FACADE] Use case returned {len(response.tasks) if response.tasks else 0} tasks"
+            )
+
             # Convert tasks based on minimal flag
             tasks_list = []
-            
+
             if minimal:
                 # Use minimal DTO for optimal performance
                 for task in response.tasks:
                     minimal_task = TaskListItemResponse.from_task_response(task)
-                    
+
                     # Only check if blocked by dependencies if requested
                     if include_dependencies and task.dependencies:
                         try:
-                            dependency_relationships = self._dependency_resolver.resolve_dependencies(task.id)
-                            minimal_task.is_blocked = dependency_relationships.is_blocked
+                            dependency_relationships = (
+                                self._dependency_resolver.resolve_dependencies(task.id)
+                            )
+                            minimal_task.is_blocked = (
+                                dependency_relationships.is_blocked
+                            )
                         except Exception:
                             minimal_task.is_blocked = False
-                    
+
                     # Add context data if requested
                     task_dict = minimal_task.to_dict()
                     if include_context:
                         task_dict = self._add_context_to_task(task_dict, task.id)
-                    
+
                     tasks_list.append(task_dict)
             else:
                 # Full task data (legacy behavior)
                 for task in response.tasks:
                     task_dict = task.to_dict()
-                    
+
                     # Add dependency summary if requested
                     if include_dependencies:
                         try:
-                            dependency_relationships = self._dependency_resolver.resolve_dependencies(task.id)
+                            dependency_relationships = (
+                                self._dependency_resolver.resolve_dependencies(task.id)
+                            )
                             task_dict["dependency_summary"] = {
                                 "total_dependencies": dependency_relationships.total_dependencies,
                                 "completed_dependencies": dependency_relationships.completed_dependencies,
@@ -1327,10 +1732,16 @@ class TaskApplicationFacade:
                                 "is_blocking_others": dependency_relationships.is_blocking_others,
                                 "dependency_completion_percentage": dependency_relationships.dependency_completion_percentage,
                                 "dependency_text": dependency_relationships.dependency_summary,
-                                "blocking_reasons": dependency_relationships.blocking_reasons[:3] if dependency_relationships.blocking_reasons else []  # Show first 3 reasons
+                                "blocking_reasons": dependency_relationships.blocking_reasons[
+                                    :3
+                                ]
+                                if dependency_relationships.blocking_reasons
+                                else [],  # Show first 3 reasons
                             }
                         except Exception as e:
-                            logger.warning(f"Failed to resolve dependencies for task {task.id}: {e}")
+                            logger.warning(
+                                f"Failed to resolve dependencies for task {task.id}: {e}"
+                            )
                             task_dict["dependency_summary"] = {
                                 "total_dependencies": 0,
                                 "completed_dependencies": 0,
@@ -1339,38 +1750,44 @@ class TaskApplicationFacade:
                                 "is_blocking_others": False,
                                 "dependency_completion_percentage": 100.0,
                                 "dependency_text": "No dependencies",
-                                "blocking_reasons": []
+                                "blocking_reasons": [],
                             }
-                    
+
                     # Add context data if requested
                     if include_context:
                         task_dict = self._add_context_to_task(task_dict, task.id)
-                    
+
                     tasks_list.append(task_dict)
-            
+
             return {
                 "success": True,
                 "action": "list",
                 "tasks": tasks_list,
                 "count": response.count,
                 "filters_applied": response.filters_applied,
-                "minimal": minimal
+                "minimal": minimal,
             }
-            
+
         except Exception as e:
             logger.error(f"Unexpected error in list_tasks: {e}")
-            return {"success": False, "action": "list", "error": f"Unexpected error: {str(e)}"}
-    
-    def search_tasks(self, request: SearchTasksRequest, include_context: bool = False) -> dict[str, Any]:
+            return {
+                "success": False,
+                "action": "list",
+                "error": f"Unexpected error: {str(e)}",
+            }
+
+    def search_tasks(
+        self, request: SearchTasksRequest, include_context: bool = False
+    ) -> dict[str, Any]:
         """Search tasks by query"""
         try:
             # Validate request at application boundary
             if not request.query or not request.query.strip():
                 raise ValueError("Search query is required")
-            
+
             # Execute use case
             response = self._search_tasks_use_case.execute(request)
-            
+
             # Process tasks with context if requested
             tasks_list = []
             for task in response.tasks:
@@ -1378,24 +1795,34 @@ class TaskApplicationFacade:
                 if include_context:
                     task_dict = self._add_context_to_task(task_dict, task.id)
                 tasks_list.append(task_dict)
-            
+
             return {
                 "success": True,
                 "action": "search",
                 "tasks": tasks_list,
                 "count": response.count,
-                "query": response.query
+                "query": response.query,
             }
-            
+
         except ValueError as e:
             return {"success": False, "action": "search", "error": str(e)}
         except Exception as e:
             logger.error(f"Unexpected error in search_tasks: {e}")
-            return {"success": False, "action": "search", "error": f"Unexpected error: {str(e)}"}
-    
-    async def get_next_task(self, include_context: bool = True, user_id: str | None = None, 
-                           project_id: str = "", git_branch_id: str = "main", 
-                           assignee: str | None = None, labels: list[str] | None = None) -> dict[str, Any]:
+            return {
+                "success": False,
+                "action": "search",
+                "error": f"Unexpected error: {str(e)}",
+            }
+
+    async def get_next_task(
+        self,
+        include_context: bool = True,
+        user_id: str | None = None,
+        project_id: str = "",
+        git_branch_id: str = "main",
+        assignee: str | None = None,
+        labels: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Get the next task to work on with optional context data"""
         try:
             # Execute use case with all required parameters
@@ -1405,9 +1832,9 @@ class TaskApplicationFacade:
                 labels=labels,
                 git_branch_id=git_branch_id,  # Pass git_branch_id directly
                 user_id=user_id,
-                include_context=include_context
+                include_context=include_context,
             )
-            
+
             if task_response:
                 # Manually convert NextTaskResponse to dictionary instead of using asdict()
                 # This avoids TypeError issues with custom methods and non-serializable objects
@@ -1419,8 +1846,8 @@ class TaskApplicationFacade:
                         "next_item": task_response.next_item,
                         "context": task_response.context,
                         "context_info": task_response.context_info,
-                        "message": task_response.message
-                    }
+                        "message": task_response.message,
+                    },
                 }
                 # Temporarily disable context response factory to debug string error
                 # TODO: Re-enable after fixing the root cause
@@ -1431,14 +1858,17 @@ class TaskApplicationFacade:
                     "success": False,
                     "action": "next",
                     "message": "No tasks found. Create a task to get started!",
-                    "error": "No actionable tasks found. Create tasks or update context for existing tasks."
+                    "error": "No actionable tasks found. Create tasks or update context for existing tasks.",
                 }
-                
+
         except Exception as e:
             logger.error(f"Unexpected error in get_next_task: {e}")
-            return {"success": False, "action": "next", "error": f"Unexpected error: {str(e)}"}
-    
-    
+            return {
+                "success": False,
+                "action": "next",
+                "error": f"Unexpected error: {str(e)}",
+            }
+
     def count_tasks(self, filters: dict[str, Any]) -> dict[str, Any]:
         """
         Count tasks with given filters.
@@ -1452,26 +1882,28 @@ class TaskApplicationFacade:
                 assignees=filters.get("assignees", []),
                 labels=filters.get("labels", []),
                 limit=0,  # We only need the count
-                git_branch_id=filters.get("git_branch_id")
+                git_branch_id=filters.get("git_branch_id"),
             )
-            
+
             response = self._list_tasks_use_case.execute(request)
-            
-            return {
-                "success": True,
-                "count": response.count
-            }
-            
+
+            return {"success": True, "count": response.count}
+
         except Exception as e:
             logger.error(f"Error counting tasks: {e}")
             return {"success": False, "error": str(e), "count": 0}
-    
-    def list_tasks_summary(self, filters: dict[str, Any], offset: int = 0, 
-                          limit: int = 20, include_counts: bool = True) -> dict[str, Any]:
+
+    def list_tasks_summary(
+        self,
+        filters: dict[str, Any],
+        offset: int = 0,
+        limit: int = 20,
+        include_counts: bool = True,
+    ) -> dict[str, Any]:
         """
         Get lightweight task summaries for list views.
         Returns minimal task data for performance optimization.
-        
+
         Note: Since ListTasksRequest doesn't support offset, we get all tasks
         up to offset+limit and then slice. This is less efficient but maintains
         compatibility with the existing DTO structure.
@@ -1483,15 +1915,21 @@ class TaskApplicationFacade:
                 priority=filters.get("priority"),
                 assignees=filters.get("assignees", []),
                 labels=filters.get("labels", []),
-                limit=offset + limit if offset > 0 else limit,  # Get enough tasks to handle offset
-                git_branch_id=filters.get("git_branch_id")
+                limit=offset + limit
+                if offset > 0
+                else limit,  # Get enough tasks to handle offset
+                git_branch_id=filters.get("git_branch_id"),
             )
-            
+
             response = self._list_tasks_use_case.execute(request)
-            
+
             # Slice tasks based on offset
-            tasks_to_process = response.tasks[offset:offset+limit] if offset > 0 else response.tasks[:limit]
-            
+            tasks_to_process = (
+                response.tasks[offset : offset + limit]
+                if offset > 0
+                else response.tasks[:limit]
+            )
+
             # Convert to lightweight summaries
             task_summaries = []
             for task in tasks_to_process:
@@ -1499,109 +1937,166 @@ class TaskApplicationFacade:
                 summary = {
                     "id": task.id,
                     "title": task.title,
-                    "status": task.status.value if hasattr(task.status, 'value') else str(task.status),
-                    "priority": task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
-                    "git_branch_id": task.git_branch_id if hasattr(task, 'git_branch_id') else None,  # Required by frontend
-                    "project_id": task.project_id if hasattr(task, 'project_id') else None,  # Required by frontend
-                    "created_at": task.created_at.isoformat() if hasattr(task.created_at, 'isoformat') else str(task.created_at),
-                    "updated_at": task.updated_at.isoformat() if hasattr(task.updated_at, 'isoformat') else str(task.updated_at)
+                    "status": task.status.value
+                    if hasattr(task.status, "value")
+                    else str(task.status),
+                    "priority": task.priority.value
+                    if hasattr(task.priority, "value")
+                    else str(task.priority),
+                    "git_branch_id": task.git_branch_id
+                    if hasattr(task, "git_branch_id")
+                    else None,  # Required by frontend
+                    "project_id": task.project_id
+                    if hasattr(task, "project_id")
+                    else None,  # Required by frontend
+                    "created_at": task.created_at.isoformat()
+                    if hasattr(task.created_at, "isoformat")
+                    else str(task.created_at),
+                    "updated_at": task.updated_at.isoformat()
+                    if hasattr(task.updated_at, "isoformat")
+                    else str(task.updated_at),
                 }
 
                 if include_counts:
                     # Add counts for related data
-                    summary["subtasks"] = task.subtasks if hasattr(task, 'subtasks') else []
-                    summary["assignees"] = task.assignees if hasattr(task, 'assignees') else []
-                    summary["dependencies"] = task.dependencies if hasattr(task, 'dependencies') else []
+                    summary["subtasks"] = (
+                        task.subtasks if hasattr(task, "subtasks") else []
+                    )
+                    summary["assignees"] = (
+                        task.assignees if hasattr(task, "assignees") else []
+                    )
+                    summary["dependencies"] = (
+                        task.dependencies if hasattr(task, "dependencies") else []
+                    )
 
                 task_summaries.append(summary)
-            
+
             return {
                 "success": True,
                 "tasks": task_summaries,
-                "count": response.count  # Total count, not just the slice
+                "count": response.count,  # Total count, not just the slice
             }
-            
+
         except Exception as e:
             logger.error(f"Error fetching task summaries: {e}")
             return {"success": False, "error": str(e), "tasks": []}
-    
-    def list_subtasks_summary(self, parent_task_id: str, include_counts: bool = True) -> dict[str, Any]:
+
+    def list_subtasks_summary(
+        self, parent_task_id: str, include_counts: bool = True
+    ) -> dict[str, Any]:
         """
         Get lightweight subtask summaries for a parent task.
         Returns minimal subtask data for performance optimization.
         """
         try:
             if not self._subtask_repository:
-                return {"success": False, "error": "Subtask repository not configured", "subtasks": []}
-            
+                return {
+                    "success": False,
+                    "error": "Subtask repository not configured",
+                    "subtasks": [],
+                }
+
             # Get subtasks for the parent task
             from ...domain.value_objects.task_id import TaskId
+
             parent_id = TaskId(parent_task_id)
-            
+
             # Use the subtask repository to find subtasks
             subtasks = self._subtask_repository.find_by_parent_task_id(parent_id)
-            
+
             # Convert to lightweight summaries
             subtask_summaries = []
             for subtask in subtasks:
                 # Extract primitive values from value objects
-                subtask_id = subtask.id.value if hasattr(subtask.id, 'value') else str(subtask.id)
-                status = subtask.status.value if hasattr(subtask.status, 'value') else str(subtask.status)
-                priority = subtask.priority.value if hasattr(subtask.priority, 'value') else (subtask.priority if hasattr(subtask, 'priority') else "medium")
-                
+                subtask_id = (
+                    subtask.id.value
+                    if hasattr(subtask.id, "value")
+                    else str(subtask.id)
+                )
+                status = (
+                    subtask.status.value
+                    if hasattr(subtask.status, "value")
+                    else str(subtask.status)
+                )
+                priority = (
+                    subtask.priority.value
+                    if hasattr(subtask.priority, "value")
+                    else (
+                        subtask.priority if hasattr(subtask, "priority") else "medium"
+                    )
+                )
+
                 summary = {
                     "id": subtask_id,
                     "title": subtask.title,
                     "status": status,
                     "priority": priority,
-                    "progress_percentage": subtask.progress_percentage if hasattr(subtask, 'progress_percentage') else 0
+                    "progress_percentage": subtask.progress_percentage
+                    if hasattr(subtask, "progress_percentage")
+                    else 0,
                 }
-                
+
                 if include_counts:
                     # Add assignees count
-                    summary["assignees"] = subtask.assignees if hasattr(subtask, 'assignees') else []
-                
+                    summary["assignees"] = (
+                        subtask.assignees if hasattr(subtask, "assignees") else []
+                    )
+
                 subtask_summaries.append(summary)
-            
-            return {
-                "success": True,
-                "subtasks": subtask_summaries
-            }
-            
+
+            return {"success": True, "subtasks": subtask_summaries}
+
         except Exception as e:
             logger.error(f"Error fetching subtask summaries: {e}")
             return {"success": False, "error": str(e), "subtasks": []}
-    
-    
+
     def add_dependency(self, task_id: str, dependency_id: str) -> dict[str, Any]:
         """Add a dependency to a task"""
         try:
             # For backward compatibility, allow empty task_id / dependency_id (tests expect success)
             if not task_id or not task_id.strip():
-                return {"success": True, "message": "No-op: task_id not provided (validation pending)", "task": None}
+                return {
+                    "success": True,
+                    "message": "No-op: task_id not provided (validation pending)",
+                    "task": None,
+                }
             if not dependency_id or not dependency_id.strip():
-                return {"success": True, "message": "No-op: dependency_id not provided (validation pending)", "task": None}
+                return {
+                    "success": True,
+                    "message": "No-op: dependency_id not provided (validation pending)",
+                    "task": None,
+                }
 
             from ...domain.value_objects.task_id import TaskId
-            
+
             task = self._task_repository.find_by_id(TaskId(task_id))
             if not task:
                 raise TaskNotFoundError(f"Task with ID {task_id} not found")
 
             # First try to find dependency in current context
             dependency_task = self._task_repository.find_by_id(TaskId(dependency_id))
-            
+
             # If not found, try to find across all states (active, completed, archived)
-            if not dependency_task and hasattr(self._task_repository, 'find_by_id_all_states'):
-                dependency_task = self._task_repository.find_by_id_all_states(TaskId(dependency_id))
-            
+            if not dependency_task and hasattr(
+                self._task_repository, "find_by_id_all_states"
+            ):
+                dependency_task = self._task_repository.find_by_id_all_states(
+                    TaskId(dependency_id)
+                )
+
             # If still not found and repository supports cross-context search, try that
-            if not dependency_task and hasattr(self._task_repository, 'find_by_id_across_contexts'):
-                dependency_task = self._task_repository.find_by_id_across_contexts(TaskId(dependency_id))
-            
+            if not dependency_task and hasattr(
+                self._task_repository, "find_by_id_across_contexts"
+            ):
+                dependency_task = self._task_repository.find_by_id_across_contexts(
+                    TaskId(dependency_id)
+                )
+
             if not dependency_task:
-                raise TaskNotFoundError(f"Dependency task with ID {dependency_id} not found")
-            
+                raise TaskNotFoundError(
+                    f"Dependency task with ID {dependency_id} not found"
+                )
+
             # Use the Task entity's add_dependency method
             try:
                 task.add_dependency(dependency_task.id)
@@ -1614,8 +2109,12 @@ class TaskApplicationFacade:
                     return {"success": False, "error": str(ve)}
                 else:
                     # Dependency might already exist
-                    message = f"Dependency {dependency_id} already exists for task {task_id}"
-                    logger.info(f"Dependency {dependency_id} already exists for task {task_id}")
+                    message = (
+                        f"Dependency {dependency_id} already exists for task {task_id}"
+                    )
+                    logger.info(
+                        f"Dependency {dependency_id} already exists for task {task_id}"
+                    )
 
             task_dict = MinimalResponseSerializer.serialize_task_minimal(task, "update")
 
@@ -1631,8 +2130,16 @@ class TaskApplicationFacade:
                 # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
                 try:
                     # Convert enum values to strings for Pydantic validation
-                    status_value = task.status.value if hasattr(task.status, 'value') else str(task.status)
-                    priority_value = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+                    status_value = (
+                        task.status.value
+                        if hasattr(task.status, "value")
+                        else str(task.status)
+                    )
+                    priority_value = (
+                        task.priority.value
+                        if hasattr(task.priority, "value")
+                        else str(task.priority)
+                    )
 
                     payload = TaskUpdatePayload(
                         id=task_dict.get("id") or task_id,
@@ -1640,15 +2147,20 @@ class TaskApplicationFacade:
                         description=task_dict.get("description") or task.description,
                         status=task_dict.get("status") or status_value,
                         priority=task_dict.get("priority") or priority_value,
-                        git_branch_id=task_dict.get("git_branch_id") or str(task.git_branch_id),
+                        git_branch_id=task_dict.get("git_branch_id")
+                        or str(task.git_branch_id),
                         assignees=task_dict.get("assignees") or task.assignees,
                         labels=task_dict.get("labels") or task.labels,
-                        updated_at=task_dict.get("updated_at")
+                        updated_at=task_dict.get("updated_at"),
                     )
                     validated_task_data = payload.model_dump()
-                    logger.info(f"✅ Task dependency add payload validated for {task_id}")
+                    logger.info(
+                        f"✅ Task dependency add payload validated for {task_id}"
+                    )
                 except Exception as validation_error:
-                    logger.error(f"❌ Task dependency add payload validation failed: {validation_error}")
+                    logger.error(
+                        f"❌ Task dependency add payload validation failed: {validation_error}"
+                    )
                     # Fallback to dict (maintains backward compatibility)
                     validated_task_data = task_dict
 
@@ -1656,26 +2168,23 @@ class TaskApplicationFacade:
                     event_type="updated",
                     task_id=task_id,
                     user_id=user_id,
-                    task_data=validated_task_data
+                    task_data=validated_task_data,
                 )
-                logger.info(f"Broadcasted task update notification after adding dependency to task {task_id}")
+                logger.info(
+                    f"Broadcasted task update notification after adding dependency to task {task_id}"
+                )
             except Exception as e:
-                logger.warning(f"Failed to broadcast task update after dependency add: {e}")
+                logger.warning(
+                    f"Failed to broadcast task update after dependency add: {e}"
+                )
 
-            return {
-                "success": True,
-                "message": message,
-                "task": task_dict
-            }
+            return {"success": True, "message": message, "task": task_dict}
         except (TaskNotFoundError, ValueError) as e:
             return {"success": False, "error": str(e)}
         except Exception as e:
             logger.error(f"Failed to add dependency: {e}")
-            return {
-                "success": False,
-                "error": f"Failed to add dependency: {str(e)}"
-            }
-    
+            return {"success": False, "error": f"Failed to add dependency: {str(e)}"}
+
     def remove_dependency(self, task_id: str, dependency_id: str) -> dict[str, Any]:
         """Remove a dependency from a task"""
         try:
@@ -1691,7 +2200,7 @@ class TaskApplicationFacade:
                 raise TaskNotFoundError(f"Task with ID {task_id} not found")
 
             dependency_task_id = TaskId(dependency_id)
-            
+
             # Use the Task entity's remove_dependency method
             try:
                 task.remove_dependency(dependency_task_id)
@@ -1717,8 +2226,16 @@ class TaskApplicationFacade:
                 # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
                 try:
                     # Convert enum values to strings for Pydantic validation
-                    status_value = task.status.value if hasattr(task.status, 'value') else str(task.status)
-                    priority_value = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+                    status_value = (
+                        task.status.value
+                        if hasattr(task.status, "value")
+                        else str(task.status)
+                    )
+                    priority_value = (
+                        task.priority.value
+                        if hasattr(task.priority, "value")
+                        else str(task.priority)
+                    )
 
                     payload = TaskUpdatePayload(
                         id=task_dict.get("id") or task_id,
@@ -1726,15 +2243,20 @@ class TaskApplicationFacade:
                         description=task_dict.get("description") or task.description,
                         status=task_dict.get("status") or status_value,
                         priority=task_dict.get("priority") or priority_value,
-                        git_branch_id=task_dict.get("git_branch_id") or str(task.git_branch_id),
+                        git_branch_id=task_dict.get("git_branch_id")
+                        or str(task.git_branch_id),
                         assignees=task_dict.get("assignees") or task.assignees,
                         labels=task_dict.get("labels") or task.labels,
-                        updated_at=task_dict.get("updated_at")
+                        updated_at=task_dict.get("updated_at"),
                     )
                     validated_task_data = payload.model_dump()
-                    logger.info(f"✅ Task dependency remove payload validated for {task_id}")
+                    logger.info(
+                        f"✅ Task dependency remove payload validated for {task_id}"
+                    )
                 except Exception as validation_error:
-                    logger.error(f"❌ Task dependency remove payload validation failed: {validation_error}")
+                    logger.error(
+                        f"❌ Task dependency remove payload validation failed: {validation_error}"
+                    )
                     # Fallback to dict (maintains backward compatibility)
                     validated_task_data = task_dict
 
@@ -1742,35 +2264,38 @@ class TaskApplicationFacade:
                     event_type="updated",
                     task_id=task_id,
                     user_id=user_id,
-                    task_data=validated_task_data
+                    task_data=validated_task_data,
                 )
-                logger.info(f"Broadcasted task update notification after removing dependency from task {task_id}")
+                logger.info(
+                    f"Broadcasted task update notification after removing dependency from task {task_id}"
+                )
             except Exception as e:
-                logger.warning(f"Failed to broadcast task update after dependency remove: {e}")
+                logger.warning(
+                    f"Failed to broadcast task update after dependency remove: {e}"
+                )
 
-            return {
-                "success": True,
-                "message": message,
-                "task": task_dict
-            }
+            return {"success": True, "message": message, "task": task_dict}
         except (TaskNotFoundError, ValueError) as e:
             return {"success": False, "error": str(e)}
         except Exception as e:
             logger.error(f"Failed to remove dependency: {e}")
-            return {
-                "success": False,
-                "error": f"Failed to remove dependency: {str(e)}"
-            }
-    
+            return {"success": False, "error": f"Failed to remove dependency: {str(e)}"}
+
     def get_dependencies(self, task_id: str, user_id: str = None) -> dict[str, Any]:
         """Get all dependencies for a task"""
         try:
             if not task_id or not task_id.strip():
-                return {"success": False, "action": "get_dependencies", "error": "Task ID is required"}
-            
+                return {
+                    "success": False,
+                    "action": "get_dependencies",
+                    "error": "Task ID is required",
+                }
+
             # Use the manage dependencies use case
-            dependencies_data = self._manage_dependencies_use_case.get_dependencies(task_id)
-            
+            dependencies_data = self._manage_dependencies_use_case.get_dependencies(
+                task_id
+            )
+
             return {
                 "success": True,
                 "action": "get_dependencies",
@@ -1778,9 +2303,9 @@ class TaskApplicationFacade:
                 "dependencies": dependencies_data.get("dependencies", []),
                 "dependency_ids": dependencies_data.get("dependency_ids", []),
                 "can_start": dependencies_data.get("can_start", True),
-                "message": f"Retrieved {len(dependencies_data.get('dependencies', []))} dependencies for task {task_id}"
+                "message": f"Retrieved {len(dependencies_data.get('dependencies', []))} dependencies for task {task_id}",
             }
-            
+
         except TaskNotFoundError as e:
             return {"success": False, "action": "get_dependencies", "error": str(e)}
         except Exception as e:
@@ -1788,26 +2313,32 @@ class TaskApplicationFacade:
             return {
                 "success": False,
                 "action": "get_dependencies",
-                "error": f"Failed to get dependencies: {str(e)}"
+                "error": f"Failed to get dependencies: {str(e)}",
             }
-    
+
     def clear_dependencies(self, task_id: str, user_id: str = None) -> dict[str, Any]:
         """Clear all dependencies from a task"""
         try:
             if not task_id or not task_id.strip():
-                return {"success": False, "action": "clear_dependencies", "error": "Task ID is required"}
-            
+                return {
+                    "success": False,
+                    "action": "clear_dependencies",
+                    "error": "Task ID is required",
+                }
+
             # Use the manage dependencies use case
             response = self._manage_dependencies_use_case.clear_dependencies(task_id)
-            
+
             return {
                 "success": response.success,
-                "action": "clear_dependencies", 
+                "action": "clear_dependencies",
                 "task_id": response.task_id,
                 "message": response.message,
-                "dependencies_cleared": response.message.split()[1] if "Cleared" in response.message else "0"
+                "dependencies_cleared": response.message.split()[1]
+                if "Cleared" in response.message
+                else "0",
             }
-            
+
         except TaskNotFoundError as e:
             return {"success": False, "action": "clear_dependencies", "error": str(e)}
         except Exception as e:
@@ -1815,37 +2346,43 @@ class TaskApplicationFacade:
             return {
                 "success": False,
                 "action": "clear_dependencies",
-                "error": f"Failed to clear dependencies: {str(e)}"
+                "error": f"Failed to clear dependencies: {str(e)}",
             }
-    
+
     def get_blocking_tasks(self, task_id: str, user_id: str = None) -> dict[str, Any]:
         """Get all tasks that are blocked by this task (reverse dependencies)"""
         try:
             if not task_id or not task_id.strip():
-                return {"success": False, "action": "get_blocking_tasks", "error": "Task ID is required"}
-            
+                return {
+                    "success": False,
+                    "action": "get_blocking_tasks",
+                    "error": "Task ID is required",
+                }
+
             # Use the manage dependencies use case
-            blocking_data = self._manage_dependencies_use_case.get_blocking_tasks(task_id)
-            
+            blocking_data = self._manage_dependencies_use_case.get_blocking_tasks(
+                task_id
+            )
+
             return {
                 "success": True,
                 "action": "get_blocking_tasks",
                 "task_id": blocking_data.get("task_id", task_id),
                 "blocking_tasks": blocking_data.get("blocking_tasks", []),
                 "blocking_count": blocking_data.get("blocking_count", 0),
-                "message": f"Found {blocking_data.get('blocking_count', 0)} tasks blocked by task {task_id}"
+                "message": f"Found {blocking_data.get('blocking_count', 0)} tasks blocked by task {task_id}",
             }
-            
+
         except TaskNotFoundError as e:
             return {"success": False, "action": "get_blocking_tasks", "error": str(e)}
         except Exception as e:
             logger.error(f"Failed to get blocking tasks: {e}")
             return {
                 "success": False,
-                "action": "get_blocking_tasks", 
-                "error": f"Failed to get blocking tasks: {str(e)}"
+                "action": "get_blocking_tasks",
+                "error": f"Failed to get blocking tasks: {str(e)}",
             }
-    
+
     # ---------------------------------------------------------------------
     # Helper
     # ---------------------------------------------------------------------
@@ -1858,9 +2395,10 @@ class TaskApplicationFacade:
         if asyncio.iscoroutine(value):
             # Always use threading approach to avoid asyncio.run() issues
             import threading
+
             result = None
             exception = None
-            
+
             def run_in_new_loop():
                 nonlocal result, exception
                 try:
@@ -1873,11 +2411,11 @@ class TaskApplicationFacade:
                         asyncio.set_event_loop(None)
                 except Exception as e:
                     exception = e
-            
+
             thread = threading.Thread(target=run_in_new_loop)
             thread.start()
             thread.join()
-            
+
             if exception:
                 raise exception
             return result
@@ -1887,7 +2425,9 @@ class TaskApplicationFacade:
     # Duplicate Detection Methods (following completion deduplication pattern)
     # ---------------------------------------------------------------------
 
-    def _check_for_duplicate_creation(self, request: CreateTaskRequest, user_id: str) -> bool:
+    def _check_for_duplicate_creation(
+        self, request: CreateTaskRequest, user_id: str
+    ) -> bool:
         """
         Check if a task with similar data was recently created to prevent duplicate notifications.
         Following the same pattern as CompleteTaskUseCase._check_was_already_completed.
@@ -1902,7 +2442,6 @@ class TaskApplicationFacade:
         try:
             from datetime import datetime, timedelta
 
-
             # Check for tasks created in the last 10 seconds with same title and branch
             cutoff_time = datetime.now(UTC) - timedelta(seconds=10)
 
@@ -1912,7 +2451,7 @@ class TaskApplicationFacade:
             # Create request to find recent tasks in same branch
             list_request = ListTasksRequest(
                 git_branch_id=request.git_branch_id,
-                limit=20  # Check last 20 tasks
+                limit=20,  # Check last 20 tasks
             )
 
             response = self._list_tasks_use_case.execute(list_request)
@@ -1923,13 +2462,18 @@ class TaskApplicationFacade:
             # Check for similar tasks created recently
             for task in response.tasks:
                 # Skip if task is too old
-                if hasattr(task, 'created_at') and task.created_at < cutoff_time:
+                if hasattr(task, "created_at") and task.created_at < cutoff_time:
                     continue
 
                 # Check for same title (case-insensitive)
-                if (hasattr(task, 'title') and request.title and
-                    task.title.lower().strip() == request.title.lower().strip()):
-                    logger.info(f"Found recent task with same title '{task.title}' created at {task.created_at}")
+                if (
+                    hasattr(task, "title")
+                    and request.title
+                    and task.title.lower().strip() == request.title.lower().strip()
+                ):
+                    logger.info(
+                        f"Found recent task with same title '{task.title}' created at {task.created_at}"
+                    )
                     return True
 
             return False
@@ -1951,6 +2495,7 @@ class TaskApplicationFacade:
         """
         try:
             from ...domain.value_objects.task_id import TaskId
+
             domain_task_id = TaskId.from_string(str(task_id))
 
             # Get current task state from repository
@@ -1961,7 +2506,9 @@ class TaskApplicationFacade:
             logger.warning(f"Error getting task for update comparison: {e}")
             return None
 
-    def _check_for_meaningful_update(self, current_task, updated_task, request: UpdateTaskRequest) -> bool:
+    def _check_for_meaningful_update(
+        self, current_task, updated_task, request: UpdateTaskRequest
+    ) -> bool:
         """
         Check if the update request contains meaningful changes.
         Following the same pattern as CompleteTaskUseCase with was_already_completed flag.
@@ -1983,69 +2530,111 @@ class TaskApplicationFacade:
             meaningful_changes = []
 
             # Title change
-            if (request.title is not None and
-                hasattr(current_task, 'title') and hasattr(updated_task, 'title')):
+            if (
+                request.title is not None
+                and hasattr(current_task, "title")
+                and hasattr(updated_task, "title")
+            ):
                 if current_task.title != updated_task.title:
-                    meaningful_changes.append(f"title: '{current_task.title}' -> '{updated_task.title}'")
+                    meaningful_changes.append(
+                        f"title: '{current_task.title}' -> '{updated_task.title}'"
+                    )
 
             # Description change
-            if (request.description is not None and
-                hasattr(current_task, 'description') and hasattr(updated_task, 'description')):
+            if (
+                request.description is not None
+                and hasattr(current_task, "description")
+                and hasattr(updated_task, "description")
+            ):
                 current_desc = current_task.description or ""
                 updated_desc = updated_task.description or ""
                 if current_desc != updated_desc:
                     meaningful_changes.append("description changed")
 
             # Status change
-            if (request.status is not None and
-                hasattr(current_task, 'status') and hasattr(updated_task, 'status')):
+            if (
+                request.status is not None
+                and hasattr(current_task, "status")
+                and hasattr(updated_task, "status")
+            ):
                 current_status = str(current_task.status)
                 updated_status = str(updated_task.status)
                 if current_status != updated_status:
-                    meaningful_changes.append(f"status: '{current_status}' -> '{updated_status}'")
+                    meaningful_changes.append(
+                        f"status: '{current_status}' -> '{updated_status}'"
+                    )
 
             # Progress percentage change
             if request.progress_percentage is not None:
-                current_progress = getattr(current_task, 'overall_progress', getattr(current_task, 'progress_percentage', None))
-                updated_progress = getattr(updated_task, 'progress_percentage', getattr(updated_task, 'overall_progress', None))
+                current_progress = getattr(
+                    current_task,
+                    "overall_progress",
+                    getattr(current_task, "progress_percentage", None),
+                )
+                updated_progress = getattr(
+                    updated_task,
+                    "progress_percentage",
+                    getattr(updated_task, "overall_progress", None),
+                )
                 if current_progress != updated_progress:
-                    meaningful_changes.append(f"progress_percentage: {current_progress} -> {updated_progress}")
+                    meaningful_changes.append(
+                        f"progress_percentage: {current_progress} -> {updated_progress}"
+                    )
 
             # Priority change
-            if (request.priority is not None and
-                hasattr(current_task, 'priority') and hasattr(updated_task, 'priority')):
+            if (
+                request.priority is not None
+                and hasattr(current_task, "priority")
+                and hasattr(updated_task, "priority")
+            ):
                 current_priority = str(current_task.priority)
                 updated_priority = str(updated_task.priority)
                 if current_priority != updated_priority:
-                    meaningful_changes.append(f"priority: '{current_priority}' -> '{updated_priority}'")
+                    meaningful_changes.append(
+                        f"priority: '{current_priority}' -> '{updated_priority}'"
+                    )
 
             # Details change
-            if (request.details is not None and
-                hasattr(current_task, 'details') and hasattr(updated_task, 'details')):
+            if (
+                request.details is not None
+                and hasattr(current_task, "details")
+                and hasattr(updated_task, "details")
+            ):
                 current_details = current_task.details or ""
                 updated_details = updated_task.details or ""
                 if current_details != updated_details:
                     meaningful_changes.append("details changed")
 
             # Estimated effort change
-            if (request.estimated_effort is not None and
-                hasattr(current_task, 'estimated_effort') and hasattr(updated_task, 'estimated_effort')):
+            if (
+                request.estimated_effort is not None
+                and hasattr(current_task, "estimated_effort")
+                and hasattr(updated_task, "estimated_effort")
+            ):
                 current_effort = current_task.estimated_effort or ""
                 updated_effort = updated_task.estimated_effort or ""
                 if current_effort != updated_effort:
-                    meaningful_changes.append(f"estimated_effort: '{current_effort}' -> '{updated_effort}'")
+                    meaningful_changes.append(
+                        f"estimated_effort: '{current_effort}' -> '{updated_effort}'"
+                    )
 
             # Assignees change
-            if (request.assignees is not None and
-                hasattr(current_task, 'assignees') and hasattr(updated_task, 'assignees')):
+            if (
+                request.assignees is not None
+                and hasattr(current_task, "assignees")
+                and hasattr(updated_task, "assignees")
+            ):
                 current_assignees = set(current_task.assignees or [])
                 updated_assignees = set(updated_task.assignees or [])
                 if current_assignees != updated_assignees:
                     meaningful_changes.append("assignees changed")
 
             # Labels change
-            if (request.labels is not None and
-                hasattr(current_task, 'labels') and hasattr(updated_task, 'labels')):
+            if (
+                request.labels is not None
+                and hasattr(current_task, "labels")
+                and hasattr(updated_task, "labels")
+            ):
                 current_labels = set(current_task.labels or [])
                 updated_labels = set(updated_task.labels or [])
                 if current_labels != updated_labels:
@@ -2053,10 +2642,14 @@ class TaskApplicationFacade:
 
             # Log the changes for debugging
             if meaningful_changes:
-                logger.info(f"Meaningful changes detected for task {updated_task.id}: {', '.join(meaningful_changes)}")
+                logger.info(
+                    f"Meaningful changes detected for task {updated_task.id}: {', '.join(meaningful_changes)}"
+                )
                 return True
             else:
-                logger.info(f"No meaningful changes detected for task update of {updated_task.id}")
+                logger.info(
+                    f"No meaningful changes detected for task update of {updated_task.id}"
+                )
                 return False
 
         except Exception as e:
@@ -2065,5 +2658,3 @@ class TaskApplicationFacade:
             return True
 
     # ---------------------------------------------------------------------
-
- 

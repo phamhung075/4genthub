@@ -47,28 +47,31 @@ class BaseORMRepository(Generic[ModelType]):
         """
         self.model_class = model_class
         self._session: Session | None = None
-    
+
     @contextmanager
     def get_db_session(self):
         """
         Get a database session context manager.
-        
+
         If a session is already active (from a transaction),
         use it. Otherwise, create a new session.
         """
         # CRITICAL FIX: Check for transaction session first (higher priority)
-        if hasattr(self, '_session') and self._session:
+        if hasattr(self, "_session") and self._session:
             # Use existing session from transaction - HIGHEST PRIORITY
             yield self._session
-        elif hasattr(self, 'session') and self.session:
+        elif hasattr(self, "session") and self.session:
             # CRITICAL BUG FIX: Validate that self.session is actually a Session object
             # not a DatabaseConfig or other object
             from sqlalchemy.orm import Session as SQLAlchemySession
+
             if isinstance(self.session, SQLAlchemySession):
                 # Fall back to session attribute from BaseUserScopedRepository
                 yield self.session
             else:
-                logger.warning(f"self.session is not a Session object (type: {type(self.session)}), creating new session")
+                logger.warning(
+                    f"self.session is not a Session object (type: {type(self.session)}), creating new session"
+                )
                 # Create new session if self.session is invalid
                 session = get_session()
                 try:
@@ -80,7 +83,7 @@ class BaseORMRepository(Generic[ModelType]):
                     raise DatabaseException(
                         message=f"Database operation failed: {str(e)}",
                         operation=self.__class__.__name__,
-                        table=self.model_class.__tablename__
+                        table=self.model_class.__tablename__,
                     )
                 finally:
                     session.close()
@@ -96,16 +99,16 @@ class BaseORMRepository(Generic[ModelType]):
                 raise DatabaseException(
                     message=f"Database operation failed: {str(e)}",
                     operation=self.__class__.__name__,
-                    table=self.model_class.__tablename__
+                    table=self.model_class.__tablename__,
                 )
             finally:
                 session.close()
-    
+
     @contextmanager
     def transaction(self):
         """
         Start a database transaction.
-        
+
         All operations within this context will be part of
         the same transaction.
         """
@@ -120,12 +123,12 @@ class BaseORMRepository(Generic[ModelType]):
             raise DatabaseException(
                 message=f"Transaction failed: {str(e)}",
                 operation="transaction",
-                table=self.model_class.__tablename__
+                table=self.model_class.__tablename__,
             )
         finally:
             self._session = None
             session.close()
-    
+
     def create(self, **kwargs) -> ModelType:
         """
         Create a new record.
@@ -154,7 +157,7 @@ class BaseORMRepository(Generic[ModelType]):
                 constraint_name = self._extract_constraint_name(str(e))
                 raise DatabaseIntegrityException(
                     message=f"Database integrity constraint violation: {str(e)}",
-                    constraint=constraint_name
+                    constraint=constraint_name,
                 )
 
     def _extract_constraint_name(self, error_message: str) -> str | None:
@@ -169,10 +172,10 @@ class BaseORMRepository(Generic[ModelType]):
         """
         # Common patterns in IntegrityError messages
         patterns = [
-            ('UNIQUE constraint failed: ', True),   # Has constraint name after
-            ('NOT NULL constraint failed: ', True),  # Has constraint name after
-            ('CHECK constraint failed: ', True),     # Has constraint name after
-            ('FOREIGN KEY constraint failed', False) # Usually no specific name
+            ("UNIQUE constraint failed: ", True),  # Has constraint name after
+            ("NOT NULL constraint failed: ", True),  # Has constraint name after
+            ("CHECK constraint failed: ", True),  # Has constraint name after
+            ("FOREIGN KEY constraint failed", False),  # Usually no specific name
         ]
 
         for pattern, has_name in patterns:
@@ -188,179 +191,187 @@ class BaseORMRepository(Generic[ModelType]):
                     return name
 
         return None
-    
+
     def get_by_id(self, id: Any) -> ModelType | None:
         """
         Get a record by ID.
-        
+
         Args:
             id: Primary key value
-            
+
         Returns:
             Model instance or None if not found
         """
         with self.get_db_session() as session:
-            return session.query(self.model_class).filter(
-                self.model_class.id == id
-            ).first()
-    
-    def get_all(self, limit: int | None = None, offset: int | None = None) -> list[ModelType]:
+            return (
+                session.query(self.model_class)
+                .filter(self.model_class.id == id)
+                .first()
+            )
+
+    def get_all(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> list[ModelType]:
         """
         Get all records with optional pagination.
-        
+
         Args:
             limit: Maximum number of records to return
             offset: Number of records to skip
-            
+
         Returns:
             List of model instances
         """
         with self.get_db_session() as session:
             query = session.query(self.model_class)
-            
+
             if offset:
                 query = query.offset(offset)
             if limit:
                 query = query.limit(limit)
-            
+
             return query.all()
-    
+
     def update(self, id: Any, **kwargs) -> ModelType | None:
         """
         Update a record by ID.
-        
+
         Args:
             id: Primary key value
             **kwargs: Fields to update
-            
+
         Returns:
             Updated model instance or None if not found
         """
         with self.get_db_session() as session:
-            instance = session.query(self.model_class).filter(
-                self.model_class.id == id
-            ).first()
-            
+            instance = (
+                session.query(self.model_class)
+                .filter(self.model_class.id == id)
+                .first()
+            )
+
             if not instance:
                 return None
-            
+
             for key, value in kwargs.items():
                 if hasattr(instance, key):
                     setattr(instance, key, value)
-            
+
             session.flush()
             session.refresh(instance)
             return instance
-    
+
     def delete(self, id: Any) -> bool:
         """
         Delete a record by ID.
-        
+
         Args:
             id: Primary key value
-            
+
         Returns:
             True if deleted, False if not found
         """
         with self.get_db_session() as session:
-            instance = session.query(self.model_class).filter(
-                self.model_class.id == id
-            ).first()
-            
+            instance = (
+                session.query(self.model_class)
+                .filter(self.model_class.id == id)
+                .first()
+            )
+
             if not instance:
                 return False
-            
+
             session.delete(instance)
             # Ensure the deletion is committed
             # The context manager only commits if no session was passed in
             # So we need to explicitly commit if we have a passed-in session
-            if hasattr(self, 'session') and self.session:
+            if hasattr(self, "session") and self.session:
                 session.commit()
             return True
-    
+
     def exists(self, **filters) -> bool:
         """
         Check if a record exists with given filters.
-        
+
         Args:
             **filters: Field filters
-            
+
         Returns:
             True if exists, False otherwise
         """
         with self.get_db_session() as session:
             query = session.query(self.model_class)
-            
+
             for key, value in filters.items():
                 if hasattr(self.model_class, key):
                     query = query.filter(getattr(self.model_class, key) == value)
-            
+
             return query.first() is not None
-    
+
     def count(self, **filters) -> int:
         """
         Count records with optional filters.
-        
+
         Args:
             **filters: Field filters
-            
+
         Returns:
             Number of matching records
         """
         with self.get_db_session() as session:
             query = session.query(self.model_class)
-            
+
             for key, value in filters.items():
                 if hasattr(self.model_class, key):
                     query = query.filter(getattr(self.model_class, key) == value)
-            
+
             return query.count()
-    
+
     def find_by(self, **filters) -> list[ModelType]:
         """
         Find records by filters.
-        
+
         Args:
             **filters: Field filters
-            
+
         Returns:
             List of matching model instances
         """
         with self.get_db_session() as session:
             query = session.query(self.model_class)
-            
+
             for key, value in filters.items():
                 if hasattr(self.model_class, key):
                     query = query.filter(getattr(self.model_class, key) == value)
-            
+
             return query.all()
-    
+
     def find_one_by(self, **filters) -> ModelType | None:
         """
         Find one record by filters.
-        
+
         Args:
             **filters: Field filters
-            
+
         Returns:
             First matching model instance or None
         """
         with self.get_db_session() as session:
             query = session.query(self.model_class)
-            
+
             for key, value in filters.items():
                 if hasattr(self.model_class, key):
                     query = query.filter(getattr(self.model_class, key) == value)
-            
+
             return query.first()
-    
+
     def bulk_create(self, records: list[dict[str, Any]]) -> list[ModelType]:
         """
         Create multiple records in a single transaction.
-        
+
         Args:
             records: List of dictionaries with model attributes
-            
+
         Returns:
             List of created model instances
         """
@@ -370,21 +381,21 @@ class BaseORMRepository(Generic[ModelType]):
                 instance = self.model_class(**record)
                 session.add(instance)
                 instances.append(instance)
-            
+
             session.flush()
             for instance in instances:
                 session.refresh(instance)
-            
+
             return instances
-    
+
     def execute_query(self, query_func, **kwargs):
         """
         Execute a custom query function.
-        
+
         Args:
             query_func: Function that takes a session and returns a query
             **kwargs: Additional arguments for the query function
-            
+
         Returns:
             Query result
         """

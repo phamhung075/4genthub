@@ -73,10 +73,12 @@ class EventHandlerInitializer:
 
             # Get event bus instance
             from ..event_bus import get_event_bus
+
             event_bus = get_event_bus()
 
             # Get event store instance
             from ..event_store import get_event_store
+
             event_store = get_event_store()
 
             # Initialize handler instances with required dependencies
@@ -94,7 +96,9 @@ class EventHandlerInitializer:
             cls._register_project_handlers(event_bus, project_handlers)
 
             cls._initialized = True
-            logger.info(f"✅ Event handler initialization complete: {cls._event_handlers_registered} handlers registered")
+            logger.info(
+                f"✅ Event handler initialization complete: {cls._event_handlers_registered} handlers registered"
+            )
             return True
 
         except Exception as e:
@@ -116,13 +120,19 @@ class EventHandlerInitializer:
         event_bus.subscribe(TaskDeletedEvent, handlers.handle_task_deleted, priority=10)
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(TaskStatusChangedEvent, handlers.handle_task_status_changed, priority=10)
+        event_bus.subscribe(
+            TaskStatusChangedEvent, handlers.handle_task_status_changed, priority=10
+        )
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(TaskCompletedEvent, handlers.handle_task_completed, priority=10)
+        event_bus.subscribe(
+            TaskCompletedEvent, handlers.handle_task_completed, priority=10
+        )
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(TaskMovedToBranchEvent, handlers.handle_task_moved_to_branch, priority=10)
+        event_bus.subscribe(
+            TaskMovedToBranchEvent, handlers.handle_task_moved_to_branch, priority=10
+        )
         cls._event_handlers_registered += 1
 
         logger.debug("Registered 6 task event handlers")
@@ -136,55 +146,87 @@ class EventHandlerInitializer:
         event_bus.subscribe(AgentAssigned, handlers.handle_agent_assigned, priority=10)
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(AgentUnassigned, handlers.handle_agent_unassigned, priority=10)
+        event_bus.subscribe(
+            AgentUnassigned, handlers.handle_agent_unassigned, priority=10
+        )
         cls._event_handlers_registered += 1
 
         # Agent workload events
-        event_bus.subscribe(AgentWorkloadChanged, handlers.handle_agent_workload_changed, priority=10)
+        event_bus.subscribe(
+            AgentWorkloadChanged, handlers.handle_agent_workload_changed, priority=10
+        )
         cls._event_handlers_registered += 1
 
         # Agent collaboration/handoff events
-        event_bus.subscribe(WorkHandoffRequested, handlers.handle_work_handoff_requested, priority=10)
+        event_bus.subscribe(
+            WorkHandoffRequested, handlers.handle_work_handoff_requested, priority=10
+        )
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(WorkHandoffAccepted, handlers.handle_work_handoff_accepted, priority=10)
+        event_bus.subscribe(
+            WorkHandoffAccepted, handlers.handle_work_handoff_accepted, priority=10
+        )
         cls._event_handlers_registered += 1
 
         # Agent conflict events
-        event_bus.subscribe(ConflictDetected, handlers.handle_conflict_detected, priority=10)
+        event_bus.subscribe(
+            ConflictDetected, handlers.handle_conflict_detected, priority=10
+        )
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(ConflictResolved, handlers.handle_conflict_resolved, priority=10)
+        event_bus.subscribe(
+            ConflictResolved, handlers.handle_conflict_resolved, priority=10
+        )
         cls._event_handlers_registered += 1
 
         # Agent performance events
-        event_bus.subscribe(AgentPerformanceEvaluated, handlers.handle_agent_performance_evaluated, priority=10)
+        event_bus.subscribe(
+            AgentPerformanceEvaluated,
+            handlers.handle_agent_performance_evaluated,
+            priority=10,
+        )
         cls._event_handlers_registered += 1
 
         logger.debug("Registered 8 agent event handlers")
 
     @classmethod
-    def _register_project_handlers(cls, event_bus, handlers: ProjectEventHandlers) -> None:
+    def _register_project_handlers(
+        cls, event_bus, handlers: ProjectEventHandlers
+    ) -> None:
         """Register all project event handlers."""
         logger.debug("Registering project event handlers...")
 
         # Project lifecycle events
-        event_bus.subscribe(ProjectCreatedEvent, handlers.handle_project_created, priority=10)
+        event_bus.subscribe(
+            ProjectCreatedEvent, handlers.handle_project_created, priority=10
+        )
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(ProjectUpdatedEvent, handlers.handle_project_updated, priority=10)
+        event_bus.subscribe(
+            ProjectUpdatedEvent, handlers.handle_project_updated, priority=10
+        )
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(ProjectDeletedEvent, handlers.handle_project_deleted, priority=10)
+        event_bus.subscribe(
+            ProjectDeletedEvent, handlers.handle_project_deleted, priority=10
+        )
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(ProjectArchived, handlers.handle_project_archived, priority=10)
+        event_bus.subscribe(
+            ProjectArchived, handlers.handle_project_archived, priority=10
+        )
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(ProjectHealthChanged, handlers.handle_project_health_changed, priority=10)
+        event_bus.subscribe(
+            ProjectHealthChanged, handlers.handle_project_health_changed, priority=10
+        )
         cls._event_handlers_registered += 1
 
-        event_bus.subscribe(ProjectStatisticsUpdatedEvent, handlers.handle_project_statistics_updated, priority=10)
+        event_bus.subscribe(
+            ProjectStatisticsUpdatedEvent,
+            handlers.handle_project_statistics_updated,
+            priority=10,
+        )
         cls._event_handlers_registered += 1
 
         logger.debug("Registered 6 project event handlers")

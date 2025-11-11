@@ -5,9 +5,15 @@ from .events import DomainEvent, TaskCreated, TaskUpdated, TaskRetrieved, TaskDe
 from .exceptions import TaskNotFoundError
 
 __all__ = [
-    'Task',
-    'TaskId', 'TaskStatus', 'Priority',
-    'TaskRepository',
-    'DomainEvent', 'TaskCreated', 'TaskUpdated', 'TaskRetrieved', 'TaskDeleted',
-    'TaskNotFoundError'
-] 
+    "Task",
+    "TaskId",
+    "TaskStatus",
+    "Priority",
+    "TaskRepository",
+    "DomainEvent",
+    "TaskCreated",
+    "TaskUpdated",
+    "TaskRetrieved",
+    "TaskDeleted",
+    "TaskNotFoundError",
+]

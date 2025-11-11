@@ -8,8 +8,8 @@ from .register_status_updates import RegisterStatusUpdatesUseCase
 
 __all__ = [
     "CheckServerHealthUseCase",
-    "GetServerCapabilitiesUseCase", 
+    "GetServerCapabilitiesUseCase",
     "CheckConnectionHealthUseCase",
     "GetServerStatusUseCase",
-    "RegisterStatusUpdatesUseCase"
-] 
+    "RegisterStatusUpdatesUseCase",
+]

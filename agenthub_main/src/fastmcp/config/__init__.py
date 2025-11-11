@@ -12,5 +12,5 @@ __all__ = [
     "ToolConfigLoader",
     "ToolConfigError",
     "ToolRegistry",
-    "create_authentication_tools"
+    "create_authentication_tools",
 ]

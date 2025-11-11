@@ -12,15 +12,15 @@ from ...domain.repositories.rule_repository import RuleRepository
 
 class UpdateRuleUseCase:
     """Use case for updating existing rules"""
-    
+
     def __init__(self, rule_repository: RuleRepository):
         self._rule_repository = rule_repository
-    
+
     async def execute(
         self,
         rule_path: str,
         content: str | None = None,
-        metadata_updates: dict[str, Any] | None = None
+        metadata_updates: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Update an existing rule"""
         try:
@@ -29,14 +29,14 @@ class UpdateRuleUseCase:
             if not existing_rule:
                 return {
                     "success": False,
-                    "error": f"Rule not found at path: {rule_path}"
+                    "error": f"Rule not found at path: {rule_path}",
                 }
-            
+
             # Update content if provided
             if content is not None:
                 existing_rule.raw_content = content
                 existing_rule.metadata.size = len(content)
-            
+
             # Update metadata if provided
             if metadata_updates:
                 if "version" in metadata_updates:
@@ -48,17 +48,19 @@ class UpdateRuleUseCase:
                 if "tags" in metadata_updates:
                     existing_rule.metadata.tags = metadata_updates["tags"]
                 if "dependencies" in metadata_updates:
-                    existing_rule.metadata.dependencies = metadata_updates["dependencies"]
+                    existing_rule.metadata.dependencies = metadata_updates[
+                        "dependencies"
+                    ]
                 if "sections" in metadata_updates:
                     existing_rule.sections = metadata_updates["sections"]
                 if "variables" in metadata_updates:
                     existing_rule.variables = metadata_updates["variables"]
                 if "references" in metadata_updates:
                     existing_rule.references = metadata_updates["references"]
-            
+
             # Save the updated rule
             success = await self._rule_repository.save_rule(existing_rule)
-            
+
             if success:
                 return {
                     "success": True,
@@ -66,17 +68,14 @@ class UpdateRuleUseCase:
                     "rule_path": rule_path,
                     "updates_applied": {
                         "content_updated": content is not None,
-                        "metadata_updated": metadata_updates is not None
-                    }
+                        "metadata_updated": metadata_updates is not None,
+                    },
                 }
             else:
                 return {
                     "success": False,
-                    "error": "Failed to save updated rule to repository"
+                    "error": "Failed to save updated rule to repository",
                 }
-                
+
         except Exception as e:
-            return {
-                "success": False,
-                "error": f"Failed to update rule: {str(e)}"
-            }
+            return {"success": False, "error": f"Failed to update rule: {str(e)}"}

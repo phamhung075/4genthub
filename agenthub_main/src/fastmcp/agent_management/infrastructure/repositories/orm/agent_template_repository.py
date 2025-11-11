@@ -27,7 +27,9 @@ from ...database.models import AgentTemplateORM
 logger = logging.getLogger(__name__)
 
 
-class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], AgentTemplateRepositoryInterface):
+class ORMAgentTemplateRepository(
+    BaseTimestampRepository[AgentTemplateORM], AgentTemplateRepositoryInterface
+):
     """ORM implementation of agent template repository using SQLAlchemy"""
 
     def __init__(self):
@@ -51,9 +53,11 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
         try:
             with self.get_db_session() as session:
                 # Check if template exists
-                existing = session.query(AgentTemplateORM).filter(
-                    AgentTemplateORM.id == str(template.id)
-                ).first()
+                existing = (
+                    session.query(AgentTemplateORM)
+                    .filter(AgentTemplateORM.id == str(template.id))
+                    .first()
+                )
 
                 if existing:
                     # DDD-COMPLIANT: Convert entity to model dict
@@ -93,7 +97,7 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
                         output_format=model_dict.get("output_format"),
                         metadata_json=model_dict.get("metadata_json"),
                         created_at=model_dict["created_at"],
-                        updated_at=model_dict["updated_at"]
+                        updated_at=model_dict["updated_at"],
                     )
                     session.add(orm_template)
 
@@ -102,9 +106,11 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
                 session.commit()
 
                 # Fetch and return the saved entity
-                saved_orm = session.query(AgentTemplateORM).filter(
-                    AgentTemplateORM.id == str(template.id)
-                ).first()
+                saved_orm = (
+                    session.query(AgentTemplateORM)
+                    .filter(AgentTemplateORM.id == str(template.id))
+                    .first()
+                )
 
                 return self._model_to_entity(saved_orm)
 
@@ -124,9 +130,11 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
         """
         try:
             with self.get_db_session() as session:
-                orm_template = session.query(AgentTemplateORM).filter(
-                    AgentTemplateORM.id == str(template_id)
-                ).first()
+                orm_template = (
+                    session.query(AgentTemplateORM)
+                    .filter(AgentTemplateORM.id == str(template_id))
+                    .first()
+                )
 
                 if orm_template:
                     return self._model_to_entity(orm_template)
@@ -148,9 +156,11 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
         """
         try:
             with self.get_db_session() as session:
-                orm_template = session.query(AgentTemplateORM).filter(
-                    AgentTemplateORM.slug == slug
-                ).first()
+                orm_template = (
+                    session.query(AgentTemplateORM)
+                    .filter(AgentTemplateORM.slug == slug)
+                    .first()
+                )
 
                 if orm_template:
                     return self._model_to_entity(orm_template)
@@ -169,10 +179,11 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
         """
         try:
             with self.get_db_session() as session:
-                orm_templates = session.query(AgentTemplateORM).order_by(
-                    AgentTemplateORM.category,
-                    AgentTemplateORM.name
-                ).all()
+                orm_templates = (
+                    session.query(AgentTemplateORM)
+                    .order_by(AgentTemplateORM.category, AgentTemplateORM.name)
+                    .all()
+                )
 
                 return [self._model_to_entity(template) for template in orm_templates]
 
@@ -192,9 +203,12 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
         """
         try:
             with self.get_db_session() as session:
-                orm_templates = session.query(AgentTemplateORM).filter(
-                    AgentTemplateORM.category == category
-                ).order_by(AgentTemplateORM.name).all()
+                orm_templates = (
+                    session.query(AgentTemplateORM)
+                    .filter(AgentTemplateORM.category == category)
+                    .order_by(AgentTemplateORM.name)
+                    .all()
+                )
 
                 return [self._model_to_entity(template) for template in orm_templates]
 
@@ -214,9 +228,11 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
         """
         try:
             with self.get_db_session() as session:
-                count = session.query(func.count(AgentTemplateORM.id)).filter(
-                    AgentTemplateORM.slug == slug
-                ).scalar()
+                count = (
+                    session.query(func.count(AgentTemplateORM.id))
+                    .filter(AgentTemplateORM.slug == slug)
+                    .scalar()
+                )
 
                 return count > 0
 
@@ -236,9 +252,11 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
         """
         try:
             with self.get_db_session() as session:
-                deleted_count = session.query(AgentTemplateORM).filter(
-                    AgentTemplateORM.id == str(template_id)
-                ).delete()
+                deleted_count = (
+                    session.query(AgentTemplateORM)
+                    .filter(AgentTemplateORM.id == str(template_id))
+                    .delete()
+                )
 
                 session.commit()
 
@@ -246,7 +264,9 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
                     logger.info(f"Deleted agent template: {template_id}")
                     return True
                 else:
-                    logger.warning(f"Agent template not found for deletion: {template_id}")
+                    logger.warning(
+                        f"Agent template not found for deletion: {template_id}"
+                    )
                     return False
 
         except Exception as e:
@@ -265,11 +285,37 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
         """
         try:
             # Parse JSON fields
-            tools = json.loads(orm_template.tools) if isinstance(orm_template.tools, str) else orm_template.tools
-            capabilities = json.loads(orm_template.capabilities) if isinstance(orm_template.capabilities, str) else orm_template.capabilities
-            rules = json.loads(orm_template.rules) if orm_template.rules and isinstance(orm_template.rules, str) else (orm_template.rules if orm_template.rules else None)
-            output_format = json.loads(orm_template.output_format) if orm_template.output_format and isinstance(orm_template.output_format, str) else (orm_template.output_format if orm_template.output_format else None)
-            metadata = json.loads(orm_template.metadata_json) if orm_template.metadata_json and isinstance(orm_template.metadata_json, str) else (orm_template.metadata_json if orm_template.metadata_json else None)
+            tools = (
+                json.loads(orm_template.tools)
+                if isinstance(orm_template.tools, str)
+                else orm_template.tools
+            )
+            capabilities = (
+                json.loads(orm_template.capabilities)
+                if isinstance(orm_template.capabilities, str)
+                else orm_template.capabilities
+            )
+            rules = (
+                json.loads(orm_template.rules)
+                if orm_template.rules and isinstance(orm_template.rules, str)
+                else (orm_template.rules if orm_template.rules else None)
+            )
+            output_format = (
+                json.loads(orm_template.output_format)
+                if orm_template.output_format
+                and isinstance(orm_template.output_format, str)
+                else (
+                    orm_template.output_format if orm_template.output_format else None
+                )
+            )
+            metadata = (
+                json.loads(orm_template.metadata_json)
+                if orm_template.metadata_json
+                and isinstance(orm_template.metadata_json, str)
+                else (
+                    orm_template.metadata_json if orm_template.metadata_json else None
+                )
+            )
 
             # Create default_configuration value object
             default_configuration = AgentConfiguration(
@@ -278,7 +324,7 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
                 capabilities=capabilities,
                 rules=rules,
                 output_format=output_format,
-                metadata=metadata
+                metadata=metadata,
             )
 
             return AgentTemplate(
@@ -291,7 +337,7 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
                 default_configuration=default_configuration,
                 metadata=metadata or {},
                 created_at=orm_template.created_at,
-                updated_at=orm_template.updated_at
+                updated_at=orm_template.updated_at,
             )
         except Exception as e:
             logger.error(f"Error converting agent template model to entity: {e}")
@@ -317,9 +363,15 @@ class ORMAgentTemplateRepository(BaseTimestampRepository[AgentTemplateORM], Agen
             "system_prompt": template.default_configuration.system_prompt,
             "tools": json.dumps(template.default_configuration.tools),
             "capabilities": json.dumps(template.default_configuration.capabilities),
-            "rules": json.dumps(template.default_configuration.rules) if template.default_configuration.rules else None,
-            "output_format": json.dumps(template.default_configuration.output_format) if template.default_configuration.output_format else None,
-            "metadata_json": json.dumps(template.metadata) if template.metadata else None,
+            "rules": json.dumps(template.default_configuration.rules)
+            if template.default_configuration.rules
+            else None,
+            "output_format": json.dumps(template.default_configuration.output_format)
+            if template.default_configuration.output_format
+            else None,
+            "metadata_json": json.dumps(template.metadata)
+            if template.metadata
+            else None,
             "created_at": template.created_at,
-            "updated_at": template.updated_at
+            "updated_at": template.updated_at,
         }

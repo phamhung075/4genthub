@@ -12,6 +12,7 @@ from ..subtask.subtask_info import SubtaskInfo
 @dataclass
 class TaskInfo:
     """Information about a task from tasks.json"""
+
     id: int
     title: str
     description: str
@@ -29,9 +30,9 @@ class TaskInfo:
     complexity_score: int
     recommended_subtasks: int
     subtasks: list[SubtaskInfo]
-    
+
     def to_dict(self) -> dict:
         task_dict = asdict(self)
-        task_dict['status'] = self.status.value
-        task_dict['priority'] = self.priority.value
-        return task_dict 
+        task_dict["status"] = self.status.value
+        task_dict["priority"] = self.priority.value
+        return task_dict

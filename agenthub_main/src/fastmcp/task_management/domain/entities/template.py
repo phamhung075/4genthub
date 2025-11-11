@@ -39,11 +39,11 @@ class Template(BaseTimestampEntity):
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
         return str(self.id)
-    
+
     def __post_init__(self):
         """Initialize timestamps through BaseTimestampEntity."""
         super().__post_init__()
-    
+
     def _validate_entity(self) -> None:
         """Ensure template invariants hold."""
         if not self.name or not self.name.strip():
@@ -52,7 +52,7 @@ class Template(BaseTimestampEntity):
             raise ValueError("Template content cannot be empty")
         if not self.description or not self.description.strip():
             raise ValueError("Template description cannot be empty")
-    
+
     def update_content(self, content: str) -> None:
         """Update template content and increment version"""
         if not content.strip():
@@ -60,85 +60,85 @@ class Template(BaseTimestampEntity):
         self.content = content
         self.version += 1
         self.touch("content_updated")
-    
+
     def update_metadata(self, metadata: dict[str, Any]) -> None:
         """Update template metadata"""
         self.metadata.update(metadata)
         self.touch("metadata_updated")
-    
+
     def add_compatible_agent(self, agent_name: str) -> None:
         """Add compatible agent to template"""
         if agent_name not in self.compatible_agents:
             self.compatible_agents.append(agent_name)
             self.touch("agent_added")
-    
+
     def remove_compatible_agent(self, agent_name: str) -> None:
         """Remove compatible agent from template"""
         if agent_name in self.compatible_agents:
             self.compatible_agents.remove(agent_name)
             self.touch("agent_removed")
-    
+
     def add_file_pattern(self, pattern: str) -> None:
         """Add file pattern to template"""
         if pattern not in self.file_patterns:
             self.file_patterns.append(pattern)
             self.touch("pattern_added")
-    
+
     def remove_file_pattern(self, pattern: str) -> None:
         """Remove file pattern from template"""
         if pattern in self.file_patterns:
             self.file_patterns.remove(pattern)
             self.touch("pattern_removed")
-    
+
     def add_variable(self, variable: str) -> None:
         """Add variable to template"""
         if variable not in self.variables:
             self.variables.append(variable)
             self.touch("variable_added")
-    
+
     def remove_variable(self, variable: str) -> None:
         """Remove variable from template"""
         if variable in self.variables:
             self.variables.remove(variable)
             self.touch("variable_removed")
-    
+
     def activate(self) -> None:
         """Activate template"""
         self.is_active = True
         self.status = TemplateStatus.ACTIVE
         self.touch("template_activated")
-    
+
     def deactivate(self) -> None:
         """Deactivate template"""
         self.is_active = False
         self.status = TemplateStatus.INACTIVE
         self.touch("template_deactivated")
-    
+
     def archive(self) -> None:
         """Archive template"""
         self.is_active = False
         self.status = TemplateStatus.ARCHIVED
         self.touch("template_archived")
-    
+
     def is_compatible_with_agent(self, agent_name: str) -> bool:
         """Check if template is compatible with given agent"""
         return "*" in self.compatible_agents or agent_name in self.compatible_agents
-    
+
     def matches_file_patterns(self, file_patterns: list[str]) -> bool:
         """Check if template matches any of the given file patterns"""
         if not self.file_patterns:
             return True  # No restrictions
-        
+
         for template_pattern in self.file_patterns:
             for file_pattern in file_patterns:
                 if self._pattern_matches(template_pattern, file_pattern):
                     return True
         return False
-    
+
     def _pattern_matches(self, template_pattern: str, file_pattern: str) -> bool:
         """Check if patterns match using fnmatch for wildcard support"""
         return fnmatch.fnmatch(file_pattern, template_pattern)
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert template to dictionary representation"""
         return {
@@ -157,9 +157,9 @@ class Template(BaseTimestampEntity):
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "version": self.version,
-            "is_active": self.is_active
+            "is_active": self.is_active,
         }
-    
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Template:
         """Create template from dictionary representation"""
@@ -178,7 +178,7 @@ class Template(BaseTimestampEntity):
             variables=data["variables"],
             metadata=data["metadata"],
             version=data.get("version", 1),
-            is_active=data.get("is_active", True)
+            is_active=data.get("is_active", True),
         )
 
         # Set BaseTimestampEntity timestamps if provided
@@ -197,6 +197,7 @@ class Template(BaseTimestampEntity):
 @dataclass
 class TemplateResult:
     """Result of template rendering operation"""
+
     content: str
     template_id: TemplateId
     variables_used: dict[str, Any]
@@ -204,7 +205,7 @@ class TemplateResult:
     generation_time_ms: int
     cache_hit: bool
     output_path: str | None = None
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert result to dictionary representation"""
         return {
@@ -214,20 +215,21 @@ class TemplateResult:
             "generated_at": self.generated_at.isoformat(),
             "generation_time_ms": self.generation_time_ms,
             "cache_hit": self.cache_hit,
-            "output_path": self.output_path
+            "output_path": self.output_path,
         }
 
 
 @dataclass
 class TemplateRenderRequest:
     """Request for template rendering"""
+
     template_id: TemplateId
     variables: dict[str, Any]
     task_context: dict[str, Any] | None = None
     output_path: str | None = None
     cache_strategy: str = "default"
     force_regenerate: bool = False
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert request to dictionary representation"""
         return {
@@ -236,13 +238,14 @@ class TemplateRenderRequest:
             "task_context": self.task_context,
             "output_path": self.output_path,
             "cache_strategy": self.cache_strategy,
-            "force_regenerate": self.force_regenerate
+            "force_regenerate": self.force_regenerate,
         }
 
 
 @dataclass
 class TemplateUsage:
     """Template usage tracking entity"""
+
     template_id: TemplateId
     task_id: str | None
     project_id: str | None
@@ -252,7 +255,7 @@ class TemplateUsage:
     generation_time_ms: int
     cache_hit: bool
     used_at: datetime
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert usage to dictionary representation"""
         return {
@@ -264,5 +267,5 @@ class TemplateUsage:
             "output_path": self.output_path,
             "generation_time_ms": self.generation_time_ms,
             "cache_hit": self.cache_hit,
-            "used_at": self.used_at.isoformat()
-        } 
+            "used_at": self.used_at.isoformat(),
+        }

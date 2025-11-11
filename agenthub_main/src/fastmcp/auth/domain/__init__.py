@@ -7,7 +7,7 @@ from .value_objects.email import Email
 __all__ = [
     "User",
     "UserStatus",
-    "UserRole", 
+    "UserRole",
     "UserId",
     "Email",
 ]

@@ -31,22 +31,22 @@ def _find_project_root() -> str:
         if os.path.basename(current_path) == "agenthub_main":
             return os.path.dirname(current_path)
         current_path = os.path.dirname(current_path)
-    
+
     # Fallback 1: Walk up the directory tree looking for agenthub_main as a subdirectory
     current_path = os.path.abspath(__file__)
     while os.path.dirname(current_path) != current_path:
         if os.path.exists(os.path.join(current_path, "agenthub_main")):
             return current_path
         current_path = os.path.dirname(current_path)
-    
+
     # Fallback 2: use current working directory if it contains agenthub_main
     cwd = os.getcwd()
     if os.path.exists(os.path.join(cwd, "agenthub_main")):
         return cwd
-    
+
     # Absolute fallback
     # Use environment variable or default data path
-    data_path = os.environ.get('AGENTHUB_DATA_PATH', '/data')
+    data_path = os.environ.get("AGENTHUB_DATA_PATH", "/data")
     # If running in development, try to find project root
     if not os.path.exists(data_path):
         # Try current working directory
@@ -61,20 +61,21 @@ def _find_project_root() -> str:
 def initialize_database(db_path: str | None = None):
     """
     Initialize the database with all required schemas.
-    
+
     This function now uses SQLAlchemy ORM to create tables,
     supporting both SQLite and PostgreSQL based on DATABASE_TYPE.
-    
+
     Args:
         db_path: Optional database path (for backward compatibility with SQLite)
                  Ignored when using PostgreSQL.
     """
     database_type = os.getenv("DATABASE_TYPE", "postgresql").lower()
-    
+
     # Check if we're in test mode
     import sys
-    is_test_mode = 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ
-    
+
+    is_test_mode = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
+
     # Validate database type
     if database_type == "sqlite":
         if not is_test_mode:
@@ -84,11 +85,13 @@ def initialize_database(db_path: str | None = None):
                 "PostgreSQL is required for this system. "
                 "Set DATABASE_TYPE=postgresql or supabase to use PostgreSQL."
             )
-            raise ValueError("PostgreSQL is required for production. Set DATABASE_TYPE=postgresql or supabase.")
+            raise ValueError(
+                "PostgreSQL is required for production. Set DATABASE_TYPE=postgresql or supabase."
+            )
         else:
             # SQLite allowed for tests
             logger.info("📦 Using SQLite database for test execution")
-    
+
     # For PostgreSQL/Supabase, we don't need db_path as it uses DATABASE_URL
     if database_type in ["postgresql", "supabase"]:
         db_identifier = database_type
@@ -96,26 +99,27 @@ def initialize_database(db_path: str | None = None):
         # For SQLite, use provided path or default
         if not db_path:
             from .database_source_manager import DatabaseSourceManager
+
             manager = DatabaseSourceManager()
             db_path = manager.get_database_path()
         db_identifier = os.path.abspath(db_path)
-    
+
     # Skip if already initialized (thread-safe check)
     with db_init_lock:
         if db_identifier in _initialized_dbs:
             logger.debug(f"Database already initialized: {db_identifier}")
             return
-        
+
         logger.info(f"Initializing database: {db_identifier}")
-        
+
         try:
             # Use SQLAlchemy to initialize database
             sqlalchemy_init_database()
-            
+
             # Mark as initialized
             _initialized_dbs.add(db_identifier)
             logger.info(f"Database initialized successfully: {db_identifier}")
-            
+
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
             raise

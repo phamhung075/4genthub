@@ -10,6 +10,7 @@ from sqlalchemy import create_engine, text
 
 logger = logging.getLogger(__name__)
 
+
 class DatabaseMigrator:
     """Handles database migrations for the application"""
 
@@ -19,17 +20,21 @@ class DatabaseMigrator:
             self.database_url = database_url
         else:
             # Build database URL from environment variables
-            db_type = os.getenv('DATABASE_TYPE', 'postgresql')
-            if db_type == 'postgresql':
-                host = os.getenv('DATABASE_HOST', 'localhost')
-                port = os.getenv('DATABASE_PORT', '5432')
-                name = os.getenv('DATABASE_NAME', 'postgresdb')
-                user = os.getenv('DATABASE_USER', 'agenthub_user')
-                password = os.getenv('DATABASE_PASSWORD', 'agenthub_password')
-                self.database_url = f"postgresql://{user}:{password}@{host}:{port}/{name}"
+            db_type = os.getenv("DATABASE_TYPE", "postgresql")
+            if db_type == "postgresql":
+                host = os.getenv("DATABASE_HOST", "localhost")
+                port = os.getenv("DATABASE_PORT", "5432")
+                name = os.getenv("DATABASE_NAME", "postgresdb")
+                user = os.getenv("DATABASE_USER", "agenthub_user")
+                password = os.getenv("DATABASE_PASSWORD", "agenthub_password")
+                self.database_url = (
+                    f"postgresql://{user}:{password}@{host}:{port}/{name}"
+                )
             else:
                 # SQLite or other database types
-                self.database_url = os.getenv('DATABASE_URL', 'sqlite:///agenthub_dev.db')
+                self.database_url = os.getenv(
+                    "DATABASE_URL", "sqlite:///agenthub_dev.db"
+                )
 
     def run_migrations(self) -> bool:
         """Run all necessary database migrations"""
@@ -37,7 +42,7 @@ class DatabaseMigrator:
             logger.info("Starting database migrations...")
 
             # Only run migrations for PostgreSQL
-            if 'postgresql' not in self.database_url:
+            if "postgresql" not in self.database_url:
                 logger.info("Skipping migrations for non-PostgreSQL database")
                 return True
 
@@ -49,12 +54,14 @@ class DatabaseMigrator:
 
                 try:
                     # Check if tasks table exists
-                    result = conn.execute(text("""
+                    result = conn.execute(
+                        text("""
                         SELECT EXISTS (
                             SELECT FROM information_schema.tables
                             WHERE table_name = 'tasks'
                         );
-                    """))
+                    """)
+                    )
                     table_exists = result.scalar()
 
                     if not table_exists:
@@ -66,46 +73,59 @@ class DatabaseMigrator:
                     logger.info("Checking for progress_history columns...")
 
                     # Check if columns already exist
-                    result = conn.execute(text("""
+                    result = conn.execute(
+                        text("""
                         SELECT column_name
                         FROM information_schema.columns
                         WHERE table_name = 'tasks'
                         AND column_name IN ('progress_history', 'progress_count', 'details');
-                    """))
+                    """)
+                    )
 
                     existing_columns = {row[0] for row in result}
 
                     # Add progress_history if it doesn't exist
-                    if 'progress_history' not in existing_columns:
+                    if "progress_history" not in existing_columns:
                         logger.info("Adding progress_history column...")
-                        conn.execute(text("""
+                        conn.execute(
+                            text("""
                             ALTER TABLE tasks
                             ADD COLUMN progress_history JSON DEFAULT '{}';
-                        """))
+                        """)
+                        )
 
                     # Add progress_count if it doesn't exist
-                    if 'progress_count' not in existing_columns:
+                    if "progress_count" not in existing_columns:
                         logger.info("Adding progress_count column...")
-                        conn.execute(text("""
+                        conn.execute(
+                            text("""
                             ALTER TABLE tasks
                             ADD COLUMN progress_count INTEGER DEFAULT 0;
-                        """))
+                        """)
+                        )
 
                     # Migrate data from details column if it exists
-                    if 'details' in existing_columns:
-                        logger.info("Migrating data from details to progress_history...")
+                    if "details" in existing_columns:
+                        logger.info(
+                            "Migrating data from details to progress_history..."
+                        )
 
                         # First, check if there are any non-null details to migrate
-                        result = conn.execute(text("""
+                        result = conn.execute(
+                            text("""
                             SELECT COUNT(*) FROM tasks
                             WHERE details IS NOT NULL
                             AND (progress_history IS NULL OR progress_history::text = '{}');
-                        """))
+                        """)
+                        )
                         count_to_migrate = result.scalar()
 
                         if count_to_migrate > 0:
-                            logger.info(f"Migrating {count_to_migrate} tasks with details...")
-                            conn.execute(text("""
+                            logger.info(
+                                f"Migrating {count_to_migrate} tasks with details..."
+                            )
+                            conn.execute(
+                                text("""
                                 UPDATE tasks
                                 SET progress_history = jsonb_build_object(
                                     'entry_1', jsonb_build_object(
@@ -117,7 +137,8 @@ class DatabaseMigrator:
                                 progress_count = 1
                                 WHERE details IS NOT NULL
                                 AND (progress_history IS NULL OR progress_history::text = '{}');
-                            """))
+                            """)
+                            )
 
                         # Drop the details column
                         logger.info("Dropping old details column...")
@@ -125,10 +146,12 @@ class DatabaseMigrator:
 
                     # Create indexes
                     logger.info("Creating indexes...")
-                    conn.execute(text("""
+                    conn.execute(
+                        text("""
                         CREATE INDEX IF NOT EXISTS idx_tasks_progress_count
                         ON tasks(progress_count);
-                    """))
+                    """)
+                    )
 
                     # Commit the transaction
                     trans.commit()
@@ -151,7 +174,7 @@ class DatabaseMigrator:
         try:
             logger.info("Initializing database...")
 
-            if 'postgresql' not in self.database_url:
+            if "postgresql" not in self.database_url:
                 logger.info("Skipping initialization for non-PostgreSQL database")
                 return True
 
@@ -159,7 +182,7 @@ class DatabaseMigrator:
 
             with engine.connect() as conn:
                 # Create UUID extension if it doesn't exist
-                conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"))
+                conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'))
                 conn.commit()
 
                 logger.info("✅ Database initialization completed!")
@@ -190,12 +213,14 @@ class DatabaseMigrator:
 # Singleton instance
 _migrator = None
 
+
 def get_migrator(database_url: str | None = None) -> DatabaseMigrator:
     """Get or create the singleton migrator instance"""
     global _migrator
     if _migrator is None:
         _migrator = DatabaseMigrator(database_url)
     return _migrator
+
 
 def run_startup_migrations(database_url: str | None = None) -> bool:
     """Run migrations on application startup"""
@@ -209,6 +234,7 @@ def run_startup_migrations(database_url: str | None = None) -> bool:
             from fastmcp.task_management.infrastructure.database.auto_migration import (
                 run_auto_migrations,
             )
+
             if run_auto_migrations():
                 logger.info("✅ Automatic migrations completed successfully")
             else:
@@ -221,6 +247,7 @@ def run_startup_migrations(database_url: str | None = None) -> bool:
     if success:
         try:
             from fastmcp.database_init import initialize_database_for_current_user
+
             if initialize_database_for_current_user():
                 logger.info("✅ Database initialization completed")
             else:

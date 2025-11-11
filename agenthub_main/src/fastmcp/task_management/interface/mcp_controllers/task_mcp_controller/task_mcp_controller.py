@@ -176,7 +176,9 @@ class TaskMCPController(ContextPropagationMixin):
             logger.info("TaskMCPController initialized with workflow guidance enabled")
         else:
             self._workflow_guidance = None
-            logger.info("TaskMCPController initialized with workflow guidance disabled (token optimization)")
+            logger.info(
+                "TaskMCPController initialized with workflow guidance disabled (token optimization)"
+            )
 
         # Note: Orchestrator services are created by factories as needed
         # They require repositories and other dependencies that are not available here
@@ -427,8 +429,10 @@ class TaskMCPController(ContextPropagationMixin):
             include_context = ParameterTransformationService.transform_boolean_default(
                 include_context, default=False
             )
-            force_full_generation = ParameterTransformationService.transform_boolean_default(
-                force_full_generation, default=False
+            force_full_generation = (
+                ParameterTransformationService.transform_boolean_default(
+                    force_full_generation, default=False
+                )
             )
 
             # Transform string-to-list parameters using ParameterTransformationService
@@ -549,25 +553,42 @@ class TaskMCPController(ContextPropagationMixin):
 
             # Step 2.5: Transform parameters using ParameterTransformationService (application layer)
             # Transform string-to-list parameters
-            if "assignees" in filtered_kwargs and filtered_kwargs["assignees"] is not None:
-                filtered_kwargs["assignees"] = ParameterTransformationService.transform_string_to_list(
-                    filtered_kwargs["assignees"], "assignees"
+            if (
+                "assignees" in filtered_kwargs
+                and filtered_kwargs["assignees"] is not None
+            ):
+                filtered_kwargs["assignees"] = (
+                    ParameterTransformationService.transform_string_to_list(
+                        filtered_kwargs["assignees"], "assignees"
+                    )
                 )
 
             if "labels" in filtered_kwargs and filtered_kwargs["labels"] is not None:
-                filtered_kwargs["labels"] = ParameterTransformationService.transform_string_to_list(
-                    filtered_kwargs["labels"], "labels"
+                filtered_kwargs["labels"] = (
+                    ParameterTransformationService.transform_string_to_list(
+                        filtered_kwargs["labels"], "labels"
+                    )
                 )
 
-            if "dependencies" in filtered_kwargs and filtered_kwargs["dependencies"] is not None:
-                filtered_kwargs["dependencies"] = ParameterTransformationService.transform_string_to_list(
-                    filtered_kwargs["dependencies"], "dependencies"
+            if (
+                "dependencies" in filtered_kwargs
+                and filtered_kwargs["dependencies"] is not None
+            ):
+                filtered_kwargs["dependencies"] = (
+                    ParameterTransformationService.transform_string_to_list(
+                        filtered_kwargs["dependencies"], "dependencies"
+                    )
                 )
 
             # Validate progress percentage with range check
-            if "progress_percentage" in filtered_kwargs and filtered_kwargs["progress_percentage"] is not None:
-                validated_percentage, error_msg = ParameterTransformationService.validate_progress_percentage(
-                    filtered_kwargs["progress_percentage"]
+            if (
+                "progress_percentage" in filtered_kwargs
+                and filtered_kwargs["progress_percentage"] is not None
+            ):
+                validated_percentage, error_msg = (
+                    ParameterTransformationService.validate_progress_percentage(
+                        filtered_kwargs["progress_percentage"]
+                    )
                 )
                 if error_msg:
                     return self._response_factory.create_error_response(
@@ -766,9 +787,7 @@ class TaskMCPController(ContextPropagationMixin):
         """
         # Delegate to authorization service
         return self._authorization_service.check_task_permission_from_context(
-            action=action,
-            user_id=user_id,
-            task_id=task_id
+            action=action, user_id=user_id, task_id=task_id
         )
 
     # ===== BACKWARD COMPATIBILITY METHODS =====

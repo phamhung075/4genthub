@@ -78,8 +78,8 @@ class WebSocketServer:
             Main WebSocket endpoint with JWT authentication.
             """
             # Extract path parameters and query params from the scope
-            user_id = websocket.path_params.get('user_id')
-            token = websocket.query_params.get('token')
+            user_id = websocket.path_params.get("user_id")
+            token = websocket.query_params.get("token")
 
             if not token:
                 await websocket.close(code=1008, reason="Missing token parameter")
@@ -105,7 +105,7 @@ class WebSocketServer:
         routes = [
             WebSocketRoute("/ws/{user_id}", endpoint=websocket_endpoint),
             Route("/ws/health", endpoint=websocket_health, methods=["GET"]),
-            Route("/ws/stats", endpoint=websocket_stats, methods=["GET"])
+            Route("/ws/stats", endpoint=websocket_stats, methods=["GET"]),
         ]
 
         # Add routes to the app's router
@@ -113,10 +113,7 @@ class WebSocketServer:
             self.app.router.routes.append(route)
 
     async def _handle_websocket_connection(
-        self,
-        websocket: WebSocket,
-        user_id: str,
-        token: str
+        self, websocket: WebSocket, user_id: str, token: str
     ) -> None:
         """
         Handle individual WebSocket connection with authentication.
@@ -165,8 +162,7 @@ class WebSocketServer:
                 except Exception as e:
                     logger.error(f"Error processing message from {user_id}: {e}")
                     await self.connection_manager.send_error(
-                        user_id,
-                        "Message processing error"
+                        user_id, "Message processing error"
                     )
 
         except Exception as e:
@@ -243,13 +239,13 @@ class WebSocketServer:
             "startup_time": self.startup_time,
             "connections": {
                 "total": connection_stats["total_connections"],
-                "active_users": len(connection_stats["active_users"])
+                "active_users": len(connection_stats["active_users"]),
             },
             "batch_processing": {
                 "is_running": batch_stats["is_running"],
                 "queue_size": batch_stats["queue_size"],
-                "batches_processed": batch_stats["batches_processed"]
-            }
+                "batches_processed": batch_stats["batches_processed"],
+            },
         }
 
     async def get_detailed_stats(self) -> dict[str, Any]:
@@ -266,16 +262,22 @@ class WebSocketServer:
             "server": {
                 "version": "2.0",
                 "is_running": self.is_running,
-                "startup_time": self.startup_time
+                "startup_time": self.startup_time,
             },
             "connections": connection_stats,
             "batch_processing": batch_stats,
             "protocol": {
                 "version": "2.0",
-                "supported_message_types": ["update", "bulk", "sync", "heartbeat", "error"],
+                "supported_message_types": [
+                    "update",
+                    "bulk",
+                    "sync",
+                    "heartbeat",
+                    "error",
+                ],
                 "supported_sources": ["user", "mcp-ai", "system"],
-                "max_message_size_bytes": 64 * 1024
-            }
+                "max_message_size_bytes": 64 * 1024,
+            },
         }
 
     async def broadcast_message(self, message_data: dict[str, Any]) -> bool:
@@ -325,7 +327,9 @@ class WebSocketServer:
         """
         return self.connection_manager.is_user_connected(user_id)
 
-    async def send_message_to_user(self, user_id: str, message_data: dict[str, Any]) -> bool:
+    async def send_message_to_user(
+        self, user_id: str, message_data: dict[str, Any]
+    ) -> bool:
         """
         Send message to specific user (API endpoint).
 
@@ -390,7 +394,9 @@ async def startup_websocket_server() -> None:
     global websocket_server
 
     if websocket_server is None:
-        logger.error("WebSocketServer not initialized - call initialize_websocket_server first")
+        logger.error(
+            "WebSocketServer not initialized - call initialize_websocket_server first"
+        )
         return
 
     await websocket_server.start()

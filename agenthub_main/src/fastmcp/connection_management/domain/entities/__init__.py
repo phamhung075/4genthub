@@ -3,4 +3,4 @@
 from .server import Server
 from .connection import Connection
 
-__all__ = ["Server", "Connection"] 
+__all__ = ["Server", "Connection"]

@@ -16,6 +16,7 @@ from jwt import PyJWKClient
 
 logger = logging.getLogger(__name__)
 
+
 class KeycloakAuthProvider:
     """
     Clean Keycloak authentication provider for MCP.
@@ -31,7 +32,7 @@ class KeycloakAuthProvider:
         verify_audience: bool = True,
         ssl_verify: bool = True,
         token_cache_ttl: int = 300,
-        public_key_cache_ttl: int = 3600
+        public_key_cache_ttl: int = 3600,
     ):
         """
         Initialize Keycloak authentication provider.
@@ -82,9 +83,7 @@ class KeycloakAuthProvider:
         """Get or create JWKS client for token validation"""
         if self._jwks_client is None:
             self._jwks_client = PyJWKClient(
-                self.jwks_url,
-                cache_keys=True,
-                lifespan=self.public_key_cache_ttl
+                self.jwks_url, cache_keys=True, lifespan=self.public_key_cache_ttl
             )
         return self._jwks_client
 
@@ -144,7 +143,7 @@ class KeycloakAuthProvider:
                 "verify_exp": True,
                 "verify_nbf": True,
                 "verify_iat": True,
-                "require": ["exp", "iat", "sub"]
+                "require": ["exp", "iat", "sub"],
             }
 
             payload = jwt.decode(
@@ -153,7 +152,7 @@ class KeycloakAuthProvider:
                 algorithms=["RS256"],
                 audience=self.client_id if self.verify_audience else None,
                 issuer=issuer,
-                options=options
+                options=options,
             )
 
             # Additional validation
@@ -167,7 +166,9 @@ class KeycloakAuthProvider:
                 logger.warning("Token expired")
                 return None
 
-            logger.debug(f"Token validated for user: {payload.get('preferred_username', payload.get('sub'))}")
+            logger.debug(
+                f"Token validated for user: {payload.get('preferred_username', payload.get('sub'))}"
+            )
             return payload
 
         except jwt.ExpiredSignatureError:
@@ -196,7 +197,9 @@ class KeycloakAuthProvider:
             response.raise_for_status()
 
             user_info = response.json()
-            logger.debug(f"User info fetched for: {user_info.get('preferred_username', user_info.get('sub'))}")
+            logger.debug(
+                f"User info fetched for: {user_info.get('preferred_username', user_info.get('sub'))}"
+            )
             return user_info
 
         except Exception as e:
@@ -209,7 +212,7 @@ class KeycloakAuthProvider:
         password: str | None = None,
         refresh_token: str | None = None,
         authorization_code: str | None = None,
-        redirect_uri: str | None = None
+        redirect_uri: str | None = None,
     ) -> dict[str, Any] | None:
         """
         Exchange credentials for tokens using Keycloak token endpoint.
@@ -233,23 +236,26 @@ class KeycloakAuthProvider:
 
             # Determine grant type and add appropriate parameters
             if username and password:
-                data.update({
-                    "grant_type": "password",
-                    "username": username,
-                    "password": password,
-                    "scope": "openid profile email"
-                })
+                data.update(
+                    {
+                        "grant_type": "password",
+                        "username": username,
+                        "password": password,
+                        "scope": "openid profile email",
+                    }
+                )
             elif refresh_token:
-                data.update({
-                    "grant_type": "refresh_token",
-                    "refresh_token": refresh_token
-                })
+                data.update(
+                    {"grant_type": "refresh_token", "refresh_token": refresh_token}
+                )
             elif authorization_code and redirect_uri:
-                data.update({
-                    "grant_type": "authorization_code",
-                    "code": authorization_code,
-                    "redirect_uri": redirect_uri
-                })
+                data.update(
+                    {
+                        "grant_type": "authorization_code",
+                        "code": authorization_code,
+                        "redirect_uri": redirect_uri,
+                    }
+                )
             else:
                 logger.error("No valid credentials provided for token exchange")
                 return None
@@ -258,17 +264,21 @@ class KeycloakAuthProvider:
             response = await self.http_client.post(
                 self.token_url,
                 data=data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
             response.raise_for_status()
 
             token_response = response.json()
-            logger.info(f"Token exchanged successfully for grant_type: {data.get('grant_type')}")
+            logger.info(
+                f"Token exchanged successfully for grant_type: {data.get('grant_type')}"
+            )
 
             return token_response
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"Token exchange failed: {e.response.status_code} - {e.response.text}")
+            logger.error(
+                f"Token exchange failed: {e.response.status_code} - {e.response.text}"
+            )
             return None
         except Exception as e:
             logger.error(f"Token exchange error: {e}")
@@ -287,10 +297,7 @@ class KeycloakAuthProvider:
         try:
             logout_url = f"{self.realm_url}/protocol/openid-connect/logout"
 
-            data = {
-                "client_id": self.client_id,
-                "refresh_token": refresh_token
-            }
+            data = {"client_id": self.client_id, "refresh_token": refresh_token}
 
             if self.client_secret:
                 data["client_secret"] = self.client_secret
@@ -298,7 +305,7 @@ class KeycloakAuthProvider:
             response = await self.http_client.post(
                 logout_url,
                 data=data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
             response.raise_for_status()
 
@@ -312,6 +319,7 @@ class KeycloakAuthProvider:
     async def close(self):
         """Close HTTP client connections"""
         await self.http_client.aclose()
+
 
 class KeycloakMCPAuth:
     """
@@ -329,8 +337,7 @@ class KeycloakMCPAuth:
         self.keycloak = keycloak_provider or KeycloakAuthProvider()
 
     async def authenticate_mcp_request(
-        self,
-        authorization_header: str | None = None
+        self, authorization_header: str | None = None
     ) -> dict[str, Any] | None:
         """
         Authenticate an MCP request using Keycloak token.
@@ -391,7 +398,7 @@ class KeycloakMCPAuth:
         self,
         keycloak_token: str,
         name: str = "MCP Token",
-        scopes: list[str] | None = None
+        scopes: list[str] | None = None,
     ) -> dict[str, Any] | None:
         """
         Create an MCP-specific token from a Keycloak token.
@@ -430,7 +437,7 @@ class KeycloakMCPAuth:
             "created_at": datetime.now(UTC).isoformat(),
             "expires_at": (datetime.now(UTC) + timedelta(days=30)).isoformat(),
             "keycloak_session": payload.get("sid"),
-            "active": True
+            "active": True,
         }
 
         # TODO: Store token in database for validation
@@ -439,8 +446,10 @@ class KeycloakMCPAuth:
         logger.info(f"MCP token created for user: {token_info['username']}")
         return token_info
 
+
 # Singleton instance for easy import
 _default_provider = None
+
 
 def get_keycloak_provider() -> KeycloakAuthProvider:
     """Get or create default Keycloak provider"""
@@ -448,6 +457,7 @@ def get_keycloak_provider() -> KeycloakAuthProvider:
     if _default_provider is None:
         _default_provider = KeycloakAuthProvider()
     return _default_provider
+
 
 def get_keycloak_mcp_auth() -> KeycloakMCPAuth:
     """Get or create default Keycloak MCP auth handler"""

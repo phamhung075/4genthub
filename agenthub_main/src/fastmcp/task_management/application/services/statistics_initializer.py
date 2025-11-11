@@ -39,10 +39,7 @@ class StatisticsInitializer:
             branch_repo = provider.get_git_branch_repository()
 
             # Initialize the integration service (this registers event handlers)
-            get_branch_statistics_integration_service(
-                task_repo,
-                branch_repo
-            )
+            get_branch_statistics_integration_service(task_repo, branch_repo)
 
             logger.info("Statistics tracking system initialized successfully")
             cls._initialized = True
@@ -76,8 +73,7 @@ class StatisticsInitializer:
 
             # Get the integration service
             integration_service = get_branch_statistics_integration_service(
-                task_repo,
-                branch_repo
+                task_repo, branch_repo
             )
 
             # Recalculate all branches

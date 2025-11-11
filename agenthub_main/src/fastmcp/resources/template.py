@@ -168,6 +168,7 @@ class FunctionResourceTemplate(ResourceTemplate):
         context_kwarg = find_kwarg_by_type(self.fn, kwarg_type=Context)
         if context_kwarg and context_kwarg not in kwargs:
             from fastmcp.server.dependencies import get_context
+
             kwargs[context_kwarg] = get_context()
 
         result = self.fn(**kwargs)

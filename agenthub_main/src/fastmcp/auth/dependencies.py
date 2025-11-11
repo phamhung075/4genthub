@@ -31,11 +31,11 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """
     Get the current authenticated user from the JWT token.
-    
+
     This dependency extracts and validates the JWT token from the
     Authorization header and returns the authenticated user.
     """
@@ -45,17 +45,17 @@ async def get_current_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server configuration error: JWT secret not set",
         )
-    
+
     token = credentials.credentials
-    
+
     try:
         # Decode the JWT token
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        
+
         # Extract user information
         user_id = payload.get("sub") or payload.get("user_id")
         email = payload.get("email")
-        
+
         if not user_id:
             logger.error("Token missing user_id/sub claim")
             raise HTTPException(
@@ -63,7 +63,7 @@ async def get_current_user(
                 detail="Invalid authentication credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         # Check token expiration
         exp = payload.get("exp")
         if exp:
@@ -74,19 +74,19 @@ async def get_current_user(
                     detail="Token expired",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-        
+
         # Create and return User object
         # In a real application, you might fetch additional user details from database
         user = User(
             id=user_id,
             email=email or f"{user_id}@example.com",
             username=payload.get("username") or email or user_id,
-            password_hash="authenticated-via-jwt"  # Not used for JWT auth
+            password_hash="authenticated-via-jwt",  # Not used for JWT auth
         )
-        
+
         logger.info(f"Authenticated user: {user.id}")
         return user
-        
+
     except jwt.ExpiredSignatureError:
         logger.error("Token expired")
         raise HTTPException(
@@ -114,16 +114,16 @@ async def get_current_user(
 
 
 async def get_optional_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(security)
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> User | None:
     """
     Get the current authenticated user if available, otherwise return None.
-    
+
     This is useful for endpoints that should work with or without authentication.
     """
     if not credentials:
         return None
-    
+
     try:
         return await get_current_user(credentials)
     except HTTPException:

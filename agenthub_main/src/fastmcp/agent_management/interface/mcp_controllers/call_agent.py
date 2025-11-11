@@ -66,8 +66,7 @@ def call_agent_mcp_tool(name_agent: str, user_id: str = None) -> dict[str, Any]:
         # 1. Authenticate user
         auth_service = AuthenticationService()
         authenticated_user_id = auth_service.get_authenticated_user_id(
-            provided_user_id=user_id,
-            operation_name="call_agent"
+            provided_user_id=user_id, operation_name="call_agent"
         )
         logger.info(f"✅ Authenticated user: {authenticated_user_id}")
 
@@ -76,8 +75,7 @@ def call_agent_mcp_tool(name_agent: str, user_id: str = None) -> dict[str, Any]:
         user_id_vo = UserId(authenticated_user_id)
 
         agent_config = facade.get_agent_for_call(
-            user_id=user_id_vo,
-            agent_slug=name_agent
+            user_id=user_id_vo, agent_slug=name_agent
         )
 
         logger.info(
@@ -89,7 +87,7 @@ def call_agent_mcp_tool(name_agent: str, user_id: str = None) -> dict[str, Any]:
         return {
             "success": True,
             "agent": agent_config,
-            "source": "agent-management-system"
+            "source": "agent-management-system",
         }
 
     except ValueError as e:
@@ -97,13 +95,9 @@ def call_agent_mcp_tool(name_agent: str, user_id: str = None) -> dict[str, Any]:
         return {
             "success": False,
             "error": f"Agent not found: {name_agent}",
-            "message": str(e)
+            "message": str(e),
         }
 
     except Exception as e:
         logger.error(f"❌ Error loading agent {name_agent}: {e}", exc_info=True)
-        return {
-            "success": False,
-            "error": "Failed to load agent",
-            "message": str(e)
-        }
+        return {"success": False, "error": "Failed to load agent", "message": str(e)}

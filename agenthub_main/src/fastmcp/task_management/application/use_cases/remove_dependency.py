@@ -1,6 +1,5 @@
 """Remove Dependency Use Case"""
 
-
 from __future__ import annotations
 
 from ...application.dtos.dependency import DependencyResponse
@@ -17,7 +16,9 @@ class RemoveDependencyUseCase:
         else:
             return TaskId.from_string(str(task_id))
 
-    def execute(self, task_id: str | int, dependency_id: str | int) -> DependencyResponse:
+    def execute(
+        self, task_id: str | int, dependency_id: str | int
+    ) -> DependencyResponse:
         task_id_obj = self._convert_to_task_id(task_id)
         dependency_id_obj = self._convert_to_task_id(dependency_id)
         task = self._task_repository.find_by_id(task_id_obj)
@@ -28,7 +29,7 @@ class RemoveDependencyUseCase:
                 task_id=str(task_id),
                 dependencies=task.get_dependency_ids(),
                 success=False,
-                message=f"Dependency {dependency_id} does not exist"
+                message=f"Dependency {dependency_id} does not exist",
             )
         task.remove_dependency(dependency_id_obj)
         self._task_repository.save(task)
@@ -36,5 +37,5 @@ class RemoveDependencyUseCase:
             task_id=str(task_id),
             dependencies=task.get_dependency_ids(),
             success=True,
-            message=f"Dependency {dependency_id} removed successfully"
-        ) 
+            message=f"Dependency {dependency_id} removed successfully",
+        )

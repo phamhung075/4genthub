@@ -56,11 +56,11 @@ class EntityId(ABC):
         try:
             uuid_obj = uuid.UUID(value_str)
             # Store in canonical format (lowercase with hyphens)
-            object.__setattr__(self, 'value', str(uuid_obj))
+            object.__setattr__(self, "value", str(uuid_obj))
         except ValueError:
             # If UUID parsing fails but validation passed, store as-is
             # (This handles special cases like TaskId hierarchical format)
-            object.__setattr__(self, 'value', value_str.lower())
+            object.__setattr__(self, "value", value_str.lower())
 
     @staticmethod
     @lru_cache(maxsize=10000)
@@ -92,7 +92,11 @@ class EntityId(ABC):
         # Log cache statistics every CACHE_LOG_INTERVAL calls
         if _validation_call_count % _CACHE_LOG_INTERVAL == 0:
             cache_info = EntityId._is_valid_uuid.cache_info()
-            hit_rate = (cache_info.hits / (cache_info.hits + cache_info.misses) * 100) if (cache_info.hits + cache_info.misses) > 0 else 0
+            hit_rate = (
+                (cache_info.hits / (cache_info.hits + cache_info.misses) * 100)
+                if (cache_info.hits + cache_info.misses) > 0
+                else 0
+            )
             logger.info(
                 f"UUID validation cache stats after {_validation_call_count} calls: "
                 f"hits={cache_info.hits}, misses={cache_info.misses}, "
@@ -121,7 +125,7 @@ class EntityId(ABC):
 
     def to_hex_format(self) -> str:
         """Return the ID in hex format (32 chars without dashes)."""
-        return self.value.replace('-', '')
+        return self.value.replace("-", "")
 
     def to_canonical_format(self) -> str:
         """Return the ID in canonical UUID format (with dashes)."""
