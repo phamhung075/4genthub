@@ -5,8 +5,6 @@ This is the main entry point for the git branch MCP controller, now refactored i
 architecture using factory pattern to maintain separation of concerns and workflow guidance.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -39,6 +37,11 @@ from .manage_git_branch_description import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# Get centralized parameter definitions at module level
+# This must be at module level so Pydantic can access it when evaluating type annotations
+params = get_manage_git_branch_parameters()
 
 # Import user context utilities - REQUIRED for authentication
 try:
@@ -117,9 +120,6 @@ class GitBranchMCPController(ContextPropagationMixin):
 
     def register_tools(self, mcp: FastMCP):
         """Register MCP tools with the server."""
-
-        # Get centralized parameter definitions
-        params = get_manage_git_branch_parameters()
 
         @mcp.tool(description=get_manage_git_branch_description())
         def manage_git_branch(

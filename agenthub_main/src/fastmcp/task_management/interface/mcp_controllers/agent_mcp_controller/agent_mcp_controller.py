@@ -11,8 +11,6 @@ The controller now uses:
 - Workflow guidance system integration
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -41,6 +39,11 @@ from .manage_agent_description import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# Get centralized parameter definitions at module level
+# This must be at module level so Pydantic can access it when evaluating type annotations
+params = get_manage_agent_parameters()
 
 # Import user context utilities - REQUIRED for authentication
 try:
@@ -99,8 +102,6 @@ class AgentMCPController:
 
     def register_tools(self, mcp: FastMCP):
         """Register agent management MCP tools with the FastMCP server"""
-        # Get centralized parameter definitions
-        params = get_manage_agent_parameters()
 
         @mcp.tool(name="manage_agent", description=get_manage_agent_description())
         def manage_agent(

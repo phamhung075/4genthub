@@ -4,8 +4,6 @@ This controller handles MCP tool registration for unified context management ope
 following the new standardized MCP parameter pattern for consistent parameter type display.
 """
 
-from __future__ import annotations
-
 import json
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
@@ -32,6 +30,31 @@ from .manage_unified_context_description import (
 
 logger = logging.getLogger(__name__)
 
+# Get centralized parameter definitions at module level
+# This must be at module level so Pydantic can access it when evaluating type annotations
+params = get_manage_unified_context_parameters()
+
+
+# Pre-compute Field descriptors to avoid annotation evaluation issues
+ActionField = Field(description="[OPTIONAL] " + params["action"]["description"])
+LevelField = Field(description="[REQUIRED for all actions except 'list'] " + params["level"]["description"])
+ContextIdField = Field(description="[REQUIRED for all actions except 'list'] " + params["context_id"]["description"])
+DataField = Field(description="[OPTIONAL] " + params["data"]["description"])
+UserIdField = Field(description="[OPTIONAL] " + params["user_id"]["description"])
+ProjectIdField = Field(description="[OPTIONAL] " + params["project_id"]["description"])
+GitBranchIdField = Field(description="[OPTIONAL] " + params["git_branch_id"]["description"])
+ForceRefreshField = Field(description="[OPTIONAL] " + params["force_refresh"]["description"])
+IncludeInheritedField = Field(description="[OPTIONAL] " + params["include_inherited"]["description"])
+PropagateChangesField = Field(description="[OPTIONAL] " + params["propagate_changes"]["description"])
+DelegateToField = Field(description="[REQUIRED for 'delegate' action] " + params["delegate_to"]["description"])
+DelegateDataField = Field(description="[OPTIONAL] " + params["delegate_data"]["description"])
+DelegationReasonField = Field(description="[OPTIONAL] " + params["delegation_reason"]["description"])
+ContentField = Field(description="[REQUIRED for 'add_insight' and 'add_progress' actions] " + params["content"]["description"])
+CategoryField = Field(description="[OPTIONAL] " + params["category"]["description"])
+ImportanceField = Field(description="[OPTIONAL] " + params["importance"]["description"])
+AgentField = Field(description="[OPTIONAL] " + params["agent"]["description"])
+FiltersField = Field(description="[OPTIONAL] " + params["filters"]["description"])
+
 
 class UnifiedContextMCPController:
     """
@@ -57,62 +80,59 @@ class UnifiedContextMCPController:
     def register_tools(self, mcp: FastMCP):
         """Register unified context management tools with FastMCP."""
 
-        # Get centralized parameter definitions
-        params = get_manage_unified_context_parameters()
-
         @mcp.tool(description=get_manage_unified_context_description())
         def manage_context(
-            action: Annotated[str, Field(description="[OPTIONAL] " + params["action"]["description"])],
+            action: Annotated[str, ActionField],
             level: Annotated[
-                str, Field(description="[REQUIRED for all actions except 'list'] " + params["level"]["description"])
+                str, LevelField
             ] = None,
             context_id: Annotated[
-                str, Field(description="[REQUIRED for all actions except 'list'] " + params["context_id"]["description"])
+                str, ContextIdField
             ] = None,
             data: Annotated[
-                str, Field(description="[OPTIONAL] " + params["data"]["description"])
+                str, DataField
             ] = None,
             user_id: Annotated[
-                str, Field(description="[OPTIONAL] " + params["user_id"]["description"])
+                str, UserIdField
             ] = None,
             project_id: Annotated[
-                str, Field(description="[OPTIONAL] " + params["project_id"]["description"])
+                str, ProjectIdField
             ] = None,
             git_branch_id: Annotated[
-                str, Field(description="[OPTIONAL] " + params["git_branch_id"]["description"])
+                str, GitBranchIdField
             ] = None,
             force_refresh: Annotated[
-                str, Field(description="[OPTIONAL] " + params["force_refresh"]["description"])
+                str, ForceRefreshField
             ] = None,
             include_inherited: Annotated[
-                str, Field(description="[OPTIONAL] " + params["include_inherited"]["description"])
+                str, IncludeInheritedField
             ] = None,
             propagate_changes: Annotated[
-                str, Field(description="[OPTIONAL] " + params["propagate_changes"]["description"])
+                str, PropagateChangesField
             ] = None,
             delegate_to: Annotated[
-                str, Field(description="[REQUIRED for 'delegate' action] " + params["delegate_to"]["description"])
+                str, DelegateToField
             ] = None,
             delegate_data: Annotated[
-                str, Field(description="[OPTIONAL] " + params["delegate_data"]["description"])
+                str, DelegateDataField
             ] = None,
             delegation_reason: Annotated[
-                str, Field(description="[OPTIONAL] " + params["delegation_reason"]["description"])
+                str, DelegationReasonField
             ] = None,
             content: Annotated[
-                str, Field(description="[REQUIRED for 'add_insight' and 'add_progress' actions] " + params["content"]["description"])
+                str, ContentField
             ] = None,
             category: Annotated[
-                str, Field(description="[OPTIONAL] " + params["category"]["description"])
+                str, CategoryField
             ] = None,
             importance: Annotated[
-                str, Field(description="[OPTIONAL] " + params["importance"]["description"])
+                str, ImportanceField
             ] = None,
             agent: Annotated[
-                str, Field(description="[OPTIONAL] " + params["agent"]["description"])
+                str, AgentField
             ] = None,
             filters: Annotated[
-                str, Field(description="[OPTIONAL] " + params["filters"]["description"])
+                str, FiltersField
             ] = None,
         ) -> dict[str, Any]:
             """Main unified context management function with two-stage validation pattern:

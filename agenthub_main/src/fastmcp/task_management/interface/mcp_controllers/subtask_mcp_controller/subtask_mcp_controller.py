@@ -5,8 +5,6 @@ This is the main entry point for the subtask MCP controller, now refactored into
 architecture using factory pattern to maintain separation of concerns and automatic progress tracking.
 """
 
-from __future__ import annotations
-
 import asyncio
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
@@ -40,6 +38,33 @@ SubtaskWorkflowFactory = subtask_module.SubtaskWorkflowFactory
 from ..auth_helper import get_authenticated_user_id, log_authentication_details
 
 logger = logging.getLogger(__name__)
+
+# Get centralized parameter definitions at module level
+# This must be at module level so Pydantic can access it when evaluating type annotations
+params = get_manage_subtask_parameters()
+
+# Pre-compute Field descriptors to avoid annotation evaluation issues
+ActionField = Field(description="[OPTIONAL] " + params["action"]["description"])
+TaskIdField = Field(description="[REQUIRED for 'create', 'update', 'delete', 'get', 'list', 'complete' actions] " + params["task_id"]["description"])
+SubtaskIdField = Field(description="[REQUIRED for 'update', 'delete', 'get', 'complete' actions] " + params["subtask_id"]["description"])
+TitleField = Field(description="[REQUIRED for 'create' action] " + params["title"]["description"])
+DescriptionField = Field(description="[OPTIONAL] " + params["description"]["description"])
+StatusField = Field(description="[OPTIONAL] " + params["status"]["description"])
+PriorityField = Field(description="[OPTIONAL] " + params["priority"]["description"])
+AssigneesField = Field(description="[OPTIONAL] " + params["assignees"]["description"])
+ProgressPercentageField = Field(description="[OPTIONAL] " + params["progress_percentage"]["description"])
+ProgressNotesField = Field(description="[REQUIRED for 'update' and 'complete' actions] " + params["progress_notes"]["description"])
+CompletionSummaryField = Field(description="[REQUIRED for 'complete' action] " + params["completion_summary"]["description"])
+TestingNotesField = Field(description="[OPTIONAL] " + params["testing_notes"]["description"])
+InsightsFoundField = Field(description="[OPTIONAL] " + params["insights_found"]["description"])
+ChallengesOvercomeField = Field(description="[OPTIONAL] " + params["challenges_overcome"]["description"])
+SkillsLearnedField = Field(description="[OPTIONAL] " + params["skills_learned"]["description"])
+NextRecommendationsField = Field(description="[OPTIONAL] " + params["next_recommendations"]["description"])
+DeliverablesField = Field(description="[OPTIONAL] " + params["deliverables"]["description"])
+CompletionQualityField = Field(description="[OPTIONAL] " + params["completion_quality"]["description"])
+ImpactOnParentField = Field(description="[OPTIONAL] " + params["impact_on_parent"]["description"])
+BlockersField = Field(description="[OPTIONAL] " + params["blockers"]["description"])
+UserIdField = Field(description="[OPTIONAL] " + params["user_id"]["description"])
 
 # Import user context utilities - REQUIRED for authentication
 try:
@@ -165,72 +190,29 @@ class SubtaskMCPController(ContextPropagationMixin):
     def register_tools(self, mcp: FastMCP):
         """Register MCP tools with the server."""
 
-        # Get centralized parameter definitions
-        params = get_manage_subtask_parameters()
-
         @mcp.tool(description=get_manage_subtask_description())
         def manage_subtask(
-            action: Annotated[str, Field(description="[OPTIONAL] " + params["action"]["description"])],
-            task_id: Annotated[
-                str, Field(description="[REQUIRED for 'create', 'update', 'delete', 'get', 'list', 'complete' actions] " + params["task_id"]["description"])
-            ] = None,
-            subtask_id: Annotated[
-                str, Field(description="[REQUIRED for 'update', 'delete', 'get', 'complete' actions] " + params["subtask_id"]["description"])
-            ] = None,
-            title: Annotated[
-                str, Field(description="[REQUIRED for 'create' action] " + params["title"]["description"])
-            ] = None,
-            description: Annotated[
-                str, Field(description="[OPTIONAL] " + params["description"]["description"])
-            ] = None,
-            status: Annotated[
-                str, Field(description="[OPTIONAL] " + params["status"]["description"])
-            ] = None,
-            priority: Annotated[
-                str, Field(description="[OPTIONAL] " + params["priority"]["description"])
-            ] = None,
-            assignees: Annotated[
-                str, Field(description="[OPTIONAL] " + params["assignees"]["description"])
-            ] = None,
-            progress_percentage: Annotated[
-                int, Field(description="[OPTIONAL] " + params["progress_percentage"]["description"])
-            ] = None,
-            progress_notes: Annotated[
-                str, Field(description="[REQUIRED for 'update' and 'complete' actions] " + params["progress_notes"]["description"])
-            ] = None,
-            completion_summary: Annotated[
-                str, Field(description="[REQUIRED for 'complete' action] " + params["completion_summary"]["description"])
-            ] = None,
-            testing_notes: Annotated[
-                str, Field(description="[OPTIONAL] " + params["testing_notes"]["description"])
-            ] = None,
-            insights_found: Annotated[
-                str, Field(description="[OPTIONAL] " + params["insights_found"]["description"])
-            ] = None,
-            challenges_overcome: Annotated[
-                str, Field(description="[OPTIONAL] " + params["challenges_overcome"]["description"])
-            ] = None,
-            skills_learned: Annotated[
-                str, Field(description="[OPTIONAL] " + params["skills_learned"]["description"])
-            ] = None,
-            next_recommendations: Annotated[
-                str, Field(description="[OPTIONAL] " + params["next_recommendations"]["description"])
-            ] = None,
-            deliverables: Annotated[
-                str, Field(description="[OPTIONAL] " + params["deliverables"]["description"])
-            ] = None,
-            completion_quality: Annotated[
-                str, Field(description="[OPTIONAL] " + params["completion_quality"]["description"])
-            ] = None,
-            impact_on_parent: Annotated[
-                str, Field(description="[OPTIONAL] " + params["impact_on_parent"]["description"])
-            ] = None,
-            blockers: Annotated[
-                str, Field(description="[OPTIONAL] " + params["blockers"]["description"])
-            ] = None,
-            user_id: Annotated[
-                str, Field(description="[OPTIONAL] " + params["user_id"]["description"])
-            ] = None,
+            action: Annotated[str, ActionField],
+            task_id: Annotated[str, TaskIdField] = None,
+            subtask_id: Annotated[str, SubtaskIdField] = None,
+            title: Annotated[str, TitleField] = None,
+            description: Annotated[str, DescriptionField] = None,
+            status: Annotated[str, StatusField] = None,
+            priority: Annotated[str, PriorityField] = None,
+            assignees: Annotated[str, AssigneesField] = None,
+            progress_percentage: Annotated[int, ProgressPercentageField] = None,
+            progress_notes: Annotated[str, ProgressNotesField] = None,
+            completion_summary: Annotated[str, CompletionSummaryField] = None,
+            testing_notes: Annotated[str, TestingNotesField] = None,
+            insights_found: Annotated[str, InsightsFoundField] = None,
+            challenges_overcome: Annotated[str, ChallengesOvercomeField] = None,
+            skills_learned: Annotated[str, SkillsLearnedField] = None,
+            next_recommendations: Annotated[str, NextRecommendationsField] = None,
+            deliverables: Annotated[str, DeliverablesField] = None,
+            completion_quality: Annotated[str, CompletionQualityField] = None,
+            impact_on_parent: Annotated[str, ImpactOnParentField] = None,
+            blockers: Annotated[str, BlockersField] = None,
+            user_id: Annotated[str, UserIdField] = None,
         ) -> dict[str, Any]:
             """Main subtask management function with two-stage validation pattern:
             - Schema level: Only 'action' is required (MCP compatibility)
