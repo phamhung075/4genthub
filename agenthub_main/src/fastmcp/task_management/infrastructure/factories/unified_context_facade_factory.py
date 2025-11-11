@@ -11,4 +11,4 @@ from ...application.factories.unified_context_facade_factory import (
 )
 
 # Re-export for backward compatibility
-__all__ = ['UnifiedContextFacadeFactory']
+__all__ = ["UnifiedContextFacadeFactory"]

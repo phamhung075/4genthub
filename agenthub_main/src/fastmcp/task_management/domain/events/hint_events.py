@@ -20,7 +20,7 @@ from .base import DomainEvent
 class HintGenerated(DomainEvent):
     """
     Event raised when a workflow hint is generated.
-    
+
     Attributes:
         hint_id: Unique identifier for the hint
         task_id: Task the hint was generated for
@@ -36,7 +36,7 @@ class HintGenerated(DomainEvent):
         aggregate_id: Aggregate identifier
         aggregate_type: Type of aggregate
     """
-    
+
     hint_id: UUID = field(default_factory=uuid4)
     task_id: UUID = field(default_factory=uuid4)
     hint_type: HintType = HintType.NEXT_ACTION  # Default
@@ -46,11 +46,11 @@ class HintGenerated(DomainEvent):
     source_rule: str = ""
     confidence: float = 0
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     @property
     def event_type(self) -> str:
         return "hint_generated"
-    
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
@@ -66,7 +66,7 @@ class HintGenerated(DomainEvent):
             "suggested_action": self.suggested_action,
             "source_rule": self.source_rule,
             "confidence": self.confidence,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -74,7 +74,7 @@ class HintGenerated(DomainEvent):
 class HintAccepted(DomainEvent):
     """
     Event raised when a user accepts/follows a hint.
-    
+
     Attributes:
         hint_id: The hint that was accepted
         task_id: The task the hint was for
@@ -82,17 +82,17 @@ class HintAccepted(DomainEvent):
         action_taken: Description of action taken based on hint
         acceptance_context: Context around why hint was accepted
     """
-    
+
     hint_id: UUID = field(default_factory=uuid4)
     task_id: UUID = field(default_factory=uuid4)
     user_id: str = ""
     action_taken: str | None = None
     acceptance_context: dict[str, Any] = field(default_factory=dict)
-    
+
     @property
     def event_type(self) -> str:
         return "hint_accepted"
-    
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
@@ -104,7 +104,7 @@ class HintAccepted(DomainEvent):
             "task_id": str(self.task_id),
             "user_id": self.user_id,
             "action_taken": self.action_taken,
-            "acceptance_context": self.acceptance_context
+            "acceptance_context": self.acceptance_context,
         }
 
 
@@ -112,7 +112,7 @@ class HintAccepted(DomainEvent):
 class HintDismissed(DomainEvent):
     """
     Event raised when a user dismisses a hint.
-    
+
     Attributes:
         hint_id: The hint that was dismissed
         task_id: The task the hint was for
@@ -120,17 +120,17 @@ class HintDismissed(DomainEvent):
         reason: Reason for dismissal
         dismissal_context: Additional context about dismissal
     """
-    
+
     hint_id: UUID = field(default_factory=uuid4)
     task_id: UUID = field(default_factory=uuid4)
     user_id: str = ""
     reason: str | None = None
     dismissal_context: dict[str, Any] = field(default_factory=dict)
-    
+
     @property
     def event_type(self) -> str:
         return "hint_dismissed"
-    
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
@@ -142,7 +142,7 @@ class HintDismissed(DomainEvent):
             "task_id": str(self.task_id),
             "user_id": self.user_id,
             "reason": self.reason,
-            "dismissal_context": self.dismissal_context
+            "dismissal_context": self.dismissal_context,
         }
 
 
@@ -150,7 +150,7 @@ class HintDismissed(DomainEvent):
 class HintFeedbackProvided(DomainEvent):
     """
     Event raised when user provides feedback on a hint.
-    
+
     Attributes:
         hint_id: The hint feedback is for
         task_id: The task the hint was for
@@ -160,7 +160,7 @@ class HintFeedbackProvided(DomainEvent):
         effectiveness_score: Numerical effectiveness rating
         improvement_suggestions: Suggestions for better hints
     """
-    
+
     hint_id: UUID = field(default_factory=uuid4)
     task_id: UUID = field(default_factory=uuid4)
     user_id: str = ""
@@ -168,11 +168,11 @@ class HintFeedbackProvided(DomainEvent):
     feedback_text: str | None = None
     effectiveness_score: float | None = None
     improvement_suggestions: str | None = None
-    
+
     @property
     def event_type(self) -> str:
         return "hint_feedback_provided"
-    
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
@@ -186,7 +186,7 @@ class HintFeedbackProvided(DomainEvent):
             "was_helpful": self.was_helpful,
             "feedback_text": self.feedback_text,
             "effectiveness_score": self.effectiveness_score,
-            "improvement_suggestions": self.improvement_suggestions
+            "improvement_suggestions": self.improvement_suggestions,
         }
 
 
@@ -194,7 +194,7 @@ class HintFeedbackProvided(DomainEvent):
 class HintPatternDetected(DomainEvent):
     """
     Event raised when a new pattern is detected for hint generation.
-    
+
     Attributes:
         pattern_id: Unique identifier for the pattern
         pattern_name: Name of the detected pattern
@@ -203,18 +203,18 @@ class HintPatternDetected(DomainEvent):
         affected_tasks: Tasks that match this pattern
         suggested_rule: Suggested rule based on pattern
     """
-    
+
     pattern_id: UUID = field(default_factory=uuid4)
     pattern_name: str = ""
     pattern_description: str = ""
     confidence: float = 0
     affected_tasks: list[UUID] = field(default_factory=list)
     suggested_rule: dict[str, Any] | None = None
-    
+
     @property
     def event_type(self) -> str:
         return "hint_pattern_detected"
-    
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
@@ -227,7 +227,7 @@ class HintPatternDetected(DomainEvent):
             "pattern_description": self.pattern_description,
             "confidence": self.confidence,
             "affected_tasks": [str(task_id) for task_id in self.affected_tasks],
-            "suggested_rule": self.suggested_rule
+            "suggested_rule": self.suggested_rule,
         }
 
 
@@ -235,7 +235,7 @@ class HintPatternDetected(DomainEvent):
 class HintEffectivenessCalculated(DomainEvent):
     """
     Event raised when hint effectiveness is calculated.
-    
+
     Attributes:
         hint_type: Type of hints being evaluated
         source_rule: Rule that generated the hints
@@ -246,7 +246,7 @@ class HintEffectivenessCalculated(DomainEvent):
         period_start: Start of evaluation period
         period_end: End of evaluation period
     """
-    
+
     hint_type: HintType = HintType.NEXT_ACTION  # Default
     source_rule: str = ""
     total_hints: int = 0
@@ -255,11 +255,11 @@ class HintEffectivenessCalculated(DomainEvent):
     effectiveness_score: float = 0
     period_start: datetime = field(default_factory=lambda: datetime.now(UTC))
     period_end: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
+
     @property
     def event_type(self) -> str:
         return "hint_effectiveness_calculated"
-    
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "event_id": str(self.event_id),
@@ -274,5 +274,5 @@ class HintEffectivenessCalculated(DomainEvent):
             "dismissed_count": self.dismissed_count,
             "effectiveness_score": self.effectiveness_score,
             "period_start": self.period_start.isoformat(),
-            "period_end": self.period_end.isoformat()
+            "period_end": self.period_end.isoformat(),
         }

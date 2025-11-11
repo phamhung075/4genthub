@@ -25,16 +25,16 @@ class AgentApplicationFacade:
     Application Facade that orchestrates agent-related use cases.
     Provides a unified interface for the Interface layer while maintaining
     proper DDD boundaries.
-    
+
     This facade coordinates agent management operations through use cases
-    and handles cross-cutting concerns like validation, error handling, 
+    and handles cross-cutting concerns like validation, error handling,
     and response formatting at the application boundary.
     """
-    
+
     def __init__(self, agent_repository: AgentRepository):
         """Initialize facade with required dependencies and use cases"""
         self._agent_repository = agent_repository
-        
+
         # Initialize use cases
         self._register_agent_use_case = RegisterAgentUseCase(agent_repository)
         self._unregister_agent_use_case = UnregisterAgentUseCase(agent_repository)
@@ -42,8 +42,15 @@ class AgentApplicationFacade:
         self._unassign_agent_use_case = UnassignAgentUseCase(agent_repository)
         self._get_agent_use_case = GetAgentUseCase(agent_repository)
         self._list_agents_use_case = ListAgentsUseCase(agent_repository)
-    
-    def register_agent(self, project_id: str, agent_id: str = None, name: str = None, call_agent: str = None, user_id: str = None) -> dict[str, Any]:
+
+    def register_agent(
+        self,
+        project_id: str,
+        agent_id: str = None,
+        name: str = None,
+        call_agent: str = None,
+        user_id: str = None,
+    ) -> dict[str, Any]:
         """Register a new agent to a project"""
         try:
             # Create request DTO
@@ -51,7 +58,7 @@ class AgentApplicationFacade:
                 project_id=project_id,
                 agent_id=agent_id,
                 name=name,
-                call_agent=call_agent
+                call_agent=call_agent,
             )
 
             # Execute use case
@@ -62,13 +69,14 @@ class AgentApplicationFacade:
                 from ..services.websocket_notification_service import (
                     WebSocketNotificationService,
                 )
+
                 agent_dict = asdict(response.agent)
                 WebSocketNotificationService.sync_broadcast_agent_event(
                     event_type="created",
                     agent_id=agent_dict.get("id", agent_id),
                     project_id=project_id,
                     user_id=user_id or "system",
-                    agent_data=agent_dict
+                    agent_data=agent_dict,
                 )
 
                 return {
@@ -76,7 +84,7 @@ class AgentApplicationFacade:
                     "action": "register",
                     "agent": agent_dict,
                     "message": response.message,
-                    "hint": f"Agent '{name}' successfully registered and ready for assignment"
+                    "hint": f"Agent '{name}' successfully registered and ready for assignment",
                 }
             else:
                 # Enhance error response with helpful guidance
@@ -84,24 +92,31 @@ class AgentApplicationFacade:
                     "success": False,
                     "action": "register",
                     "error": response.error,
-                    "error_code": "REGISTRATION_FAILED"
+                    "error_code": "REGISTRATION_FAILED",
                 }
-                
+
                 # Add helpful hints based on error message
                 if "already exists" in response.error.lower():
                     error_response["error_code"] = "DUPLICATE_AGENT"
-                    error_response["hint"] = "Try using 'action=get' to view the existing agent or 'action=update' to modify it"
+                    error_response["hint"] = (
+                        "Try using 'action=get' to view the existing agent or 'action=update' to modify it"
+                    )
                     error_response["suggested_actions"] = [
                         {"action": "get", "agent_id": agent_id},
                         {"action": "update", "agent_id": agent_id},
-                        {"action": "list", "project_id": project_id}
+                        {"action": "list", "project_id": project_id},
                     ]
-                elif "project" in response.error.lower() and "not exist" in response.error.lower():
+                elif (
+                    "project" in response.error.lower()
+                    and "not exist" in response.error.lower()
+                ):
                     error_response["error_code"] = "PROJECT_NOT_FOUND"
-                    error_response["hint"] = "Check that the project_id is correct or create the project first"
-                    
+                    error_response["hint"] = (
+                        "Check that the project_id is correct or create the project first"
+                    )
+
                 return error_response
-                
+
         except ValueError as e:
             logger.warning(f"Validation error in register_agent: {e}")
             error_msg = str(e)
@@ -109,23 +124,38 @@ class AgentApplicationFacade:
                 "success": False,
                 "action": "register",
                 "error": error_msg,
-                "error_code": "VALIDATION_ERROR"
+                "error_code": "VALIDATION_ERROR",
             }
-            
+
             # Add specific hints for common validation errors
-            if "duplicate" in error_msg.lower() or "already exists" in error_msg.lower():
+            if (
+                "duplicate" in error_msg.lower()
+                or "already exists" in error_msg.lower()
+            ):
                 response["error_code"] = "DUPLICATE_AGENT"
-                response["hint"] = "An agent with this ID or name already exists. Consider using the existing agent."
+                response["hint"] = (
+                    "An agent with this ID or name already exists. Consider using the existing agent."
+                )
                 response["suggested_actions"] = [
-                    {"action": "list", "project_id": project_id, "description": "List all agents in the project"},
-                    {"action": "get", "agent_id": agent_id, "description": "Get details of the existing agent"}
+                    {
+                        "action": "list",
+                        "project_id": project_id,
+                        "description": "List all agents in the project",
+                    },
+                    {
+                        "action": "get",
+                        "agent_id": agent_id,
+                        "description": "Get details of the existing agent",
+                    },
                 ]
             elif "required" in error_msg.lower() or "missing" in error_msg.lower():
                 response["error_code"] = "MISSING_FIELD"
-                response["hint"] = "Ensure all required fields (project_id, agent_id, name) are provided"
-                
+                response["hint"] = (
+                    "Ensure all required fields (project_id, agent_id, name) are provided"
+                )
+
             return response
-            
+
         except Exception as e:
             logger.error(f"Unexpected error in register_agent: {e}")
             return {
@@ -133,17 +163,16 @@ class AgentApplicationFacade:
                 "action": "register",
                 "error": f"Unexpected error: {str(e)}",
                 "error_code": "INTERNAL_ERROR",
-                "hint": "An unexpected error occurred. Please check the logs or try again."
+                "hint": "An unexpected error occurred. Please check the logs or try again.",
             }
-    
-    def unregister_agent(self, project_id: str, agent_id: str, user_id: str = None) -> dict[str, Any]:
+
+    def unregister_agent(
+        self, project_id: str, agent_id: str, user_id: str = None
+    ) -> dict[str, Any]:
         """Unregister an agent from a project"""
         try:
             # Create request DTO
-            request = UnregisterAgentRequest(
-                project_id=project_id,
-                agent_id=agent_id
-            )
+            request = UnregisterAgentRequest(project_id=project_id, agent_id=agent_id)
 
             # Execute use case
             response = self._unregister_agent_use_case.execute(request)
@@ -153,12 +182,13 @@ class AgentApplicationFacade:
                 from ..services.websocket_notification_service import (
                     WebSocketNotificationService,
                 )
+
                 WebSocketNotificationService.sync_broadcast_agent_event(
                     event_type="deleted",
                     agent_id=response.agent_id,
                     project_id=project_id,
                     user_id=user_id or "system",
-                    agent_data=response.agent_data
+                    agent_data=response.agent_data,
                 )
 
                 return {
@@ -167,37 +197,45 @@ class AgentApplicationFacade:
                     "agent_id": response.agent_id,
                     "agent_data": response.agent_data,
                     "removed_assignments": response.removed_assignments,
-                    "message": response.message
+                    "message": response.message,
                 }
             else:
                 return {
                     "success": False,
                     "action": "unregister",
-                    "error": response.error
+                    "error": response.error,
                 }
-                
+
         except Exception as e:
             logger.error(f"Unexpected error in unregister_agent: {e}")
-            return {"success": False, "action": "unregister", "error": f"Unexpected error: {str(e)}"}
-    
-    def assign_agent(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
+            return {
+                "success": False,
+                "action": "unregister",
+                "error": f"Unexpected error: {str(e)}",
+            }
+
+    def assign_agent(
+        self, project_id: str, agent_id: str, git_branch_id: str
+    ) -> dict[str, Any]:
         """Assign an agent to a task tree"""
-        logger.debug(f"[FACADE] assign_agent called with project_id={project_id}, agent_id={agent_id}, git_branch_id={git_branch_id}")
+        logger.debug(
+            f"[FACADE] assign_agent called with project_id={project_id}, agent_id={agent_id}, git_branch_id={git_branch_id}"
+        )
         logger.debug(f"[FACADE] Type of git_branch_id: {type(git_branch_id)}")
-        
+
         try:
             # Create request DTO
             request = AssignAgentRequest(
-                project_id=project_id,
-                agent_id=agent_id,
-                git_branch_id=git_branch_id
+                project_id=project_id, agent_id=agent_id, git_branch_id=git_branch_id
             )
-            
-            logger.debug("[FACADE] Created AssignAgentRequest, about to execute use case")
-            
+
+            logger.debug(
+                "[FACADE] Created AssignAgentRequest, about to execute use case"
+            )
+
             # Execute use case
             response = self._assign_agent_use_case.execute(request)
-            
+
             if response.success:
                 return {
                     "success": True,
@@ -207,8 +245,8 @@ class AgentApplicationFacade:
                     "message": response.message,
                     "metadata": {
                         "project_id": project_id,
-                        "timestamp": datetime.now().isoformat()
-                    }
+                        "timestamp": datetime.now().isoformat(),
+                    },
                 }
             else:
                 return {
@@ -219,50 +257,58 @@ class AgentApplicationFacade:
                         "project_id": project_id,
                         "agent_id": agent_id,
                         "git_branch_id": git_branch_id,
-                        "timestamp": datetime.now().isoformat()
-                    }
+                        "timestamp": datetime.now().isoformat(),
+                    },
                 }
-                
+
         except Exception as e:
             logger.error(f"Unexpected error in assign_agent: {e}")
-            return {"success": False, "action": "assign", "error": f"Unexpected error in assigning agent: {str(e)}", "metadata": {"project_id": project_id, "agent_id": agent_id, "git_branch_id": git_branch_id, "timestamp": datetime.now().isoformat()}}
-    
-    def unassign_agent(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
+            return {
+                "success": False,
+                "action": "assign",
+                "error": f"Unexpected error in assigning agent: {str(e)}",
+                "metadata": {
+                    "project_id": project_id,
+                    "agent_id": agent_id,
+                    "git_branch_id": git_branch_id,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            }
+
+    def unassign_agent(
+        self, project_id: str, agent_id: str, git_branch_id: str
+    ) -> dict[str, Any]:
         """
         Unassigns an agent from a specific task tree within a project.
-        
+
         Args:
             project_id: The ID of the project.
             agent_id: The ID of the agent to unassign.
             git_branch_id: The ID of the task tree (branch) from which to unassign the agent.
-        
+
         Returns:
             Dict with the result of the unassignment operation.
         """
         try:
             # Use the use case to handle the business logic
-            request = UnassignAgentRequest(project_id=project_id, agent_id=agent_id, git_branch_id=git_branch_id)
+            request = UnassignAgentRequest(
+                project_id=project_id, agent_id=agent_id, git_branch_id=git_branch_id
+            )
             response = self._unassign_agent_use_case.execute(request)
             return response.to_dict()
         except Exception as e:
             logger.error(f"Error in unassign_agent facade: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
-    
+            return {"success": False, "error": str(e)}
+
     def get_agent(self, project_id: str, agent_id: str) -> dict[str, Any]:
         """Get agent details"""
         try:
             # Create request DTO
-            request = GetAgentRequest(
-                project_id=project_id,
-                agent_id=agent_id
-            )
-            
+            request = GetAgentRequest(project_id=project_id, agent_id=agent_id)
+
             # Execute use case
             response = self._get_agent_use_case.execute(request)
-            
+
             if response.success:
                 return {
                     "success": True,
@@ -272,8 +318,8 @@ class AgentApplicationFacade:
                     "metadata": {
                         "project_id": project_id,
                         "agent_id": agent_id,
-                        "timestamp": datetime.now().isoformat()
-                    }
+                        "timestamp": datetime.now().isoformat(),
+                    },
                 }
             else:
                 return {
@@ -283,25 +329,32 @@ class AgentApplicationFacade:
                     "metadata": {
                         "project_id": project_id,
                         "agent_id": agent_id,
-                        "timestamp": datetime.now().isoformat()
-                    }
+                        "timestamp": datetime.now().isoformat(),
+                    },
                 }
-                
+
         except Exception as e:
             logger.error(f"Unexpected error in get_agent: {e}")
-            return {"success": False, "action": "get", "error": f"Unexpected error in retrieving agent details: {str(e)}", "metadata": {"project_id": project_id, "agent_id": agent_id, "timestamp": datetime.now().isoformat()}}
-    
+            return {
+                "success": False,
+                "action": "get",
+                "error": f"Unexpected error in retrieving agent details: {str(e)}",
+                "metadata": {
+                    "project_id": project_id,
+                    "agent_id": agent_id,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            }
+
     def list_agents(self, project_id: str) -> dict[str, Any]:
         """List all agents in a project"""
         try:
             # Create request DTO
-            request = ListAgentsRequest(
-                project_id=project_id
-            )
-            
+            request = ListAgentsRequest(project_id=project_id)
+
             # Execute use case
             response = self._list_agents_use_case.execute(request)
-            
+
             if response.success:
                 return {
                     "success": True,
@@ -310,8 +363,8 @@ class AgentApplicationFacade:
                     "metadata": {
                         "project_id": project_id,
                         "timestamp": datetime.now().isoformat(),
-                        "count": len(response.agents)
-                    }
+                        "count": len(response.agents),
+                    },
                 }
             else:
                 return {
@@ -320,30 +373,48 @@ class AgentApplicationFacade:
                     "error": response.error,
                     "metadata": {
                         "project_id": project_id,
-                        "timestamp": datetime.now().isoformat()
-                    }
+                        "timestamp": datetime.now().isoformat(),
+                    },
                 }
-                
+
         except Exception as e:
             logger.error(f"Unexpected error in list_agents: {e}")
-            return {"success": False, "action": "list", "error": f"Unexpected error in listing agents: {str(e)}", "metadata": {"project_id": project_id, "timestamp": datetime.now().isoformat()}}
-    
-    def update_agent(self, project_id: str, agent_id: str, name: str = None, call_agent: str = None, user_id: str = None) -> dict[str, Any]:
+            return {
+                "success": False,
+                "action": "list",
+                "error": f"Unexpected error in listing agents: {str(e)}",
+                "metadata": {
+                    "project_id": project_id,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            }
+
+    def update_agent(
+        self,
+        project_id: str,
+        agent_id: str,
+        name: str = None,
+        call_agent: str = None,
+        user_id: str = None,
+    ) -> dict[str, Any]:
         """Update agent information"""
         try:
             # Create request DTO - using a direct repository call since use case might not be fully defined yet
-            updated_agent = self._agent_repository.update_agent(project_id, agent_id, name, call_agent)
+            updated_agent = self._agent_repository.update_agent(
+                project_id, agent_id, name, call_agent
+            )
 
             # Broadcast WebSocket event for real-time UI updates
             from ..services.websocket_notification_service import (
                 WebSocketNotificationService,
             )
+
             WebSocketNotificationService.sync_broadcast_agent_event(
                 event_type="updated",
                 agent_id=agent_id,
                 project_id=project_id,
                 user_id=user_id or "system",
-                agent_data=updated_agent
+                agent_data=updated_agent,
             )
 
             return {
@@ -354,19 +425,46 @@ class AgentApplicationFacade:
                 "metadata": {
                     "project_id": project_id,
                     "agent_id": agent_id,
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": datetime.now().isoformat(),
+                },
             }
         except AgentNotFoundError as e:
             logger.warning(f"Agent not found during update: {e}")
-            return {"success": False, "action": "update", "error": str(e), "metadata": {"project_id": project_id, "agent_id": agent_id, "timestamp": datetime.now().isoformat()}}
+            return {
+                "success": False,
+                "action": "update",
+                "error": str(e),
+                "metadata": {
+                    "project_id": project_id,
+                    "agent_id": agent_id,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            }
         except ProjectNotFoundError as e:
             logger.warning(f"Project not found during update: {e}")
-            return {"success": False, "action": "update", "error": str(e), "metadata": {"project_id": project_id, "agent_id": agent_id, "timestamp": datetime.now().isoformat()}}
+            return {
+                "success": False,
+                "action": "update",
+                "error": str(e),
+                "metadata": {
+                    "project_id": project_id,
+                    "agent_id": agent_id,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            }
         except Exception as e:
             logger.error(f"Unexpected error in update_agent: {e}")
-            return {"success": False, "action": "update", "error": f"Unexpected error in updating agent: {str(e)}", "metadata": {"project_id": project_id, "agent_id": agent_id, "timestamp": datetime.now().isoformat()}}
-    
+            return {
+                "success": False,
+                "action": "update",
+                "error": f"Unexpected error in updating agent: {str(e)}",
+                "metadata": {
+                    "project_id": project_id,
+                    "agent_id": agent_id,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            }
+
     def rebalance_agents(self, project_id: str) -> dict[str, Any]:
         """Rebalance agent assignments"""
         try:
@@ -380,12 +478,28 @@ class AgentApplicationFacade:
                 "message": f"Agent rebalancing completed for project {project_id}",
                 "metadata": {
                     "project_id": project_id,
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": datetime.now().isoformat(),
+                },
             }
         except ProjectNotFoundError as e:
             logger.warning(f"Project not found during rebalance: {e}")
-            return {"success": False, "action": "rebalance", "error": str(e), "metadata": {"project_id": project_id, "timestamp": datetime.now().isoformat()}}
+            return {
+                "success": False,
+                "action": "rebalance",
+                "error": str(e),
+                "metadata": {
+                    "project_id": project_id,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            }
         except Exception as e:
             logger.error(f"Unexpected error in rebalance_agents: {e}")
-            return {"success": False, "action": "rebalance", "error": f"Unexpected error in rebalancing agents: {str(e)}", "metadata": {"project_id": project_id, "timestamp": datetime.now().isoformat()}}
+            return {
+                "success": False,
+                "action": "rebalance",
+                "error": f"Unexpected error in rebalancing agents: {str(e)}",
+                "metadata": {
+                    "project_id": project_id,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            }

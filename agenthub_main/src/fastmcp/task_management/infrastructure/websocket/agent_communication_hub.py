@@ -28,27 +28,28 @@ logger = logging.getLogger(__name__)
 
 class MessageType(Enum):
     """WebSocket message types"""
+
     # Connection management
     CONNECT = "connect"
     DISCONNECT = "disconnect"
     HEARTBEAT = "heartbeat"
     ACK = "acknowledge"
-    
+
     # Status updates
     STATUS_UPDATE = "status_update"
     RESOURCE_UPDATE = "resource_update"
     TASK_UPDATE = "task_update"
-    
+
     # Coordination
     COORDINATION_REQUEST = "coordination_request"
     COORDINATION_RESPONSE = "coordination_response"
     WORK_HANDOFF = "work_handoff"
-    
+
     # Communication
     DIRECT_MESSAGE = "direct_message"
     BROADCAST_MESSAGE = "broadcast_message"
     GROUP_MESSAGE = "group_message"
-    
+
     # Notifications
     NOTIFICATION = "notification"
     ALERT = "alert"
@@ -58,6 +59,7 @@ class MessageType(Enum):
 @dataclass
 class WebSocketMessage:
     """Standard WebSocket message format"""
+
     id: str
     type: MessageType
     from_agent: str
@@ -66,14 +68,14 @@ class WebSocketMessage:
     payload: dict[str, Any]
     requires_ack: bool = False
     correlation_id: str | None = None
-    
+
     def to_json(self) -> str:
         """Convert to JSON string for transmission"""
         data = asdict(self)
         data["type"] = self.type.value
         data["timestamp"] = self.timestamp.isoformat()
         return json.dumps(data)
-    
+
     @classmethod
     def from_json(cls, json_str: str) -> WebSocketMessage:
         """Create from JSON string"""
@@ -86,17 +88,18 @@ class WebSocketMessage:
 @dataclass
 class AgentConnection:
     """Active agent WebSocket connection"""
+
     agent_id: str
     session_id: str
     websocket: WebSocket
     connected_at: datetime
     last_heartbeat: datetime
     subscriptions: set[str] = None  # Channel subscriptions
-    
+
     def __post_init__(self):
         if self.subscriptions is None:
             self.subscriptions = set()
-    
+
     async def send_message(self, message: WebSocketMessage) -> bool:
         """Send message through WebSocket"""
         try:
@@ -106,7 +109,7 @@ class AgentConnection:
         except Exception as e:
             logger.error(f"Failed to send message to {self.agent_id}: {e}")
         return False
-    
+
     def is_alive(self, timeout_seconds: int = 60) -> bool:
         """Check if connection is still alive"""
         elapsed = (datetime.now(UTC) - self.last_heartbeat).total_seconds()
@@ -116,7 +119,7 @@ class AgentConnection:
 class AgentCommunicationHub:
     """
     WebSocket-based communication hub for real-time agent coordination.
-    
+
     Features:
     - WebSocket connection management
     - Real-time message routing
@@ -125,62 +128,62 @@ class AgentCommunicationHub:
     - Message acknowledgment
     - Connection health monitoring
     """
-    
+
     def __init__(
         self,
         status_tracker: RealTimeStatusTracker | None = None,
         heartbeat_interval: int = 30,
-        message_timeout: int = 30
+        message_timeout: int = 30,
     ):
         """Initialize the communication hub"""
         self.status_tracker = status_tracker
         self.heartbeat_interval = heartbeat_interval
         self.message_timeout = message_timeout
-        
+
         # Connection management
         self.connections: dict[str, AgentConnection] = {}
         self.sessions: dict[str, AgentSession] = {}
-        
+
         # Message handling
         self.pending_acks: dict[str, WebSocketMessage] = {}
         self.message_handlers: dict[MessageType, list[Callable]] = {}
-        
+
         # Channels for group communication
         self.channels: dict[str, set[str]] = {
             "global": set(),  # All connected agents
             "status": set(),  # Status update subscribers
-            "coordination": set()  # Coordination subscribers
+            "coordination": set(),  # Coordination subscribers
         }
-        
+
         # Metrics
         self.metrics = {
             "total_connections": 0,
             "messages_sent": 0,
             "messages_received": 0,
             "messages_failed": 0,
-            "avg_latency_ms": 0
+            "avg_latency_ms": 0,
         }
-        
+
         # Background tasks
         self._heartbeat_task: asyncio.Task | None = None
         self._cleanup_task: asyncio.Task | None = None
         self._is_running = False
-    
+
     async def start(self) -> None:
         """Start the communication hub"""
         if self._is_running:
             return
-        
+
         self._is_running = True
         self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
         self._cleanup_task = asyncio.create_task(self._cleanup_loop())
-        
+
         logger.info("Agent communication hub started")
-    
+
     async def stop(self) -> None:
         """Stop the communication hub"""
         self._is_running = False
-        
+
         # Cancel background tasks
         for task in [self._heartbeat_task, self._cleanup_task]:
             if task:
@@ -189,37 +192,34 @@ class AgentCommunicationHub:
                     await task
                 except asyncio.CancelledError:
                     pass
-        
+
         # Close all connections
         for connection in list(self.connections.values()):
             await self.disconnect_agent(connection.agent_id)
-        
+
         logger.info("Agent communication hub stopped")
-    
+
     async def connect_agent(
-        self,
-        agent_id: str,
-        session_id: str,
-        websocket: WebSocket
+        self, agent_id: str, session_id: str, websocket: WebSocket
     ) -> None:
         """Connect an agent to the hub"""
         await websocket.accept()
-        
+
         # Create connection
         connection = AgentConnection(
             agent_id=agent_id,
             session_id=session_id,
             websocket=websocket,
             connected_at=datetime.now(UTC),
-            last_heartbeat=datetime.now(UTC)
+            last_heartbeat=datetime.now(UTC),
         )
-        
+
         self.connections[agent_id] = connection
         self.metrics["total_connections"] += 1
-        
+
         # Add to global channel
         self.channels["global"].add(agent_id)
-        
+
         # Send connection confirmation
         welcome_msg = WebSocketMessage(
             id=str(uuid.uuid4()),
@@ -231,12 +231,12 @@ class AgentCommunicationHub:
                 "status": "connected",
                 "session_id": session_id,
                 "hub_version": "1.0.0",
-                "available_channels": list(self.channels.keys())
-            }
+                "available_channels": list(self.channels.keys()),
+            },
         )
-        
+
         await connection.send_message(welcome_msg)
-        
+
         # Notify other agents
         await self.broadcast_to_channel(
             "global",
@@ -244,34 +244,34 @@ class AgentCommunicationHub:
             {
                 "event": "agent_connected",
                 "agent_id": agent_id,
-                "timestamp": datetime.now(UTC).isoformat()
+                "timestamp": datetime.now(UTC).isoformat(),
             },
-            exclude=[agent_id]
+            exclude=[agent_id],
         )
-        
+
         logger.info(f"Agent {agent_id} connected with session {session_id}")
-    
+
     async def disconnect_agent(self, agent_id: str) -> None:
         """Disconnect an agent from the hub"""
         if agent_id not in self.connections:
             return
-        
+
         connection = self.connections[agent_id]
-        
+
         # Close WebSocket
         try:
             if connection.websocket.client_state == WebSocketState.CONNECTED:
                 await connection.websocket.close()
         except Exception as e:
             logger.error(f"Error closing WebSocket for {agent_id}: {e}")
-        
+
         # Remove from channels
         for channel_agents in self.channels.values():
             channel_agents.discard(agent_id)
-        
+
         # Remove connection
         del self.connections[agent_id]
-        
+
         # Notify other agents
         await self.broadcast_to_channel(
             "global",
@@ -279,40 +279,36 @@ class AgentCommunicationHub:
             {
                 "event": "agent_disconnected",
                 "agent_id": agent_id,
-                "timestamp": datetime.now(UTC).isoformat()
-            }
+                "timestamp": datetime.now(UTC).isoformat(),
+            },
         )
-        
+
         logger.info(f"Agent {agent_id} disconnected")
-    
+
     async def handle_agent_connection(
-        self,
-        websocket: WebSocket,
-        agent_id: str,
-        session_id: str
+        self, websocket: WebSocket, agent_id: str, session_id: str
     ) -> None:
         """Handle agent WebSocket connection lifecycle"""
         try:
             # Connect agent
             await self.connect_agent(agent_id, session_id, websocket)
-            
+
             # Handle messages
             while self._is_running:
                 try:
                     # Receive message with timeout
                     message_text = await asyncio.wait_for(
-                        websocket.receive_text(),
-                        timeout=self.heartbeat_interval * 2
+                        websocket.receive_text(), timeout=self.heartbeat_interval * 2
                     )
-                    
+
                     # Process message
                     await self.process_message(agent_id, message_text)
-                    
+
                 except TimeoutError:
                     # Send heartbeat ping
                     if agent_id in self.connections:
                         await self.send_heartbeat(agent_id)
-                    
+
                 except WebSocketDisconnect:
                     break
 
@@ -320,71 +316,71 @@ class AgentCommunicationHub:
                     logger.error(f"Error handling message from {agent_id}: {e}")
                     # Break the loop on any other exception to prevent infinite loops
                     break
-                    
+
         finally:
             # Ensure disconnection
             await self.disconnect_agent(agent_id)
-    
+
     async def process_message(self, from_agent: str, message_text: str) -> None:
         """Process incoming WebSocket message"""
         try:
             message = WebSocketMessage.from_json(message_text)
             self.metrics["messages_received"] += 1
-            
+
             # Update heartbeat
             if from_agent in self.connections:
                 self.connections[from_agent].last_heartbeat = datetime.now(UTC)
-            
+
             # Handle acknowledgments
             if message.type == MessageType.ACK:
                 await self.handle_acknowledgment(message)
                 return
-            
+
             # Route message based on type
             if message.type == MessageType.HEARTBEAT:
                 # Heartbeat already updated above
                 pass
-                
+
             elif message.type == MessageType.STATUS_UPDATE:
                 await self.handle_status_update(from_agent, message)
-                
+
             elif message.type == MessageType.DIRECT_MESSAGE:
                 await self.route_direct_message(message)
-                
+
             elif message.type == MessageType.BROADCAST_MESSAGE:
                 await self.route_broadcast_message(message)
-                
+
             elif message.type == MessageType.GROUP_MESSAGE:
                 await self.route_group_message(message)
-                
+
             elif message.type == MessageType.COORDINATION_REQUEST:
                 await self.handle_coordination_request(message)
-                
+
             else:
                 # Call registered handlers
                 await self.call_message_handlers(message.type, message)
-            
+
             # Send acknowledgment if required
             if message.requires_ack:
                 await self.send_acknowledgment(from_agent, message.id)
-                
+
         except Exception as e:
             logger.error(f"Error processing message from {from_agent}: {e}")
             await self.send_error(from_agent, str(e))
-    
+
     async def send_message(
         self,
         to_agent: str,
         message_type: MessageType,
         payload: dict[str, Any],
         requires_ack: bool = False,
-        correlation_id: str | None = None
+        correlation_id: str | None = None,
     ) -> bool:
         """Send message to specific agent"""
         if to_agent not in self.connections:
             logger.warning(f"Agent {to_agent} not connected")
             return False
-        
+
         message = WebSocketMessage(
             id=str(uuid.uuid4()),
             type=message_type,
@@ -393,32 +389,32 @@ class AgentCommunicationHub:
             timestamp=datetime.now(UTC),
             payload=payload,
             requires_ack=requires_ack,
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
         )
-        
+
         success = await self.connections[to_agent].send_message(message)
-        
+
         if success:
             self.metrics["messages_sent"] += 1
-            
+
             if requires_ack:
                 self.pending_acks[message.id] = message
                 # TODO: Implement timeout handling for acks
         else:
             self.metrics["messages_failed"] += 1
-        
+
         return success
-    
+
     async def broadcast_message(
         self,
         message_type: MessageType,
         payload: dict[str, Any],
-        exclude: list[str] | None = None
+        exclude: list[str] | None = None,
     ) -> int:
         """Broadcast message to all connected agents"""
         if exclude is None:
             exclude = []
-        
+
         message = WebSocketMessage(
             id=str(uuid.uuid4()),
             type=message_type,
@@ -426,88 +422,81 @@ class AgentCommunicationHub:
             to_agents=[],  # Empty for broadcast
             timestamp=datetime.now(UTC),
             payload=payload,
-            requires_ack=False
+            requires_ack=False,
         )
-        
+
         sent_count = 0
         for agent_id, connection in self.connections.items():
             if agent_id not in exclude:
                 if await connection.send_message(message):
                     sent_count += 1
-        
+
         self.metrics["messages_sent"] += sent_count
         return sent_count
-    
+
     async def broadcast_to_channel(
         self,
         channel: str,
         message_type: MessageType,
         payload: dict[str, Any],
-        exclude: list[str] | None = None
+        exclude: list[str] | None = None,
     ) -> int:
         """Broadcast message to channel subscribers"""
         if channel not in self.channels:
             logger.warning(f"Unknown channel: {channel}")
             return 0
-        
+
         if exclude is None:
             exclude = []
-        
+
         sent_count = 0
         for agent_id in self.channels[channel]:
             if agent_id not in exclude and agent_id in self.connections:
                 if await self.send_message(agent_id, message_type, payload):
                     sent_count += 1
-        
+
         return sent_count
-    
+
     async def subscribe_to_channel(self, agent_id: str, channel: str) -> bool:
         """Subscribe agent to a channel"""
         if agent_id not in self.connections:
             return False
-        
+
         if channel not in self.channels:
             self.channels[channel] = set()
-        
+
         self.channels[channel].add(agent_id)
         self.connections[agent_id].subscriptions.add(channel)
-        
+
         # Notify agent
         await self.send_message(
             agent_id,
             MessageType.NOTIFICATION,
-            {
-                "event": "channel_subscribed",
-                "channel": channel
-            }
+            {"event": "channel_subscribed", "channel": channel},
         )
-        
+
         return True
-    
+
     async def unsubscribe_from_channel(self, agent_id: str, channel: str) -> bool:
         """Unsubscribe agent from a channel"""
         if channel in self.channels:
             self.channels[channel].discard(agent_id)
-        
+
         if agent_id in self.connections:
             self.connections[agent_id].subscriptions.discard(channel)
-        
+
         return True
-    
+
     def register_message_handler(
-        self,
-        message_type: MessageType,
-        handler: Callable
+        self, message_type: MessageType, handler: Callable
     ) -> None:
         """Register handler for message type"""
         if message_type not in self.message_handlers:
             self.message_handlers[message_type] = []
         self.message_handlers[message_type].append(handler)
-    
+
     async def call_message_handlers(
-        self,
-        message_type: MessageType,
-        message: WebSocketMessage
+        self, message_type: MessageType, message: WebSocketMessage
     ) -> None:
         """Call registered handlers for message type"""
         if message_type in self.message_handlers:
@@ -516,11 +505,9 @@ class AgentCommunicationHub:
                     await handler(message)
                 except Exception as e:
                     logger.error(f"Error in message handler: {e}")
-    
+
     async def handle_status_update(
-        self,
-        from_agent: str,
-        message: WebSocketMessage
+        self, from_agent: str, message: WebSocketMessage
     ) -> None:
         """Handle status update from agent"""
         if self.status_tracker:
@@ -530,28 +517,22 @@ class AgentCommunicationHub:
                 payload.get("status"),
                 payload.get("current_task_id"),
                 payload.get("current_activity"),
-                payload.get("metadata")
+                payload.get("metadata"),
             )
-        
+
         # Broadcast to status channel
         await self.broadcast_to_channel(
             "status",
             MessageType.STATUS_UPDATE,
-            {
-                "agent_id": from_agent,
-                **message.payload
-            },
-            exclude=[from_agent]
+            {"agent_id": from_agent, **message.payload},
+            exclude=[from_agent],
         )
-    
-    async def handle_coordination_request(
-        self,
-        message: WebSocketMessage
-    ) -> None:
+
+    async def handle_coordination_request(self, message: WebSocketMessage) -> None:
         """Handle coordination request between agents"""
         payload = message.payload
         target_agent = payload.get("target_agent")
-        
+
         if target_agent and target_agent in self.connections:
             # Forward to target agent
             await self.send_message(
@@ -559,9 +540,9 @@ class AgentCommunicationHub:
                 MessageType.COORDINATION_REQUEST,
                 payload,
                 requires_ack=True,
-                correlation_id=message.id
+                correlation_id=message.id,
             )
-        
+
         # Broadcast to coordination channel
         await self.broadcast_to_channel(
             "coordination",
@@ -570,24 +551,22 @@ class AgentCommunicationHub:
                 "event": "coordination_request",
                 "from_agent": message.from_agent,
                 "to_agent": target_agent,
-                "type": payload.get("coordination_type")
-            }
+                "type": payload.get("coordination_type"),
+            },
         )
-    
+
     async def route_direct_message(self, message: WebSocketMessage) -> None:
         """Route direct message to target agent"""
         for target in message.to_agents:
             if target in self.connections:
                 await self.connections[target].send_message(message)
-    
+
     async def route_broadcast_message(self, message: WebSocketMessage) -> None:
         """Route broadcast message to all agents"""
         await self.broadcast_message(
-            MessageType.BROADCAST_MESSAGE,
-            message.payload,
-            exclude=[message.from_agent]
+            MessageType.BROADCAST_MESSAGE, message.payload, exclude=[message.from_agent]
         )
-    
+
     async def route_group_message(self, message: WebSocketMessage) -> None:
         """Route message to group of agents"""
         channel = message.payload.get("channel")
@@ -596,40 +575,34 @@ class AgentCommunicationHub:
                 channel,
                 MessageType.GROUP_MESSAGE,
                 message.payload,
-                exclude=[message.from_agent]
+                exclude=[message.from_agent],
             )
-    
+
     async def send_heartbeat(self, agent_id: str) -> None:
         """Send heartbeat to agent"""
         await self.send_message(
             agent_id,
             MessageType.HEARTBEAT,
             {"timestamp": datetime.now(UTC).isoformat()},
-            requires_ack=True
+            requires_ack=True,
         )
-    
+
     async def send_acknowledgment(self, to_agent: str, message_id: str) -> None:
         """Send acknowledgment for message"""
         await self.send_message(
-            to_agent,
-            MessageType.ACK,
-            {"ack_message_id": message_id}
+            to_agent, MessageType.ACK, {"ack_message_id": message_id}
         )
-    
+
     async def handle_acknowledgment(self, message: WebSocketMessage) -> None:
         """Handle message acknowledgment"""
         ack_id = message.payload.get("ack_message_id")
         if ack_id in self.pending_acks:
             del self.pending_acks[ack_id]
-    
+
     async def send_error(self, to_agent: str, error_message: str) -> None:
         """Send error message to agent"""
-        await self.send_message(
-            to_agent,
-            MessageType.ERROR,
-            {"error": error_message}
-        )
-    
+        await self.send_message(to_agent, MessageType.ERROR, {"error": error_message})
+
     async def _heartbeat_loop(self) -> None:
         """Background task to send heartbeats"""
         while self._is_running:
@@ -637,13 +610,13 @@ class AgentCommunicationHub:
                 # Send heartbeat to all connections
                 for agent_id in list(self.connections.keys()):
                     await self.send_heartbeat(agent_id)
-                
+
                 await asyncio.sleep(self.heartbeat_interval)
-                
+
             except Exception as e:
                 logger.error(f"Error in heartbeat loop: {e}")
                 await asyncio.sleep(5)
-    
+
     async def _cleanup_loop(self) -> None:
         """Background task to cleanup dead connections"""
         while self._is_running:
@@ -653,39 +626,38 @@ class AgentCommunicationHub:
                 for agent_id, connection in self.connections.items():
                     if not connection.is_alive():
                         dead_agents.append(agent_id)
-                
+
                 # Disconnect dead agents
                 for agent_id in dead_agents:
                     logger.warning(f"Removing dead connection for {agent_id}")
                     await self.disconnect_agent(agent_id)
-                
+
                 # Cleanup pending acks
                 # TODO: Implement ack timeout handling
-                
+
                 await asyncio.sleep(60)  # Check every minute
-                
+
             except Exception as e:
                 logger.error(f"Error in cleanup loop: {e}")
                 await asyncio.sleep(30)
-    
+
     def get_connection_status(self) -> dict[str, Any]:
         """Get current connection status"""
         return {
             "active_connections": len(self.connections),
             "agents": list(self.connections.keys()),
             "channels": {
-                channel: len(agents)
-                for channel, agents in self.channels.items()
+                channel: len(agents) for channel, agents in self.channels.items()
             },
             "pending_acks": len(self.pending_acks),
-            "metrics": self.metrics
+            "metrics": self.metrics,
         }
-    
+
     def get_agent_info(self, agent_id: str) -> dict[str, Any] | None:
         """Get information about connected agent"""
         if agent_id not in self.connections:
             return None
-        
+
         connection = self.connections[agent_id]
         return {
             "agent_id": agent_id,
@@ -693,5 +665,5 @@ class AgentCommunicationHub:
             "connected_at": connection.connected_at.isoformat(),
             "last_heartbeat": connection.last_heartbeat.isoformat(),
             "subscriptions": list(connection.subscriptions),
-            "is_alive": connection.is_alive()
+            "is_alive": connection.is_alive(),
         }

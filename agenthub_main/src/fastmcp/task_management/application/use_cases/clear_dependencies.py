@@ -1,6 +1,5 @@
 """Clear Dependencies Use Case"""
 
-
 from __future__ import annotations
 
 from ...application.dtos.dependency import DependencyResponse
@@ -29,5 +28,5 @@ class ClearDependenciesUseCase:
             task_id=str(task_id),
             dependencies=[],
             success=True,
-            message=f"Cleared {dependency_count} dependencies"
-        ) 
+            message=f"Cleared {dependency_count} dependencies",
+        )

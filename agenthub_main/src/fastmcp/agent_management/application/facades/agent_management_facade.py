@@ -46,7 +46,7 @@ class AgentManagementFacade:
         template_repository: ORMAgentTemplateRepository | None = None,
         instance_repository: ORMUserAgentInstanceRepository | None = None,
         instantiation_service: AgentInstantiationService | None = None,
-        sharing_service: AgentSharingService | None = None
+        sharing_service: AgentSharingService | None = None,
     ):
         """
         Initialize the facade with repositories and services.
@@ -59,19 +59,20 @@ class AgentManagementFacade:
         """
         self._template_repo = template_repository or ORMAgentTemplateRepository()
         self._instance_repo = instance_repository or ORMUserAgentInstanceRepository()
-        self._instantiation_service = instantiation_service or AgentInstantiationService(
-            template_repository=self._template_repo,
-            instance_repository=self._instance_repo
+        self._instantiation_service = (
+            instantiation_service
+            or AgentInstantiationService(
+                template_repository=self._template_repo,
+                instance_repository=self._instance_repo,
+            )
         )
         self._sharing_service = sharing_service or AgentSharingService(
             instance_repository=self._instance_repo,
-            template_repository=self._template_repo
+            template_repository=self._template_repo,
         )
 
     def get_or_create_instance(
-        self,
-        user_id: UserId,
-        agent_slug: str
+        self, user_id: UserId, agent_slug: str
     ) -> UserAgentInstance:
         """
         Get or create a user agent instance for the specified user and agent.
@@ -91,12 +92,13 @@ class AgentManagementFacade:
         Raises:
             ValueError: If agent template not found
         """
-        logger.info(f"Getting or creating instance for user={user_id.value}, agent={agent_slug}")
+        logger.info(
+            f"Getting or creating instance for user={user_id.value}, agent={agent_slug}"
+        )
 
         # Delegate to domain service - no logic duplication
         instance = self._instantiation_service.get_or_create_instance(
-            user_id=user_id,
-            template_slug=agent_slug
+            user_id=user_id, template_slug=agent_slug
         )
 
         if not instance:
@@ -106,9 +108,7 @@ class AgentManagementFacade:
         return instance
 
     def bulk_create_instances(
-        self,
-        user_id: UserId,
-        template_slugs: list[str] | None = None
+        self, user_id: UserId, template_slugs: list[str] | None = None
     ) -> list[UserAgentInstance]:
         """
         Create instances for multiple templates in a single operation.
@@ -121,13 +121,17 @@ class AgentManagementFacade:
         Returns:
             List of UserAgentInstance objects (newly created only)
         """
-        logger.info(f"Bulk creating instances for user={user_id.value}, templates={template_slugs or 'all'}")
+        logger.info(
+            f"Bulk creating instances for user={user_id.value}, templates={template_slugs or 'all'}"
+        )
 
         # Get all available templates if no specific list provided
         all_templates = self._template_repo.find_all()
         if template_slugs is None:
             template_slugs = [t.slug for t in all_templates]
-            logger.info(f"Creating instances for all {len(template_slugs)} available templates")
+            logger.info(
+                f"Creating instances for all {len(template_slugs)} available templates"
+            )
 
         # Create a mapping of template_id -> slug for existing instances check
         template_id_to_slug = {t.id.value: t.slug for t in all_templates}
@@ -154,8 +158,7 @@ class AgentManagementFacade:
 
             try:
                 instance = self._instantiation_service.get_or_create_instance(
-                    user_id=user_id,
-                    template_slug=slug
+                    user_id=user_id, template_slug=slug
                 )
                 if instance:
                     created_instances.append(instance)
@@ -164,14 +167,12 @@ class AgentManagementFacade:
                 logger.warning(f"Failed to create instance for {slug}: {e}")
                 continue
 
-        logger.info(f"Bulk creation complete: {len(created_instances)} created, {skipped_count} skipped")
+        logger.info(
+            f"Bulk creation complete: {len(created_instances)} created, {skipped_count} skipped"
+        )
         return created_instances
 
-    def get_agent_for_call(
-        self,
-        user_id: UserId,
-        agent_slug: str
-    ) -> dict[str, Any]:
+    def get_agent_for_call(self, user_id: UserId, agent_slug: str) -> dict[str, Any]:
         """
         Get agent configuration for MCP call_agent tool.
 
@@ -208,7 +209,9 @@ class AgentManagementFacade:
         Raises:
             ValueError: If agent template not found
         """
-        logger.info(f"Getting agent configuration for call: user={user_id.value}, agent={agent_slug}")
+        logger.info(
+            f"Getting agent configuration for call: user={user_id.value}, agent={agent_slug}"
+        )
 
         # Get or create user instance
         instance = self.get_or_create_instance(user_id, agent_slug)
@@ -235,7 +238,9 @@ class AgentManagementFacade:
             "system_prompt": config.system_prompt,
             "tools": list(config.tools),  # Convert tuple to list for JSON serialization
             "capabilities": config.capabilities or {},
-            "rules": list(config.rules) if config.rules else [],  # Convert tuple to list
+            "rules": list(config.rules)
+            if config.rules
+            else [],  # Convert tuple to list
             "output_format": config.output_format,
             "category": template.category,
             "version": template.version,
@@ -246,10 +251,14 @@ class AgentManagementFacade:
             "metadata": {
                 **template.metadata,
                 "created_at": instance.created_at.isoformat(),
-                "last_used": instance.last_used_at.isoformat() if instance.last_used_at else None,
+                "last_used": instance.last_used_at.isoformat()
+                if instance.last_used_at
+                else None,
                 "customizations": instance.metadata.get("customizations", {}),
-                "orphaned_warning": "Agent not supported by owner anymore, you are in last version" if is_orphaned else None
-            }
+                "orphaned_warning": "Agent not supported by owner anymore, you are in last version"
+                if is_orphaned
+                else None,
+            },
         }
 
     def get_user_instances(self, user_id: UserId) -> list[UserAgentInstance]:
@@ -311,7 +320,7 @@ class AgentManagementFacade:
         capabilities: dict[str, Any] | None = None,
         rules: list[str] | None = None,
         output_format: str | None = None,
-        visibility: str | None = None
+        visibility: str | None = None,
     ) -> UserAgentInstance:
         """
         Update a user agent instance.
@@ -349,7 +358,9 @@ class AgentManagementFacade:
             raise ValueError(f"Instance not found: {instance_id}")
 
         if instance.user_id != user_id:
-            raise ValueError(f"Instance {instance_id} does not belong to user {user_id.value}")
+            raise ValueError(
+                f"Instance {instance_id} does not belong to user {user_id.value}"
+            )
 
         # Check if this is an imported agent (read-only for non-owners)
         if instance.original_creator_id:
@@ -362,11 +373,11 @@ class AgentManagementFacade:
 
         # Update agent name if provided
         if agent_name is not None:
-            object.__setattr__(instance, 'agent_name', agent_name)
+            object.__setattr__(instance, "agent_name", agent_name)
 
         # Update is_enabled if provided
         if is_enabled is not None:
-            object.__setattr__(instance, 'is_enabled', is_enabled)
+            object.__setattr__(instance, "is_enabled", is_enabled)
 
         # Update configuration if any config fields provided
         if any([system_prompt, tools, capabilities, rules, output_format]):
@@ -374,11 +385,17 @@ class AgentManagementFacade:
 
             # Create new configuration with updates
             new_config_dict = {
-                "system_prompt": system_prompt if system_prompt is not None else current_config.system_prompt,
+                "system_prompt": system_prompt
+                if system_prompt is not None
+                else current_config.system_prompt,
                 "tools": tuple(tools) if tools is not None else current_config.tools,
-                "capabilities": capabilities if capabilities is not None else current_config.capabilities,
+                "capabilities": capabilities
+                if capabilities is not None
+                else current_config.capabilities,
                 "rules": tuple(rules) if rules is not None else current_config.rules,
-                "output_format": output_format if output_format is not None else current_config.output_format,
+                "output_format": output_format
+                if output_format is not None
+                else current_config.output_format,
             }
 
             new_config = AgentConfiguration.from_dict(new_config_dict)
@@ -386,22 +403,30 @@ class AgentManagementFacade:
 
         # Update visibility if provided - use sharing service for proper token handling
         if visibility is not None:
-            if visibility not in ('private', 'public'):
-                raise ValueError(f"Invalid visibility: {visibility}. Must be 'private' or 'public'")
+            if visibility not in ("private", "public"):
+                raise ValueError(
+                    f"Invalid visibility: {visibility}. Must be 'private' or 'public'"
+                )
 
             # Use sharing service to handle visibility changes with proper token management
-            if visibility == 'public' and not instance.share_token:
+            if visibility == "public" and not instance.share_token:
                 # Generate share token and set visibility to public atomically
-                share_token = self._sharing_service.generate_share_token(instance.id, user_id)
+                share_token = self._sharing_service.generate_share_token(
+                    instance.id, user_id
+                )
                 if not share_token:
-                    raise ValueError(f"Failed to generate share token for instance {instance_id}")
+                    raise ValueError(
+                        f"Failed to generate share token for instance {instance_id}"
+                    )
                 # Re-fetch instance with updated share_token
                 instance = self._instance_repo.find_by_id(instance_uuid)
-            elif visibility == 'private' and instance.share_token:
+            elif visibility == "private" and instance.share_token:
                 # Revoke share token and set visibility to private atomically
                 success = self._sharing_service.revoke_share_token(instance.id, user_id)
                 if not success:
-                    raise ValueError(f"Failed to revoke share token for instance {instance_id}")
+                    raise ValueError(
+                        f"Failed to revoke share token for instance {instance_id}"
+                    )
                 # Re-fetch instance with revoked share_token
                 instance = self._instance_repo.find_by_id(instance_uuid)
 
@@ -411,11 +436,7 @@ class AgentManagementFacade:
 
         return updated_instance
 
-    def delete_instance(
-        self,
-        user_id: UserId,
-        instance_id: str
-    ) -> bool:
+    def delete_instance(self, user_id: UserId, instance_id: str) -> bool:
         """
         Delete a user agent instance.
 
@@ -441,7 +462,9 @@ class AgentManagementFacade:
             raise ValueError(f"Instance not found: {instance_id}")
 
         if instance.user_id != user_id:
-            raise ValueError(f"Instance {instance_id} does not belong to user {user_id.value}")
+            raise ValueError(
+                f"Instance {instance_id} does not belong to user {user_id.value}"
+            )
 
         # Delete instance
         result = self._instance_repo.delete(instance_uuid)
@@ -461,7 +484,7 @@ class AgentManagementFacade:
         tools: list[str] | None = None,
         capabilities: dict[str, Any] | None = None,
         rules: list[str] | None = None,
-        output_format: str | None = None
+        output_format: str | None = None,
     ) -> UserAgentInstance:
         """
         Update agent configuration for a user.
@@ -485,7 +508,9 @@ class AgentManagementFacade:
         Raises:
             ValueError: If template not found
         """
-        logger.info(f"Updating configuration for agent {agent_slug}, user {user_id.value}")
+        logger.info(
+            f"Updating configuration for agent {agent_slug}, user {user_id.value}"
+        )
 
         # Get or create instance
         instance = self.get_or_create_instance(user_id, agent_slug)
@@ -496,15 +521,23 @@ class AgentManagementFacade:
 
             # Create new configuration with updates
             new_config_dict = {
-                "system_prompt": system_prompt if system_prompt is not None else current_config.system_prompt,
+                "system_prompt": system_prompt
+                if system_prompt is not None
+                else current_config.system_prompt,
                 "tools": tuple(tools) if tools is not None else current_config.tools,
-                "capabilities": capabilities if capabilities is not None else current_config.capabilities,
+                "capabilities": capabilities
+                if capabilities is not None
+                else current_config.capabilities,
                 "rules": tuple(rules) if rules is not None else current_config.rules,
-                "output_format": output_format if output_format is not None else current_config.output_format,
+                "output_format": output_format
+                if output_format is not None
+                else current_config.output_format,
             }
 
             new_config = AgentConfiguration.from_dict(new_config_dict)
-            instance.customize_configuration(new_config, "Updated configuration via REST API")
+            instance.customize_configuration(
+                new_config, "Updated configuration via REST API"
+            )
 
             # Save updates
             updated_instance = self._instance_repo.save(instance)
@@ -515,9 +548,7 @@ class AgentManagementFacade:
         return instance
 
     def reset_configuration(
-        self,
-        user_id: UserId,
-        agent_slug: str
+        self, user_id: UserId, agent_slug: str
     ) -> UserAgentInstance:
         """
         Reset agent configuration to default template.
@@ -535,7 +566,9 @@ class AgentManagementFacade:
         Raises:
             ValueError: If template or instance not found
         """
-        logger.info(f"Resetting configuration for agent {agent_slug}, user {user_id.value}")
+        logger.info(
+            f"Resetting configuration for agent {agent_slug}, user {user_id.value}"
+        )
 
         # Get template
         template = self._template_repo.find_by_slug(agent_slug)
@@ -544,22 +577,22 @@ class AgentManagementFacade:
 
         # Get existing instance
         instance = self._instance_repo.find_by_user_and_template_slug(
-            user_id=user_id,
-            template_slug=agent_slug
+            user_id=user_id, template_slug=agent_slug
         )
 
         if not instance:
-            raise ValueError(f"No instance found for user {user_id.value} and agent {agent_slug}")
+            raise ValueError(
+                f"No instance found for user {user_id.value} and agent {agent_slug}"
+            )
 
         # Reset to template configuration
         template_config = template.default_configuration
         instance.customize_configuration(
-            template_config,
-            "Reset to default template configuration"
+            template_config, "Reset to default template configuration"
         )
 
         # Mark as not customized
-        object.__setattr__(instance, 'is_customized', False)
+        object.__setattr__(instance, "is_customized", False)
 
         # Save updates
         reset_instance = self._instance_repo.save(instance)
@@ -567,11 +600,7 @@ class AgentManagementFacade:
 
         return reset_instance
 
-    def share_agent(
-        self,
-        user_id: UserId,
-        instance_id: str
-    ) -> str | None:
+    def share_agent(self, user_id: UserId, instance_id: str) -> str | None:
         """
         Generate a share token and make an instance public.
 
@@ -594,21 +623,18 @@ class AgentManagementFacade:
 
         instance_uuid = UserAgentInstanceId.from_string(instance_id)
         share_token = self._sharing_service.generate_share_token(
-            instance_id=instance_uuid,
-            user_id=user_id
+            instance_id=instance_uuid, user_id=user_id
         )
 
         if not share_token:
-            raise ValueError(f"Failed to share instance {instance_id}. Instance not found or unauthorized.")
+            raise ValueError(
+                f"Failed to share instance {instance_id}. Instance not found or unauthorized."
+            )
 
         logger.info(f"Instance {instance_id} shared successfully with token")
         return share_token
 
-    def unshare_agent(
-        self,
-        user_id: UserId,
-        instance_id: str
-    ) -> bool:
+    def unshare_agent(self, user_id: UserId, instance_id: str) -> bool:
         """
         Revoke the share token and make an instance private.
 
@@ -628,12 +654,13 @@ class AgentManagementFacade:
 
         instance_uuid = UserAgentInstanceId.from_string(instance_id)
         result = self._sharing_service.revoke_share_token(
-            instance_id=instance_uuid,
-            user_id=user_id
+            instance_id=instance_uuid, user_id=user_id
         )
 
         if not result:
-            raise ValueError(f"Failed to unshare instance {instance_id}. Instance not found or unauthorized.")
+            raise ValueError(
+                f"Failed to unshare instance {instance_id}. Instance not found or unauthorized."
+            )
 
         logger.info(f"Instance {instance_id} unshared successfully")
         return result
@@ -642,7 +669,7 @@ class AgentManagementFacade:
         self,
         share_token: str,
         importer_user_id: UserId,
-        creator_email: str | None = None
+        creator_email: str | None = None,
     ) -> UserAgentInstance | None:
         """
         Import a shared agent from another user.
@@ -661,7 +688,9 @@ class AgentManagementFacade:
         Raises:
             ValueError: If share_token is invalid or user already has this template
         """
-        logger.info(f"Importing agent for user {importer_user_id.value} with share token")
+        logger.info(
+            f"Importing agent for user {importer_user_id.value} with share token"
+        )
 
         # Get source instance before import (for history recording)
         source_instance = self._instance_repo.find_by_share_token(share_token)
@@ -669,7 +698,7 @@ class AgentManagementFacade:
         imported_instance = self._sharing_service.import_agent(
             share_token=share_token,
             importer_user_id=importer_user_id,
-            creator_email=creator_email
+            creator_email=creator_email,
         )
 
         if not imported_instance:
@@ -688,7 +717,7 @@ class AgentManagementFacade:
                     source_instance_id=str(source_instance.id.value),
                     imported_instance_id=str(imported_instance.id.value),
                     imported_at=datetime.now(UTC),
-                    share_token=share_token
+                    share_token=share_token,
                 )
                 session.add(history_record)
                 session.commit()
@@ -704,10 +733,7 @@ class AgentManagementFacade:
         return imported_instance
 
     def get_marketplace_agents(
-        self,
-        limit: int = 50,
-        offset: int = 0,
-        order_by: InstanceOrdering = None
+        self, limit: int = 50, offset: int = 0, order_by: InstanceOrdering = None
     ) -> list[UserAgentInstance]:
         """Get list of publicly shared agents for marketplace browsing.
 
@@ -726,15 +752,10 @@ class AgentManagementFacade:
             f"order_by={order_by.value if order_by else 'default'}"
         )
         return self._sharing_service.get_public_instances(
-            limit=limit,
-            offset=offset,
-            order_by=order_by
+            limit=limit, offset=offset, order_by=order_by
         )
 
-    def get_shared_agent_preview(
-        self,
-        share_token: str
-    ) -> UserAgentInstance | None:
+    def get_shared_agent_preview(self, share_token: str) -> UserAgentInstance | None:
         """
         Preview a shared agent before importing.
 

@@ -20,70 +20,86 @@ from ...infrastructure.repositories.task_context_repository import TaskContextRe
 
 # Module-level logger - not used due to scoping issues, using logging.getLogger(__name__) directly instead
 
+
 class CompleteTaskUseCase:
     """Use case for completing a task (marking all subtasks as completed and task status as done)"""
-    
-    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository | None = None, 
-                 task_context_repository: TaskContextRepository | None = None):
+
+    def __init__(
+        self,
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository | None = None,
+        task_context_repository: TaskContextRepository | None = None,
+    ):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
         self._task_context_repository = task_context_repository
         # Only create completion service if subtask repository is provided
-        self._completion_service = TaskCompletionService(subtask_repository, task_context_repository) if subtask_repository else None
+        self._completion_service = (
+            TaskCompletionService(subtask_repository, task_context_repository)
+            if subtask_repository
+            else None
+        )
         # Vision System validation service
         # self._validation_service = ContextValidationService()  # TODO: Fix circular import
         self._validation_service = None
-    
-    def execute(self, task_id: str | int, 
-                completion_summary: str | None = None,
-                testing_notes: str | None = None,
-                next_recommendations: str | None = None) -> dict[str, Any]:
+
+    def execute(
+        self,
+        task_id: str | int,
+        completion_summary: str | None = None,
+        testing_notes: str | None = None,
+        next_recommendations: str | None = None,
+    ) -> dict[str, Any]:
         """
         Execute the complete task use case.
-        
+
         Args:
             task_id: ID of the task to complete
             completion_summary: Summary of what was accomplished (REQUIRED by Vision System)
             testing_notes: Optional testing notes
             next_recommendations: Optional recommendations for next steps
-            
+
         Returns:
             Dict with success status and details
         """
         # Debug: Verify logger is accessible
         logging.getLogger(__name__).debug(f"Starting task completion for {task_id}")
-        
+
         # Convert to domain value object (handle both int and str)
         domain_task_id = TaskId.from_string(str(task_id))
-        
+
         # Find the task
         task = self._task_repository.find_by_id(domain_task_id)
         if not task:
             raise TaskNotFoundError(f"Task {task_id} not found")
-        
+
         # Check if task is already completed - FIXED: Allow summary updates
         if task.status.is_done():
             # Task is already complete, but allow updating completion summary and testing notes
-            logging.getLogger(__name__).info(f"Task {task_id} is already completed, updating summary and notes")
-            
+            logging.getLogger(__name__).info(
+                f"Task {task_id} is already completed, updating summary and notes"
+            )
+
             # Update completion summary if provided
             if completion_summary:
                 task._completion_summary = completion_summary
-                logging.getLogger(__name__).info(f"Updated completion summary for task {task_id}")
-            
+                logging.getLogger(__name__).info(
+                    f"Updated completion summary for task {task_id}"
+                )
+
             # Update context with completion information if summary provided
             if completion_summary:
                 try:
                     from ...application.factories.unified_context_facade_factory import (
                         UnifiedContextFacadeFactory,
                     )
-                    
+
                     # Use the unified context facade to update context
-                    git_branch_id = getattr(task, 'git_branch_id', None)
+                    git_branch_id = getattr(task, "git_branch_id", None)
                     unified_facade = UnifiedContextFacadeFactory().create_facade(
                         git_branch_id=git_branch_id
                     )
-                    
+
                     # Ensure next_steps is always a list
                     next_steps_list = []
                     if next_recommendations:
@@ -91,128 +107,175 @@ class CompleteTaskUseCase:
                             next_steps_list = next_recommendations
                         else:
                             next_steps_list = [next_recommendations]
-                    
+
                     completion_time = datetime.now(UTC)
                     context_update = {
                         "progress": {
                             "current_session_summary": completion_summary,
                             "completion_percentage": 100.0,
                             "next_steps": next_steps_list,
-                            "completed_actions": []
+                            "completed_actions": [],
                         },
                         "metadata": {
                             "status": "done",
-                            "last_summary_update": completion_time.isoformat()
-                        }
+                            "last_summary_update": completion_time.isoformat(),
+                        },
                     }
-                    
+
                     # Add testing notes to next_steps if provided
                     if testing_notes:
-                        context_update["progress"]["next_steps"].append(f"Testing completed: {testing_notes}")
-                    
+                        context_update["progress"]["next_steps"].append(
+                            f"Testing completed: {testing_notes}"
+                        )
+
                     # Update task context with completion summary
                     unified_facade.update_context(
                         level="task",
                         context_id=str(task_id),
                         data=context_update,
-                        propagate_changes=True
+                        propagate_changes=True,
                     )
-                    logging.getLogger(__name__).info(f"Updated context for already completed task {task_id}")
+                    logging.getLogger(__name__).info(
+                        f"Updated context for already completed task {task_id}"
+                    )
                 except Exception as e:
-                    logging.getLogger(__name__).warning(f"Could not update context for already completed task {task_id}: {e}")
-            
+                    logging.getLogger(__name__).warning(
+                        f"Could not update context for already completed task {task_id}: {e}"
+                    )
+
             # Save the updated task (with completion summary) - use entity's touch() method for clean timestamp handling
             task.touch("task_completed_with_summary")
             self._task_repository.save(task)
-            
+
             return {
                 "success": True,
                 "task_id": str(task_id),
-                "message": "Task already completed, summary updated" if completion_summary else "Task already completed",
+                "message": "Task already completed, summary updated"
+                if completion_summary
+                else "Task already completed",
                 "status": str(task.status),
-                "was_already_completed": True  # Flag to prevent duplicate notifications
+                "was_already_completed": True,  # Flag to prevent duplicate notifications
             }
-        
+
         try:
             # Auto-create context if it doesn't exist
             # This addresses Issue #1: Task Completion Context Dependency
             context_exists = False
-            
+
             # Check for context existence using both legacy and unified systems
             if self._task_context_repository:
                 legacy_context = self._task_context_repository.get(str(task_id))
-                logging.getLogger(__name__).info(f"Legacy context check for task {task_id}: {legacy_context}")
+                logging.getLogger(__name__).info(
+                    f"Legacy context check for task {task_id}: {legacy_context}"
+                )
                 if legacy_context:
                     context_exists = True
-                    logging.getLogger(__name__).info(f"Found legacy context for task {task_id}")
-                    
+                    logging.getLogger(__name__).info(
+                        f"Found legacy context for task {task_id}"
+                    )
+
                     # CRITICAL: Update the task's context_id to link to the context
                     # This ensures the task entity validation passes
                     if task.context_id is None:
                         task.context_id = str(task_id)
                         self._task_repository.save(task)
-                        logging.getLogger(__name__).info(f"Updated task {task_id} context_id to link to existing legacy context")
-            
+                        logging.getLogger(__name__).info(
+                            f"Updated task {task_id} context_id to link to existing legacy context"
+                        )
+
             # Also check unified context system
             if not context_exists:
-                logging.getLogger(__name__).info(f"Checking unified context system for task {task_id}")
+                logging.getLogger(__name__).info(
+                    f"Checking unified context system for task {task_id}"
+                )
                 try:
                     from ...application.factories.unified_context_facade_factory import (
                         UnifiedContextFacadeFactory,
                     )
-                    git_branch_id = getattr(task, 'git_branch_id', None)
-                    logging.getLogger(__name__).info(f"Creating unified facade with git_branch_id: {git_branch_id}")
-                    unified_facade = UnifiedContextFacadeFactory().create_facade(git_branch_id=git_branch_id)
-                    logging.getLogger(__name__).info(f"Getting unified context for task {task_id}")
-                    unified_context_result = unified_facade.get_context("task", str(task_id))
-                    logging.getLogger(__name__).info(f"Unified context check result for task {task_id}: {unified_context_result}")
-                    if unified_context_result.get("success") and unified_context_result.get("context"):
+
+                    git_branch_id = getattr(task, "git_branch_id", None)
+                    logging.getLogger(__name__).info(
+                        f"Creating unified facade with git_branch_id: {git_branch_id}"
+                    )
+                    unified_facade = UnifiedContextFacadeFactory().create_facade(
+                        git_branch_id=git_branch_id
+                    )
+                    logging.getLogger(__name__).info(
+                        f"Getting unified context for task {task_id}"
+                    )
+                    unified_context_result = unified_facade.get_context(
+                        "task", str(task_id)
+                    )
+                    logging.getLogger(__name__).info(
+                        f"Unified context check result for task {task_id}: {unified_context_result}"
+                    )
+                    if unified_context_result.get(
+                        "success"
+                    ) and unified_context_result.get("context"):
                         context_exists = True
-                        logging.getLogger(__name__).info(f"Found existing unified context for task {task_id}")
-                        
+                        logging.getLogger(__name__).info(
+                            f"Found existing unified context for task {task_id}"
+                        )
+
                         # CRITICAL: Update the task's context_id to link to the hierarchical context
                         # This ensures the task entity validation passes
                         if task.context_id is None:
                             task.context_id = str(task_id)
                             self._task_repository.save(task)
-                            logging.getLogger(__name__).info(f"Updated task {task_id} context_id to link to existing hierarchical context")
+                            logging.getLogger(__name__).info(
+                                f"Updated task {task_id} context_id to link to existing hierarchical context"
+                            )
                         else:
-                            logging.getLogger(__name__).info(f"Task {task_id} already has context_id: {task.context_id}")
+                            logging.getLogger(__name__).info(
+                                f"Task {task_id} already has context_id: {task.context_id}"
+                            )
                     else:
-                        logging.getLogger(__name__).info(f"No unified context found for task {task_id}")
-                        
+                        logging.getLogger(__name__).info(
+                            f"No unified context found for task {task_id}"
+                        )
+
                 except Exception as e:
-                    logging.getLogger(__name__).warning(f"Could not check unified context for task {task_id}: {e}")
+                    logging.getLogger(__name__).warning(
+                        f"Could not check unified context for task {task_id}: {e}"
+                    )
                     import traceback
-                    logging.getLogger(__name__).warning(f"Traceback: {traceback.format_exc()}")
-            
+
+                    logging.getLogger(__name__).warning(
+                        f"Traceback: {traceback.format_exc()}"
+                    )
+
             if not context_exists:
-                logging.getLogger(__name__).info(f"Auto-creating context for task {task_id} during completion")
+                logging.getLogger(__name__).info(
+                    f"Auto-creating context for task {task_id} during completion"
+                )
                 try:
                     from ...application.factories.unified_context_facade_factory import (
                         UnifiedContextFacadeFactory,
                     )
-                    
+
                     # Extract git_branch_id from task for facade creation
-                    git_branch_id = getattr(task, 'git_branch_id', None)
-                    project_id = getattr(task, 'project_id', None)
-                    
+                    git_branch_id = getattr(task, "git_branch_id", None)
+                    project_id = getattr(task, "project_id", None)
+
                     # If project_id is not available, try to get it from the branch
                     # Note: We cannot get project_id from branch without already having project_id
                     # This is a limitation of the current repository structure
                     if not project_id and git_branch_id:
                         # Log that we couldn't get project_id - raise error for DDD compliance
-                        logging.getLogger(__name__).error(f"Cannot retrieve project_id from branch {git_branch_id} without knowing project_id")
-                        raise ValueError("project_id is required for context completion (no fallback allowed for DDD compliance)")
-                    
+                        logging.getLogger(__name__).error(
+                            f"Cannot retrieve project_id from branch {git_branch_id} without knowing project_id"
+                        )
+                        raise ValueError(
+                            "project_id is required for context completion (no fallback allowed for DDD compliance)"
+                        )
+
                     unified_facade = UnifiedContextFacadeFactory().create_facade(
-                        git_branch_id=git_branch_id,
-                        project_id=project_id
+                        git_branch_id=git_branch_id, project_id=project_id
                     )
-                    
+
                     # Create the hierarchy: Project → Branch → Task
                     created_any = False
-                    
+
                     # 1. Create project context if it doesn't exist
                     if project_id:
                         try:
@@ -222,15 +285,19 @@ class CompleteTaskUseCase:
                                 data={
                                     "project_id": project_id,
                                     "auto_created": True,
-                                    "created_during": "task_completion"
-                                }
+                                    "created_during": "task_completion",
+                                },
                             )
                             if project_result.get("success"):
-                                logging.getLogger(__name__).info(f"Auto-created project context for {project_id}")
+                                logging.getLogger(__name__).info(
+                                    f"Auto-created project context for {project_id}"
+                                )
                                 created_any = True
                         except Exception as e:
-                            logging.getLogger(__name__).debug(f"Project context {project_id} might already exist: {e}")
-                    
+                            logging.getLogger(__name__).debug(
+                                f"Project context {project_id} might already exist: {e}"
+                            )
+
                     # 2. Create branch context if it doesn't exist
                     if git_branch_id:
                         try:
@@ -241,15 +308,19 @@ class CompleteTaskUseCase:
                                     "project_id": project_id,
                                     "git_branch_id": git_branch_id,
                                     "auto_created": True,
-                                    "created_during": "task_completion"
-                                }
+                                    "created_during": "task_completion",
+                                },
                             )
                             if branch_result.get("success"):
-                                logging.getLogger(__name__).info(f"Auto-created branch context for {git_branch_id}")
+                                logging.getLogger(__name__).info(
+                                    f"Auto-created branch context for {git_branch_id}"
+                                )
                                 created_any = True
                         except Exception as e:
-                            logging.getLogger(__name__).debug(f"Branch context {git_branch_id} might already exist: {e}")
-                    
+                            logging.getLogger(__name__).debug(
+                                f"Branch context {git_branch_id} might already exist: {e}"
+                            )
+
                     # 3. Create task context
                     context_data = {
                         "branch_id": git_branch_id,
@@ -257,37 +328,47 @@ class CompleteTaskUseCase:
                         "task_data": {
                             "title": task.title,
                             "status": str(task.status),
-                            "description": task.description or ""
+                            "description": task.description or "",
                         },
                         "auto_created": True,
-                        "created_during": "task_completion"
+                        "created_during": "task_completion",
                     }
-                    
+
                     create_result = unified_facade.create_context(
-                        level="task",
-                        context_id=str(task_id),
-                        data=context_data
+                        level="task", context_id=str(task_id), data=context_data
                     )
-                    
+
                     if create_result.get("success"):
-                        logging.getLogger(__name__).info(f"Successfully auto-created task context for task {task_id}")
+                        logging.getLogger(__name__).info(
+                            f"Successfully auto-created task context for task {task_id}"
+                        )
                         created_any = True
-                        
+
                         # CRITICAL: Update the task's context_id field to link to the hierarchical context
                         # This is necessary for the task completion validation to pass
-                        task.context_id = str(task_id)  # Use task_id as context_id for hierarchical context
+                        task.context_id = str(
+                            task_id
+                        )  # Use task_id as context_id for hierarchical context
                         # Persist the context_id update to the database
                         self._task_repository.save(task)
-                        logging.getLogger(__name__).info(f"Updated task {task_id} with context_id={task.context_id}")
+                        logging.getLogger(__name__).info(
+                            f"Updated task {task_id} with context_id={task.context_id}"
+                        )
                     else:
-                        logging.getLogger(__name__).warning(f"Failed to auto-create task context for task {task_id}: {create_result.get('error')}")
-                    
+                        logging.getLogger(__name__).warning(
+                            f"Failed to auto-create task context for task {task_id}: {create_result.get('error')}"
+                        )
+
                     if created_any:
-                        logging.getLogger(__name__).info(f"Auto-context creation completed for task {task_id} with hierarchy")
+                        logging.getLogger(__name__).info(
+                            f"Auto-context creation completed for task {task_id} with hierarchy"
+                        )
                 except Exception as e:
-                    logging.getLogger(__name__).warning(f"Could not auto-create context for task {task_id}: {e}")
+                    logging.getLogger(__name__).warning(
+                        f"Could not auto-create context for task {task_id}: {e}"
+                    )
                     # Continue with completion even if context creation fails
-            
+
             # Validate task completion using domain service (if available)
             if self._completion_service:
                 self._completion_service.validate_task_completion(task)
@@ -296,8 +377,7 @@ class CompleteTaskUseCase:
                 subtasks = self._subtask_repository.find_by_parent_task_id(task.id)
                 if subtasks:
                     incomplete_subtasks = [
-                        subtask for subtask in subtasks
-                        if not subtask.is_completed
+                        subtask for subtask in subtasks if not subtask.is_completed
                     ]
 
                     if incomplete_subtasks:
@@ -307,11 +387,21 @@ class CompleteTaskUseCase:
                         # Create detailed incomplete subtask information
                         incomplete_subtask_details = []
                         for subtask in incomplete_subtasks:
-                            incomplete_subtask_details.append({
-                                "id": str(subtask.id.value if hasattr(subtask.id, 'value') else subtask.id),
-                                "title": subtask.title,
-                                "status": str(subtask.status.value if hasattr(subtask.status, 'value') else subtask.status)
-                            })
+                            incomplete_subtask_details.append(
+                                {
+                                    "id": str(
+                                        subtask.id.value
+                                        if hasattr(subtask.id, "value")
+                                        else subtask.id
+                                    ),
+                                    "title": subtask.title,
+                                    "status": str(
+                                        subtask.status.value
+                                        if hasattr(subtask.status, "value")
+                                        else subtask.status
+                                    ),
+                                }
+                            )
 
                         error_msg = f"Cannot complete task: {incomplete_count} of {total_count} subtasks are not done"
 
@@ -326,11 +416,11 @@ class CompleteTaskUseCase:
                                 "details": {
                                     "incomplete_subtasks": incomplete_subtask_details,
                                     "incomplete_count": incomplete_count,
-                                    "total_count": total_count
-                                }
-                            }
+                                    "total_count": total_count,
+                                },
+                            },
                         }
-            
+
             # Get context timestamp to validate context is newer than task
             # Only validate context timing if task has context_id (hasn't been updated after context creation)
             context_updated_at = None
@@ -342,89 +432,119 @@ class CompleteTaskUseCase:
                     from ...application.factories.unified_context_facade_factory import (
                         UnifiedContextFacadeFactory,
                     )
-                    
+
                     # Use the unified context facade to get context
                     # Extract git_branch_id from task for facade creation
-                    git_branch_id = getattr(task, 'git_branch_id', None)
+                    git_branch_id = getattr(task, "git_branch_id", None)
                     unified_facade = UnifiedContextFacadeFactory().create_facade(
                         git_branch_id=git_branch_id
                     )
                     context_result = unified_facade.get_context("task", str(task_id))
-                    
+
                     if context_result.get("success") and "context" in context_result:
                         context = context_result["context"]
                         # Get updated_at timestamp from context
                         if "updated_at" in context:
                             # Parse the timestamp - it's in format "2025-07-13 01:14:22"
                             # Make it timezone-aware (UTC) to match task.updated_at
-                            context_updated_at = datetime.strptime(context["updated_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
-                            logging.getLogger(__name__).info(f"Context updated at: {context_updated_at}, Task updated at: {task.updated_at}")
-                            logging.getLogger(__name__).info(f"Validation check: context_updated_at <= task.updated_at? {context_updated_at <= task.updated_at}")
+                            context_updated_at = datetime.strptime(
+                                context["updated_at"], "%Y-%m-%d %H:%M:%S"
+                            ).replace(tzinfo=UTC)
+                            logging.getLogger(__name__).info(
+                                f"Context updated at: {context_updated_at}, Task updated at: {task.updated_at}"
+                            )
+                            logging.getLogger(__name__).info(
+                                f"Validation check: context_updated_at <= task.updated_at? {context_updated_at <= task.updated_at}"
+                            )
                         else:
-                            logging.getLogger(__name__).warning(f"No 'updated_at' field found in context: {context}")
+                            logging.getLogger(__name__).warning(
+                                f"No 'updated_at' field found in context: {context}"
+                            )
                     else:
-                        logging.getLogger(__name__).warning(f"Context retrieval failed or no context field: {context_result}")
+                        logging.getLogger(__name__).warning(
+                            f"Context retrieval failed or no context field: {context_result}"
+                        )
                 except Exception as e:
-                    logging.getLogger(__name__).warning(f"Could not get context timestamp for task {task_id}: {e}")
+                    logging.getLogger(__name__).warning(
+                        f"Could not get context timestamp for task {task_id}: {e}"
+                    )
                     import traceback
-                    logging.getLogger(__name__).warning(f"Traceback: {traceback.format_exc()}")
-            
+
+                    logging.getLogger(__name__).warning(
+                        f"Traceback: {traceback.format_exc()}"
+                    )
+
             # Complete the task (will complete all subtasks and set status to done)
             # Vision System requires completion_summary
             # FIXED: Handle state transition from todo -> in_progress -> done to avoid validation error
-            if str(task.status).lower() == 'todo':
-                logging.getLogger(__name__).info(f"Task {task_id} is in 'todo' state, transitioning to 'in_progress' first")
+            if str(task.status).lower() == "todo":
+                logging.getLogger(__name__).info(
+                    f"Task {task_id} is in 'todo' state, transitioning to 'in_progress' first"
+                )
                 # Transition from todo to in_progress first
                 from ...domain.value_objects.task_status import TaskStatus
+
                 task.status = TaskStatus.in_progress()
                 self._task_repository.save(task)
-                logging.getLogger(__name__).info(f"Task {task_id} transitioned to 'in_progress'")
-            
+                logging.getLogger(__name__).info(
+                    f"Task {task_id} transitioned to 'in_progress'"
+                )
+
             # Try to complete with context validation, but allow completion without context if it fails
             try:
-                task.complete_task(completion_summary=completion_summary, 
-                                 context_updated_at=context_updated_at if task.context_id else None)
+                task.complete_task(
+                    completion_summary=completion_summary,
+                    context_updated_at=context_updated_at if task.context_id else None,
+                )
             except ValueError as e:
-                if "Context must be updated" in str(e) or "context must be updated" in str(e).lower():
+                if (
+                    "Context must be updated" in str(e)
+                    or "context must be updated" in str(e).lower()
+                ):
                     # Context validation failed - bypass it and complete anyway
-                    logging.getLogger(__name__).warning(f"Bypassing context validation for task {task_id}: {e}")
+                    logging.getLogger(__name__).warning(
+                        f"Bypassing context validation for task {task_id}: {e}"
+                    )
                     # Manually complete the task without context validation
                     from ...domain.value_objects.task_status import TaskStatus
+
                     old_status = task.status
                     task.status = TaskStatus.done()
                     task._completion_summary = completion_summary
                     # Use entity's touch() method for clean timestamp handling
                     task.touch("task_completed_manually")
                     # Raise domain event
-                    task._events.append(TaskUpdated(
-                        task_id=task.id,
-                        field_name="status",
-                        old_value=str(old_status),
-                        new_value=str(task.status),
-                        updated_at=task.updated_at,
-                        metadata={"completion_summary": completion_summary}
-                    ))
+                    task._events.append(
+                        TaskUpdated(
+                            task_id=task.id,
+                            field_name="status",
+                            old_value=str(old_status),
+                            new_value=str(task.status),
+                            updated_at=task.updated_at,
+                            metadata={"completion_summary": completion_summary},
+                        )
+                    )
                 else:
                     # Re-raise if it's a different validation error
                     raise
-            
+
             # Update context with completion information using hierarchical context
             if completion_summary:
                 try:
                     from ...application.factories.unified_context_facade_factory import (
                         UnifiedContextFacadeFactory,
                     )
-                    
+
                     # Use the unified context facade to update context
                     # Extract git_branch_id from task for facade creation
-                    git_branch_id = getattr(task, 'git_branch_id', None)
+                    git_branch_id = getattr(task, "git_branch_id", None)
                     unified_facade = UnifiedContextFacadeFactory().create_facade(
                         git_branch_id=git_branch_id
                     )
-                    
+
                     # Update context with completion summary using correct ContextProgress schema
                     # ContextProgress fields: current_session_summary, completion_percentage, next_steps, completed_actions, time_spent_minutes
-                    
+
                     # Ensure next_steps is always a list
                     next_steps_list = []
                     if next_recommendations:
@@ -432,29 +552,31 @@ class CompleteTaskUseCase:
                             next_steps_list = next_recommendations
                         else:
                             next_steps_list = [next_recommendations]
-                    
+
                     context_update = {
                         "progress": {
                             "current_session_summary": completion_summary,
                             "completion_percentage": 100.0,
                             "next_steps": next_steps_list,
-                            "completed_actions": []  # Could be populated with task completion action
+                            "completed_actions": [],  # Could be populated with task completion action
                         },
                         "metadata": {
                             "status": "done"  # Synchronize context status with task status
-                        }
+                        },
                     }
-                    
+
                     # Add testing notes to next_steps if provided
                     if testing_notes:
-                        context_update["progress"]["next_steps"].append(f"Testing completed: {testing_notes}")
-                    
+                        context_update["progress"]["next_steps"].append(
+                            f"Testing completed: {testing_notes}"
+                        )
+
                     # Update task context with completion summary
                     unified_facade.update_context(
                         level="task",
                         context_id=str(task_id),
                         data=context_update,
-                        propagate_changes=True
+                        propagate_changes=True,
                     )
 
                     # 🔄 SYNC: Synchronize task status and metadata after completion
@@ -473,23 +595,41 @@ class CompleteTaskUseCase:
                             # Check if we're already in an event loop
                             asyncio.get_running_loop()
                             # We're in an async context - schedule as background tasks
-                            asyncio.create_task(sync_service.sync_task_status(task_id_str, "done"))
-                            asyncio.create_task(sync_service.sync_task_metadata(task_id_str, task))
-                            logging.getLogger(__name__).info(f"⏭️ Scheduled status/metadata sync for completed task {task_id_str} (in async context)")
+                            asyncio.create_task(
+                                sync_service.sync_task_status(task_id_str, "done")
+                            )
+                            asyncio.create_task(
+                                sync_service.sync_task_metadata(task_id_str, task)
+                            )
+                            logging.getLogger(__name__).info(
+                                f"⏭️ Scheduled status/metadata sync for completed task {task_id_str} (in async context)"
+                            )
                         except RuntimeError:
                             # No event loop running - safe to use asyncio.run()
                             try:
-                                asyncio.run(sync_service.sync_task_status(task_id_str, "done"))
-                                asyncio.run(sync_service.sync_task_metadata(task_id_str, task))
-                                logging.getLogger(__name__).info(f"✅ Synced status and metadata for completed task {task_id_str}")
+                                asyncio.run(
+                                    sync_service.sync_task_status(task_id_str, "done")
+                                )
+                                asyncio.run(
+                                    sync_service.sync_task_metadata(task_id_str, task)
+                                )
+                                logging.getLogger(__name__).info(
+                                    f"✅ Synced status and metadata for completed task {task_id_str}"
+                                )
                             except Exception as inner_error:
-                                logging.getLogger(__name__).warning(f"⚠️ Failed to sync status/metadata: {inner_error}")
+                                logging.getLogger(__name__).warning(
+                                    f"⚠️ Failed to sync status/metadata: {inner_error}"
+                                )
                     except Exception as sync_error:
-                        logging.getLogger(__name__).warning(f"⚠️ Failed to sync status/metadata for completed task {task_id_str}: {sync_error}")
+                        logging.getLogger(__name__).warning(
+                            f"⚠️ Failed to sync status/metadata for completed task {task_id_str}: {sync_error}"
+                        )
 
                 except Exception as e:
-                    logging.getLogger(__name__).warning(f"Could not update context with completion summary: {e}")
-            
+                    logging.getLogger(__name__).warning(
+                        f"Could not update context with completion summary: {e}"
+                    )
+
         except MissingCompletionSummaryError as e:
             # Vision System enforcement - provide helpful error message
             return {
@@ -497,57 +637,71 @@ class CompleteTaskUseCase:
                 "task_id": str(task_id),
                 "message": str(e),
                 "status": str(task.status),
-                "hint": "Use the 'complete_task_with_context' action or provide 'completion_summary' parameter"
+                "hint": "Use the 'complete_task_with_context' action or provide 'completion_summary' parameter",
             }
         except TaskCompletionError as e:
             response = {
                 "success": False,
                 "task_id": str(task_id),
                 "message": str(e),
-                "status": str(task.status)
+                "status": str(task.status),
             }
 
             # Add detailed error information if incomplete subtasks data is available
-            if hasattr(e, 'incomplete_subtasks') and e.incomplete_subtasks:
+            if hasattr(e, "incomplete_subtasks") and e.incomplete_subtasks:
                 response["error"] = {
                     "message": str(e),
                     "code": e.error_code or "SUBTASKS_NOT_COMPLETE",
                     "details": {
                         "incomplete_subtasks": e.incomplete_subtasks,
                         "incomplete_count": len(e.incomplete_subtasks),
-                        "total_count": e.context.get('total_count', len(e.incomplete_subtasks)) if hasattr(e, 'context') else len(e.incomplete_subtasks)
-                    }
+                        "total_count": e.context.get(
+                            "total_count", len(e.incomplete_subtasks)
+                        )
+                        if hasattr(e, "context")
+                        else len(e.incomplete_subtasks),
+                    },
                 }
 
             return response
-        except ValueError as e:  # DISABLED - Let inner try-except handle context validation
+        except (
+            ValueError
+        ) as e:  # DISABLED - Let inner try-except handle context validation
             # The inner try-except at line 295-321 handles context validation errors
             # If we get here, it's a different ValueError that we should re-raise
-            logging.getLogger(__name__).warning(f"Unhandled ValueError in task completion: {e}")
+            logging.getLogger(__name__).warning(
+                f"Unhandled ValueError in task completion: {e}"
+            )
             raise  # Re-raise to be caught by the facade
-        
+
         # Save the task
         self._task_repository.save(task)
-        
+
         # Update dependent tasks (tasks that depend on this completed task)
         self._update_dependent_tasks(task)
-        
+
         # Handle domain events
         try:
             events = task.get_events()
             for event in events:
                 if isinstance(event, TaskUpdated):
                     # Could trigger notifications, logging, etc.
-                    logging.getLogger(__name__).debug(f"TaskUpdated event processed: {event.task_id}")
+                    logging.getLogger(__name__).debug(
+                        f"TaskUpdated event processed: {event.task_id}"
+                    )
         except Exception as e:
-            logging.getLogger(__name__).warning(f"Error processing domain events for task {task_id}: {e}")
+            logging.getLogger(__name__).warning(
+                f"Error processing domain events for task {task_id}: {e}"
+            )
             # Don't fail the entire completion for event processing errors
-        
+
         # Get subtask progress for the response (both legacy and new subtasks)
         legacy_progress = task.get_subtask_progress()
         new_subtask_summary = None
         if self._completion_service:
-            new_subtask_summary = self._completion_service.get_subtask_completion_summary(task)
+            new_subtask_summary = (
+                self._completion_service.get_subtask_completion_summary(task)
+            )
         elif self._subtask_repository:
             # Fallback: Create subtask summary directly from repository when completion service is not available
             try:
@@ -556,14 +710,16 @@ class CompleteTaskUseCase:
                     total = len(subtasks)
                     completed = sum(1 for subtask in subtasks if subtask.is_completed)
                     incomplete = total - completed
-                    completion_percentage = round((completed / total) * 100, 1) if total > 0 else 0
-                    
+                    completion_percentage = (
+                        round((completed / total) * 100, 1) if total > 0 else 0
+                    )
+
                     new_subtask_summary = {
                         "total": total,
                         "completed": completed,
                         "incomplete": incomplete,
                         "completion_percentage": completion_percentage,
-                        "can_complete_parent": incomplete == 0
+                        "can_complete_parent": incomplete == 0,
                     }
                 else:
                     # No subtasks case
@@ -572,11 +728,13 @@ class CompleteTaskUseCase:
                         "completed": 0,
                         "incomplete": 0,
                         "completion_percentage": 100,  # No subtasks = 100% complete
-                        "can_complete_parent": True
+                        "can_complete_parent": True,
                     }
             except Exception as e:
-                logging.getLogger(__name__).warning(f"Error generating fallback subtask summary for task {task_id}: {e}")
-        
+                logging.getLogger(__name__).warning(
+                    f"Error generating fallback subtask summary for task {task_id}: {e}"
+                )
+
         # Return success response with required message format
         response = {
             "success": True,
@@ -584,60 +742,72 @@ class CompleteTaskUseCase:
             "status": str(task.status),
             "subtask_progress": legacy_progress,
             "message": f"task {task_id} done, can next_task",
-            "was_already_completed": False  # Flag indicating this is a new completion
+            "was_already_completed": False,  # Flag indicating this is a new completion
         }
-        
+
         # Add subtask summary if available
         if new_subtask_summary:
             response["subtask_summary"] = new_subtask_summary
-            
+
         return response
-    
+
     def _update_dependent_tasks(self, completed_task):
         """
         Update tasks that depend on the completed task.
-        
+
         This method finds all tasks that have the completed task as a dependency
         and updates their status if all their dependencies are now satisfied.
-        
+
         Args:
             completed_task: The task that was just completed
         """
         try:
-            logging.getLogger(__name__).info(f"Updating dependent tasks for completed task {completed_task.id}")
-            
+            logging.getLogger(__name__).info(
+                f"Updating dependent tasks for completed task {completed_task.id}"
+            )
+
             # Find all tasks that might depend on this completed task
             # We need to search through all tasks to find dependencies
             all_tasks = self._task_repository.find_all()
-            
+
             dependent_tasks = []
             for task in all_tasks:
-                if hasattr(task, 'dependencies') and task.dependencies:
+                if hasattr(task, "dependencies") and task.dependencies:
                     # Check if this task depends on the completed task
                     for dependency in task.dependencies:
-                        dependency_id = str(dependency) if hasattr(dependency, 'value') else str(dependency)
+                        dependency_id = (
+                            str(dependency)
+                            if hasattr(dependency, "value")
+                            else str(dependency)
+                        )
                         if dependency_id == str(completed_task.id):
                             dependent_tasks.append(task)
                             break
-                elif hasattr(task, 'get_dependency_ids') and task.get_dependency_ids():
+                elif hasattr(task, "get_dependency_ids") and task.get_dependency_ids():
                     # Alternative way to check dependencies
                     if str(completed_task.id) in task.get_dependency_ids():
                         dependent_tasks.append(task)
-            
-            logging.getLogger(__name__).info(f"Found {len(dependent_tasks)} tasks dependent on {completed_task.id}")
-            
+
+            logging.getLogger(__name__).info(
+                f"Found {len(dependent_tasks)} tasks dependent on {completed_task.id}"
+            )
+
             # Update each dependent task
             for dependent_task in dependent_tasks:
-                self._update_single_dependent_task(dependent_task, completed_task, all_tasks)
-                
+                self._update_single_dependent_task(
+                    dependent_task, completed_task, all_tasks
+                )
+
         except Exception as e:
-            logging.getLogger(__name__).error(f"Error updating dependent tasks for {completed_task.id}: {e}")
+            logging.getLogger(__name__).error(
+                f"Error updating dependent tasks for {completed_task.id}: {e}"
+            )
             # Don't fail the entire completion operation for this
-    
+
     def _update_single_dependent_task(self, dependent_task, completed_task, all_tasks):
         """
         Update a single dependent task based on the completion of a dependency.
-        
+
         Args:
             dependent_task: The task that depends on the completed task
             completed_task: The task that was just completed
@@ -645,80 +815,105 @@ class CompleteTaskUseCase:
         """
         try:
             # Check if all dependencies of the dependent task are now satisfied
-            all_dependencies_complete = self._check_all_dependencies_complete(dependent_task, all_tasks)
-            
+            all_dependencies_complete = self._check_all_dependencies_complete(
+                dependent_task, all_tasks
+            )
+
             original_status = str(dependent_task.status)
-            
+
             # If all dependencies are complete and task is blocked, unblock it
-            if all_dependencies_complete and hasattr(dependent_task.status, 'value'):
-                if dependent_task.status.value == 'blocked':
+            if all_dependencies_complete and hasattr(dependent_task.status, "value"):
+                if dependent_task.status.value == "blocked":
                     # Unblock the task - set to todo
                     from ...domain.value_objects.task_status import TaskStatus
+
                     dependent_task.status = TaskStatus.todo()
-                    
+
                     # Save the updated task
                     self._task_repository.save(dependent_task)
-                    
-                    logging.getLogger(__name__).info(f"Task {dependent_task.id} unblocked: all dependencies completed")
-                    logging.getLogger(__name__).info(f"Status changed from {original_status} to {dependent_task.status}")
-                elif dependent_task.status.value == 'todo':
-                    logging.getLogger(__name__).info(f"Task {dependent_task.id} ready to start: all dependencies completed")
+
+                    logging.getLogger(__name__).info(
+                        f"Task {dependent_task.id} unblocked: all dependencies completed"
+                    )
+                    logging.getLogger(__name__).info(
+                        f"Status changed from {original_status} to {dependent_task.status}"
+                    )
+                elif dependent_task.status.value == "todo":
+                    logging.getLogger(__name__).info(
+                        f"Task {dependent_task.id} ready to start: all dependencies completed"
+                    )
                 else:
-                    logging.getLogger(__name__).debug(f"Task {dependent_task.id} status is {dependent_task.status.value} - no change needed")
+                    logging.getLogger(__name__).debug(
+                        f"Task {dependent_task.id} status is {dependent_task.status.value} - no change needed"
+                    )
             else:
-                logging.getLogger(__name__).debug(f"Task {dependent_task.id} still has incomplete dependencies")
-                
+                logging.getLogger(__name__).debug(
+                    f"Task {dependent_task.id} still has incomplete dependencies"
+                )
+
         except Exception as e:
-            logging.getLogger(__name__).error(f"Error updating dependent task {dependent_task.id}: {e}")
-    
+            logging.getLogger(__name__).error(
+                f"Error updating dependent task {dependent_task.id}: {e}"
+            )
+
     def _check_all_dependencies_complete(self, task, all_tasks: list) -> bool:
         """
         Check if all dependencies of a task are completed.
-        
+
         Args:
             task: The task to check
             all_tasks: List of all tasks
-            
+
         Returns:
             True if all dependencies are completed, False otherwise
         """
         try:
             # Get task dependencies
             dependency_ids = []
-            
-            if hasattr(task, 'dependencies') and task.dependencies:
+
+            if hasattr(task, "dependencies") and task.dependencies:
                 # Convert TaskId objects to strings
                 dependency_ids = [str(dep) for dep in task.dependencies]
-            elif hasattr(task, 'get_dependency_ids'):
+            elif hasattr(task, "get_dependency_ids"):
                 dependency_ids = task.get_dependency_ids()
-            
+
             if not dependency_ids:
                 return True  # No dependencies means all are satisfied
-            
+
             # Check each dependency
             for dep_id in dependency_ids:
                 # Find the dependency task
                 dep_task = None
                 for t in all_tasks:
                     # Handle both string and TaskId object comparisons
-                    task_id_str = str(t.id) if hasattr(t.id, '__str__') else t.id
-                    dep_id_str = str(dep_id) if hasattr(dep_id, '__str__') else dep_id
+                    task_id_str = str(t.id) if hasattr(t.id, "__str__") else t.id
+                    dep_id_str = str(dep_id) if hasattr(dep_id, "__str__") else dep_id
                     if task_id_str == dep_id_str:
                         dep_task = t
                         break
-                
+
                 if not dep_task:
-                    logging.getLogger(__name__).warning(f"Dependency task {dep_id} not found for task {task.id} in all_tasks")
+                    logging.getLogger(__name__).warning(
+                        f"Dependency task {dep_id} not found for task {task.id} in all_tasks"
+                    )
                     return False  # Missing dependency means not all complete
-                
+
                 # Check if dependency is completed
-                if hasattr(dep_task.status, 'is_done') and not dep_task.status.is_done():
+                if (
+                    hasattr(dep_task.status, "is_done")
+                    and not dep_task.status.is_done()
+                ):
                     return False  # Found incomplete dependency
-                elif hasattr(dep_task.status, 'value') and dep_task.status.value != 'done':
+                elif (
+                    hasattr(dep_task.status, "value")
+                    and dep_task.status.value != "done"
+                ):
                     return False  # Found incomplete dependency
-            
+
             return True  # All dependencies are completed
-            
+
         except Exception as e:
-            logging.getLogger(__name__).error(f"Error checking dependencies for task {task.id}: {e}")
-            return False 
+            logging.getLogger(__name__).error(
+                f"Error checking dependencies for task {task.id}: {e}"
+            )
+            return False

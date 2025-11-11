@@ -42,21 +42,21 @@ def setup_timestamp_events() -> None:
 
     # Register event handlers for individual operations
     try:
-        event.remove(Mapper, 'before_insert', _before_insert_handler)
+        event.remove(Mapper, "before_insert", _before_insert_handler)
     except InvalidRequestError:
         logger.debug("No existing before_insert handler to remove")
     except Exception as exc:
         logger.debug("Skipping before_insert removal: %s", exc)
 
     try:
-        event.remove(Mapper, 'before_update', _before_update_handler)
+        event.remove(Mapper, "before_update", _before_update_handler)
     except InvalidRequestError:
         logger.debug("No existing before_update handler to remove")
     except Exception as exc:
         logger.debug("Skipping before_update removal: %s", exc)
 
-    event.listen(Mapper, 'before_insert', _before_insert_handler)
-    event.listen(Mapper, 'before_update', _before_update_handler)
+    event.listen(Mapper, "before_insert", _before_insert_handler)
+    event.listen(Mapper, "before_update", _before_update_handler)
 
     logger.info("Timestamp event handlers registered successfully")
 
@@ -80,12 +80,12 @@ def _before_insert_handler(mapper: Mapper, connection: Any, target: Any) -> None
     entity_class = target.__class__.__name__
 
     # Set created_at if not already set
-    if not hasattr(target, 'created_at') or target.created_at is None:
+    if not hasattr(target, "created_at") or target.created_at is None:
         target.created_at = now
         logger.debug(f"Set created_at for new {entity_class}: {now}")
 
     # Set updated_at if not already set
-    if not hasattr(target, 'updated_at') or target.updated_at is None:
+    if not hasattr(target, "updated_at") or target.updated_at is None:
         target.updated_at = now
         logger.debug(f"Set updated_at for new {entity_class}: {now}")
 
@@ -114,11 +114,11 @@ def _before_update_handler(mapper: Mapper, connection: Any, target: Any) -> None
     entity_class = target.__class__.__name__
 
     # Always update updated_at for existing entities
-    old_updated_at = getattr(target, 'updated_at', None)
+    old_updated_at = getattr(target, "updated_at", None)
     target.updated_at = now
 
     # Ensure created_at is preserved and in UTC
-    if hasattr(target, 'created_at') and target.created_at:
+    if hasattr(target, "created_at") and target.created_at:
         _ensure_created_at_utc(target)
 
     # Ensure updated_at is in UTC
@@ -128,7 +128,6 @@ def _before_update_handler(mapper: Mapper, connection: Any, target: Any) -> None
         f"Updated timestamp for {entity_class}: "
         f"old={old_updated_at}, new={target.updated_at}"
     )
-
 
 
 def _is_timestamp_entity(target: Any) -> bool:
@@ -141,9 +140,9 @@ def _is_timestamp_entity(target: Any) -> bool:
         bool: True if target has timestamp management capabilities
     """
     return (
-        hasattr(target, 'created_at') and
-        hasattr(target, 'updated_at') and
-        hasattr(target, 'touch')  # BaseTimestampEntity method
+        hasattr(target, "created_at")
+        and hasattr(target, "updated_at")
+        and hasattr(target, "touch")  # BaseTimestampEntity method
     )
 
 
@@ -157,9 +156,9 @@ def _mapper_handles_timestamps(mapper: Mapper) -> bool:
         bool: True if mapper handles timestamp entities
     """
     return (
-        hasattr(mapper.class_, 'created_at') and
-        hasattr(mapper.class_, 'updated_at') and
-        hasattr(mapper.class_, 'touch')  # BaseTimestampEntity method
+        hasattr(mapper.class_, "created_at")
+        and hasattr(mapper.class_, "updated_at")
+        and hasattr(mapper.class_, "touch")  # BaseTimestampEntity method
     )
 
 
@@ -179,11 +178,13 @@ def _ensure_created_at_utc(target: Any) -> None:
     Args:
         target: Entity instance to check and fix
     """
-    if hasattr(target, 'created_at') and target.created_at:
+    if hasattr(target, "created_at") and target.created_at:
         if target.created_at.tzinfo is None:
             # Assume naive datetime is UTC
             target.created_at = target.created_at.replace(tzinfo=UTC)
-            logger.debug(f"Added UTC timezone to created_at for {target.__class__.__name__}")
+            logger.debug(
+                f"Added UTC timezone to created_at for {target.__class__.__name__}"
+            )
         elif target.created_at.tzinfo != UTC:
             # Convert to UTC
             target.created_at = target.created_at.astimezone(UTC)
@@ -196,11 +197,13 @@ def _ensure_updated_at_utc(target: Any) -> None:
     Args:
         target: Entity instance to check and fix
     """
-    if hasattr(target, 'updated_at') and target.updated_at:
+    if hasattr(target, "updated_at") and target.updated_at:
         if target.updated_at.tzinfo is None:
             # Assume naive datetime is UTC
             target.updated_at = target.updated_at.replace(tzinfo=UTC)
-            logger.debug(f"Added UTC timezone to updated_at for {target.__class__.__name__}")
+            logger.debug(
+                f"Added UTC timezone to updated_at for {target.__class__.__name__}"
+            )
         elif target.updated_at.tzinfo != UTC:
             # Convert to UTC
             target.updated_at = target.updated_at.astimezone(UTC)
@@ -216,11 +219,9 @@ def cleanup_timestamp_events() -> None:
 
     try:
         # Remove event handlers
-        event.remove(Mapper, 'before_insert', _before_insert_handler)
-        event.remove(Mapper, 'before_update', _before_update_handler)
+        event.remove(Mapper, "before_insert", _before_insert_handler)
+        event.remove(Mapper, "before_update", _before_update_handler)
 
         logger.info("Timestamp event handlers removed successfully")
     except Exception as e:
         logger.warning(f"Some event handlers may not have been registered: {e}")
-
-

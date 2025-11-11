@@ -9,7 +9,7 @@ from typing import Generic, TypeVar
 # Import pagination types from value_objects (moved from base_repository in Phase 5.1)
 from ..value_objects.pagination import PaginationRequest, PaginationResult
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class PaginationService(Generic[T]):
@@ -26,10 +26,7 @@ class PaginationService(Generic[T]):
 
     @classmethod
     def create_pagination_result(
-        cls,
-        items: list[T],
-        total_count: int,
-        pagination: PaginationRequest
+        cls, items: list[T], total_count: int, pagination: PaginationRequest
     ) -> PaginationResult[T]:
         """
         Create a pagination result with metadata.
@@ -94,7 +91,7 @@ class PaginationService(Generic[T]):
             page_size=pagination.page_size,
             total_pages=total_pages,
             has_next=has_next,
-            has_previous=has_previous
+            has_previous=has_previous,
         )
 
     @classmethod

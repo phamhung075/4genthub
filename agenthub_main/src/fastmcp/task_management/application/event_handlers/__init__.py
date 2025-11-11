@@ -7,9 +7,9 @@ from .agent_event_handlers import AgentEventHandlers
 from .project_event_handlers import ProjectEventHandlers
 
 __all__ = [
-    'HintEventHandlers',
-    'ProgressEventHandlers',
-    'TaskEventHandlers',
-    'AgentEventHandlers',
-    'ProjectEventHandlers',
+    "HintEventHandlers",
+    "ProgressEventHandlers",
+    "TaskEventHandlers",
+    "AgentEventHandlers",
+    "ProjectEventHandlers",
 ]

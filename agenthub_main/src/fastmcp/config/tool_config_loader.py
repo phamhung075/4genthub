@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class ToolConfigError(Exception):
     """Raised when there are issues with tool configuration."""
+
     pass
 
 
@@ -67,10 +68,12 @@ class ToolConfigLoader:
             config_path = Path(self.config_path)
 
             if not config_path.exists():
-                logger.warning(f"Tool config file not found at {config_path}, using defaults")
+                logger.warning(
+                    f"Tool config file not found at {config_path}, using defaults"
+                )
                 return self._get_default_config()
 
-            with open(config_path, encoding='utf-8') as file:
+            with open(config_path, encoding="utf-8") as file:
                 self.config_data = yaml.safe_load(file)
 
             # Validate configuration
@@ -99,21 +102,19 @@ class ToolConfigLoader:
                         "get_rate_limit_status": {"enabled": True},
                         "revoke_token": {"enabled": True},
                         "get_auth_status": {"enabled": True},
-                        "generate_token": {"enabled": False}
-                    }
+                        "generate_token": {"enabled": False},
+                    },
                 },
                 "connection": {
                     "enabled": True,
-                    "tools": {
-                        "manage_connection": {"enabled": True}
-                    }
-                }
+                    "tools": {"manage_connection": {"enabled": True}},
+                },
             },
             "global": {
                 "respect_auth_env": True,
                 "auth_env_override": True,
-                "log_tool_registration": True
-            }
+                "log_tool_registration": True,
+            },
         }
 
     def _validate_config(self) -> None:
@@ -135,7 +136,9 @@ class ToolConfigLoader:
         for group_name, group_config in tools.items():
             self._validate_tool_group(group_name, group_config)
 
-    def _validate_tool_group(self, group_name: str, group_config: dict[str, Any]) -> None:
+    def _validate_tool_group(
+        self, group_name: str, group_config: dict[str, Any]
+    ) -> None:
         """Validate a tool group configuration."""
         if not isinstance(group_config, dict):
             raise ToolConfigError(f"Tool group '{group_name}' must be a dictionary")
@@ -143,7 +146,9 @@ class ToolConfigLoader:
         if "tools" in group_config:
             tools = group_config["tools"]
             if not isinstance(tools, dict):
-                raise ToolConfigError(f"Tools in group '{group_name}' must be a dictionary")
+                raise ToolConfigError(
+                    f"Tools in group '{group_name}' must be a dictionary"
+                )
 
     def _is_version_compatible(self, version: str) -> bool:
         """Check if the configuration version is compatible."""
@@ -241,8 +246,9 @@ class ToolConfigLoader:
 
         return enabled_tools
 
-    def validate_dependencies(self, group_name: str, tool_name: str,
-                            available_dependencies: set[str]) -> bool:
+    def validate_dependencies(
+        self, group_name: str, tool_name: str, available_dependencies: set[str]
+    ) -> bool:
         """
         Validate that all dependencies for a tool are available.
 
@@ -257,7 +263,9 @@ class ToolConfigLoader:
         tool_config = self.get_tool_config(group_name, tool_name)
         dependencies = tool_config.get("dependencies", [])
 
-        missing_deps = [dep for dep in dependencies if dep not in available_dependencies]
+        missing_deps = [
+            dep for dep in dependencies if dep not in available_dependencies
+        ]
 
         if missing_deps:
             logger.warning(f"Tool '{tool_name}' missing dependencies: {missing_deps}")

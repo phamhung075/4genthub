@@ -39,72 +39,71 @@ async def create_project(
     name: str = Form(...),
     description: str = Form(""),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Create a new project for the authenticated user.
-    
+
     The project will be automatically associated with the current user,
     ensuring data isolation.
     """
     try:
         # Log the access for audit
         logger.info(f"User {current_user.email} creating project: {name}")
-        
+
         # Create request DTO
         request = CreateProjectRequest(name=name, description=description)
-        
+
         # Delegate to API controller
         result = await project_controller.create_project(request, current_user.id, db)
 
         if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.message or "Failed to create project"
+                detail=result.message or "Failed to create project",
             )
 
         return result.model_dump(by_alias=True)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error creating project for user {current_user.id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create project"
+            detail="Failed to create project",
         )
 
 
 @router.get("/", response_model=dict)
 async def list_projects(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """
     List all projects for the authenticated user.
-    
+
     Only returns projects that belong to the current user.
     """
     try:
         # Log the access for audit
         logger.info(f"User {current_user.email} listing projects")
-        
+
         # Delegate to API controller
         result = await project_controller.list_projects(current_user.id, db)
 
         if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.message or "Failed to list projects"
+                detail=result.message or "Failed to list projects",
             )
 
         return result.model_dump(by_alias=True)
-        
+
     except Exception as e:
         logger.error(f"Error listing projects for user {current_user.id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to list projects"
+            detail="Failed to list projects",
         )
 
 
@@ -112,35 +111,37 @@ async def list_projects(
 async def get_project(
     project_id: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get a specific project by ID.
-    
+
     Only returns the project if it belongs to the current user.
     """
     try:
         # Log the access for audit
         logger.info(f"User {current_user.email} accessing project: {project_id}")
-        
+
         # Delegate to API controller
         result = await project_controller.get_project(project_id, current_user.id, db)
 
         if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found or access denied"
+                detail="Project not found or access denied",
             )
 
         return result.model_dump(by_alias=True)
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting project {project_id} for user {current_user.id}: {e}")
+        logger.error(
+            f"Error getting project {project_id} for user {current_user.id}: {e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get project"
+            detail="Failed to get project",
         )
 
 
@@ -150,44 +151,50 @@ async def update_project(
     name: str | None = Form(None),
     description: str | None = Form(None),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Update a project.
-    
+
     Only allows updating projects that belong to the current user.
     """
     try:
         # Log the access for audit
         logger.info(f"User {current_user.email} updating project: {project_id}")
-        
+
         # Create request DTO
-        update_request = UpdateProjectRequest(project_id=project_id, name=name, description=description)
+        update_request = UpdateProjectRequest(
+            project_id=project_id, name=name, description=description
+        )
 
         # Delegate to API controller
-        result = await project_controller.update_project(project_id, update_request, current_user.id, db)
+        result = await project_controller.update_project(
+            project_id, update_request, current_user.id, db
+        )
 
         if not result.success:
             if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Project not found or access denied"
+                    detail="Project not found or access denied",
                 )
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.message or "Failed to update project"
+                    detail=result.message or "Failed to update project",
                 )
 
         return result.model_dump(by_alias=True)
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating project {project_id} for user {current_user.id}: {e}")
+        logger.error(
+            f"Error updating project {project_id} for user {current_user.id}: {e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update project"
+            detail="Failed to update project",
         )
 
 
@@ -195,44 +202,50 @@ async def update_project(
 async def delete_project(
     project_id: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Delete a project.
-    
+
     Only allows deleting projects that belong to the current user.
     This will also delete all associated git branches, tasks, and contexts.
     """
     try:
         # Log the access for audit
         logger.info(f"User {current_user.email} deleting project: {project_id}")
-        
+
         # Delegate to API controller
-        result = await project_controller.delete_project(project_id, current_user.id, db)
+        result = await project_controller.delete_project(
+            project_id, current_user.id, db
+        )
 
         if not result.success:
             if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Project not found or access denied"
+                    detail="Project not found or access denied",
                 )
             else:
                 # Return the detailed error message from the error field, not the generic message
-                error_detail = result.error or result.message or "Failed to delete project"
+                error_detail = (
+                    result.error or result.message or "Failed to delete project"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=error_detail
+                    detail=error_detail,
                 )
 
         return result.model_dump(by_alias=True)
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting project {project_id} for user {current_user.id}: {e}")
+        logger.error(
+            f"Error deleting project {project_id} for user {current_user.id}: {e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete project"
+            detail="Failed to delete project",
         )
 
 
@@ -240,39 +253,45 @@ async def delete_project(
 async def project_health_check(
     project_id: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Perform a health check on a project.
-    
+
     Only works for projects that belong to the current user.
     """
     try:
         # Log the access for audit
-        logger.info(f"User {current_user.email} checking health of project: {project_id}")
-        
+        logger.info(
+            f"User {current_user.email} checking health of project: {project_id}"
+        )
+
         # Delegate to API controller
-        result = await project_controller.get_project_health(project_id, current_user.id, db)
+        result = await project_controller.get_project_health(
+            project_id, current_user.id, db
+        )
 
         if not result.success:
             if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Project not found or access denied"
+                    detail="Project not found or access denied",
                 )
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.message or "Failed to check project health"
+                    detail=result.message or "Failed to check project health",
                 )
 
         return result.model_dump(by_alias=True)
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error checking health of project {project_id} for user {current_user.id}: {e}")
+        logger.error(
+            f"Error checking health of project {project_id} for user {current_user.id}: {e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to perform health check"
+            detail="Failed to perform health check",
         )

@@ -125,7 +125,7 @@ class DDDCompliantMCPTools:
         self._task_controller = TaskMCPController(
             facade_service_or_factory=self._facade_service,
             workflow_hint_enhancer=None,
-            config=self._config
+            config=self._config,
         )
 
         self._subtask_controller = SubtaskMCPController(
@@ -133,7 +133,7 @@ class DDDCompliantMCPTools:
             task_facade=None,  # Will be set if Vision System is enabled
             context_facade=None,  # Will be set if Vision System is enabled
             task_repository_factory=self._task_repository_factory,
-            config=self._config
+            config=self._config,
         )
 
         # Auto-create global context on system startup with a system user ID
@@ -150,9 +150,7 @@ class DDDCompliantMCPTools:
                     )
 
                 # Get context facade from service
-                self._facade_service.get_context_facade(
-                    user_id=system_user_id
-                )
+                self._facade_service.get_context_facade(user_id=system_user_id)
                 # Global context auto-creation is handled by the facade
                 logger.info(
                     f"Global context initialization completed for system user: {system_user_id}"
@@ -178,14 +176,12 @@ class DDDCompliantMCPTools:
         )
 
         self._git_branch_controller = GitBranchMCPController(
-            facade_service=self._facade_service,
-            config=self._config
+            facade_service=self._facade_service, config=self._config
         )
 
         # Agent controller with facade service and config
         self._agent_controller = AgentMCPController(
-            facade_service=self._facade_service,
-            config=self._config
+            facade_service=self._facade_service, config=self._config
         )
 
         # Initialize new call agent controller (agent_management module)

@@ -29,39 +29,59 @@ from ..use_cases.update_subtask import UpdateSubtaskRequest, UpdateSubtaskUseCas
 
 logger = logging.getLogger(__name__)
 
+
 class SubtaskApplicationFacade:
     """Facade for subtask-related operations"""
-    
-    def __init__(self, task_repository: TaskRepository = None, subtask_repository: SubtaskRepository = None, 
-                 task_repository_factory: TaskRepositoryFactory = None, 
-                 subtask_repository_factory: SubtaskRepositoryFactory = None,
-                 user_id: str = None):
+
+    def __init__(
+        self,
+        task_repository: TaskRepository = None,
+        subtask_repository: SubtaskRepository = None,
+        task_repository_factory: TaskRepositoryFactory = None,
+        subtask_repository_factory: SubtaskRepositoryFactory = None,
+        user_id: str = None,
+    ):
         # For backward compatibility, keep the old constructor signature
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
-        
+
         # New factory-based approach
         self._task_repository_factory = task_repository_factory
         self._subtask_repository_factory = subtask_repository_factory
-        
+
         # Store user_id for repository creation
         self._user_id = user_id
-        
+
         # Initialize agent inheritance service if both repositories are available
         if task_repository and subtask_repository:
             from ..services.agent_inheritance_service import AgentInheritanceService
-            self._agent_inheritance_service = AgentInheritanceService(task_repository, subtask_repository)
+
+            self._agent_inheritance_service = AgentInheritanceService(
+                task_repository, subtask_repository
+            )
         else:
             self._agent_inheritance_service = None
-        
+
         # Initialize use cases only if static repositories are provided (backward compatibility)
         if task_repository:
-            self._add_subtask_use_case = AddSubtaskUseCase(task_repository, subtask_repository)
-            self._update_subtask_use_case = UpdateSubtaskUseCase(task_repository, subtask_repository)
-            self._remove_subtask_use_case = RemoveSubtaskUseCase(task_repository, subtask_repository)
-            self._get_subtask_use_case = GetSubtaskUseCase(task_repository, subtask_repository)
-            self._get_subtasks_use_case = GetSubtasksUseCase(task_repository, subtask_repository)
-            self._complete_subtask_use_case = CompleteSubtaskUseCase(task_repository, subtask_repository)
+            self._add_subtask_use_case = AddSubtaskUseCase(
+                task_repository, subtask_repository
+            )
+            self._update_subtask_use_case = UpdateSubtaskUseCase(
+                task_repository, subtask_repository
+            )
+            self._remove_subtask_use_case = RemoveSubtaskUseCase(
+                task_repository, subtask_repository
+            )
+            self._get_subtask_use_case = GetSubtaskUseCase(
+                task_repository, subtask_repository
+            )
+            self._get_subtasks_use_case = GetSubtasksUseCase(
+                task_repository, subtask_repository
+            )
+            self._complete_subtask_use_case = CompleteSubtaskUseCase(
+                task_repository, subtask_repository
+            )
         else:
             # Use cases will be created dynamically with context-specific repositories
             self._add_subtask_use_case = None
@@ -70,8 +90,10 @@ class SubtaskApplicationFacade:
             self._get_subtask_use_case = None
             self._get_subtasks_use_case = None
             self._complete_subtask_use_case = None
-    
-    def _derive_context_from_task(self, task_id: str, subtask_id: str = None) -> dict[str, str]:
+
+    def _derive_context_from_task(
+        self, task_id: str, subtask_id: str = None
+    ) -> dict[str, str]:
         """Derive context parameters from the parent task by looking it up in database"""
         # First, ensure we have a user_id for authentication filtering
         lookup_user_id = None
@@ -83,81 +105,116 @@ class SubtaskApplicationFacade:
                 from ...interface.mcp_controllers.auth_helper.auth_helper import (
                     get_authenticated_user_id,
                 )
-                lookup_user_id = get_authenticated_user_id(None, "Task lookup for subtask context")
-                logger.info(f"🔍 Using authenticated user_id for task lookup: {lookup_user_id}")
+
+                lookup_user_id = get_authenticated_user_id(
+                    None, "Task lookup for subtask context"
+                )
+                logger.info(
+                    f"🔍 Using authenticated user_id for task lookup: {lookup_user_id}"
+                )
             except Exception as e:
                 logger.error(f"Authentication failed for task lookup: {e}")
                 raise ValueError("User authentication required for task lookup") from e
-        
+
         try:
             # Use proper database connection (PostgreSQL/Supabase)
             from ...infrastructure.database.database_config import get_session
             from ...infrastructure.database.models import Task
-            
+
             with get_session() as session:
                 # CRITICAL FIX: Look up the task with user_id filter for proper multi-tenant isolation
-                task = session.query(Task).filter(
-                    Task.id == task_id,
-                    Task.user_id == lookup_user_id  # Multi-tenant filtering - REQUIRED
-                ).first()
-                
+                task = (
+                    session.query(Task)
+                    .filter(
+                        Task.id == task_id,
+                        Task.user_id
+                        == lookup_user_id,  # Multi-tenant filtering - REQUIRED
+                    )
+                    .first()
+                )
+
                 if task:
-                    logger.info(f"✅ Task {task_id} found with git_branch_id: {task.git_branch_id}, user_id: {task.user_id}")
-                    
+                    logger.info(
+                        f"✅ Task {task_id} found with git_branch_id: {task.git_branch_id}, user_id: {task.user_id}"
+                    )
+
                     # If task has a user_id, use it directly for consistency
                     if task.user_id:
                         # DDD Compliance: No hardcoded project IDs - require explicit values
                         if not task.git_branch_id:
-                            raise ValueError(f"Task {task_id} missing git_branch_id required for context derivation")
+                            raise ValueError(
+                                f"Task {task_id} missing git_branch_id required for context derivation"
+                            )
                         context = None
-                        
+
                         # If task has git_branch_id, derive full context
                         if task.git_branch_id:
-                            branch_context = self._derive_context_from_git_branch_id(task.git_branch_id)
+                            branch_context = self._derive_context_from_git_branch_id(
+                                task.git_branch_id
+                            )
                             # But preserve the task's user_id
                             branch_context["user_id"] = str(task.user_id)
                             context = branch_context
-                        
-                        logger.info(f"✅ Derived context for subtask with task's user_id: {context}")
+
+                        logger.info(
+                            f"✅ Derived context for subtask with task's user_id: {context}"
+                        )
                         return context
                     elif task.git_branch_id:
                         # Derive context from task's git_branch_id
-                        context = self._derive_context_from_git_branch_id(task.git_branch_id)
-                        logger.info(f"✅ Derived context for subtask from branch: {context}")
+                        context = self._derive_context_from_git_branch_id(
+                            task.git_branch_id
+                        )
+                        logger.info(
+                            f"✅ Derived context for subtask from branch: {context}"
+                        )
                         return context
                 else:
-                    logger.error(f"❌ Task {task_id} not found for user {lookup_user_id}")
+                    logger.error(
+                        f"❌ Task {task_id} not found for user {lookup_user_id}"
+                    )
                     # CRITICAL: Task not found for this user - raise error instead of fallback
                     from ...domain.exceptions import TaskNotFoundError
+
                     raise TaskNotFoundError(f"Task {task_id} not found")
-                    
+
         except Exception as e:
-            if isinstance(e, ValueError) and "authentication required" in str(e).lower():
+            if (
+                isinstance(e, ValueError)
+                and "authentication required" in str(e).lower()
+            ):
                 # Re-raise authentication errors
                 raise e
             logger.error(f"Failed to find task {task_id} in database: {e}")
             # CRITICAL: If task lookup fails, we should fail rather than create defaults
             from ...domain.exceptions import TaskNotFoundError
+
             raise TaskNotFoundError(f"Task {task_id} not found") from e
-    
+
     def _derive_context_from_git_branch_id(self, git_branch_id: str) -> dict[str, str]:
         """Derive context parameters from git_branch_id by looking up the project_git_branchs table"""
         try:
             # Use proper database connection (PostgreSQL/Supabase)
             from ...infrastructure.database.database_config import get_session
             from ...infrastructure.database.models import Project, ProjectGitBranch
-            
+
             with get_session() as session:
                 # Look up the git branch to get project_id and git_branch_name
-                branch = session.query(ProjectGitBranch).filter(ProjectGitBranch.id == git_branch_id).first()
-                
+                branch = (
+                    session.query(ProjectGitBranch)
+                    .filter(ProjectGitBranch.id == git_branch_id)
+                    .first()
+                )
+
                 if branch:
                     project_id = branch.project_id
                     git_branch_name = branch.name
-                    
+
                     # Look up the project to get user_id
-                    project = session.query(Project).filter(Project.id == project_id).first()
-                    
+                    project = (
+                        session.query(Project).filter(Project.id == project_id).first()
+                    )
+
                     if project:
                         user_id = project.user_id
                         # If user_id is still None (e.g., in MVP mode), get authenticated user
@@ -166,47 +223,79 @@ class SubtaskApplicationFacade:
                                 from ...interface.mcp_controllers.auth_helper.auth_helper import (
                                     get_authenticated_user_id,
                                 )
-                                user_id = get_authenticated_user_id(None, "Subtask context derivation from git_branch")
-                                logger.info(f"✅ Using authenticated user for context: {user_id}")
+
+                                user_id = get_authenticated_user_id(
+                                    None, "Subtask context derivation from git_branch"
+                                )
+                                logger.info(
+                                    f"✅ Using authenticated user for context: {user_id}"
+                                )
                             except Exception as e:
                                 logger.error(f"Failed to get authenticated user: {e}")
                                 # Authentication is required - no fallbacks
-                                raise ValueError("User authentication required. No user ID provided.") from e
-                        
-                        logger.info(f"✅ Derived context from git_branch_id {git_branch_id}: project={project_id}, branch={git_branch_name}, user={user_id}")
+                                raise ValueError(
+                                    "User authentication required. No user ID provided."
+                                ) from e
+
+                        logger.info(
+                            f"✅ Derived context from git_branch_id {git_branch_id}: project={project_id}, branch={git_branch_name}, user={user_id}"
+                        )
                         return {
-                            "project_id": str(project_id) if project_id else None,  # Convert UUID to string
+                            "project_id": str(project_id)
+                            if project_id
+                            else None,  # Convert UUID to string
                             "git_branch_name": git_branch_name,
-                            "user_id": str(user_id) if user_id else None  # Convert to string
+                            "user_id": str(user_id)
+                            if user_id
+                            else None,  # Convert to string
                         }
-                        
+
         except Exception as e:
-            logger.debug(f"Failed to derive context from git_branch_id {git_branch_id}: {e}")
-        
+            logger.debug(
+                f"Failed to derive context from git_branch_id {git_branch_id}: {e}"
+            )
+
         # Fallback to defaults
-        logger.warning(f"Could not derive context from git_branch_id {git_branch_id}, using defaults")
+        logger.warning(
+            f"Could not derive context from git_branch_id {git_branch_id}, using defaults"
+        )
         # Validate user authentication
-        
+
         # Use auth_helper to get authenticated user ID (same as controllers)
         try:
             from ...interface.mcp_controllers.auth_helper.auth_helper import (
                 get_authenticated_user_id,
             )
+
             user_id = get_authenticated_user_id(None, "Subtask context derivation")
         except Exception as e:
             logger.error(f"Authentication failed for subtask context derivation: {e}")
             # Authentication is required - no fallbacks
             raise ValueError("User authentication required. No user ID provided.")
-        
-        # DDD Compliance: No hardcoded project IDs - require explicit values
-        raise ValueError("Cannot derive subtask context: git_branch_id is required. No fallback to default project allowed per DDD principles.")
 
-    def _get_context_repositories(self, project_id: str = None, git_branch_name: str = None, user_id: str = None) -> tuple[TaskRepository, SubtaskRepository]:
+        # DDD Compliance: No hardcoded project IDs - require explicit values
+        raise ValueError(
+            "Cannot derive subtask context: git_branch_id is required. No fallback to default project allowed per DDD principles."
+        )
+
+    def _get_context_repositories(
+        self, project_id: str = None, git_branch_name: str = None, user_id: str = None
+    ) -> tuple[TaskRepository, SubtaskRepository]:
         """Get repositories with correct context parameters"""
-        if self._task_repository_factory and self._subtask_repository_factory and all([project_id, git_branch_name, user_id]):
+        if (
+            self._task_repository_factory
+            and self._subtask_repository_factory
+            and all([project_id, git_branch_name, user_id])
+        ):
             # Use factory-based approach with context parameters
-            task_repository = self._task_repository_factory.create_repository(project_id, git_branch_name, user_id)
-            subtask_repository = self._subtask_repository_factory.create_subtask_repository(project_id, git_branch_name, user_id)
+            task_repository = self._task_repository_factory.create_repository(
+                project_id, git_branch_name, user_id
+            )
+            subtask_repository = (
+                self._subtask_repository_factory.create_subtask_repository(
+                    project_id, git_branch_name, user_id
+                )
+            )
             return task_repository, subtask_repository
         else:
             # Fall back to static repositories for backward compatibility
@@ -242,73 +331,104 @@ class SubtaskApplicationFacade:
 
         if not task_id:
             raise ValueError("Task ID is required")
-        
+
         # Following clean relationship chain: derive context from task_id for factory-based repositories
         if self._task_repository_factory and self._subtask_repository_factory:
             # For factory-based repositories, derive context from task_id
             context = self._derive_context_from_task(task_id)
             # CRITICAL FIX: Prioritize provided user_id over derived user_id for MCP authentication
             effective_user_id = user_id or context.get("user_id")
-            logger.info(f"🔐 SUBTASK_AUTH_FIX: Using user_id={effective_user_id} (provided={user_id}, derived={context.get('user_id')})")
+            logger.info(
+                f"🔐 SUBTASK_AUTH_FIX: Using user_id={effective_user_id} (provided={user_id}, derived={context.get('user_id')})"
+            )
             task_repository, subtask_repository = self._get_context_repositories(
                 project_id=context.get("project_id"),
                 git_branch_name=context.get("git_branch_name"),
-                user_id=effective_user_id
+                user_id=effective_user_id,
             )
         else:
             # For static repositories (backward compatibility), use them directly
             task_repository, subtask_repository = self._get_context_repositories()
-        
+
         # Normalize action: allow 'add' as alias for 'create'
         action = action.lower()
         if action == "add":
             action = "create"
         if action == "create":
-            return self._handle_create_subtask(task_id, subtask_data, task_repository, subtask_repository)
+            return self._handle_create_subtask(
+                task_id, subtask_data, task_repository, subtask_repository
+            )
         elif action == "update":
-            return self._handle_update_subtask(task_id, subtask_data, task_repository, subtask_repository, subtask_id, suppress_broadcast)
+            return self._handle_update_subtask(
+                task_id,
+                subtask_data,
+                task_repository,
+                subtask_repository,
+                subtask_id,
+                suppress_broadcast,
+            )
         elif action == "delete":
-            return self._handle_delete_subtask(task_id, subtask_data, task_repository, subtask_repository, subtask_id)
+            return self._handle_delete_subtask(
+                task_id, subtask_data, task_repository, subtask_repository, subtask_id
+            )
         elif action == "list":
-            return self._handle_list_subtasks(task_id, task_repository, subtask_repository)
+            return self._handle_list_subtasks(
+                task_id, task_repository, subtask_repository
+            )
         elif action == "get":
-            return self._handle_get_subtask(task_id, subtask_data, task_repository, subtask_repository, subtask_id)
+            return self._handle_get_subtask(
+                task_id, subtask_data, task_repository, subtask_repository, subtask_id
+            )
         elif action == "complete":
-            return self._handle_complete_subtask(task_id, subtask_data, task_repository, subtask_repository, subtask_id)
+            return self._handle_complete_subtask(
+                task_id, subtask_data, task_repository, subtask_repository, subtask_id
+            )
         else:
             raise ValueError(f"Unsupported subtask action: {action}")
-    
-    def _handle_create_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository) -> dict[str, Any]:
+
+    def _handle_create_subtask(
+        self,
+        task_id: str,
+        subtask_data: dict[str, Any],
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository,
+    ) -> dict[str, Any]:
         """Handle subtask creation"""
         if not subtask_data or "title" not in subtask_data:
             raise ValueError("subtask_data with title is required")
-        
+
         # Create use case with context-specific repositories
-        add_subtask_use_case = self._add_subtask_use_case or AddSubtaskUseCase(task_repository, subtask_repository)
-        
+        add_subtask_use_case = self._add_subtask_use_case or AddSubtaskUseCase(
+            task_repository, subtask_repository
+        )
+
         # Extract user_id and ensure it's passed through
         # When using factory-based repositories, the user_id should already be set in the repository
         # But we need to ensure it's properly configured
-        if hasattr(subtask_repository, '_user_id') and not subtask_repository._user_id:
+        if hasattr(subtask_repository, "_user_id") and not subtask_repository._user_id:
             # If repository doesn't have user_id, derive it from context
             context = self._derive_context_from_task(task_id)
-            if context.get('user_id'):
+            if context.get("user_id"):
                 # Create a new repository instance with the proper user_id
                 if self._subtask_repository_factory:
-                    subtask_repository = self._subtask_repository_factory.create_subtask_repository(
-                        project_id=context.get("project_id"),
-                        git_branch_name=context.get("git_branch_name"),
-                        user_id=context.get("user_id")
+                    subtask_repository = (
+                        self._subtask_repository_factory.create_subtask_repository(
+                            project_id=context.get("project_id"),
+                            git_branch_name=context.get("git_branch_name"),
+                            user_id=context.get("user_id"),
+                        )
                     )
                     # Recreate the use case with the properly scoped repository
-                    add_subtask_use_case = AddSubtaskUseCase(task_repository, subtask_repository)
-        
+                    add_subtask_use_case = AddSubtaskUseCase(
+                        task_repository, subtask_repository
+                    )
+
         request = AddSubtaskRequest(
             task_id=task_id,
             title=subtask_data["title"],
             description=subtask_data.get("description", ""),
             assignees=subtask_data.get("assignees", []),
-            priority=subtask_data.get("priority")
+            priority=subtask_data.get("priority"),
         )
         response = add_subtask_use_case.execute(request)
         result = {
@@ -317,14 +437,16 @@ class SubtaskApplicationFacade:
             "message": f"Subtask '{subtask_data['title']}' created for task {task_id}",
             "subtask": response.subtask,  # Direct access to subtask data, not wrapped response
             "task_id": response.task_id,
-            "progress": response.progress
+            "progress": response.progress,
         }
-        
+
         # Include agent inheritance information if applicable
         if response.agent_inheritance_applied:
             result["agent_inheritance_applied"] = True
             result["inherited_assignees"] = response.inherited_assignees
-            result["message"] = f"Subtask '{subtask_data['title']}' created for task {task_id} with {len(response.inherited_assignees)} agent(s) inherited from parent"
+            result["message"] = (
+                f"Subtask '{subtask_data['title']}' created for task {task_id} with {len(response.inherited_assignees)} agent(s) inherited from parent"
+            )
 
         # Broadcast subtask creation event via WebSocket
         try:
@@ -333,7 +455,11 @@ class SubtaskApplicationFacade:
             user_id = context.get("user_id", "system")
 
             # Convert subtask response to dict for broadcasting
-            subtask_dict = response.subtask if isinstance(response.subtask, dict) else response.subtask.__dict__
+            subtask_dict = (
+                response.subtask
+                if isinstance(response.subtask, dict)
+                else response.subtask.__dict__
+            )
 
             # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
             from ...domain.websocket_protocol import SubtaskCreatePayload
@@ -347,12 +473,18 @@ class SubtaskApplicationFacade:
                     task_id=task_id,
                     progress_percentage=subtask_dict.get("progress_percentage"),
                     created_at=subtask_dict.get("created_at"),
-                    updated_at=subtask_dict.get("updated_at")  # ✅ FIX: Include updated_at for frontend validation
+                    updated_at=subtask_dict.get(
+                        "updated_at"
+                    ),  # ✅ FIX: Include updated_at for frontend validation
                 )
                 validated_subtask_data = payload.model_dump()
-                logger.info(f"✅ Subtask create payload validated for {subtask_dict.get('id')}")
+                logger.info(
+                    f"✅ Subtask create payload validated for {subtask_dict.get('id')}"
+                )
             except Exception as validation_error:
-                logger.error(f"❌ Subtask create payload validation failed: {validation_error}")
+                logger.error(
+                    f"❌ Subtask create payload validation failed: {validation_error}"
+                )
                 # Fallback to dict (maintains backward compatibility)
                 validated_subtask_data = subtask_dict
 
@@ -361,7 +493,7 @@ class SubtaskApplicationFacade:
                 subtask_id=subtask_dict.get("id"),
                 task_id=task_id,
                 user_id=user_id,
-                subtask_data=validated_subtask_data
+                subtask_data=validated_subtask_data,
             )
 
             # CRITICAL: Broadcast parent task update to refresh data in frontend
@@ -374,11 +506,17 @@ class SubtaskApplicationFacade:
                     parent_task_dict = {
                         "id": str(parent_task.id),
                         "title": parent_task.title,
-                        "status": parent_task.status.value if hasattr(parent_task.status, 'value') else str(parent_task.status),
-                        "priority": parent_task.priority.value if hasattr(parent_task.priority, 'value') else str(parent_task.priority),
+                        "status": parent_task.status.value
+                        if hasattr(parent_task.status, "value")
+                        else str(parent_task.status),
+                        "priority": parent_task.priority.value
+                        if hasattr(parent_task.priority, "value")
+                        else str(parent_task.priority),
                         "assignees": parent_task.assignees or [],
-                        "has_dependencies": len(parent_task.dependencies) > 0 if parent_task.dependencies else False,
-                        "has_context": bool(parent_task.context_id)
+                        "has_dependencies": len(parent_task.dependencies) > 0
+                        if parent_task.dependencies
+                        else False,
+                        "has_context": bool(parent_task.context_id),
                     }
 
                     # FIX: Add metadata to suppress duplicate notification toasts
@@ -388,11 +526,18 @@ class SubtaskApplicationFacade:
                         task_id=task_id,
                         user_id=user_id,
                         task_data=parent_task_dict,
-                        metadata={"source": "system", "event_type": "subtask_count_update"}
+                        metadata={
+                            "source": "system",
+                            "event_type": "subtask_count_update",
+                        },
                     )
-                    logger.info("✅ Broadcasted parent task update after subtask creation")
+                    logger.info(
+                        "✅ Broadcasted parent task update after subtask creation"
+                    )
             except Exception as parent_error:
-                logger.warning(f"Failed to broadcast parent task update: {parent_error}")
+                logger.warning(
+                    f"Failed to broadcast parent task update: {parent_error}"
+                )
 
         except Exception as e:
             logger.warning(f"Failed to broadcast subtask creation: {e}")
@@ -408,34 +553,58 @@ class SubtaskApplicationFacade:
                 # Check if we're already in an event loop
                 asyncio.get_running_loop()
                 # We're in an async context - schedule as background task
-                asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+                asyncio.create_task(
+                    sync_service.sync_subtask_counts(task_id, subtask_repository)
+                )
+                logger.info(
+                    f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)"
+                )
             except RuntimeError:
                 # No event loop running - safe to use asyncio.run()
                 try:
-                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask creation")
+                    asyncio.run(
+                        sync_service.sync_subtask_counts(task_id, subtask_repository)
+                    )
+                    logger.info(
+                        f"✅ Synced subtask counts for parent task {task_id} after subtask creation"
+                    )
                 except Exception as inner_error:
                     logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
         except Exception as sync_error:
-            logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
+            logger.warning(
+                f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}"
+            )
 
         return result
-    
-    def _handle_update_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None, suppress_broadcast: bool = False) -> dict[str, Any]:
+
+    def _handle_update_subtask(
+        self,
+        task_id: str,
+        subtask_data: dict[str, Any],
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository,
+        subtask_id: str = None,
+        suppress_broadcast: bool = False,
+    ) -> dict[str, Any]:
         """Handle subtask update
 
         Args:
             suppress_broadcast: If True, skip WebSocket broadcast (used during completion to prevent duplicate events)
         """
         # Use subtask_id parameter if provided, otherwise extract from subtask_data (backward compatibility)
-        actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
+        actual_subtask_id = subtask_id or (
+            subtask_data and subtask_data.get("subtask_id")
+        )
         if not actual_subtask_id:
-            raise ValueError("subtask_id is required (either as parameter or in subtask_data)")
-        
+            raise ValueError(
+                "subtask_id is required (either as parameter or in subtask_data)"
+            )
+
         # Create use case with context-specific repositories
-        update_subtask_use_case = self._update_subtask_use_case or UpdateSubtaskUseCase(task_repository, subtask_repository)
-        
+        update_subtask_use_case = self._update_subtask_use_case or UpdateSubtaskUseCase(
+            task_repository, subtask_repository
+        )
+
         request = UpdateSubtaskRequest(
             task_id=task_id,
             id=actual_subtask_id,
@@ -444,15 +613,19 @@ class SubtaskApplicationFacade:
             status=subtask_data.get("status") if subtask_data else None,
             priority=subtask_data.get("priority") if subtask_data else None,
             assignees=subtask_data.get("assignees") if subtask_data else None,
-            progress_percentage=subtask_data.get("progress_percentage") if subtask_data else None,
-            progress_notes=subtask_data.get("progress_notes") if subtask_data else None
+            progress_percentage=subtask_data.get("progress_percentage")
+            if subtask_data
+            else None,
+            progress_notes=subtask_data.get("progress_notes") if subtask_data else None,
         )
         response = update_subtask_use_case.execute(request)
         result = {
             "success": True,
             "action": "update",
             "message": f"Subtask {actual_subtask_id} updated",
-            "subtask": MinimalResponseSerializer.serialize_subtask_minimal(response.subtask, "update")
+            "subtask": MinimalResponseSerializer.serialize_subtask_minimal(
+                response.subtask, "update"
+            ),
         }
 
         # Broadcast subtask update event via WebSocket (unless suppressed during completion)
@@ -463,7 +636,9 @@ class SubtaskApplicationFacade:
                 user_id = context.get("user_id", "system")
 
                 # Convert subtask response to dict for broadcasting (minimal serialization)
-                subtask_dict = MinimalResponseSerializer.serialize_subtask_minimal(response.subtask, "update")
+                subtask_dict = MinimalResponseSerializer.serialize_subtask_minimal(
+                    response.subtask, "update"
+                )
 
                 # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
                 from ...domain.websocket_protocol import SubtaskUpdatePayload
@@ -476,13 +651,19 @@ class SubtaskApplicationFacade:
                         status=subtask_dict.get("status"),
                         task_id=task_id,
                         progress_percentage=subtask_dict.get("progress_percentage"),
-                        created_at=subtask_dict.get("created_at"),  # ✅ FIX: Include created_at for frontend validation
-                        updated_at=subtask_dict.get("updated_at")
+                        created_at=subtask_dict.get(
+                            "created_at"
+                        ),  # ✅ FIX: Include created_at for frontend validation
+                        updated_at=subtask_dict.get("updated_at"),
                     )
                     validated_subtask_data = payload.model_dump()
-                    logger.info(f"✅ Subtask update payload validated for {actual_subtask_id}")
+                    logger.info(
+                        f"✅ Subtask update payload validated for {actual_subtask_id}"
+                    )
                 except Exception as validation_error:
-                    logger.error(f"❌ Subtask update payload validation failed: {validation_error}")
+                    logger.error(
+                        f"❌ Subtask update payload validation failed: {validation_error}"
+                    )
                     validated_subtask_data = subtask_dict
 
                 WebSocketNotificationService.sync_broadcast_subtask_event(
@@ -490,12 +671,14 @@ class SubtaskApplicationFacade:
                     subtask_id=actual_subtask_id,
                     task_id=task_id,
                     user_id=user_id,
-                    subtask_data=validated_subtask_data
+                    subtask_data=validated_subtask_data,
                 )
             except Exception as e:
                 logger.warning(f"Failed to broadcast subtask update: {e}")
         else:
-            logger.info(f"🔇 Suppressed 'updated' broadcast for subtask {actual_subtask_id} (part of completion flow)")
+            logger.info(
+                f"🔇 Suppressed 'updated' broadcast for subtask {actual_subtask_id} (part of completion flow)"
+            )
 
         # 🔄 SYNC: Update parent task's subtask counts in context_data
         try:
@@ -508,29 +691,52 @@ class SubtaskApplicationFacade:
                 # Check if we're already in an event loop
                 asyncio.get_running_loop()
                 # We're in an async context - schedule as background task
-                asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+                asyncio.create_task(
+                    sync_service.sync_subtask_counts(task_id, subtask_repository)
+                )
+                logger.info(
+                    f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)"
+                )
             except RuntimeError:
                 # No event loop running - safe to use asyncio.run()
                 try:
-                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask update")
+                    asyncio.run(
+                        sync_service.sync_subtask_counts(task_id, subtask_repository)
+                    )
+                    logger.info(
+                        f"✅ Synced subtask counts for parent task {task_id} after subtask update"
+                    )
                 except Exception as inner_error:
                     logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
         except Exception as sync_error:
-            logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
+            logger.warning(
+                f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}"
+            )
 
         return result
-    
-    def _handle_delete_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> dict[str, Any]:
+
+    def _handle_delete_subtask(
+        self,
+        task_id: str,
+        subtask_data: dict[str, Any],
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository,
+        subtask_id: str = None,
+    ) -> dict[str, Any]:
         """Handle subtask deletion"""
         # Use subtask_id parameter if provided, otherwise extract from subtask_data (backward compatibility)
-        actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
+        actual_subtask_id = subtask_id or (
+            subtask_data and subtask_data.get("subtask_id")
+        )
         if not actual_subtask_id:
-            raise ValueError("subtask_id is required (either as parameter or in subtask_data)")
+            raise ValueError(
+                "subtask_id is required (either as parameter or in subtask_data)"
+            )
 
         # Create use case with context-specific repositories
-        remove_subtask_use_case = self._remove_subtask_use_case or RemoveSubtaskUseCase(task_repository, subtask_repository)
+        remove_subtask_use_case = self._remove_subtask_use_case or RemoveSubtaskUseCase(
+            task_repository, subtask_repository
+        )
 
         # ✅ FIX: Use case now returns subtask title in result (no need to fetch separately)
         result = remove_subtask_use_case.execute(task_id, actual_subtask_id)
@@ -538,7 +744,7 @@ class SubtaskApplicationFacade:
             "success": result["success"],
             "action": "delete",
             "message": f"Subtask {actual_subtask_id} deleted from task {task_id}",
-            "progress": result.get("progress", {})
+            "progress": result.get("progress", {}),
         }
 
         # Broadcast subtask deletion event via WebSocket (only if successful)
@@ -555,20 +761,18 @@ class SubtaskApplicationFacade:
                 # Apply fallback if title is still missing (shouldn't happen unless use case failed)
                 if not subtask_title:
                     subtask_title = f"Subtask {actual_subtask_id[:8]}"
-                    logger.warning(f"📝 Using fallback title for subtask deletion: '{subtask_title}'")
+                    logger.warning(
+                        f"📝 Using fallback title for subtask deletion: '{subtask_title}'"
+                    )
 
                 # Create type-safe payload with validation
                 delete_payload = SubtaskDeletePayload(
-                    id=actual_subtask_id,
-                    task_id=task_id,
-                    title=subtask_title
+                    id=actual_subtask_id, task_id=task_id, title=subtask_title
                 )
 
                 # Create WebSocket message using typed payload
                 create_delete_message(
-                    entity='subtask',
-                    payload=delete_payload,
-                    user_id=user_id
+                    entity="subtask", payload=delete_payload, user_id=user_id
                 )
 
                 # Convert to dict for WebSocket broadcast
@@ -579,24 +783,32 @@ class SubtaskApplicationFacade:
                     subtask_id=actual_subtask_id,
                     task_id=task_id,
                     user_id=user_id,
-                    subtask_data=subtask_data_for_broadcast
+                    subtask_data=subtask_data_for_broadcast,
                 )
 
                 # CRITICAL: Broadcast parent task update to refresh data in frontend
                 try:
                     # Reload parent task to get updated data
-                    parent_task = task_repository.find_by_id(TaskId.from_string(task_id))
+                    parent_task = task_repository.find_by_id(
+                        TaskId.from_string(task_id)
+                    )
                     if parent_task:
                         # Convert to dict for WebSocket broadcast
                         # CRITICAL FIX: Serialize enums to their string values for JSON compatibility
                         parent_task_dict = {
                             "id": str(parent_task.id),
                             "title": parent_task.title,
-                            "status": parent_task.status.value if hasattr(parent_task.status, 'value') else str(parent_task.status),
-                            "priority": parent_task.priority.value if hasattr(parent_task.priority, 'value') else str(parent_task.priority),
+                            "status": parent_task.status.value
+                            if hasattr(parent_task.status, "value")
+                            else str(parent_task.status),
+                            "priority": parent_task.priority.value
+                            if hasattr(parent_task.priority, "value")
+                            else str(parent_task.priority),
                             "assignees": parent_task.assignees or [],
-                            "has_dependencies": len(parent_task.dependencies) > 0 if parent_task.dependencies else False,
-                            "has_context": bool(parent_task.context_id)
+                            "has_dependencies": len(parent_task.dependencies) > 0
+                            if parent_task.dependencies
+                            else False,
+                            "has_context": bool(parent_task.context_id),
                         }
 
                         # FIX: Add metadata to suppress duplicate notification toasts
@@ -606,11 +818,18 @@ class SubtaskApplicationFacade:
                             task_id=task_id,
                             user_id=user_id,
                             task_data=parent_task_dict,
-                            metadata={"source": "system", "event_type": "subtask_count_update"}
+                            metadata={
+                                "source": "system",
+                                "event_type": "subtask_count_update",
+                            },
                         )
-                        logger.info("✅ Broadcasted parent task update after subtask deletion")
+                        logger.info(
+                            "✅ Broadcasted parent task update after subtask deletion"
+                        )
                 except Exception as parent_error:
-                    logger.warning(f"Failed to broadcast parent task update: {parent_error}")
+                    logger.warning(
+                        f"Failed to broadcast parent task update: {parent_error}"
+                    )
 
             except Exception as e:
                 logger.warning(f"Failed to broadcast subtask deletion: {e}")
@@ -626,69 +845,121 @@ class SubtaskApplicationFacade:
                     # Check if we're already in an event loop
                     asyncio.get_running_loop()
                     # We're in an async context - schedule as background task
-                    asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                    logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+                    asyncio.create_task(
+                        sync_service.sync_subtask_counts(task_id, subtask_repository)
+                    )
+                    logger.info(
+                        f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)"
+                    )
                 except RuntimeError:
                     # No event loop running - safe to use asyncio.run()
                     try:
-                        asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                        logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask deletion")
+                        asyncio.run(
+                            sync_service.sync_subtask_counts(
+                                task_id, subtask_repository
+                            )
+                        )
+                        logger.info(
+                            f"✅ Synced subtask counts for parent task {task_id} after subtask deletion"
+                        )
                     except Exception as inner_error:
-                        logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
+                        logger.warning(
+                            f"⚠️ Failed to sync subtask counts: {inner_error}"
+                        )
             except Exception as sync_error:
-                logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
+                logger.warning(
+                    f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}"
+                )
 
         return response
-    
-    def _handle_list_subtasks(self, task_id: str, task_repository: TaskRepository, subtask_repository: SubtaskRepository) -> dict[str, Any]:
+
+    def _handle_list_subtasks(
+        self,
+        task_id: str,
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository,
+    ) -> dict[str, Any]:
         """Handle listing subtasks for a task"""
         # Create use case with context-specific repositories
-        get_subtasks_use_case = self._get_subtasks_use_case or GetSubtasksUseCase(task_repository, subtask_repository)
-        
+        get_subtasks_use_case = self._get_subtasks_use_case or GetSubtasksUseCase(
+            task_repository, subtask_repository
+        )
+
         result = get_subtasks_use_case.execute(task_id)
         return {
             "success": True,
             "action": "list",
             "message": f"Subtasks retrieved for task {task_id}",
             "subtasks": result["subtasks"],
-            "progress": result["progress"]
+            "progress": result["progress"],
         }
-    
-    def _handle_get_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> dict[str, Any]:
+
+    def _handle_get_subtask(
+        self,
+        task_id: str,
+        subtask_data: dict[str, Any],
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository,
+        subtask_id: str = None,
+    ) -> dict[str, Any]:
         """Handle getting a specific subtask"""
         # Use subtask_id parameter if provided, otherwise extract from subtask_data (backward compatibility)
-        actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
+        actual_subtask_id = subtask_id or (
+            subtask_data and subtask_data.get("subtask_id")
+        )
         if not actual_subtask_id:
-            raise ValueError("subtask_id is required (either as parameter or in subtask_data)")
-        
+            raise ValueError(
+                "subtask_id is required (either as parameter or in subtask_data)"
+            )
+
         # Create use case with context-specific repositories
-        get_subtask_use_case = self._get_subtask_use_case or GetSubtaskUseCase(task_repository, subtask_repository)
-        
+        get_subtask_use_case = self._get_subtask_use_case or GetSubtaskUseCase(
+            task_repository, subtask_repository
+        )
+
         result = get_subtask_use_case.execute(task_id, actual_subtask_id)
         return {
             "success": True,
             "action": "get",
             "message": f"Subtask {actual_subtask_id} retrieved",
             "subtask": result["subtask"],
-            "progress": result["progress"]
+            "progress": result["progress"],
         }
-    
-    def _handle_complete_subtask(self, task_id: str, subtask_data: dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> dict[str, Any]:
+
+    def _handle_complete_subtask(
+        self,
+        task_id: str,
+        subtask_data: dict[str, Any],
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository,
+        subtask_id: str = None,
+    ) -> dict[str, Any]:
         """Handle completing a subtask"""
         # Use subtask_id parameter if provided, otherwise extract from subtask_data (backward compatibility)
-        actual_subtask_id = subtask_id or (subtask_data and subtask_data.get("subtask_id"))
+        actual_subtask_id = subtask_id or (
+            subtask_data and subtask_data.get("subtask_id")
+        )
         if not actual_subtask_id:
-            raise ValueError("subtask_id is required (either as parameter or in subtask_data)")
+            raise ValueError(
+                "subtask_id is required (either as parameter or in subtask_data)"
+            )
 
         # Extract completion parameters from subtask_data if available
-        user_id = subtask_data.get('user_id') if subtask_data else None
-        completion_summary = subtask_data.get('completion_summary') if subtask_data else None
-        insights_found = subtask_data.get('insights_found') if subtask_data else None
-        testing_notes = subtask_data.get('testing_notes') if subtask_data else None
-        impact_on_parent = subtask_data.get('impact_on_parent') if subtask_data else None
+        user_id = subtask_data.get("user_id") if subtask_data else None
+        completion_summary = (
+            subtask_data.get("completion_summary") if subtask_data else None
+        )
+        insights_found = subtask_data.get("insights_found") if subtask_data else None
+        testing_notes = subtask_data.get("testing_notes") if subtask_data else None
+        impact_on_parent = (
+            subtask_data.get("impact_on_parent") if subtask_data else None
+        )
 
         # Create use case with context-specific repositories
-        complete_subtask_use_case = self._complete_subtask_use_case or CompleteSubtaskUseCase(task_repository, subtask_repository)
+        complete_subtask_use_case = (
+            self._complete_subtask_use_case
+            or CompleteSubtaskUseCase(task_repository, subtask_repository)
+        )
 
         result = complete_subtask_use_case.execute(
             task_id,
@@ -696,7 +967,7 @@ class SubtaskApplicationFacade:
             user_id=user_id,
             completion_summary=completion_summary,
             insights_found=insights_found,
-            testing_notes=testing_notes
+            testing_notes=testing_notes,
         )
 
         # 🔄 SYNC: Update parent task's subtask counts in context_data after completion
@@ -711,30 +982,42 @@ class SubtaskApplicationFacade:
                 # Check if we're already in an event loop
                 asyncio.get_running_loop()
                 # We're in an async context - schedule as background task
-                asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+                asyncio.create_task(
+                    sync_service.sync_subtask_counts(task_id, subtask_repository)
+                )
+                logger.info(
+                    f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)"
+                )
             except RuntimeError:
                 # No event loop running - safe to use asyncio.run()
                 try:
-                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask completion")
+                    asyncio.run(
+                        sync_service.sync_subtask_counts(task_id, subtask_repository)
+                    )
+                    logger.info(
+                        f"✅ Synced subtask counts for parent task {task_id} after subtask completion"
+                    )
                 except Exception as inner_error:
                     logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
         except Exception as sync_error:
-            logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
+            logger.warning(
+                f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}"
+            )
 
         response = {
             "success": result["success"],
             "action": "complete",
             "message": f"Subtask {actual_subtask_id} completed",
             "subtask": {"id": actual_subtask_id, "completed": True},
-            "progress": result["progress"]
+            "progress": result["progress"],
         }
 
         # Broadcast subtask completion event via WebSocket (only if successful)
         # CRITICAL: This must fire LAST, after all DB operations, to ensure cclaude-wait receives it
         if result["success"]:
-            logger.info(f"🎯 COMPLETION_BROADCAST: Starting completion broadcast for subtask {actual_subtask_id}")
+            logger.info(
+                f"🎯 COMPLETION_BROADCAST: Starting completion broadcast for subtask {actual_subtask_id}"
+            )
             try:
                 # Get user_id from context derivation
                 context = self._derive_context_from_task(task_id)
@@ -749,30 +1032,46 @@ class SubtaskApplicationFacade:
 
                     # Query ORM model directly for persistence fields that don't exist on domain entity
                     with get_session() as session:
-                        orm_subtask = session.query(SubtaskModel).filter(
-                            SubtaskModel.id == actual_subtask_id
-                        ).first()
+                        orm_subtask = (
+                            session.query(SubtaskModel)
+                            .filter(SubtaskModel.id == actual_subtask_id)
+                            .first()
+                        )
 
                         if orm_subtask:
-                            logger.info(f"🎯 COMPLETION_BROADCAST: ORM model fetched, progress_history has {len(orm_subtask.progress_history)} entries")
+                            logger.info(
+                                f"🎯 COMPLETION_BROADCAST: ORM model fetched, progress_history has {len(orm_subtask.progress_history)} entries"
+                            )
                             enriched_subtask_data = {
                                 "id": actual_subtask_id,
                                 "status": "done",
                                 "title": subtask.title,
                                 "description": subtask.description,
-                                "completion_summary": completion_summary or orm_subtask.completion_summary or "",
+                                "completion_summary": completion_summary
+                                or orm_subtask.completion_summary
+                                or "",
                                 "testing_notes": testing_notes or "",
                                 "progress_percentage": 100,
                                 "assignees": subtask.assignees,
-                                "insights_found": insights_found or orm_subtask.insights_found or [],
+                                "insights_found": insights_found
+                                or orm_subtask.insights_found
+                                or [],
                                 "blockers": orm_subtask.blockers or [],
                                 "progress_history": orm_subtask.progress_history or {},
-                                "progress_count": len(orm_subtask.progress_history) if orm_subtask.progress_history else 0,
-                                "impact_on_parent": impact_on_parent or orm_subtask.impact_on_parent or "",
+                                "progress_count": len(orm_subtask.progress_history)
+                                if orm_subtask.progress_history
+                                else 0,
+                                "impact_on_parent": impact_on_parent
+                                or orm_subtask.impact_on_parent
+                                or "",
                             }
-                            logger.info(f"🎯 COMPLETION_BROADCAST: Enriched data prepared with {len(enriched_subtask_data)} fields, progress_history keys: {list(enriched_subtask_data['progress_history'].keys())}")
+                            logger.info(
+                                f"🎯 COMPLETION_BROADCAST: Enriched data prepared with {len(enriched_subtask_data)} fields, progress_history keys: {list(enriched_subtask_data['progress_history'].keys())}"
+                            )
                         else:
-                            logger.warning(f"🚨 COMPLETION_BROADCAST: ORM model not found for {actual_subtask_id}, using domain entity only")
+                            logger.warning(
+                                f"🚨 COMPLETION_BROADCAST: ORM model not found for {actual_subtask_id}, using domain entity only"
+                            )
                             enriched_subtask_data = {
                                 "id": actual_subtask_id,
                                 "status": "done",
@@ -789,7 +1088,9 @@ class SubtaskApplicationFacade:
                                 "impact_on_parent": impact_on_parent or "",
                             }
                 except Exception as fetch_error:
-                    logger.warning(f"Could not fetch full subtask data, using minimal: {fetch_error}")
+                    logger.warning(
+                        f"Could not fetch full subtask data, using minimal: {fetch_error}"
+                    )
                     enriched_subtask_data = {
                         "id": actual_subtask_id,
                         "status": "done",
@@ -799,7 +1100,9 @@ class SubtaskApplicationFacade:
                         "progress_percentage": 100,
                     }
 
-                logger.info("🎯 COMPLETION_BROADCAST: About to call WebSocketNotificationService with event_type='completed'")
+                logger.info(
+                    "🎯 COMPLETION_BROADCAST: About to call WebSocketNotificationService with event_type='completed'"
+                )
 
                 # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
                 from ...domain.websocket_protocol import SubtaskCompletePayload
@@ -807,19 +1110,31 @@ class SubtaskApplicationFacade:
                 try:
                     payload = SubtaskCompletePayload(
                         id=enriched_subtask_data.get("id") or actual_subtask_id,
-                        title=enriched_subtask_data.get("title", f"Subtask {actual_subtask_id[:8]}"),
-                        status='done',
+                        title=enriched_subtask_data.get(
+                            "title", f"Subtask {actual_subtask_id[:8]}"
+                        ),
+                        status="done",
                         task_id=task_id,
-                        completion_summary=enriched_subtask_data.get("completion_summary"),
+                        completion_summary=enriched_subtask_data.get(
+                            "completion_summary"
+                        ),
                         progress_percentage=100,
-                        created_at=enriched_subtask_data.get("created_at"),  # ✅ FIX: Include created_at for frontend validation
-                        updated_at=enriched_subtask_data.get("updated_at"),  # ✅ FIX: Include updated_at for frontend validation
-                        completed_at=enriched_subtask_data.get("completed_at")
+                        created_at=enriched_subtask_data.get(
+                            "created_at"
+                        ),  # ✅ FIX: Include created_at for frontend validation
+                        updated_at=enriched_subtask_data.get(
+                            "updated_at"
+                        ),  # ✅ FIX: Include updated_at for frontend validation
+                        completed_at=enriched_subtask_data.get("completed_at"),
                     )
                     validated_subtask_data = payload.model_dump()
-                    logger.info(f"✅ Subtask complete payload validated for {actual_subtask_id}")
+                    logger.info(
+                        f"✅ Subtask complete payload validated for {actual_subtask_id}"
+                    )
                 except Exception as validation_error:
-                    logger.error(f"❌ Subtask complete payload validation failed: {validation_error}")
+                    logger.error(
+                        f"❌ Subtask complete payload validation failed: {validation_error}"
+                    )
                     validated_subtask_data = enriched_subtask_data
 
                 WebSocketNotificationService.sync_broadcast_subtask_event(
@@ -827,9 +1142,11 @@ class SubtaskApplicationFacade:
                     subtask_id=actual_subtask_id,
                     task_id=task_id,
                     user_id=user_id,
-                    subtask_data=validated_subtask_data
+                    subtask_data=validated_subtask_data,
                 )
-                logger.info("🎯 COMPLETION_BROADCAST: Successfully called WebSocketNotificationService.sync_broadcast_subtask_event with event_type='completed'")
+                logger.info(
+                    "🎯 COMPLETION_BROADCAST: Successfully called WebSocketNotificationService.sync_broadcast_subtask_event with event_type='completed'"
+                )
             except Exception as e:
                 logger.error(f"🚨 COMPLETION_BROADCAST FAILED: {e}", exc_info=True)
 
@@ -844,24 +1161,41 @@ class SubtaskApplicationFacade:
                     # Check if we're already in an event loop
                     asyncio.get_running_loop()
                     # We're in an async context - schedule as background task
-                    asyncio.create_task(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                    logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+                    asyncio.create_task(
+                        sync_service.sync_subtask_counts(task_id, subtask_repository)
+                    )
+                    logger.info(
+                        f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)"
+                    )
                 except RuntimeError:
                     # No event loop running - safe to use asyncio.run()
                     try:
-                        asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
-                        logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask completion")
+                        asyncio.run(
+                            sync_service.sync_subtask_counts(
+                                task_id, subtask_repository
+                            )
+                        )
+                        logger.info(
+                            f"✅ Synced subtask counts for parent task {task_id} after subtask completion"
+                        )
                     except Exception as inner_error:
-                        logger.warning(f"⚠️ Failed to sync subtask counts: {inner_error}")
+                        logger.warning(
+                            f"⚠️ Failed to sync subtask counts: {inner_error}"
+                        )
             except Exception as sync_error:
-                logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
+                logger.warning(
+                    f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}"
+                )
 
         return response
-    
-    def _create_inheritance_service(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository):
+
+    def _create_inheritance_service(
+        self, task_repository: TaskRepository, subtask_repository: SubtaskRepository
+    ):
         """Create agent inheritance_service for operations."""
         try:
             from ..services.agent_inheritance_service import AgentInheritanceService
+
             return AgentInheritanceService(task_repository, subtask_repository)
         except Exception as e:
             logger.error(f"Failed to create agent inheritance service: {e}")
@@ -878,7 +1212,7 @@ class SubtaskApplicationFacade:
         assignees: str = None,
         priority: str = "medium",
         user_id: str = None,
-        **kwargs
+        **kwargs,
     ) -> dict[str, Any]:
         """Convenience method for creating a subtask with dual signature support.
 
@@ -905,18 +1239,20 @@ class SubtaskApplicationFacade:
         # Pattern 1: CreateSubtaskRequest object passed as positional
         if task_id_or_request is not None:
             # Check if it's a CreateSubtaskRequest object
-            if hasattr(task_id_or_request, 'task_id') and hasattr(task_id_or_request, 'title'):
+            if hasattr(task_id_or_request, "task_id") and hasattr(
+                task_id_or_request, "title"
+            ):
                 request = task_id_or_request
                 task_id = request.task_id
                 subtask_data = {
                     "title": request.title,
-                    "description": getattr(request, 'description', None),
-                    "assignees": getattr(request, 'assignees', None),
-                    "priority": getattr(request, 'priority', 'medium'),
-                    "status": getattr(request, 'status', None),
+                    "description": getattr(request, "description", None),
+                    "assignees": getattr(request, "assignees", None),
+                    "priority": getattr(request, "priority", "medium"),
+                    "status": getattr(request, "status", None),
                 }
                 # Add any other fields from request
-                for field in ['progress_notes', 'progress_percentage', 'blockers']:
+                for field in ["progress_notes", "progress_percentage", "blockers"]:
                     if hasattr(request, field):
                         val = getattr(request, field)
                         if val is not None:
@@ -925,18 +1261,22 @@ class SubtaskApplicationFacade:
                 # Legacy: If first param is a string, treat as task_id
                 task_id = str(task_id_or_request)
                 if title is None:
-                    raise TypeError("create_subtask() missing required argument: 'title'")
+                    raise TypeError(
+                        "create_subtask() missing required argument: 'title'"
+                    )
                 subtask_data = {
                     "title": title,
                     "description": description,
                     "assignees": assignees,
                     "priority": priority,
-                    **kwargs
+                    **kwargs,
                 }
         # Pattern 2: Keyword arguments (tests use this pattern)
         else:
             if task_id is None:
-                raise TypeError("create_subtask() missing required argument: 'task_id' (use task_id=... or pass CreateSubtaskRequest)")
+                raise TypeError(
+                    "create_subtask() missing required argument: 'task_id' (use task_id=... or pass CreateSubtaskRequest)"
+                )
             if title is None:
                 raise TypeError("create_subtask() missing required argument: 'title'")
             subtask_data = {
@@ -944,17 +1284,21 @@ class SubtaskApplicationFacade:
                 "description": description,
                 "assignees": assignees,
                 "priority": priority,
-                **kwargs
+                **kwargs,
             }
 
         return self.handle_manage_subtask(
-            action="create",
-            task_id=task_id,
-            subtask_data=subtask_data
+            action="create", task_id=task_id, subtask_data=subtask_data
         )
 
-    def complete_subtask(self, task_id: str = None, subtask_id: str = None, completion_summary: str = None,
-                         testing_notes: str = None, **kwargs) -> dict[str, Any]:
+    def complete_subtask(
+        self,
+        task_id: str = None,
+        subtask_id: str = None,
+        completion_summary: str = None,
+        testing_notes: str = None,
+        **kwargs,
+    ) -> dict[str, Any]:
         """Convenience method for completing a subtask.
 
         Supports two calling styles:
@@ -968,7 +1312,20 @@ class SubtaskApplicationFacade:
             subtask_id = data.get("subtask_id")
             completion_summary = data.get("completion_summary")
             testing_notes = data.get("testing_notes")
-            kwargs.update({k: v for k, v in data.items() if k not in ["task_id", "subtask_id", "completion_summary", "testing_notes", "action"]})
+            kwargs.update(
+                {
+                    k: v
+                    for k, v in data.items()
+                    if k
+                    not in [
+                        "task_id",
+                        "subtask_id",
+                        "completion_summary",
+                        "testing_notes",
+                        "action",
+                    ]
+                }
+            )
 
         if not task_id or not subtask_id:
             raise ValueError("task_id and subtask_id are required")
@@ -976,16 +1333,18 @@ class SubtaskApplicationFacade:
         subtask_data = {
             "completion_summary": completion_summary,
             "testing_notes": testing_notes,
-            **kwargs
+            **kwargs,
         }
         return self.handle_manage_subtask(
             action="complete",
             task_id=task_id,
             subtask_id=subtask_id,
-            subtask_data=subtask_data
+            subtask_data=subtask_data,
         )
 
-    def delete_subtask(self, task_id: str = None, subtask_id: str = None, **kwargs) -> dict[str, Any]:
+    def delete_subtask(
+        self, task_id: str = None, subtask_id: str = None, **kwargs
+    ) -> dict[str, Any]:
         """Convenience method for deleting a subtask.
 
         Supports two calling styles:
@@ -997,7 +1356,13 @@ class SubtaskApplicationFacade:
             data = task_id
             task_id = data.get("task_id")
             subtask_id = data.get("subtask_id")
-            kwargs.update({k: v for k, v in data.items() if k not in ["task_id", "subtask_id", "action"]})
+            kwargs.update(
+                {
+                    k: v
+                    for k, v in data.items()
+                    if k not in ["task_id", "subtask_id", "action"]
+                }
+            )
 
         if not task_id or not subtask_id:
             raise ValueError("task_id and subtask_id are required")
@@ -1007,5 +1372,5 @@ class SubtaskApplicationFacade:
             action="delete",
             task_id=task_id,
             subtask_id=subtask_id,
-            subtask_data=subtask_data
+            subtask_data=subtask_data,
         )

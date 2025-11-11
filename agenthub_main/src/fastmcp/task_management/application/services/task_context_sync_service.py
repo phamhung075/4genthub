@@ -20,20 +20,29 @@ class TaskContextSyncService:
     """Application-level service that ensures a freshly-created or updated Task
     has an up-to-date Context and returns the complete TaskResponse (including
     context data).
-    
+
     This keeps infrastructure-heavy orchestration out of facades / use-cases and
     out of the Domain layer while remaining easily testable.
     """
 
-    def __init__(self, task_repository: TaskRepository, context_service: Any | None = None, user_id: str | None = None):
+    def __init__(
+        self,
+        task_repository: TaskRepository,
+        context_service: Any | None = None,
+        user_id: str | None = None,
+    ):
         self._user_id = user_id  # Store user context
         self._task_repository = task_repository
         # Initialize hierarchical context service using FacadeService
-        self._hierarchical_context_service = FacadeService.get_unified_context_facade(user_id=user_id)
+        self._hierarchical_context_service = FacadeService.get_unified_context_facade(
+            user_id=user_id
+        )
 
         # Get git_branch_repository for dependency injection
         git_branch_repo = self._get_git_branch_repository()
-        self._get_task_use_case = GetTaskUseCase(task_repository, context_service, git_branch_repo)
+        self._get_task_use_case = GetTaskUseCase(
+            task_repository, context_service, git_branch_repo
+        )
 
     def _get_git_branch_repository(self):
         """Get git_branch_repository from RepositoryProviderService - single source of truth.
@@ -54,7 +63,9 @@ class TaskContextSyncService:
             git_branch_repo = provider.get_git_branch_repository()
 
             if git_branch_repo is None:
-                raise RepositoryProviderError("git_branch_repository is None - cannot lookup project_id")
+                raise RepositoryProviderError(
+                    "git_branch_repository is None - cannot lookup project_id"
+                )
 
             return git_branch_repo
 
@@ -65,21 +76,24 @@ class TaskContextSyncService:
             # Log as ERROR (not warning) with full stack trace
             logger.error(
                 f"CRITICAL: Failed to get git_branch_repository - cannot fetch project_id: {e}",
-                exc_info=True  # Include stack trace for debugging
+                exc_info=True,  # Include stack trace for debugging
             )
             # Fail fast - raise custom exception
             from ..exceptions import RepositoryProviderError
+
             raise RepositoryProviderError(
                 f"Cannot fetch project_id without git_branch_repository: {e}"
             ) from e
 
     def with_user(self, user_id: str) -> TaskContextSyncService:
         """Create a new service instance scoped to a specific user."""
-        return TaskContextSyncService(self._task_repository, self._hierarchical_context_service, user_id)
+        return TaskContextSyncService(
+            self._task_repository, self._hierarchical_context_service, user_id
+        )
 
     def _get_user_scoped_repository(self, repository):
         """Get user-scoped repository if user_id is available."""
-        if self._user_id and hasattr(repository, 'with_user'):
+        if self._user_id and hasattr(repository, "with_user"):
             return repository.with_user(self._user_id)
         return repository
 
@@ -105,9 +119,9 @@ class TaskContextSyncService:
             if user_id is None:
                 # NO FALLBACKS ALLOWED - user authentication is required
                 raise UserAuthenticationRequiredError("Task context sync")
-            
+
             user_id = validate_user_id(user_id, "Task context sync")
-            
+
             # ------------------------------------------------------------------
             # 1. Reload domain task and create/update its context
             # ------------------------------------------------------------------
@@ -115,64 +129,78 @@ class TaskContextSyncService:
             repo = self._get_user_scoped_repository(self._task_repository)
             domain_task = repo.find_by_id(task_id_obj)
             if domain_task is None:
-                logger.warning("[TaskContextSyncService] Task %s not found while syncing context", task_id)
+                logger.warning(
+                    "[TaskContextSyncService] Task %s not found while syncing context",
+                    task_id,
+                )
                 return None
 
             # Create or update task context in hierarchical system
-            task_id_str = str(domain_task.id.value if hasattr(domain_task.id, 'value') else domain_task.id)
-            
+            task_id_str = str(
+                domain_task.id.value
+                if hasattr(domain_task.id, "value")
+                else domain_task.id
+            )
+
             # If project_id not provided, try to get it from the task's git_branch
             # Note: Current repository structure requires project_id to find git branch
             # This is a circular dependency that cannot be resolved without refactoring
-            if not project_id and hasattr(domain_task, 'git_branch_id'):
+            if not project_id and hasattr(domain_task, "git_branch_id"):
                 # Cannot retrieve project_id from branch without knowing project_id first
-                logger.debug(f"Cannot retrieve project_id from branch {domain_task.git_branch_id} without knowing project_id")
+                logger.debug(
+                    f"Cannot retrieve project_id from branch {domain_task.git_branch_id} without knowing project_id"
+                )
                 # Use domain_task.project_id if available, otherwise use default
-                project_id = getattr(domain_task, 'project_id', None)
-            
+                project_id = getattr(domain_task, "project_id", None)
+
             # Ensure we have a project_id
             if not project_id:
-                raise ValueError("project_id is required for context sync (no fallback allowed for DDD compliance)")
-            
+                raise ValueError(
+                    "project_id is required for context sync (no fallback allowed for DDD compliance)"
+                )
+
             # Try to get existing context first
             context_result = self._hierarchical_context_service.get_context(
-                level="task",
-                context_id=task_id_str
+                level="task", context_id=task_id_str
             )
-            
+
             # Prepare task data
             task_data = {
                 "task_data": {
                     "title": domain_task.title,
                     "description": domain_task.description,
-                    "status": domain_task.status.value if hasattr(domain_task.status, 'value') else str(domain_task.status),
-                    "priority": domain_task.priority.value if hasattr(domain_task.priority, 'value') else str(domain_task.priority),
+                    "status": domain_task.status.value
+                    if hasattr(domain_task.status, "value")
+                    else str(domain_task.status),
+                    "priority": domain_task.priority.value
+                    if hasattr(domain_task.priority, "value")
+                    else str(domain_task.priority),
                     "assignees": domain_task.assignees,
                     "labels": domain_task.labels,
                     "estimated_effort": domain_task.estimated_effort,
-                    "due_date": domain_task.due_date if domain_task.due_date else None
+                    "due_date": domain_task.due_date if domain_task.due_date else None,
                 },
                 # Add parent references for proper 4-tier hierarchy
                 # Tasks belong to branches in the 4-tier system
                 "parent_branch_id": domain_task.git_branch_id,
-                "parent_branch_context_id": domain_task.git_branch_id
+                "parent_branch_context_id": domain_task.git_branch_id,
             }
-            
+
             if not context_result:
                 # Create new context
-                logger.info("[TaskContextSyncService] Creating new context for task %s with project_id=%s", task_id_str, project_id)
+                logger.info(
+                    "[TaskContextSyncService] Creating new context for task %s with project_id=%s",
+                    task_id_str,
+                    project_id,
+                )
                 logger.debug("[TaskContextSyncService] Context data: %s", task_data)
                 self._hierarchical_context_service.create_context(
-                    level="task",
-                    context_id=task_id_str,
-                    data=task_data
+                    level="task", context_id=task_id_str, data=task_data
                 )
             else:
                 # Update existing context
                 self._hierarchical_context_service.update_context(
-                    level="task",
-                    context_id=task_id_str,
-                    data=task_data
+                    level="task", context_id=task_id_str, data=task_data
                 )
 
             # ------------------------------------------------------------------
@@ -192,7 +220,12 @@ class TaskContextSyncService:
             # Re-raise validation errors - they should not be swallowed
             raise
         except Exception as exc:
-            logger.error("[TaskContextSyncService] Failed to sync context for task %s: %s", task_id, exc, exc_info=True)
+            logger.error(
+                "[TaskContextSyncService] Failed to sync context for task %s: %s",
+                task_id,
+                exc,
+                exc_info=True,
+            )
             return None
 
     # ------------------------------------------------------------------
@@ -220,26 +253,31 @@ class TaskContextSyncService:
 
             # Calculate counts and progress
             total_count = len(subtasks)
-            completed_count = sum(1 for st in subtasks if str(st.status) in ['done', 'completed'])
-            progress_percentage = (completed_count / total_count * 100.0) if total_count > 0 else 0.0
+            completed_count = sum(
+                1 for st in subtasks if str(st.status) in ["done", "completed"]
+            )
+            progress_percentage = (
+                (completed_count / total_count * 100.0) if total_count > 0 else 0.0
+            )
 
             # Build subtask items array
             subtask_items = []
             for st in subtasks:
-                subtask_items.append({
-                    "id": str(st.id.value if hasattr(st.id, 'value') else st.id),
-                    "title": st.title,
-                    "description": st.description or "",
-                    "status": str(st.status),
-                    "assignees": st.assignees if hasattr(st, 'assignees') else [],
-                    "completed": str(st.status) in ['done', 'completed'],
-                    "progress_notes": getattr(st, 'progress_notes', '')
-                })
+                subtask_items.append(
+                    {
+                        "id": str(st.id.value if hasattr(st.id, "value") else st.id),
+                        "title": st.title,
+                        "description": st.description or "",
+                        "status": str(st.status),
+                        "assignees": st.assignees if hasattr(st, "assignees") else [],
+                        "completed": str(st.status) in ["done", "completed"],
+                        "progress_notes": getattr(st, "progress_notes", ""),
+                    }
+                )
 
             # Get current context
             context_result = self._hierarchical_context_service.get_context(
-                level="task",
-                context_id=task_id
+                level="task", context_id=task_id
             )
 
             if context_result and context_result.get("success"):
@@ -249,25 +287,28 @@ class TaskContextSyncService:
                     "items": subtask_items,
                     "total_count": total_count,
                     "completed_count": completed_count,
-                    "progress_percentage": progress_percentage
+                    "progress_percentage": progress_percentage,
                 }
 
                 # Update context
                 self._hierarchical_context_service.update_context(
-                    level="task",
-                    context_id=task_id,
-                    data=context_data
+                    level="task", context_id=task_id, data=context_data
                 )
 
                 logger.info(
                     "[TaskContextSyncService] Synced subtask counts for task %s: %d total, %d completed (%.1f%%)",
-                    task_id, total_count, completed_count, progress_percentage
+                    task_id,
+                    total_count,
+                    completed_count,
+                    progress_percentage,
                 )
 
         except Exception as exc:
             logger.error(
                 "[TaskContextSyncService] Failed to sync subtask counts for task %s: %s",
-                task_id, exc, exc_info=True
+                task_id,
+                exc,
+                exc_info=True,
             )
 
     async def sync_task_status(self, task_id: str, new_status: str) -> None:
@@ -280,8 +321,7 @@ class TaskContextSyncService:
         try:
             # Get current context
             context_result = self._hierarchical_context_service.get_context(
-                level="task",
-                context_id=task_id
+                level="task", context_id=task_id
             )
 
             if context_result and context_result.get("success"):
@@ -294,20 +334,21 @@ class TaskContextSyncService:
 
                 # Update context
                 self._hierarchical_context_service.update_context(
-                    level="task",
-                    context_id=task_id,
-                    data=context_data
+                    level="task", context_id=task_id, data=context_data
                 )
 
                 logger.info(
                     "[TaskContextSyncService] Synced status for task %s: %s",
-                    task_id, new_status
+                    task_id,
+                    new_status,
                 )
 
         except Exception as exc:
             logger.error(
                 "[TaskContextSyncService] Failed to sync status for task %s: %s",
-                task_id, exc, exc_info=True
+                task_id,
+                exc,
+                exc_info=True,
             )
 
     async def sync_task_metadata(self, task_id: str, task) -> None:
@@ -326,8 +367,7 @@ class TaskContextSyncService:
         try:
             # Get current context
             context_result = self._hierarchical_context_service.get_context(
-                level="task",
-                context_id=task_id
+                level="task", context_id=task_id
             )
 
             if context_result and context_result.get("success"):
@@ -344,40 +384,50 @@ class TaskContextSyncService:
                 # Sync metadata fields
                 context_data["metadata"]["status"] = str(task.status)
                 context_data["metadata"]["priority"] = str(task.priority)
-                context_data["metadata"]["labels"] = task.labels if hasattr(task, 'labels') else []
+                context_data["metadata"]["labels"] = (
+                    task.labels if hasattr(task, "labels") else []
+                )
 
                 # Sync assignees with @ prefix
-                assignees = task.assignees if hasattr(task, 'assignees') else []
+                assignees = task.assignees if hasattr(task, "assignees") else []
                 context_data["metadata"]["assignees"] = [
-                    f"@{a}" if not a.startswith('@') else a
-                    for a in assignees
+                    f"@{a}" if not a.startswith("@") else a for a in assignees
                 ]
 
                 # Sync timestamps
-                if hasattr(task, 'created_at') and task.created_at:
-                    context_data["metadata"]["created_at"] = task.created_at.isoformat() if hasattr(task.created_at, 'isoformat') else str(task.created_at)
+                if hasattr(task, "created_at") and task.created_at:
+                    context_data["metadata"]["created_at"] = (
+                        task.created_at.isoformat()
+                        if hasattr(task.created_at, "isoformat")
+                        else str(task.created_at)
+                    )
 
-                if hasattr(task, 'updated_at') and task.updated_at:
-                    context_data["metadata"]["updated_at"] = task.updated_at.isoformat() if hasattr(task.updated_at, 'isoformat') else str(task.updated_at)
+                if hasattr(task, "updated_at") and task.updated_at:
+                    context_data["metadata"]["updated_at"] = (
+                        task.updated_at.isoformat()
+                        if hasattr(task.updated_at, "isoformat")
+                        else str(task.updated_at)
+                    )
 
                 # Sync estimated effort bidirectionally
-                if hasattr(task, 'estimated_effort') and task.estimated_effort:
-                    context_data["objective"]["estimated_effort"] = task.estimated_effort
+                if hasattr(task, "estimated_effort") and task.estimated_effort:
+                    context_data["objective"]["estimated_effort"] = (
+                        task.estimated_effort
+                    )
 
                 # Update context
                 self._hierarchical_context_service.update_context(
-                    level="task",
-                    context_id=task_id,
-                    data=context_data
+                    level="task", context_id=task_id, data=context_data
                 )
 
                 logger.info(
-                    "[TaskContextSyncService] Synced metadata for task %s",
-                    task_id
+                    "[TaskContextSyncService] Synced metadata for task %s", task_id
                 )
 
         except Exception as exc:
             logger.error(
                 "[TaskContextSyncService] Failed to sync metadata for task %s: %s",
-                task_id, exc, exc_info=True
-            ) 
+                task_id,
+                exc,
+                exc_info=True,
+            )

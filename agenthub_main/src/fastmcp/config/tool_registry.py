@@ -80,7 +80,7 @@ class ToolRegistry:
             "skipped_tools": 0,
             "disabled_tools": 0,
             "dependency_failures": 0,
-            "results": {}
+            "results": {},
         }
 
         should_log = self.config_loader.should_log_registration()
@@ -92,7 +92,7 @@ class ToolRegistry:
                 "enabled": [],
                 "disabled": [],
                 "skipped": [],
-                "dependency_failures": []
+                "dependency_failures": [],
             }
 
             for tool_name, tool_func in tools.items():
@@ -141,7 +141,9 @@ class ToolRegistry:
 
         return mounting_stats
 
-    def _mount_tool_to_server(self, server: FastMCP, tool_name: str, tool_func: Callable) -> None:
+    def _mount_tool_to_server(
+        self, server: FastMCP, tool_name: str, tool_func: Callable
+    ) -> None:
         """
         Mount a single tool to the server.
 
@@ -159,7 +161,9 @@ class ToolRegistry:
         server.tool(description=description)(tool_func)
 
         # The tool is now registered with the server through the decorator
-        logger.debug(f"Successfully mounted tool: {tool_name} with description: {description}")
+        logger.debug(
+            f"Successfully mounted tool: {tool_name} with description: {description}"
+        )
 
     def _log_mounting_summary(self, stats: dict[str, Any]) -> None:
         """Log a summary of tool mounting results."""
@@ -173,17 +177,20 @@ class ToolRegistry:
 
         # Log details by group if there were any issues
         for group_name, group_results in stats["results"].items():
-            if (group_results["disabled"] or
-                group_results["skipped"] or
-                group_results["dependency_failures"]):
-
+            if (
+                group_results["disabled"]
+                or group_results["skipped"]
+                or group_results["dependency_failures"]
+            ):
                 logger.info(f"Group '{group_name}':")
                 if group_results["enabled"]:
                     logger.info(f"  Enabled: {', '.join(group_results['enabled'])}")
                 if group_results["disabled"]:
                     logger.info(f"  Disabled: {', '.join(group_results['disabled'])}")
                 if group_results["dependency_failures"]:
-                    logger.info(f"  Dep failures: {', '.join(group_results['dependency_failures'])}")
+                    logger.info(
+                        f"  Dep failures: {', '.join(group_results['dependency_failures'])}"
+                    )
                 if group_results["skipped"]:
                     logger.info(f"  Skipped: {', '.join(group_results['skipped'])}")
 
@@ -201,7 +208,7 @@ class ToolRegistry:
             summary[group_name] = {
                 "enabled_tools": enabled_tools,
                 "total_tools": len(self.registered_tools[group_name]),
-                "enabled_count": len(enabled_tools)
+                "enabled_count": len(enabled_tools),
             }
 
         return summary
@@ -238,5 +245,5 @@ class ToolRegistry:
             "dependencies": tool_config.get("dependencies", []),
             "description": tool_config.get("description", ""),
             "deprecated": tool_config.get("deprecated", False),
-            "deprecation_message": tool_config.get("deprecation_message", "")
+            "deprecation_message": tool_config.get("deprecation_message", ""),
         }

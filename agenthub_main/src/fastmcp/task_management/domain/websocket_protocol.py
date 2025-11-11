@@ -45,8 +45,10 @@ from pydantic import BaseModel, Field, field_validator
 # PROJECT PAYLOADS
 # -----------------------------------------------------------------------------
 
+
 class ProjectCreatePayload(BaseModel):
     """Project creation WebSocket payload"""
+
     id: str
     name: str
     description: str | None = None
@@ -56,6 +58,7 @@ class ProjectCreatePayload(BaseModel):
 
 class ProjectUpdatePayload(BaseModel):
     """Project update WebSocket payload"""
+
     id: str
     name: str
     description: str | None = None
@@ -70,17 +73,18 @@ class ProjectDeletePayload(BaseModel):
     - id: For frontend cache operations
     - name: For toast notification display
     """
+
     id: str = Field(..., description="Project UUID - REQUIRED for frontend handler")
     name: str = Field(..., description="Project name - REQUIRED for toast notification")
 
-    @field_validator('id')
+    @field_validator("id")
     @classmethod
     def validate_id(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("Project ID cannot be empty")
         return v
 
-    @field_validator('name')
+    @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
         if not v or not v.strip():
@@ -92,8 +96,10 @@ class ProjectDeletePayload(BaseModel):
 # BRANCH PAYLOADS
 # -----------------------------------------------------------------------------
 
+
 class BranchCreatePayload(BaseModel):
     """Branch creation WebSocket payload"""
+
     id: str
     name: str
     git_branch_name: str
@@ -105,6 +111,7 @@ class BranchCreatePayload(BaseModel):
 
 class BranchUpdatePayload(BaseModel):
     """Branch update WebSocket payload"""
+
     id: str
     name: str
     git_branch_name: str
@@ -123,18 +130,21 @@ class BranchDeletePayload(BaseModel):
     - name: For toast notification display
     - project_id: For cache invalidation of parent project
     """
+
     id: str = Field(..., description="Branch UUID - REQUIRED for frontend handler")
     name: str = Field(..., description="Branch name - REQUIRED for toast notification")
-    project_id: str = Field(..., description="Parent project UUID - REQUIRED for cache invalidation")
+    project_id: str = Field(
+        ..., description="Parent project UUID - REQUIRED for cache invalidation"
+    )
 
-    @field_validator('id', 'project_id')
+    @field_validator("id", "project_id")
     @classmethod
     def validate_id(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("ID cannot be empty")
         return v
 
-    @field_validator('name')
+    @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
         if not v or not v.strip():
@@ -146,8 +156,10 @@ class BranchDeletePayload(BaseModel):
 # TASK PAYLOADS
 # -----------------------------------------------------------------------------
 
+
 class TaskCreatePayload(BaseModel):
     """Task creation WebSocket payload"""
+
     id: str
     title: str
     description: str | None = None
@@ -161,6 +173,7 @@ class TaskCreatePayload(BaseModel):
 
 class TaskUpdatePayload(BaseModel):
     """Task update WebSocket payload"""
+
     id: str
     title: str
     description: str | None = None
@@ -181,18 +194,21 @@ class TaskDeletePayload(BaseModel):
     - title: For toast notification display
     - git_branch_id: For cache invalidation of parent branch (optional but recommended)
     """
+
     id: str = Field(..., description="Task UUID - REQUIRED for frontend handler")
     title: str = Field(..., description="Task title - REQUIRED for toast notification")
-    git_branch_id: str | None = Field(None, description="Parent branch UUID - for cache invalidation")
+    git_branch_id: str | None = Field(
+        None, description="Parent branch UUID - for cache invalidation"
+    )
 
-    @field_validator('id')
+    @field_validator("id")
     @classmethod
     def validate_id(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("Task ID cannot be empty")
         return v
 
-    @field_validator('title')
+    @field_validator("title")
     @classmethod
     def validate_title(cls, v: str) -> str:
         if not v or not v.strip():
@@ -202,9 +218,10 @@ class TaskDeletePayload(BaseModel):
 
 class TaskCompletePayload(BaseModel):
     """Task completion WebSocket payload"""
+
     id: str
     title: str
-    status: Literal['done'] = 'done'
+    status: Literal["done"] = "done"
     completion_summary: str | None = None
     testing_notes: str | None = None
     completed_at: str | None = None
@@ -214,8 +231,10 @@ class TaskCompletePayload(BaseModel):
 # SUBTASK PAYLOADS
 # -----------------------------------------------------------------------------
 
+
 class SubtaskCreatePayload(BaseModel):
     """Subtask creation WebSocket payload"""
+
     id: str
     title: str
     description: str | None = None
@@ -223,18 +242,23 @@ class SubtaskCreatePayload(BaseModel):
     task_id: str
     progress_percentage: int | None = None
     created_at: str | None = None
-    updated_at: str | None = None  # ✅ FIX: Added to match frontend validator requirements
+    updated_at: str | None = (
+        None  # ✅ FIX: Added to match frontend validator requirements
+    )
 
 
 class SubtaskUpdatePayload(BaseModel):
     """Subtask update WebSocket payload"""
+
     id: str
     title: str
     description: str | None = None
     status: str
     task_id: str
     progress_percentage: int | None = None
-    created_at: str | None = None  # ✅ FIX: Added to match frontend validator requirements
+    created_at: str | None = (
+        None  # ✅ FIX: Added to match frontend validator requirements
+    )
     updated_at: str | None = None
 
 
@@ -247,11 +271,16 @@ class SubtaskDeletePayload(BaseModel):
     - task_id: For cache invalidation of parent task
     - title: For toast notification (optional but recommended)
     """
-    id: str = Field(..., description="Subtask UUID - REQUIRED for frontend handler")
-    task_id: str = Field(..., description="Parent task UUID - REQUIRED for cache invalidation")
-    title: str | None = Field(None, description="Subtask title - for toast notification")
 
-    @field_validator('id', 'task_id')
+    id: str = Field(..., description="Subtask UUID - REQUIRED for frontend handler")
+    task_id: str = Field(
+        ..., description="Parent task UUID - REQUIRED for cache invalidation"
+    )
+    title: str | None = Field(
+        None, description="Subtask title - for toast notification"
+    )
+
+    @field_validator("id", "task_id")
     @classmethod
     def validate_id(cls, v: str) -> str:
         if not v or not v.strip():
@@ -261,14 +290,19 @@ class SubtaskDeletePayload(BaseModel):
 
 class SubtaskCompletePayload(BaseModel):
     """Subtask completion WebSocket payload"""
+
     id: str
     title: str
-    status: Literal['done'] = 'done'
+    status: Literal["done"] = "done"
     task_id: str
     completion_summary: str | None = None
     progress_percentage: Literal[100] = 100
-    created_at: str | None = None  # ✅ FIX: Added to match frontend validator requirements
-    updated_at: str | None = None  # ✅ FIX: Added to match frontend validator requirements
+    created_at: str | None = (
+        None  # ✅ FIX: Added to match frontend validator requirements
+    )
+    updated_at: str | None = (
+        None  # ✅ FIX: Added to match frontend validator requirements
+    )
     completed_at: str | None = None
 
 
@@ -276,9 +310,11 @@ class SubtaskCompletePayload(BaseModel):
 # WEBSOCKET MESSAGE STRUCTURE (v2.0)
 # =============================================================================
 
+
 class WSMetadata(BaseModel):
     """WebSocket metadata - contextual information"""
-    source: Literal['mcp-ai', 'user', 'system']
+
+    source: Literal["mcp-ai", "user", "system"]
     userId: str | None = None
     sessionId: str | None = None
     correlationId: str | None = None
@@ -302,34 +338,43 @@ class WSMetadata(BaseModel):
     timestamp: str | None = None
 
     class Config:
-        extra = 'allow'  # Allow additional metadata fields
+        extra = "allow"  # Allow additional metadata fields
 
 
 class WSPayloadData(BaseModel):
     """WebSocket payload data structure"""
-    primary: dict[str, Any] = Field(..., description="Main entity data - MUST include 'id' field")
-    cascade: dict[str, list[Any]] | None = Field(None, description="Related entities updated")
 
-    @field_validator('primary')
+    primary: dict[str, Any] = Field(
+        ..., description="Main entity data - MUST include 'id' field"
+    )
+    cascade: dict[str, list[Any]] | None = Field(
+        None, description="Related entities updated"
+    )
+
+    @field_validator("primary")
     @classmethod
     def validate_primary_has_id(cls, v: dict[str, Any]) -> dict[str, Any]:
-        if 'id' not in v:
+        if "id" not in v:
             raise ValueError("Payload primary data MUST include 'id' field")
         return v
 
 
 class WSPayload(BaseModel):
     """WebSocket payload structure"""
-    entity: Literal['project', 'branch', 'task', 'subtask', 'context', 'agent']
-    action: Literal['created', 'updated', 'deleted', 'completed', 'assigned', 'unassigned']
+
+    entity: Literal["project", "branch", "task", "subtask", "context", "agent"]
+    action: Literal[
+        "created", "updated", "deleted", "completed", "assigned", "unassigned"
+    ]
     data: WSPayloadData
 
 
 class WSMessage(BaseModel):
     """Complete WebSocket message (v2.0 protocol)"""
+
     id: str = Field(default_factory=lambda: f"ws-{uuid.uuid4().hex[:12]}")
-    version: Literal['2.0'] = '2.0'
-    type: Literal['update', 'bulk', 'sync', 'heartbeat', 'error']
+    version: Literal["2.0"] = "2.0"
+    type: Literal["update", "bulk", "sync", "heartbeat", "error"]
     timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     sequence: int = Field(default_factory=lambda: 0)
     payload: WSPayload
@@ -340,11 +385,15 @@ class WSMessage(BaseModel):
 # MESSAGE FACTORY FUNCTIONS
 # =============================================================================
 
+
 def create_delete_message(
-    entity: Literal['project', 'branch', 'task', 'subtask'],
-    payload: ProjectDeletePayload | BranchDeletePayload | TaskDeletePayload | SubtaskDeletePayload,
+    entity: Literal["project", "branch", "task", "subtask"],
+    payload: ProjectDeletePayload
+    | BranchDeletePayload
+    | TaskDeletePayload
+    | SubtaskDeletePayload,
     user_id: str,
-    metadata_overrides: dict[str, Any] | None = None
+    metadata_overrides: dict[str, Any] | None = None,
 ) -> WSMessage:
     """
     Create type-safe WebSocket message for DELETE operations
@@ -368,94 +417,83 @@ def create_delete_message(
 
     # Build metadata
     metadata = WSMetadata(
-        source='user',
+        source="user",
         userId=user_id,
         entity_type=entity,
-        entity_id=payload_dict['id'],
-        event_type='deleted',
-        **(metadata_overrides or {})
+        entity_id=payload_dict["id"],
+        event_type="deleted",
+        **(metadata_overrides or {}),
     )
 
     # Build payload
     ws_payload = WSPayload(
-        entity=entity,
-        action='deleted',
-        data=WSPayloadData(primary=payload_dict)
+        entity=entity, action="deleted", data=WSPayloadData(primary=payload_dict)
     )
 
     # Create complete message
-    return WSMessage(
-        type='update',
-        payload=ws_payload,
-        metadata=metadata
-    )
+    return WSMessage(type="update", payload=ws_payload, metadata=metadata)
 
 
 def create_update_message(
-    entity: Literal['project', 'branch', 'task', 'subtask'],
-    payload: ProjectUpdatePayload | BranchUpdatePayload | TaskUpdatePayload | SubtaskUpdatePayload,
+    entity: Literal["project", "branch", "task", "subtask"],
+    payload: ProjectUpdatePayload
+    | BranchUpdatePayload
+    | TaskUpdatePayload
+    | SubtaskUpdatePayload,
     user_id: str,
-    metadata_overrides: dict[str, Any] | None = None
+    metadata_overrides: dict[str, Any] | None = None,
 ) -> WSMessage:
     """Create type-safe WebSocket message for UPDATE operations"""
     payload_dict = payload.model_dump()
 
     metadata = WSMetadata(
-        source='user',
+        source="user",
         userId=user_id,
         entity_type=entity,
-        entity_id=payload_dict['id'],
-        event_type='updated',
-        **(metadata_overrides or {})
+        entity_id=payload_dict["id"],
+        event_type="updated",
+        **(metadata_overrides or {}),
     )
 
     ws_payload = WSPayload(
-        entity=entity,
-        action='updated',
-        data=WSPayloadData(primary=payload_dict)
+        entity=entity, action="updated", data=WSPayloadData(primary=payload_dict)
     )
 
-    return WSMessage(
-        type='update',
-        payload=ws_payload,
-        metadata=metadata
-    )
+    return WSMessage(type="update", payload=ws_payload, metadata=metadata)
 
 
 def create_create_message(
-    entity: Literal['project', 'branch', 'task', 'subtask'],
-    payload: ProjectCreatePayload | BranchCreatePayload | TaskCreatePayload | SubtaskCreatePayload,
+    entity: Literal["project", "branch", "task", "subtask"],
+    payload: ProjectCreatePayload
+    | BranchCreatePayload
+    | TaskCreatePayload
+    | SubtaskCreatePayload,
     user_id: str,
-    metadata_overrides: dict[str, Any] | None = None
+    metadata_overrides: dict[str, Any] | None = None,
 ) -> WSMessage:
     """Create type-safe WebSocket message for CREATE operations"""
     payload_dict = payload.model_dump()
 
     metadata = WSMetadata(
-        source='user',
+        source="user",
         userId=user_id,
         entity_type=entity,
-        entity_id=payload_dict['id'],
-        event_type='created',
-        **(metadata_overrides or {})
+        entity_id=payload_dict["id"],
+        event_type="created",
+        **(metadata_overrides or {}),
     )
 
     ws_payload = WSPayload(
-        entity=entity,
-        action='created',
-        data=WSPayloadData(primary=payload_dict)
+        entity=entity, action="created", data=WSPayloadData(primary=payload_dict)
     )
 
-    return WSMessage(
-        type='update',
-        payload=ws_payload,
-        metadata=metadata
-    )
+    return WSMessage(type="update", payload=ws_payload, metadata=metadata)
 
 
 # =============================================================================
 # VALIDATION HELPERS
 # =============================================================================
+
 
 def validate_delete_payload(data: dict[str, Any]) -> tuple[bool, list[str]]:
     """
@@ -467,11 +505,11 @@ def validate_delete_payload(data: dict[str, Any]) -> tuple[bool, list[str]]:
     errors = []
 
     # Check required: id
-    if not data.get('id'):
+    if not data.get("id"):
         errors.append("Missing required field: id (string)")
 
     # Check required: name OR title
-    if not data.get('name') and not data.get('title'):
+    if not data.get("name") and not data.get("title"):
         errors.append("Missing required field: name or title (string)")
 
     return (len(errors) == 0, errors)
@@ -481,7 +519,10 @@ def validate_delete_payload(data: dict[str, Any]) -> tuple[bool, list[str]]:
 # MIGRATION HELPERS - Convert Legacy to Type-Safe
 # =============================================================================
 
-def convert_branch_delete_legacy(branch_id: str, branch_name: str, project_id: str) -> BranchDeletePayload:
+
+def convert_branch_delete_legacy(
+    branch_id: str, branch_name: str, project_id: str
+) -> BranchDeletePayload:
     """
     Convert legacy branch delete dict to typed payload
 
@@ -492,11 +533,7 @@ def convert_branch_delete_legacy(branch_id: str, branch_name: str, project_id: s
         payload = convert_branch_delete_legacy(branch_id, branch_name, project_id)
         # Pydantic validates all required fields are present
     """
-    return BranchDeletePayload(
-        id=branch_id,
-        name=branch_name,
-        project_id=project_id
-    )
+    return BranchDeletePayload(id=branch_id, name=branch_name, project_id=project_id)
 
 
 def convert_task_delete_legacy(task_snapshot: dict[str, Any]) -> TaskDeletePayload:
@@ -515,26 +552,22 @@ def convert_task_delete_legacy(task_snapshot: dict[str, Any]) -> TaskDeletePaylo
     if not task_snapshot:
         raise TypeError("task_snapshot cannot be None or empty")
 
-    task_id = task_snapshot.get('id')
+    task_id = task_snapshot.get("id")
     if not task_id:
         raise KeyError("task_snapshot must contain 'id' field")
 
     # Get title with fallback for empty/None values
-    title = task_snapshot.get('title')
+    title = task_snapshot.get("title")
     if not title or (isinstance(title, str) and not title.strip()):
         title = f"Task {task_id[:8]}"
 
     return TaskDeletePayload(
-        id=task_id,
-        title=title,
-        git_branch_id=task_snapshot.get('git_branch_id')
+        id=task_id, title=title, git_branch_id=task_snapshot.get("git_branch_id")
     )
 
 
-def convert_subtask_delete_legacy(subtask_id: str, task_id: str, title: str | None = None) -> SubtaskDeletePayload:
+def convert_subtask_delete_legacy(
+    subtask_id: str, task_id: str, title: str | None = None
+) -> SubtaskDeletePayload:
     """Convert legacy subtask delete dict to typed payload"""
-    return SubtaskDeletePayload(
-        id=subtask_id,
-        task_id=task_id,
-        title=title
-    )
+    return SubtaskDeletePayload(id=subtask_id, task_id=task_id, title=title)

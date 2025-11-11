@@ -29,15 +29,17 @@ from .secure_health_check import (
 logger = logging.getLogger(__name__)
 
 
-async def secure_connection_check(ctx: Context, access_level: str = "client", **kwargs) -> dict[str, Any]:
+async def secure_connection_check(
+    ctx: Context, access_level: str = "client", **kwargs
+) -> dict[str, Any]:
     """
     Secure connection health check with access level control
-    
+
     Args:
         ctx: MCP context with session information
         access_level: Access level - "client", "authenticated", or "admin"
         **kwargs: Additional parameters
-    
+
     Returns:
         Security-filtered health check response
     """
@@ -45,42 +47,44 @@ async def secure_connection_check(ctx: Context, access_level: str = "client", **
         if access_level == "client":
             # Client-safe response (minimal information)
             return await client_health_check()
-            
+
         elif access_level == "authenticated":
             # Authenticated user response (limited details)
-            user_id = getattr(ctx, 'user_id', 'authenticated_user') if ctx else 'authenticated_user'
-            return await secure_health_check(
-                user_id=user_id,
-                is_admin=False,
-                is_internal=False
+            user_id = (
+                getattr(ctx, "user_id", "authenticated_user")
+                if ctx
+                else "authenticated_user"
             )
-            
+            return await secure_health_check(
+                user_id=user_id, is_admin=False, is_internal=False
+            )
+
         elif access_level == "admin":
             # Admin response (full details)
-            user_id = getattr(ctx, 'user_id', 'admin_user') if ctx else 'admin_user'
+            user_id = getattr(ctx, "user_id", "admin_user") if ctx else "admin_user"
             return await admin_health_check(user_id=user_id)
-            
+
         else:
             return {
                 "success": False,
                 "error": f"Invalid access level: {access_level}",
                 "valid_levels": ["client", "authenticated", "admin"],
-                "timestamp": 0
+                "timestamp": 0,
             }
-            
+
     except Exception as e:
         logger.error(f"Secure connection check failed: {e}")
         return {
             "success": False,
             "status": "error",
             "error": "Service temporarily unavailable",
-            "timestamp": 0
+            "timestamp": 0,
         }
 
 
 def register_secure_connection_tool(server):
     """Register the secure connection tool with the MCP server"""
-    
+
     @server.tool(
         name="secure_health_check",
         description="""🔒 SECURE HEALTH CHECK - Security-filtered server health information
@@ -104,18 +108,20 @@ Security Features:
 Example Usage:
 - Client: secure_health_check(access_level="client")
 - Auth: secure_health_check(access_level="authenticated") 
-- Admin: secure_health_check(access_level="admin")"""
+- Admin: secure_health_check(access_level="admin")""",
     )
-    async def secure_health_check_tool(ctx: Context, access_level: str = "client") -> str:
+    async def secure_health_check_tool(
+        ctx: Context, access_level: str = "client"
+    ) -> str:
         """Secure health check tool with access level control"""
         try:
             result = await secure_connection_check(ctx, access_level)
-            
+
             if result["success"]:
                 return _format_secure_health_response(result, access_level)
             else:
                 return f"❌ Health Check Failed\n\nError: {result.get('error', 'Unknown error')}"
-                
+
         except Exception as e:
             logger.error(f"Secure health check tool error: {e}")
             return "❌ Health Check Error\n\nService temporarily unavailable"
@@ -123,7 +129,7 @@ Example Usage:
 
 def _format_secure_health_response(result: dict[str, Any], access_level: str) -> str:
     """Format secure health check response for display"""
-    
+
     if access_level == "client":
         # Client-safe formatting (minimal info)
         status_emoji = "🟢" if result["status"] == "healthy" else "🔴"
@@ -137,7 +143,7 @@ This is a client-safe health check with minimal information disclosure."""
         # Authenticated user formatting (limited details)
         status_emoji = "🟢" if result["status"] == "healthy" else "🔴"
         uptime_hours = result.get("uptime_seconds", 0) / 3600
-        
+
         response = f"""{status_emoji} Server Health Check - Authenticated View
 
 **Server Information:**
@@ -158,7 +164,7 @@ This is a client-safe health check with minimal information disclosure."""
         # Admin formatting (full details)
         status_emoji = "🟢" if result["status"] == "healthy" else "🔴"
         uptime_hours = result.get("uptime_seconds", 0) / 3600
-        
+
         response = f"""{status_emoji} Server Health Check - Administrative View
 
 **Server Information:**
@@ -221,4 +227,4 @@ This is a client-safe health check with minimal information disclosure."""
 • Environment: {security_ctx.get("environment", "unknown")}"""
 
         response += f"\n\nTimestamp: {result['timestamp']}"
-        return response 
+        return response

@@ -40,7 +40,7 @@ class MinimalResponseSerializer:
             Minimal task dictionary with only essential computed properties
         """
         # Handle both entity objects and dictionaries
-        if hasattr(task, 'to_dict'):
+        if hasattr(task, "to_dict"):
             full_dict = task.to_dict()
         else:
             full_dict = task
@@ -106,7 +106,7 @@ class MinimalResponseSerializer:
             Minimal subtask dictionary with only essential computed properties
         """
         # Handle both entity objects and dictionaries
-        if hasattr(subtask, 'to_dict'):
+        if hasattr(subtask, "to_dict"):
             full_dict = subtask.to_dict(include_parent_id=True)
         else:
             full_dict = subtask
@@ -116,10 +116,18 @@ class MinimalResponseSerializer:
         minimal = {
             "id": full_dict.get("id"),
             "title": full_dict.get("title"),  # ✅ FIX: Required by SubtaskUpdatePayload
-            "description": full_dict.get("description"),  # ✅ FIX: Required by SubtaskUpdatePayload (optional but should be preserved)
-            "status": full_dict.get("status"),  # ✅ FIX: Required by SubtaskUpdatePayload
-            "task_id": full_dict.get("parent_task_id"),  # ✅ FIX: Required by SubtaskUpdatePayload (maps to task_id)
-            "parent_task_id": full_dict.get("parent_task_id"),  # Keep for backward compatibility
+            "description": full_dict.get(
+                "description"
+            ),  # ✅ FIX: Required by SubtaskUpdatePayload (optional but should be preserved)
+            "status": full_dict.get(
+                "status"
+            ),  # ✅ FIX: Required by SubtaskUpdatePayload
+            "task_id": full_dict.get(
+                "parent_task_id"
+            ),  # ✅ FIX: Required by SubtaskUpdatePayload (maps to task_id)
+            "parent_task_id": full_dict.get(
+                "parent_task_id"
+            ),  # Keep for backward compatibility
             "created_at": full_dict.get("created_at"),
             "updated_at": full_dict.get("updated_at"),
         }
@@ -143,7 +151,9 @@ class MinimalResponseSerializer:
         return minimal
 
     @staticmethod
-    def serialize_task_list_minimal(tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def serialize_task_list_minimal(
+        tasks: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """
         Serialize task list with moderate optimization for list operations.
 
@@ -181,7 +191,9 @@ class MinimalResponseSerializer:
         return optimized
 
     @staticmethod
-    def serialize_subtask_list_minimal(subtasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def serialize_subtask_list_minimal(
+        subtasks: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """
         Serialize subtask list with moderate optimization for list operations.
 

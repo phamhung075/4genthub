@@ -6,14 +6,14 @@ from .infrastructure import (
     EventMetadata,
     EventPriority,
     get_event_bus,
-    set_event_bus
+    set_event_bus,
 )
 
 __all__ = [
     "EventBus",
     "DomainEvent",
-    "EventMetadata", 
+    "EventMetadata",
     "EventPriority",
     "get_event_bus",
-    "set_event_bus"
+    "set_event_bus",
 ]

@@ -27,50 +27,53 @@ logger = logging.getLogger(__name__)
 
 # Connection tracking
 websocket_connections = Gauge(
-    'websocket_connections',
-    'Number of active WebSocket connections',
-    ['status']  # Labels: 'active', 'authenticated', 'unauthenticated'
+    "websocket_connections",
+    "Number of active WebSocket connections",
+    ["status"],  # Labels: 'active', 'authenticated', 'unauthenticated'
 )
 
 # Queue size metrics
 websocket_message_queue_size = Gauge(
-    'websocket_message_queue_size',
-    'Current number of queued messages per user',
-    ['user_id']  # Label: user_id for per-user tracking
+    "websocket_message_queue_size",
+    "Current number of queued messages per user",
+    ["user_id"],  # Label: user_id for per-user tracking
 )
 
 websocket_message_queue_max_size = Gauge(
-    'websocket_message_queue_max_size',
-    'Maximum queue size reached per user',
-    ['user_id']
+    "websocket_message_queue_max_size",
+    "Maximum queue size reached per user",
+    ["user_id"],
 )
 
 # Retry tracking
 websocket_message_retries_total = Counter(
-    'websocket_message_retries_total',
-    'Total number of message retry attempts',
-    ['result', 'attempt']  # Labels: result ('success'/'failure'), attempt (1, 2, 3)
+    "websocket_message_retries_total",
+    "Total number of message retry attempts",
+    ["result", "attempt"],  # Labels: result ('success'/'failure'), attempt (1, 2, 3)
 )
 
 # Delivery latency
 websocket_message_delivery_seconds = Histogram(
-    'websocket_message_delivery_seconds',
-    'Message delivery time in seconds',
-    ['delivery_type']  # Labels: 'immediate', 'retry', 'failed'
+    "websocket_message_delivery_seconds",
+    "Message delivery time in seconds",
+    ["delivery_type"],  # Labels: 'immediate', 'retry', 'failed'
 )
 
 # Broadcast operation duration
 websocket_broadcast_duration_seconds = Histogram(
-    'websocket_broadcast_duration_seconds',
-    'Time spent broadcasting messages to all connections',
-    ['event_type', 'entity_type']  # Labels: event_type, entity_type
+    "websocket_broadcast_duration_seconds",
+    "Time spent broadcasting messages to all connections",
+    ["event_type", "entity_type"],  # Labels: event_type, entity_type
 )
 
 # ============================================================================
 # HELPER FUNCTIONS FOR METRICS COLLECTION
 # ============================================================================
 
-def update_connection_count(active: int, authenticated: int, unauthenticated: int) -> None:
+
+def update_connection_count(
+    active: int, authenticated: int, unauthenticated: int
+) -> None:
     """
     Update connection count metrics.
 
@@ -80,9 +83,9 @@ def update_connection_count(active: int, authenticated: int, unauthenticated: in
         unauthenticated: Unauthenticated connections
     """
     try:
-        websocket_connections.labels(status='active').set(active)
-        websocket_connections.labels(status='authenticated').set(authenticated)
-        websocket_connections.labels(status='unauthenticated').set(unauthenticated)
+        websocket_connections.labels(status="active").set(active)
+        websocket_connections.labels(status="authenticated").set(authenticated)
+        websocket_connections.labels(status="unauthenticated").set(unauthenticated)
     except Exception as e:
         logger.warning(f"Failed to update connection metrics: {e}")
 
@@ -99,7 +102,9 @@ def update_queue_size(user_id: str, size: int) -> None:
         websocket_message_queue_size.labels(user_id=user_id).set(size)
 
         # Track maximum queue size
-        current_max = websocket_message_queue_max_size.labels(user_id=user_id)._value._value
+        current_max = websocket_message_queue_max_size.labels(
+            user_id=user_id
+        )._value._value
         if size > current_max:
             websocket_message_queue_max_size.labels(user_id=user_id).set(size)
     except Exception as e:
@@ -128,10 +133,9 @@ def record_retry_attempt(success: bool, attempt: int) -> None:
         attempt: Retry attempt number (1, 2, 3)
     """
     try:
-        result = 'success' if success else 'failure'
+        result = "success" if success else "failure"
         websocket_message_retries_total.labels(
-            result=result,
-            attempt=str(attempt)
+            result=result, attempt=str(attempt)
         ).inc()
     except Exception as e:
         logger.warning(f"Failed to record retry attempt: {e}")
@@ -146,9 +150,9 @@ def record_delivery_time(delivery_type: str, duration_seconds: float) -> None:
         duration_seconds: Time taken in seconds
     """
     try:
-        websocket_message_delivery_seconds.labels(
-            delivery_type=delivery_type
-        ).observe(duration_seconds)
+        websocket_message_delivery_seconds.labels(delivery_type=delivery_type).observe(
+            duration_seconds
+        )
     except Exception as e:
         logger.warning(f"Failed to record delivery time: {e}")
 
@@ -174,8 +178,7 @@ def track_broadcast_duration(event_type: str, entity_type: str):
         duration = time.time() - start_time
         try:
             websocket_broadcast_duration_seconds.labels(
-                event_type=event_type,
-                entity_type=entity_type
+                event_type=event_type, entity_type=entity_type
             ).observe(duration)
         except Exception as e:
             logger.warning(f"Failed to record broadcast duration: {e}")
@@ -184,6 +187,7 @@ def track_broadcast_duration(event_type: str, entity_type: str):
 # ============================================================================
 # METRICS COLLECTION HELPERS
 # ============================================================================
+
 
 def get_metrics_summary() -> dict:
     """
@@ -194,8 +198,12 @@ def get_metrics_summary() -> dict:
     """
     try:
         return {
-            "active_connections": websocket_connections.labels(status='active')._value._value,
-            "authenticated_connections": websocket_connections.labels(status='authenticated')._value._value,
+            "active_connections": websocket_connections.labels(
+                status="active"
+            )._value._value,
+            "authenticated_connections": websocket_connections.labels(
+                status="authenticated"
+            )._value._value,
             "total_retries": sum(
                 metric._value._value
                 for metric in websocket_message_retries_total.collect()[0].samples

@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 class EntityType(Enum):
     """Supported entity types for cascade calculation"""
+
     TASK = "task"
     SUBTASK = "subtask"
     BRANCH = "branch"
@@ -58,11 +59,11 @@ class CascadeResult:
     def get_all_affected_ids(self) -> set[str]:
         """Get all affected entity IDs regardless of type"""
         return (
-            self.affected_tasks |
-            self.affected_subtasks |
-            self.affected_branches |
-            self.affected_projects |
-            self.affected_contexts
+            self.affected_tasks
+            | self.affected_subtasks
+            | self.affected_branches
+            | self.affected_projects
+            | self.affected_contexts
         )
 
     def get_affected_count(self) -> int:
@@ -101,7 +102,7 @@ class CascadeCalculator:
         self,
         entity_id: str,
         entity_type: EntityType | None = None,
-        use_cache: bool = True
+        use_cache: bool = True,
     ) -> CascadeResult:
         """
         Main cascade calculation method that determines entity type and delegates.
@@ -189,7 +190,7 @@ class CascadeCalculator:
                 affected_branches=affected_branches,
                 affected_projects=affected_projects,
                 affected_contexts=affected_contexts,
-                calculation_time_ms=0.0
+                calculation_time_ms=0.0,
             )
 
         # Add affected branch and project
@@ -221,7 +222,7 @@ class CascadeCalculator:
             affected_branches=affected_branches,
             affected_projects=affected_projects,
             affected_contexts=affected_contexts,
-            calculation_time_ms=0.0  # Will be set by caller
+            calculation_time_ms=0.0,  # Will be set by caller
         )
 
     async def calculate_subtask_cascade(self, subtask_id: str) -> CascadeResult:
@@ -249,7 +250,7 @@ class CascadeCalculator:
                 affected_branches=affected_branches,
                 affected_projects=affected_projects,
                 affected_contexts=affected_contexts,
-                calculation_time_ms=0.0
+                calculation_time_ms=0.0,
             )
 
         # Add affected entities
@@ -274,7 +275,7 @@ class CascadeCalculator:
             affected_branches=affected_branches,
             affected_projects=affected_projects,
             affected_contexts=affected_contexts,
-            calculation_time_ms=0.0
+            calculation_time_ms=0.0,
         )
 
     async def calculate_branch_cascade(self, branch_id: str) -> CascadeResult:
@@ -302,7 +303,7 @@ class CascadeCalculator:
                 affected_branches=affected_branches,
                 affected_projects=affected_projects,
                 affected_contexts=affected_contexts,
-                calculation_time_ms=0.0
+                calculation_time_ms=0.0,
             )
 
         # Add affected entities
@@ -324,7 +325,7 @@ class CascadeCalculator:
             affected_branches=affected_branches,
             affected_projects=affected_projects,
             affected_contexts=affected_contexts,
-            calculation_time_ms=0.0
+            calculation_time_ms=0.0,
         )
 
     async def calculate_project_cascade(self, project_id: str) -> CascadeResult:
@@ -352,7 +353,7 @@ class CascadeCalculator:
                 affected_branches=affected_branches,
                 affected_projects=affected_projects,
                 affected_contexts=affected_contexts,
-                calculation_time_ms=0.0
+                calculation_time_ms=0.0,
             )
 
         # Add affected entities
@@ -375,7 +376,7 @@ class CascadeCalculator:
             affected_branches=affected_branches,
             affected_projects=affected_projects,
             affected_contexts=affected_contexts,
-            calculation_time_ms=0.0
+            calculation_time_ms=0.0,
         )
 
     async def calculate_context_cascade(self, context_id: str) -> CascadeResult:
@@ -403,7 +404,7 @@ class CascadeCalculator:
                 affected_branches=affected_branches,
                 affected_projects=affected_projects,
                 affected_contexts=affected_contexts,
-                calculation_time_ms=0.0
+                calculation_time_ms=0.0,
             )
 
         # Add affected entities
@@ -420,7 +421,7 @@ class CascadeCalculator:
             affected_branches=affected_branches,
             affected_projects=affected_projects,
             affected_contexts=affected_contexts,
-            calculation_time_ms=0.0
+            calculation_time_ms=0.0,
         )
 
     def _is_cache_valid(self, cache_key: str) -> bool:
@@ -442,5 +443,5 @@ class CascadeCalculator:
         return {
             "cache_size": len(self._cache),
             "cache_entries": list(self._cache.keys()),
-            "cache_ttl_seconds": self._cache_ttl_seconds
+            "cache_ttl_seconds": self._cache_ttl_seconds,
         }

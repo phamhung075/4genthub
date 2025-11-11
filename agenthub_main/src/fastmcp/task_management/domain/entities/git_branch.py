@@ -19,24 +19,30 @@ class GitBranch(BaseTimestampEntity):
     name: str = ""
     description: str = ""
     project_id: str = ""
-    git_branch_name: str | None = None  # The actual git branch name (e.g., "feature/auth")
+    git_branch_name: str | None = (
+        None  # The actual git branch name (e.g., "feature/auth")
+    )
 
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
         if not self.id:
             return "unknown"
         # Handle both value object and string types
-        return str(self.id.value if hasattr(self.id, 'value') else self.id)
-    
+        return str(self.id.value if hasattr(self.id, "value") else self.id)
+
     # Task hierarchy
     root_tasks: dict[str, Task] = field(default_factory=dict)  # task_id -> Task
-    all_tasks: dict[str, Task] = field(default_factory=dict)   # Flattened view for quick lookup
-    
+    all_tasks: dict[str, Task] = field(
+        default_factory=dict
+    )  # Flattened view for quick lookup
+
     # Branch metadata
     assigned_agent_id: str | None = None
     assigned_agents: list[str] = field(default_factory=list)  # Support multiple agents
     priority: Priority = field(default_factory=Priority.medium)  # Branch-level priority
-    status: TaskStatus = field(default_factory=TaskStatus.todo)    # todo, in_progress, blocked, review, testing, done, cancelled, archived
+    status: TaskStatus = field(
+        default_factory=TaskStatus.todo
+    )  # todo, in_progress, blocked, review, testing, done, cancelled, archived
     archived: bool = False  # Support for archiving branches
 
     def _validate_entity(self) -> None:
@@ -47,7 +53,7 @@ class GitBranch(BaseTimestampEntity):
             raise ValueError("GitBranch name cannot be empty")
         if not self.project_id or not self.project_id.strip():
             raise ValueError("GitBranch project_id cannot be empty")
-    
+
     @classmethod
     def create(cls, name: str, description: str, project_id: str) -> GitBranch:
         """Create a new GitBranch with a generated UUID"""
@@ -55,103 +61,112 @@ class GitBranch(BaseTimestampEntity):
             id=GitBranchId.generate_new(),
             name=name,
             description=description,
-            project_id=project_id
+            project_id=project_id,
         )
-    
+
     def add_root_task(self, task: Task) -> None:
         """Add a root-level task to this branch"""
-        task_id_str = str(task.id.value if hasattr(task.id, 'value') else task.id)
+        task_id_str = str(task.id.value if hasattr(task.id, "value") else task.id)
         self.root_tasks[task_id_str] = task
         self.all_tasks[task_id_str] = task
         self.touch("root_task_added")
-    
+
     def add_child_task(self, parent_task_id: str, child_task: Task) -> None:
         """Add a child task under a parent task"""
         if parent_task_id in self.all_tasks:
             parent = self.all_tasks[parent_task_id]
             # Add subtask ID to parent task's subtasks list
-            child_id_str = str(child_task.id.value if hasattr(child_task.id, 'value') else child_task.id)
+            child_id_str = str(
+                child_task.id.value
+                if hasattr(child_task.id, "value")
+                else child_task.id
+            )
             parent.add_subtask(child_id_str)
             self.all_tasks[child_id_str] = child_task
             self.touch("child_task_added")
         else:
             raise ValueError(f"Parent task {parent_task_id} not found in branch")
-    
+
     def remove_task(self, task_id: str) -> bool:
         """Remove a task and all its children from the branch"""
         if task_id not in self.all_tasks:
             return False
-        
+
         task = self.all_tasks[task_id]
-        
+
         # Remove from root tasks if it's a root task
         if task_id in self.root_tasks:
             del self.root_tasks[task_id]
-        
+
         # Remove from parent's children if it has a parent
         for potential_parent in self.all_tasks.values():
-            if hasattr(potential_parent, 'subtasks') and task_id in potential_parent.subtasks:
+            if (
+                hasattr(potential_parent, "subtasks")
+                and task_id in potential_parent.subtasks
+            ):
                 potential_parent.subtasks.remove(task_id)
 
         # Remove all children recursively
         children_to_remove = []
-        if hasattr(task, 'subtasks'):
+        if hasattr(task, "subtasks"):
             children_to_remove = list(task.subtasks)
-        
+
         for child_id in children_to_remove:
             self.remove_task(child_id)
-        
+
         # Remove the task itself
         del self.all_tasks[task_id]
         self.touch("task_removed")
         return True
-    
+
     def get_task(self, task_id: str) -> Task | None:
         """Get a task by ID"""
         return self.all_tasks.get(task_id)
-    
+
     def has_task(self, task_id: str) -> bool:
         """Check if a task exists in the branch"""
         return task_id in self.all_tasks
-    
+
     def get_all_tasks(self) -> dict[str, Task]:
         """Get all tasks in the branch"""
         return self.all_tasks.copy()
-    
+
     def get_root_tasks(self) -> dict[str, Task]:
         """Get all root-level tasks"""
         return self.root_tasks.copy()
-    
+
     def get_task_count(self) -> int:
         """Get total number of tasks in the branch"""
         return len(self.all_tasks)
-    
+
     def get_completed_task_count(self) -> int:
         """Get number of completed tasks"""
+
         def is_task_done(task):
             # Handle both Task entity and dict representation
-            if hasattr(task, 'status'):
+            if hasattr(task, "status"):
                 return task.status == TaskStatus.done()
             elif isinstance(task, dict):
-                return task.get('status') == 'done'
+                return task.get("status") == "done"
             else:
                 return False
-        
+
         return sum(1 for task in self.all_tasks.values() if is_task_done(task))
-    
+
     def get_active_task_count(self) -> int:
         """Get number of active tasks (in_progress status)"""
+
         def is_task_active(task):
             # Handle both Task entity and dict representation
-            if hasattr(task, 'status'):
+            if hasattr(task, "status"):
                 return task.status == TaskStatus.in_progress()
             elif isinstance(task, dict):
-                return task.get('status') == 'in_progress'
+                return task.get("status") == "in_progress"
             else:
                 return False
-        
+
         return sum(1 for task in self.all_tasks.values() if is_task_active(task))
-    
+
     def get_progress_percentage(self) -> float:
         """Get completion percentage"""
         total = self.get_task_count()
@@ -159,30 +174,36 @@ class GitBranch(BaseTimestampEntity):
             return 0.0
         completed = self.get_completed_task_count()
         return (completed / total) * 100.0
-    
+
     def get_tree_status(self) -> dict:
         """Get comprehensive tree status"""
         status_counts = {}
         priority_counts = {}
-        
+
         for task in self.all_tasks.values():
             # Count by status
-            status_key = task.status.value if hasattr(task.status, 'value') else str(task.status)
+            status_key = (
+                task.status.value if hasattr(task.status, "value") else str(task.status)
+            )
             status_counts[status_key] = status_counts.get(status_key, 0) + 1
-            
+
             # Count by priority
-            priority_key = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+            priority_key = (
+                task.priority.value
+                if hasattr(task.priority, "value")
+                else str(task.priority)
+            )
             priority_counts[priority_key] = priority_counts.get(priority_key, 0) + 1
-        
+
         return {
             "tree_name": self.name,
             "total_tasks": self.get_task_count(),
             "completed_tasks": self.get_completed_task_count(),
             "progress_percentage": self.get_progress_percentage(),
             "status_breakdown": status_counts,
-            "priority_breakdown": priority_counts
+            "priority_breakdown": priority_counts,
         }
-    
+
     def get_available_tasks(self) -> list[Task]:
         """Get tasks that are available for work"""
         available = []
@@ -190,37 +211,35 @@ class GitBranch(BaseTimestampEntity):
             if task.status != TaskStatus.done():
                 available.append(task)
         return available
-    
+
     def get_next_task(self) -> Task | None:
         """Get the next highest priority task"""
         available_tasks = self.get_available_tasks()
         if not available_tasks:
             return None
-        
+
         # Sort by priority (highest first)
-        priority_order = {
-            'critical': 5,
-            'urgent': 4,
-            'high': 3,
-            'medium': 2,
-            'low': 1
-        }
-        
+        priority_order = {"critical": 5, "urgent": 4, "high": 3, "medium": 2, "low": 1}
+
         def get_priority_value(task):
-            priority_str = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+            priority_str = (
+                task.priority.value
+                if hasattr(task.priority, "value")
+                else str(task.priority)
+            )
             return priority_order.get(priority_str, 2)  # Default to medium
-        
+
         available_tasks.sort(key=get_priority_value, reverse=True)
         return available_tasks[0]
-    
+
     def update_status_based_on_tasks(self) -> None:
         """Update branch status based on task statuses"""
         if not self.all_tasks:
             self.status = TaskStatus.todo()
             return
-        
+
         task_statuses = [task.status for task in self.all_tasks.values()]
-        
+
         # If all tasks are done, mark branch as done
         if all(status == TaskStatus.done() for status in task_statuses):
             self.status = TaskStatus.done()
@@ -240,37 +259,47 @@ class GitBranch(BaseTimestampEntity):
             self.status = TaskStatus.todo()
 
         self.touch("status_updated")
-    
+
     def assign_agent(self, agent_id: str) -> None:
         """Assign an agent to this branch"""
         self.assigned_agent_id = agent_id
         self.touch("agent_assigned")
-    
+
     def unassign_agent(self) -> None:
         """Remove agent assignment from this branch"""
         self.assigned_agent_id = None
         self.touch("agent_unassigned")
-    
+
     def is_assigned_to_agent(self, agent_id: str) -> bool:
         """Check if branch is assigned to specific agent"""
         return self.assigned_agent_id == agent_id
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary representation"""
         return {
-            'id': str(self.id.value if hasattr(self.id, 'value') else self.id) if self.id else "",
-            'name': self.name,
-            'description': self.description,
-            'project_id': self.project_id,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
-            'assigned_agent_id': self.assigned_agent_id,
-            'assigned_agents': self.assigned_agents.copy(),  # Include assigned_agents list
-            'priority': self.priority.value if hasattr(self.priority, 'value') else str(self.priority),
-            'status': self.status.value if hasattr(self.status, 'value') else str(self.status),
-            'archived': self.archived
+            "id": str(self.id.value if hasattr(self.id, "value") else self.id)
+            if self.id
+            else "",
+            "name": self.name,
+            "description": self.description,
+            "project_id": self.project_id,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "assigned_agent_id": self.assigned_agent_id,
+            "assigned_agents": self.assigned_agents.copy(),  # Include assigned_agents list
+            "priority": self.priority.value
+            if hasattr(self.priority, "value")
+            else str(self.priority),
+            "status": self.status.value
+            if hasattr(self.status, "value")
+            else str(self.status),
+            "archived": self.archived,
         }
-    
+
     def __repr__(self) -> str:
-        id_str = str(self.id.value if hasattr(self.id, 'value') else self.id) if self.id else None
+        id_str = (
+            str(self.id.value if hasattr(self.id, "value") else self.id)
+            if self.id
+            else None
+        )
         return f"GitBranch(id='{id_str}', name='{self.name}', project_id='{self.project_id}', tasks={self.get_task_count()})"

@@ -14,19 +14,23 @@ from pydantic import BaseModel
 # MCP OAuth types for compatibility
 class ClientRegistrationOptions(BaseModel):
     """Client registration options for OAuth"""
+
     enabled: bool = False
     client_name: str | None = None
     client_uri: str | None = None
     redirect_uris: list[str] = []
 
+
 class RevocationOptions(BaseModel):
     """Token revocation options for OAuth"""
+
     enabled: bool = False
     revocation_endpoint: str | None = None
 
+
 class OAuthProvider:
     """Minimal OAuth provider stub for compatibility"""
-    
+
     def __init__(
         self,
         issuer_url: str,
@@ -41,22 +45,28 @@ class OAuthProvider:
         self.revocation_options = revocation_options
         self.required_scopes = required_scopes or []
 
+
 # Additional classes that may be imported
 @dataclass
 class AuthorizationCode:
     """OAuth authorization code"""
+
     code: str
     state: str | None = None
+
 
 @dataclass
 class RefreshToken:
     """OAuth refresh token"""
+
     token: str
     expires_at: int | None = None
+
 
 @dataclass
 class AccessToken:
     """OAuth access token"""
+
     token: str
     token_type: str = "Bearer"
     expires_in: int | None = None

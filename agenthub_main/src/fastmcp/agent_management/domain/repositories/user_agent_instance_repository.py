@@ -1,6 +1,5 @@
 """UserAgentInstanceRepository - Repository interface for UserAgentInstance aggregate"""
 
-
 from abc import ABC, abstractmethod
 
 from ..entities.user_agent_instance import UserAgentInstance
@@ -43,9 +42,7 @@ class UserAgentInstanceRepository(ABC):
 
     @abstractmethod
     def find_by_user_and_template(
-        self,
-        user_id: UserId,
-        template_id: AgentTemplateId
+        self, user_id: UserId, template_id: AgentTemplateId
     ) -> UserAgentInstance | None:
         """Find an instance by user ID and template ID.
 
@@ -103,7 +100,7 @@ class UserAgentInstanceRepository(ABC):
         self,
         limit: int = 50,
         offset: int = 0,
-        order_by: InstanceOrdering = InstanceOrdering.CREATED_DESC
+        order_by: InstanceOrdering = InstanceOrdering.CREATED_DESC,
     ) -> list[UserAgentInstance]:
         """Find all publicly shared instances.
 
@@ -119,9 +116,7 @@ class UserAgentInstanceRepository(ABC):
 
     @abstractmethod
     def exists_by_user_and_template(
-        self,
-        user_id: UserId,
-        template_id: AgentTemplateId
+        self, user_id: UserId, template_id: AgentTemplateId
     ) -> bool:
         """Check if an instance exists for user and template.
 

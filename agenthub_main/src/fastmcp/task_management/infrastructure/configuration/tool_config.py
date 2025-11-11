@@ -5,13 +5,16 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+
 class ToolConfig:
     """Manages MCP tool configuration and enablement settings"""
 
     def __init__(self, config_overrides: dict[str, Any] | None = None):
         self.config = self._load_config(config_overrides)
 
-    def _load_config(self, config_overrides: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _load_config(
+        self, config_overrides: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Load configuration from environment variables (.env.dev) or use defaults"""
         # Load enabled tools from environment variables
         enabled_tools = {
@@ -23,10 +26,12 @@ class ToolConfig:
             "manage_document": self._get_bool_env("TOOL_MANAGE_DOCUMENT", True),
             "update_auto_rule": self._get_bool_env("TOOL_UPDATE_AUTO_RULE", True),
             "validate_rules": self._get_bool_env("TOOL_VALIDATE_RULES", True),
-            "regenerate_auto_rule": self._get_bool_env("TOOL_REGENERATE_AUTO_RULE", True),
+            "regenerate_auto_rule": self._get_bool_env(
+                "TOOL_REGENERATE_AUTO_RULE", True
+            ),
             "validate_tasks_json": self._get_bool_env("TOOL_VALIDATE_TASKS_JSON", True),
             "create_context_file": self._get_bool_env("TOOL_CREATE_CONTEXT_FILE", True),
-            "manage_context": self._get_bool_env("TOOL_MANAGE_CONTEXT", True)
+            "manage_context": self._get_bool_env("TOOL_MANAGE_CONTEXT", True),
         }
 
         # Load other configuration from environment variables
@@ -34,11 +39,13 @@ class ToolConfig:
             "enabled_tools": enabled_tools,
             "debug_mode": self._get_bool_env("TOOL_DEBUG_MODE", False),
             "tool_logging": self._get_bool_env("TOOL_LOGGING", False),
-            "enable_workflow_guidance": self._get_bool_env("ENABLE_WORKFLOW_GUIDANCE", False)
+            "enable_workflow_guidance": self._get_bool_env(
+                "ENABLE_WORKFLOW_GUIDANCE", False
+            ),
         }
 
         # Legacy support: Check for MCP_TOOL_CONFIG JSON file (with warning)
-        config_path = os.environ.get('MCP_TOOL_CONFIG')
+        config_path = os.environ.get("MCP_TOOL_CONFIG")
         if config_path and os.path.exists(config_path):
             logger.warning(
                 f"DEPRECATED: Using JSON config file from MCP_TOOL_CONFIG ({config_path}). "
@@ -55,7 +62,10 @@ class ToolConfig:
                                 env_var = f"TOOL_{tool_name.upper()}"
                                 if env_var not in os.environ:
                                     config["enabled_tools"][tool_name] = tool_enabled
-                        elif key not in ["debug_mode", "tool_logging"] or f"TOOL_{key.upper()}" not in os.environ:
+                        elif (
+                            key not in ["debug_mode", "tool_logging"]
+                            or f"TOOL_{key.upper()}" not in os.environ
+                        ):
                             config[key] = value
             except Exception as e:
                 logger.warning(f"Failed to load legacy config from {config_path}: {e}")
@@ -77,12 +87,12 @@ class ToolConfig:
         value = os.environ.get(env_var)
         if value is None:
             return default
-        return value.lower() in ('true', '1', 'yes', 'on')
-        
+        return value.lower() in ("true", "1", "yes", "on")
+
     def is_enabled(self, tool_name: str) -> bool:
         """Check if a specific tool is enabled"""
         return self.config.get("enabled_tools", {}).get(tool_name, True)
-    
+
     def get_enabled_tools(self) -> dict[str, bool]:
         """Get all enabled tools configuration"""
         return self.config.get("enabled_tools", {})

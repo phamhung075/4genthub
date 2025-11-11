@@ -16,6 +16,7 @@ from .base import BaseDomainEvent
 @dataclass(frozen=True)
 class TaskCreatedEvent(BaseDomainEvent):
     """Event raised when a task is created"""
+
     task_id: str = ""
     branch_id: str = ""
     title: str = ""
@@ -28,6 +29,7 @@ class TaskCreatedEvent(BaseDomainEvent):
 @dataclass(frozen=True)
 class TaskUpdatedEvent(BaseDomainEvent):
     """Event raised when a task is updated"""
+
     task_id: str = ""
     branch_id: str = ""
     old_status: str | None = None
@@ -41,6 +43,7 @@ class TaskUpdatedEvent(BaseDomainEvent):
 @dataclass(frozen=True)
 class TaskDeletedEvent(BaseDomainEvent):
     """Event raised when a task is deleted"""
+
     task_id: str = ""
     branch_id: str = ""
     status: str = ""
@@ -51,6 +54,7 @@ class TaskDeletedEvent(BaseDomainEvent):
 @dataclass(frozen=True)
 class TaskStatusChangedEvent(BaseDomainEvent):
     """Event raised when task status changes"""
+
     task_id: str = ""
     branch_id: str = ""
     old_status: str = ""
@@ -66,6 +70,7 @@ class TaskCompletedEvent(BaseDomainEvent):
     This is a new event added in Phase 5 to distinguish task completion
     from generic status changes. Provides rich context about what was accomplished.
     """
+
     task_id: str = ""
     branch_id: str = ""
     title: str = ""
@@ -79,6 +84,7 @@ class TaskCompletedEvent(BaseDomainEvent):
 @dataclass(frozen=True)
 class TaskRetrievedEvent(BaseDomainEvent):
     """Event raised when a task is retrieved from repository"""
+
     task_id: str = ""
     branch_id: str | None = None
     user_id: str | None = None
@@ -87,6 +93,7 @@ class TaskRetrievedEvent(BaseDomainEvent):
 @dataclass(frozen=True)
 class TaskMovedToBranchEvent(BaseDomainEvent):
     """Event raised when task is moved to a different branch"""
+
     task_id: str = ""
     old_branch_id: str = ""
     new_branch_id: str = ""
@@ -94,11 +101,11 @@ class TaskMovedToBranchEvent(BaseDomainEvent):
 
 
 __all__ = [
-    'TaskCreatedEvent',
-    'TaskUpdatedEvent',
-    'TaskDeletedEvent',
-    'TaskStatusChangedEvent',
-    'TaskCompletedEvent',
-    'TaskRetrievedEvent',
-    'TaskMovedToBranchEvent',
+    "TaskCreatedEvent",
+    "TaskUpdatedEvent",
+    "TaskDeletedEvent",
+    "TaskStatusChangedEvent",
+    "TaskCompletedEvent",
+    "TaskRetrievedEvent",
+    "TaskMovedToBranchEvent",
 ]

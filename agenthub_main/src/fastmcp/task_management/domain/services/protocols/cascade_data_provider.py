@@ -116,7 +116,9 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_subtask_cascade_data(self, subtask_id: str) -> SubtaskCascadeData | None:
+    async def get_subtask_cascade_data(
+        self, subtask_id: str
+    ) -> SubtaskCascadeData | None:
         """
         Get cascade-relevant data for a subtask.
 
@@ -140,7 +142,9 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_project_cascade_data(self, project_id: str) -> ProjectCascadeData | None:
+    async def get_project_cascade_data(
+        self, project_id: str
+    ) -> ProjectCascadeData | None:
         """
         Get cascade-relevant data for a project.
 
@@ -152,7 +156,9 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_context_cascade_data(self, context_id: str) -> ContextCascadeData | None:
+    async def get_context_cascade_data(
+        self, context_id: str
+    ) -> ContextCascadeData | None:
         """
         Get cascade-relevant data for a context.
 
@@ -164,7 +170,9 @@ class CascadeDataProvider(Protocol):
         """
         ...
 
-    async def get_related_context_ids(self, branch_id: str, project_id: str) -> set[str]:
+    async def get_related_context_ids(
+        self, branch_id: str, project_id: str
+    ) -> set[str]:
         """
         Get context IDs related to a branch and project.
 

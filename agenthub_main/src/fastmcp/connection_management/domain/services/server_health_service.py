@@ -9,28 +9,28 @@ from ..value_objects.server_status import ServerStatus
 
 class ServerHealthService(ABC):
     """Domain service interface for server health operations"""
-    
+
     @abstractmethod
     def check_server_health(self, server: Server) -> ServerStatus:
         """Perform comprehensive server health check"""
         pass
-    
+
     @abstractmethod
     def get_environment_info(self) -> dict[str, Any]:
         """Get server environment information"""
         pass
-    
+
     @abstractmethod
     def get_authentication_status(self) -> dict[str, Any]:
         """Get authentication configuration and status"""
         pass
-    
+
     @abstractmethod
     def get_task_management_info(self) -> dict[str, Any]:
         """Get task management system information"""
         pass
-    
+
     @abstractmethod
     def validate_server_configuration(self) -> dict[str, Any]:
         """Validate server configuration and dependencies"""
-        pass 
+        pass

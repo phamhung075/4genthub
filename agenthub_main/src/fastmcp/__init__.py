@@ -32,9 +32,11 @@ def __getattr__(name: str):
     """
     if name == "FastMCP":
         from fastmcp.server.server import FastMCP
+
         return FastMCP
     elif name == "Context":
         from fastmcp.server.context import Context
+
         return Context
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 

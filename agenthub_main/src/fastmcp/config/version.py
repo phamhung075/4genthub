@@ -20,5 +20,5 @@ VERSION_INFO = {
     "version": VERSION,
     "name": "agenthub - Task Management & Agent Orchestration",
     "codename": "Vision System Enhanced",
-    "release_date": "2025-09-10"
+    "release_date": "2025-09-10",
 }

@@ -31,10 +31,7 @@ class AgentCustomizationService:
     - Ensures consistency across configuration updates
     """
 
-    def __init__(
-        self,
-        instance_repository: UserAgentInstanceRepository
-    ):
+    def __init__(self, instance_repository: UserAgentInstanceRepository):
         """Initialize the service with repository dependency.
 
         Args:
@@ -47,7 +44,7 @@ class AgentCustomizationService:
         instance_id: UserAgentInstanceId,
         user_id: UserId,
         new_system_prompt: str,
-        customization_notes: str | None = None
+        customization_notes: str | None = None,
     ) -> UserAgentInstance | None:
         """Update the system prompt (instructions) for an agent instance.
 
@@ -77,7 +74,7 @@ class AgentCustomizationService:
             capabilities=instance.configuration.capabilities,
             rules=instance.configuration.rules,
             output_format=instance.configuration.output_format,
-            metadata=instance.configuration.metadata
+            metadata=instance.configuration.metadata,
         )
 
         # Apply the customization
@@ -87,8 +84,7 @@ class AgentCustomizationService:
         updated_instance = self.instance_repository.save(instance)
 
         logger.info(
-            f"Updated system prompt for instance {instance_id} "
-            f"(user: {user_id})"
+            f"Updated system prompt for instance {instance_id} (user: {user_id})"
         )
 
         return updated_instance
@@ -98,7 +94,7 @@ class AgentCustomizationService:
         instance_id: UserAgentInstanceId,
         user_id: UserId,
         new_rules: list[str],
-        customization_notes: str | None = None
+        customization_notes: str | None = None,
     ) -> UserAgentInstance | None:
         """Update the rules for an agent instance.
 
@@ -122,7 +118,7 @@ class AgentCustomizationService:
             capabilities=instance.configuration.capabilities,
             rules=tuple(new_rules),  # Convert to tuple for immutability
             output_format=instance.configuration.output_format,
-            metadata=instance.configuration.metadata
+            metadata=instance.configuration.metadata,
         )
 
         # Apply the customization
@@ -143,7 +139,7 @@ class AgentCustomizationService:
         instance_id: UserAgentInstanceId,
         user_id: UserId,
         new_capabilities: dict[str, Any],
-        customization_notes: str | None = None
+        customization_notes: str | None = None,
     ) -> UserAgentInstance | None:
         """Update the capabilities for an agent instance.
 
@@ -167,7 +163,7 @@ class AgentCustomizationService:
             capabilities=new_capabilities,
             rules=instance.configuration.rules,
             output_format=instance.configuration.output_format,
-            metadata=instance.configuration.metadata
+            metadata=instance.configuration.metadata,
         )
 
         # Apply the customization
@@ -177,8 +173,7 @@ class AgentCustomizationService:
         updated_instance = self.instance_repository.save(instance)
 
         logger.info(
-            f"Updated capabilities for instance {instance_id} "
-            f"(user: {user_id})"
+            f"Updated capabilities for instance {instance_id} (user: {user_id})"
         )
 
         return updated_instance
@@ -188,7 +183,7 @@ class AgentCustomizationService:
         instance_id: UserAgentInstanceId,
         user_id: UserId,
         new_output_format: dict[str, Any],
-        customization_notes: str | None = None
+        customization_notes: str | None = None,
     ) -> UserAgentInstance | None:
         """Update the output format for an agent instance.
 
@@ -212,7 +207,7 @@ class AgentCustomizationService:
             capabilities=instance.configuration.capabilities,
             rules=instance.configuration.rules,
             output_format=new_output_format,
-            metadata=instance.configuration.metadata
+            metadata=instance.configuration.metadata,
         )
 
         # Apply the customization
@@ -222,8 +217,7 @@ class AgentCustomizationService:
         updated_instance = self.instance_repository.save(instance)
 
         logger.info(
-            f"Updated output format for instance {instance_id} "
-            f"(user: {user_id})"
+            f"Updated output format for instance {instance_id} (user: {user_id})"
         )
 
         return updated_instance
@@ -233,7 +227,7 @@ class AgentCustomizationService:
         instance_id: UserAgentInstanceId,
         user_id: UserId,
         new_configuration: AgentConfiguration,
-        customization_notes: str | None = None
+        customization_notes: str | None = None,
     ) -> UserAgentInstance | None:
         """Update the entire configuration for an agent instance.
 
@@ -259,8 +253,7 @@ class AgentCustomizationService:
         updated_instance = self.instance_repository.save(instance)
 
         logger.info(
-            f"Updated full configuration for instance {instance_id} "
-            f"(user: {user_id})"
+            f"Updated full configuration for instance {instance_id} (user: {user_id})"
         )
 
         return updated_instance
@@ -269,7 +262,7 @@ class AgentCustomizationService:
         self,
         instance_id: UserAgentInstanceId,
         user_id: UserId,
-        template_configuration: AgentConfiguration
+        template_configuration: AgentConfiguration,
     ) -> UserAgentInstance | None:
         """Reset an instance to its template's default configuration.
 
@@ -286,29 +279,26 @@ class AgentCustomizationService:
             return None
 
         # Reset configuration
-        object.__setattr__(instance, 'configuration', template_configuration)
-        object.__setattr__(instance, 'is_customized', False)
+        object.__setattr__(instance, "configuration", template_configuration)
+        object.__setattr__(instance, "is_customized", False)
 
         # Clear customization metadata
         metadata_copy = instance.metadata.copy()
-        if 'last_customization' in metadata_copy:
-            del metadata_copy['last_customization']
-        object.__setattr__(instance, 'metadata', metadata_copy)
+        if "last_customization" in metadata_copy:
+            del metadata_copy["last_customization"]
+        object.__setattr__(instance, "metadata", metadata_copy)
 
         # Save and return
         updated_instance = self.instance_repository.save(instance)
 
         logger.info(
-            f"Reset instance {instance_id} to template defaults "
-            f"(user: {user_id})"
+            f"Reset instance {instance_id} to template defaults (user: {user_id})"
         )
 
         return updated_instance
 
     def _get_and_verify_ownership(
-        self,
-        instance_id: UserAgentInstanceId,
-        user_id: UserId
+        self, instance_id: UserAgentInstanceId, user_id: UserId
     ) -> UserAgentInstance | None:
         """Get instance and verify the user owns it.
 

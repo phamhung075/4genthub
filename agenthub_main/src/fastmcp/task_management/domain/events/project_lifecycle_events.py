@@ -16,15 +16,17 @@ from .base import BaseDomainEvent
 @dataclass(frozen=True)
 class ProjectCreatedEvent(BaseDomainEvent):
     """Event raised when a project is created"""
+
     project_id: str = ""
     name: str = ""
     description: str | None = None
-    status: str = 'active'
+    status: str = "active"
 
 
 @dataclass(frozen=True)
 class ProjectUpdatedEvent(BaseDomainEvent):
     """Event raised when a project is updated"""
+
     project_id: str = ""
     old_name: str | None = None
     new_name: str | None = None
@@ -37,6 +39,7 @@ class ProjectUpdatedEvent(BaseDomainEvent):
 @dataclass(frozen=True)
 class ProjectDeletedEvent(BaseDomainEvent):
     """Event raised when a project is deleted"""
+
     project_id: str = ""
     name: str = ""
     branches_deleted: int = 0
@@ -48,6 +51,7 @@ class ProjectDeletedEvent(BaseDomainEvent):
 @dataclass(frozen=True)
 class ProjectStatisticsUpdatedEvent(BaseDomainEvent):
     """Event raised when project statistics are updated"""
+
     project_id: str = ""
     branch_count: int = 0
     total_tasks: int = 0
@@ -64,6 +68,7 @@ class ProjectHealthChanged(BaseDomainEvent):
 
     This is a new event added in Phase 5 to track project health status.
     """
+
     project_id: str = ""
     old_health_status: str = ""
     new_health_status: str = ""
@@ -74,6 +79,7 @@ class ProjectHealthChanged(BaseDomainEvent):
 @dataclass(frozen=True)
 class ProjectArchived(BaseDomainEvent):
     """Event raised when a project is archived"""
+
     project_id: str = ""
     name: str = ""
     archived_by: str = ""
@@ -81,10 +87,10 @@ class ProjectArchived(BaseDomainEvent):
 
 
 __all__ = [
-    'ProjectCreatedEvent',
-    'ProjectUpdatedEvent',
-    'ProjectDeletedEvent',
-    'ProjectStatisticsUpdatedEvent',
-    'ProjectHealthChanged',
-    'ProjectArchived',
+    "ProjectCreatedEvent",
+    "ProjectUpdatedEvent",
+    "ProjectDeletedEvent",
+    "ProjectStatisticsUpdatedEvent",
+    "ProjectHealthChanged",
+    "ProjectArchived",
 ]

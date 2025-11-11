@@ -14,6 +14,7 @@ from typing import Any
 
 class DocumentType(Enum):
     """Document types for compliance"""
+
     CONFIG = "config"
     TEMPLATE = "template"
     DOCUMENT = "document"
@@ -24,6 +25,7 @@ class DocumentType(Enum):
 @dataclass(frozen=True)
 class DocumentInfo:
     """Document information value object"""
+
     path: str
     type: DocumentType
     content: str
@@ -31,7 +33,7 @@ class DocumentInfo:
     created_at: datetime
     updated_at: datetime | None = None
     hash: str | None = None
-    
+
     def __post_init__(self):
         """Validate document info on creation"""
         if not self.path:
@@ -43,6 +45,7 @@ class DocumentInfo:
 @dataclass(frozen=True)
 class ComplianceStatus:
     """Compliance status value object"""
+
     is_compliant: bool
     validation_date: datetime
     validator: str
@@ -53,6 +56,7 @@ class ComplianceStatus:
 @dataclass(frozen=True)
 class ValidationResult:
     """Validation result value object"""
+
     is_valid: bool
     errors: list[str]
     warnings: list[str]
@@ -62,6 +66,7 @@ class ValidationResult:
 @dataclass(frozen=True)
 class ValidationReport:
     """Comprehensive validation report value object"""
+
     validation_id: str
     entity_id: str
     entity_type: str
@@ -71,17 +76,17 @@ class ValidationReport:
     summary: str
     recommendations: list[str]
     metadata: dict[str, Any]
-    
+
     @property
     def total_errors(self) -> int:
         """Get total number of errors across all results"""
         return sum(len(result.errors) for result in self.results)
-    
+
     @property
     def total_warnings(self) -> int:
         """Get total number of warnings across all results"""
         return sum(len(result.warnings) for result in self.results)
-    
+
     @property
     def has_issues(self) -> bool:
         """Check if report has any errors or warnings"""

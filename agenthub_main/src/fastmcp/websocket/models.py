@@ -25,38 +25,33 @@ class CascadeData(BaseModel):
     """
 
     branches: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="All affected branch entities with full data"
+        default_factory=list, description="All affected branch entities with full data"
     )
 
     tasks: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="All affected task entities with full data"
+        default_factory=list, description="All affected task entities with full data"
     )
 
     projects: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="All affected project entities with full data"
+        default_factory=list, description="All affected project entities with full data"
     )
 
     subtasks: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="All affected subtask entities with full data"
+        default_factory=list, description="All affected subtask entities with full data"
     )
 
     contexts: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="All affected context entities with full data"
+        default_factory=list, description="All affected context entities with full data"
     )
 
     def get_total_entities(self) -> int:
         """Get total count of entities in cascade data"""
         return (
-            len(self.branches) +
-            len(self.tasks) +
-            len(self.projects) +
-            len(self.subtasks) +
-            len(self.contexts)
+            len(self.branches)
+            + len(self.tasks)
+            + len(self.projects)
+            + len(self.subtasks)
+            + len(self.contexts)
         )
 
     def is_empty(self) -> bool:
@@ -78,12 +73,11 @@ class WSData(BaseModel):
 
     cascade: CascadeData | None = Field(
         default=None,
-        description="All affected entities (eliminates secondary API calls)"
+        description="All affected entities (eliminates secondary API calls)",
     )
 
     delta: dict[str, Any] | None = Field(
-        default=None,
-        description="Delta patch for efficient large updates"
+        default=None, description="Delta patch for efficient large updates"
     )
 
 
@@ -92,17 +86,11 @@ class WSPayload(BaseModel):
     WebSocket payload structure defining the operation and data.
     """
 
-    entity: EntityType = Field(
-        description="Type of entity being affected"
-    )
+    entity: EntityType = Field(description="Type of entity being affected")
 
-    action: ActionType = Field(
-        description="Action being performed on the entity"
-    )
+    action: ActionType = Field(description="Action being performed on the entity")
 
-    data: WSData = Field(
-        description="The actual data and cascade information"
-    )
+    data: WSData = Field(description="The actual data and cascade information")
 
 
 class WSMetadata(BaseModel):
@@ -118,28 +106,24 @@ class WSMetadata(BaseModel):
     )
 
     user_id: str | None = Field(
-        default=None,
-        description="User ID for authentication and tracking"
+        default=None, description="User ID for authentication and tracking"
     )
 
     session_id: str | None = Field(
-        default=None,
-        description="Session ID for connection management"
+        default=None, description="Session ID for connection management"
     )
 
     correlation_id: str | None = Field(
-        default=None,
-        description="Correlation ID for request tracking"
+        default=None, description="Correlation ID for request tracking"
     )
 
     batch_id: str | None = Field(
-        default=None,
-        description="Batch ID for AI batched updates (500ms interval)"
+        default=None, description="Batch ID for AI batched updates (500ms interval)"
     )
 
     immediate: bool = Field(
         default=True,
-        description="True for user actions (immediate), False for AI batches"
+        description="True for user actions (immediate), False for AI batches",
     )
 
 
@@ -153,26 +137,21 @@ class WSMessage(BaseModel):
 
     id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),
-        description="Unique message identifier"
+        description="Unique message identifier",
     )
 
     version: ProtocolVersion = Field(
-        default="2.0",
-        description="Protocol version - ONLY v2.0 supported"
+        default="2.0", description="Protocol version - ONLY v2.0 supported"
     )
 
-    type: MessageType = Field(
-        description="Message type for routing and processing"
-    )
+    type: MessageType = Field(description="Message type for routing and processing")
 
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        description="Message creation timestamp (UTC)"
+        description="Message creation timestamp (UTC)",
     )
 
-    sequence: int = Field(
-        description="Message sequence number for ordering"
-    )
+    sequence: int = Field(description="Message sequence number for ordering")
 
     payload: WSPayload = Field(
         description="Message payload with entity data and cascade"
@@ -190,6 +169,7 @@ class WSMessage(BaseModel):
 
 # Specialized Message Types for Type Safety
 
+
 class UserUpdateMessage(WSMessage):
     """
     User-initiated update message (immediate processing).
@@ -198,7 +178,9 @@ class UserUpdateMessage(WSMessage):
     They include full cascade data for single entity updates.
     """
 
-    type: MessageType = Field(default="update", description="Always 'update' for user messages")
+    type: MessageType = Field(
+        default="update", description="Always 'update' for user messages"
+    )
 
     metadata: WSMetadata = Field(
         description="Metadata with source='user' and immediate=True"
@@ -206,16 +188,16 @@ class UserUpdateMessage(WSMessage):
 
     def __init__(self, **data):
         # Ensure user message defaults
-        if 'metadata' in data:
+        if "metadata" in data:
             # Create a new metadata dict with overrides
-            if isinstance(data['metadata'], WSMetadata):
-                metadata_dict = data['metadata'].model_dump()
+            if isinstance(data["metadata"], WSMetadata):
+                metadata_dict = data["metadata"].model_dump()
             else:
-                metadata_dict = data['metadata']
-            
-            metadata_dict['source'] = 'user'
-            metadata_dict['immediate'] = True
-            data['metadata'] = WSMetadata(**metadata_dict)
+                metadata_dict = data["metadata"]
+
+            metadata_dict["source"] = "user"
+            metadata_dict["immediate"] = True
+            data["metadata"] = WSMetadata(**metadata_dict)
         super().__init__(**data)
 
 
@@ -227,7 +209,9 @@ class AIBatchMessage(WSMessage):
     They include combined cascade data for multiple entity updates.
     """
 
-    type: MessageType = Field(default="bulk", description="Always 'bulk' for AI batch messages")
+    type: MessageType = Field(
+        default="bulk", description="Always 'bulk' for AI batch messages"
+    )
 
     metadata: WSMetadata = Field(
         description="Metadata with source='mcp-ai' and immediate=False"
@@ -235,37 +219,35 @@ class AIBatchMessage(WSMessage):
 
     def __init__(self, **data):
         # Ensure AI batch message defaults
-        if 'metadata' in data:
+        if "metadata" in data:
             # Create a new metadata dict with overrides
-            if isinstance(data['metadata'], WSMetadata):
-                metadata_dict = data['metadata'].model_dump()
+            if isinstance(data["metadata"], WSMetadata):
+                metadata_dict = data["metadata"].model_dump()
             else:
-                metadata_dict = data['metadata']
-            
-            metadata_dict['source'] = 'mcp-ai'
-            metadata_dict['immediate'] = False
-            data['metadata'] = WSMetadata(**metadata_dict)
+                metadata_dict = data["metadata"]
+
+            metadata_dict["source"] = "mcp-ai"
+            metadata_dict["immediate"] = False
+            data["metadata"] = WSMetadata(**metadata_dict)
         super().__init__(**data)
 
 
 class SystemMessage(WSMessage):
     """Base class for system messages (heartbeat, error, sync)."""
 
-    metadata: WSMetadata = Field(
-        description="Metadata with source='system'"
-    )
+    metadata: WSMetadata = Field(description="Metadata with source='system'")
 
     def __init__(self, **data):
         # Ensure system message defaults
-        if 'metadata' in data:
+        if "metadata" in data:
             # Create a new metadata dict with overrides
-            if isinstance(data['metadata'], WSMetadata):
-                metadata_dict = data['metadata'].model_dump()
+            if isinstance(data["metadata"], WSMetadata):
+                metadata_dict = data["metadata"].model_dump()
             else:
-                metadata_dict = data['metadata']
-            
-            metadata_dict['source'] = 'system'
-            data['metadata'] = WSMetadata(**metadata_dict)
+                metadata_dict = data["metadata"]
+
+            metadata_dict["source"] = "system"
+            data["metadata"] = WSMetadata(**metadata_dict)
         super().__init__(**data)
 
 

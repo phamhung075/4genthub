@@ -12,15 +12,15 @@ Components:
 """
 
 from .semantic_matcher import SemanticMatcher
-from .progressive_expander import ProgressiveExpander  
+from .progressive_expander import ProgressiveExpander
 from .predictive_loader import PredictiveLoader
 from .context_prioritizer import ContextPrioritizer
 from .intelligent_context_selector import IntelligentContextSelector
 
 __all__ = [
-    'SemanticMatcher',
-    'ProgressiveExpander', 
-    'PredictiveLoader',
-    'ContextPrioritizer',
-    'IntelligentContextSelector'
+    "SemanticMatcher",
+    "ProgressiveExpander",
+    "PredictiveLoader",
+    "ContextPrioritizer",
+    "IntelligentContextSelector",
 ]

@@ -20,9 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 async def track_token_operation(
-    token_id: str | None,
-    operation: str,
-    session: Session
+    token_id: str | None, operation: str, session: Session
 ) -> bool:
     """
     Track a specific operation for a token.
@@ -56,9 +54,13 @@ async def track_token_operation(
         success = await repository.update_token_usage(token_id, operation)
 
         if success:
-            logger.debug(f"✅ Tracked token operation: {operation} for token {token_id}")
+            logger.debug(
+                f"✅ Tracked token operation: {operation} for token {token_id}"
+            )
         else:
-            logger.warning(f"⚠️ Failed to track operation: {operation} for token {token_id}")
+            logger.warning(
+                f"⚠️ Failed to track operation: {operation} for token {token_id}"
+            )
 
         return success
 

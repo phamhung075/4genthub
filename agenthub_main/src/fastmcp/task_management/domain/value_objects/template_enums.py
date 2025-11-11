@@ -7,6 +7,7 @@ from ..value_objects.priority import PriorityLevel
 
 class TemplateType(Enum):
     """Template type enumeration"""
+
     TASK = "task"
     PROJECT = "project"
     WORKFLOW = "workflow"
@@ -22,6 +23,7 @@ class TemplateType(Enum):
 
 class TemplateCategory(Enum):
     """Template category enumeration"""
+
     DEVELOPMENT = "development"
     TESTING = "testing"
     DEPLOYMENT = "deployment"
@@ -38,6 +40,7 @@ class TemplateCategory(Enum):
 
 class TemplateStatus(Enum):
     """Template status enumeration"""
+
     DRAFT = "draft"
     ACTIVE = "active"
     INACTIVE = "inactive"
@@ -49,6 +52,7 @@ class TemplateStatus(Enum):
 
 class TemplatePriority(Enum):
     """Template priority enumeration"""
+
     LOW = PriorityLevel.LOW.label
     MEDIUM = PriorityLevel.MEDIUM.label
     HIGH = PriorityLevel.HIGH.label
@@ -57,6 +61,7 @@ class TemplatePriority(Enum):
 
 class CacheStrategy(Enum):
     """Cache strategy enumeration"""
+
     DEFAULT = "default"
     AGGRESSIVE = "aggressive"
     MINIMAL = "minimal"
@@ -66,6 +71,7 @@ class CacheStrategy(Enum):
 
 class TemplateCompatibility(Enum):
     """Template compatibility enumeration"""
+
     ALL = "all"
     SPECIFIC = "specific"
     NONE = "none"
@@ -73,6 +79,7 @@ class TemplateCompatibility(Enum):
 
 class TemplateValidationStatus(Enum):
     """Template validation status enumeration"""
+
     VALID = "valid"
     INVALID = "invalid"
     WARNING = "warning"
@@ -81,8 +88,9 @@ class TemplateValidationStatus(Enum):
 
 class TemplateRenderStatus(Enum):
     """Template render status enumeration"""
+
     SUCCESS = "success"
     FAILED = "failed"
     PARTIAL = "partial"
     PENDING = "pending"
-    CANCELLED = "cancelled" 
+    CANCELLED = "cancelled"

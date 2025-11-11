@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AuthResult:
     """Unified authentication result."""
+
     valid: bool
     user_id: str | None = None
     email: str | None = None
@@ -37,8 +38,7 @@ class AuthResult:
 
 
 async def validate_token_universal(
-    token: str,
-    client_info: dict[str, Any] | None = None
+    token: str, client_info: dict[str, Any] | None = None
 ) -> AuthResult:
     """
     Validate any token type: Keycloak, API token, or MCP token.
@@ -65,44 +65,64 @@ async def validate_token_universal(
     client_info = client_info or {}
 
     # 1. Check if it's a JWT token and try validation
-    if token.startswith('eyJ'):  # JWT tokens start with this
+    if token.startswith("eyJ"):  # JWT tokens start with this
         try:
             logger.debug("🔍 UNIFIED VALIDATOR: Detected JWT token")
 
             # Decode without verification to check token structure
             import jwt as pyjwt
+
             try:
-                unverified_payload = pyjwt.decode(token, options={"verify_signature": False})
+                unverified_payload = pyjwt.decode(
+                    token, options={"verify_signature": False}
+                )
 
                 # Check if it's a Keycloak token (has iss claim pointing to Keycloak)
                 auth_provider = os.getenv("AUTH_PROVIDER", "supabase").lower()
-                issuer = unverified_payload.get('iss', '')
+                issuer = unverified_payload.get("iss", "")
                 keycloak_url = os.getenv("KEYCLOAK_URL", "")
 
-                if auth_provider == "keycloak" and keycloak_url and issuer.startswith(keycloak_url):
-                    logger.debug("🔍 UNIFIED VALIDATOR: Token appears to be Keycloak token")
+                if (
+                    auth_provider == "keycloak"
+                    and keycloak_url
+                    and issuer.startswith(keycloak_url)
+                ):
+                    logger.debug(
+                        "🔍 UNIFIED VALIDATOR: Token appears to be Keycloak token"
+                    )
                     result = await _validate_keycloak_token(token)
                     if result.valid:
                         return result
-                    logger.debug(f"🔍 UNIFIED VALIDATOR: Keycloak validation failed: {result.error}")
+                    logger.debug(
+                        f"🔍 UNIFIED VALIDATOR: Keycloak validation failed: {result.error}"
+                    )
 
                 # Check if it's an API token (has token_id claim)
-                elif unverified_payload.get('token_id') or unverified_payload.get('type') == 'api_token':
+                elif (
+                    unverified_payload.get("token_id")
+                    or unverified_payload.get("type") == "api_token"
+                ):
                     logger.debug("🔍 UNIFIED VALIDATOR: Token appears to be API token")
                     result = await _validate_api_token(token)
                     if result.valid:
                         return result
-                    logger.debug(f"🔍 UNIFIED VALIDATOR: API token validation failed: {result.error}")
+                    logger.debug(
+                        f"🔍 UNIFIED VALIDATOR: API token validation failed: {result.error}"
+                    )
 
             except Exception as decode_error:
-                logger.debug(f"🔍 UNIFIED VALIDATOR: Could not decode token: {decode_error}")
+                logger.debug(
+                    f"🔍 UNIFIED VALIDATOR: Could not decode token: {decode_error}"
+                )
 
             # Try general local JWT validation
             logger.debug("🔍 UNIFIED VALIDATOR: Trying general local JWT validation")
             result = await _validate_local_jwt(token)
             if result.valid:
                 return result
-            logger.debug(f"🔍 UNIFIED VALIDATOR: Local JWT validation failed: {result.error}")
+            logger.debug(
+                f"🔍 UNIFIED VALIDATOR: Local JWT validation failed: {result.error}"
+            )
 
         except Exception as e:
             logger.debug(f"🔍 UNIFIED VALIDATOR: JWT validation failed: {e}")
@@ -113,15 +133,16 @@ async def validate_token_universal(
         result = await _validate_mcp_token(token, client_info)
         if result.valid:
             return result
-        logger.debug(f"🔍 UNIFIED VALIDATOR: MCP token validation failed: {result.error}")
+        logger.debug(
+            f"🔍 UNIFIED VALIDATOR: MCP token validation failed: {result.error}"
+        )
     except Exception as e:
         logger.debug(f"🔍 UNIFIED VALIDATOR: MCP token validation error: {e}")
 
     # No valid authentication found
     logger.warning("❌ UNIFIED VALIDATOR: All token validation methods failed")
     return AuthResult(
-        valid=False,
-        error="Invalid token: no validation method succeeded"
+        valid=False, error="Invalid token: no validation method succeeded"
     )
 
 
@@ -131,18 +152,16 @@ async def _validate_keycloak_token(token: str) -> AuthResult:
         from .keycloak_dependencies import validate_keycloak_token
 
         user = await validate_keycloak_token(token)
-        logger.info(f"✅ UNIFIED VALIDATOR: Keycloak token validated for user {user.id}")
+        logger.info(
+            f"✅ UNIFIED VALIDATOR: Keycloak token validated for user {user.id}"
+        )
 
         return AuthResult(
             valid=True,
             user_id=user.id,
             email=user.email,
-            auth_method='keycloak',
-            user_data={
-                'id': user.id,
-                'email': user.email,
-                'username': user.username
-            }
+            auth_method="keycloak",
+            user_data={"id": user.id, "email": user.email, "username": user.username},
         )
     except Exception as e:
         logger.debug(f"Keycloak token validation failed: {e}")
@@ -164,17 +183,17 @@ async def _validate_api_token(token: str) -> AuthResult:
         # API tokens have type 'api_token'
         payload = jwt_service.verify_token(token, expected_type="api_token")
         if payload:
-            user_id = payload.get('user_id') or payload.get('sub')
+            user_id = payload.get("user_id") or payload.get("sub")
             logger.info(f"✅ UNIFIED VALIDATOR: API token validated for user {user_id}")
 
             return AuthResult(
                 valid=True,
                 user_id=user_id,
-                email=payload.get('email'),
-                auth_method='api_token',
-                token_id=payload.get('token_id') or payload.get('jti'),
-                scopes=payload.get('scopes', []),
-                roles=payload.get('roles', [])
+                email=payload.get("email"),
+                auth_method="api_token",
+                token_id=payload.get("token_id") or payload.get("jti"),
+                scopes=payload.get("scopes", []),
+                roles=payload.get("roles", []),
             )
 
         return AuthResult(valid=False, error="API token validation failed")
@@ -192,7 +211,9 @@ async def _validate_local_jwt(token: str) -> AuthResult:
         from .domain.services.jwt_service import JWTService
 
         # Get both potential secrets
-        jwt_secret = os.getenv("JWT_SECRET_KEY", "default-secret-key-change-in-production")
+        jwt_secret = os.getenv(
+            "JWT_SECRET_KEY", "default-secret-key-change-in-production"
+        )
         supabase_jwt_secret = os.getenv("SUPABASE_JWT_SECRET")
 
         # List of secrets to try
@@ -215,17 +236,19 @@ async def _validate_local_jwt(token: str) -> AuthResult:
                             secret_value,
                             algorithms=["HS256"],
                             audience="authenticated",
-                            options={"verify_iss": False}
+                            options={"verify_iss": False},
                         )
                         if payload:
-                            user_id = payload.get('user_id') or payload.get('sub')
-                            logger.info(f"✅ UNIFIED VALIDATOR: Supabase JWT validated for user {user_id}")
+                            user_id = payload.get("user_id") or payload.get("sub")
+                            logger.info(
+                                f"✅ UNIFIED VALIDATOR: Supabase JWT validated for user {user_id}"
+                            )
                             return AuthResult(
                                 valid=True,
                                 user_id=user_id,
-                                email=payload.get('email'),
-                                auth_method='local_jwt',
-                                roles=payload.get('roles', [])
+                                email=payload.get("email"),
+                                auth_method="local_jwt",
+                                roles=payload.get("roles", []),
                             )
                     except Exception:
                         pass
@@ -233,18 +256,22 @@ async def _validate_local_jwt(token: str) -> AuthResult:
                 # Try standard validation
                 for token_type in ["api_token", "access"]:
                     try:
-                        payload = jwt_service.verify_token(token, expected_type=token_type)
+                        payload = jwt_service.verify_token(
+                            token, expected_type=token_type
+                        )
                         if payload:
-                            user_id = payload.get('user_id') or payload.get('sub')
-                            logger.info(f"✅ UNIFIED VALIDATOR: Local JWT validated for user {user_id}")
+                            user_id = payload.get("user_id") or payload.get("sub")
+                            logger.info(
+                                f"✅ UNIFIED VALIDATOR: Local JWT validated for user {user_id}"
+                            )
                             return AuthResult(
                                 valid=True,
                                 user_id=user_id,
-                                email=payload.get('email'),
-                                auth_method='local_jwt',
-                                token_id=payload.get('token_id') or payload.get('jti'),
-                                scopes=payload.get('scopes', []),
-                                roles=payload.get('roles', [])
+                                email=payload.get("email"),
+                                auth_method="local_jwt",
+                                token_id=payload.get("token_id") or payload.get("jti"),
+                                scopes=payload.get("scopes", []),
+                                roles=payload.get("roles", []),
                             )
                     except Exception:
                         continue
@@ -253,7 +280,9 @@ async def _validate_local_jwt(token: str) -> AuthResult:
                 logger.debug(f"JWT validation with {secret_name} failed: {e}")
                 continue
 
-        return AuthResult(valid=False, error="Local JWT validation failed with all secrets")
+        return AuthResult(
+            valid=False, error="Local JWT validation failed with all secrets"
+        )
 
     except Exception as e:
         logger.debug(f"Local JWT validation error: {e}")
@@ -268,16 +297,22 @@ async def _validate_mcp_token(token: str, client_info: dict[str, Any]) -> AuthRe
         token_validator = TokenValidator()
         token_info = await token_validator.validate_token(token, client_info)
 
-        logger.info(f"✅ UNIFIED VALIDATOR: MCP token validated for user {token_info.user_id}")
+        logger.info(
+            f"✅ UNIFIED VALIDATOR: MCP token validated for user {token_info.user_id}"
+        )
 
         return AuthResult(
             valid=True,
             user_id=token_info.user_id,
-            auth_method='mcp_token',
+            auth_method="mcp_token",
             user_data={
-                'created_at': token_info.created_at.isoformat() if token_info.created_at else None,
-                'expires_at': token_info.expires_at.isoformat() if token_info.expires_at else None
-            }
+                "created_at": token_info.created_at.isoformat()
+                if token_info.created_at
+                else None,
+                "expires_at": token_info.expires_at.isoformat()
+                if token_info.expires_at
+                else None,
+            },
         )
 
     except Exception as e:

@@ -61,8 +61,8 @@ class AgentTemplate(BaseTimestampEntity):
         if isinstance(self.default_configuration, dict):
             object.__setattr__(
                 self,
-                'default_configuration',
-                AgentConfiguration.from_dict(self.default_configuration)
+                "default_configuration",
+                AgentConfiguration.from_dict(self.default_configuration),
             )
 
         # Call parent initialization for timestamps
@@ -98,7 +98,7 @@ class AgentTemplate(BaseTimestampEntity):
             raise ValueError("AgentTemplate must have default_configuration")
 
         # Validate slug format (lowercase, alphanumeric, hyphens only)
-        if not all(c.isalnum() or c in ('-', '_') for c in self.slug):
+        if not all(c.isalnum() or c in ("-", "_") for c in self.slug):
             raise ValueError(
                 f"AgentTemplate slug '{self.slug}' contains invalid characters. "
                 "Only lowercase letters, numbers, hyphens, and underscores allowed."
@@ -106,9 +106,7 @@ class AgentTemplate(BaseTimestampEntity):
 
     @classmethod
     def from_yaml(
-        cls,
-        yaml_path: str,
-        template_id: AgentTemplateId | None = None
+        cls, yaml_path: str, template_id: AgentTemplateId | None = None
     ) -> AgentTemplate:
         """Create AgentTemplate from YAML file in agent-library.
 
@@ -127,7 +125,7 @@ class AgentTemplate(BaseTimestampEntity):
             FileNotFoundError: If YAML file doesn't exist
         """
         try:
-            with open(yaml_path, encoding='utf-8') as f:
+            with open(yaml_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
         except FileNotFoundError:
             raise FileNotFoundError(f"Agent template YAML not found: {yaml_path}")
@@ -138,19 +136,19 @@ class AgentTemplate(BaseTimestampEntity):
             raise ValueError(f"Expected dict in YAML, got {type(data)}")
 
         # Extract required fields
-        slug = data.get('slug') or data.get('name', '').lower().replace(' ', '-')
-        name = data.get('name')
+        slug = data.get("slug") or data.get("name", "").lower().replace(" ", "-")
+        name = data.get("name")
         if not name:
             raise ValueError(f"Agent template YAML missing 'name' field: {yaml_path}")
 
         # Build configuration from YAML structure
         config_data = {
-            "system_prompt": data.get('system_prompt', ''),
-            "tools": data.get('tools', []),
-            "capabilities": data.get('capabilities', {}),
-            "rules": data.get('rules', []),
-            "output_format": data.get('output_format', {}),
-            "metadata": data.get('metadata', {})
+            "system_prompt": data.get("system_prompt", ""),
+            "tools": data.get("tools", []),
+            "capabilities": data.get("capabilities", {}),
+            "rules": data.get("rules", []),
+            "output_format": data.get("output_format", {}),
+            "metadata": data.get("metadata", {}),
         }
 
         configuration = AgentConfiguration.from_dict(config_data)
@@ -160,14 +158,11 @@ class AgentTemplate(BaseTimestampEntity):
             id=template_id or AgentTemplateId.generate_new(),
             slug=slug,
             name=name,
-            category=data.get('category', 'general'),
-            description=data.get('description', ''),
-            version=data.get('version', '1.0.0'),
+            category=data.get("category", "general"),
+            description=data.get("description", ""),
+            version=data.get("version", "1.0.0"),
             default_configuration=configuration,
-            metadata={
-                "source_file": yaml_path,
-                **data.get('metadata', {})
-            }
+            metadata={"source_file": yaml_path, **data.get("metadata", {})},
         )
 
     @classmethod
@@ -181,14 +176,15 @@ class AgentTemplate(BaseTimestampEntity):
             AgentTemplate instance
         """
         template_id = None
-        if 'id' in data and data['id']:
+        if "id" in data and data["id"]:
             template_id = (
-                data['id'] if isinstance(data['id'], AgentTemplateId)
-                else AgentTemplateId.from_string(str(data['id']))
+                data["id"]
+                if isinstance(data["id"], AgentTemplateId)
+                else AgentTemplateId.from_string(str(data["id"]))
             )
 
         # Handle configuration
-        config = data.get('default_configuration')
+        config = data.get("default_configuration")
         if isinstance(config, dict):
             configuration = AgentConfiguration.from_dict(config)
         elif isinstance(config, AgentConfiguration):
@@ -198,15 +194,15 @@ class AgentTemplate(BaseTimestampEntity):
 
         return cls(
             id=template_id,
-            slug=data.get('slug', ''),
-            name=data.get('name', ''),
-            category=data.get('category', ''),
-            description=data.get('description', ''),
-            version=data.get('version', '1.0.0'),
+            slug=data.get("slug", ""),
+            name=data.get("name", ""),
+            category=data.get("category", ""),
+            description=data.get("description", ""),
+            version=data.get("version", "1.0.0"),
             default_configuration=configuration,
-            metadata=data.get('metadata', {}),
-            created_at=data.get('created_at'),
-            updated_at=data.get('updated_at')
+            metadata=data.get("metadata", {}),
+            created_at=data.get("created_at"),
+            updated_at=data.get("updated_at"),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -222,10 +218,12 @@ class AgentTemplate(BaseTimestampEntity):
             "category": self.category,
             "description": self.description,
             "version": self.version,
-            "default_configuration": self.default_configuration.to_dict() if self.default_configuration else {},
+            "default_configuration": self.default_configuration.to_dict()
+            if self.default_configuration
+            else {},
             "metadata": self.metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
     def matches_slug(self, slug: str) -> bool:

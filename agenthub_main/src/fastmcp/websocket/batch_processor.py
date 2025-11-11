@@ -148,7 +148,9 @@ class BatchProcessor:
                 # Update statistics
                 self._update_stats(batch_size, batch_start)
 
-                logger.debug(f"Batch processed successfully: {batch_size} messages merged")
+                logger.debug(
+                    f"Batch processed successfully: {batch_size} messages merged"
+                )
 
             except Exception as e:
                 logger.error(f"Error processing batch: {e}")
@@ -165,14 +167,14 @@ class BatchProcessor:
 
         # Collect messages until batch size or timeout
         while (
-            len(messages) < self.max_batch_size and
-            (datetime.now(UTC) - start_time).total_seconds() < self.max_batch_timeout
+            len(messages) < self.max_batch_size
+            and (datetime.now(UTC) - start_time).total_seconds()
+            < self.max_batch_timeout
         ):
             try:
                 # Non-blocking queue get with timeout
                 message = await asyncio.wait_for(
-                    self.manager.ai_batch_queue.get(),
-                    timeout=0.1
+                    self.manager.ai_batch_queue.get(), timeout=0.1
                 )
                 messages.append(message)
             except TimeoutError:
@@ -203,12 +205,14 @@ class BatchProcessor:
         # Convert to update format for create_ai_batch
         updates = []
         for entity_id, update_data in entity_updates.items():
-            updates.append({
-                "entity_id": entity_id,
-                "entity_type": update_data["entity_type"],
-                "action": update_data["action"],
-                "data": update_data["data"]
-            })
+            updates.append(
+                {
+                    "entity_id": entity_id,
+                    "entity_type": update_data["entity_type"],
+                    "action": update_data["action"],
+                    "data": update_data["data"],
+                }
+            )
 
         # Get user_id from first message (all should be from same context)
         user_id = messages[0].metadata.user_id if messages else None
@@ -222,12 +226,14 @@ class BatchProcessor:
                 batch_id=batch_id,
                 cascade_calculator=cascade_calculator,
                 user_id=user_id,
-                sequence=self.manager._next_sequence()
+                sequence=self.manager._next_sequence(),
             )
 
         return batch_message
 
-    def _deduplicate_updates(self, messages: list[WSMessage]) -> dict[str, dict[str, Any]]:
+    def _deduplicate_updates(
+        self, messages: list[WSMessage]
+    ) -> dict[str, dict[str, Any]]:
         """
         Deduplicate entity updates, keeping the latest update for each entity.
 
@@ -248,7 +254,11 @@ class BatchProcessor:
             if isinstance(primary_data, dict):
                 entity_id = primary_data.get("id")
             elif isinstance(primary_data, list) and primary_data:
-                entity_id = primary_data[0].get("id") if isinstance(primary_data[0], dict) else None
+                entity_id = (
+                    primary_data[0].get("id")
+                    if isinstance(primary_data[0], dict)
+                    else None
+                )
 
             if not entity_id:
                 logger.warning("Message without entity ID, skipping deduplication")
@@ -259,10 +269,12 @@ class BatchProcessor:
                 "entity_type": payload.entity,
                 "action": payload.action,
                 "data": primary_data,
-                "timestamp": message.timestamp
+                "timestamp": message.timestamp,
             }
 
-        logger.debug(f"Deduplicated {len(messages)} messages to {len(entity_updates)} unique entities")
+        logger.debug(
+            f"Deduplicated {len(messages)} messages to {len(entity_updates)} unique entities"
+        )
         return entity_updates
 
     async def _process_final_batch(self) -> None:
@@ -292,9 +304,8 @@ class BatchProcessor:
 
         # Calculate running average batch size
         self.average_batch_size = (
-            (self.average_batch_size * (self.batches_processed - 1) + batch_size) /
-            self.batches_processed
-        )
+            self.average_batch_size * (self.batches_processed - 1) + batch_size
+        ) / self.batches_processed
 
     def get_stats(self) -> dict[str, Any]:
         """
@@ -310,8 +321,10 @@ class BatchProcessor:
             "batches_processed": self.batches_processed,
             "messages_processed": self.messages_processed,
             "average_batch_size": round(self.average_batch_size, 2),
-            "last_batch_time": self.last_batch_time.isoformat() if self.last_batch_time else None,
-            "queue_size": self.manager.ai_batch_queue.qsize() if self.manager else 0
+            "last_batch_time": self.last_batch_time.isoformat()
+            if self.last_batch_time
+            else None,
+            "queue_size": self.manager.ai_batch_queue.qsize() if self.manager else 0,
         }
 
     async def force_process_batch(self) -> bool:
@@ -336,7 +349,7 @@ class BatchProcessor:
         self,
         interval: float | None = None,
         max_size: int | None = None,
-        max_timeout: float | None = None
+        max_timeout: float | None = None,
     ) -> None:
         """
         Update batch processing parameters (for testing/tuning).
@@ -353,7 +366,9 @@ class BatchProcessor:
             self.max_batch_size = max(1, min(200, max_size))  # 1 to 200 limit
 
         if max_timeout is not None:
-            self.max_batch_timeout = max(0.5, min(10.0, max_timeout))  # 0.5s to 10s limit
+            self.max_batch_timeout = max(
+                0.5, min(10.0, max_timeout)
+            )  # 0.5s to 10s limit
 
         logger.info(
             f"Batch parameters updated: interval={self.batch_interval}s, "

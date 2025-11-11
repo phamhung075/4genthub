@@ -24,6 +24,7 @@ AUTH_PROVIDER = os.getenv("AUTH_PROVIDER", "keycloak").lower()
 # Security scheme for extracting Bearer tokens
 security = HTTPBearer()
 
+
 def get_db() -> Generator[Session, None, None]:
     """Get database session"""
     session = get_session()
@@ -32,26 +33,30 @@ def get_db() -> Generator[Session, None, None]:
     finally:
         session.close()
 
+
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """Get current authenticated user based on configured provider"""
     if AUTH_PROVIDER == "keycloak":
         # Use Keycloak authentication with development fallback
         try:
             from ..keycloak_dependencies import get_current_user_universal
+
             return await get_current_user_universal(credentials)
         except Exception as e:
             # Development fallback when Keycloak is not accessible
             # Check if we're in development mode and Keycloak is unavailable
             env = os.getenv("ENV", "production").lower()
             if env in ["local", "development", "dev"]:
-                logger.warning(f"Keycloak authentication failed in development mode, using test user: {e}")
+                logger.warning(
+                    f"Keycloak authentication failed in development mode, using test user: {e}"
+                )
                 return User(
                     id="dev-user-001",
                     email="dev@example.com",
                     username="dev-user",
-                    password_hash="dev-hash"
+                    password_hash="dev-hash",
                 )
             else:
                 # In production, re-raise the exception
@@ -59,6 +64,7 @@ async def get_current_user(
     elif AUTH_PROVIDER == "supabase":
         # Use Supabase authentication
         from .supabase_fastapi_auth import get_current_user_supabase
+
         return await get_current_user_supabase(credentials)
     else:
         # Fallback for local/testing - should not be used in production
@@ -66,17 +72,19 @@ async def get_current_user(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
 
+
 async def get_current_active_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """Get current active user based on configured provider"""
     return await get_current_user(credentials)
 
+
 async def require_admin(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """Require admin role - validates token and checks admin role"""
     user = await get_current_user(credentials)
@@ -84,9 +92,9 @@ async def require_admin(
     # For now, just return the authenticated user
     return user
 
+
 async def require_roles(
-    *roles,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    *roles, credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     """Require specific roles - validates token and checks roles"""
     user = await get_current_user(credentials)
@@ -94,8 +102,9 @@ async def require_roles(
     # For now, just return the authenticated user
     return user
 
+
 async def get_optional_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(security)
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> User | None:
     """Get optional user - returns user if authenticated, None otherwise"""
     if credentials:

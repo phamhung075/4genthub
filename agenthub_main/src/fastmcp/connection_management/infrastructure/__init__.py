@@ -10,6 +10,6 @@ __all__ = [
     "InMemoryServerRepository",
     "InMemoryConnectionRepository",
     "MCPServerHealthService",
-    "MCPConnectionDiagnosticsService", 
-    "MCPStatusBroadcastingService"
-] 
+    "MCPConnectionDiagnosticsService",
+    "MCPStatusBroadcastingService",
+]

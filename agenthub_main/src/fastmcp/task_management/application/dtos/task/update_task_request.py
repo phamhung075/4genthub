@@ -9,6 +9,7 @@ from typing import Any
 @dataclass
 class UpdateTaskRequest:
     """Request DTO for updating a task with hierarchical storage support"""
+
     task_id: Any
     title: str | None = None
     description: str | None = None
@@ -22,5 +23,5 @@ class UpdateTaskRequest:
     context_id: str | None = None
     completion_summary: str | None = None
     testing_notes: str | None = None
-    completed_at: str | None = None 
+    completed_at: str | None = None
     progress_percentage: int | None = None

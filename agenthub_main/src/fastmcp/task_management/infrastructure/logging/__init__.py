@@ -4,12 +4,7 @@ from .logger_config import (
     TaskManagementLogger,
     log_operation,
     init_logging,
-    JSONFormatter
+    JSONFormatter,
 )
 
-__all__ = [
-    "TaskManagementLogger",
-    "log_operation", 
-    "init_logging",
-    "JSONFormatter"
-]
+__all__ = ["TaskManagementLogger", "log_operation", "init_logging", "JSONFormatter"]

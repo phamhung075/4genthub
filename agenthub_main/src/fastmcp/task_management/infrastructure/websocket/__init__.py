@@ -4,12 +4,12 @@ from .agent_communication_hub import (
     AgentCommunicationHub,
     WebSocketMessage,
     MessageType,
-    AgentConnection
+    AgentConnection,
 )
 
 __all__ = [
     "AgentCommunicationHub",
-    "WebSocketMessage", 
+    "WebSocketMessage",
     "MessageType",
-    "AgentConnection"
+    "AgentConnection",
 ]

@@ -35,9 +35,9 @@ class AgentConfiguration:
 
         # Ensure tools and rules are tuples for immutability
         if isinstance(self.tools, list):
-            object.__setattr__(self, 'tools', tuple(self.tools))
+            object.__setattr__(self, "tools", tuple(self.tools))
         if isinstance(self.rules, list):
-            object.__setattr__(self, 'rules', tuple(self.rules))
+            object.__setattr__(self, "rules", tuple(self.rules))
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AgentConfiguration":
@@ -58,7 +58,7 @@ class AgentConfiguration:
             capabilities=data.get("capabilities", {}),
             rules=tuple(data.get("rules", [])),
             output_format=data.get("output_format", {}),
-            metadata=data.get("metadata", {})
+            metadata=data.get("metadata", {}),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -73,7 +73,7 @@ class AgentConfiguration:
             "capabilities": self.capabilities,
             "rules": list(self.rules),
             "output_format": self.output_format,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
     def to_json(self) -> str:
@@ -99,7 +99,7 @@ class AgentConfiguration:
             capabilities=self.capabilities,
             rules=self.rules,
             output_format=self.output_format,
-            metadata=self.metadata
+            metadata=self.metadata,
         )
 
     def with_tools(self, tools: list[str]) -> "AgentConfiguration":
@@ -117,10 +117,12 @@ class AgentConfiguration:
             capabilities=self.capabilities,
             rules=self.rules,
             output_format=self.output_format,
-            metadata=self.metadata
+            metadata=self.metadata,
         )
 
-    def merge_capabilities(self, new_capabilities: dict[str, Any]) -> "AgentConfiguration":
+    def merge_capabilities(
+        self, new_capabilities: dict[str, Any]
+    ) -> "AgentConfiguration":
         """Create a new configuration with merged capabilities.
 
         Args:
@@ -136,5 +138,5 @@ class AgentConfiguration:
             capabilities=merged,
             rules=self.rules,
             output_format=self.output_format,
-            metadata=self.metadata
+            metadata=self.metadata,
         )

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BranchStatistics:
     """Value object for branch statistics"""
+
     branch_id: str
     task_count: int
     completed_task_count: int
@@ -22,12 +23,14 @@ class BranchStatistics:
 
 class TaskRepositoryProtocol(Protocol):
     """Protocol for task repository to avoid infrastructure dependency."""
+
     def find_by_git_branch_id(self, branch_id: str) -> list:
         pass
 
 
 class GitBranchRepositoryProtocol(Protocol):
     """Protocol for git branch repository to avoid infrastructure dependency."""
+
     def get(self, branch_id: str) -> Any | None:
         pass
 
@@ -72,13 +75,21 @@ class BranchStatisticsService:
             return
 
         try:
-            logger.info(f"Updating branch {branch_id} statistics after task {task_id} creation")
+            logger.info(
+                f"Updating branch {branch_id} statistics after task {task_id} creation"
+            )
             self._recalculate_branch_statistics(branch_id)
         except Exception as e:
             logger.error(f"Failed to update branch statistics on task creation: {e}")
 
-    def on_task_updated(self, task_id: str, old_branch_id: str | None,
-                       new_branch_id: str | None, old_status: str, new_status: str) -> None:
+    def on_task_updated(
+        self,
+        task_id: str,
+        old_branch_id: str | None,
+        new_branch_id: str | None,
+        old_status: str,
+        new_status: str,
+    ) -> None:
         """
         Handle task update event - update branch counts.
 
@@ -100,7 +111,9 @@ class BranchStatisticsService:
 
         for branch_id in branches_to_update:
             try:
-                logger.info(f"Updating branch {branch_id} statistics after task {task_id} update")
+                logger.info(
+                    f"Updating branch {branch_id} statistics after task {task_id} update"
+                )
                 self._recalculate_branch_statistics(branch_id)
             except Exception as e:
                 logger.error(f"Failed to update branch {branch_id} statistics: {e}")
@@ -118,7 +131,9 @@ class BranchStatisticsService:
             return
 
         try:
-            logger.info(f"Updating branch {branch_id} statistics after task {task_id} deletion")
+            logger.info(
+                f"Updating branch {branch_id} statistics after task {task_id} deletion"
+            )
             self._recalculate_branch_statistics(branch_id)
         except Exception as e:
             logger.error(f"Failed to update branch statistics on task deletion: {e}")
@@ -138,9 +153,9 @@ class BranchStatisticsService:
 
         # Calculate statistics
         task_count = len(tasks)
-        completed_count = sum(1 for task in tasks if task.status == 'done')
-        in_progress_count = sum(1 for task in tasks if task.status == 'in_progress')
-        blocked_count = sum(1 for task in tasks if task.status == 'blocked')
+        completed_count = sum(1 for task in tasks if task.status == "done")
+        in_progress_count = sum(1 for task in tasks if task.status == "in_progress")
+        blocked_count = sum(1 for task in tasks if task.status == "blocked")
 
         progress_percentage = 0.0
         if task_count > 0:
@@ -151,9 +166,9 @@ class BranchStatisticsService:
         if branch:
             # Update branch statistics
             updates = {
-                'task_count': task_count,
-                'completed_task_count': completed_count,
-                'progress_percentage': progress_percentage
+                "task_count": task_count,
+                "completed_task_count": completed_count,
+                "progress_percentage": progress_percentage,
             }
 
             self._git_branch_repository.update(branch_id, updates)
@@ -173,10 +188,12 @@ class BranchStatisticsService:
             completed_task_count=completed_count,
             in_progress_count=in_progress_count,
             blocked_count=blocked_count,
-            progress_percentage=progress_percentage
+            progress_percentage=progress_percentage,
         )
 
-    def recalculate_all_branches(self, project_id: str | None = None) -> dict[str, BranchStatistics]:
+    def recalculate_all_branches(
+        self, project_id: str | None = None
+    ) -> dict[str, BranchStatistics]:
         """
         Recalculate statistics for all branches in a project or all branches.
 
@@ -197,7 +214,9 @@ class BranchStatisticsService:
                 stats = self._recalculate_branch_statistics(branch.id)
                 results[branch.id] = stats
             except Exception as e:
-                logger.error(f"Failed to recalculate statistics for branch {branch.id}: {e}")
+                logger.error(
+                    f"Failed to recalculate statistics for branch {branch.id}: {e}"
+                )
 
         logger.info(f"Recalculated statistics for {len(results)} branches")
         return results
@@ -220,9 +239,9 @@ class BranchStatisticsService:
         tasks = self._task_repository.find_by_git_branch_id(branch_id)
 
         task_count = len(tasks)
-        completed_count = sum(1 for task in tasks if task.status == 'done')
-        in_progress_count = sum(1 for task in tasks if task.status == 'in_progress')
-        blocked_count = sum(1 for task in tasks if task.status == 'blocked')
+        completed_count = sum(1 for task in tasks if task.status == "done")
+        in_progress_count = sum(1 for task in tasks if task.status == "in_progress")
+        blocked_count = sum(1 for task in tasks if task.status == "blocked")
 
         progress_percentage = 0.0
         if task_count > 0:
@@ -234,5 +253,5 @@ class BranchStatisticsService:
             completed_task_count=completed_count,
             in_progress_count=in_progress_count,
             blocked_count=blocked_count,
-            progress_percentage=progress_percentage
+            progress_percentage=progress_percentage,
         )

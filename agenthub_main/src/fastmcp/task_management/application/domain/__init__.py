@@ -3,7 +3,7 @@
 This module provides application layer domain components specific to task management.
 It bridges the application services with domain entities and repositories.
 
-This is distinct from the core domain layer and provides application-specific 
+This is distinct from the core domain layer and provides application-specific
 domain objects and interfaces.
 """
 
@@ -11,7 +11,7 @@ domain objects and interfaces.
 # Import what's available and skip what's missing
 try:
     from ...domain.entities.task import Task
-    from ...domain.entities.project import Project  
+    from ...domain.entities.project import Project
     from ...domain.entities.git_branch import GitBranch
 except ImportError:
     pass
@@ -24,6 +24,12 @@ except ImportError:
     pass
 
 try:
-    from ...domain.value_objects import AgentRole, EstimatedEffort, EffortLevel, CommonLabel, LabelValidator
+    from ...domain.value_objects import (
+        AgentRole,
+        EstimatedEffort,
+        EffortLevel,
+        CommonLabel,
+        LabelValidator,
+    )
 except ImportError:
     pass

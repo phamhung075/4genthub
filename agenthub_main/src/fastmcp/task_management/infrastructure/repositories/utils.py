@@ -38,7 +38,7 @@ from ..database.database_utils import get_database_utils
 logger = logging.getLogger(__name__)
 
 # Type variable for repository utilities
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def get_validated_database_type() -> str:
@@ -50,14 +50,14 @@ def get_validated_database_type() -> str:
     Raises:
         ConfigurationException: If DATABASE_TYPE is not set or invalid
     """
-    database_type = os.getenv('DATABASE_TYPE')
+    database_type = os.getenv("DATABASE_TYPE")
     if not database_type:
         raise ConfigurationException(
             "DATABASE_TYPE environment variable is not set. "
             "Please set DATABASE_TYPE to 'postgresql', 'sqlite', or 'supabase'"
         )
 
-    valid_types = {'postgresql', 'sqlite', 'supabase'}
+    valid_types = {"postgresql", "sqlite", "supabase"}
     if database_type.lower() not in valid_types:
         raise ConfigurationException(
             f"Invalid DATABASE_TYPE '{database_type}'. "
@@ -77,24 +77,27 @@ def get_repository_config() -> dict[str, Any]:
         ConfigurationException: If configuration is invalid
     """
     try:
-        environment = os.getenv('ENVIRONMENT', 'production').lower()
+        environment = os.getenv("ENVIRONMENT", "production").lower()
         database_type = get_validated_database_type()
 
         # Validate environment
-        valid_environments = {'development', 'testing', 'staging', 'production'}
+        valid_environments = {"development", "testing", "staging", "production"}
         if environment not in valid_environments:
-            logger.warning(f"Unknown environment '{environment}', defaulting to 'production'")
-            environment = 'production'
+            logger.warning(
+                f"Unknown environment '{environment}', defaulting to 'production'"
+            )
+            environment = "production"
 
         config = {
-            'environment': environment,
-            'database_type': database_type,
-            'redis_enabled': os.getenv('REDIS_ENABLED', 'false').lower() == 'true',
-            'use_cache': os.getenv('USE_CACHE', 'false').lower() == 'true',
-            'debug_mode': environment in ('development', 'testing'),
-            'performance_mode': os.getenv('PERFORMANCE_MODE', 'false').lower() == 'true',
-            'timestamp_events_enabled': True,  # Always enabled in clean architecture
-            'clean_architecture_mode': True   # Always enabled
+            "environment": environment,
+            "database_type": database_type,
+            "redis_enabled": os.getenv("REDIS_ENABLED", "false").lower() == "true",
+            "use_cache": os.getenv("USE_CACHE", "false").lower() == "true",
+            "debug_mode": environment in ("development", "testing"),
+            "performance_mode": os.getenv("PERFORMANCE_MODE", "false").lower()
+            == "true",
+            "timestamp_events_enabled": True,  # Always enabled in clean architecture
+            "clean_architecture_mode": True,  # Always enabled
         }
 
         logger.debug(f"Repository configuration loaded: {config}")
@@ -125,12 +128,12 @@ def validate_entity_timestamps(entity: Any) -> dict[str, Any]:
             "created_at": None,
             "updated_at": None,
             "timezone_compliant": False,
-            "errors": []
+            "errors": [],
         }
 
         # Check if entity has timestamp attributes
-        has_created_at = hasattr(entity, 'created_at')
-        has_updated_at = hasattr(entity, 'updated_at')
+        has_created_at = hasattr(entity, "created_at")
+        has_updated_at = hasattr(entity, "updated_at")
 
         if not (has_created_at and has_updated_at):
             validation_result["errors"].append(
@@ -141,7 +144,7 @@ def validate_entity_timestamps(entity: Any) -> dict[str, Any]:
         validation_result["has_timestamps"] = True
 
         # Validate created_at
-        created_at = getattr(entity, 'created_at')
+        created_at = getattr(entity, "created_at")
         if created_at is not None:
             if not isinstance(created_at, datetime):
                 validation_result["errors"].append(
@@ -155,7 +158,7 @@ def validate_entity_timestamps(entity: Any) -> dict[str, Any]:
                     )
 
         # Validate updated_at
-        updated_at = getattr(entity, 'updated_at')
+        updated_at = getattr(entity, "updated_at")
         if updated_at is not None:
             if not isinstance(updated_at, datetime):
                 validation_result["errors"].append(
@@ -178,9 +181,11 @@ def validate_entity_timestamps(entity: Any) -> dict[str, Any]:
         # Set final validation status
         validation_result["timestamps_valid"] = len(validation_result["errors"]) == 0
         validation_result["timezone_compliant"] = (
-            validation_result["timestamps_valid"] and
-            created_at and created_at.tzinfo == UTC and
-            updated_at and updated_at.tzinfo == UTC
+            validation_result["timestamps_valid"]
+            and created_at
+            and created_at.tzinfo == UTC
+            and updated_at
+            and updated_at.tzinfo == UTC
         )
 
         return validation_result
@@ -216,7 +221,12 @@ def normalize_query_params(params: dict[str, Any]) -> dict[str, Any]:
                 continue
 
             # Handle timestamp fields
-            if key.endswith('_at') or key in ('start_time', 'end_time', 'before', 'after'):
+            if key.endswith("_at") or key in (
+                "start_time",
+                "end_time",
+                "before",
+                "after",
+            ):
                 normalized[key] = db_utils.normalize_timestamp(value)
 
             # Handle string fields
@@ -257,6 +267,7 @@ def with_database_error_handling(func: Callable[..., T]) -> Callable[..., T]:
     Returns:
         Wrapped function with error handling
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs) -> T:
         try:
@@ -286,13 +297,13 @@ def get_performance_settings() -> dict[str, Any]:
     config = get_repository_config()
 
     return {
-        "batch_size": int(os.getenv('REPO_BATCH_SIZE', '100')),
-        "connection_pool_size": int(os.getenv('DB_POOL_SIZE', '10')),
-        "query_timeout": int(os.getenv('QUERY_TIMEOUT', '30')),
-        "enable_query_cache": config.get('use_cache', True),
-        "enable_lazy_loading": config.get('performance_mode', True),
+        "batch_size": int(os.getenv("REPO_BATCH_SIZE", "100")),
+        "connection_pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
+        "query_timeout": int(os.getenv("QUERY_TIMEOUT", "30")),
+        "enable_query_cache": config.get("use_cache", True),
+        "enable_lazy_loading": config.get("performance_mode", True),
         "timestamp_index_optimization": True,  # Always enabled in clean architecture
-        "bulk_operations_enabled": True
+        "bulk_operations_enabled": True,
     }
 
 
@@ -308,16 +319,18 @@ def get_repository_health_status() -> dict[str, Any]:
         config = get_repository_config()
 
         return {
-            "status": "healthy" if db_health.get("status") == "healthy" else "unhealthy",
+            "status": "healthy"
+            if db_health.get("status") == "healthy"
+            else "unhealthy",
             "database_health": db_health,
             "repository_config": {
                 "database_type": config["database_type"],
                 "environment": config["environment"],
                 "timestamp_events_active": config["timestamp_events_enabled"],
-                "clean_architecture_mode": config["clean_architecture_mode"]
+                "clean_architecture_mode": config["clean_architecture_mode"],
             },
             "performance_settings": get_performance_settings(),
-            "checked_at": datetime.now(UTC).isoformat()
+            "checked_at": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:
@@ -325,7 +338,7 @@ def get_repository_health_status() -> dict[str, Any]:
         return {
             "status": "unhealthy",
             "error": str(e),
-            "checked_at": datetime.now(UTC).isoformat()
+            "checked_at": datetime.now(UTC).isoformat(),
         }
 
 
@@ -352,7 +365,9 @@ class RepositoryMetrics:
 
     def record_operation(self, operation_name: str) -> None:
         """Record a successful repository operation."""
-        self.operation_counts[operation_name] = self.operation_counts.get(operation_name, 0) + 1
+        self.operation_counts[operation_name] = (
+            self.operation_counts.get(operation_name, 0) + 1
+        )
 
     def record_error(self, operation_name: str) -> None:
         """Record a failed repository operation."""
@@ -370,7 +385,7 @@ class RepositoryMetrics:
             "total_operations": sum(self.operation_counts.values()),
             "total_errors": sum(self.error_counts.values()),
             "success_rate": self._calculate_success_rate(),
-            "collected_at": datetime.now(UTC).isoformat()
+            "collected_at": datetime.now(UTC).isoformat(),
         }
 
     def _calculate_success_rate(self) -> float:

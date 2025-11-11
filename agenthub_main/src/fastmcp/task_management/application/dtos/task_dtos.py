@@ -10,6 +10,7 @@ from typing import Any
 @dataclass
 class CreateTaskDTO:
     """DTO for creating a new task"""
+
     title: str
     description: str
     git_branch_id: str | None = None
@@ -20,7 +21,7 @@ class CreateTaskDTO:
     due_date: str | None = None
     estimated_effort: str | None = None
     details: str | None = None
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API usage"""
         return {
@@ -33,12 +34,14 @@ class CreateTaskDTO:
             "labels": self.labels or [],
             "due_date": self.due_date,
             "estimated_effort": self.estimated_effort,
-            "details": self.details or ""
+            "details": self.details or "",
         }
+
 
 @dataclass
 class UpdateTaskDTO:
     """DTO for updating an existing task"""
+
     task_id: str
     title: str | None = None
     description: str | None = None
@@ -50,11 +53,11 @@ class UpdateTaskDTO:
     estimated_effort: str | None = None
     details: str | None = None
     context_id: str | None = None
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API usage"""
         result = {"task_id": self.task_id}
-        
+
         if self.title is not None:
             result["title"] = self.title
         if self.description is not None:
@@ -75,22 +78,24 @@ class UpdateTaskDTO:
             result["details"] = self.details
         if self.context_id is not None:
             result["context_id"] = self.context_id
-            
+
         return result
+
 
 @dataclass
 class TaskResponseDTO:
     """DTO for task response"""
+
     success: bool
     task_id: str | None = None
     message: str | None = None
     task_data: dict[str, Any] | None = None
     errors: list[str] | None = None
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API usage"""
         result = {"success": self.success}
-        
+
         if self.task_id is not None:
             result["task_id"] = self.task_id
         if self.message is not None:
@@ -99,24 +104,26 @@ class TaskResponseDTO:
             result["task_data"] = self.task_data
         if self.errors is not None:
             result["errors"] = self.errors
-            
+
         return result
+
 
 @dataclass
 class CompleteTaskDTO:
     """DTO for completing a task"""
+
     task_id: str
     completion_summary: str
     context_updated_at: datetime | None = None
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API usage"""
         result = {
             "task_id": self.task_id,
-            "completion_summary": self.completion_summary
+            "completion_summary": self.completion_summary,
         }
-        
+
         if self.context_updated_at is not None:
             result["context_updated_at"] = self.context_updated_at.isoformat()
-            
+
         return result

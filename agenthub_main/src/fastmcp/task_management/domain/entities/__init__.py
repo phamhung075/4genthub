@@ -14,4 +14,19 @@ from .template import Template, TemplateResult, TemplateRenderRequest, TemplateU
 from ..value_objects.task_status import TaskStatus
 from ..value_objects.priority import Priority as TaskPriority
 
-__all__ = ['Task', 'Subtask', 'TaskStatus', 'TaskPriority', 'GitBranch', 'Agent', 'WorkSession', 'TaskContext', 'Template', 'TemplateResult', 'TemplateRenderRequest', 'TemplateUsage', 'Label', 'Project'] 
+__all__ = [
+    "Task",
+    "Subtask",
+    "TaskStatus",
+    "TaskPriority",
+    "GitBranch",
+    "Agent",
+    "WorkSession",
+    "TaskContext",
+    "Template",
+    "TemplateResult",
+    "TemplateRenderRequest",
+    "TemplateUsage",
+    "Label",
+    "Project",
+]

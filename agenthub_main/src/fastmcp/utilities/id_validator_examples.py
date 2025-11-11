@@ -35,7 +35,7 @@ class SubtaskControllerExample:
         # BUG: Directly passing task_id as git_branch_id without validation
         return self._facade_service.get_subtask_facade(
             user_id=user_id,
-            git_branch_id=task_id  # CRITICAL BUG: task_id ≠ git_branch_id
+            git_branch_id=task_id,  # CRITICAL BUG: task_id ≠ git_branch_id
         )
 
     def _get_facade_for_request_FIXED(self, task_id: str, user_id: str):
@@ -66,34 +66,39 @@ class SubtaskControllerExample:
             task_facade = self._facade_service.get_task_facade(user_id=user_id)
             task_response = task_facade.get_task(task_id=task_id)
 
-            if not task_response or not task_response.get('success'):
+            if not task_response or not task_response.get("success"):
                 raise ValueError(f"Task {task_id} not found or inaccessible")
 
             # Extract git_branch_id from task data
-            task_data = task_response.get('data', {}).get('task', {})
-            git_branch_id = task_data.get('git_branch_id')
+            task_data = task_response.get("data", {}).get("task", {})
+            git_branch_id = task_data.get("git_branch_id")
 
             if not git_branch_id:
                 raise ValueError(f"Task {task_id} missing git_branch_id")
 
             # Step 4: Validate that task_id ≠ git_branch_id (critical check)
             context_validation = self.id_validator.validate_task_context(
-                task_id=task_id,
-                expected_git_branch_id=git_branch_id
+                task_id=task_id, expected_git_branch_id=git_branch_id
             )
 
             if not context_validation.is_valid:
                 # This catches the critical bug where task_id == git_branch_id
-                logger.error(f"Critical parameter confusion detected: {context_validation.error_message}")
-                raise ValueError(f"Parameter confusion detected: {context_validation.error_message}")
+                logger.error(
+                    f"Critical parameter confusion detected: {context_validation.error_message}"
+                )
+                raise ValueError(
+                    f"Parameter confusion detected: {context_validation.error_message}"
+                )
 
             # Step 5: Final parameter validation before facade creation
-            prevent_id_confusion(task_id=task_id, git_branch_id=git_branch_id, user_id=user_id)
+            prevent_id_confusion(
+                task_id=task_id, git_branch_id=git_branch_id, user_id=user_id
+            )
 
             # Step 6: Create facade with CORRECT git_branch_id
             return self._facade_service.get_subtask_facade(
                 user_id=user_id,
-                git_branch_id=git_branch_id  # FIXED: Use correct git_branch_id
+                git_branch_id=git_branch_id,  # FIXED: Use correct git_branch_id
             )
 
         except Exception as e:
@@ -102,7 +107,7 @@ class SubtaskControllerExample:
             # Provide fix suggestions for debugging
             suggestions = self.id_validator.suggest_fix_for_confusion(
                 confused_task_id=task_id,
-                context="subtask_controller._get_facade_for_request"
+                context="subtask_controller._get_facade_for_request",
             )
             logger.error(f"Fix suggestions: {suggestions}")
 
@@ -117,10 +122,12 @@ class FacadeServiceExample:
     def __init__(self):
         self.id_validator = IDValidator()
 
-    def get_subtask_facade_with_validation(self,
-                                         user_id: str,
-                                         git_branch_id: str | None = None,
-                                         project_id: str | None = None):
+    def get_subtask_facade_with_validation(
+        self,
+        user_id: str,
+        git_branch_id: str | None = None,
+        project_id: str | None = None,
+    ):
         """
         Enhanced facade creation with comprehensive ID validation.
 
@@ -129,14 +136,16 @@ class FacadeServiceExample:
         """
         # Validate all provided parameters
         validation_result = self.id_validator.validate_parameter_mapping(
-            git_branch_id=git_branch_id,
-            project_id=project_id,
-            user_id=user_id
+            git_branch_id=git_branch_id, project_id=project_id, user_id=user_id
         )
 
         if not validation_result.is_valid:
-            logger.error(f"Facade parameter validation failed: {validation_result.error_message}")
-            raise ValueError(f"Invalid facade parameters: {validation_result.error_message}")
+            logger.error(
+                f"Facade parameter validation failed: {validation_result.error_message}"
+            )
+            raise ValueError(
+                f"Invalid facade parameters: {validation_result.error_message}"
+            )
 
         # Log warnings for monitoring
         if validation_result.warnings:
@@ -144,8 +153,10 @@ class FacadeServiceExample:
                 logger.warning(f"Facade creation warning: {warning}")
 
         # Proceed with facade creation...
-        logger.info(f"Creating subtask facade with validated parameters: "
-                   f"git_branch_id={git_branch_id}, project_id={project_id}, user_id={user_id}")
+        logger.info(
+            f"Creating subtask facade with validated parameters: "
+            f"git_branch_id={git_branch_id}, project_id={project_id}, user_id={user_id}"
+        )
 
         # ... actual facade creation logic here ...
 
@@ -166,22 +177,24 @@ class MCPControllerBaseExample:
         method to catch parameter confusion early.
         """
         # Extract ID parameters
-        task_id = kwargs.get('task_id')
-        git_branch_id = kwargs.get('git_branch_id')
-        project_id = kwargs.get('project_id')
-        user_id = kwargs.get('user_id')
+        task_id = kwargs.get("task_id")
+        git_branch_id = kwargs.get("git_branch_id")
+        project_id = kwargs.get("project_id")
+        user_id = kwargs.get("user_id")
 
         # Validate parameter mapping
         result = self.id_validator.validate_parameter_mapping(
             task_id=task_id,
             git_branch_id=git_branch_id,
             project_id=project_id,
-            user_id=user_id
+            user_id=user_id,
         )
 
         # Log validation results
         if not result.is_valid:
-            logger.error(f"MCP controller parameter validation failed: {result.error_message}")
+            logger.error(
+                f"MCP controller parameter validation failed: {result.error_message}"
+            )
         elif result.warnings:
             for warning in result.warnings:
                 logger.warning(f"MCP controller parameter warning: {warning}")
@@ -201,9 +214,9 @@ class MCPControllerBaseExample:
                 "error": "PARAMETER_VALIDATION_FAILED",
                 "message": validation_result.error_message,
                 "suggestions": self.id_validator.suggest_fix_for_confusion(
-                    confused_task_id=kwargs.get('task_id', 'unknown'),
-                    context=f"MCP controller {action} action"
-                )
+                    confused_task_id=kwargs.get("task_id", "unknown"),
+                    context=f"MCP controller {action} action",
+                ),
             }
 
         # Proceed with actual request handling...
@@ -231,27 +244,24 @@ class DatabaseConstraintExample:
             ADD CONSTRAINT chk_task_id_uuid_format
             CHECK (id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$');
             """,
-
             # UUID format validation for subtask task_id foreign key
             """
             ALTER TABLE task_subtasks
             ADD CONSTRAINT chk_subtask_task_id_uuid_format
             CHECK (task_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$');
             """,
-
             # Foreign key constraint to prevent orphaned subtasks
             """
             ALTER TABLE task_subtasks
             ADD CONSTRAINT fk_subtask_task_id
             FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE;
             """,
-
             # Ensure git_branch_id in tasks table references actual git branches
             """
             ALTER TABLE tasks
             ADD CONSTRAINT fk_task_git_branch_id
             FOREIGN KEY (git_branch_id) REFERENCES git_branches(id) ON DELETE CASCADE;
-            """
+            """,
         ]
 
     @staticmethod
@@ -267,7 +277,6 @@ class DatabaseConstraintExample:
             LEFT JOIN tasks t ON ts.task_id = t.id
             WHERE t.id IS NULL;
             """,
-
             # Find tasks with git_branch_id that don't reference actual branches
             """
             SELECT t.id as task_id, t.git_branch_id, gb.id as actual_branch_id
@@ -275,7 +284,6 @@ class DatabaseConstraintExample:
             LEFT JOIN git_branches gb ON t.git_branch_id = gb.id
             WHERE gb.id IS NULL;
             """,
-
             # Find potential ID confusion (same ID used in multiple contexts)
             """
             SELECT 'task_id_as_branch_id' as issue_type, COUNT(*) as count
@@ -285,7 +293,7 @@ class DatabaseConstraintExample:
             SELECT 'branch_id_as_task_id' as issue_type, COUNT(*) as count
             FROM git_branches gb
             JOIN tasks t ON gb.id = t.id;
-            """
+            """,
         ]
 
 
@@ -294,6 +302,7 @@ def test_integration_example():
     """
     Example of how to test the IDValidator integration.
     """
+
     # Test the fixed subtask controller
     class MockFacadeService:
         def get_task_facade(self, user_id):
@@ -305,13 +314,13 @@ def test_integration_example():
     class MockTaskFacade:
         def get_task(self, task_id):
             return {
-                'success': True,
-                'data': {
-                    'task': {
-                        'id': task_id,
-                        'git_branch_id': '550e8400-e29b-41d4-a716-446655440001'
+                "success": True,
+                "data": {
+                    "task": {
+                        "id": task_id,
+                        "git_branch_id": "550e8400-e29b-41d4-a716-446655440001",
                     }
-                }
+                },
             }
 
     class MockSubtaskFacade:
@@ -322,8 +331,8 @@ def test_integration_example():
 
     try:
         controller._get_facade_for_request_FIXED(
-            task_id='550e8400-e29b-41d4-a716-446655440000',
-            user_id='user-550e8400-e29b-41d4-a716-446655440002'
+            task_id="550e8400-e29b-41d4-a716-446655440000",
+            user_id="user-550e8400-e29b-41d4-a716-446655440002",
         )
         print("✅ IDValidator integration successful - no parameter confusion detected")
         return True

@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -34,6 +34,7 @@ class PaginationRequest:
         >>> req.offset
         10
     """
+
     page: int = 1
     page_size: int = 20
     offset: int | None = None
@@ -41,7 +42,7 @@ class PaginationRequest:
     def __post_init__(self):
         """Calculate offset if not provided."""
         if self.offset is None:
-            object.__setattr__(self, 'offset', (self.page - 1) * self.page_size)
+            object.__setattr__(self, "offset", (self.page - 1) * self.page_size)
 
 
 @dataclass(frozen=True)
@@ -70,6 +71,7 @@ class PaginationResult(Generic[T]):
         ...     has_previous=True
         ... )
     """
+
     items: list[T]
     total_count: int
     page: int

@@ -45,40 +45,40 @@ subtask_controller = SubtaskAPIController()
 async def create_task(
     request: CreateTaskRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Create a new task for the authenticated user.
-    
+
     The task will be automatically associated with the current user,
     ensuring data isolation.
     """
     try:
         # Log the access for audit
         logger.info(f"User {current_user.email} creating task: {request.title}")
-        
+
         # Delegate to API controller
         result = task_controller.create_task(request, current_user.id, db)
 
         if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.message or "Failed to create task"
+                detail=result.message or "Failed to create task",
             )
 
         return {
             "success": True,
             "task": result.task,
-            "message": f"Task created successfully for user {current_user.email}"
+            "message": f"Task created successfully for user {current_user.email}",
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error creating task for user {current_user.id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create task"
+            detail="Failed to create task",
         )
 
 
@@ -86,18 +86,19 @@ async def create_task(
 async def list_tasks(
     task_status: str | None = None,
     priority: str | None = None,
-    git_branch_id: str | None = None,  # Add git_branch_id parameter for branch filtering
+    git_branch_id: str
+    | None = None,  # Add git_branch_id parameter for branch filtering
     limit: int = 50,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     List all tasks for the authenticated user.
-    
+
     Only returns tasks that belong to the current user,
     ensuring data isolation. Can be filtered by git_branch_id
     to show tasks from a specific branch only.
-    
+
     Args:
         task_status: Optional task status filter (todo, in_progress, done, etc.)
         priority: Optional priority filter (low, medium, high, urgent, critical)
@@ -109,80 +110,93 @@ async def list_tasks(
         logger.debug("=" * 80)
         logger.debug("🔍 TASK LISTING REQUEST")
         logger.debug(f"📧 User: {current_user.email} (ID: {current_user.id})")
-        logger.debug(f"🎯 Filters: status={task_status}, priority={priority}, git_branch_id={git_branch_id}, limit={limit}")
+        logger.debug(
+            f"🎯 Filters: status={task_status}, priority={priority}, git_branch_id={git_branch_id}, limit={limit}"
+        )
         logger.debug(f"💾 Database session: {type(db)}")
-        
+
         # Build request
         logger.debug("📋 Building list request...")
         list_request = ListTasksRequest(
             git_branch_id=git_branch_id,
             status=task_status,
             priority=priority,
-            limit=limit
+            limit=limit,
         )
         logger.debug(f"✅ List request built: {list_request}")
-        
+
         # Delegate to API controller
         logger.debug("🔍 Fetching tasks from controller...")
-        controller_result = task_controller.list_tasks(list_request, current_user.id, db)
+        controller_result = task_controller.list_tasks(
+            list_request, current_user.id, db
+        )
         logger.debug(f"✅ Controller result type: {type(controller_result)}")
-        
+
         # Extract the actual tasks array from the controller response
         if controller_result.success:
             tasks = controller_result.tasks or []
             logger.debug(f"✅ Tasks extracted: {len(tasks)} tasks found")
         else:
-            logger.error(f"❌ Controller result error: {controller_result.error or 'Unknown error'}")
+            logger.error(
+                f"❌ Controller result error: {controller_result.error or 'Unknown error'}"
+            )
             tasks = []
-        
+
         # Log each task for debugging
         if tasks:
             logger.debug("📝 Task details:")
             try:
                 for i, task in enumerate(tasks[:5]):  # Log first 5 tasks only
                     if isinstance(task, dict):
-                        logger.debug(f"   Task {i+1}: ID={task.get('id', 'N/A')}, Title={task.get('title', 'N/A')}, Status={task.get('status', 'N/A')}")
+                        logger.debug(
+                            f"   Task {i + 1}: ID={task.get('id', 'N/A')}, Title={task.get('title', 'N/A')}, Status={task.get('status', 'N/A')}"
+                        )
                     else:
-                        logger.debug(f"   Task {i+1}: ID={getattr(task, 'id', 'N/A')}, Title={getattr(task, 'title', 'N/A')}, Status={getattr(task, 'status', 'N/A')}")
+                        logger.debug(
+                            f"   Task {i + 1}: ID={getattr(task, 'id', 'N/A')}, Title={getattr(task, 'title', 'N/A')}, Status={getattr(task, 'status', 'N/A')}"
+                        )
                 if len(tasks) > 5:
                     logger.debug(f"   ... and {len(tasks) - 5} more tasks")
             except Exception as debug_error:
-                logger.debug(f"📝 Debug logging error: {debug_error}, tasks type: {type(tasks)}")
+                logger.debug(
+                    f"📝 Debug logging error: {debug_error}, tasks type: {type(tasks)}"
+                )
         else:
             logger.debug("📝 No tasks found for user")
-        
+
         # Prepare response - now using the extracted tasks array
         response_data = {
             "success": True,
             "tasks": tasks,
             "count": len(tasks),
-            "user": current_user.email
+            "user": current_user.email,
         }
-        
+
         logger.info(f"User {current_user.email} retrieved {len(tasks)} tasks")
         logger.debug(f"✅ TASK LISTING COMPLETED - Returning {len(tasks)} tasks")
         logger.debug("=" * 80)
-        
+
         return response_data
-        
+
     except Exception as e:
         logger.error("=" * 80)
         logger.error(f"❌ ERROR in task listing for user {current_user.id}")
         logger.error(f"❌ User: {current_user.email}")
         logger.error(f"❌ Error type: {type(e).__name__}")
         logger.error(f"❌ Error message: {str(e)}")
-        
+
         # Log stack trace for debugging
         import traceback
+
         logger.error("❌ Stack trace:")
         for line in traceback.format_exc().splitlines():
             logger.error(f"   {line}")
-        
+
         logger.error("=" * 80)
-        
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to list tasks"
+            detail="Failed to list tasks",
         )
 
 
@@ -190,11 +204,11 @@ async def list_tasks(
 async def get_task(
     task_id: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get a specific task for the authenticated user.
-    
+
     Returns 404 if the task doesn't exist or doesn't belong to the user.
     """
     try:
@@ -202,26 +216,24 @@ async def get_task(
         result = task_controller.get_task(task_id, current_user.id, db)
 
         if not result.success:
-            logger.warning(f"User {current_user.email} attempted to access non-existent or unauthorized task {task_id}")
+            logger.warning(
+                f"User {current_user.email} attempted to access non-existent or unauthorized task {task_id}"
+            )
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Task not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
             )
 
         logger.info(f"User {current_user.email} accessed task {task_id}")
 
-        return {
-            "success": True,
-            "task": result.task
-        }
-        
+        return {"success": True, "task": result.task}
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error getting task {task_id} for user {current_user.id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get task"
+            detail="Failed to get task",
         )
 
 
@@ -230,11 +242,11 @@ async def update_task(
     task_id: str,
     request: UpdateTaskRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Update a task for the authenticated user.
-    
+
     Only allows updating tasks that belong to the current user.
     """
     try:
@@ -243,15 +255,16 @@ async def update_task(
 
         if not result.success:
             if "not found" in (result.error or "").lower():
-                logger.warning(f"User {current_user.email} attempted to update non-existent or unauthorized task {task_id}")
+                logger.warning(
+                    f"User {current_user.email} attempted to update non-existent or unauthorized task {task_id}"
+                )
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Task not found"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
                 )
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.message or "Failed to update task"
+                    detail=result.message or "Failed to update task",
                 )
 
         logger.info(f"User {current_user.email} updated task {task_id}")
@@ -259,16 +272,16 @@ async def update_task(
         return {
             "success": True,
             "task": result.task,
-            "message": "Task updated successfully"
+            "message": "Task updated successfully",
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error updating task {task_id} for user {current_user.id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update task"
+            detail="Failed to update task",
         )
 
 
@@ -276,11 +289,11 @@ async def update_task(
 async def delete_task(
     task_id: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Delete a task for the authenticated user.
-    
+
     Only allows deleting tasks that belong to the current user.
     """
     try:
@@ -289,31 +302,29 @@ async def delete_task(
 
         if not result.success:
             if "not found" in (result.error or "").lower():
-                logger.warning(f"User {current_user.email} attempted to delete non-existent or unauthorized task {task_id}")
+                logger.warning(
+                    f"User {current_user.email} attempted to delete non-existent or unauthorized task {task_id}"
+                )
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Task not found"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
                 )
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.message or "Failed to delete task"
+                    detail=result.message or "Failed to delete task",
                 )
-        
+
         logger.info(f"User {current_user.email} deleted task {task_id}")
-        
-        return {
-            "success": True,
-            "message": "Task deleted successfully"
-        }
-        
+
+        return {"success": True, "message": "Task deleted successfully"}
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error deleting task {task_id} for user {current_user.id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete task"
+            detail="Failed to delete task",
         )
 
 
@@ -323,28 +334,31 @@ async def complete_task(
     completion_summary: str,
     testing_notes: str | None = None,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Mark a task as completed for the authenticated user.
-    
+
     Only allows completing tasks that belong to the current user.
     """
     try:
         # Delegate to API controller
-        result = task_controller.complete_task(task_id, completion_summary, testing_notes, current_user.id, db)
+        result = task_controller.complete_task(
+            task_id, completion_summary, testing_notes, current_user.id, db
+        )
 
         if not result.success:
             if "not found" in (result.error or "").lower():
-                logger.warning(f"User {current_user.email} attempted to complete non-existent or unauthorized task {task_id}")
+                logger.warning(
+                    f"User {current_user.email} attempted to complete non-existent or unauthorized task {task_id}"
+                )
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Task not found"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
                 )
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.message or "Failed to complete task"
+                    detail=result.message or "Failed to complete task",
                 )
 
         logger.info(f"User {current_user.email} completed task {task_id}")
@@ -352,27 +366,26 @@ async def complete_task(
         return {
             "success": True,
             "task": result.task,
-            "message": "Task completed successfully"
+            "message": "Task completed successfully",
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error completing task {task_id} for user {current_user.id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to complete task"
+            detail="Failed to complete task",
         )
 
 
 @router.get("/stats/summary", response_model=dict)
 async def get_user_task_stats(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """
     Get task statistics for the authenticated user.
-    
+
     Returns summary statistics only for the user's own tasks.
     """
     try:
@@ -382,25 +395,22 @@ async def get_user_task_stats(
         if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.message or "Failed to get task statistics"
+                detail=result.message or "Failed to get task statistics",
             )
 
         # Add user email to stats
         stats = result.statistics or {}
         stats["user"] = current_user.email
-        
+
         logger.info(f"User {current_user.email} retrieved task statistics")
-        
-        return {
-            "success": True,
-            "stats": stats
-        }
-        
+
+        return {"success": True, "stats": stats}
+
     except Exception as e:
         logger.error(f"Error getting task stats for user {current_user.id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get task statistics"
+            detail="Failed to get task statistics",
         )
 
 
@@ -409,11 +419,11 @@ async def get_subtask_summaries(
     task_id: str,
     request: Request,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get lightweight subtask summaries for a parent task.
-    
+
     This endpoint provides subtask information without loading full details,
     improving performance when expanding tasks in the UI.
     """
@@ -425,24 +435,26 @@ async def get_subtask_summaries(
             data.get("include_counts", True)
         except Exception:
             pass
-        
-        logger.info(f"Loading subtask summaries for task {task_id} by user {current_user.email}")
-        
+
+        logger.info(
+            f"Loading subtask summaries for task {task_id} by user {current_user.email}"
+        )
+
         # Delegate to API controller
         result = subtask_controller.list_subtasks(task_id, current_user.id, db)
 
         if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.error or "Failed to fetch subtasks"
+                detail=result.error or "Failed to fetch subtasks",
             )
 
         subtasks_data = result.subtasks or []
-        
+
         # Convert to subtask summaries
         subtask_summaries = []
         status_counts = {"todo": 0, "in_progress": 0, "done": 0, "blocked": 0}
-        
+
         for subtask_data in subtasks_data:
             # Extract values from value objects if needed
             subtask_id = subtask_data["id"]
@@ -450,33 +462,33 @@ async def get_subtask_summaries(
                 subtask_id = subtask_id["value"]
             elif hasattr(subtask_id, "value"):
                 subtask_id = subtask_id.value
-                
+
             status = subtask_data["status"]
             if isinstance(status, dict) and "value" in status:
                 status = status["value"]
             elif hasattr(status, "value"):
                 status = status.value
-                
+
             priority = subtask_data["priority"]
             if isinstance(priority, dict) and "value" in priority:
                 priority = priority["value"]
             elif hasattr(priority, "value"):
                 priority = priority.value
-            
+
             summary = {
                 "id": str(subtask_id),
                 "title": subtask_data["title"],
                 "status": str(status),
                 "priority": str(priority),
                 "assignees_count": len(subtask_data.get("assignees", [])),
-                "progress_percentage": subtask_data.get("progress_percentage", 0)
+                "progress_percentage": subtask_data.get("progress_percentage", 0),
             }
             subtask_summaries.append(summary)
-            
+
             # Count statuses for progress summary
             if status in status_counts:
                 status_counts[status] += 1
-        
+
         # Calculate progress summary
         total_subtasks = len(subtask_summaries)
         progress_summary = {
@@ -485,27 +497,33 @@ async def get_subtask_summaries(
             "in_progress": status_counts["in_progress"],
             "todo": status_counts["todo"],
             "blocked": status_counts["blocked"],
-            "completion_percentage": round((status_counts["done"] / total_subtasks) * 100) if total_subtasks > 0 else 0
+            "completion_percentage": round(
+                (status_counts["done"] / total_subtasks) * 100
+            )
+            if total_subtasks > 0
+            else 0,
         }
-        
+
         response = {
             "subtasks": subtask_summaries,
             "parent_task_id": task_id,
             "total_count": total_subtasks,
-            "progress_summary": progress_summary
+            "progress_summary": progress_summary,
         }
-        
-        logger.info(f"Returned {len(subtask_summaries)} subtask summaries for task {task_id}")
+
+        logger.info(
+            f"Returned {len(subtask_summaries)} subtask summaries for task {task_id}"
+        )
         return response
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error fetching subtask summaries for task {task_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
+
 
 # Nested subtask endpoint removed - using simple /api/v2/subtasks/{subtask_id} instead
 

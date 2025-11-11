@@ -8,16 +8,16 @@ from .connection_exceptions import (
     InvalidConnectionStatusError,
     ServerHealthCheckFailedError,
     ConnectionHealthCheckFailedError,
-    StatusBroadcastError
+    StatusBroadcastError,
 )
 
 __all__ = [
     "ConnectionError",
     "ServerNotFoundError",
-    "ConnectionNotFoundError", 
+    "ConnectionNotFoundError",
     "InvalidServerStatusError",
     "InvalidConnectionStatusError",
     "ServerHealthCheckFailedError",
     "ConnectionHealthCheckFailedError",
-    "StatusBroadcastError"
-] 
+    "StatusBroadcastError",
+]
