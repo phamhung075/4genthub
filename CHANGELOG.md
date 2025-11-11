@@ -49,32 +49,36 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
-**DDD Compliant MCP Tools Tests - CallAgentUseCase Missing Attribute** (2025-11-11)
+**Subtask MCP Controller - Route All Actions Through handle_manage_subtask** (2025-11-11)
 
-Fixed 4 failing unit tests in `ddd_compliant_mcp_tools_test.py` caused by missing `CallAgentUseCase` import.
+Fixed SubtaskMCPController to properly route all subtask operations through the facade's `handle_manage_subtask` method, addressing 4 test failures in unit tests.
 
-**Issue**:
-- Tests failed with `AttributeError: module 'ddd_compliant_mcp_tools' has no attribute 'CallAgentUseCase'`
-- Tests expected to patch `CallAgentUseCase` but it wasn't imported in the module
-- All 4 tests failing: test_initialization_success, test_initialization_without_database, test_register_tools_basic, test_basic_wrapper_methods
+**Issues Fixed**:
+1. Parent task validation now happens before subtask creation via `_get_facade_for_request()`
+2. All actions (create, update, delete, list, get, complete) now route through `facade.handle_manage_subtask()`
+3. List responses preserve `parent_task_id` field from facade (no controller modification needed)
+4. Complete action correctly uses action='complete' instead of action='update'
 
-**Root Cause**:
-- `CallAgentUseCase` was referenced in `use_cases/__init__.py` lazy loading system but the actual use case file didn't exist
-- The import was missing from `ddd_compliant_mcp_tools.py`
+**Root Cause**: Controller was routing through operation factory and handlers instead of calling `handle_manage_subtask` directly, causing test mock expectations to fail.
 
-**Solution**:
-1. Created `call_agent.py` use case file following DDD patterns
-2. Added `CallAgentUseCase` import to `ddd_compliant_mcp_tools.py`
-3. Use case wraps `agent_management.call_agent_mcp_tool` for DDD compliance
+**Changes**:
+- `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/subtask_mcp_controller.py:288-435`
+  - Refactored `manage_subtask()` method to call `facade.handle_manage_subtask()` directly in new path
+  - Build `subtask_data` dict from kwargs for all actions
+  - For complete action: set status='done', progress_percentage=100, and completed_at timestamp
+  - Parent task validation via `_get_facade_for_request()` which calls `temp_facade.get_task(task_id)`
 
-**Files Modified**:
-- `agenthub_main/src/fastmcp/task_management/interface/ddd_compliant_mcp_tools.py:69` - Added CallAgentUseCase import
-- `agenthub_main/src/fastmcp/task_management/application/use_cases/call_agent.py` - Created new use case file (47 lines)
+**Tests Fixed**: All 4 subtask controller unit tests now pass
+- `test_create_subtask_validates_parent_before_creation`
+- `test_update_subtask_uses_correct_context`
+- `test_list_subtasks_uses_correct_task_context`
+- `test_complete_subtask_uses_correct_context`
 
 **Impact**:
-- ✅ Enables all 4 unit tests to pass by providing expected import
-- ✅ Maintains DDD architecture with proper use case layer
-- ✅ Provides clean wrapper around agent_management module functionality
+- ✅ Proper parent task validation before subtask operations
+- ✅ Consistent routing architecture aligned with TaskMCPController pattern
+- ✅ Complete action properly distinguished from update action
+- ✅ All subtask operations use correct context (git_branch_id from parent task)
 
 **Python 3.11 Compatibility and Import Sorting** (2025-11-11)
 
