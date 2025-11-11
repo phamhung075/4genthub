@@ -19,6 +19,9 @@ RUN apt-get update && apt-get install -y \
 # Install uv for fast dependency management
 RUN pip install uv
 
+# Copy root README.md (required by pyproject.toml)
+COPY README.md* ./
+
 # Copy dependency files first for better caching (pyproject.toml is the single source of truth)
 COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md* ./agenthub_main/
 
