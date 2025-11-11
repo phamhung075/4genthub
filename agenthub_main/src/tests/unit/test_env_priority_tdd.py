@@ -4,6 +4,7 @@ Tests that .env.dev takes priority over .env when both exist
 Written BEFORE implementation to define expected behavior
 """
 
+import contextlib
 import os
 import sys
 import tempfile
@@ -29,34 +30,56 @@ def mock_database_connections():
         "DATABASE_PASSWORD": "test_pass",
     }
 
-    with (
-        patch("psycopg2.connect") as mock_pg,
-        patch("psycopg2.extras.register_uuid") as mock_uuid,
-        patch("sqlalchemy.create_engine") as mock_engine,
-        patch("sqlalchemy.event.listens_for") as mock_event,
-        patch.dict(os.environ, env_vars),
-    ):
-        # Create a proper mock connection with server_version attribute
-        mock_conn = MagicMock()
-        mock_conn.server_version = 140000  # PostgreSQL 14.0
-        mock_pg.return_value = mock_conn
-        mock_uuid.return_value = None  # register_uuid returns None
-        mock_engine.return_value = MagicMock()
-        mock_event.return_value = (
-            lambda func: func
-        )  # Return decorator that does nothing
+    # Use ExitStack to manage patches cleanly
+    with contextlib.ExitStack() as stack:
+        # Set environment variables
+        stack.enter_context(patch.dict(os.environ, env_vars))
+
+        # Only patch if modules are available
+        try:
+            import sqlalchemy  # noqa: F401
+
+            mock_engine = stack.enter_context(patch("sqlalchemy.create_engine"))
+            mock_event = stack.enter_context(patch("sqlalchemy.event.listens_for"))
+            mock_engine.return_value = MagicMock()
+            mock_event.return_value = lambda func: func
+        except ImportError:
+            pass  # sqlalchemy not available, skip patching
+
+        try:
+            import psycopg2  # noqa: F401
+
+            mock_pg = stack.enter_context(patch("psycopg2.connect"))
+            mock_uuid = stack.enter_context(patch("psycopg2.extras.register_uuid"))
+
+            mock_conn = MagicMock()
+            mock_conn.server_version = 140000
+            mock_pg.return_value = mock_conn
+            mock_uuid.return_value = None
+        except ImportError:
+            pass  # psycopg2 not available, skip patching
 
         # Reset DatabaseConfig singleton AFTER mocks are set up
-        from fastmcp.task_management.infrastructure.database.database_config import (
-            DatabaseConfig,
-        )
+        try:
+            from fastmcp.task_management.infrastructure.database.database_config import (
+                DatabaseConfig,
+            )
 
-        DatabaseConfig.reset_instance()
+            DatabaseConfig.reset_instance()
+        except ImportError:
+            pass  # DatabaseConfig might not be available in all test contexts
 
         yield
 
         # Reset again after test
-        DatabaseConfig.reset_instance()
+        try:
+            from fastmcp.task_management.infrastructure.database.database_config import (
+                DatabaseConfig,
+            )
+
+            DatabaseConfig.reset_instance()
+        except ImportError:
+            pass
 
 
 @pytest.fixture
@@ -77,23 +100,16 @@ def mock_project_root_with_env(tmp_path):
     # Patch the Settings class to use this temp directory
     from fastmcp.settings import Settings
 
-    original_project_root = Settings._project_root
-    original_env_path = Settings._env_path
-    original_env_dev_path = Settings._env_dev_path
-    original_env_file = Settings._env_file
+    # Save original project root
+    original_project_root = Settings._get_project_root()
 
-    Settings._project_root = tmp_path
-    Settings._env_path = tmp_path / ".env"
-    Settings._env_dev_path = tmp_path / ".env.dev"
-    Settings._env_file = str(env_file)
+    # Set temp directory as project root
+    Settings._set_project_root(tmp_path)
 
     yield tmp_path
 
     # Restore original values
-    Settings._project_root = original_project_root
-    Settings._env_path = original_env_path
-    Settings._env_dev_path = original_env_dev_path
-    Settings._env_file = original_env_file
+    Settings._set_project_root(original_project_root)
 
 
 @pytest.fixture
@@ -124,24 +140,16 @@ def mock_project_root_with_both_env(tmp_path):
     # Patch the Settings class to use this temp directory
     from fastmcp.settings import Settings
 
-    original_project_root = Settings._project_root
-    original_env_path = Settings._env_path
-    original_env_dev_path = Settings._env_dev_path
-    original_env_file = Settings._env_file
+    # Save original project root
+    original_project_root = Settings._get_project_root()
 
-    Settings._project_root = tmp_path
-    Settings._env_path = tmp_path / ".env"
-    Settings._env_dev_path = tmp_path / ".env.dev"
-    # .env.dev takes priority when it exists
-    Settings._env_file = str(env_dev_file)
+    # Set temp directory as project root
+    Settings._set_project_root(tmp_path)
 
     yield tmp_path
 
     # Restore original values
-    Settings._project_root = original_project_root
-    Settings._env_path = original_env_path
-    Settings._env_dev_path = original_env_dev_path
-    Settings._env_file = original_env_file
+    Settings._set_project_root(original_project_root)
 
 
 @pytest.mark.unit
