@@ -18,16 +18,20 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 @pytest.fixture
 def mock_project_root_with_env(tmp_path):
-    """Mock the project root to use a temporary directory with .env file."""
+    """Mock the project root to use a temporary directory with .env file.
+
+    NOTE: These are MOCK credentials for testing only, not real secrets.
+    """
     # Create .env file in temp directory
     env_file = tmp_path / ".env"
+    # gitguardian:ignore - Mock credentials for unit tests
     env_file.write_text(
         "DATABASE_TYPE=postgresql\n"
         "DATABASE_HOST=localhost\n"
         "DATABASE_PORT=5432\n"
         "DATABASE_NAME=test_db\n"
-        "DATABASE_USER=test_user\n"
-        "DATABASE_PASSWORD=test_pass\n"
+        "DATABASE_USER=MOCK_TEST_USER_NOT_REAL\n"
+        "DATABASE_PASSWORD=MOCK_TEST_PASSWORD_NOT_REAL\n"
         "FASTMCP_PORT=8000\n"
     )
 
@@ -54,27 +58,32 @@ def mock_project_root_with_env(tmp_path):
 
 @pytest.fixture
 def mock_project_root_with_both_env(tmp_path):
-    """Mock the project root with both .env and .env.dev files."""
+    """Mock the project root with both .env and .env.dev files.
+
+    NOTE: These are MOCK credentials for testing only, not real secrets.
+    """
     # Create .env file
     env_file = tmp_path / ".env"
+    # gitguardian:ignore - Mock credentials for unit tests
     env_file.write_text(
         "DATABASE_TYPE=postgresql\n"
         "DATABASE_HOST=prod-host\n"
         "DATABASE_PORT=5432\n"
         "DATABASE_NAME=prod_db\n"
-        "DATABASE_USER=prod_user\n"
-        "DATABASE_PASSWORD=prod_pass\n"
+        "DATABASE_USER=MOCK_PROD_USER_NOT_REAL\n"
+        "DATABASE_PASSWORD=MOCK_PROD_PASSWORD_NOT_REAL\n"
     )
 
     # Create .env.dev file (should take priority)
     env_dev_file = tmp_path / ".env.dev"
+    # gitguardian:ignore - Mock credentials for unit tests
     env_dev_file.write_text(
         "DATABASE_TYPE=postgresql\n"
         "DATABASE_HOST=localhost\n"
         "DATABASE_PORT=5432\n"
         "DATABASE_NAME=dev_db\n"
-        "DATABASE_USER=dev_user\n"
-        "DATABASE_PASSWORD=dev_pass\n"
+        "DATABASE_USER=MOCK_DEV_USER_NOT_REAL\n"
+        "DATABASE_PASSWORD=MOCK_DEV_PASSWORD_NOT_REAL\n"
     )
 
     # Patch the Settings class to use this temp directory
@@ -132,16 +141,21 @@ class TestEnvFilePriority:
         assert Path(env_file_used).exists()
 
     def test_env_dev_values_override_env_values(self):
-        """Values from .env.dev should override values from .env"""
+        """Values from .env.dev should override values from .env
+
+        NOTE: Uses MOCK credentials for testing only, not real secrets.
+        """
         from dotenv import load_dotenv
 
         # Create temporary files for testing
+        # gitguardian:ignore - Mock credentials for unit tests
         with tempfile.NamedTemporaryFile(mode='w', suffix='.env', delete=False) as env_file:
             env_file.write("TEST_VAR=from_env\n")
             env_file.write("COMMON_VAR=env_value\n")
             env_file.write("DATABASE_HOST=prod-host\n")
             env_temp = env_file.name
 
+        # gitguardian:ignore - Mock credentials for unit tests
         with tempfile.NamedTemporaryFile(mode='w', suffix='.env.dev', delete=False) as env_dev_file:
             env_dev_file.write("TEST_VAR=from_env_dev\n")
             env_dev_file.write("DEV_ONLY_VAR=dev_value\n")

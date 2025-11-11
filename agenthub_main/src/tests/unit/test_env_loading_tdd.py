@@ -17,14 +17,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 @pytest.fixture
 def temp_env_file():
-    """Create a temporary .env file for testing."""
+    """Create a temporary .env file for testing.
+
+    NOTE: These are MOCK credentials for testing only, not real secrets.
+    """
     with tempfile.NamedTemporaryFile(mode='w', suffix='.env', delete=False) as f:
         f.write("DATABASE_TYPE=postgresql\n")
         f.write("DATABASE_HOST=localhost\n")
         f.write("DATABASE_PORT=5432\n")
         f.write("DATABASE_NAME=test_db\n")
-        f.write("DATABASE_USER=test_user\n")
-        f.write("DATABASE_PASSWORD=test_pass\n")
+        # gitguardian:ignore - Mock credentials for unit tests
+        f.write("DATABASE_USER=MOCK_TEST_USER_NOT_REAL\n")
+        f.write("DATABASE_PASSWORD=MOCK_TEST_PASSWORD_NOT_REAL\n")
         f.write("FASTMCP_PORT=8000\n")
         temp_path = f.name
 
@@ -37,16 +41,20 @@ def temp_env_file():
 
 @pytest.fixture
 def mock_project_root_with_env(tmp_path, monkeypatch):
-    """Mock the project root to use a temporary directory with .env file."""
+    """Mock the project root to use a temporary directory with .env file.
+
+    NOTE: These are MOCK credentials for testing only, not real secrets.
+    """
     # Create .env file in temp directory
     env_file = tmp_path / ".env"
+    # gitguardian:ignore - Mock credentials for unit tests
     env_file.write_text(
         "DATABASE_TYPE=postgresql\n"
         "DATABASE_HOST=localhost\n"
         "DATABASE_PORT=5432\n"
         "DATABASE_NAME=test_db\n"
-        "DATABASE_USER=test_user\n"
-        "DATABASE_PASSWORD=test_pass\n"
+        "DATABASE_USER=MOCK_TEST_USER_NOT_REAL\n"
+        "DATABASE_PASSWORD=MOCK_TEST_PASSWORD_NOT_REAL\n"
         "FASTMCP_PORT=8000\n"
     )
 

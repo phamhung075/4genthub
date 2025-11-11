@@ -57,12 +57,16 @@ Fixed 7 failing unit tests in environment loading test suite that were expecting
 - Tests expected `.env` or `.env.dev` files at project root
 - CI environment doesn't have these files (not checked into git)
 - Tests failed with file not found errors
+- GitGuardian flagged test credentials as potential secrets
 
 **Solution**:
 - Created pytest fixtures (`mock_project_root_with_env`, `mock_project_root_with_both_env`)
 - Fixtures provide temporary .env files with proper test data
 - Patched Settings class to use temp directories during tests
 - Tests now work in any environment (local dev, CI, production)
+- Updated mock credentials to be obviously fake (`MOCK_TEST_USER_NOT_REAL`)
+- Added `gitguardian:ignore` comments to test fixtures
+- Added docstring notes clarifying these are mock credentials
 
 **Tests Fixed**:
 1. `test_settings_should_load_env_from_root` - Now uses temp .env fixture
@@ -74,13 +78,14 @@ Fixed 7 failing unit tests in environment loading test suite that were expecting
 7. `test_database_config_with_env_priority` - Uses temp files and resets singleton
 
 **Files Modified**:
-- `agenthub_main/src/tests/unit/test_env_loading_tdd.py` - Added 2 fixtures, updated 3 tests
-- `agenthub_main/src/tests/unit/test_env_priority_tdd.py` - Added 2 fixtures, updated 4 tests
+- `agenthub_main/src/tests/unit/test_env_loading_tdd.py` - Added 2 fixtures, updated 3 tests, mock credentials
+- `agenthub_main/src/tests/unit/test_env_priority_tdd.py` - Added 2 fixtures, updated 4 tests, mock credentials
 
 **Impact**:
 - ✅ Tests pass in CI without requiring .env files
 - ✅ Tests are isolated and don't depend on project environment
 - ✅ Proper cleanup via pytest fixtures ensures no test pollution
+- ✅ No false positive security alerts from GitGuardian
 
 **Python 3.11 Compatibility and Import Sorting** (2025-11-11)
 
