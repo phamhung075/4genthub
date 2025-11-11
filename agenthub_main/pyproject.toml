@@ -256,3 +256,20 @@ output = "coverage.xml"
 # allow imports not at the top of the file
 "src/fastmcp/__init__.py" = ["E402"]
 
+# Scripts: Allow sys.path manipulation before imports
+"scripts/**/*.py" = ["E402"]
+"init_database.py" = ["E402"]
+"utils/**/*.py" = ["E402"]
+
+# Templates: Allow undefined placeholders
+"scripts/test_templates/*.py" = ["F821"]
+"scripts/validate_migration.py" = ["F821"]
+
+# Utility scripts: Allow bare excepts for broad error handling
+"scripts/modernize_*.py" = ["E722"]
+"scripts/ddd_layer_tracer.py" = ["E722"]
+"scripts/test/test-mcp-keycloak-auth.py" = ["E722"]
+
+# Database scripts: Allow star imports
+"scripts/database/create_missing_tables.py" = ["F403"]
+

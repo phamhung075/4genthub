@@ -26,10 +26,7 @@ async def test_email_service():
 
     try:
         # Import after path setup
-        from fastmcp.auth.infrastructure.email_service import (
-            SMTPEmailService,
-            get_email_service,
-        )
+        from fastmcp.auth.infrastructure.email_service import get_email_service
         from fastmcp.auth.infrastructure.enhanced_auth_service import (
             get_enhanced_auth_service,
         )
