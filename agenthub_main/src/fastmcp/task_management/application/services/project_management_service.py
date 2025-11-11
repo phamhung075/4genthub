@@ -10,9 +10,15 @@ import logging
 from typing import Any
 
 from ...domain.repositories.project_repository import ProjectRepository
+from ...domain.websocket_protocol import (
+    ProjectCreatePayload,
+    ProjectDeletePayload,
+    ProjectUpdatePayload,
+)
 from ...infrastructure.repositories.project_repository_factory import (
     GlobalRepositoryManager,
 )
+from ..services.websocket_notification_service import WebSocketNotificationService
 from ..use_cases.cleanup_obsolete_use_case import CleanupObsoleteUseCase
 from ..use_cases.create_project import CreateProjectUseCase
 from ..use_cases.get_project import GetProjectUseCase
@@ -100,11 +106,6 @@ class ProjectManagementService:
             if result.get("success") and self._user_id:
                 logger.info(f"🔵 Entering broadcast block - user_id: {self._user_id}")
                 try:
-                    from ...domain.websocket_protocol import ProjectCreatePayload
-                    from .websocket_notification_service import (
-                        WebSocketNotificationService,
-                    )
-
                     raw_project_data = result.get("project", {})
 
                     logger.info(
@@ -215,11 +216,6 @@ class ProjectManagementService:
             # CRITICAL FIX: Ensure WebSocket broadcast for updates
             if result.get("success") and self._user_id:
                 try:
-                    from ...domain.websocket_protocol import ProjectUpdatePayload
-                    from .websocket_notification_service import (
-                        WebSocketNotificationService,
-                    )
-
                     raw_project_data = result.get("project", {})
 
                     # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
@@ -487,10 +483,6 @@ class ProjectManagementService:
                 try:
                     logger.info(
                         f"🔵 [DELETE] About to call sync_broadcast_project_event - project_id: {project_id}, user_id: {self._user_id}"
-                    )
-                    from ...domain.websocket_protocol import ProjectDeletePayload
-                    from ..services.websocket_notification_service import (
-                        WebSocketNotificationService,
                     )
 
                     # ✅ NEW: Type-safe payload construction with Pydantic validation
