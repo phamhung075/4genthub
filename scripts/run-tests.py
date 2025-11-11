@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Test runner that respects file creation rules."""
+
 import os
 import subprocess
 import sys
 from pathlib import Path
 
 # Set environment to prevent file creation in root
-os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 # Change to test directory to avoid creating files in root
 project_root = Path(__file__).parent.parent
@@ -19,14 +20,17 @@ cache_dir.mkdir(exist_ok=True)
 
 # Run pytest with proper configuration
 cmd = [
-    sys.executable, "-m", "pytest",
+    sys.executable,
+    "-m",
+    "pytest",
     "src/tests/unit/",
     "-x",  # Stop on first failure
     "--tb=short",  # Short traceback
     "--no-header",  # No header
     "-q",  # Quiet mode
-    "-p", "no:cacheprovider",  # Disable cache provider
-    "--cache-clear"  # Clear cache
+    "-p",
+    "no:cacheprovider",  # Disable cache provider
+    "--cache-clear",  # Clear cache
 ]
 
 print(f"Running tests from: {test_dir}")

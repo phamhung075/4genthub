@@ -34,7 +34,7 @@ def parse_sql_file(sql_file_path):
         content = f.read()
 
     # Extract CREATE TABLE statements
-    create_table_pattern = r'CREATE TABLE\s+(\w+)\s*\('
+    create_table_pattern = r"CREATE TABLE\s+(\w+)\s*\("
     tables = set(re.findall(create_table_pattern, content, re.IGNORECASE))
 
     return tables
@@ -46,7 +46,7 @@ def get_actual_tables(database_url):
     inspector = inspect(engine)
 
     # Get all tables except system tables
-    skip_tables = {'alembic_version', 'applied_migrations'}
+    skip_tables = {"alembic_version", "applied_migrations"}
     actual_tables = set(inspector.get_table_names())
     actual_tables = {t for t in actual_tables if t not in skip_tables}
 
@@ -70,32 +70,49 @@ def verify_table_columns(sql_file_path, database_url):
     for table_name in sorted(sql_tables):
         try:
             # Get actual database columns
-            db_columns = {col['name']: col for col in inspector.get_columns(table_name)}
+            db_columns = {col["name"]: col for col in inspector.get_columns(table_name)}
 
             # Extract columns from SQL for this table
-            table_section_pattern = f'CREATE TABLE {table_name}\\s*\\((.+?)\\);'
-            match = re.search(table_section_pattern, sql_content, re.DOTALL | re.IGNORECASE)
+            table_section_pattern = f"CREATE TABLE {table_name}\\s*\\((.+?)\\);"
+            match = re.search(
+                table_section_pattern, sql_content, re.DOTALL | re.IGNORECASE
+            )
 
             if not match:
-                issues.append(f"❌ Table {table_name}: Could not find CREATE TABLE statement in SQL")
+                issues.append(
+                    f"❌ Table {table_name}: Could not find CREATE TABLE statement in SQL"
+                )
                 continue
 
             table_def = match.group(1)
 
             # Extract column names from SQL (rough parsing)
-            column_lines = [line.strip() for line in table_def.split('\n') if line.strip() and not line.strip().startswith('--')]
+            column_lines = [
+                line.strip()
+                for line in table_def.split("\n")
+                if line.strip() and not line.strip().startswith("--")
+            ]
             sql_columns = set()
 
             for line in column_lines:
                 # Skip constraint lines
-                if any(keyword in line.upper() for keyword in ['PRIMARY KEY', 'FOREIGN KEY', 'UNIQUE', 'CHECK', 'CONSTRAINT']):
-                    if not line.split()[0].replace(',', '').isidentifier():
+                if any(
+                    keyword in line.upper()
+                    for keyword in [
+                        "PRIMARY KEY",
+                        "FOREIGN KEY",
+                        "UNIQUE",
+                        "CHECK",
+                        "CONSTRAINT",
+                    ]
+                ):
+                    if not line.split()[0].replace(",", "").isidentifier():
                         continue
 
                 # Extract column name (first word)
                 parts = line.split()
                 if parts:
-                    col_name = parts[0].replace(',', '')
+                    col_name = parts[0].replace(",", "")
                     if col_name.isidentifier():
                         sql_columns.add(col_name)
 
@@ -105,12 +122,16 @@ def verify_table_columns(sql_file_path, database_url):
             # Check for missing columns in SQL
             missing_in_sql = db_col_names - sql_columns
             if missing_in_sql:
-                issues.append(f"⚠️  Table {table_name}: Columns missing in SQL: {', '.join(sorted(missing_in_sql))}")
+                issues.append(
+                    f"⚠️  Table {table_name}: Columns missing in SQL: {', '.join(sorted(missing_in_sql))}"
+                )
 
             # Check for extra columns in SQL
             extra_in_sql = sql_columns - db_col_names
             if extra_in_sql:
-                issues.append(f"⚠️  Table {table_name}: Extra columns in SQL: {', '.join(sorted(extra_in_sql))}")
+                issues.append(
+                    f"⚠️  Table {table_name}: Extra columns in SQL: {', '.join(sorted(extra_in_sql))}"
+                )
 
         except Exception as e:
             issues.append(f"❌ Table {table_name}: Error - {str(e)}")
@@ -120,11 +141,20 @@ def verify_table_columns(sql_file_path, database_url):
 
 
 def main():
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("VERIFY INIT SCHEMA SQL vs ACTUAL DATABASE")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
-    sql_file_path = project_root / "agenthub_main" / "src" / "fastmcp" / "task_management" / "infrastructure" / "database" / "init_schema_postgresql.sql"
+    sql_file_path = (
+        project_root
+        / "agenthub_main"
+        / "src"
+        / "fastmcp"
+        / "task_management"
+        / "infrastructure"
+        / "database"
+        / "init_schema_postgresql.sql"
+    )
 
     if not sql_file_path.exists():
         print(f"❌ SQL file not found: {sql_file_path}")
@@ -179,9 +209,9 @@ def main():
         print("\n✅ All table columns match!\n")
 
     # Summary
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("VERIFICATION SUMMARY")
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
     total_issues = len(missing_in_sql) + len(extra_in_sql) + len(column_issues)
 
