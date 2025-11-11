@@ -7,7 +7,7 @@ with Pydantic validation and fallback handling.
 This test suite follows the BranchDeletePayload pattern from git_branch_service.py:206-221
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import ValidationError
@@ -96,12 +96,13 @@ class TestProjectDeletePayload:
 class TestProjectManagementServiceWebSocketIntegration:
     """Test integration of ProjectDeletePayload in project_management_service.py"""
 
+    @pytest.mark.anyio
     @patch('fastmcp.task_management.application.services.project_management_service.logger')
     @patch('fastmcp.task_management.application.services.project_management_service.WebSocketNotificationService')
-    def test_successful_payload_validation_and_broadcast(self, mock_ws_service, mock_logger):
+    async def test_successful_payload_validation_and_broadcast(self, mock_ws_service, mock_logger):
         """Test successful ProjectDeletePayload validation and WebSocket broadcast"""
-        from fastmcp.task_management.infrastructure.persistence.sqlalchemy.repositories.sqlalchemy_project_repository import (
-            SQLAlchemyProjectRepository,
+        from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
+            ORMProjectRepository,
         )
 
         from fastmcp.task_management.application.services.project_management_service import (
@@ -109,47 +110,56 @@ class TestProjectManagementServiceWebSocketIntegration:
         )
         from fastmcp.task_management.domain.entities.project import Project
 
-        # Setup mock repository
-        mock_repo = MagicMock(spec=SQLAlchemyProjectRepository)
+        # Setup mock repository with async methods
+        mock_repo = MagicMock(spec=ORMProjectRepository)
         mock_project = Project(
             name="Test Project",
             description="Test Description"
         )
-        mock_repo.get_by_id.return_value = mock_project
-        mock_repo.delete.return_value = True
+        mock_repo.find_by_id = AsyncMock(return_value=mock_project)
+        mock_repo.delete = AsyncMock(return_value=True)
+        mock_repo.user_id = "test-user-123"  # Set user_id attribute for _get_user_scoped_repository()
 
-        # Create service with mocked dependencies
-        service = ProjectManagementService(
-            project_repo=mock_repo,
-            user_id="test-user-123"
-        )
+        # Mock RepositoryFactory for git_branch_repo
+        with patch('fastmcp.task_management.infrastructure.repositories.repository_factory.RepositoryFactory') as mock_factory:
+            mock_git_branch_repo = MagicMock()
+            mock_git_branch_repo.find_all_by_project = AsyncMock(return_value=[])
+            mock_git_branch_repo.delete_branch = AsyncMock(return_value=True)
+            mock_factory.get_git_branch_repository.return_value = mock_git_branch_repo
 
-        # Execute delete operation
-        project_id = "123e4567-e89b-12d3-a456-426614174000"
-        result = service.delete_project(project_id=project_id)
+            # Create service with mocked dependencies
+            service = ProjectManagementService(
+                project_repo=mock_repo,
+                user_id="test-user-123"
+            )
 
-        # Verify result
-        assert result["success"] is True
+            # Execute delete operation (force=True to bypass validation checks in tests)
+            project_id = "123e4567-e89b-12d3-a456-426614174000"
+            result = await service.delete_project(project_id=project_id, force=True)
 
-        # Verify WebSocket service was called with validated payload
-        mock_ws_service.sync_broadcast_project_event.assert_called_once()
-        call_args = mock_ws_service.sync_broadcast_project_event.call_args
+            # Verify result
+            assert result["success"] is True, f"Deletion failed: {result.get('error', 'Unknown error')}"
 
-        # Verify the project_data parameter contains validated payload
-        assert call_args.kwargs["event_type"] == "deleted"
-        assert call_args.kwargs["project_id"] == project_id
-        assert call_args.kwargs["user_id"] == "test-user-123"
+            # Verify WebSocket service was called with validated payload
+            mock_ws_service.sync_broadcast_project_event.assert_called_once()
+            call_args = mock_ws_service.sync_broadcast_project_event.call_args
 
-        project_data = call_args.kwargs["project_data"]
-        assert project_data["id"] == project_id
-        assert project_data["name"] == "Test Project"
+            # Verify the project_data parameter contains validated payload
+            assert call_args.kwargs["event_type"] == "deleted"
+            assert call_args.kwargs["project_id"] == project_id
+            assert call_args.kwargs["user_id"] == "test-user-123"
 
-        # Verify success logging
-        mock_logger.info.assert_any_call(f"✅ Project delete payload validated: {project_data}")
+            project_data = call_args.kwargs["project_data"]
+            assert project_data["id"] == project_id
+            assert project_data["name"] == "Test Project"
 
+            # Verify success logging
+            mock_logger.info.assert_any_call(f"✅ Project delete payload validated: {project_data}")
+
+    @pytest.mark.anyio
     @patch('fastmcp.task_management.application.services.project_management_service.logger')
     @patch('fastmcp.task_management.application.services.project_management_service.WebSocketNotificationService')
-    def test_fallback_on_validation_failure(self, mock_ws_service, mock_logger):
+    async def test_fallback_on_validation_failure(self, mock_ws_service, mock_logger):
         """Test fallback to dict when ProjectDeletePayload validation fails"""
         # This test simulates a scenario where validation might fail
         # and ensures the fallback mechanism works correctly
@@ -161,8 +171,8 @@ class TestProjectManagementServiceWebSocketIntegration:
                 [{'type': 'value_error', 'loc': ('id',), 'msg': 'Test validation error', 'input': ''}]
             )
 
-            from fastmcp.task_management.infrastructure.persistence.sqlalchemy.repositories.sqlalchemy_project_repository import (
-                SQLAlchemyProjectRepository,
+            from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
+                ORMProjectRepository,
             )
 
             from fastmcp.task_management.application.services.project_management_service import (
@@ -170,41 +180,49 @@ class TestProjectManagementServiceWebSocketIntegration:
             )
             from fastmcp.task_management.domain.entities.project import Project
 
-            # Setup mock repository
-            mock_repo = MagicMock(spec=SQLAlchemyProjectRepository)
+            # Setup mock repository with async methods
+            mock_repo = MagicMock(spec=ORMProjectRepository)
             mock_project = Project(
                 name="Test Project",
                 description="Test Description"
             )
-            mock_repo.get_by_id.return_value = mock_project
-            mock_repo.delete.return_value = True
+            mock_repo.find_by_id = AsyncMock(return_value=mock_project)
+            mock_repo.delete = AsyncMock(return_value=True)
+            mock_repo.user_id = "test-user-123"  # Set user_id attribute for _get_user_scoped_repository()
 
-            # Create service
-            service = ProjectManagementService(
-                project_repo=mock_repo,
-                user_id="test-user-123"
-            )
+            # Mock RepositoryFactory for git_branch_repo
+            with patch('fastmcp.task_management.infrastructure.repositories.repository_factory.RepositoryFactory') as mock_repo_factory:
+                mock_git_branch_repo = MagicMock()
+                mock_git_branch_repo.find_all_by_project = AsyncMock(return_value=[])
+                mock_git_branch_repo.delete_branch = AsyncMock(return_value=True)
+                mock_repo_factory.get_git_branch_repository.return_value = mock_git_branch_repo
 
-            # Execute delete operation
-            project_id = "123e4567-e89b-12d3-a456-426614174000"
-            result = service.delete_project(project_id=project_id)
+                # Create service
+                service = ProjectManagementService(
+                    project_repo=mock_repo,
+                    user_id="test-user-123"
+                )
 
-            # Verify result is still successful (fallback worked)
-            assert result["success"] is True
+                # Execute delete operation (force=True to bypass validation checks in tests)
+                project_id = "123e4567-e89b-12d3-a456-426614174000"
+                result = await service.delete_project(project_id=project_id, force=True)
 
-            # Verify error logging for validation failure
-            mock_logger.error.assert_any_call(
-                pytest.approx("❌ Project delete payload validation failed:", rel=1e-9),
-                extra=pytest.approx(mock_payload_class.side_effect, rel=1e-9)
-            )
+                # Verify result is still successful (fallback worked)
+                assert result["success"] is True, f"Deletion failed: {result.get('error', 'Unknown error')}"
 
-            # Verify WebSocket service was still called with fallback dict
-            mock_ws_service.sync_broadcast_project_event.assert_called_once()
-            call_args = mock_ws_service.sync_broadcast_project_event.call_args
+                # Verify error logging for validation failure
+                mock_logger.error.assert_any_call(
+                    pytest.approx("❌ Project delete payload validation failed:", rel=1e-9),
+                    extra=pytest.approx(mock_payload_class.side_effect, rel=1e-9)
+                )
 
-            project_data = call_args.kwargs["project_data"]
-            assert project_data["id"] == project_id
-            assert project_data["name"] == "Test Project"
+                # Verify WebSocket service was still called with fallback dict
+                mock_ws_service.sync_broadcast_project_event.assert_called_once()
+                call_args = mock_ws_service.sync_broadcast_project_event.call_args
+
+                project_data = call_args.kwargs["project_data"]
+                assert project_data["id"] == project_id
+                assert project_data["name"] == "Test Project"
 
     @patch('fastmcp.task_management.application.services.project_management_service.logger')
     def test_logging_on_successful_validation(self, mock_logger):
