@@ -26,11 +26,11 @@ class TestRepositoryUserIsolation:
         repository = MyRepository(user_id=user_id)
 
         # Create entities for both users
-        entity1 = repository.create(data={"name": "user1_item"})
+        repository.create(data={"name": "user1_item"})
 
         # Switch to other user
         other_repo = MyRepository(user_id=other_user_id)
-        entity2 = other_repo.create(data={"name": "user2_item"})
+        other_repo.create(data={"name": "user2_item"})
 
         # Act
         user1_items = repository.get_all()

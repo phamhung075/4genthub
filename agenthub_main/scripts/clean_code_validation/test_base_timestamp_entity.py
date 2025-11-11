@@ -10,7 +10,7 @@ Usage:
 """
 
 import sys
-from datetime import UTC, timezone
+from datetime import UTC
 from pathlib import Path
 
 # Add the project src to the path

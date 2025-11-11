@@ -9,7 +9,6 @@ It verifies token validation, MCP tool access, and proper authorization.
 import json
 import os
 import sys
-from typing import Optional
 
 import requests
 from dotenv import load_dotenv

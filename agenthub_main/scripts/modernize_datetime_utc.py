@@ -96,7 +96,7 @@ def process_file(file_path: Path) -> bool:
         # Check if timezone is still used for anything other than .utc
         if has_timezone_import:
             # Remove timezone from content temporarily to check usage
-            temp_content = (
+            (
                 final_content.replace(", timezone", "")
                 .replace("timezone,", "")
                 .replace("timezone", "")

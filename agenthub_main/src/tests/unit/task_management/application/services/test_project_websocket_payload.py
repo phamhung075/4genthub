@@ -7,7 +7,6 @@ with Pydantic validation and fallback handling.
 This test suite follows the BranchDeletePayload pattern from git_branch_service.py:206-221
 """
 
-import importlib.util
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

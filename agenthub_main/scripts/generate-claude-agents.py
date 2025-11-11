@@ -8,7 +8,6 @@ with Claude Code's agent system.
 """
 
 from pathlib import Path
-from typing import List
 
 # Configuration
 CLAUDE_AGENTS_DIR = Path.home() / ".claude" / "agents"

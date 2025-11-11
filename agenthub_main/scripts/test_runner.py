@@ -11,7 +11,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class TestRunner:
@@ -250,8 +250,8 @@ def main():
     # Generate additional reports
     if args.ci or args.type in ["all", "unit"]:
         print("\n📊 Generating additional reports...")
-        coverage_result = runner.generate_coverage_report()
-        json_result = runner.generate_coverage_json()
+        runner.generate_coverage_report()
+        runner.generate_coverage_json()
 
         # Check coverage threshold
         coverage_ok = runner.check_coverage_threshold(args.coverage_threshold)

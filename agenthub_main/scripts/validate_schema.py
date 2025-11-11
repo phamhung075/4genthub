@@ -16,7 +16,6 @@ import logging
 import os
 import sys
 from dataclasses import dataclass
-from typing import List, Optional
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
@@ -330,7 +329,7 @@ def run_validation(database_url: str | None = None, fix_issues: bool = False) ->
 
         # Run validation
         validator = SchemaValidator(engine)
-        mismatches = validator.validate_all_tables()
+        validator.validate_all_tables()
 
         # Print report
         validator.print_report()

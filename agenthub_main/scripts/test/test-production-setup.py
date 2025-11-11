@@ -263,7 +263,7 @@ async def test_mcp_with_keycloak():
         from fastmcp.auth.keycloak_auth import KeycloakAuth
 
         # Initialize Keycloak auth
-        auth = KeycloakAuth()
+        KeycloakAuth()
 
         # Get a token using client credentials
         keycloak_url = os.getenv("KEYCLOAK_URL", "").rstrip("/")

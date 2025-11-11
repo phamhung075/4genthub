@@ -6,7 +6,6 @@ This script identifies all files that need updates and creates a checklist.
 
 import os
 from pathlib import Path
-from typing import Dict, List
 
 # Base paths
 BASE_PATH = Path(__file__).parent.parent

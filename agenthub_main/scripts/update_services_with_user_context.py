@@ -8,7 +8,6 @@ following the established pattern.
 
 import re
 from pathlib import Path
-from typing import List, Optional
 
 # Service files that need updating
 SERVICES_TO_UPDATE = [
