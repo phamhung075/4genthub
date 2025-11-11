@@ -117,18 +117,21 @@ def test_database(request):
         test_config.configure_test_environment()
         
         # Display what database is being used
-        db_type = os.environ.get('DATABASE_TYPE', 'sqlite')
-        if db_type == 'sqlite':
-            print("\n📦 Using SQLite test database")
-        elif db_type == 'supabase':
+        db_type = os.environ.get('DATABASE_TYPE', 'postgresql')
+        if db_type == 'supabase':
             print("\n🎯 Using Supabase test database")
         elif db_type == 'postgresql':
             print("\n🐘 Using PostgreSQL test database")
         else:
-            print(f"\n⚠️ Unknown database type: {db_type}, defaulting to SQLite")
-            os.environ['DATABASE_TYPE'] = 'sqlite'
-            
-        print(f"📊 DATABASE_TYPE: {os.environ.get('DATABASE_TYPE', 'sqlite')}")
+            print(f"\n⚠️ Invalid database type: {db_type}, defaulting to PostgreSQL")
+            print("   Valid types: 'postgresql' or 'supabase'")
+            os.environ['DATABASE_TYPE'] = 'postgresql'
+            # Set required PostgreSQL env vars if not set
+            os.environ.setdefault('DATABASE_HOST', 'localhost')
+            os.environ.setdefault('DATABASE_USER', 'test_user')
+            os.environ.setdefault('DATABASE_PASSWORD', 'test_password')
+
+        print(f"📊 DATABASE_TYPE: {os.environ.get('DATABASE_TYPE', 'postgresql')}")
         
         # Initialize the test database with schema
         from fastmcp.task_management.infrastructure.database.database_initializer import (

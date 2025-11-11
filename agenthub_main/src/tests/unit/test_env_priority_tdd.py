@@ -288,7 +288,9 @@ class TestEnvPriorityImplementation:
         with patch.dict(os.environ, {
             'DATABASE_HOST': 'localhost',
             'DATABASE_PORT': '5432',  # Use standard postgres port for test
-            'DATABASE_TYPE': 'sqlite',
+            'DATABASE_TYPE': 'postgresql',
+            'DATABASE_USER': 'test_user',
+            'DATABASE_PASSWORD': 'test_password',
             'PYTEST_CURRENT_TEST': 'test'
         }):
             # Check Docker-related database config

@@ -82,15 +82,17 @@ def test_env_variables_accessible_in_app():
     """Test that environment variables are accessible throughout the application."""
     # Mock critical environment variables for unit testing
     with patch.dict(os.environ, {
-        'DATABASE_TYPE': 'sqlite',
+        'DATABASE_TYPE': 'postgresql',
         'DATABASE_HOST': 'localhost',
         'DATABASE_PORT': '5432',
         'DATABASE_NAME': 'test-db',
+        'DATABASE_USER': 'test_user',
+        'DATABASE_PASSWORD': 'test_password',
         'PYTEST_CURRENT_TEST': 'test'
     }):
         # Test critical variables
         critical_vars = {
-            'DATABASE_TYPE': 'sqlite',
+            'DATABASE_TYPE': 'postgresql',
             'DATABASE_HOST': ['localhost', '127.0.0.1', 'agenthub-postgres'],
             'DATABASE_PORT': lambda x: x.isdigit(),
             'DATABASE_NAME': lambda x: len(x) > 0,

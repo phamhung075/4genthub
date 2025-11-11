@@ -65,8 +65,11 @@ class TestServerStartupSuccess:
             'AUTH_ENABLED': 'true',
             'AUTH_PROVIDER': 'local',
             'JWT_SECRET_KEY': 'test-secret-key-32-characters-long-minimum',
-            'DATABASE_TYPE': 'sqlite',
-            'DATABASE_PATH': ':memory:'
+            'DATABASE_TYPE': 'postgresql',
+            'DATABASE_HOST': 'localhost',
+            'DATABASE_USER': 'test_user',
+            'DATABASE_PASSWORD': 'test_password',
+            'DATABASE_NAME': 'test_db'
         }
 
         for key, value in env_vars.items():
