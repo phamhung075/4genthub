@@ -49,6 +49,37 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**Subtask MCP Controller - Route All Actions Through handle_manage_subtask** (2025-11-11)
+
+Fixed SubtaskMCPController to properly route all subtask operations through the facade's `handle_manage_subtask` method, addressing 4 test failures in unit tests.
+
+**Issues Fixed**:
+1. Parent task validation now happens before subtask creation via `_get_facade_for_request()`
+2. All actions (create, update, delete, list, get, complete) now route through `facade.handle_manage_subtask()`
+3. List responses preserve `parent_task_id` field from facade (no controller modification needed)
+4. Complete action correctly uses action='complete' instead of action='update'
+
+**Root Cause**: Controller was routing through operation factory and handlers instead of calling `handle_manage_subtask` directly, causing test mock expectations to fail.
+
+**Changes**:
+- `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/subtask_mcp_controller.py:288-435`
+  - Refactored `manage_subtask()` method to call `facade.handle_manage_subtask()` directly in new path
+  - Build `subtask_data` dict from kwargs for all actions
+  - For complete action: set status='done', progress_percentage=100, and completed_at timestamp
+  - Parent task validation via `_get_facade_for_request()` which calls `temp_facade.get_task(task_id)`
+
+**Tests Fixed**: All 4 subtask controller unit tests now pass
+- `test_create_subtask_validates_parent_before_creation`
+- `test_update_subtask_uses_correct_context`
+- `test_list_subtasks_uses_correct_task_context`
+- `test_complete_subtask_uses_correct_context`
+
+**Impact**:
+- ✅ Proper parent task validation before subtask operations
+- ✅ Consistent routing architecture aligned with TaskMCPController pattern
+- ✅ Complete action properly distinguished from update action
+- ✅ All subtask operations use correct context (git_branch_id from parent task)
+
 **Python 3.11 Compatibility and Import Sorting** (2025-11-11)
 
 Fixed syntax errors and import sorting issues to ensure Python 3.11 compatibility and PEP 8 compliance.
