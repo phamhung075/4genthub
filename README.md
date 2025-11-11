@@ -11,7 +11,7 @@ Dai Hung PHAM
 
 *Orchestrate 32 specialized AI agents through an intuitive web interface designed for humans who want to harness the power of AI without complexity. Recently optimized from 69 agents to 32 core agents for better maintainability and clearer specialization.*
 
-[🎯 Quick Start](#-quick-start) • [🌟 Live Demo](#-live-demo) • [🤖 Agent Gallery](#-agent-gallery) • [📚 Documentation](#-documentation) • [📋 Version History](#-version-history) • [💬 Community](#-community)
+[☁️ Cloud Platform](https://www.4genthub.com/) • [🎯 Quick Start](#-quick-start) • [🌟 Live Demo](#-live-demo) • [🤖 Agent Gallery](#-agent-gallery) • [📚 Documentation](#-documentation) • [📋 Version History](#-version-history) • [💬 Community](#-community)
 
 </div>
 
@@ -218,17 +218,66 @@ graph TD
 
 ---
 
-## 🚀 **Quick Start - Get Running in 3 Minutes**
+## 🚀 **Quick Start - Choose Your Path**
 
-### 🎯 **One-Line Setup**
+### ☁️ **Option 1: Cloud Platform (Recommended)**
+
+<div align="center">
+
+### **🌟 [Start Using agenthub Cloud Now](https://www.4genthub.com/) 🌟**
+
+**Zero Setup • Instant Access • Fully Managed**
+
+</div>
+
+<table>
+<tr>
+<td width="50%">
+
+#### ✨ **Why Choose Cloud?**
+- ⚡ **Instant Access** — No installation required
+- 🔧 **Zero Maintenance** — We handle updates & infrastructure
+- 🚀 **Always Up-to-Date** — Latest features automatically
+- 💪 **Enterprise Performance** — Optimized servers & scaling
+- 🔒 **Secure & Reliable** — Professional hosting & backups
+- 📱 **Access Anywhere** — Work from any device
+
+</td>
+<td width="50%">
+
+#### 🎯 **Perfect For:**
+- ✅ Quick evaluation and testing
+- ✅ Teams who want zero DevOps overhead
+- ✅ Users new to MCP protocol
+- ✅ Production deployments without infrastructure hassle
+- ✅ Collaborative team environments
+- ✅ Anyone who values time over control
+
+</td>
+</tr>
+</table>
+
+**👉 Visit [https://www.4genthub.com/](https://www.4genthub.com/) to get started in seconds!**
+
+---
+
+### 🏠 **Option 2: Self-Hosted (Advanced Users)**
+
+<div align="center">
+
+**For users who need full control and want to host locally**
+
+</div>
+
+#### 🎯 **One-Line Setup**
 
 ```bash
 # Clone → Setup → Run (that's it!)
 git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.sh
 ```
 
-### 📋 **Prerequisites** 
-🐳 **Docker & Docker Compose** (that's all you need!)  
+#### 📋 **Prerequisites**
+🐳 **Docker & Docker Compose** (that's all you need!)
 Optional: Python 3.8+, Node.js 18+, WSL2 (Windows)
 
 ### 🎬 **Interactive Docker Menu**
@@ -654,8 +703,15 @@ Our release process follows industry best practices:
 
 ## 🌟 **Ready to Experience the Future?**
 
-### Get started in 3 minutes and transform how you collaborate with AI
+### Transform how you collaborate with AI — Choose your path:
 
+### ☁️ **Easiest Way: Cloud Platform**
+### **[🚀 Start Now at 4genthub.com](https://www.4genthub.com/)**
+**No setup required • Instant access • Fully managed**
+
+---
+
+### 🏠 **Advanced: Self-Hosted**
 ```bash
 git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.sh
 ```
