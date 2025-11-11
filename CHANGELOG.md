@@ -49,28 +49,32 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
-**Domain Services - Missing Feature Flag and Transition Rules** (2025-11-11)
+**DDD Compliant MCP Tools Tests - CallAgentUseCase Missing Attribute** (2025-11-11)
 
-Fixed domain service tests by adding missing feature flag attribute and updating state transition rules for task rework scenarios.
+Fixed 4 failing unit tests in `ddd_compliant_mcp_tools_test.py` caused by missing `CallAgentUseCase` import.
 
-**Issues Fixed**:
-1. **PaginationService**: Missing `FEATURE_CLEAN_REPOSITORIES` class attribute - Added as `False` by default
-2. **TaskStateTransitionService**: Empty transition rules for "done" status - Updated to allow "in_progress" for rework scenarios
+**Issue**:
+- Tests failed with `AttributeError: module 'ddd_compliant_mcp_tools' has no attribute 'CallAgentUseCase'`
+- Tests expected to patch `CallAgentUseCase` but it wasn't imported in the module
+- All 4 tests failing: test_initialization_success, test_initialization_without_database, test_register_tools_basic, test_basic_wrapper_methods
+
+**Root Cause**:
+- `CallAgentUseCase` was referenced in `use_cases/__init__.py` lazy loading system but the actual use case file didn't exist
+- The import was missing from `ddd_compliant_mcp_tools.py`
+
+**Solution**:
+1. Created `call_agent.py` use case file following DDD patterns
+2. Added `CallAgentUseCase` import to `ddd_compliant_mcp_tools.py`
+3. Use case wraps `agent_management.call_agent_mcp_tool` for DDD compliance
 
 **Files Modified**:
-- `agenthub_main/src/fastmcp/task_management/domain/services/pagination_service.py:28` - Added FEATURE_CLEAN_REPOSITORIES class attribute
-- `agenthub_main/src/fastmcp/task_management/domain/services/task_state_transition_service.py:323` - Updated done status transition rules
-
-**Test Fixes**:
-- ✅ `pagination_service_test.py::test_feature_flag_default_value` - Feature flag attribute now exists
-- ✅ `test_task_state_transition_service.py::test_get_allowed_transitions_empty_status` - Done tasks can transition to in_progress for rework
+- `agenthub_main/src/fastmcp/task_management/interface/ddd_compliant_mcp_tools.py:69` - Added CallAgentUseCase import
+- `agenthub_main/src/fastmcp/task_management/application/use_cases/call_agent.py` - Created new use case file (47 lines)
 
 **Impact**:
-- ✅ Domain service tests now pass
-- ✅ Supports task rework workflow (done → in_progress)
-- ✅ Clean repository feature flag ready for implementation
-
----
+- ✅ Enables all 4 unit tests to pass by providing expected import
+- ✅ Maintains DDD architecture with proper use case layer
+- ✅ Provides clean wrapper around agent_management module functionality
 
 **Python 3.11 Compatibility and Import Sorting** (2025-11-11)
 
