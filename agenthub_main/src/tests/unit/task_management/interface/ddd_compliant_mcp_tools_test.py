@@ -90,11 +90,6 @@ class TestDDDCompliantMCPTools:
             )
             stack.enter_context(
                 patch(
-                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase"
-                )
-            )
-            stack.enter_context(
-                patch(
                     "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
                 )
             )
@@ -183,11 +178,6 @@ class TestDDDCompliantMCPTools:
             )
             stack.enter_context(
                 patch(
-                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase"
-                )
-            )
-            stack.enter_context(
-                patch(
                     "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
                 )
             )
@@ -271,11 +261,6 @@ class TestDDDCompliantMCPTools:
             stack.enter_context(
                 patch(
                     "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
-                )
-            )
-            stack.enter_context(
-                patch(
-                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase"
                 )
             )
             stack.enter_context(
@@ -377,11 +362,6 @@ class TestDDDCompliantMCPTools:
             stack.enter_context(
                 patch(
                     "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
-                )
-            )
-            stack.enter_context(
-                patch(
-                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase"
                 )
             )
             stack.enter_context(
