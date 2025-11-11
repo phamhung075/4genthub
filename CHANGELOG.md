@@ -75,18 +75,19 @@ Fixed final test collection errors preventing CI test execution.
 1. **Added Future Annotations Import**:
    - Added `from __future__ import annotations` to `dependency_mcp_controller.py:8`
    - Makes all type annotations strings automatically, eliminating runtime import errors
-2. **Enhanced uv Sync with Explicit Flags**:
-   - Changed `uv sync --dev` → `uv sync --frozen --all-groups`
-   - `--frozen`: Forces exact lock file reproduction (no version resolution)
-   - `--all-groups`: Explicitly installs all dependency groups including dev
-   - Applied to test-matrix job (line 96), performance-tests job (line 230), and run-static.yml (line 53)
+2. **Explicit Dual freezegun Installation** (Pragmatic Approach):
+   - Install during dependency setup: `uv pip install freezegun>=1.2.2` (line 103)
+   - Install again before running tests: `uv pip install freezegun>=1.2.2` (line 171)
+   - Abandoned complex uv sync dependency group approach
+   - Direct installation in exact environment where tests run
+   - Redundant but bulletproof approach prioritizes reliability
 
 **Files Modified**:
 - `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/dependency_mcp_controller/dependency_mcp_controller.py:8` - Added future annotations
-- `.github/workflows/test_coverage.yml:84,234` - Added version: "latest" to uv setup for PEP 735 support
-- `.github/workflows/test_coverage.yml:96,240` - Added --frozen --all-groups flags to uv sync
-- `.github/workflows/test_coverage.yml:102-108` - Added freezegun verification and fallback install
-- `agenthub_main/.github/workflows/run-static.yml:53` - Added --frozen --all-groups flags to uv sync
+- `.github/workflows/test_coverage.yml:84,234` - Added version: "latest" to uv setup
+- `.github/workflows/test_coverage.yml:103-104` - Explicit freezegun install during dependency setup
+- `.github/workflows/test_coverage.yml:171` - Explicit freezegun install before test execution
+- `agenthub_main/.github/workflows/run-static.yml:53` - Added --frozen --all-groups flags
 
 **Impact**:
 - ✅ All 7 test collection errors resolved
