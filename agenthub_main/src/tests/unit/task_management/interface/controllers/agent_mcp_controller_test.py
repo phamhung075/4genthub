@@ -17,6 +17,9 @@ from fastmcp.task_management.application.facades.agent_application_facade import
     AgentApplicationFacade,
 )
 from fastmcp.task_management.application.services.facade_service import FacadeService
+from fastmcp.task_management.infrastructure.configuration.tool_config import (
+    ToolConfig,
+)
 from fastmcp.task_management.interface.mcp_controllers.agent_mcp_controller.agent_mcp_controller import (
     AgentMCPController,
 )
@@ -38,7 +41,7 @@ def create_mock_with_spec(spec_class):
 
 class TestAgentMCPController:
     """Test cases for AgentMCPController."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_facade_service = create_mock_with_spec(FacadeService)
@@ -46,7 +49,6 @@ class TestAgentMCPController:
         self.mock_facade_service.get_agent_facade.return_value = self.mock_facade
 
         # Mock ToolConfig to enable workflow guidance for tests
-        from fastmcp.task_management.infrastructure.configuration.tool_config import ToolConfig
         self.mock_config = Mock(spec=ToolConfig)
         self.mock_config.is_workflow_guidance_enabled.return_value = True
 
@@ -61,7 +63,6 @@ class TestAgentMCPController:
             mock_workflow_factory.create.return_value = mock_workflow
 
             # Create controller with enabled workflow guidance
-            from fastmcp.task_management.infrastructure.configuration.tool_config import ToolConfig
             mock_config = Mock(spec=ToolConfig)
             mock_config.is_workflow_guidance_enabled.return_value = True
 
@@ -554,7 +555,6 @@ class TestAgentMCPControllerIntegration:
         self.mock_facade_service.get_agent_facade.return_value = self.mock_facade
 
         # Mock ToolConfig to enable workflow guidance for tests
-        from fastmcp.task_management.infrastructure.configuration.tool_config import ToolConfig
         self.mock_config = Mock(spec=ToolConfig)
         self.mock_config.is_workflow_guidance_enabled.return_value = True
 
