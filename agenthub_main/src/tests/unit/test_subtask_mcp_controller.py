@@ -363,12 +363,12 @@ class TestSubtaskMCPController:
         assert call_args["project_id"] is None
 
         # Verify completion was processed
-        # Note: The complete action internally calls update with status=done
+        # Note: The complete action is handled directly (not mapped to update)
         mock_subtask_facade.handle_manage_subtask.assert_called_once()
         complete_args = mock_subtask_facade.handle_manage_subtask.call_args[1]
         assert (
-            complete_args.get("action") == "update"
-        )  # Complete is mapped to update internally
+            complete_args.get("action") == "complete"
+        )  # Complete action is handled directly
         assert complete_args.get("subtask_id") == subtask_id
         # The completion_summary is passed in subtask_data
         subtask_data = complete_args.get("subtask_data", {})
