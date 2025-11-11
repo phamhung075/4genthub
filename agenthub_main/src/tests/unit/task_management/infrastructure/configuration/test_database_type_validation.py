@@ -10,13 +10,49 @@ These tests verify that the tightened DATABASE_TYPE validation correctly:
 """
 
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from fastmcp.task_management.infrastructure.database.database_config import (
     DatabaseConfig,
 )
+
+
+@pytest.fixture
+def mock_db_connection():
+    """Mock database connection to prevent actual database authentication."""
+    with patch(
+        "fastmcp.task_management.infrastructure.database.database_config.create_engine"
+    ) as mock_engine:
+        # Create a mock engine that behaves like a real one
+        mock_engine_instance = MagicMock()
+        mock_connection = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar.return_value = "PostgreSQL 14.0"
+
+        # Setup connection behavior
+        mock_connection.execute.return_value = mock_result
+        mock_connection.__enter__ = MagicMock(return_value=mock_connection)
+        mock_connection.__exit__ = MagicMock(return_value=False)
+        mock_engine_instance.connect.return_value = mock_connection
+
+        # Setup pool info (for get_database_info)
+        mock_pool = MagicMock()
+        mock_pool.size.return_value = 5
+        mock_pool.checkedin.return_value = 5
+        mock_pool.checkedout.return_value = 0
+        mock_pool.overflow.return_value = 0
+        mock_engine_instance.pool = mock_pool
+
+        mock_engine.return_value = mock_engine_instance
+
+        # Also mock ensure_ai_columns_exist to prevent column checks
+        with patch(
+            "fastmcp.task_management.infrastructure.database.database_config.ensure_ai_columns_exist"
+        ) as mock_ai_columns:
+            mock_ai_columns.return_value = True
+            yield mock_engine
 
 
 class TestDatabaseTypeValidation:
@@ -40,7 +76,7 @@ class TestDatabaseTypeValidation:
             "PoStGrEsQl",  # Mixed case
         ],
     )
-    def test_valid_database_types_accepted(self, valid_type):
+    def test_valid_database_types_accepted(self, valid_type, mock_db_connection):
         """Test that valid DATABASE_TYPE values are accepted (case-insensitive)."""
         with patch.dict(
             os.environ,
@@ -152,7 +188,7 @@ class TestDatabaseTypeValidation:
                 "supabase" in error_msg.lower() or "configuration" in error_msg.lower()
             )
 
-    def test_case_insensitive_normalization(self):
+    def test_case_insensitive_normalization(self, mock_db_connection):
         """Test that DATABASE_TYPE is normalized to lowercase."""
         test_cases = [
             ("PostgreSQL", "postgresql"),
@@ -249,7 +285,7 @@ class TestDatabaseConfigurationConstructor:
             error_msg = str(exc_info.value)
             assert "Invalid DATABASE_TYPE" in error_msg
 
-    def test_singleton_pattern_preserved(self):
+    def test_singleton_pattern_preserved(self, mock_db_connection):
         """Test that singleton pattern still works after validation changes."""
         with patch.dict(
             os.environ,
@@ -267,7 +303,7 @@ class TestDatabaseConfigurationConstructor:
             # Should be same instance
             assert config1 is config2
 
-    def test_reset_instance_clears_validation_state(self):
+    def test_reset_instance_clears_validation_state(self, mock_db_connection):
         """Test that reset_instance properly clears validation state."""
         # First create with valid config
         with patch.dict(
