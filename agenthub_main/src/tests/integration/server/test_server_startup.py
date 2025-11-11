@@ -264,9 +264,9 @@ class TestServerStartupSuccess:
             # The server was created successfully
             assert server is not None
             # The custom_route is a decorator, so we verify the server has it available
-            assert hasattr(mock_server, "custom_route"), (
-                "Server should have custom_route method"
-            )
+            assert hasattr(
+                mock_server, "custom_route"
+            ), "Server should have custom_route method"
 
 
 class TestGracefulDegradation:
@@ -511,9 +511,10 @@ class TestEnvironmentValidation:
                     "log_level", os.environ.get("FASTMCP_LOG_LEVEL", "INFO")
                 )
                 # Default value should be INFO
-                assert log_level in ["INFO", "DEBUG"], (
-                    f"Log level should be INFO or DEBUG, got '{log_level}'"
-                )
+                assert log_level in [
+                    "INFO",
+                    "DEBUG",
+                ], f"Log level should be INFO or DEBUG, got '{log_level}'"
 
 
 class TestSecurityMeasures:
@@ -973,6 +974,6 @@ class TestCoverageVerification:
 
         # Verify all critical scenarios have tests
         for scenario in critical_scenarios:
-            assert scenario in test_methods, (
-                f"Missing test for critical scenario: {scenario}"
-            )
+            assert (
+                scenario in test_methods
+            ), f"Missing test for critical scenario: {scenario}"
