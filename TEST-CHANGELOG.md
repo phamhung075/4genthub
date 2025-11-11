@@ -18,6 +18,16 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ### Fixed
 
+**BaseORMRepository Import Fix - Complete Solution** (2025-11-11)
+- Added missing import statement for BaseORMRepository in task_repository.py
+- Previous fix (faf3cd4) added __all__ export but forgot the import
+- Problem: `AttributeError: module has no attribute 'BaseORMRepository'`
+- Solution: Added `from ..base_orm_repository import BaseORMRepository`
+- File: `agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py:45`
+- Result: BaseORMRepository now properly importable from task_repository module
+- Impact: Fixes 12 test failures in supabase_optimized_repository_test.py
+- Commit: 5921146
+
 **Agent Doc Generator Test Environment Setup** (2025-11-11)
 - Fixed PyYAML dependency installation for agent_doc_generator_test.py
 - Problem: Test failed with `ModuleNotFoundError: No module named 'yaml'`
