@@ -152,12 +152,12 @@ class TestDatabaseIntegrityConstraints:
         )
 
         # Should succeed due to context auto-creation
-        assert result["success"] is True, (
-            "Task creation should succeed with auto-created branch context"
-        )
-        assert result["task"]["git_branch_id"] == invalid_git_branch_id, (
-            "Task should have the specified git_branch_id"
-        )
+        assert (
+            result["success"] is True
+        ), "Task creation should succeed with auto-created branch context"
+        assert (
+            result["task"]["git_branch_id"] == invalid_git_branch_id
+        ), "Task should have the specified git_branch_id"
 
     def test_cannot_create_subtask_for_non_existent_parent(self, subtask_facade):
         """
@@ -221,9 +221,9 @@ class TestDatabaseIntegrityConstraints:
                 text("SELECT COUNT(*) FROM subtasks WHERE task_id = :task_id"),
                 {"task_id": task_id},
             )
-            assert result.scalar() == 0, (
-                "Subtasks should be cascade deleted with parent"
-            )
+            assert (
+                result.scalar() == 0
+            ), "Subtasks should be cascade deleted with parent"
 
     def test_database_counts_match_application_counts(
         self, task_facade, subtask_facade, git_branch_id, db_config
@@ -288,12 +288,12 @@ class TestDatabaseIntegrityConstraints:
             db_completed = row[1] if row[1] is not None else 0
 
         # CRITICAL: Application and database must match
-        assert app_total == db_total, (
-            f"Application shows {app_total} subtasks, database shows {db_total}"
-        )
-        assert app_completed == db_completed, (
-            f"Application shows {app_completed} completed, database shows {db_completed}"
-        )
+        assert (
+            app_total == db_total
+        ), f"Application shows {app_total} subtasks, database shows {db_total}"
+        assert (
+            app_completed == db_completed
+        ), f"Application shows {app_completed} completed, database shows {db_completed}"
 
     def test_context_auto_creation_on_task_creation(self, task_facade, db_config):
         """
@@ -326,9 +326,9 @@ class TestDatabaseIntegrityConstraints:
         # Verify task created successfully
         if not task_result["success"]:
             print(f"Task creation failed: {task_result}")
-        assert task_result["success"] is True, (
-            f"Task creation should succeed with auto-created context. Error: {task_result.get('error', 'Unknown')}"
-        )
+        assert (
+            task_result["success"] is True
+        ), f"Task creation should succeed with auto-created context. Error: {task_result.get('error', 'Unknown')}"
         assert task_result["task"]["git_branch_id"] == new_branch_id
 
         # Verify branch context was auto-created
@@ -350,12 +350,12 @@ class TestDatabaseIntegrityConstraints:
             import json
 
             context_data = json.loads(row[1]) if isinstance(row[1], str) else row[1]
-            assert context_data.get("auto_created") is True, (
-                "Context should be marked as auto-created"
-            )
-            assert context_data.get("source") == "task_creation_auto_create", (
-                "Context should have correct source metadata"
-            )
+            assert (
+                context_data.get("auto_created") is True
+            ), "Context should be marked as auto-created"
+            assert (
+                context_data.get("source") == "task_creation_auto_create"
+            ), "Context should have correct source metadata"
 
     def test_context_auto_creation_includes_metadata(self, task_facade, db_config):
         """
@@ -431,9 +431,9 @@ class TestDatabaseIntegrityConstraints:
             final_created_at = row[0] if row else None
 
             if initial_created_at:
-                assert final_created_at == initial_created_at, (
-                    "Existing context should not be recreated"
-                )
+                assert (
+                    final_created_at == initial_created_at
+                ), "Existing context should not be recreated"
 
     def test_multiple_tasks_share_auto_created_context(self, task_facade):
         """
@@ -458,9 +458,9 @@ class TestDatabaseIntegrityConstraints:
         # Verify all tasks have same branch ID
         for task_id in task_ids:
             task_data = task_facade.get_task(task_id)["task"]
-            assert task_data["git_branch_id"] == shared_branch_id, (
-                "All tasks should share the same git_branch_id"
-            )
+            assert (
+                task_data["git_branch_id"] == shared_branch_id
+            ), "All tasks should share the same git_branch_id"
 
     def test_context_auto_creation_preserves_foreign_key_integrity(
         self, task_facade, db_config
@@ -497,9 +497,9 @@ class TestDatabaseIntegrityConstraints:
             row = result.fetchone()
 
             assert row is not None, "Task should exist"
-            assert str(row[0]) == new_branch_id, (
-                "Task should have correct git_branch_id"
-            )
+            assert (
+                str(row[0]) == new_branch_id
+            ), "Task should have correct git_branch_id"
             assert str(row[1]) == new_branch_id, "Context should exist with matching ID"
 
 
@@ -585,13 +585,13 @@ class TestConcurrentOperations:
         # Accept 80%+ success rate as passing to validate concurrent operation resilience.
         min_expected = int(num_subtasks * 0.8)  # 80% success rate minimum
 
-        assert final_count >= min_expected, (
-            f"Expected at least {min_expected} subtasks ({min_expected}/{num_subtasks}), got {final_count}"
-        )
+        assert (
+            final_count >= min_expected
+        ), f"Expected at least {min_expected} subtasks ({min_expected}/{num_subtasks}), got {final_count}"
 
-        assert db_count >= min_expected, (
-            f"Database shows {db_count} subtasks, expected at least {min_expected}"
-        )
+        assert (
+            db_count >= min_expected
+        ), f"Database shows {db_count} subtasks, expected at least {min_expected}"
 
         # Log actual success rate for monitoring
         success_rate = (final_count / num_subtasks) * 100
@@ -676,9 +676,9 @@ class TestConcurrentOperations:
         # Session lifecycle management under high concurrency is complex.
         min_expected = int(10 * 0.8)  # 80% success rate minimum
 
-        assert completed_count >= min_expected, (
-            f"Expected at least {min_expected} completed subtasks ({min_expected}/10), got {completed_count}"
-        )
+        assert (
+            completed_count >= min_expected
+        ), f"Expected at least {min_expected} completed subtasks ({min_expected}/10), got {completed_count}"
 
         # Log actual success rate for monitoring
         success_rate = (completed_count / 10) * 100
@@ -755,15 +755,20 @@ class TestConcurrentOperations:
 
         # Verify critical fields are not corrupted
         assert final_task["id"] == task_id, "Task ID should not change"
-        assert final_task["git_branch_id"] == git_branch_id, (
-            "Branch ID should not change"
-        )
-        assert final_task["status"] in ["todo", "in_progress", "done"], (
-            "Status should be valid value"
-        )
-        assert final_task["priority"] in ["low", "medium", "high", "critical"], (
-            "Priority should be valid value"
-        )
+        assert (
+            final_task["git_branch_id"] == git_branch_id
+        ), "Branch ID should not change"
+        assert final_task["status"] in [
+            "todo",
+            "in_progress",
+            "done",
+        ], "Status should be valid value"
+        assert final_task["priority"] in [
+            "low",
+            "medium",
+            "high",
+            "critical",
+        ], "Priority should be valid value"
 
     def test_rapid_subtask_add_delete_maintains_consistency(
         self, task_facade, subtask_facade, git_branch_id
@@ -800,9 +805,9 @@ class TestConcurrentOperations:
 
             # Verify count is 5
             check1 = task_facade.get_task(task_id)["task"]
-            assert check1["subtask_count"] == 5, (
-                f"Cycle {cycle}: Expected 5 subtasks after creation"
-            )
+            assert (
+                check1["subtask_count"] == 5
+            ), f"Cycle {cycle}: Expected 5 subtasks after creation"
 
             # Delete 3 subtasks
             for i in range(3):
@@ -816,9 +821,9 @@ class TestConcurrentOperations:
 
             # Verify count is 2
             check2 = task_facade.get_task(task_id)["task"]
-            assert check2["subtask_count"] == 2, (
-                f"Cycle {cycle}: Expected 2 subtasks after deletion"
-            )
+            assert (
+                check2["subtask_count"] == 2
+            ), f"Cycle {cycle}: Expected 2 subtasks after deletion"
 
             # Delete remaining
             for i in range(3, 5):
@@ -832,9 +837,9 @@ class TestConcurrentOperations:
 
             # Verify count is 0
             check3 = task_facade.get_task(task_id)["task"]
-            assert check3["subtask_count"] == 0, (
-                f"Cycle {cycle}: Expected 0 subtasks after all deleted"
-            )
+            assert (
+                check3["subtask_count"] == 0
+            ), f"Cycle {cycle}: Expected 0 subtasks after all deleted"
 
         # Final verification
         final = task_facade.get_task(task_id)["task"]

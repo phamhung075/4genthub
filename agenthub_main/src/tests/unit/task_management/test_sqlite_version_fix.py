@@ -35,9 +35,10 @@ def test_sqlite_connection():
         db_info = db.get_database_info()
         print(f"Database type: {db_info['type']}")
         # Accept any valid database type (sqlite, postgresql, etc.)
-        assert db_info["type"] in ["sqlite", "postgresql"], (
-            f"Unexpected database type: {db_info['type']}"
-        )
+        assert db_info["type"] in [
+            "sqlite",
+            "postgresql",
+        ], f"Unexpected database type: {db_info['type']}"
 
         # 3. Test that we can get a session (this would fail with version() error before fix)
         with db.get_session() as session:

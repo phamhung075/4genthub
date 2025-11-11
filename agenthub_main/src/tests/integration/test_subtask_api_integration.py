@@ -116,28 +116,29 @@ class TestSubtaskAPIIntegration:
             pytest.skip("Subtask endpoint not implemented yet")
 
         # Verify successful creation
-        assert response.status_code in [200, 201], (
-            f"Failed to create subtask: {response.text}"
-        )
+        assert response.status_code in [
+            200,
+            201,
+        ], f"Failed to create subtask: {response.text}"
 
         subtask_data = response.json()
 
         # CRITICAL ASSERTIONS:
         # 1. Subtask should have parent_task_id field
-        assert "parent_task_id" in subtask_data or "task_id" in subtask_data, (
-            "Subtask missing parent reference"
-        )
+        assert (
+            "parent_task_id" in subtask_data or "task_id" in subtask_data
+        ), "Subtask missing parent reference"
 
         # 2. Parent ID should be the task_id, NOT git_branch_id
         parent_field = subtask_data.get("parent_task_id") or subtask_data.get("task_id")
-        assert parent_field == task_id, (
-            f"Wrong parent ID: expected {task_id}, got {parent_field}"
-        )
+        assert (
+            parent_field == task_id
+        ), f"Wrong parent ID: expected {task_id}, got {parent_field}"
 
         # 3. Parent ID should NOT be git_branch_id
-        assert parent_field != git_branch_id, (
-            f"Parent ID incorrectly set to git_branch_id: {git_branch_id}"
-        )
+        assert (
+            parent_field != git_branch_id
+        ), f"Parent ID incorrectly set to git_branch_id: {git_branch_id}"
 
     def test_fetch_subtask_via_parent_task_endpoint(self, api_headers, setup_test_task):
         """Test fetching a subtask through the parent task API endpoint"""
@@ -174,9 +175,9 @@ class TestSubtaskAPIIntegration:
         )
 
         # Verify successful fetch
-        assert fetch_response.status_code == 200, (
-            f"Failed to fetch subtask: {fetch_response.status_code} - {fetch_response.text}"
-        )
+        assert (
+            fetch_response.status_code == 200
+        ), f"Failed to fetch subtask: {fetch_response.status_code} - {fetch_response.text}"
 
         fetched_subtask = fetch_response.json()
 
@@ -184,9 +185,9 @@ class TestSubtaskAPIIntegration:
         parent_field = fetched_subtask.get("parent_task_id") or fetched_subtask.get(
             "task_id"
         )
-        assert parent_field == task_id, (
-            f"Fetched subtask has wrong parent: expected {task_id}, got {parent_field}"
-        )
+        assert (
+            parent_field == task_id
+        ), f"Fetched subtask has wrong parent: expected {task_id}, got {parent_field}"
 
     def test_list_subtasks_for_task(self, api_headers, setup_test_task):
         """Test listing all subtasks for a task returns correct parent relationships"""
@@ -224,9 +225,9 @@ class TestSubtaskAPIIntegration:
         if list_response.status_code == 404:
             pytest.skip("Subtask list endpoint not implemented")
 
-        assert list_response.status_code == 200, (
-            f"Failed to list subtasks: {list_response.text}"
-        )
+        assert (
+            list_response.status_code == 200
+        ), f"Failed to list subtasks: {list_response.text}"
 
         subtasks = list_response.json()
 
@@ -239,14 +240,14 @@ class TestSubtaskAPIIntegration:
             parent_field = subtask.get("parent_task_id") or subtask.get("task_id")
 
             # Each subtask should reference the correct parent task
-            assert parent_field == task_id, (
-                f"Subtask {subtask.get('id')} has wrong parent: expected {task_id}, got {parent_field}"
-            )
+            assert (
+                parent_field == task_id
+            ), f"Subtask {subtask.get('id')} has wrong parent: expected {task_id}, got {parent_field}"
 
             # Parent should NOT be git_branch_id
-            assert parent_field != git_branch_id, (
-                f"Subtask {subtask.get('id')} incorrectly uses git_branch_id as parent"
-            )
+            assert (
+                parent_field != git_branch_id
+            ), f"Subtask {subtask.get('id')} incorrectly uses git_branch_id as parent"
 
     def test_reject_invalid_task_id_for_subtask_creation(self, api_headers):
         """Test that creating a subtask with non-existent task_id fails appropriately"""
@@ -266,9 +267,10 @@ class TestSubtaskAPIIntegration:
         )
 
         # Should return 404 or 400 for non-existent parent task
-        assert response.status_code in [400, 404], (
-            f"Expected error for non-existent task, got {response.status_code}"
-        )
+        assert response.status_code in [
+            400,
+            404,
+        ], f"Expected error for non-existent task, got {response.status_code}"
 
         # Error message should indicate task not found
         if response.text:
@@ -334,9 +336,10 @@ class TestSubtaskAPIIntegration:
         if update_response.status_code == 404:
             pytest.skip("Subtask update endpoint not implemented")
 
-        assert update_response.status_code in [200, 201], (
-            f"Failed to update subtask: {update_response.text}"
-        )
+        assert update_response.status_code in [
+            200,
+            201,
+        ], f"Failed to update subtask: {update_response.text}"
 
         updated_subtask = update_response.json()
 
@@ -344,9 +347,9 @@ class TestSubtaskAPIIntegration:
         parent_field = updated_subtask.get("parent_task_id") or updated_subtask.get(
             "task_id"
         )
-        assert parent_field == task_id, (
-            f"Parent relationship lost after update: expected {task_id}, got {parent_field}"
-        )
+        assert (
+            parent_field == task_id
+        ), f"Parent relationship lost after update: expected {task_id}, got {parent_field}"
 
     def test_delete_subtask_via_parent_task(self, api_headers, setup_test_task):
         """Test deleting a subtask through parent task endpoint"""
@@ -385,9 +388,10 @@ class TestSubtaskAPIIntegration:
         if delete_response.status_code == 404:
             pytest.skip("Subtask delete endpoint not implemented")
 
-        assert delete_response.status_code in [200, 204], (
-            f"Failed to delete subtask: {delete_response.text}"
-        )
+        assert delete_response.status_code in [
+            200,
+            204,
+        ], f"Failed to delete subtask: {delete_response.text}"
 
         # Verify subtask is deleted by trying to fetch it
         fetch_response = requests.get(
@@ -395,9 +399,9 @@ class TestSubtaskAPIIntegration:
         )
 
         # Should return 404 for deleted subtask
-        assert fetch_response.status_code == 404, (
-            f"Deleted subtask still accessible: {fetch_response.status_code}"
-        )
+        assert (
+            fetch_response.status_code == 404
+        ), f"Deleted subtask still accessible: {fetch_response.status_code}"
 
 
 if __name__ == "__main__":

@@ -252,9 +252,9 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
     task_data = payload["data"]["primary"]
     assert "id" in task_data, "Missing 'id' in task data"
     assert "title" in task_data, "Missing 'title' in task data"
-    assert task_data["title"] == request.title, (
-        f"Title mismatch: expected '{request.title}', got '{task_data['title']}'"
-    )
+    assert (
+        task_data["title"] == request.title
+    ), f"Title mismatch: expected '{request.title}', got '{task_data['title']}'"
     assert "status" in task_data, "Missing 'status' in task data"
     assert "priority" in task_data, "Missing 'priority' in task data"
 
@@ -313,9 +313,9 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         # Get "updated" notifications
         update_notifications = self.mock_websocket.get_messages_by_type("updated")
 
-        assert len(update_notifications) > 0, (
-            f"❌ NO UPDATE NOTIFICATION RECEIVED! Expected 'updated' notification but got {len(update_notifications)} messages."
-        )
+        assert (
+            len(update_notifications) > 0
+        ), f"❌ NO UPDATE NOTIFICATION RECEIVED! Expected 'updated' notification but got {len(update_notifications)} messages."
 
         notification = update_notifications[0]
 
@@ -326,9 +326,9 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
 
         # Verify updated data
         task_data = payload["data"]["primary"]
-        assert task_data["title"] == "UPDATED E2E Test Task", (
-            f"Title not updated in notification: {task_data['title']}"
-        )
+        assert (
+            task_data["title"] == "UPDATED E2E Test Task"
+        ), f"Title not updated in notification: {task_data['title']}"
         assert task_data["status"] == "in_progress" or "in_progress" in str(
             task_data["status"]
         ), f"Status not updated in notification: {task_data['status']}"
@@ -397,9 +397,9 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         # Verify deleted task data included (for frontend to remove from UI)
         task_data = payload["data"]["primary"]
         assert "id" in task_data, "Missing task ID in delete notification"
-        assert task_data["id"] == task_id, (
-            f"Task ID mismatch: expected '{task_id}', got '{task_data['id']}'"
-        )
+        assert (
+            task_data["id"] == task_id
+        ), f"Task ID mismatch: expected '{task_id}', got '{task_data['id']}'"
 
         logger.info(
             "✅ E2E TEST PASSED: Task delete notification received with task ID"
@@ -469,9 +469,12 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         # Verify root level fields (TypeScript interface)
         assert isinstance(notification["id"], str), "id must be string"
         assert isinstance(notification["version"], str), "version must be string"
-        assert notification["type"] in ["update", "sync", "error", "heartbeat"], (
-            f"type must be one of allowed values, got: {notification['type']}"
-        )
+        assert notification["type"] in [
+            "update",
+            "sync",
+            "error",
+            "heartbeat",
+        ], f"type must be one of allowed values, got: {notification['type']}"
         assert isinstance(notification["timestamp"], str), "timestamp must be string"
         # Verify timestamp is ISO 8601 format
         try:
@@ -494,15 +497,15 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         metadata = notification["metadata"]
         assert isinstance(metadata["source"], str), "metadata.source must be string"
         assert isinstance(metadata["userId"], str), "metadata.userId must be string"
-        assert isinstance(metadata["entity_type"], str), (
-            "metadata.entity_type must be string"
-        )
-        assert isinstance(metadata["entity_id"], str), (
-            "metadata.entity_id must be string"
-        )
-        assert isinstance(metadata["event_type"], str), (
-            "metadata.event_type must be string"
-        )
+        assert isinstance(
+            metadata["entity_type"], str
+        ), "metadata.entity_type must be string"
+        assert isinstance(
+            metadata["entity_id"], str
+        ), "metadata.entity_id must be string"
+        assert isinstance(
+            metadata["event_type"], str
+        ), "metadata.event_type must be string"
 
         logger.info(
             "✅ E2E TEST PASSED: Data model matches TypeScript interface exactly"
@@ -564,31 +567,31 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         # Verify cascade data structure (if present)
         if cascade:  # Cascade might be None for some entity types
             # Cascade should be a dictionary or list
-            assert isinstance(cascade, (dict, list)), (
-                f"Cascade data must be dict or list, got: {type(cascade)}"
-            )
+            assert isinstance(
+                cascade, dict | list
+            ), f"Cascade data must be dict or list, got: {type(cascade)}"
 
             # If it's a list (branches), verify structure
             if isinstance(cascade, list) and len(cascade) > 0:
                 branch = cascade[0]
                 # Branch statistics for animations
                 if "task_count" in branch:
-                    assert isinstance(branch["task_count"], int), (
-                        "task_count must be integer"
-                    )
+                    assert isinstance(
+                        branch["task_count"], int
+                    ), "task_count must be integer"
                 if "completed_tasks" in branch:
-                    assert isinstance(branch["completed_tasks"], int), (
-                        "completed_tasks must be integer"
-                    )
+                    assert isinstance(
+                        branch["completed_tasks"], int
+                    ), "completed_tasks must be integer"
                 if "progress_percentage" in branch:
-                    assert isinstance(branch["progress_percentage"], (int, float)), (
-                        "progress_percentage must be number"
-                    )
+                    assert isinstance(
+                        branch["progress_percentage"], int | float
+                    ), "progress_percentage must be number"
 
         # Verify cascade data NOT in metadata (avoid duplication)
-        assert "cascade" not in notification["metadata"], (
-            "❌ CASCADE DATA IN METADATA! Should only be in payload.data (bug fix verification)"
-        )
+        assert (
+            "cascade" not in notification["metadata"]
+        ), "❌ CASCADE DATA IN METADATA! Should only be in payload.data (bug fix verification)"
 
         logger.info(
             "✅ E2E TEST PASSED: Cascade data included in payload.data for frontend animations"
@@ -635,21 +638,21 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             api_response.task.__dict__ if hasattr(api_response.task, "__dict__") else {}
         )
 
-        assert "notification_sent" not in task_dict, (
-            "❌ API response contains 'notification_sent' field! Should be WebSocket only"
-        )
-        assert "websocket_triggered" not in task_dict, (
-            "❌ API response contains 'websocket_triggered' field! Should be WebSocket only"
-        )
-        assert "websocket_message" not in task_dict, (
-            "❌ API response contains 'websocket_message' field! Should be WebSocket only"
-        )
+        assert (
+            "notification_sent" not in task_dict
+        ), "❌ API response contains 'notification_sent' field! Should be WebSocket only"
+        assert (
+            "websocket_triggered" not in task_dict
+        ), "❌ API response contains 'websocket_triggered' field! Should be WebSocket only"
+        assert (
+            "websocket_message" not in task_dict
+        ), "❌ API response contains 'websocket_message' field! Should be WebSocket only"
 
         # Verify WebSocket notification arrived separately
         notifications = self.mock_websocket.get_messages_by_type("created")
-        assert len(notifications) > 0, (
-            "❌ NO WEBSOCKET NOTIFICATION! Notification should arrive via WebSocket, not API"
-        )
+        assert (
+            len(notifications) > 0
+        ), "❌ NO WEBSOCKET NOTIFICATION! Notification should arrive via WebSocket, not API"
 
         logger.info(
             "✅ E2E TEST PASSED: API response clean, notification via WebSocket only"
@@ -711,9 +714,9 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             tab1_data = tab1_notifications[0]["payload"]["data"]["primary"]
             tab2_data = tab2_notifications[0]["payload"]["data"]["primary"]
 
-            assert tab1_data["title"] == tab2_data["title"], (
-                "Notification data differs between tabs"
-            )
+            assert (
+                tab1_data["title"] == tab2_data["title"]
+            ), "Notification data differs between tabs"
 
             logger.info(
                 "✅ E2E TEST PASSED: Multiple tabs received identical notification"
@@ -786,9 +789,9 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             user_a_notifications = self.mock_websocket.get_messages_by_type("created")
             user_b_notifications = mock_websocket_user_b.get_messages_by_type("created")
 
-            assert len(user_a_notifications) > 0, (
-                "❌ User A did not receive notification for their own task"
-            )
+            assert (
+                len(user_a_notifications) > 0
+            ), "❌ User A did not receive notification for their own task"
             assert len(user_b_notifications) == 0, (
                 f"❌ SECURITY ISSUE: User B received notification for User A's task! "
                 f"Received: {user_b_notifications}"
