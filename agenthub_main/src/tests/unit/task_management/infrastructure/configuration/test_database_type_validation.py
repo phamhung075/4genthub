@@ -49,7 +49,14 @@ def mock_db_connection():
     """Mock database connection to prevent actual database authentication."""
     with patch(
         "fastmcp.task_management.infrastructure.database.database_config.create_engine"
-    ) as mock_engine:
+    ) as mock_engine, \
+         patch(
+             "fastmcp.task_management.infrastructure.database.database_config.event.listens_for"
+         ) as mock_event_listener, \
+         patch(
+             "fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist"
+         ) as mock_ai_columns:
+
         # Create a mock engine that behaves like a real one
         mock_engine_instance = MagicMock()
         mock_connection = MagicMock()
@@ -72,12 +79,13 @@ def mock_db_connection():
 
         mock_engine.return_value = mock_engine_instance
 
-        # Also mock ensure_ai_columns_exist to prevent column checks
-        with patch(
-            "fastmcp.task_management.infrastructure.database.database_config.ensure_ai_columns_exist"
-        ) as mock_ai_columns:
-            mock_ai_columns.return_value = True
-            yield mock_engine
+        # Mock event.listens_for to return a no-op decorator
+        mock_event_listener.return_value = lambda func: func
+
+        # Mock ensure_ai_columns_exist to prevent column checks
+        mock_ai_columns.return_value = True
+
+        yield mock_engine
 
 
 class TestDatabaseTypeValidation:
@@ -103,17 +111,26 @@ class TestDatabaseTypeValidation:
     )
     def test_valid_database_types_accepted(self, valid_type, mock_db_connection):
         """Test that valid DATABASE_TYPE values are accepted (case-insensitive)."""
-        with patch.dict(
-            os.environ,
-            {
-                "DATABASE_TYPE": valid_type,
+        # Prepare environment variables based on database type
+        env_vars = {"DATABASE_TYPE": valid_type}
+
+        # Add appropriate connection details based on type
+        if valid_type.lower() == "supabase":
+            env_vars.update({
+                "SUPABASE_URL": "https://test.supabase.co",
+                "SUPABASE_ANON_KEY": "test_anon_key",
+                "SUPABASE_DB_HOST": "localhost",
+                "SUPABASE_DB_PASSWORD": "test_pass",
+            })
+        else:  # postgresql
+            env_vars.update({
                 "DATABASE_HOST": "localhost",
                 "DATABASE_USER": "test_user",
                 "DATABASE_PASSWORD": "test_pass",
                 "DATABASE_NAME": "test_db",
-            },
-            clear=True,
-        ):
+            })
+
+        with patch.dict(os.environ, env_vars, clear=True):
             try:
                 config = DatabaseConfig()
                 # Should not raise - verify type was normalized to lowercase
@@ -225,16 +242,23 @@ class TestDatabaseTypeValidation:
         for input_type, expected_normalized in test_cases:
             DatabaseConfig.reset_instance()
 
-            with patch.dict(
-                os.environ,
-                {
-                    "DATABASE_TYPE": input_type,
+            # Prepare environment variables based on expected normalized type
+            env_vars = {"DATABASE_TYPE": input_type}
+            if expected_normalized == "supabase":
+                env_vars.update({
+                    "SUPABASE_URL": "https://test.supabase.co",
+                    "SUPABASE_ANON_KEY": "test_anon_key",
+                    "SUPABASE_DB_HOST": "localhost",
+                    "SUPABASE_DB_PASSWORD": "test_pass",
+                })
+            else:  # postgresql
+                env_vars.update({
                     "DATABASE_HOST": "localhost",
                     "DATABASE_USER": "test_user",
                     "DATABASE_PASSWORD": "test_pass",
-                },
-                clear=True,
-            ):
+                })
+
+            with patch.dict(os.environ, env_vars, clear=True):
                 config = DatabaseConfig()
                 assert config.database_type == expected_normalized, (
                     f"Expected '{input_type}' to be normalized to '{expected_normalized}', "
