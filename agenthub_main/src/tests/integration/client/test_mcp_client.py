@@ -30,12 +30,14 @@ oauth_callback_mock = MagicMock()
 oauth_callback_mock.create_oauth_callback_server = MagicMock()
 sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
 
-import mcp.types
-import pytest
-from pydantic import AnyUrl
+# fmt: off - Imports must come after sys.modules mock, cannot auto-sort
+import mcp.types  # noqa: E402, I001
+import pytest  # noqa: E402, I001
+from pydantic import AnyUrl  # noqa: E402, I001
 
-from fastmcp.client.client import Client
-from fastmcp.exceptions import ToolError
+from fastmcp.client.client import Client  # noqa: E402, I001
+from fastmcp.exceptions import ToolError  # noqa: E402, I001
+# fmt: on
 
 # Test markers
 pytestmark = [
