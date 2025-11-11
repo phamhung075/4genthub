@@ -50,7 +50,7 @@ try:
 
     from fastmcp.auth.domain.value_objects.user_id import UserId
     IMPORTS_AVAILABLE = True
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError):
     IMPORTS_AVAILABLE = False
     # Module already skipped at top level via pytestmark
     # This except block is kept for future when tests are fixed

@@ -27,6 +27,12 @@ from datetime import timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
+# CRITICAL: Mock the missing oauth_callback module BEFORE importing transports
+# This prevents ModuleNotFoundError during transport import chain
+oauth_callback_mock = MagicMock()
+oauth_callback_mock.create_oauth_callback_server = MagicMock()
+sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
+
 import httpx
 import mcp.types
 import pytest
@@ -49,11 +55,6 @@ from fastmcp.client.transports import (
 )
 from fastmcp.server.server import FastMCP
 from fastmcp.utilities.mcp_config import MCPConfig
-
-# Mock the missing oauth_callback module before importing
-oauth_callback_mock = MagicMock()
-oauth_callback_mock.create_oauth_callback_server = MagicMock()
-sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
 
 # Test markers
 pytestmark = [

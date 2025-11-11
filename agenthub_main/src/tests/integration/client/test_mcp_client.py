@@ -19,12 +19,16 @@ from __future__ import annotations
 
 import asyncio
 import json
-
-# Mock the missing oauth_callback module before importing client
 import sys
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+# CRITICAL: Mock the missing oauth_callback module BEFORE importing client
+# This prevents ModuleNotFoundError during client import chain
+oauth_callback_mock = MagicMock()
+oauth_callback_mock.create_oauth_callback_server = MagicMock()
+sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
 
 import mcp.types
 import pytest
@@ -32,11 +36,6 @@ from pydantic import AnyUrl
 
 from fastmcp.client.client import Client
 from fastmcp.exceptions import ToolError
-
-# Create mock for oauth_callback
-oauth_callback_mock = MagicMock()
-oauth_callback_mock.create_oauth_callback_server = MagicMock()
-sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
 
 # Test markers
 pytestmark = [

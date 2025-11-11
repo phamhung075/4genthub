@@ -15,18 +15,19 @@ from pathlib import Path
 
 import pytest
 
-from utils.agent_state_manager import (
+# Skip pytest collection - this is a standalone script
+# MUST be set BEFORE any imports that might fail
+pytestmark = pytest.mark.skip(reason="Standalone script - run directly, not via pytest")
+
+# Add hooks to path BEFORE importing from utils
+project_root = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(project_root / ".claude" / "hooks"))
+
+from utils.agent_state_manager import (  # noqa: E402 - Import must come after sys.path modification
     get_agent_role_from_session,
     get_current_agent,
     set_current_agent,
 )
-
-# Skip pytest collection - this is a standalone script
-pytestmark = pytest.mark.skip(reason="Standalone script - run directly, not via pytest")
-
-# Add hooks to path
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root / ".claude" / "hooks"))
 
 
 def test_agent_role_mapping():
