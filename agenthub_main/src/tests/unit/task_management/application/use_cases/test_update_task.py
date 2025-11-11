@@ -548,19 +548,33 @@ class TestUpdateTaskUseCase:
         mock_task_repository.find_by_id.return_value = sample_task
         mock_task_repository.save.return_value = None
 
-        with patch("asyncio.get_running_loop") as mock_get_loop:
-            mock_get_loop.return_value = Mock()  # Simulate running loop
+        with patch(
+            "fastmcp.task_management.application.services.task_context_sync_service.TaskContextSyncService"
+        ) as mock_sync_service_class:
+            mock_sync_service = Mock()
+            mock_sync_service.sync_context_and_get_task = AsyncMock(
+                return_value=sample_task
+            )
+            mock_sync_service.sync_task_metadata = AsyncMock(return_value=None)
+            mock_sync_service_class.return_value = mock_sync_service
 
-            with patch(
-                "fastmcp.task_management.application.use_cases.update_task.TaskResponse"
-            ):
-                with patch(
-                    "fastmcp.task_management.application.use_cases.update_task.UpdateTaskResponse"
-                ):
-                    # Act
-                    with caplog.at_level(logging.INFO):
-                        result = use_case.execute(basic_update_request)
+            with patch("asyncio.get_running_loop") as mock_get_loop:
+                mock_get_loop.return_value = Mock()  # Simulate running loop
 
-                    # Assert
-                    assert result is not None
-                    assert "Context sync triggered" in caplog.text
+                with patch("asyncio.create_task") as mock_create_task:
+                    mock_create_task.return_value = Mock()  # Mock the task creation
+
+                    with patch(
+                        "fastmcp.task_management.application.use_cases.update_task.TaskResponse"
+                    ):
+                        with patch(
+                            "fastmcp.task_management.application.use_cases.update_task.UpdateTaskResponse"
+                        ):
+                            # Act
+                            with caplog.at_level(logging.INFO):
+                                result = use_case.execute(basic_update_request)
+
+                            # Assert
+                            assert result is not None
+                            # Verify create_task was called (indicates async context handling)
+                            mock_create_task.assert_called_once()
