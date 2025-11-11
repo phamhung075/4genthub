@@ -49,6 +49,23 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**Python 3.11 Compatibility and Import Sorting** (2025-11-11)
+
+Fixed syntax errors and import sorting issues to ensure Python 3.11 compatibility and PEP 8 compliance.
+
+**Issues Fixed**:
+1. **F-string nested quote syntax error** in `task_plan.py:175` - Changed inner double quotes to single quotes for Python 3.11 compatibility (nested quote reuse requires Python 3.12+)
+2. **Import sorting errors** in `agent_mcp_controller_test.py` - Moved `ToolConfig` import from method bodies to top-level imports per PEP 8
+
+**Files Modified**:
+- `agenthub_main/src/fastmcp/ai_task_planning/domain/entities/task_plan.py:175` - Fixed f-string syntax
+- `agenthub_main/src/tests/unit/task_management/interface/controllers/agent_mcp_controller_test.py:20-22,52,67,559` - Consolidated imports
+
+**Impact**:
+- ✅ Code now compatible with Python 3.11
+- ✅ Follows PEP 8 import standards
+- ✅ CI/CD linting checks pass
+
 **GitHub Actions - Workflow Run Deletion Permissions** (2025-11-11)
 
 Fixed 403 "Resource not accessible by integration" errors when cleanup job attempts to delete old workflow runs.
