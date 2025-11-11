@@ -89,6 +89,7 @@ def test_init_file_content_basic():
 
 def test_no_circular_imports():
     """Test that there are no circular import issues"""
+    # ruff: noqa: I001 - Import order intentional to test various import styles for circular dependency detection
     try:
         # This should not cause circular import errors
         # Re-importing should work fine

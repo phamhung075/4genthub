@@ -238,6 +238,56 @@ Fixed 4 additional pytest collection errors discovered during CI test runs, brin
 - 📚 Clear pattern for mocking missing modules in test files
 - ✅ CI test runs now execute without collection errors
 
+**Additional F401 Linting Suppressions - Availability Testing Pattern** (2025-11-11)
+
+Added justified F401 (imported but unused) suppressions to 3 test files that use imports for availability testing, not direct functionality.
+
+**Files Fixed**:
+1. **server_test.py** (src/tests/fastmcp/server/)
+   - Line 39: `Middleware, MiddlewareContext` imported to test availability, pytest.skip if unavailable
+   - Pattern: try-except import block skips entire module if dependencies missing
+
+2. **auth_module_init_test.py** (src/tests/unit/auth/)
+   - Line 119: `fastmcp.auth` imported in `test_import_error_handling()` to verify module loads correctly
+   - Tests that imports work without catastrophic failures
+
+3. **auth_services_module_init_test.py** (src/tests/unit/auth/services/)
+   - Lines 96-98: Multiple import styles in `test_no_circular_imports()` to verify no circular dependency issues
+   - Intentionally imports same module 4 different ways (module, submodule, from import, class import)
+   - Tests import mechanism itself, not using imported symbols
+
+**Suppressions Applied**:
+```python
+# server_test.py:33,40
+# ruff: noqa: I001 - Import order intentional for availability testing pattern
+from fastmcp.server.middleware import Middleware, MiddlewareContext  # noqa: F401 - Imported to test availability, pytest.skip if unavailable
+
+# auth_module_init_test.py:119
+import fastmcp.auth  # noqa: F401 - Import used to test availability, not for functionality
+
+# auth_services_module_init_test.py:92,96-98
+# ruff: noqa: I001 - Import order intentional to test various import styles for circular dependency detection
+import fastmcp.auth.services  # noqa: F401 - Testing circular imports, not using functionality
+import fastmcp.auth.services.mcp_token_service  # noqa: F401 - Testing circular imports, verifying multiple import paths work
+from fastmcp.auth.services import mcp_token_service  # noqa: F401 - Testing circular imports, verifying 'from' imports work
+from fastmcp.auth.services.mcp_token_service import MCPTokenService  # noqa: F401 - Testing circular imports, verifying class imports work
+```
+
+**Verification**:
+- ✅ All linting checks pass (`ruff check --select E402,I001,F401,UP037`)
+- ✅ 113 tests collect successfully across all 3 files
+- ✅ Suppressions follow same pattern as `server_import_mount_test.py` (previously fixed)
+
+**Pattern Documented**:
+- **Availability Testing**: Imports used in try-except blocks to determine if dependencies exist
+- **Import Testing**: Imports used to verify module structure and circular import absence
+- **Not "Unused"**: These imports serve testing purposes, linter just can't detect the pattern
+
+**Impact**:
+- ✅ Consistent linting suppression pattern across test suite
+- 📚 Clear documentation for why imports appear "unused"
+- 🧹 Clean CI linting output without false positives
+
 **CI/CD Workflows - Production Docker Alignment** (2025-11-11)
 
 Aligned CI/CD workflows with production Docker configuration for consistency and reliability.

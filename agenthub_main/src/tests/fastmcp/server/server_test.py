@@ -30,6 +30,7 @@ from fastmcp.server.server import (
 )
 
 # Import related components for testing
+# ruff: noqa: I001 - Import order intentional for availability testing pattern
 try:
     from mcp.server.lowlevel.server import Server as MCPServer
 
