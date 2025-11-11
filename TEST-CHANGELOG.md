@@ -18,6 +18,15 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ### Fixed
 
+**Agent Doc Generator Test Environment Setup** (2025-11-11)
+- Fixed PyYAML dependency installation for agent_doc_generator_test.py
+- Problem: Test failed with `ModuleNotFoundError: No module named 'yaml'`
+- Solution: Ran `uv sync` to create virtual environment and install all project dependencies
+- Test Runner: Use `.venv/bin/pytest` after `uv sync` instead of global pytest
+- Result: All 24 tests passing (100%)
+- File: `src/tests/unit/task_management/infrastructure/services/agent_doc_generator_test.py`
+- Impact: Subtask 9da9e685-b094-48c6-a5f1-8e5c01c799ef completed (86% → 100%)
+
 **Import Error Fixes - CallAgentUseCase & BaseORMRepository** (2025-11-11)
 - Fixed AttributeError in `ddd_compliant_mcp_tools_test.py` (4 tests)
   - Removed obsolete CallAgentUseCase patches (not in module)
