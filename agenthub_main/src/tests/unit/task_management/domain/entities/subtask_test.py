@@ -136,12 +136,12 @@ class TestSubtaskCreation:
             )
 
     def test_subtask_validation_description_too_long(self):
-        """Test validation fails for description exceeding 500 characters."""
+        """Test validation fails for description exceeding 2000 characters."""
         parent_task_id = TaskId("parent-123")
-        long_description = "a" * 501
+        long_description = "a" * 2001
 
         with pytest.raises(
-            ValueError, match="Subtask description cannot exceed 500 characters"
+            ValueError, match="Subtask description cannot exceed 2000 characters"
         ):
             Subtask(
                 title="Valid",

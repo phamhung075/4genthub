@@ -112,8 +112,8 @@ class Subtask(BaseTimestampEntity):
         if len(self.title) > 200:
             raise ValueError("Subtask title cannot exceed 200 characters")
 
-        if self.description is not None and len(self.description) > 500:
-            raise ValueError("Subtask description cannot exceed 500 characters")
+        if self.description is not None and len(self.description) > 2000:
+            raise ValueError("Subtask description cannot exceed 2000 characters")
 
         if self.parent_task_id is None:
             raise ValueError("Subtask must have a parent task ID")

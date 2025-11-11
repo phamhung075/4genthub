@@ -49,6 +49,28 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**Subtask Description Character Limit Increased** (2025-11-11)
+
+Fixed inconsistency between Task and Subtask entity validation where subtask descriptions were limited to 500 characters while task descriptions allowed 2000 characters.
+
+**Changes**:
+- Increased subtask description validation limit from 500 → 2000 characters
+- Updated domain entity validation (subtask.py:115-116)
+- Updated unit tests to match new limit (test_subtask.py, subtask_test.py)
+- Database already supported 2000+ characters via TEXT column type
+
+**Files Modified**:
+- `agenthub_main/src/fastmcp/task_management/domain/entities/subtask.py:115-116` - Updated validation limit
+- `agenthub_main/src/tests/unit/task_management/domain/entities/test_subtask.py:101-108` - Updated test assertion
+- `agenthub_main/src/tests/unit/task_management/domain/entities/subtask_test.py:138-150` - Updated test assertion
+
+**Impact**:
+- ✅ Subtasks now support detailed descriptions matching task entity capabilities
+- ✅ Domain validation aligned with database TEXT column capacity
+- ✅ All unit tests pass (4/4 description-related tests passing)
+
+---
+
 **Settings Import AttributeError in Unit Tests** (2025-11-11)
 
 Fixed incorrect Settings import pattern in environment loading test fixtures that caused AttributeError: 'Settings' object has no attribute 'Settings'.
