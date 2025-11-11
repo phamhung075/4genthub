@@ -49,8 +49,8 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          # Dev dependency group is synced by default (no flag needed)
-          uv sync
+          # Install all dependency groups with explicit flags
+          uv sync --frozen --all-groups
       - name: Run pre-commit
         run: |
           export DATABASE_TYPE=postgresql
