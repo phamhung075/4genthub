@@ -552,9 +552,15 @@ def convert_task_delete_legacy(task_snapshot: dict[str, Any]) -> TaskDeletePaylo
     if not task_snapshot:
         raise TypeError("task_snapshot cannot be None or empty")
 
-    task_id = task_snapshot.get("id")
-    if not task_id:
+    # Check if 'id' key exists
+    if "id" not in task_snapshot:
         raise KeyError("task_snapshot must contain 'id' field")
+
+    task_id = task_snapshot["id"]
+
+    # Check if id is empty or whitespace
+    if not task_id or (isinstance(task_id, str) and not task_id.strip()):
+        raise ValueError("Task ID cannot be empty")
 
     # Get title with fallback for empty/None values
     title = task_snapshot.get("title")
