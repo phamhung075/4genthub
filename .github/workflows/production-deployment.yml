@@ -32,6 +32,13 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   NODE_VERSION: '18'
   PYTHON_VERSION: '3.13'
+  # Database configuration (required for Python module imports)
+  DATABASE_TYPE: postgresql
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: agenthub_test
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
 
 jobs:
   # Security and vulnerability scanning

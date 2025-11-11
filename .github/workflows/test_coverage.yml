@@ -13,6 +13,13 @@ on:
 env:
   PYTHON_VERSION: '3.13'
   COVERAGE_THRESHOLD: 80
+  # Database configuration (required for Python module imports)
+  DATABASE_TYPE: postgresql
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: agenthub_test
+  POSTGRES_USER: testuser
+  POSTGRES_PASSWORD: testpass
 
 jobs:
   test-matrix:
