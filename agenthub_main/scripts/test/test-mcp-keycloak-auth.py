@@ -7,7 +7,6 @@ Verifies that the MCP server can authenticate using Keycloak JWT tokens
 import asyncio
 import os
 import sys
-from typing import Dict, Optional
 
 import httpx
 from dotenv import load_dotenv
@@ -271,7 +270,7 @@ async def main():
     # Check if MCP server is running
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get("http://localhost:8001/health", timeout=2.0)
+            await client.get("http://localhost:8001/health", timeout=2.0)
     except:
         print("❌ MCP server not running on port 8001")
         print("   Start it with: docker-compose up mcp-server")

@@ -19,8 +19,8 @@ import json
 import logging
 import os
 import sys
-from datetime import UTC, datetime, timedelta, timezone
-from typing import Any, Dict
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import jwt
 import requests
@@ -579,21 +579,21 @@ class JWTAuthenticationTester:
         self.log("=" * 60, "info")
 
         # Test 1: Configuration
-        config_ok = self.test_configuration()
+        self.test_configuration()
 
         # Test 2: Token Generation
         token = self.test_token_generation()
 
         # Test 3: Token Validation
         if token:
-            validation_ok = self.test_token_validation(token)
+            self.test_token_validation(token)
 
             # Test 4: Middleware Compatibility
-            middleware_ok = self.test_middleware_compatibility(token)
+            self.test_middleware_compatibility(token)
 
             # Test 5: Endpoints (optional)
             if test_endpoints:
-                endpoint_ok = self.test_endpoints(token)
+                self.test_endpoints(token)
         else:
             self.log("❌ Skipping validation tests - no token generated", "error")
             self.results["summary"]["failed"] += 2

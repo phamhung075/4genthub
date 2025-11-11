@@ -9,7 +9,6 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 
 @dataclass
@@ -194,7 +193,6 @@ class DDDLayerTracer:
     ) -> list[LayerViolation]:
         """Check for DDD layer violations"""
         violations = []
-        filename = filepath.name
 
         # Routes should only use controllers
         if "routes" in str(filepath):

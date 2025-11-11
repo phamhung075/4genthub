@@ -12,7 +12,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import patch
 
 from sqlalchemy import create_engine, inspect, text
@@ -328,7 +328,7 @@ class MigrationValidator:
 
             try:
                 start_time = time.time()
-                projects = session.query(Project).limit(10).all()
+                session.query(Project).limit(10).all()
                 query_time = time.time() - start_time
                 performance_results["query_performance"].append(
                     f"✅ Query 10 projects in {query_time:.3f}s"

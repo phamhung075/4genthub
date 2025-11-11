@@ -4,8 +4,9 @@ Pytest configuration for task_management unit tests.
 This module provides fixtures to prevent real database connections in unit tests.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture(autouse=True)

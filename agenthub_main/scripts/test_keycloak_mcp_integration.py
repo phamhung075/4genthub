@@ -11,7 +11,7 @@ This script tests the complete authentication flow:
 import asyncio
 import os
 import sys
-from typing import Any, Dict, Optional
+from typing import Any
 
 import httpx
 from dotenv import load_dotenv

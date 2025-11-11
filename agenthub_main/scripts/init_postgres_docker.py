@@ -15,7 +15,6 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 import psycopg2
 from dotenv import load_dotenv
@@ -76,7 +75,7 @@ class PostgreSQLInitializer:
                 conn.close()
                 logger.info("✅ PostgreSQL is ready!")
                 return True
-            except psycopg2.OperationalError as e:
+            except psycopg2.OperationalError:
                 if i < max_retries - 1:
                     logger.info(
                         f"   Attempt {i + 1}/{max_retries}: PostgreSQL not ready, waiting..."

@@ -8,7 +8,6 @@ import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 
 @dataclass
@@ -551,7 +550,7 @@ class EnhancedTestCoverageAnalyzer:
 def main():
     """Run enhanced test coverage analysis"""
     analyzer = EnhancedTestCoverageAnalyzer()
-    report = analyzer.analyze()
+    analyzer.analyze()
 
     print("\n📁 TEST CREATION TEMPLATE")
     print("=" * 50)

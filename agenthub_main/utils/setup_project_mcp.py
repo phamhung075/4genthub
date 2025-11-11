@@ -15,7 +15,6 @@ If no project_path is provided, it uses the current directory.
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 def setup_project_structure(project_path: Path) -> bool:

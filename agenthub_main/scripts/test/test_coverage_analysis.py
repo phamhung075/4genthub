@@ -7,7 +7,6 @@ Identifies Python source files in agenthub_main/src that don't have correspondin
 import fnmatch
 import os
 from pathlib import Path
-from typing import Dict, List
 
 
 def find_python_files(directory: str, exclude_patterns: list[str] = None) -> list[Path]:
@@ -133,7 +132,7 @@ def prioritize_missing_tests(missing_tests: list[dict]) -> dict[str, list[dict]]
         source_file = missing["source_file"]
         file_name = source_file.name
         layer = missing["layer"]
-        domain = missing["domain"]
+        missing["domain"]
 
         # Critical: Core domain services, entities, and use cases
         if layer in ["domain", "application"] and (

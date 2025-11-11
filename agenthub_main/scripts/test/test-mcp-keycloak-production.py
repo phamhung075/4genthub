@@ -20,7 +20,6 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 # Add project to path
 PROJECT_ROOT = Path(__file__).parent
