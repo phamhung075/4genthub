@@ -30,10 +30,9 @@ class TestORMGitBranchRepository:
 
     def setup_method(self):
         """Set up test fixtures."""
-        # Mock database initialization to prevent real connection attempts
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session'):
-            self.repo = ORMGitBranchRepository(user_id="test_user")
+        # Inject mock session directly via constructor (get_session no longer exists)
         self.mock_session = Mock(spec=Session)
+        self.repo = ORMGitBranchRepository(session=self.mock_session, user_id="test_user")
 
         # Patch _model_to_entity to avoid database access in tests
         self._patch_model_to_entity()
@@ -92,10 +91,11 @@ class TestORMGitBranchRepository:
 
     def test_initialization(self):
         """Test repository initialization."""
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session'):
-            repo = ORMGitBranchRepository(user_id="test_user")
-            assert repo.user_id == "test_user"
-            assert repo.model_class == ProjectGitBranch
+        # Inject mock session directly via constructor (get_session no longer exists)
+        mock_session = Mock()
+        repo = ORMGitBranchRepository(session=mock_session, user_id="test_user")
+        assert repo.user_id == "test_user"
+        assert repo.model_class == ProjectGitBranch
 
     def test_model_to_entity_conversion(self):
         """Test conversion from model to domain entity."""

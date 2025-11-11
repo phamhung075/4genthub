@@ -48,16 +48,14 @@ class TestORMSubtaskRepositoryInitialization:
     
     def test_init_with_minimal_params(self):
         """Test repository initialization with minimal parameters."""
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.subtask_repository.get_session') as mock_get_session:
-            mock_session = Mock()
-            mock_get_session.return_value = mock_session
-            
-            repo = ORMSubtaskRepository()
-            
-            # Should initialize both base classes
-            assert repo.model_class == SubtaskModel
-            assert hasattr(repo, 'user_id')
-            assert hasattr(repo, 'apply_user_filter')
+        # Inject mock session directly via constructor (get_session no longer exists)
+        mock_session = Mock()
+        repo = ORMSubtaskRepository(session=mock_session)
+
+        # Should initialize both base classes
+        assert repo.model_class == SubtaskModel
+        assert hasattr(repo, 'user_id')
+        assert hasattr(repo, 'apply_user_filter')
     
     def test_init_with_session_and_user_id(self):
         """Test repository initialization with session and user ID."""
@@ -70,15 +68,14 @@ class TestORMSubtaskRepositoryInitialization:
     
     def test_init_inheritance_chain(self):
         """Test repository properly inherits from all base classes."""
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.subtask_repository.get_session') as mock_get_session:
-            mock_get_session.return_value = Mock()
-            
-            repo = ORMSubtaskRepository()
-            
-            # Should have methods from all base classes
-            assert hasattr(repo, 'apply_user_filter')  # BaseUserScopedRepository
-            assert hasattr(repo, 'model_class')         # BaseORMRepository
-            assert hasattr(repo, 'save')                # SubtaskRepository interface
+        # Inject mock session directly via constructor (get_session no longer exists)
+        mock_session = Mock()
+        repo = ORMSubtaskRepository(session=mock_session)
+
+        # Should have methods from all base classes
+        assert hasattr(repo, 'apply_user_filter')  # BaseUserScopedRepository
+        assert hasattr(repo, 'model_class')         # BaseORMRepository
+        assert hasattr(repo, 'save')                # SubtaskRepository interface
 
 
 class TestORMSubtaskRepositoryDataConversion:
@@ -86,9 +83,9 @@ class TestORMSubtaskRepositoryDataConversion:
     
     def setup_method(self):
         """Set up test fixtures."""
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.subtask_repository.get_session') as mock_get_session:
-            mock_get_session.return_value = Mock()
-            self.repo = ORMSubtaskRepository(user_id="test-user")
+        # Inject mock session directly via constructor (get_session no longer exists)
+        mock_session = Mock()
+        self.repo = ORMSubtaskRepository(session=mock_session, user_id="test-user")
     
     def test_to_model_data_minimal_subtask(self):
         """Test converting minimal subtask entity to model data."""
@@ -197,10 +194,9 @@ class TestORMSubtaskRepositorySaveOperations:
         self.context_manager = Mock()
         self.context_manager.__enter__ = Mock(return_value=self.mock_session)
         self.context_manager.__exit__ = Mock(return_value=False)
-        
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.subtask_repository.get_session') as mock_get_session:
-            mock_get_session.return_value = self.context_manager
-            self.repo = ORMSubtaskRepository(user_id="test-user")
+
+        # Inject mock session directly via constructor (get_session no longer exists)
+        self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
     
     def test_save_new_subtask_success(self):
         """Test successfully saving a new subtask."""
@@ -333,10 +329,9 @@ class TestORMSubtaskRepositoryFindOperations:
         self.context_manager = Mock()
         self.context_manager.__enter__ = Mock(return_value=self.mock_session)
         self.context_manager.__exit__ = Mock(return_value=False)
-        
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.subtask_repository.get_session') as mock_get_session:
-            mock_get_session.return_value = self.context_manager
-            self.repo = ORMSubtaskRepository(user_id="test-user")
+
+        # Inject mock session directly via constructor (get_session no longer exists)
+        self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
     
     def test_find_by_id_found(self):
         """Test finding subtask by ID when it exists."""
@@ -473,10 +468,9 @@ class TestORMSubtaskRepositoryCompletionOperations:
         self.context_manager = Mock()
         self.context_manager.__enter__ = Mock(return_value=self.mock_session)
         self.context_manager.__exit__ = Mock(return_value=False)
-        
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.subtask_repository.get_session') as mock_get_session:
-            mock_get_session.return_value = self.context_manager
-            self.repo = ORMSubtaskRepository(user_id="test-user")
+
+        # Inject mock session directly via constructor (get_session no longer exists)
+        self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
     
     def test_complete_subtask_success(self):
         """Test successful subtask completion."""
@@ -569,10 +563,9 @@ class TestORMSubtaskRepositoryProgressOperations:
         self.context_manager = Mock()
         self.context_manager.__enter__ = Mock(return_value=self.mock_session)
         self.context_manager.__exit__ = Mock(return_value=False)
-        
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.subtask_repository.get_session') as mock_get_session:
-            mock_get_session.return_value = self.context_manager
-            self.repo = ORMSubtaskRepository(user_id="test-user")
+
+        # Inject mock session directly via constructor (get_session no longer exists)
+        self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
     
     def test_update_progress_success(self):
         """Test successful progress update."""
@@ -666,10 +659,9 @@ class TestORMSubtaskRepositoryErrorHandling:
         self.context_manager = Mock()
         self.context_manager.__enter__ = Mock(return_value=self.mock_session)
         self.context_manager.__exit__ = Mock(return_value=False)
-        
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.subtask_repository.get_session') as mock_get_session:
-            mock_get_session.return_value = self.context_manager
-            self.repo = ORMSubtaskRepository(user_id="test-user")
+
+        # Inject mock session directly via constructor (get_session no longer exists)
+        self.repo = ORMSubtaskRepository(session=self.mock_session, user_id="test-user")
     
     def test_save_with_session_error(self):
         """Test save operation with session error."""

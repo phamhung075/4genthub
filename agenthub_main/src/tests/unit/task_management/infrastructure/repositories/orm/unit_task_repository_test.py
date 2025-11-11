@@ -47,51 +47,44 @@ class TestORMTaskRepositoryInitialization:
 
     def test_init_with_minimal_params(self):
         """Test repository initialization with minimal parameters."""
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
-            mock_session = Mock()
-            mock_get_session.return_value = mock_session
+        # Inject mock session directly via constructor (get_session no longer exists)
+        mock_session = Mock()
+        repo = ORMTaskRepository(session=mock_session)
 
-            repo = ORMTaskRepository()
-
-            assert repo.git_branch_id is None
-            assert repo.project_id is None
-            assert repo.git_branch_name is None
-            mock_get_session.assert_called_once()
+        assert repo.git_branch_id is None
+        assert repo.project_id is None
+        assert repo.git_branch_name is None
 
     def test_init_with_full_params(self):
         """Test repository initialization with all parameters."""
-        # Need to mock the session manager as well
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session'):
-            mock_session = Mock()
+        # Inject mock session directly via constructor (get_session no longer exists)
+        mock_session = Mock()
+        repo = ORMTaskRepository(
+            session=mock_session,
+            git_branch_id="branch-123",
+            project_id="project-456",
+            git_branch_name="feature/auth",
+            user_id="user-789"
+        )
 
-            repo = ORMTaskRepository(
-                session=mock_session,
-                git_branch_id="branch-123",
-                project_id="project-456",
-                git_branch_name="feature/auth",
-                user_id="user-789"
-            )
-
-            assert repo.git_branch_id == "branch-123"
-            assert repo.project_id == "project-456"
-            assert repo.git_branch_name == "feature/auth"
-            assert repo.user_id == "user-789"
+        assert repo.git_branch_id == "branch-123"
+        assert repo.project_id == "project-456"
+        assert repo.git_branch_name == "feature/auth"
+        assert repo.user_id == "user-789"
 
     def test_init_user_scoped_repository_inheritance(self):
         """Test repository properly inherits user scoped functionality."""
-        # Need to mock the session manager as well
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session'):
-            mock_session = Mock()
+        # Inject mock session directly via constructor (get_session no longer exists)
+        mock_session = Mock()
+        repo = ORMTaskRepository(
+            session=mock_session,
+            user_id="test-user"
+        )
 
-            repo = ORMTaskRepository(
-                session=mock_session,
-                user_id="test-user"
-            )
-
-            # Should have user scoped methods
-            assert hasattr(repo, 'apply_user_filter')
-            assert hasattr(repo, 'user_id')
-            assert repo.user_id == "test-user"
+        # Should have user scoped methods
+        assert hasattr(repo, 'apply_user_filter')
+        assert hasattr(repo, 'user_id')
+        assert repo.user_id == "test-user"
 
 
 class TestORMTaskRepositoryTaskLoading:
