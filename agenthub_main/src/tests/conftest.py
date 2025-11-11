@@ -16,8 +16,16 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
-import psutil
 import pytest
+
+# Optional import for performance monitoring
+try:
+    import psutil
+
+    HAS_PSUTIL = True
+except ImportError:
+    psutil = None
+    HAS_PSUTIL = False
 
 # Add src to sys.path to ensure imports work correctly
 src_path = Path(__file__).parent.parent
@@ -1108,11 +1116,13 @@ def performance_tracker():
 
         def start(self):
             self.start_time = time.time()
-            self.start_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
+            if HAS_PSUTIL and psutil:
+                self.start_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
 
         def end(self) -> dict[str, Any]:
             self.end_time = time.time()
-            self.end_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
+            if HAS_PSUTIL and psutil:
+                self.end_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
 
             return {
                 "duration": self.end_time - self.start_time if self.start_time else 0,
