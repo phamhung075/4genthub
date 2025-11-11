@@ -133,17 +133,21 @@ class TestAgentDocGenerator:
 
     def test_init_default_paths(self, mock_project_root):
         """Test initialization with default paths"""
-        generator = AgentDocGenerator()
+        # Clear environment variables that could override defaults
+        with patch.dict(
+            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+        ):
+            generator = AgentDocGenerator()
 
-        assert generator.project_root == mock_project_root
-        assert (
-            generator.agent_yaml_lib
-            == mock_project_root / "agenthub_main" / "agent-library"
-        )
-        assert (
-            generator.agents_output_dir
-            == mock_project_root / ".cursor" / "rules" / "agents"
-        )
+            assert generator.project_root == mock_project_root
+            assert (
+                generator.agent_yaml_lib
+                == mock_project_root / "agenthub_main" / "agent-library"
+            )
+            assert (
+                generator.agents_output_dir
+                == mock_project_root / ".cursor" / "rules" / "agents"
+            )
 
     def test_init_custom_paths(self, mock_project_root):
         """Test initialization with custom paths"""
@@ -245,132 +249,152 @@ class TestAgentDocGenerator:
 
     def test_generate_single_agent_doc(self, mock_project_root):
         """Test generating documentation for a single agent"""
-        generator = AgentDocGenerator()
+        # Clear environment variables that could override defaults
+        with patch.dict(
+            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+        ):
+            generator = AgentDocGenerator()
 
-        # Create agent directory structure
-        agent_dir = generator.agent_yaml_lib / "test_agent"
-        agent_dir.mkdir(parents=True)
+            # Create agent directory structure
+            agent_dir = generator.agent_yaml_lib / "test_agent"
+            agent_dir.mkdir(parents=True)
 
-        job_desc = {
-            "name": "Test Agent",
-            "slug": "test-agent",
-            "role_definition": "A test agent for testing",
-            "when_to_use": "When you need to test",
-            "groups": ["testing", "qa"],
-        }
+            job_desc = {
+                "name": "Test Agent",
+                "slug": "test-agent",
+                "role_definition": "A test agent for testing",
+                "when_to_use": "When you need to test",
+                "groups": ["testing", "qa"],
+            }
 
-        job_desc_file = agent_dir / "job_desc.yaml"
-        with open(job_desc_file, "w") as f:
-            yaml.dump(job_desc, f)
+            job_desc_file = agent_dir / "job_desc.yaml"
+            with open(job_desc_file, "w") as f:
+                yaml.dump(job_desc, f)
 
-        # Create subdirectories with content
-        contexts_dir = agent_dir / "contexts"
-        contexts_dir.mkdir()
-        context_file = contexts_dir / "context1.yaml"
-        with open(context_file, "w") as f:
-            yaml.dump({"context": "test"}, f)
+            # Create subdirectories with content
+            contexts_dir = agent_dir / "contexts"
+            contexts_dir.mkdir()
+            context_file = contexts_dir / "context1.yaml"
+            with open(context_file, "w") as f:
+                yaml.dump({"context": "test"}, f)
 
-        # Generate doc
-        generator._generate_single_agent_doc(agent_dir)
+            # Generate doc
+            generator._generate_single_agent_doc(agent_dir)
 
-        # Check output file
-        output_file = generator.agents_output_dir / "test_agent.mdc"
-        assert output_file.exists()
+            # Check output file
+            output_file = generator.agents_output_dir / "test_agent.mdc"
+            assert output_file.exists()
 
-        content = output_file.read_text()
-        assert "# Test Agent" in content
-        assert "**Slug:** `test-agent`" in content
-        assert "**Role Definition:** A test agent for testing" in content
-        assert "**When to Use:** When you need to test" in content
-        assert "**Groups:** testing, qa" in content
-        assert "## Contexts" in content
-        assert "### context1" in content
+            content = output_file.read_text()
+            assert "# Test Agent" in content
+            assert "**Slug:** `test-agent`" in content
+            assert "**Role Definition:** A test agent for testing" in content
+            assert "**When to Use:** When you need to test" in content
+            assert "**Groups:** testing, qa" in content
+            assert "## Contexts" in content
+            assert "### context1" in content
 
     def test_generate_single_agent_doc_no_job_desc(self, mock_project_root):
         """Test generating doc when job_desc.yaml is missing"""
-        generator = AgentDocGenerator()
+        # Clear environment variables that could override defaults
+        with patch.dict(
+            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+        ):
+            generator = AgentDocGenerator()
 
-        agent_dir = generator.agent_yaml_lib / "test_agent"
-        agent_dir.mkdir(parents=True)
+            agent_dir = generator.agent_yaml_lib / "test_agent"
+            agent_dir.mkdir(parents=True)
 
-        # No job_desc.yaml file
-        generator._generate_single_agent_doc(agent_dir)
+            # No job_desc.yaml file
+            generator._generate_single_agent_doc(agent_dir)
 
-        # Should not create output file
-        output_file = generator.agents_output_dir / "test_agent.mdc"
-        assert not output_file.exists()
+            # Should not create output file
+            output_file = generator.agents_output_dir / "test_agent.mdc"
+            assert not output_file.exists()
 
     def test_generate_agent_docs_single(self, mock_project_root):
         """Test generating docs for a single agent"""
-        generator = AgentDocGenerator()
+        # Clear environment variables that could override defaults
+        with patch.dict(
+            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+        ):
+            generator = AgentDocGenerator()
 
-        # Create test agent
-        agent_dir = generator.agent_yaml_lib / "test_agent"
-        agent_dir.mkdir(parents=True)
-        job_desc_file = agent_dir / "job_desc.yaml"
-        with open(job_desc_file, "w") as f:
-            yaml.dump({"name": "Test Agent"}, f)
-
-        # Generate docs
-        generator.generate_agent_docs(agent_name="test_agent")
-
-        # Check output
-        output_file = generator.agents_output_dir / "test_agent.mdc"
-        assert output_file.exists()
-
-    def test_generate_agent_docs_all(self, mock_project_root):
-        """Test generating docs for all agents"""
-        generator = AgentDocGenerator()
-
-        # Create multiple agents
-        for i in range(3):
-            agent_dir = generator.agent_yaml_lib / f"test{i}_agent"
+            # Create test agent
+            agent_dir = generator.agent_yaml_lib / "test_agent"
             agent_dir.mkdir(parents=True)
             job_desc_file = agent_dir / "job_desc.yaml"
             with open(job_desc_file, "w") as f:
-                yaml.dump({"name": f"Test Agent {i}"}, f)
+                yaml.dump({"name": "Test Agent"}, f)
 
-        # Create non-agent directory (should be ignored)
-        other_dir = generator.agent_yaml_lib / "not_an_agent"
-        other_dir.mkdir()
+            # Generate docs
+            generator.generate_agent_docs(agent_name="test_agent")
 
-        # Generate all docs
-        generator.generate_agent_docs()
-
-        # Check outputs
-        for i in range(3):
-            output_file = generator.agents_output_dir / f"test{i}_agent.mdc"
+            # Check output
+            output_file = generator.agents_output_dir / "test_agent.mdc"
             assert output_file.exists()
 
-        # Non-agent should not have output
-        non_agent_file = generator.agents_output_dir / "not_an_agent.mdc"
-        assert not non_agent_file.exists()
+    def test_generate_agent_docs_all(self, mock_project_root):
+        """Test generating docs for all agents"""
+        # Clear environment variables that could override defaults
+        with patch.dict(
+            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+        ):
+            generator = AgentDocGenerator()
+
+            # Create multiple agents
+            for i in range(3):
+                agent_dir = generator.agent_yaml_lib / f"test{i}_agent"
+                agent_dir.mkdir(parents=True)
+                job_desc_file = agent_dir / "job_desc.yaml"
+                with open(job_desc_file, "w") as f:
+                    yaml.dump({"name": f"Test Agent {i}"}, f)
+
+            # Create non-agent directory (should be ignored)
+            other_dir = generator.agent_yaml_lib / "not_an_agent"
+            other_dir.mkdir()
+
+            # Generate all docs
+            generator.generate_agent_docs()
+
+            # Check outputs
+            for i in range(3):
+                output_file = generator.agents_output_dir / f"test{i}_agent.mdc"
+                assert output_file.exists()
+
+            # Non-agent should not have output
+            non_agent_file = generator.agents_output_dir / "not_an_agent.mdc"
+            assert not non_agent_file.exists()
 
     def test_generate_agent_docs_clear_all(self, mock_project_root):
         """Test generating docs with clear_all option"""
-        generator = AgentDocGenerator()
+        # Clear environment variables that could override defaults
+        with patch.dict(
+            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+        ):
+            generator = AgentDocGenerator()
 
-        # Create existing file
-        generator.agents_output_dir.mkdir(parents=True, exist_ok=True)
-        existing_file = generator.agents_output_dir / "old_agent.mdc"
-        existing_file.touch()
+            # Create existing file
+            generator.agents_output_dir.mkdir(parents=True, exist_ok=True)
+            existing_file = generator.agents_output_dir / "old_agent.mdc"
+            existing_file.touch()
 
-        # Create new agent
-        agent_dir = generator.agent_yaml_lib / "new_agent"
-        agent_dir.mkdir(parents=True)
-        job_desc_file = agent_dir / "job_desc.yaml"
-        with open(job_desc_file, "w") as f:
-            yaml.dump({"name": "New Agent"}, f)
+            # Create new agent
+            agent_dir = generator.agent_yaml_lib / "new_agent"
+            agent_dir.mkdir(parents=True)
+            job_desc_file = agent_dir / "job_desc.yaml"
+            with open(job_desc_file, "w") as f:
+                yaml.dump({"name": "New Agent"}, f)
 
-        # Generate with clear_all
-        generator.generate_agent_docs(agent_name="new_agent", clear_all=True)
+            # Generate with clear_all
+            generator.generate_agent_docs(agent_name="new_agent", clear_all=True)
 
-        # Old file should be gone
-        assert not existing_file.exists()
+            # Old file should be gone
+            assert not existing_file.exists()
 
-        # New file should exist
-        new_file = generator.agents_output_dir / "new_agent.mdc"
-        assert new_file.exists()
+            # New file should exist
+            new_file = generator.agents_output_dir / "new_agent.mdc"
+            assert new_file.exists()
 
     def test_generate_agent_docs_nonexistent(self, mock_project_root):
         """Test generating docs for non-existent agent"""
