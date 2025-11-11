@@ -28,13 +28,22 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-# Skip entire test module due to freezegun installation issues in CI
+# Try to import freezegun - skip entire module if not available
 # WebSocket functionality is working correctly - this is a test infrastructure issue
-pytestmark = pytest.mark.skip(reason="freezegun dependency not available in CI environment - WebSocket functionality verified working")
+try:
+    from freezegun import freeze_time
+    FREEZEGUN_AVAILABLE = True
+except ImportError:
+    FREEZEGUN_AVAILABLE = False
+    freeze_time = None  # Placeholder to prevent NameError in test signatures
 
-from freezegun import freeze_time
+# Skip entire test module if freezegun not available in CI environment
+pytestmark = pytest.mark.skipif(
+    not FREEZEGUN_AVAILABLE,
+    reason="freezegun dependency not available in CI environment - WebSocket functionality verified working"
+)
 
-from fastmcp.task_management.application.services.websocket_notification_service import (
+from fastmcp.task_management.application.services.websocket_notification_service import (  # noqa: E402 - Import after pytestmark skip marker
     WebSocketNotificationService,
     _is_duplicate_notification,
     _notification_cache,
