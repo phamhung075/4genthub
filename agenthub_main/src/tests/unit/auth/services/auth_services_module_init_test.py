@@ -92,11 +92,11 @@ def test_no_circular_imports():
     try:
         # This should not cause circular import errors
         # Re-importing should work fine
-        import fastmcp.auth.services
-        import fastmcp.auth.services.mcp_token_service
-        from fastmcp.auth.services import mcp_token_service
-        from fastmcp.auth.services.mcp_token_service import MCPTokenService
-        
+        import fastmcp.auth.services  # noqa: F401 - Testing circular imports, not using functionality
+        import fastmcp.auth.services.mcp_token_service  # noqa: F401 - Testing circular imports, verifying multiple import paths work
+        from fastmcp.auth.services import mcp_token_service  # noqa: F401 - Testing circular imports, verifying 'from' imports work
+        from fastmcp.auth.services.mcp_token_service import MCPTokenService  # noqa: F401 - Testing circular imports, verifying class imports work
+
     except ImportError as e:
         if "circular import" in str(e).lower():
             pytest.fail(f"Circular import detected: {e}")

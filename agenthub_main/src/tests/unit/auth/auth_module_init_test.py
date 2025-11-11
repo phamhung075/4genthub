@@ -116,7 +116,7 @@ class TestAuthModuleInit:
         # This tests that the import doesn't fail catastrophically
         # even if some dependencies might be missing in test environment
         try:
-            import fastmcp.auth
+            import fastmcp.auth  # noqa: F401 - Import used to test availability, not for functionality
             # If we get here, imports worked
             assert True
         except ImportError as e:

@@ -36,7 +36,7 @@ try:
     from fastmcp.prompts import Prompt
     from fastmcp.resources import Resource
     from fastmcp.server.auth.auth import OAuthProvider
-    from fastmcp.server.middleware import Middleware, MiddlewareContext
+    from fastmcp.server.middleware import Middleware, MiddlewareContext  # noqa: F401 - Imported to test availability, pytest.skip if unavailable
     from fastmcp.settings import Settings
     from fastmcp.tools import Tool
     from fastmcp.utilities.cache import TimedCache
