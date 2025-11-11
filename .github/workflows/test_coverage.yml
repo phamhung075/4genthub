@@ -91,21 +91,17 @@ jobs:
     - name: Install Python dependencies
       working-directory: agenthub_main
       run: |
-        # Install dependencies using uv with explicit group inclusion
-        # Use --frozen to ensure exact lock file reproduction
-        # Use --all-groups to ensure all dependency groups (including dev) are installed
+        # Install dependencies using uv
         uv sync --frozen --all-groups
 
         # Install package in editable mode so imports work
         uv pip install -e .
 
-        # Verify freezegun is installed (debug step)
-        echo "Verifying freezegun installation..."
-        if ! uv run python -c "import freezegun; print(f'✓ freezegun {freezegun.__version__} installed')" 2>/dev/null; then
-          echo "✗ freezegun NOT installed via uv sync, installing explicitly..."
-          uv pip install freezegun>=1.2.2
-          uv run python -c "import freezegun; print(f'✓ freezegun {freezegun.__version__} installed after explicit install')"
-        fi
+        # Explicitly install freezegun to ensure it's available for tests
+        # This is a workaround for dependency group installation issues
+        echo "Ensuring freezegun is installed..."
+        uv pip install freezegun>=1.2.2
+        uv run python -c "import freezegun; print(f'✅ freezegun {freezegun.__version__} verified')"
 
     - name: Setup test environment
       working-directory: agenthub_main
@@ -167,6 +163,9 @@ jobs:
     - name: Run ${{ matrix.test-type }} tests
       working-directory: agenthub_main
       run: |
+        # Ensure freezegun is installed before running tests
+        uv pip install freezegun>=1.2.2
+
         chmod +x scripts/run_tests_enhanced.sh
         uv run scripts/run_tests_enhanced.sh --type ${{ matrix.test-type }} --ci ${{ matrix.coverage && '--coverage-threshold 80' || '--quick' }}
 
