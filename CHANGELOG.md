@@ -83,7 +83,9 @@ Fixed final test collection errors preventing CI test execution.
 
 **Files Modified**:
 - `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/dependency_mcp_controller/dependency_mcp_controller.py:8` - Added future annotations
-- `.github/workflows/test_coverage.yml:96,230` - Added --frozen --all-groups flags to uv sync
+- `.github/workflows/test_coverage.yml:84,234` - Added version: "latest" to uv setup for PEP 735 support
+- `.github/workflows/test_coverage.yml:96,240` - Added --frozen --all-groups flags to uv sync
+- `.github/workflows/test_coverage.yml:102-108` - Added freezegun verification and fallback install
 - `agenthub_main/.github/workflows/run-static.yml:53` - Added --frozen --all-groups flags to uv sync
 
 **Impact**:
