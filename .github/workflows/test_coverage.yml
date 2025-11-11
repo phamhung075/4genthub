@@ -91,8 +91,9 @@ jobs:
       working-directory: agenthub_main
       run: |
         # Install dependencies using uv (includes all dev dependencies from pyproject.toml)
-        # Note: --dev flag installs all dependency-groups including dev dependencies
-        uv sync --dev
+        # Note: The 'dev' dependency group is synced by default in uv (no flag needed)
+        # See: https://docs.astral.sh/uv/concepts/projects/dependencies/
+        uv sync
 
         # Install package in editable mode so imports work
         uv pip install -e .
@@ -225,8 +226,8 @@ jobs:
     - name: Install dependencies
       working-directory: agenthub_main
       run: |
-        # Install all dependency groups including dev dependencies
-        uv sync --dev
+        # Install all dependency groups (dev group is synced by default)
+        uv sync
 
     - name: Run performance tests
       working-directory: agenthub_main
