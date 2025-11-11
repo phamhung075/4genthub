@@ -26,7 +26,17 @@ inspector = inspect(engine)
 print("\nForeign Keys in Database:")
 print("=" * 100)
 
-tables_to_check = ['subtasks', 'task_assignees', 'task_dependencies', 'task_labels', 'tasks', 'project_git_branchs', 'branch_contexts', 'task_contexts', 'project_contexts']
+tables_to_check = [
+    "subtasks",
+    "task_assignees",
+    "task_dependencies",
+    "task_labels",
+    "tasks",
+    "project_git_branchs",
+    "branch_contexts",
+    "task_contexts",
+    "project_contexts",
+]
 
 for table in sorted(tables_to_check):
     fks = inspector.get_foreign_keys(table)
@@ -34,13 +44,15 @@ for table in sorted(tables_to_check):
         print(f"\nTable: {table}")
         print("-" * 100)
         for fk in fks:
-            local_cols = ', '.join(fk['constrained_columns'])
-            ref_table = fk['referred_table']
-            ref_cols = ', '.join(fk['referred_columns'])
-            on_delete = fk.get('ondelete') or 'NO ACTION'
-            name = fk.get('name', 'unnamed')
+            local_cols = ", ".join(fk["constrained_columns"])
+            ref_table = fk["referred_table"]
+            ref_cols = ", ".join(fk["referred_columns"])
+            on_delete = fk.get("ondelete") or "NO ACTION"
+            name = fk.get("name", "unnamed")
 
-            status = "✅" if on_delete == 'CASCADE' else "⚠️ "
-            print(f"  {status} {local_cols:25} → {ref_table:30}({ref_cols:20}) ON DELETE {on_delete:15} ({name})")
+            status = "✅" if on_delete == "CASCADE" else "⚠️ "
+            print(
+                f"  {status} {local_cols:25} → {ref_table:30}({ref_cols:20}) ON DELETE {on_delete:15} ({name})"
+            )
 
 engine.dispose()

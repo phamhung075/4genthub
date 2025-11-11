@@ -31,19 +31,17 @@ class TypeHintModernizer:
 
         # Patterns for type hint replacements
         self.type_replacements = {
-            r'\bList\[': 'list[',
-            r'\bDict\[': 'dict[',
-            r'\bSet\[': 'set[',
-            r'\bTuple\[': 'tuple[',
+            r"\bList\[": "list[",
+            r"\bDict\[": "dict[",
+            r"\bSet\[": "set[",
+            r"\bTuple\[": "tuple[",
         }
 
         # Optional pattern needs special handling: Optional[X] -> X | None
-        self.optional_pattern = re.compile(r'Optional\[([^\]]+)\]')
+        self.optional_pattern = re.compile(r"Optional\[([^\]]+)\]")
 
         # Imports to remove from typing module
-        self.deprecated_imports = {
-            'List', 'Dict', 'Set', 'Tuple', 'Optional'
-        }
+        self.deprecated_imports = {"List", "Dict", "Set", "Tuple", "Optional"}
 
     def modernize_file(self, file_path: Path) -> bool:
         """
@@ -53,7 +51,7 @@ class TypeHintModernizer:
             True if file was modified, False otherwise
         """
         try:
-            content = file_path.read_text(encoding='utf-8')
+            content = file_path.read_text(encoding="utf-8")
             original_content = content
 
             # Step 1: Replace type annotations
@@ -69,13 +67,15 @@ class TypeHintModernizer:
             content = self._fix_datetime_utc(content)
 
             # Step 5: Add future annotations if needed
-            if self._needs_future_annotations(content) and not self._has_future_annotations(content):
+            if self._needs_future_annotations(
+                content
+            ) and not self._has_future_annotations(content):
                 content = self._add_future_annotations(content)
 
             # Check if content changed
             if content != original_content:
                 if not self.dry_run:
-                    file_path.write_text(content, encoding='utf-8')
+                    file_path.write_text(content, encoding="utf-8")
                 self.files_modified += 1
                 return True
 
@@ -107,31 +107,31 @@ class TypeHintModernizer:
 
     def _cleanup_imports(self, content: str) -> str:
         """Remove unused typing imports and clean up import statements"""
-        lines = content.split('\n')
+        lines = content.split("\n")
         new_lines = []
 
         for line in lines:
             # Check if this is a typing import line
-            if re.match(r'^from typing import', line):
+            if re.match(r"^from typing import", line):
                 # Extract imported items
-                import_match = re.search(r'from typing import (.+)', line)
+                import_match = re.search(r"from typing import (.+)", line)
                 if import_match:
                     imports_str = import_match.group(1)
 
                     # Handle multi-line imports with parentheses
-                    if '(' in imports_str and ')' not in imports_str:
+                    if "(" in imports_str and ")" not in imports_str:
                         # Multi-line import, skip for now (complex case)
                         new_lines.append(line)
                         continue
 
                     # Split imports and filter out deprecated ones
-                    imports = [imp.strip() for imp in imports_str.split(',')]
+                    imports = [imp.strip() for imp in imports_str.split(",")]
 
                     # Keep only non-deprecated imports
                     kept_imports = []
                     for imp in imports:
                         # Remove comments and clean
-                        imp_clean = imp.split('#')[0].strip()
+                        imp_clean = imp.split("#")[0].strip()
                         if imp_clean and imp_clean not in self.deprecated_imports:
                             kept_imports.append(imp_clean)
 
@@ -140,49 +140,51 @@ class TypeHintModernizer:
                         if len(kept_imports) == 1:
                             new_lines.append(f"from typing import {kept_imports[0]}")
                         else:
-                            new_lines.append(f"from typing import {', '.join(kept_imports)}")
+                            new_lines.append(
+                                f"from typing import {', '.join(kept_imports)}"
+                            )
                     # else: skip the line entirely (all imports were deprecated)
                 else:
                     new_lines.append(line)
             else:
                 new_lines.append(line)
 
-        return '\n'.join(new_lines)
+        return "\n".join(new_lines)
 
     def _fix_datetime_utc(self, content: str) -> str:
         """Fix datetime.UTC imports and usage"""
 
         # Check if file uses datetime
-        if 'datetime' not in content:
+        if "datetime" not in content:
             return content
 
         # Fix import: from datetime import timezone -> from datetime import UTC
         # Only if timezone.utc is used
-        if 'timezone.utc' in content or 'timezone.UTC' in content:
+        if "timezone.utc" in content or "timezone.UTC" in content:
             # Replace import
             content = re.sub(
-                r'from datetime import (.*)timezone(.*)',
+                r"from datetime import (.*)timezone(.*)",
                 lambda m: f"from datetime import {m.group(1)}UTC{m.group(2)}",
-                content
+                content,
             )
 
             # Replace usage
-            content = content.replace('timezone.utc', 'UTC')
-            content = content.replace('timezone.UTC', 'UTC')
+            content = content.replace("timezone.utc", "UTC")
+            content = content.replace("timezone.UTC", "UTC")
 
         return content
 
     def _needs_future_annotations(self, content: str) -> bool:
         """Check if file uses | union syntax in type annotations"""
-        return bool(re.search(r':\s*\w+\s*\|\s*(\w+|None)', content))
+        return bool(re.search(r":\s*\w+\s*\|\s*(\w+|None)", content))
 
     def _has_future_annotations(self, content: str) -> bool:
         """Check if file already has future annotations import"""
-        return 'from __future__ import annotations' in content
+        return "from __future__ import annotations" in content
 
     def _add_future_annotations(self, content: str) -> str:
         """Add future annotations import to the top of the file"""
-        lines = content.split('\n')
+        lines = content.split("\n")
 
         # Find the insertion point (after docstring, before other imports)
         insert_at = 0
@@ -210,18 +212,20 @@ class TypeHintModernizer:
                 continue
 
             # If we see an import or code, insert before it
-            if stripped and not stripped.startswith('#'):
+            if stripped and not stripped.startswith("#"):
                 if not stripped.startswith('"""') and not stripped.startswith("'''"):
                     insert_at = i
                     break
 
         # Insert the future import
-        lines.insert(insert_at, 'from __future__ import annotations')
-        lines.insert(insert_at + 1, '')  # Add blank line
+        lines.insert(insert_at, "from __future__ import annotations")
+        lines.insert(insert_at + 1, "")  # Add blank line
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
-    def process_directory(self, directory: Path, exclude_patterns: list[str] = None) -> None:
+    def process_directory(
+        self, directory: Path, exclude_patterns: list[str] = None
+    ) -> None:
         """
         Process all Python files in a directory recursively.
 
@@ -230,22 +234,22 @@ class TypeHintModernizer:
             exclude_patterns: List of patterns to exclude (e.g., ['test_', '__pycache__'])
         """
         exclude_patterns = exclude_patterns or [
-            '__pycache__',
-            '.venv',
-            'venv',
-            '.git',
-            'node_modules',
-            '.pytest_cache',
-            'dist',
-            'build',
-            '*.egg-info'
+            "__pycache__",
+            ".venv",
+            "venv",
+            ".git",
+            "node_modules",
+            ".pytest_cache",
+            "dist",
+            "build",
+            "*.egg-info",
         ]
 
         print(f"Processing directory: {directory}")
         print(f"Dry run: {self.dry_run}")
         print("-" * 60)
 
-        for py_file in directory.rglob('*.py'):
+        for py_file in directory.rglob("*.py"):
             # Check exclusions
             if any(pattern in str(py_file) for pattern in exclude_patterns):
                 continue
@@ -258,7 +262,9 @@ class TypeHintModernizer:
 
         print("-" * 60)
         print(f"Files checked: {self.files_checked}")
-        print(f"Files {'would be ' if self.dry_run else ''}modified: {self.files_modified}")
+        print(
+            f"Files {'would be ' if self.dry_run else ''}modified: {self.files_modified}"
+        )
 
 
 def main():
@@ -281,26 +287,24 @@ Examples:
 
   # Apply changes with custom excludes
   python modernize_type_hints.py --exclude "test_*" --exclude "migrations"
-        """
+        """,
     )
 
     parser.add_argument(
-        '--directory',
+        "--directory",
         type=Path,
-        default=Path.cwd() / 'src',
-        help='Directory to process (default: ./src)'
+        default=Path.cwd() / "src",
+        help="Directory to process (default: ./src)",
     )
 
     parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Preview changes without modifying files'
+        "--dry-run", action="store_true", help="Preview changes without modifying files"
     )
 
     parser.add_argument(
-        '--exclude',
-        action='append',
-        help='Patterns to exclude (can be specified multiple times)'
+        "--exclude",
+        action="append",
+        help="Patterns to exclude (can be specified multiple times)",
     )
 
     args = parser.parse_args()
@@ -322,15 +326,16 @@ Examples:
     if not args.dry_run and modernizer.files_modified > 0:
         print("\nRunning ruff to fix import sorting...")
         import subprocess
+
         try:
             subprocess.run(
-                ['ruff', 'check', '--fix', '--select', 'I001', str(args.directory)],
-                check=False
+                ["ruff", "check", "--fix", "--select", "I001", str(args.directory)],
+                check=False,
             )
             print("✅ Import sorting complete")
         except FileNotFoundError:
             print("⚠️  ruff not found, skipping import sorting")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
