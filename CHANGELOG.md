@@ -49,6 +49,44 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**Database Connection Mocking in Type Validation Tests** (2025-11-11)
+
+Fixed 8 database connection errors in database type validation unit tests by adding autouse fixture to mock all database connections.
+
+**Problem**:
+- Tests attempting real PostgreSQL connections via psycopg2
+- Error: `psycopg2.OperationalError: password authentication failed for user "test_user"`
+- 8 tests failing: `test_valid_database_types_accepted[postgresql/supabase/PostgreSQL/SUPABASE/PoStGrEsQl]`, `test_case_insensitive_normalization`, `test_singleton_pattern_preserved`, `test_reset_instance_clears_validation_state`
+
+**Root Cause**:
+- Existing `mock_db_connection` fixture only mocked SQLAlchemy's `create_engine`
+- Did not mock `psycopg2.connect`, allowing real database connection attempts
+- Unit tests should never attempt real database connections
+
+**Solution**:
+- Added `mock_database_connections` autouse fixture (lines 22-44)
+- Mocks `psycopg2.connect` to prevent psycopg2 connections
+- Mocks `sqlalchemy.create_engine` and `sqlalchemy.engine.Engine.connect`
+- Autouse ensures all tests use mocks without explicit fixture declaration
+
+**Files Modified**:
+- `agenthub_main/src/tests/unit/task_management/infrastructure/configuration/test_database_type_validation.py:22-44` - Added autouse mock fixture
+
+**Tests Fixed** (8 tests):
+1. `test_valid_database_types_accepted[postgresql]`
+2. `test_valid_database_types_accepted[supabase]`
+3. `test_valid_database_types_accepted[PostgreSQL]`
+4. `test_valid_database_types_accepted[SUPABASE]`
+5. `test_valid_database_types_accepted[PoStGrEsQl]`
+6. `test_case_insensitive_normalization`
+7. `test_singleton_pattern_preserved`
+8. `test_reset_instance_clears_validation_state`
+
+**Impact**:
+- ✅ All 8 tests now pass without real database connections
+- ✅ Tests complete in <5 seconds (previously timed out)
+- ✅ Proper unit test isolation (no external dependencies)
+
 **Settings Import AttributeError in Unit Tests** (2025-11-11)
 
 Fixed incorrect Settings import pattern in environment loading test fixtures that caused AttributeError: 'Settings' object has no attribute 'Settings'.
