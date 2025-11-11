@@ -512,6 +512,9 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs: [deploy-production, rollback-production]
+    permissions:
+      actions: write
+      contents: read
     steps:
       - name: Clean up old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
