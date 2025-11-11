@@ -5,6 +5,8 @@ This is the main entry point for the subtask MCP controller, now refactored into
 architecture using factory pattern to maintain separation of concerns and automatic progress tracking.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import TYPE_CHECKING, Annotated, Any
@@ -33,11 +35,11 @@ from .manage_subtask_description import (
     get_manage_subtask_description,
     get_manage_subtask_parameters,
 )
-
-SubtaskWorkflowFactory = subtask_module.SubtaskWorkflowFactory
 from ..auth_helper import get_authenticated_user_id, log_authentication_details
 
 logger = logging.getLogger(__name__)
+
+SubtaskWorkflowFactory = subtask_module.SubtaskWorkflowFactory
 
 # Get centralized parameter definitions at module level
 # This must be at module level so Pydantic can access it when evaluating type annotations

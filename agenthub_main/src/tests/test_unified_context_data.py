@@ -3,17 +3,18 @@
 Test script to verify the unified_context_data column functionality
 """
 
+from __future__ import annotations
+
+import json
 import sys
 from pathlib import Path
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
 # Add src to path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root / "agenthub_main" / "src"))
-
-import json
-
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 
 
 def test_unified_context_data():

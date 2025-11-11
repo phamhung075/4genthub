@@ -20,9 +20,9 @@ from typing import Any
 
 # PostgreSQL/Supabase support
 try:
-    from sqlalchemy import create_engine, pool
+    from sqlalchemy import create_engine
     from sqlalchemy.orm import Session, sessionmaker
-    from sqlalchemy.pool import NullPool, QueuePool
+    from sqlalchemy.pool import QueuePool
     HAS_SQLALCHEMY = True
 except ImportError:
     HAS_SQLALCHEMY = False

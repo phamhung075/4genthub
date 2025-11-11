@@ -11,6 +11,8 @@ Issues addressed:
 3. Context Management Authentication Paradox - TO BE TESTED
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import sys
@@ -19,15 +21,14 @@ from unittest.mock import patch
 
 import pytest
 
+from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
+    DDDCompliantMCPTools,
+)
+
 # Add the project path to sys.path
 project_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if project_path not in sys.path:
     sys.path.insert(0, project_path)
-
-# Import MCP controllers to test
-from fastmcp.task_management.interface.ddd_compliant_mcp_tools import (
-    DDDCompliantMCPTools,
-)
 
 logger = logging.getLogger(__name__)
 

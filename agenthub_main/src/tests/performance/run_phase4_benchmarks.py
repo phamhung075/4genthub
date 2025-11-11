@@ -6,16 +6,14 @@ Executable script for running Phase 4 comprehensive performance benchmarks.
 Designed for CI/CD integration and manual execution.
 """
 
+from __future__ import annotations
+
 import argparse
 import asyncio
 import logging
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
 
 from agenthub_main.src.tests.performance import setup_performance_logger
 from agenthub_main.src.tests.performance.benchmarks.ai_comprehension_tests import (
@@ -30,6 +28,10 @@ from agenthub_main.src.tests.performance.benchmarks.load_testing_suite import (
 from agenthub_main.src.tests.performance.benchmarks.response_size_tests import (
     run_response_size_benchmark,
 )
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 logger = setup_performance_logger()
 

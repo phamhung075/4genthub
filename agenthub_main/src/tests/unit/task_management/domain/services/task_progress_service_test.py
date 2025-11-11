@@ -1,5 +1,7 @@
 """Unit tests for TaskProgressService - Domain Service for Task Progress Calculations"""
 
+from __future__ import annotations
+
 from unittest.mock import Mock
 
 import pytest
@@ -10,6 +12,8 @@ from fastmcp.task_management.domain.services.task_progress_service import (
     SubtaskRepositoryProtocol,
     TaskProgressService,
 )
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
 def create_mock_with_spec(spec_class):
@@ -24,8 +28,6 @@ def create_mock_with_spec(spec_class):
     else:
         # It's a real class, safe to use as spec
         return Mock(spec=spec_class)
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
 class TestTaskProgressService:

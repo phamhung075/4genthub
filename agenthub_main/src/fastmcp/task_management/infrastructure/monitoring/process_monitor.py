@@ -17,6 +17,10 @@ import uuid
 from enum import Enum
 from typing import Any
 
+from ...domain.value_objects.compliance_objects import ProcessInfo
+
+logger = logging.getLogger(__name__)
+
 
 class ProcessStatus(Enum):
     """Simplified process status"""
@@ -24,9 +28,6 @@ class ProcessStatus(Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
-from ...domain.value_objects.compliance_objects import ProcessInfo
-
-logger = logging.getLogger(__name__)
 
 
 class ProcessMonitor:

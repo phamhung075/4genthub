@@ -15,6 +15,8 @@ Test Categories:
 6. Connection State Management - State tracking, reconnection
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 
@@ -28,14 +30,13 @@ import mcp.types
 import pytest
 from pydantic import AnyUrl
 
+from fastmcp.client.client import Client
+from fastmcp.exceptions import ToolError
+
 # Create mock for oauth_callback
 oauth_callback_mock = MagicMock()
 oauth_callback_mock.create_oauth_callback_server = MagicMock()
 sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
-
-# Import client components
-from fastmcp.client.client import Client
-from fastmcp.exceptions import ToolError
 
 # Test markers
 pytestmark = [

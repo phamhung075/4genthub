@@ -23,9 +23,15 @@ try:
     PLAYWRIGHT_AVAILABLE = True
 except ImportError:
     # Playwright not available, create dummy types to avoid syntax errors
-    class Page: pass
-    class Route: pass
-    def expect(x): pass
+    class Page:
+        pass
+
+    class Route:
+        pass
+
+    def expect(x):
+        pass
+
     PLAYWRIGHT_AVAILABLE = False
 
 
