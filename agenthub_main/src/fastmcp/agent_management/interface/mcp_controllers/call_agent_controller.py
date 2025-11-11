@@ -34,14 +34,18 @@ class CallAgentMCPController:
         Args:
             mcp: FastMCP server instance
         """
-        logger.info("Registering call_agent tool (new agent_management implementation)...")
+        logger.info(
+            "Registering call_agent tool (new agent_management implementation)..."
+        )
 
         # Register the tool with description
-        @mcp.tool(description=(
-            "Load and invoke a specialized agent by name using the database-backed "
-            "user agent instance system. Returns agent configuration including "
-            "system_prompt, tools, and capabilities."
-        ))
+        @mcp.tool(
+            description=(
+                "Load and invoke a specialized agent by name using the database-backed "
+                "user agent instance system. Returns agent configuration including "
+                "system_prompt, tools, and capabilities."
+            )
+        )
         def call_agent(name_agent: str, user_id: str = None) -> dict[str, Any]:
             """
             Load and invoke a specialized agent.

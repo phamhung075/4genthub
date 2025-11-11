@@ -16,38 +16,38 @@ from .notification_service import NotificationService, get_notification_service
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class DIContainer:
     """
     Simple dependency injection container for infrastructure components.
-    
+
     Provides singleton instances of infrastructure services.
     """
-    
+
     def __init__(self):
         """Initialize the DI container."""
         self._instances: dict[str | type, Any] = {}
         self._factories: dict[str | type, Callable] = {}
         self._config: dict[str, Any] = {}
         self._initialized: bool = False
-    
+
     def register_singleton(self, key: str | type[T], instance: T) -> None:
         """
         Register a singleton instance.
-        
+
         Args:
             key: Service key (string) or type
             instance: The instance to register
         """
         self._instances[key] = instance
         logger.debug(f"Registered singleton for {key}")
-    
+
     def register_factory(self, key: str | type[T], factory: Callable[[], T]) -> None:
         """
         Register a factory function for a service.
-        
+
         Args:
             key: Service key (string) or type
             factory: Factory function that creates the service
@@ -57,24 +57,24 @@ class DIContainer:
         if key in self._instances:
             del self._instances[key]
         logger.debug(f"Registered factory for {key}")
-    
+
     def register_instance(self, service_type: type[T], instance: T) -> None:
         """
         Register a specific instance for a service type (backward compatibility).
-        
+
         Args:
             service_type: The type of service
             instance: The instance to register
         """
         self.register_singleton(service_type, instance)
-    
+
     def get(self, key: str | type[T]) -> T | None:
         """
         Get an instance of a service.
-        
+
         Args:
             key: Service key (string) or type
-            
+
         Returns:
             The service instance or None if not found
         """
@@ -85,29 +85,29 @@ class DIContainer:
                 instance = self._factories[key]()
                 self._instances[key] = instance
             return self._instances[key]
-        
+
         # Check if we have a cached instance
         if key in self._instances:
             return self._instances[key]
-        
+
         return None
-    
+
     def has(self, key: str | type) -> bool:
         """
         Check if a service is registered.
-        
+
         Args:
             key: Service key (string) or type
-            
+
         Returns:
             True if service is registered, False otherwise
         """
         return key in self._instances or key in self._factories
-    
+
     def remove(self, key: str | type) -> None:
         """
         Remove a service registration.
-        
+
         Args:
             key: Service key (string) or type
         """
@@ -115,17 +115,17 @@ class DIContainer:
             del self._instances[key]
         if key in self._factories:
             del self._factories[key]
-    
+
     def clear(self) -> None:
         """Clear all registrations and reset initialization state."""
         self._instances.clear()
         self._factories.clear()
         self._initialized = False
-    
+
     def get_all_services(self) -> dict[str | type, Any]:
         """
         Get all registered service instances.
-        
+
         Returns:
             Dictionary of all service instances
         """
@@ -137,29 +137,29 @@ class DIContainer:
                 self._instances[key] = instance
                 all_services[key] = instance
         return all_services
-    
+
     def get_optional(self, service_type: type[T]) -> T | None:
         """
         Get an optional instance of a service.
-        
+
         Args:
             service_type: The type of service to get
-            
+
         Returns:
             The service instance or None if not registered
         """
         return self.get(service_type)
-    
+
     def configure(self, config: dict[str, Any]) -> None:
         """
         Configure the container with settings.
-        
+
         Args:
             config: Configuration dictionary
         """
         self._config.update(config)
         logger.debug(f"Updated container configuration: {list(config.keys())}")
-    
+
     def reset(self) -> None:
         """Reset the container, clearing all instances."""
         self._instances.clear()
@@ -167,82 +167,86 @@ class DIContainer:
         self._config.clear()
         self._initialized = False
         logger.debug("DI container reset")
-    
+
     def get_event_bus(self) -> EventBus:
         """Convenience method to get EventBus instance."""
         return self.get("event_bus")
-    
+
     async def get_event_store(self) -> EventStore | None:
         """Convenience method to get EventStore instance."""
         return self.get("event_store")
-    
+
     def get_notification_service(self) -> NotificationService:
         """Convenience method to get NotificationService instance."""
         return self.get("notification_service")
-    
-    async def initialize_infrastructure(self, 
-                                        event_store_path: str | None = None,
-                                        notification_channels: list | None = None) -> None:
+
+    async def initialize_infrastructure(
+        self,
+        event_store_path: str | None = None,
+        notification_channels: list | None = None,
+    ) -> None:
         """
         Initialize all infrastructure components with configuration.
-        
+
         Args:
             event_store_path: Optional path for event store database
             notification_channels: Optional list of notification channels to add
         """
         if self._initialized:
             return  # Already initialized
-            
+
         # Configure event store path
         if event_store_path:
-            self.configure({'event_store_path': event_store_path})
-        
+            self.configure({"event_store_path": event_store_path})
+
         # Register infrastructure services with string keys (as expected by tests)
         event_bus = get_event_bus()
         self.register_singleton("event_bus", event_bus)
-        
+
         notification_service = get_notification_service()
         self.register_singleton("notification_service", notification_service)
-        
+
         # Only register event store if path is provided
         if event_store_path:
             event_store = get_event_store(event_store_path)
             self.register_singleton("event_store", event_store)
-        
+
         # Add custom notification channels if provided
         if notification_channels:
             for channel in notification_channels:
                 notification_service.add_channel(channel)
-        
+
         self._initialized = True
         logger.info("Infrastructure components initialized")
         logger.info(f"  - EventBus: {event_bus}")
         if event_store_path:
             logger.info(f"  - EventStore: {self.get('event_store')}")
         logger.info(f"  - NotificationService: {notification_service}")
-    
+
     def wire_event_handlers(self, registry: Any) -> None:
         """
         Wire event handlers to the event bus.
-        
+
         Args:
             registry: Event handler registry to wire up
         """
         event_bus = self.get_event_bus()
-        
+
         # Subscribe handlers from registry
-        if hasattr(registry, 'handlers'):
+        if hasattr(registry, "handlers"):
             for event_type, handler in registry.handlers.items():
-                if hasattr(handler, 'handle'):
+                if hasattr(handler, "handle"):
                     event_bus.subscribe(event_type, handler.handle)
                     logger.debug(f"Wired handler for {event_type.__name__}")
-        
+
         logger.info(f"Wired {len(registry.handlers)} event handlers to event bus")
-    
+
     def __repr__(self) -> str:
         """String representation of the container."""
-        return (f"DIContainer(instances={len(self._instances)}, "
-                f"factories={len(self._factories)})")
+        return (
+            f"DIContainer(instances={len(self._instances)}, "
+            f"factories={len(self._factories)})"
+        )
 
 
 # Global DI container instance
@@ -281,15 +285,16 @@ def get_infrastructure_notification_service() -> NotificationService:
     return get_container().get_notification_service()
 
 
-def initialize_infrastructure(event_store_path: str | None = None,
-                             notification_channels: list | None = None) -> DIContainer:
+def initialize_infrastructure(
+    event_store_path: str | None = None, notification_channels: list | None = None
+) -> DIContainer:
     """
     Initialize infrastructure with default configuration.
-    
+
     Args:
         event_store_path: Optional path for event store database
         notification_channels: Optional list of notification channels
-        
+
     Returns:
         The configured DI container
     """

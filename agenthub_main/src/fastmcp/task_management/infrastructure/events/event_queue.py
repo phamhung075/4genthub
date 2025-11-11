@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 class QueueState(Enum):
     """Queue operational states"""
+
     RUNNING = "running"
     PAUSED = "paused"
     SHUTDOWN = "shutdown"
@@ -35,6 +36,7 @@ class QueueState(Enum):
 @dataclass
 class QueueMetrics:
     """Queue performance metrics"""
+
     total_enqueued: int = 0
     total_dequeued: int = 0
     total_dropped: int = 0
@@ -314,19 +316,27 @@ class EventQueue:
                 "max_size_reached": self._metrics.max_size_reached,
                 "utilization_percent": (
                     (self._metrics.current_size / self._maxsize * 100)
-                    if self._maxsize > 0 else 0
+                    if self._maxsize > 0
+                    else 0
                 ),
                 "drop_rate_percent": (
-                    (self._metrics.total_dropped / (self._metrics.total_enqueued + self._metrics.total_dropped) * 100)
-                    if (self._metrics.total_enqueued + self._metrics.total_dropped) > 0 else 0
+                    (
+                        self._metrics.total_dropped
+                        / (self._metrics.total_enqueued + self._metrics.total_dropped)
+                        * 100
+                    )
+                    if (self._metrics.total_enqueued + self._metrics.total_dropped) > 0
+                    else 0
                 ),
                 "last_enqueue_time": (
                     self._metrics.last_enqueue_time.isoformat()
-                    if self._metrics.last_enqueue_time else None
+                    if self._metrics.last_enqueue_time
+                    else None
                 ),
                 "last_dequeue_time": (
                     self._metrics.last_dequeue_time.isoformat()
-                    if self._metrics.last_dequeue_time else None
+                    if self._metrics.last_dequeue_time
+                    else None
                 ),
             }
 

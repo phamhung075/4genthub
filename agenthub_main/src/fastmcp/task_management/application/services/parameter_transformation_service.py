@@ -129,7 +129,9 @@ class ParameterTransformationService:
             logger.debug(f"Validated progress_percentage: {progress.to_int()}")
             return progress.to_int(), None
         except (ValueError, TypeError) as e:
-            error_msg = f"progress_percentage must be an integer between 0 and 100: {str(e)}"
+            error_msg = (
+                f"progress_percentage must be an integer between 0 and 100: {str(e)}"
+            )
             logger.warning(f"Invalid progress_percentage: {value} - {error_msg}")
             return None, error_msg
 
@@ -180,13 +182,17 @@ class ParameterTransformationService:
             field_value = result[field_name]
 
             if field_type == "list":
-                result[field_name] = ParameterTransformationService.transform_string_to_list(
-                    field_value, field_name
+                result[field_name] = (
+                    ParameterTransformationService.transform_string_to_list(
+                        field_value, field_name
+                    )
                 )
             elif field_type == "integer":
                 default = config.get("default", 0)
-                result[field_name] = ParameterTransformationService.transform_to_integer(
-                    field_value, default, field_name
+                result[field_name] = (
+                    ParameterTransformationService.transform_to_integer(
+                        field_value, default, field_name
+                    )
                 )
             elif field_type == "percentage":
                 transformed, error = (
@@ -202,8 +208,10 @@ class ParameterTransformationService:
                     result[field_name] = transformed
             elif field_type == "boolean":
                 default = config.get("default", False)
-                result[field_name] = ParameterTransformationService.transform_boolean_default(
-                    field_value, default
+                result[field_name] = (
+                    ParameterTransformationService.transform_boolean_default(
+                        field_value, default
+                    )
                 )
 
         return result

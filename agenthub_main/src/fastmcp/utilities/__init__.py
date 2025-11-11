@@ -7,7 +7,7 @@ from .id_validator import (
     IDValidationError,
     validate_uuid,
     prevent_id_confusion,
-    is_mcp_task_id
+    is_mcp_task_id,
 )
 
 __all__ = [
@@ -17,5 +17,5 @@ __all__ = [
     "IDValidationError",
     "validate_uuid",
     "prevent_id_confusion",
-    "is_mcp_task_id"
+    "is_mcp_task_id",
 ]

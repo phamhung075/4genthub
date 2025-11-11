@@ -106,12 +106,8 @@ MANAGE_CONNECTION_DESCRIPTION = """🔗 UNIFIED CONNECTION MANAGEMENT ENGINE - C
 # Parameter descriptions for the manage_connection tool
 MANAGE_CONNECTION_PARAMETERS = {
     "action": "Connection management action to perform. Valid actions: 'health_check' (basic server health), 'server_capabilities' (feature discovery), 'connection_health' (diagnostics), 'status' (comprehensive monitoring), 'register_updates' (real-time notifications). Each action provides specific operational insights and monitoring capabilities. (string)",
-    
     "include_details": "Whether to include detailed information in responses. When true, provides comprehensive data including metrics, configuration details, and diagnostic information. When false, returns minimal essential information for reduced bandwidth and faster responses. Default: true (boolean)",
-    
     "connection_id": "Specific connection identifier for targeted diagnostics. Used with 'connection_health' action to analyze individual connection performance and health. When not provided, analyzes overall connection pool health. Useful for isolating connection-specific issues. (string)",
-    
     "session_id": "Client session identifier for update registration. Required for 'register_updates' action to establish real-time notification delivery. Should be unique per client session and maintained throughout the connection lifecycle. Used for update routing and session management. (string)",
-    
-    "client_info": "Optional client metadata for registration customization. JSON object containing client identification, capabilities, preferences, and filtering criteria. Used to customize update delivery, prioritize notifications, and provide client-specific monitoring. Supports fields like client_type, version, features, and notification_preferences. (object)"
+    "client_info": "Optional client metadata for registration customization. JSON object containing client identification, capabilities, preferences, and filtering criteria. Used to customize update delivery, prioritize notifications, and provide client-specific monitoring. Supports fields like client_type, version, features, and notification_preferences. (object)",
 }

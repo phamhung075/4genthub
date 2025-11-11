@@ -82,7 +82,9 @@ class YAMLAgentTemplateLoader:
         slug = agent_info.get("slug")
         # Convert hyphenated slug to underscored for file naming convention
         slug_underscored = slug.replace("-", "_")
-        instructions_file = agent_dir / "contexts" / f"{slug_underscored}_instructions.yaml"
+        instructions_file = (
+            agent_dir / "contexts" / f"{slug_underscored}_instructions.yaml"
+        )
         instructions_data = self._load_yaml(instructions_file)
         system_prompt = instructions_data.get("custom_instructions", "")
 
@@ -97,7 +99,9 @@ class YAMLAgentTemplateLoader:
             output_format = output_format_data.get("output_specification")
 
         # 6. Load metadata.yaml (multi-document YAML file)
-        metadata_data = self._load_yaml(agent_dir / "metadata.yaml", multi_document=True)
+        metadata_data = self._load_yaml(
+            agent_dir / "metadata.yaml", multi_document=True
+        )
 
         # 7. Extract tools from capabilities
         tools = self._extract_tools(capabilities_data)
@@ -112,7 +116,7 @@ class YAMLAgentTemplateLoader:
             capabilities=capabilities_obj,
             rules=rules,
             output_format=output_format,
-            metadata=metadata_data
+            metadata=metadata_data,
         )
 
         # 10. Create AgentTemplate entity
@@ -129,15 +133,17 @@ class YAMLAgentTemplateLoader:
                 "migration_date": agent_info.get("migration_date"),
                 "usage_scenarios": agent_info.get("usage_scenarios"),
                 "author": agent_info.get("author", "agenthub"),
-                **metadata_data
+                **metadata_data,
             },
             created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC)
+            updated_at=datetime.now(UTC),
         )
 
         return template
 
-    def _load_yaml(self, file_path: Path, multi_document: bool = False) -> dict[str, Any]:
+    def _load_yaml(
+        self, file_path: Path, multi_document: bool = False
+    ) -> dict[str, Any]:
         """
         Load and parse a YAML file
 
@@ -153,7 +159,7 @@ class YAMLAgentTemplateLoader:
             return {}
 
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 if multi_document:
                     # Load all documents and return the first one (metadata.yaml case)
                     docs = list(yaml.safe_load_all(f))
@@ -186,10 +192,7 @@ class YAMLAgentTemplateLoader:
                 rule_data = self._load_yaml(rule_file)
                 # Extract rule content (structure varies, so we take the whole dict)
                 rule_name = rule_file.stem
-                rules.append({
-                    "name": rule_name,
-                    "content": rule_data
-                })
+                rules.append({"name": rule_name, "content": rule_data})
             except Exception as e:
                 logger.error(f"Error loading rule file {rule_file}: {e}")
                 continue
@@ -212,7 +215,9 @@ class YAMLAgentTemplateLoader:
             return tools if isinstance(tools, list) else []
         return []
 
-    def _build_capabilities_object(self, capabilities_data: dict[str, Any]) -> dict[str, Any]:
+    def _build_capabilities_object(
+        self, capabilities_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Build structured capabilities object from capabilities.yaml
 
@@ -226,5 +231,5 @@ class YAMLAgentTemplateLoader:
             "file_operations": capabilities_data.get("file_operations", {}),
             "command_execution": capabilities_data.get("command_execution", {}),
             "mcp_tools": capabilities_data.get("mcp_tools", {}),
-            "collaboration": capabilities_data.get("collaboration", {})
+            "collaboration": capabilities_data.get("collaboration", {}),
         }

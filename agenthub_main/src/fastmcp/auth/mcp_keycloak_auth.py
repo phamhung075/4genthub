@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 # Security scheme for FastAPI
 security = HTTPBearer()
 
+
 class MCPKeycloakAuth:
     """MCP Authentication handler using Keycloak tokens"""
 
@@ -28,7 +29,13 @@ class MCPKeycloakAuth:
         """Initialize MCP Keycloak authentication"""
         self.keycloak_provider = KeycloakAuthProvider()
         self.mcp_auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() == "true"
-        self.required_roles = ["mcp-user", "mcp-tools", "mcp-developer", "mcp-admin", "admin"]  # Required roles for MCP access
+        self.required_roles = [
+            "mcp-user",
+            "mcp-tools",
+            "mcp-developer",
+            "mcp-admin",
+            "admin",
+        ]  # Required roles for MCP access
         self.jwks_cache = None
         self.jwks_cache_time = None
 
@@ -54,7 +61,7 @@ class MCPKeycloakAuth:
                 "sub": "dev-user",
                 "email": "dev@localhost",
                 "roles": ["mcp-user", "mcp-tools", "admin"],
-                "permissions": ["*"]
+                "permissions": ["*"],
             }
 
         try:
@@ -62,15 +69,12 @@ class MCPKeycloakAuth:
             token_data = await self.keycloak_provider.validate_token(token)
 
             if not token_data:
-                raise HTTPException(
-                    status_code=401,
-                    detail="Invalid or expired token"
-                )
+                raise HTTPException(status_code=401, detail="Invalid or expired token")
 
             # Extract user roles from Keycloak token payload
             realm_access = token_data.get("realm_access", {})
             roles = realm_access.get("roles", [])
-            
+
             # Also check resource access for client-specific roles
             resource_access = token_data.get("resource_access", {})
             client_access = resource_access.get(self.keycloak_provider.client_id, {})
@@ -83,7 +87,7 @@ class MCPKeycloakAuth:
             if not has_mcp_access:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"Insufficient permissions. Required roles: {self.required_roles}"
+                    detail=f"Insufficient permissions. Required roles: {self.required_roles}",
                 )
 
             # Build MCP permissions based on roles
@@ -100,7 +104,7 @@ class MCPKeycloakAuth:
                 "mcp_permissions": permissions,
                 "mcp_tools": self._get_allowed_tools(roles),
                 "exp": token_data.get("exp"),
-                "iat": token_data.get("iat")
+                "iat": token_data.get("iat"),
             }
 
             return mcp_token_data
@@ -109,10 +113,7 @@ class MCPKeycloakAuth:
             raise
         except Exception as e:
             logger.error(f"Token validation error: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail="Authentication service error"
-            )
+            raise HTTPException(status_code=500, detail="Authentication service error")
 
     def _build_mcp_permissions(self, roles: list[str]) -> list[str]:
         """
@@ -134,19 +135,10 @@ class MCPKeycloakAuth:
                 "tools:list",
                 "tools:describe",
                 "context:read",
-                "context:write"
+                "context:write",
             ],
-            "mcp-user": [
-                "tools:list",
-                "tools:describe",
-                "context:read"
-            ],
-            "mcp-developer": [
-                "tools:*",
-                "context:*",
-                "agents:*",
-                "projects:*"
-            ]
+            "mcp-user": ["tools:list", "tools:describe", "context:read"],
+            "mcp-developer": ["tools:*", "context:*", "agents:*", "projects:*"],
         }
 
         for role in roles:
@@ -156,7 +148,9 @@ class MCPKeycloakAuth:
         # Remove duplicates
         return list(set(permissions))
 
-    def _merge_tool_permissions(self, target: dict[str, list[str]], source: dict[str, list[str]]) -> None:
+    def _merge_tool_permissions(
+        self, target: dict[str, list[str]], source: dict[str, list[str]]
+    ) -> None:
         """
         Merge tool permissions by combining lists instead of overwriting them
 
@@ -189,32 +183,36 @@ class MCPKeycloakAuth:
         allowed_tools = {}
 
         if "mcp-developer" in roles:
-            self._merge_tool_permissions(allowed_tools, {
-                "project": ["manage_project", "manage_git_branch"],
-                "task": ["manage_task", "manage_subtask"],
-                "context": ["manage_context"],
-                "agent": ["call_agent", "manage_agent"],
-                "development": ["*"]
-            })
+            self._merge_tool_permissions(
+                allowed_tools,
+                {
+                    "project": ["manage_project", "manage_git_branch"],
+                    "task": ["manage_task", "manage_subtask"],
+                    "context": ["manage_context"],
+                    "agent": ["call_agent", "manage_agent"],
+                    "development": ["*"],
+                },
+            )
 
         if "mcp-tools" in roles:
-            self._merge_tool_permissions(allowed_tools, {
-                "task": ["manage_task", "search_task"],
-                "context": ["manage_context"],
-                "agent": ["call_agent"]
-            })
+            self._merge_tool_permissions(
+                allowed_tools,
+                {
+                    "task": ["manage_task", "search_task"],
+                    "context": ["manage_context"],
+                    "agent": ["call_agent"],
+                },
+            )
 
         if "mcp-user" in roles:
-            self._merge_tool_permissions(allowed_tools, {
-                "task": ["search_task"],
-                "context": ["get_context"]
-            })
+            self._merge_tool_permissions(
+                allowed_tools, {"task": ["search_task"], "context": ["get_context"]}
+            )
 
         return allowed_tools
 
     async def get_current_user(
-        self,
-        credentials: HTTPAuthorizationCredentials = Depends(security)
+        self, credentials: HTTPAuthorizationCredentials = Depends(security)
     ) -> dict[str, Any]:
         """
         FastAPI dependency to get current authenticated user
@@ -238,6 +236,7 @@ class MCPKeycloakAuth:
         Returns:
             Decorated function
         """
+
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -246,8 +245,7 @@ class MCPKeycloakAuth:
 
                 if not user:
                     raise HTTPException(
-                        status_code=401,
-                        detail="Authentication required"
+                        status_code=401, detail="Authentication required"
                     )
 
                 permissions = user.get("mcp_permissions", [])
@@ -256,12 +254,13 @@ class MCPKeycloakAuth:
                 if "*" not in permissions and permission not in permissions:
                     raise HTTPException(
                         status_code=403,
-                        detail=f"Permission denied. Required: {permission}"
+                        detail=f"Permission denied. Required: {permission}",
                     )
 
                 return await func(*args, **kwargs)
 
             return wrapper
+
         return decorator
 
     def require_tool_access(self, tool_name: str):
@@ -274,6 +273,7 @@ class MCPKeycloakAuth:
         Returns:
             Decorated function
         """
+
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -282,8 +282,7 @@ class MCPKeycloakAuth:
 
                 if not user:
                     raise HTTPException(
-                        status_code=401,
-                        detail="Authentication required"
+                        status_code=401, detail="Authentication required"
                     )
 
                 allowed_tools = user.get("mcp_tools", {})
@@ -301,13 +300,13 @@ class MCPKeycloakAuth:
 
                 if not tool_allowed:
                     raise HTTPException(
-                        status_code=403,
-                        detail=f"Access denied to tool: {tool_name}"
+                        status_code=403, detail=f"Access denied to tool: {tool_name}"
                     )
 
                 return await func(*args, **kwargs)
 
             return wrapper
+
         return decorator
 
     async def create_mcp_session(self, user_data: dict[str, Any]) -> dict[str, Any]:
@@ -330,7 +329,7 @@ class MCPKeycloakAuth:
             "permissions": user_data.get("mcp_permissions", []),
             "tools": user_data.get("mcp_tools", {}),
             "created_at": datetime.now(UTC).isoformat(),
-            "expires_at": (datetime.now(UTC) + timedelta(hours=24)).isoformat()
+            "expires_at": (datetime.now(UTC) + timedelta(hours=24)).isoformat(),
         }
 
         # Store session in cache/database if needed
@@ -341,7 +340,7 @@ class MCPKeycloakAuth:
         self,
         tool_name: str,
         user_data: dict[str, Any],
-        parameters: dict[str, Any] | None = None
+        parameters: dict[str, Any] | None = None,
     ) -> bool:
         """
         Validate if user can execute specific tool with parameters
@@ -380,12 +379,14 @@ class MCPKeycloakAuth:
 
         return True
 
+
 # Global instance
 mcp_auth = MCPKeycloakAuth()
 
+
 # FastAPI dependencies
 async def get_mcp_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict[str, Any]:
     """
     FastAPI dependency for MCP authentication
@@ -398,6 +399,7 @@ async def get_mcp_user(
     """
     return await mcp_auth.validate_mcp_token(credentials.credentials)
 
+
 def require_mcp_auth(func):
     """
     Decorator for functions requiring MCP authentication
@@ -408,6 +410,7 @@ def require_mcp_auth(func):
             # Tool implementation
             pass
     """
+
     @wraps(func)
     async def wrapper(*args, **kwargs):
         # Check if auth is enabled

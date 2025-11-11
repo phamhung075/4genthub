@@ -33,7 +33,9 @@ class OrchestrationStrategy(ABC):
     """Abstract base class for orchestration strategies"""
 
     @abstractmethod
-    def assign_work(self, project: Project, available_agents: list[Agent]) -> dict[str, str]:
+    def assign_work(
+        self, project: Project, available_agents: list[Agent]
+    ) -> dict[str, str]:
         """Assign work to agents based on strategy"""
         pass
 
@@ -41,7 +43,9 @@ class OrchestrationStrategy(ABC):
 class CapabilityBasedStrategy(OrchestrationStrategy):
     """Orchestration strategy based on agent capabilities"""
 
-    def assign_work(self, project: Project, available_agents: list[Agent]) -> dict[str, str]:
+    def assign_work(
+        self, project: Project, available_agents: list[Agent]
+    ) -> dict[str, str]:
         assignments = {}
 
         for git_branch_name, tree in project.git_branchs.items():
@@ -55,7 +59,9 @@ class CapabilityBasedStrategy(OrchestrationStrategy):
 
         return assignments
 
-    def _find_best_agent_for_tree(self, tree: GitBranch, agents: list[Agent]) -> Agent | None:
+    def _find_best_agent_for_tree(
+        self, tree: GitBranch, agents: list[Agent]
+    ) -> Agent | None:
         """Find the best agent for a specific task tree"""
         available_agents = [agent for agent in agents if agent.is_available()]
 
@@ -81,12 +87,18 @@ class CapabilityBasedStrategy(OrchestrationStrategy):
 
         # Check capability match
         required_capabilities = tree_requirements.get("capabilities", [])
-        capability_match = sum(1 for cap in required_capabilities if agent.has_capability(cap))
-        capability_score = (capability_match / max(len(required_capabilities), 1)) * 30.0
+        capability_match = sum(
+            1 for cap in required_capabilities if agent.has_capability(cap)
+        )
+        capability_score = (
+            capability_match / max(len(required_capabilities), 1)
+        ) * 30.0
 
         # Check language preferences
         required_languages = tree_requirements.get("languages", [])
-        language_match = sum(1 for lang in required_languages if lang in agent.preferred_languages)
+        language_match = sum(
+            1 for lang in required_languages if lang in agent.preferred_languages
+        )
         language_score = (language_match / max(len(required_languages), 1)) * 10.0
 
         # Workload factor
@@ -104,27 +116,35 @@ class CapabilityBasedStrategy(OrchestrationStrategy):
             task_text = f"{task.title} {task.description}".lower()
 
             # Detect frontend work
-            if any(keyword in task_text for keyword in ["frontend", "ui", "react", "vue", "angular"]):
+            if any(
+                keyword in task_text
+                for keyword in ["frontend", "ui", "react", "vue", "angular"]
+            ):
                 capabilities.add(AgentCapability.FRONTEND_DEVELOPMENT)
                 languages.update(["javascript", "typescript", "html", "css"])
 
             # Detect backend work
-            if any(keyword in task_text for keyword in ["backend", "api", "server", "database"]):
+            if any(
+                keyword in task_text
+                for keyword in ["backend", "api", "server", "database"]
+            ):
                 capabilities.add(AgentCapability.BACKEND_DEVELOPMENT)
                 languages.update(["python", "java", "node.js"])
 
             # Detect DevOps work
-            if any(keyword in task_text for keyword in ["deploy", "docker", "kubernetes", "ci/cd"]):
+            if any(
+                keyword in task_text
+                for keyword in ["deploy", "docker", "kubernetes", "ci/cd"]
+            ):
                 capabilities.add(AgentCapability.DEVOPS)
 
             # Detect testing work
-            if any(keyword in task_text for keyword in ["test", "testing", "qa", "quality"]):
+            if any(
+                keyword in task_text for keyword in ["test", "testing", "qa", "quality"]
+            ):
                 capabilities.add(AgentCapability.TESTING)
 
-        return {
-            "capabilities": list(capabilities),
-            "languages": list(languages)
-        }
+        return {"capabilities": list(capabilities), "languages": list(languages)}
 
 
 class ProjectOrchestrator:
@@ -160,11 +180,16 @@ class ProjectOrchestrator:
         Returns:
             Dict with orchestration results including assignments and recommendations
         """
-        self.logger.info(f"[Application Layer] Starting orchestration for project {project.id}")
+        self.logger.info(
+            f"[Application Layer] Starting orchestration for project {project.id}"
+        )
 
         # Get available agents
-        available_agents = [agent for agent in project.registered_agents.values()
-                           if agent.status != AgentStatus.OFFLINE]
+        available_agents = [
+            agent
+            for agent in project.registered_agents.values()
+            if agent.status != AgentStatus.OFFLINE
+        ]
 
         # Check for timeout sessions
         self._handle_timeout_sessions(project)
@@ -187,7 +212,9 @@ class ProjectOrchestrator:
                 next_tasks = project.get_available_work_for_agent(agent_id)
                 if next_tasks:
                     # Prioritize tasks
-                    recommended_task = self._prioritize_tasks_for_agent(agent, next_tasks)
+                    recommended_task = self._prioritize_tasks_for_agent(
+                        agent, next_tasks
+                    )
                     agent_recommendations[agent_id] = recommended_task
 
         return {
@@ -202,7 +229,7 @@ class ProjectOrchestrator:
             "conflicts_resolved": len(conflicts),
             "active_sessions": len(project.active_work_sessions),
             "available_agents": len([a for a in available_agents if a.is_available()]),
-            "orchestrator_layer": "application"  # Identify which layer handled this
+            "orchestrator_layer": "application",  # Identify which layer handled this
         }
 
     def coordinate_cross_tree_dependencies(self, project: Project) -> list[dict]:
@@ -213,7 +240,10 @@ class ProjectOrchestrator:
         """
         dependency_issues = []
 
-        for dependent_task_id, prerequisite_ids in project.cross_tree_dependencies.items():
+        for (
+            dependent_task_id,
+            prerequisite_ids,
+        ) in project.cross_tree_dependencies.items():
             dependent_tree = project._find_git_branch(dependent_task_id)
             if not dependent_tree:
                 continue
@@ -221,27 +251,33 @@ class ProjectOrchestrator:
             for prerequisite_id in prerequisite_ids:
                 prerequisite_tree = project._find_git_branch(prerequisite_id)
                 if not prerequisite_tree:
-                    dependency_issues.append({
-                        "type": "missing_prerequisite",
-                        "dependent_task": dependent_task_id,
-                        "missing_prerequisite": prerequisite_id
-                    })
+                    dependency_issues.append(
+                        {
+                            "type": "missing_prerequisite",
+                            "dependent_task": dependent_task_id,
+                            "missing_prerequisite": prerequisite_id,
+                        }
+                    )
                     continue
 
                 prerequisite_task = prerequisite_tree.get_task(prerequisite_id)
                 if prerequisite_task and not prerequisite_task.status.is_done():
                     # Check if prerequisite is being worked on
-                    prerequisite_agent = project.agent_assignments.get(prerequisite_tree.id)
+                    prerequisite_agent = project.agent_assignments.get(
+                        prerequisite_tree.id
+                    )
                     if prerequisite_agent:
                         agent = project.registered_agents.get(prerequisite_agent)
                         if agent and prerequisite_id not in agent.active_tasks:
-                            dependency_issues.append({
-                                "type": "prerequisite_not_active",
-                                "dependent_task": dependent_task_id,
-                                "prerequisite_task": prerequisite_id,
-                                "prerequisite_agent": prerequisite_agent,
-                                "recommendation": "prioritize_prerequisite"
-                            })
+                            dependency_issues.append(
+                                {
+                                    "type": "prerequisite_not_active",
+                                    "dependent_task": dependent_task_id,
+                                    "prerequisite_task": prerequisite_id,
+                                    "prerequisite_agent": prerequisite_agent,
+                                    "recommendation": "prioritize_prerequisite",
+                                }
+                            )
 
         return dependency_issues
 
@@ -258,8 +294,12 @@ class ProjectOrchestrator:
         workloads.sort(key=lambda x: x[1])
 
         # Identify overloaded and underloaded agents
-        overloaded_agents = [agent_id for agent_id, workload in workloads if workload > 80.0]
-        underloaded_agents = [agent_id for agent_id, workload in workloads if workload < 50.0]
+        overloaded_agents = [
+            agent_id for agent_id, workload in workloads if workload > 80.0
+        ]
+        underloaded_agents = [
+            agent_id for agent_id, workload in workloads if workload < 50.0
+        ]
 
         rebalancing_recommendations = []
 
@@ -273,29 +313,37 @@ class ProjectOrchestrator:
                 if git_branch:
                     # Find suitable underloaded agents
                     for underloaded_agent_id in underloaded_agents:
-                        underloaded_agent = project.registered_agents[underloaded_agent_id]
+                        underloaded_agent = project.registered_agents[
+                            underloaded_agent_id
+                        ]
 
                         # Check if underloaded agent can handle the task
                         task = git_branch.get_task(task_id)
-                        if task and self._can_agent_handle_task(underloaded_agent, task):
-                            rebalancing_recommendations.append({
-                                "type": "reassign_task",
-                                "from_agent": overloaded_agent_id,
-                                "to_agent": underloaded_agent_id,
-                                "task_id": task_id,
-                                "git_branch_name": git_branch.id
-                            })
+                        if task and self._can_agent_handle_task(
+                            underloaded_agent, task
+                        ):
+                            rebalancing_recommendations.append(
+                                {
+                                    "type": "reassign_task",
+                                    "from_agent": overloaded_agent_id,
+                                    "to_agent": underloaded_agent_id,
+                                    "task_id": task_id,
+                                    "git_branch_name": git_branch.id,
+                                }
+                            )
                             break
 
         return {
             "workload_analysis": {
                 "overloaded_agents": overloaded_agents,
                 "underloaded_agents": underloaded_agents,
-                "average_workload": sum(w[1] for w in workloads) / len(workloads) if workloads else 0,
-                "workload_distribution": workloads
+                "average_workload": sum(w[1] for w in workloads) / len(workloads)
+                if workloads
+                else 0,
+                "workload_distribution": workloads,
             },
             "rebalancing_recommendations": rebalancing_recommendations,
-            "orchestrator_layer": "application"
+            "orchestrator_layer": "application",
         }
 
     def _handle_timeout_sessions(self, project: Project) -> None:
@@ -325,11 +373,16 @@ class ProjectOrchestrator:
         for session in project.active_work_sessions.values():
             for resource in session.resources_locked:
                 if resource in resource_usage:
-                    conflicts.append({
-                        "type": "resource_conflict",
-                        "resource": resource,
-                        "conflicting_sessions": [resource_usage[resource], session.id]
-                    })
+                    conflicts.append(
+                        {
+                            "type": "resource_conflict",
+                            "resource": resource,
+                            "conflicting_sessions": [
+                                resource_usage[resource],
+                                session.id,
+                            ],
+                        }
+                    )
                 else:
                     resource_usage[resource] = session.id
 
@@ -346,9 +399,13 @@ class ProjectOrchestrator:
                     if older_session_id in project.active_work_sessions:
                         older_session = project.active_work_sessions[older_session_id]
                         older_session.unlock_resource(conflict["resource"])
-                        self.logger.info(f"Resolved resource conflict for {conflict['resource']}")
+                        self.logger.info(
+                            f"Resolved resource conflict for {conflict['resource']}"
+                        )
 
-    def _prioritize_tasks_for_agent(self, agent: Agent, tasks: list[Task]) -> Task | None:
+    def _prioritize_tasks_for_agent(
+        self, agent: Agent, tasks: list[Task]
+    ) -> Task | None:
         """Select the highest priority task for the given agent based on preferences"""
         if not tasks:
             return None
@@ -363,7 +420,7 @@ class ProjectOrchestrator:
                 PriorityLevel.URGENT.label: 4,
                 PriorityLevel.HIGH.label: 3,
                 PriorityLevel.MEDIUM.label: 2,
-                PriorityLevel.LOW.label: 1
+                PriorityLevel.LOW.label: 1,
             }
             task_priority_score = priority_scores.get(task.priority.value, 1)
 
@@ -379,7 +436,7 @@ class ProjectOrchestrator:
                 task_created = task.created_at
 
                 if task.created_at.tzinfo is not None and now.tzinfo is None:
-                                        now = now.replace(tzinfo=UTC)
+                    now = now.replace(tzinfo=UTC)
                 elif task.created_at.tzinfo is None and now.tzinfo is not None:
                     task_created = task.created_at.replace(tzinfo=UTC)
 

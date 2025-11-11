@@ -5,7 +5,7 @@ from .token_consumption_service import (
     TokenConsumptionService,
     TokenConsumptionResult,
     TokenBalanceResult,
-    TokenAdditionResult
+    TokenAdditionResult,
 )
 
 __all__ = [
@@ -15,5 +15,5 @@ __all__ = [
     "TokenConsumptionService",
     "TokenConsumptionResult",
     "TokenBalanceResult",
-    "TokenAdditionResult"
+    "TokenAdditionResult",
 ]

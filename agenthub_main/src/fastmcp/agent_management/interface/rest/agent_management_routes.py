@@ -45,8 +45,7 @@ logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(
-    prefix="/api/v2/agent-management",
-    tags=["Agent Management - User Instances"]
+    prefix="/api/v2/agent-management", tags=["Agent Management - User Instances"]
 )
 
 
@@ -60,8 +59,7 @@ def get_facade(db: Session = Depends(get_db)) -> AgentManagementFacade:
     instance_repo._session = db
 
     return AgentManagementFacade(
-        template_repository=template_repo,
-        instance_repository=instance_repo
+        template_repository=template_repo, instance_repository=instance_repo
     )
 
 
@@ -69,15 +67,16 @@ def get_facade(db: Session = Depends(get_db)) -> AgentManagementFacade:
 # AGENT TEMPLATES ENDPOINTS (Read-Only)
 # ============================================================================
 
+
 @router.get(
     "/templates",
     response_model=AgentTemplateListResponse,
     summary="List all agent templates",
-    description="Get list of all available agent templates from agent-library"
+    description="Get list of all available agent templates from agent-library",
 )
 async def list_templates(
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """List all available agent templates."""
     try:
@@ -96,25 +95,25 @@ async def list_templates(
                 system_prompt=t.default_configuration.system_prompt,
                 tools=list(t.default_configuration.tools),
                 capabilities=t.default_configuration.capabilities or {},
-                rules=list(t.default_configuration.rules) if t.default_configuration.rules else None,
+                rules=list(t.default_configuration.rules)
+                if t.default_configuration.rules
+                else None,
                 output_format=t.default_configuration.output_format,
                 metadata=t.metadata,
-                created_at=t.created_at
+                created_at=t.created_at,
             )
             for t in templates
         ]
 
         return AgentTemplateListResponse(
-            success=True,
-            templates=template_responses,
-            count=len(template_responses)
+            success=True, templates=template_responses, count=len(template_responses)
         )
 
     except Exception as e:
         logger.error(f"Error listing templates: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list templates: {str(e)}"
+            detail=f"Failed to list templates: {str(e)}",
         )
 
 
@@ -122,12 +121,12 @@ async def list_templates(
     "/templates/{slug}",
     response_model=AgentTemplateResponse,
     summary="Get specific agent template",
-    description="Get detailed information about a specific agent template"
+    description="Get detailed information about a specific agent template",
 )
 async def get_template(
     slug: str,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """Get specific agent template by slug."""
     try:
@@ -138,7 +137,7 @@ async def get_template(
         if not template:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Template '{slug}' not found"
+                detail=f"Template '{slug}' not found",
             )
 
         return AgentTemplateResponse(
@@ -151,10 +150,12 @@ async def get_template(
             system_prompt=template.default_configuration.system_prompt,
             tools=list(template.default_configuration.tools),
             capabilities=template.default_configuration.capabilities or {},
-            rules=list(template.default_configuration.rules) if template.default_configuration.rules else None,
+            rules=list(template.default_configuration.rules)
+            if template.default_configuration.rules
+            else None,
             output_format=template.default_configuration.output_format,
             metadata=template.metadata,
-            created_at=template.created_at
+            created_at=template.created_at,
         )
 
     except HTTPException:
@@ -163,7 +164,7 @@ async def get_template(
         logger.error(f"Error getting template {slug}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get template: {str(e)}"
+            detail=f"Failed to get template: {str(e)}",
         )
 
 
@@ -171,15 +172,16 @@ async def get_template(
 # USER AGENT INSTANCES ENDPOINTS (CRUD)
 # ============================================================================
 
+
 @router.get(
     "/instances",
     response_model=UserAgentInstanceListResponse,
     summary="List user's agent instances",
-    description="Get list of all agent instances owned by current user"
+    description="Get list of all agent instances owned by current user",
 )
 async def list_user_instances(
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """List all user's agent instances."""
     try:
@@ -202,31 +204,33 @@ async def list_user_instances(
                 created_at=inst.created_at,
                 updated_at=inst.updated_at,
                 is_imported=inst.original_creator_id is not None,
-                original_creator_id=str(inst.original_creator_id.value) if inst.original_creator_id else None,
+                original_creator_id=str(inst.original_creator_id.value)
+                if inst.original_creator_id
+                else None,
                 is_read_only=(
-                    inst.original_creator_id is not None and
-                    str(inst.original_creator_id.value) != str(user_id.value)
+                    inst.original_creator_id is not None
+                    and str(inst.original_creator_id.value) != str(user_id.value)
                 ),
                 system_prompt=inst.configuration.system_prompt,
                 tools=list(inst.configuration.tools),
                 capabilities=inst.configuration.capabilities or {},
-                rules=list(inst.configuration.rules) if inst.configuration.rules else None,
-                output_format=inst.configuration.output_format
+                rules=list(inst.configuration.rules)
+                if inst.configuration.rules
+                else None,
+                output_format=inst.configuration.output_format,
             )
             for inst in instances
         ]
 
         return UserAgentInstanceListResponse(
-            success=True,
-            instances=instance_responses,
-            count=len(instance_responses)
+            success=True, instances=instance_responses, count=len(instance_responses)
         )
 
     except Exception as e:
         logger.error(f"Error listing user instances: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list instances: {str(e)}"
+            detail=f"Failed to list instances: {str(e)}",
         )
 
 
@@ -234,12 +238,12 @@ async def list_user_instances(
     "/instances/{instance_id}",
     response_model=UserAgentInstanceResponse,
     summary="Get specific agent instance",
-    description="Get detailed information about a specific agent instance"
+    description="Get detailed information about a specific agent instance",
 )
 async def get_instance(
     instance_id: str,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """Get specific agent instance by ID."""
     try:
@@ -253,7 +257,7 @@ async def get_instance(
         if not instance:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Instance '{instance_id}' not found or access denied"
+                detail=f"Instance '{instance_id}' not found or access denied",
             )
 
         return UserAgentInstanceResponse(
@@ -271,8 +275,10 @@ async def get_instance(
             system_prompt=instance.configuration.system_prompt,
             tools=list(instance.configuration.tools),
             capabilities=instance.configuration.capabilities or {},
-            rules=list(instance.configuration.rules) if instance.configuration.rules else None,
-            output_format=instance.configuration.output_format
+            rules=list(instance.configuration.rules)
+            if instance.configuration.rules
+            else None,
+            output_format=instance.configuration.output_format,
         )
 
     except HTTPException:
@@ -281,7 +287,7 @@ async def get_instance(
         logger.error(f"Error getting instance {instance_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get instance: {str(e)}"
+            detail=f"Failed to get instance: {str(e)}",
         )
 
 
@@ -290,24 +296,34 @@ async def get_instance(
     response_model=UserAgentInstanceResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create/customize agent instance",
-    description="Create a new customized agent instance from a template"
+    description="Create a new customized agent instance from a template",
 )
 async def create_instance(
     request: CreateInstanceRequest,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """Create new agent instance (auto-creates on first call)."""
     try:
         user_id = UserId(current_user.id)
-        logger.info(f"User {current_user.email} creating instance from: {request.template_slug}")
+        logger.info(
+            f"User {current_user.email} creating instance from: {request.template_slug}"
+        )
 
         # Get or create instance (facade handles this)
         instance = facade.get_or_create_instance(user_id, request.template_slug)
 
         # Apply customizations if provided
-        if any([request.agent_name, request.system_prompt, request.tools,
-                request.capabilities, request.rules, request.output_format]):
+        if any(
+            [
+                request.agent_name,
+                request.system_prompt,
+                request.tools,
+                request.capabilities,
+                request.rules,
+                request.output_format,
+            ]
+        ):
             # TODO: Implement customization method in facade
             logger.info("Customizations requested but not yet implemented")
 
@@ -316,6 +332,7 @@ async def create_instance(
             from ....task_management.application.services.websocket_notification_service import (
                 WebSocketNotificationService,
             )
+
             agent_data = {
                 "id": str(instance.id.value),
                 "user_id": str(instance.user_id.value),
@@ -332,7 +349,7 @@ async def create_instance(
                 agent_id=str(instance.id.value),
                 project_id="default",
                 user_id=str(current_user.id),
-                agent_data=agent_data
+                agent_data=agent_data,
             )
         except Exception as ws_error:
             logger.warning(f"Failed to broadcast WebSocket event: {ws_error}")
@@ -352,20 +369,19 @@ async def create_instance(
             system_prompt=instance.configuration.system_prompt,
             tools=list(instance.configuration.tools),
             capabilities=instance.configuration.capabilities or {},
-            rules=list(instance.configuration.rules) if instance.configuration.rules else None,
-            output_format=instance.configuration.output_format
+            rules=list(instance.configuration.rules)
+            if instance.configuration.rules
+            else None,
+            output_format=instance.configuration.output_format,
         )
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
         logger.error(f"Error creating instance: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create instance: {str(e)}"
+            detail=f"Failed to create instance: {str(e)}",
         )
 
 
@@ -374,11 +390,11 @@ async def create_instance(
     response_model=list[UserAgentInstanceResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Bulk create agent instances",
-    description="Create instances for multiple templates in a single request. Only creates instances that don't already exist."
+    description="Create instances for multiple templates in a single request. Only creates instances that don't already exist.",
 )
 async def bulk_create_instances(
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """
     Create instances for all available agent templates that the user doesn't already have.
@@ -394,12 +410,15 @@ async def bulk_create_instances(
         logger.info(f"User {current_user.email} bulk creating all agent instances")
 
         # Create instances for all templates (facade handles duplicate checking)
-        created_instances = facade.bulk_create_instances(user_id=user_id, template_slugs=None)
+        created_instances = facade.bulk_create_instances(
+            user_id=user_id, template_slugs=None
+        )
 
         # Broadcast WebSocket events for each created instance (real-time UI updates)
         from ....task_management.application.services.websocket_notification_service import (
             WebSocketNotificationService,
         )
+
         for instance in created_instances:
             try:
                 # Prepare agent data for WebSocket payload
@@ -413,9 +432,15 @@ async def bulk_create_instances(
                     "is_enabled": instance.is_enabled,
                     "visibility": instance.visibility,
                     "usage_count": instance.usage_count,
-                    "last_used_at": instance.last_used_at.isoformat() if instance.last_used_at else None,
-                    "created_at": instance.created_at.isoformat() if instance.created_at else None,
-                    "updated_at": instance.updated_at.isoformat() if instance.updated_at else None,
+                    "last_used_at": instance.last_used_at.isoformat()
+                    if instance.last_used_at
+                    else None,
+                    "created_at": instance.created_at.isoformat()
+                    if instance.created_at
+                    else None,
+                    "updated_at": instance.updated_at.isoformat()
+                    if instance.updated_at
+                    else None,
                 }
 
                 # Emit WebSocket event for this agent creation
@@ -424,11 +449,13 @@ async def bulk_create_instances(
                     agent_id=str(instance.id.value),
                     project_id="default",  # User agent instances are not project-scoped
                     user_id=str(current_user.id),
-                    agent_data=agent_data
+                    agent_data=agent_data,
                 )
             except Exception as ws_error:
                 # Don't fail the entire bulk creation if WebSocket fails
-                logger.warning(f"Failed to broadcast WebSocket event for agent {instance.agent_name}: {ws_error}")
+                logger.warning(
+                    f"Failed to broadcast WebSocket event for agent {instance.agent_name}: {ws_error}"
+                )
 
         # Convert to response format
         instance_responses = [
@@ -447,20 +474,24 @@ async def bulk_create_instances(
                 system_prompt=instance.configuration.system_prompt,
                 tools=list(instance.configuration.tools),
                 capabilities=instance.configuration.capabilities or {},
-                rules=list(instance.configuration.rules) if instance.configuration.rules else None,
-                output_format=instance.configuration.output_format
+                rules=list(instance.configuration.rules)
+                if instance.configuration.rules
+                else None,
+                output_format=instance.configuration.output_format,
             )
             for instance in created_instances
         ]
 
-        logger.info(f"Bulk created {len(instance_responses)} agent instances with WebSocket notifications")
+        logger.info(
+            f"Bulk created {len(instance_responses)} agent instances with WebSocket notifications"
+        )
         return instance_responses
 
     except Exception as e:
         logger.error(f"Error bulk creating instances: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to bulk create instances: {str(e)}"
+            detail=f"Failed to bulk create instances: {str(e)}",
         )
 
 
@@ -468,13 +499,13 @@ async def bulk_create_instances(
     "/instances/{instance_id}",
     response_model=UserAgentInstanceResponse,
     summary="Update agent instance",
-    description="Update configuration of an existing agent instance"
+    description="Update configuration of an existing agent instance",
 )
 async def update_instance(
     instance_id: str,
     request: UpdateInstanceRequest,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """Update agent instance configuration."""
     try:
@@ -484,10 +515,13 @@ async def update_instance(
         except ValueError:
             # Convert non-UUID ID to deterministic UUID v5
             import uuid
-            namespace_uuid = uuid.UUID('00000000-0000-0000-0000-000000000000')
+
+            namespace_uuid = uuid.UUID("00000000-0000-0000-0000-000000000000")
             user_uuid = str(uuid.uuid5(namespace_uuid, current_user.id))
             user_id = UserId(user_uuid)
-            logger.info(f"Converted non-UUID user ID '{current_user.id}' to UUID: {user_uuid}")
+            logger.info(
+                f"Converted non-UUID user ID '{current_user.id}' to UUID: {user_uuid}"
+            )
 
         logger.info(f"User {current_user.email} updating instance: {instance_id}")
 
@@ -502,7 +536,7 @@ async def update_instance(
             capabilities=request.capabilities,
             rules=request.rules,
             output_format=request.output_format,
-            visibility=request.visibility
+            visibility=request.visibility,
         )
 
         # Broadcast WebSocket event for real-time UI updates
@@ -510,6 +544,7 @@ async def update_instance(
             from ....task_management.application.services.websocket_notification_service import (
                 WebSocketNotificationService,
             )
+
             agent_data = {
                 "id": str(updated_instance.id.value),
                 "user_id": str(updated_instance.user_id.value),
@@ -526,7 +561,7 @@ async def update_instance(
                 agent_id=str(updated_instance.id.value),
                 project_id="default",
                 user_id=str(current_user.id),
-                agent_data=agent_data
+                agent_data=agent_data,
             )
         except Exception as ws_error:
             logger.warning(f"Failed to broadcast WebSocket event: {ws_error}")
@@ -547,8 +582,10 @@ async def update_instance(
             system_prompt=updated_instance.configuration.system_prompt,
             tools=list(updated_instance.configuration.tools),
             capabilities=updated_instance.configuration.capabilities or {},
-            rules=list(updated_instance.configuration.rules) if updated_instance.configuration.rules else [],
-            output_format=updated_instance.configuration.output_format
+            rules=list(updated_instance.configuration.rules)
+            if updated_instance.configuration.rules
+            else [],
+            output_format=updated_instance.configuration.output_format,
         )
 
     except ValueError as e:
@@ -557,23 +594,17 @@ async def update_instance(
 
         # Check if this is a read-only violation (imported agent)
         if "Cannot edit imported agent" in error_msg or "original creator" in error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=error_msg
-            )
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
 
         # Other validation errors are 400 Bad Request
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_msg
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error updating instance {instance_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update instance: {str(e)}"
+            detail=f"Failed to update instance: {str(e)}",
         )
 
 
@@ -581,12 +612,12 @@ async def update_instance(
     "/instances/{instance_id}",
     response_model=SuccessResponse,
     summary="Delete agent instance",
-    description="Delete a user's agent instance"
+    description="Delete a user's agent instance",
 )
 async def delete_instance(
     instance_id: str,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """Delete agent instance."""
     try:
@@ -597,7 +628,10 @@ async def delete_instance(
         agent_name = None
         try:
             user_instances = facade.get_user_instances(user_id=user_id)
-            matching_instance = next((inst for inst in user_instances if str(inst.id.value) == instance_id), None)
+            matching_instance = next(
+                (inst for inst in user_instances if str(inst.id.value) == instance_id),
+                None,
+            )
             if matching_instance:
                 agent_name = matching_instance.agent_name
                 logger.info(f"Found agent name for WebSocket: {agent_name}")
@@ -607,15 +641,12 @@ async def delete_instance(
             logger.warning(f"Could not retrieve instance name before delete: {e}")
 
         # Delete instance using facade
-        success = facade.delete_instance(
-            user_id=user_id,
-            instance_id=instance_id
-        )
+        success = facade.delete_instance(user_id=user_id, instance_id=instance_id)
 
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete instance"
+                detail="Failed to delete instance",
             )
 
         # Broadcast WebSocket event for real-time UI updates
@@ -623,6 +654,7 @@ async def delete_instance(
             from ....task_management.application.services.websocket_notification_service import (
                 WebSocketNotificationService,
             )
+
             agent_data = {
                 "id": instance_id,
                 "user_id": str(current_user.id),
@@ -634,29 +666,25 @@ async def delete_instance(
                 agent_id=instance_id,
                 project_id="default",
                 user_id=str(current_user.id),
-                agent_data=agent_data
+                agent_data=agent_data,
             )
         except Exception as ws_error:
             logger.warning(f"Failed to broadcast WebSocket event: {ws_error}")
 
         return SuccessResponse(
-            success=True,
-            message=f"Instance {instance_id} deleted successfully"
+            success=True, message=f"Instance {instance_id} deleted successfully"
         )
 
     except ValueError as e:
         logger.error(f"Validation error deleting instance {instance_id}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error deleting instance {instance_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete instance: {str(e)}"
+            detail=f"Failed to delete instance: {str(e)}",
         )
 
 
@@ -664,15 +692,16 @@ async def delete_instance(
 # USAGE ANALYTICS ENDPOINTS
 # ============================================================================
 
+
 @router.get(
     "/analytics/usage",
     response_model=UsageAnalyticsResponse,
     summary="Get user's usage statistics",
-    description="Get detailed usage statistics for current user's agents"
+    description="Get detailed usage statistics for current user's agents",
 )
 async def get_user_usage_stats(
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """Get user's agent usage statistics."""
     try:
@@ -688,30 +717,31 @@ async def get_user_usage_stats(
 
         # Find most used agent
         most_used = max(instances, key=lambda i: i.usage_count) if instances else None
-        most_used_name = most_used.agent_name if most_used and most_used.usage_count > 0 else None
+        most_used_name = (
+            most_used.agent_name if most_used and most_used.usage_count > 0 else None
+        )
 
         # Find last activity
         instances_with_usage = [i for i in instances if i.last_used_at]
-        last_activity = max((i.last_used_at for i in instances_with_usage), default=None)
+        last_activity = max(
+            (i.last_used_at for i in instances_with_usage), default=None
+        )
 
         user_stats = UserUsageStats(
             total_calls=total_calls,
             unique_agents=unique_agents,
             most_used_agent=most_used_name,
             last_activity=last_activity,
-            usage_by_agent=usage_by_agent
+            usage_by_agent=usage_by_agent,
         )
 
-        return UsageAnalyticsResponse(
-            success=True,
-            user_stats=user_stats
-        )
+        return UsageAnalyticsResponse(success=True, user_stats=user_stats)
 
     except Exception as e:
         logger.error(f"Error getting usage stats: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get usage statistics: {str(e)}"
+            detail=f"Failed to get usage statistics: {str(e)}",
         )
 
 
@@ -719,12 +749,12 @@ async def get_user_usage_stats(
     "/analytics/popular",
     response_model=UsageAnalyticsResponse,
     summary="Get popular agents globally",
-    description="Get statistics about most popular agents across all users"
+    description="Get statistics about most popular agents across all users",
 )
 async def get_popular_agents(
     current_user: User = Depends(get_current_user),
     facade: AgentManagementFacade = Depends(get_facade),
-    limit: int = 10
+    limit: int = 10,
 ):
     """Get globally popular agents."""
     try:
@@ -735,14 +765,14 @@ async def get_popular_agents(
         return UsageAnalyticsResponse(
             success=True,
             popular_agents=[],
-            message="Global analytics not yet implemented"
+            message="Global analytics not yet implemented",
         )
 
     except Exception as e:
         logger.error(f"Error getting popular agents: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get popular agents: {str(e)}"
+            detail=f"Failed to get popular agents: {str(e)}",
         )
 
 
@@ -750,16 +780,17 @@ async def get_popular_agents(
 # AGENT CONFIGURATION ENDPOINTS
 # ============================================================================
 
+
 @router.get(
     "/configuration/{slug}",
     response_model=AgentConfigurationResponse,
     summary="Get agent configuration",
-    description="Get current configuration for an agent (template or user instance)"
+    description="Get current configuration for an agent (template or user instance)",
 )
 async def get_configuration(
     slug: str,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """Get agent configuration for editing."""
     try:
@@ -773,8 +804,10 @@ async def get_configuration(
             "system_prompt": instance.configuration.system_prompt,
             "tools": list(instance.configuration.tools),
             "capabilities": instance.configuration.capabilities or {},
-            "rules": list(instance.configuration.rules) if instance.configuration.rules else None,
-            "output_format": instance.configuration.output_format
+            "rules": list(instance.configuration.rules)
+            if instance.configuration.rules
+            else None,
+            "output_format": instance.configuration.output_format,
         }
 
         return AgentConfigurationResponse(
@@ -782,19 +815,16 @@ async def get_configuration(
             instance_id=str(instance.id.value),
             template_id=str(instance.template_id.value),
             is_customized=instance.is_customized,
-            configuration=configuration
+            configuration=configuration,
         )
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
         logger.error(f"Error getting configuration for {slug}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get configuration: {str(e)}"
+            detail=f"Failed to get configuration: {str(e)}",
         )
 
 
@@ -802,13 +832,13 @@ async def get_configuration(
     "/configuration/{slug}",
     response_model=AgentConfigurationResponse,
     summary="Update agent configuration",
-    description="Save customized configuration for an agent"
+    description="Save customized configuration for an agent",
 )
 async def update_configuration(
     slug: str,
     request: UpdateConfigurationRequest,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """Update agent configuration."""
     try:
@@ -823,7 +853,7 @@ async def update_configuration(
             tools=request.tools,
             capabilities=request.capabilities,
             rules=request.rules,
-            output_format=request.output_format
+            output_format=request.output_format,
         )
 
         # Get template for response
@@ -831,7 +861,7 @@ async def update_configuration(
         if not template:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Agent template not found: {slug}"
+                detail=f"Agent template not found: {slug}",
             )
 
         return AgentConfigurationResponse(
@@ -843,25 +873,24 @@ async def update_configuration(
                 "system_prompt": updated_instance.configuration.system_prompt,
                 "tools": list(updated_instance.configuration.tools),
                 "capabilities": updated_instance.configuration.capabilities or {},
-                "rules": list(updated_instance.configuration.rules) if updated_instance.configuration.rules else [],
-                "output_format": updated_instance.configuration.output_format
+                "rules": list(updated_instance.configuration.rules)
+                if updated_instance.configuration.rules
+                else [],
+                "output_format": updated_instance.configuration.output_format,
             },
-            message=f"Configuration updated for {slug}"
+            message=f"Configuration updated for {slug}",
         )
 
     except ValueError as e:
         logger.error(f"Validation error updating configuration for {slug}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error updating configuration for {slug}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update configuration: {str(e)}"
+            detail=f"Failed to update configuration: {str(e)}",
         )
 
 
@@ -869,12 +898,12 @@ async def update_configuration(
     "/configuration/{slug}/reset",
     response_model=AgentConfigurationResponse,
     summary="Reset agent to default",
-    description="Reset agent configuration back to template defaults"
+    description="Reset agent configuration back to template defaults",
 )
 async def reset_configuration(
     slug: str,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ):
     """Reset agent configuration to template defaults."""
     try:
@@ -882,17 +911,14 @@ async def reset_configuration(
         logger.info(f"User {current_user.email} resetting configuration for: {slug}")
 
         # Reset configuration using facade
-        reset_instance = facade.reset_configuration(
-            user_id=user_id,
-            agent_slug=slug
-        )
+        reset_instance = facade.reset_configuration(user_id=user_id, agent_slug=slug)
 
         # Get template for response
         template = facade.get_template_by_slug(slug)
         if not template:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Agent template not found: {slug}"
+                detail=f"Agent template not found: {slug}",
             )
 
         return AgentConfigurationResponse(
@@ -904,25 +930,24 @@ async def reset_configuration(
                 "system_prompt": reset_instance.configuration.system_prompt,
                 "tools": list(reset_instance.configuration.tools),
                 "capabilities": reset_instance.configuration.capabilities or {},
-                "rules": list(reset_instance.configuration.rules) if reset_instance.configuration.rules else [],
-                "output_format": reset_instance.configuration.output_format
+                "rules": list(reset_instance.configuration.rules)
+                if reset_instance.configuration.rules
+                else [],
+                "output_format": reset_instance.configuration.output_format,
             },
-            message=f"Configuration reset to default for {slug}"
+            message=f"Configuration reset to default for {slug}",
         )
 
     except ValueError as e:
         logger.error(f"Validation error resetting configuration for {slug}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error resetting configuration for {slug}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to reset configuration: {str(e)}"
+            detail=f"Failed to reset configuration: {str(e)}",
         )
 
 
@@ -930,11 +955,12 @@ async def reset_configuration(
 # Agent Sharing Endpoints (Phase 3.6-3.10)
 # ============================================================================
 
+
 @router.post("/instances/{instance_id}/share", response_model=ShareAgentResponse)
 async def share_agent(
     instance_id: str,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ) -> ShareAgentResponse:
     """
     Share an agent instance publicly (Phase 3.6).
@@ -959,10 +985,7 @@ async def share_agent(
         logger.info(f"User {current_user.email} sharing instance: {instance_id}")
 
         # Call facade to share the agent (returns share_token string)
-        share_token = facade.share_agent(
-            user_id=user_id,
-            instance_id=instance_id
-        )
+        share_token = facade.share_agent(user_id=user_id, instance_id=instance_id)
 
         # Construct shareable URL
         shareable_url = f"/api/v2/agent-management/marketplace/{share_token}"
@@ -972,22 +995,19 @@ async def share_agent(
             share_token=share_token,
             shareable_url=shareable_url,
             visibility="public",
-            message="Agent shared successfully"
+            message="Agent shared successfully",
         )
 
     except ValueError as e:
         logger.error(f"Validation error sharing instance {instance_id}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error sharing instance {instance_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to share agent: {str(e)}"
+            detail=f"Failed to share agent: {str(e)}",
         )
 
 
@@ -995,7 +1015,7 @@ async def share_agent(
 async def unshare_agent(
     instance_id: str,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ) -> SuccessResponse:
     """
     Revoke share token and make agent private (Phase 3.7).
@@ -1020,10 +1040,7 @@ async def unshare_agent(
         logger.info(f"User {current_user.email} unsharing instance: {instance_id}")
 
         # Call facade to unshare the agent (returns True on success)
-        facade.unshare_agent(
-            user_id=user_id,
-            instance_id=instance_id
-        )
+        facade.unshare_agent(user_id=user_id, instance_id=instance_id)
 
         return SuccessResponse(
             message="Agent unshared successfully. It is now private."
@@ -1031,17 +1048,14 @@ async def unshare_agent(
 
     except ValueError as e:
         logger.error(f"Validation error unsharing instance {instance_id}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error unsharing instance {instance_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to unshare agent: {str(e)}"
+            detail=f"Failed to unshare agent: {str(e)}",
         )
 
 
@@ -1049,7 +1063,7 @@ async def unshare_agent(
 async def import_agent(
     request: ImportAgentRequest,
     current_user: User = Depends(get_current_user),
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ) -> UserAgentInstanceResponse:
     """
     Import a shared agent from marketplace (Phase 3.8).
@@ -1080,10 +1094,13 @@ async def import_agent(
             # If user ID is not a valid UUID (e.g., 'dev-user-001' in development),
             # create a deterministic UUID from it using UUID v5 (name-based)
             import uuid
-            namespace_uuid = uuid.UUID('00000000-0000-0000-0000-000000000000')
+
+            namespace_uuid = uuid.UUID("00000000-0000-0000-0000-000000000000")
             user_uuid = str(uuid.uuid5(namespace_uuid, current_user.id))
             user_id = UserId(user_uuid)
-            logger.info(f"Converted non-UUID user ID '{current_user.id}' to UUID: {user_uuid}")
+            logger.info(
+                f"Converted non-UUID user ID '{current_user.id}' to UUID: {user_uuid}"
+            )
 
         logger.info(f"User {current_user.email} importing agent with share token")
 
@@ -1091,15 +1108,14 @@ async def import_agent(
         imported_instance = facade.import_agent(
             share_token=request.share_token,
             importer_user_id=user_id,
-            creator_email=current_user.email
+            creator_email=current_user.email,
         )
 
         # Convert to response model
         # Imported agents are read-only for the importer
-        is_read_only = (
-            imported_instance.original_creator_id is not None and
-            str(imported_instance.original_creator_id.value) != str(user_id.value)
-        )
+        is_read_only = imported_instance.original_creator_id is not None and str(
+            imported_instance.original_creator_id.value
+        ) != str(user_id.value)
 
         return UserAgentInstanceResponse(
             id=str(imported_instance.id.value),
@@ -1114,28 +1130,31 @@ async def import_agent(
             created_at=imported_instance.created_at,
             updated_at=imported_instance.updated_at,
             is_imported=True,  # This is an imported agent
-            original_creator_id=str(imported_instance.original_creator_id.value) if imported_instance.original_creator_id else None,
+            original_creator_id=str(imported_instance.original_creator_id.value)
+            if imported_instance.original_creator_id
+            else None,
             is_read_only=is_read_only,  # Read-only for non-owners
             system_prompt=imported_instance.configuration.system_prompt,
             tools=list(imported_instance.configuration.tools),
             capabilities=imported_instance.configuration.capabilities,
-            rules=list(imported_instance.configuration.rules) if imported_instance.configuration.rules else None,
-            output_format=imported_instance.configuration.output_format
+            rules=list(imported_instance.configuration.rules)
+            if imported_instance.configuration.rules
+            else None,
+            output_format=imported_instance.configuration.output_format,
         )
 
     except ValueError as e:
         logger.error(f"Validation error importing agent: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error importing agent with token {request.share_token[:10]}...: {e}")
+        logger.error(
+            f"Error importing agent with token {request.share_token[:10]}...: {e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to import agent: {str(e)}"
+            detail=f"Failed to import agent: {str(e)}",
         )
 
 
@@ -1146,7 +1165,7 @@ async def browse_marketplace(
     sort: str | None = "recent",
     page: int = 1,
     page_size: int = 50,
-    facade: AgentManagementFacade = Depends(get_facade)
+    facade: AgentManagementFacade = Depends(get_facade),
 ) -> MarketplaceListResponse:
     """
     Browse publicly shared agents in marketplace (Phase 3.9).
@@ -1176,12 +1195,12 @@ async def browse_marketplace(
         if page < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Page number must be >= 1"
+                detail="Page number must be >= 1",
             )
         if page_size < 1 or page_size > 100:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Page size must be between 1 and 100"
+                detail="Page size must be between 1 and 100",
             )
 
         # Calculate offset
@@ -1197,7 +1216,8 @@ async def browse_marketplace(
         agent_responses = []
         for instance in instances:
             template = facade.get_template_by_id(
-                str(instance.template_id.value) if hasattr(instance.template_id, 'value')
+                str(instance.template_id.value)
+                if hasattr(instance.template_id, "value")
                 else str(instance.template_id)
             )
 
@@ -1213,9 +1233,11 @@ async def browse_marketplace(
                     template_slug=template.slug if template else "unknown",
                     creator_display_name=instance.get_creator_display_name(),
                     share_token=instance.share_token or "",
-                    customizations_summary=", ".join(customizations) if customizations else "Default template",
+                    customizations_summary=", ".join(customizations)
+                    if customizations
+                    else "Default template",
                     usage_count=instance.usage_count,
-                    created_at=instance.created_at
+                    created_at=instance.created_at,
                 )
             )
 
@@ -1224,7 +1246,7 @@ async def browse_marketplace(
             total=len(agent_responses),
             page=page,
             page_size=page_size,
-            message=f"Found {len(agent_responses)} public agents"
+            message=f"Found {len(agent_responses)} public agents",
         )
 
     except HTTPException:
@@ -1233,14 +1255,13 @@ async def browse_marketplace(
         logger.error(f"Error browsing marketplace: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to browse marketplace: {str(e)}"
+            detail=f"Failed to browse marketplace: {str(e)}",
         )
 
 
 @router.get("/marketplace/{share_token}", response_model=SharedAgentPreviewResponse)
 async def preview_shared_agent(
-    share_token: str,
-    facade: AgentManagementFacade = Depends(get_facade)
+    share_token: str, facade: AgentManagementFacade = Depends(get_facade)
 ) -> SharedAgentPreviewResponse:
     """
     Preview a shared agent before importing (Phase 3.10).
@@ -1269,12 +1290,13 @@ async def preview_shared_agent(
         if not instance:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Shared agent not found or is no longer public"
+                detail="Shared agent not found or is no longer public",
             )
 
         # Get template information
         template = facade.get_template_by_id(
-            str(instance.template_id.value) if hasattr(instance.template_id, 'value')
+            str(instance.template_id.value)
+            if hasattr(instance.template_id, "value")
             else str(instance.template_id)
         )
 
@@ -1283,15 +1305,21 @@ async def preview_shared_agent(
             "system_prompt": instance.configuration.system_prompt,
             "tools": list(instance.configuration.tools),
             "capabilities": instance.configuration.capabilities or {},
-            "rules": list(instance.configuration.rules) if instance.configuration.rules else [],
-            "output_format": instance.configuration.output_format
+            "rules": list(instance.configuration.rules)
+            if instance.configuration.rules
+            else [],
+            "output_format": instance.configuration.output_format,
         }
 
         # Build customizations summary
         customizations = []
         if instance.is_customized:
             customizations.append("Custom configuration")
-        customizations_summary = ", ".join(customizations) if customizations else "Default template configuration"
+        customizations_summary = (
+            ", ".join(customizations)
+            if customizations
+            else "Default template configuration"
+        )
 
         return SharedAgentPreviewResponse(
             agent_name=instance.agent_name,
@@ -1300,20 +1328,17 @@ async def preview_shared_agent(
             configuration_preview=configuration_preview,
             customizations_summary=customizations_summary,
             can_import=True,
-            message="Agent preview loaded successfully"
+            message="Agent preview loaded successfully",
         )
 
     except ValueError as e:
         logger.error(f"Validation error previewing shared agent: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error previewing shared agent {share_token[:10]}...: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to preview shared agent: {str(e)}"
+            detail=f"Failed to preview shared agent: {str(e)}",
         )

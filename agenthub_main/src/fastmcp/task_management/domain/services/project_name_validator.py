@@ -32,7 +32,9 @@ class ProjectNameValidator:
         """
         self._project_repository = project_repository
 
-    async def validate_unique_name(self, name: str, user_id: str, exclude_project_id: str | None = None) -> None:
+    async def validate_unique_name(
+        self, name: str, user_id: str, exclude_project_id: str | None = None
+    ) -> None:
         """
         Validate that a project name is unique within the user's scope.
 
@@ -101,14 +103,18 @@ class ProjectNameValidator:
             raise ValidationException("Project name cannot exceed 255 characters")
 
         # Character validation - allow most characters but prevent problematic ones
-        forbidden_chars = ['<', '>', '"', '|', '\\', '/', ':', '*', '?']
+        forbidden_chars = ["<", ">", '"', "|", "\\", "/", ":", "*", "?"]
         for char in forbidden_chars:
             if char in name:
-                raise ValidationException(f"Project name cannot contain the character '{char}'")
+                raise ValidationException(
+                    f"Project name cannot contain the character '{char}'"
+                )
 
         logger.debug(f"Project name format '{name}' validated successfully")
 
-    async def validate_project_name(self, name: str, user_id: str, exclude_project_id: str | None = None) -> None:
+    async def validate_project_name(
+        self, name: str, user_id: str, exclude_project_id: str | None = None
+    ) -> None:
         """
         Comprehensive project name validation including format and uniqueness.
 
@@ -126,4 +132,6 @@ class ProjectNameValidator:
         # Then validate uniqueness
         await self.validate_unique_name(name, user_id, exclude_project_id)
 
-        logger.info(f"Project name '{name}' passed comprehensive validation for user {user_id}")
+        logger.info(
+            f"Project name '{name}' passed comprehensive validation for user {user_id}"
+        )

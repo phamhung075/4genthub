@@ -33,6 +33,7 @@ WEBSOCKET_AVAILABLE = False
 try:
     # Test import to check availability
     from fastmcp.server.routes import websocket_routes as _test_ws  # noqa: F401
+
     WEBSOCKET_AVAILABLE = True
 except ImportError:
     logger.info("WebSocket routes not available - real-time updates disabled")
@@ -42,9 +43,12 @@ try:
     from fastmcp.auth.middleware.request_context_middleware import (
         RequestContextMiddleware,
     )
+
     KEYCLOAK_MIDDLEWARE_AVAILABLE = True
 except ImportError:
-    logger.warning("Keycloak RequestContextMiddleware not available - user context will not be propagated")
+    logger.warning(
+        "Keycloak RequestContextMiddleware not available - user context will not be propagated"
+    )
     KEYCLOAK_MIDDLEWARE_AVAILABLE = False
 
 if TYPE_CHECKING:
@@ -75,7 +79,7 @@ def set_http_request(request: Request) -> Generator[Request, None, None]:
 @runtime_checkable
 class TokenVerifier(Protocol):
     """Protocol for token verification matching MCP's TokenVerifier interface."""
-    
+
     async def verify_token(self, token: str) -> AccessToken | None:
         """Verify a token and return an AccessToken if valid."""
         ...
@@ -84,51 +88,51 @@ class TokenVerifier(Protocol):
 class TokenVerifierAdapter:
     """
     Adapter that wraps an OAuthProvider to implement the TokenVerifier protocol.
-    
+
     This bridges the gap between FastMCP's OAuthProvider (which has load_access_token)
     and MCP's TokenVerifier (which expects verify_token).
     """
-    
+
     def __init__(self, provider: OAuthProvider):
         """
         Initialize the adapter with an OAuth provider.
-        
+
         Args:
             provider: The OAuth provider to wrap
         """
         self.provider = provider
-    
+
     async def verify_token(self, token: str) -> AccessToken | None:
         """
         Verify a token by delegating to the provider's verify_token or load_access_token method.
-        
+
         Args:
             token: The token to verify
-            
+
         Returns:
             AccessToken if valid, None otherwise
         """
         # Handle JWT auth backends (MCP TokenVerifier protocol)
-        if hasattr(self.provider, 'verify_token'):
+        if hasattr(self.provider, "verify_token"):
             return await self.provider.verify_token(token)
-        
+
         # Handle OAuth providers (FastMCP's OAuthProvider)
-        elif hasattr(self.provider, 'load_access_token'):
+        elif hasattr(self.provider, "load_access_token"):
             return await self.provider.load_access_token(token)
-        
+
         # Handle JWT middleware providers
-        elif hasattr(self.provider, 'extract_user_from_token'):
+        elif hasattr(self.provider, "extract_user_from_token"):
             user_id = self.provider.extract_user_from_token(token)
             if user_id:
                 # Create a proper AccessToken object for JWT authentication
-                #from mcp.server.auth.provider import AccessToken
+                # from mcp.server.auth.provider import AccessToken
                 return AccessToken(
                     token=token,
                     client_id=user_id,  # Use user_id as client_id for JWT auth
-                    scopes=['execute:mcp']
+                    scopes=["execute:mcp"],
                 )
             return None
-        
+
         # Unknown provider type
         else:
             logger.error(f"Unknown auth provider type: {type(self.provider)}")
@@ -169,7 +173,9 @@ class HTTPSRedirectMiddleware:
             if x_forwarded_proto:
                 # Update the scheme based on the proxy header
                 scope["scheme"] = x_forwarded_proto
-                logger.debug(f"Detected scheme from X-Forwarded-Proto: {x_forwarded_proto}")
+                logger.debug(
+                    f"Detected scheme from X-Forwarded-Proto: {x_forwarded_proto}"
+                )
 
             # Also check for X-Forwarded-Host if needed
             x_forwarded_host = headers.get(b"x-forwarded-host", b"").decode()
@@ -203,9 +209,11 @@ def setup_auth_middleware_and_routes(
 
     # Note: RequestContextMiddleware is now added in create_base_app to avoid duplicates
     if not KEYCLOAK_MIDDLEWARE_AVAILABLE:
-        logger.warning("Keycloak RequestContextMiddleware not available - MCP tools will not have user context")
+        logger.warning(
+            "Keycloak RequestContextMiddleware not available - MCP tools will not have user context"
+        )
 
-    required_scopes = getattr(auth, 'required_scopes', None) or []
+    required_scopes = getattr(auth, "required_scopes", None) or []
 
     # Using Keycloak JWT authentication - no OAuth routes needed
     logger.info("Using Keycloak JWT authentication - no OAuth routes needed")
@@ -301,7 +309,7 @@ def create_http_server_factory(
     include_websocket: bool = True,
 ) -> tuple[list[BaseRoute], list[Middleware], list[str]]:
     """Factory function to create common server components for both SSE and Streamable HTTP apps.
-    
+
     Args:
         server: The FastMCP server instance
         auth: Optional OAuth provider for authentication
@@ -309,19 +317,19 @@ def create_http_server_factory(
         routes: Optional additional routes to include
         middleware: Optional additional middleware to include
         cors_origins: List of allowed CORS origins
-        
+
     Returns:
         Tuple of (server_routes, server_middleware, required_scopes)
     """
     if cors_origins is None:
         # Use wildcard for MCP endpoints to allow Claude Code access from anywhere
         cors_origins = ["*"]
-    
+
     # Initialize base components
     server_routes: list[BaseRoute] = []
     server_middleware: list[Middleware] = []
     required_scopes: list[str] = []
-    
+
     # Add custom routes if provided
     if routes:
         server_routes.extend(routes)
@@ -331,21 +339,25 @@ def create_http_server_factory(
         try:
             # Add routes directly to server_routes
             # These will be mounted properly when creating the Starlette app
-            logger.info("📡 WebSocket support requested, will add routes during app creation")
+            logger.info(
+                "📡 WebSocket support requested, will add routes during app creation"
+            )
         except Exception as e:
             logger.warning(f"Could not prepare WebSocket routes: {e}")
 
     # Add custom middleware if provided
     if middleware:
         server_middleware.extend(middleware)
-    
+
     # Set up authentication if provided
     if auth:
-        auth_middleware, auth_routes, auth_scopes = setup_auth_middleware_and_routes(auth)
+        auth_middleware, auth_routes, auth_scopes = setup_auth_middleware_and_routes(
+            auth
+        )
         server_middleware.extend(auth_middleware)
         server_routes.extend(auth_routes)
         required_scopes.extend(auth_scopes)
-    
+
     return server_routes, server_middleware, required_scopes
 
 
@@ -367,6 +379,7 @@ def _register_websocket_lifecycle(v2_app) -> None:
             stop_notification_cleanup_task,
             stop_retry_queue_processor,
         )
+
         v2_app.include_router(websocket_router)
         logger.info("✅ WebSocket routes registered at /ws/realtime")
 
@@ -386,7 +399,9 @@ def _register_websocket_lifecycle(v2_app) -> None:
         @v2_app.on_event("shutdown")
         async def shutdown_websocket_retry_queue():
             await stop_retry_queue_processor()
-            logger.info("✅ WebSocket retry queue processor stopped during app shutdown")
+            logger.info(
+                "✅ WebSocket retry queue processor stopped during app shutdown"
+            )
 
         # Stop the notification cleanup task on shutdown
         @v2_app.on_event("shutdown")
@@ -439,19 +454,22 @@ def create_sse_app(
 
     # Add server's additional HTTP routes
     server_routes.extend(server._additional_http_routes)
-    
+
     # Legacy auth integration routes removed - authentication handled by unified auth system
-    
+
     # Task summary routes now registered as FastAPI router in V2 section below
-    
+
     # Add token management routes
     try:
         from .routes.token_routes import token_routes
+
         server_routes.extend(token_routes)
-        logger.info(f"Token management routes registered at /api/v2/tokens ({len(token_routes)} endpoints)")
+        logger.info(
+            f"Token management routes registered at /api/v2/tokens ({len(token_routes)} endpoints)"
+        )
     except ImportError as e:
         logger.warning(f"Could not import token management routes: {e}")
-    
+
     # Add user-scoped V2 routes using the same pattern as Supabase auth
     try:
         from fastapi import FastAPI
@@ -475,13 +493,14 @@ def create_sse_app(
         v2_app.include_router(subtask_router)
         v2_app.include_router(connection_router)
         v2_app.include_router(agent_management_router)
-        
+
         # Unified authentication routes removed - using Keycloak/Supabase directly
         # Authentication is handled through middleware and fastapi_auth.py
-        
+
         # Add MCP token management routes
         try:
             from .routes.mcp_token_routes import router as mcp_token_router
+
             v2_app.include_router(mcp_token_router)
             logger.info("MCP token management routes registered at /api/v2/mcp-tokens")
         except ImportError as mcp_token_e:
@@ -490,6 +509,7 @@ def create_sse_app(
         # Add main token management routes
         try:
             from .routes.token_router import router as token_router
+
             v2_app.include_router(token_router)
             logger.info("Token management routes registered at /api/v2/tokens")
         except ImportError as token_e:
@@ -501,6 +521,7 @@ def create_sse_app(
         # Add broadcast routes for cross-process communication
         try:
             from .routes.broadcast_routes import router as broadcast_router
+
             v2_app.include_router(broadcast_router)
             logger.info("✅ Broadcast routes registered at /api/v2/broadcast/notify")
         except ImportError as br_e:
@@ -508,11 +529,13 @@ def create_sse_app(
 
         # Mount the FastAPI app as a sub-application
         server_routes.append(Mount("/", app=v2_app))
-        logger.info("User-scoped V2 routes registered with task summaries at /api/v2/projects, /api/v2/tasks, and /api/tasks")
-            
+        logger.info(
+            "User-scoped V2 routes registered with task summaries at /api/v2/projects, /api/v2/tasks, and /api/tasks"
+        )
+
     except ImportError as e:
         logger.warning(f"Could not import user-scoped V2 routes: {e}")
-    
+
     # OAuth2 auth endpoints removed - using JWT authentication only
     # Auth is handled by middleware stack
 
@@ -580,7 +603,7 @@ def create_sse_app(
     # Store the FastMCP server instance on the Starlette app state
     app.state.fastmcp_server = server
     app.state.path = sse_path
-    
+
     # Agent metadata routes are now part of the FastAPI v2 routes at /api/v2/agents
     # Legacy agent_metadata registration removed
 
@@ -591,6 +614,7 @@ class MCPHeaderValidationMiddleware:
     """
     Middleware to enforce MCP protocol header requirements for Streamable HTTP endpoints.
     """
+
     def __init__(self, app, cors_origins: list[str] | None = None):
         self.app = app
         self.cors_origins = cors_origins or ["*"]
@@ -606,6 +630,7 @@ class MCPHeaderValidationMiddleware:
 
         async def send_error(status_code, detail):
             from starlette.responses import JSONResponse
+
             response = JSONResponse({"error": detail}, status_code=status_code)
             # Add CORS headers to error responses
             origin = headers.get("origin", "")
@@ -625,8 +650,13 @@ class MCPHeaderValidationMiddleware:
                 if headers.get("content-type", "") != "application/json":
                     await send_error(415, "Content-Type must be application/json")
                     return
-                if "application/json" not in headers.get("accept", "") or "text/event-stream" not in headers.get("accept", ""):
-                    await send_error(406, "Accept header must include both application/json and text/event-stream")
+                if "application/json" not in headers.get(
+                    "accept", ""
+                ) or "text/event-stream" not in headers.get("accept", ""):
+                    await send_error(
+                        406,
+                        "Accept header must include both application/json and text/event-stream",
+                    )
                     return
 
                 # /mcp/initialize only needs Content-Type and Accept
@@ -637,11 +667,13 @@ class MCPHeaderValidationMiddleware:
                 # For other /mcp POST requests, also pass through after validation
                 await self.app(scope, receive, send)
                 return
-                
+
             # For GET (SSE), require Accept
             elif method == "GET":
                 if "text/event-stream" not in headers.get("accept", ""):
-                    await send_error(406, "Accept header must include text/event-stream for SSE")
+                    await send_error(
+                        406, "Accept header must include text/event-stream for SSE"
+                    )
                     return
         await self.app(scope, receive, send)
 
@@ -661,9 +693,9 @@ def create_streamable_http_app(
     """Return an instance of the streamable HTTP server app."""
     server_routes: list[BaseRoute] = []
     server_middleware: list[Middleware] = []
-    
+
     # Normalize the MCP path to remove trailing slash
-    streamable_http_path = streamable_http_path.rstrip('/')
+    streamable_http_path = streamable_http_path.rstrip("/")
 
     if auth:
         auth_middleware, auth_routes, required_scopes = (
@@ -698,7 +730,7 @@ def create_streamable_http_app(
             # we need to return an empty Response to satisfy Starlette's expectations
             await handle_streamable_http(request.scope, request.receive, request._send)  # type: ignore[reportPrivateUsage]
             return Response(content=b"", status_code=200)
-        
+
         server_routes.append(
             Route(
                 streamable_http_path,
@@ -715,33 +747,41 @@ def create_streamable_http_app(
             # we need to return an empty Response to satisfy Starlette's expectations
             await handle_streamable_http(request.scope, request.receive, request._send)  # type: ignore[reportPrivateUsage]
             return Response(content=b"", status_code=200)
-        
+
         server_routes.append(
-            Route(streamable_http_path, endpoint=streamable_http_endpoint, methods=["POST"])
+            Route(
+                streamable_http_path,
+                endpoint=streamable_http_endpoint,
+                methods=["POST"],
+            )
         )
 
     # Add custom routes with lowest precedence
     if routes:
         server_routes.extend(routes)
     server_routes.extend(server._additional_http_routes)
-    
-    
+
     # Add task summary routes for lazy loading optimization
     # Task summary routes now registered as FastAPI router in V2 section above
-    
+
     # Branch routes are now registered as FastAPI router in V2 section
     # Legacy Starlette branch routes removed - using FastAPI pattern instead
-    
+
     # Add token management routes for streamable HTTP
     try:
         from .routes.token_routes import token_routes
+
         server_routes.extend(token_routes)
-        logger.info(f"Token management routes registered for streamable HTTP at /api/v2/tokens ({len(token_routes)} endpoints)")
+        logger.info(
+            f"Token management routes registered for streamable HTTP at /api/v2/tokens ({len(token_routes)} endpoints)"
+        )
     except ImportError as e:
-        logger.warning(f"Could not import token management routes for streamable HTTP: {e}")
-    
+        logger.warning(
+            f"Could not import token management routes for streamable HTTP: {e}"
+        )
+
     # MCP registration routes are now handled directly in FastAPI app below
-    
+
     # Add user-scoped V2 routes for streamable HTTP
     try:
         from fastapi import FastAPI
@@ -765,28 +805,31 @@ def create_streamable_http_app(
         v2_app.include_router(subtask_router)
         v2_app.include_router(connection_router)
         v2_app.include_router(agent_management_router)
-        
+
         # Token management routes are now handled by /api/v2/tokens router
-        
+
         # Add authentication endpoints for frontend (after token routes to avoid conflicts)
         try:
             from ..auth.interface.auth_endpoints import router as auth_router
+
             v2_app.include_router(auth_router)
             logger.info("Authentication endpoints registered at /api/auth")
         except ImportError as auth_e:
             logger.warning(f"Could not import auth endpoints: {auth_e}")
-        
+
         # Add user-scoped context routes
         try:
             from .routes.context_routes import router as context_router
+
             v2_app.include_router(context_router)
             logger.info("User-scoped context routes registered at /api/v2/contexts")
         except ImportError as context_e:
             logger.warning(f"Could not import user-scoped context routes: {context_e}")
-        
+
         # Add MCP token management routes
         try:
             from .routes.mcp_token_routes import router as mcp_token_router
+
             v2_app.include_router(mcp_token_router)
             logger.info("MCP token management routes registered at /api/v2/mcp-tokens")
         except ImportError as mcp_token_e:
@@ -795,6 +838,7 @@ def create_streamable_http_app(
         # Add main token management routes
         try:
             from .routes.token_router import router as token_router
+
             v2_app.include_router(token_router)
             logger.info("Token management routes registered at /api/v2/tokens")
         except ImportError as token_e:
@@ -824,10 +868,10 @@ def create_streamable_http_app(
                         body = await request.json()
                     except Exception:
                         pass  # Some clients send empty body
-                
+
                 # Generate session ID for this client
                 session_id = str(uuid.uuid4())
-                
+
                 # Create registration record
                 registration = {
                     "session_id": session_id,
@@ -837,14 +881,16 @@ def create_streamable_http_app(
                     "registered_at": time.time(),
                     "last_activity": time.time(),
                     "client_info": body.get("client_info", {}),
-                    "capabilities": body.get("capabilities", {})
+                    "capabilities": body.get("capabilities", {}),
                 }
-                
+
                 # Store registration
                 active_registrations[session_id] = registration
-                
-                logger.info(f"MCP client registered: {session_id} from {request.client} with User-Agent: {request.headers.get('user-agent', 'Unknown')}")
-                
+
+                logger.info(
+                    f"MCP client registered: {session_id} from {request.client} with User-Agent: {request.headers.get('user-agent', 'Unknown')}"
+                )
+
                 # Return successful registration response
                 return {
                     "success": True,
@@ -852,68 +898,79 @@ def create_streamable_http_app(
                     "server": {
                         "name": "agenthub-server",
                         "version": "2.1.0",
-                        "protocol_version": "2025-06-18"
+                        "protocol_version": "2025-06-18",
                     },
                     "endpoints": {
                         "mcp": f"{request.url.scheme}://{request.url.netloc}/mcp/",
                         "initialize": f"{request.url.scheme}://{request.url.netloc}/mcp/initialize",
                         "tools": f"{request.url.scheme}://{request.url.netloc}/mcp/tools/list",
-                        "health": f"{request.url.scheme}://{request.url.netloc}/health"
+                        "health": f"{request.url.scheme}://{request.url.netloc}/health",
                     },
                     "transport": "streamable-http",
                     "authentication": {
                         "required": True,
                         "type": "Bearer",
                         "header": "Authorization",
-                        "format": "Bearer YOUR_JWT_TOKEN_HERE"
+                        "format": "Bearer YOUR_JWT_TOKEN_HERE",
                     },
                     "capabilities": {
                         "tools": True,
                         "resources": True,
                         "prompts": True,
                         "logging": True,
-                        "progress": True
+                        "progress": True,
                     },
                     "instructions": {
                         "next_step": "Initialize connection at /mcp/initialize endpoint",
                         "authentication": "Include JWT token in Authorization header",
-                        "protocol": "Use MCP protocol for all subsequent requests"
-                    }
+                        "protocol": "Use MCP protocol for all subsequent requests",
+                    },
                 }
-                
+
             except Exception as e:
                 logger.error(f"Registration error: {e}")
-                return {"error": "Registration failed", "message": str(e), "instructions": "Please check your client configuration"}
-        
+                return {
+                    "error": "Registration failed",
+                    "message": str(e),
+                    "instructions": "Please check your client configuration",
+                }
+
         @v2_app.post("/unregister")
         async def unregister_mcp_client(request: Request):
             """Handle client unregistration/logout."""
             try:
                 body = await request.json()
                 session_id = body.get("session_id")
-                
+
                 if session_id and session_id in active_registrations:
                     del active_registrations[session_id]
                     logger.info(f"MCP client unregistered: {session_id}")
-                    return {"success": True, "message": "Client unregistered successfully"}
+                    return {
+                        "success": True,
+                        "message": "Client unregistered successfully",
+                    }
                 else:
-                    return {"error": "Invalid session", "message": "Session ID not found"}
+                    return {
+                        "error": "Invalid session",
+                        "message": "Session ID not found",
+                    }
             except Exception as e:
                 logger.error(f"Unregistration error: {e}")
                 return {"error": "Unregistration failed", "message": str(e)}
-        
+
         @v2_app.get("/registrations")
         async def list_mcp_registrations():
             """List active client registrations (for debugging)."""
             # Clean up old registrations (older than 1 hour)
             current_time = time.time()
             expired_sessions = [
-                sid for sid, reg in active_registrations.items()
+                sid
+                for sid, reg in active_registrations.items()
                 if current_time - reg["last_activity"] > 3600
             ]
             for sid in expired_sessions:
                 del active_registrations[sid]
-            
+
             return {
                 "active_registrations": len(active_registrations),
                 "sessions": list(active_registrations.keys()),
@@ -923,38 +980,47 @@ def create_streamable_http_app(
                         "client_ip": reg["client_ip"],
                         "user_agent": reg["user_agent"],
                         "registered_at": reg["registered_at"],
-                        "last_activity": reg["last_activity"]
+                        "last_activity": reg["last_activity"],
                     }
                     for sid, reg in active_registrations.items()
-                ]
+                ],
             }
-        
+
         @v2_app.options("/register")
         @v2_app.options("/unregister")
         async def handle_mcp_options():
             """Handle CORS preflight requests."""
             return {}
-        
-        logger.info("MCP registration endpoints added directly to FastAPI app (/register, /unregister, /registrations)")
-        
+
+        logger.info(
+            "MCP registration endpoints added directly to FastAPI app (/register, /unregister, /registrations)"
+        )
+
         # Mount the FastAPI app as a sub-application
         server_routes.append(Mount("/", app=v2_app))
-        logger.info("User-scoped V2 routes registered for streamable HTTP with task summaries at /api/api/v2/projects, /api/api/v2/tasks, and /api/api/tasks")
-            
+        logger.info(
+            "User-scoped V2 routes registered for streamable HTTP with task summaries at /api/api/v2/projects, /api/api/v2/tasks, and /api/api/tasks"
+        )
+
     except ImportError as e:
-        logger.warning(f"Could not import user-scoped V2 routes for streamable HTTP: {e}")
-    
+        logger.warning(
+            f"Could not import user-scoped V2 routes for streamable HTTP: {e}"
+        )
+
     # Add unified authentication routes as fallback (outside V2 section to avoid import issues)
     try:
         from fastapi import FastAPI
         # Unified auth endpoints removed - using Keycloak/Supabase directly
-        
+
         # Auth routes removed - authentication handled through middleware
         logger.info("✅ Authentication handled through Keycloak/Supabase middleware")
-        
+
     except Exception as auth_fallback_e:
-        logger.error(f"❌ Could not register auth routes even in fallback mode: {auth_fallback_e}")
+        logger.error(
+            f"❌ Could not register auth routes even in fallback mode: {auth_fallback_e}"
+        )
         import traceback
+
         logger.error(f"Traceback: {traceback.format_exc()}")
 
     if middleware:
@@ -970,7 +1036,9 @@ def create_streamable_http_app(
     # Always add MCPHeaderValidationMiddleware as one of the outermost middleware
     if cors_origins is None:
         cors_origins = ["*"]  # Allow all origins for MCP
-    server_middleware.append(Middleware(MCPHeaderValidationMiddleware, cors_origins=cors_origins))
+    server_middleware.append(
+        Middleware(MCPHeaderValidationMiddleware, cors_origins=cors_origins)
+    )
 
     app = create_base_app(
         routes=server_routes,
@@ -982,5 +1050,5 @@ def create_streamable_http_app(
     # Store the FastMCP server instance and path on the Starlette app state
     app.state.fastmcp_server = server
     app.state.path = streamable_http_path
-    
+
     return app

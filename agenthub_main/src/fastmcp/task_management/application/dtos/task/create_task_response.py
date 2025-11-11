@@ -10,16 +10,21 @@ from .task_response import TaskResponse
 @dataclass
 class CreateTaskResponse:
     """Response DTO for create task operations"""
+
     success: bool
     task: TaskResponse
     message: str = ""
-    
+
     @classmethod
-    def success_response(cls, task: TaskResponse, message: str = "Task created successfully") -> CreateTaskResponse:
+    def success_response(
+        cls, task: TaskResponse, message: str = "Task created successfully"
+    ) -> CreateTaskResponse:
         """Create a successful response"""
         return cls(success=True, task=task, message=message)
-    
+
     @classmethod
-    def error_response(cls, message: str, task: TaskResponse | None = None) -> CreateTaskResponse:
+    def error_response(
+        cls, message: str, task: TaskResponse | None = None
+    ) -> CreateTaskResponse:
         """Create an error response"""
-        return cls(success=False, task=task, message=message) 
+        return cls(success=False, task=task, message=message)

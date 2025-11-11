@@ -11,7 +11,7 @@ class SubtaskResponse:
     progress: dict[str, Any]
     agent_inheritance_applied: bool = field(default=False)
     inherited_assignees: list[str] = field(default_factory=list)
-    
+
     def to_dict(self, include_parent_id: bool = False) -> dict[str, Any]:
         """Convert response to dictionary
 
@@ -22,7 +22,7 @@ class SubtaskResponse:
         result = {
             "task_id": self.task_id,
             "subtask": self.subtask,
-            "progress": self.progress
+            "progress": self.progress,
         }
 
         # Include inheritance information if applied
@@ -30,4 +30,4 @@ class SubtaskResponse:
             result["agent_inheritance_applied"] = self.agent_inheritance_applied
             result["inherited_assignees"] = self.inherited_assignees
 
-        return result 
+        return result

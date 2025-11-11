@@ -117,12 +117,16 @@ class DatabaseUtils:
 
                 # Get database version and info
                 db_url = str(self.engine.url)
-                if 'postgresql' in db_url.lower():
-                    version_result = session.execute(text("SELECT version()")).fetchone()
+                if "postgresql" in db_url.lower():
+                    version_result = session.execute(
+                        text("SELECT version()")
+                    ).fetchone()
                     db_type = "postgresql"
                     db_version = version_result[0] if version_result else "unknown"
                 else:
-                    version_result = session.execute(text("SELECT sqlite_version()")).fetchone()
+                    version_result = session.execute(
+                        text("SELECT sqlite_version()")
+                    ).fetchone()
                     db_type = "sqlite"
                     db_version = version_result[0] if version_result else "unknown"
 
@@ -142,7 +146,7 @@ class DatabaseUtils:
                     "table_count": table_count,
                     "response_time_ms": round(response_time_ms, 2),
                     "timestamp_events_active": True,  # We always use clean timestamp events
-                    "checked_at": end_time.isoformat()
+                    "checked_at": end_time.isoformat(),
                 }
 
         except Exception as e:
@@ -150,7 +154,7 @@ class DatabaseUtils:
             return {
                 "status": "unhealthy",
                 "error": str(e),
-                "checked_at": datetime.now(UTC).isoformat()
+                "checked_at": datetime.now(UTC).isoformat(),
             }
 
     def validate_schema_integrity(self) -> dict[str, Any]:
@@ -171,18 +175,18 @@ class DatabaseUtils:
                     "warnings": [],
                     "timestamp_compliance": True,
                     "tables_checked": 0,
-                    "timestamp_tables": 0
+                    "timestamp_tables": 0,
                 }
 
                 # Check each table for timestamp compliance
                 for table_name in inspector.get_table_names():
                     validation_results["tables_checked"] += 1
                     columns = inspector.get_columns(table_name)
-                    column_names = [col['name'] for col in columns]
+                    column_names = [col["name"] for col in columns]
 
                     # Check if table has timestamp fields
-                    has_created_at = 'created_at' in column_names
-                    has_updated_at = 'updated_at' in column_names
+                    has_created_at = "created_at" in column_names
+                    has_updated_at = "updated_at" in column_names
 
                     if has_created_at or has_updated_at:
                         validation_results["timestamp_tables"] += 1
@@ -199,24 +203,30 @@ class DatabaseUtils:
 
                         # Check for proper timestamp column types
                         for col in columns:
-                            if col['name'] in ('created_at', 'updated_at'):
-                                if not str(col['type']).lower().startswith('datetime'):
+                            if col["name"] in ("created_at", "updated_at"):
+                                if not str(col["type"]).lower().startswith("datetime"):
                                     validation_results["errors"].append(
                                         f"Table {table_name}.{col['name']} should be DATETIME type, got {col['type']}"
                                     )
 
                 # Check for required core tables
                 required_tables = {
-                    'projects', 'project_git_branchs', 'tasks', 'subtasks',
-                    'global_contexts', 'project_contexts', 'branch_contexts', 'task_contexts'
+                    "projects",
+                    "project_git_branchs",
+                    "tasks",
+                    "subtasks",
+                    "global_contexts",
+                    "project_contexts",
+                    "branch_contexts",
+                    "task_contexts",
                 }
                 existing_tables = set(inspector.get_table_names())
                 missing_tables = required_tables - existing_tables
 
                 if missing_tables:
-                    validation_results["errors"].extend([
-                        f"Missing required table: {table}" for table in missing_tables
-                    ])
+                    validation_results["errors"].extend(
+                        [f"Missing required table: {table}" for table in missing_tables]
+                    )
 
                 # Set overall status
                 if validation_results["errors"]:
@@ -249,8 +259,8 @@ class DatabaseUtils:
         try:
             if isinstance(timestamp, str):
                 # Parse ISO format string
-                if timestamp.endswith('Z'):
-                    timestamp = timestamp[:-1] + '+00:00'
+                if timestamp.endswith("Z"):
+                    timestamp = timestamp[:-1] + "+00:00"
                 dt = datetime.fromisoformat(timestamp)
             elif isinstance(timestamp, datetime):
                 dt = timestamp
@@ -274,9 +284,7 @@ class DatabaseUtils:
             raise ValidationException(f"Invalid timestamp format: {str(e)}")
 
     def validate_timestamp_range(
-        self,
-        start_time: datetime | None,
-        end_time: datetime | None
+        self, start_time: datetime | None, end_time: datetime | None
     ) -> tuple[datetime, datetime]:
         """Validate and normalize timestamp range.
 
@@ -302,7 +310,9 @@ class DatabaseUtils:
         # Check for reasonable range (not more than 10 years)
         max_range_days = 365 * 10
         if (norm_end - norm_start).days > max_range_days:
-            raise ValidationException(f"Timestamp range too large (max {max_range_days} days)")
+            raise ValidationException(
+                f"Timestamp range too large (max {max_range_days} days)"
+            )
 
         return norm_start, norm_end
 
@@ -320,13 +330,13 @@ class DatabaseUtils:
                 "status": "completed",
                 "operations": [],
                 "performance_gain": {},
-                "recommendations": []
+                "recommendations": [],
             }
 
             db_url = str(self.engine.url).lower()
 
             with self.get_session() as session:
-                if 'postgresql' in db_url:
+                if "postgresql" in db_url:
                     # PostgreSQL optimizations
 
                     # Analyze tables for better query planning
@@ -364,10 +374,14 @@ class DatabaseUtils:
                     optimization_results["operations"].append("ran_vacuum")
 
                     # Get database size info
-                    size_query = text("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")
+                    size_query = text(
+                        "SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()"
+                    )
                     size_result = session.execute(size_query).fetchone()
                     if size_result:
-                        optimization_results["performance_gain"]["database_size_bytes"] = size_result[0]
+                        optimization_results["performance_gain"][
+                            "database_size_bytes"
+                        ] = size_result[0]
 
                 # Generic recommendations
                 inspector = inspect(self.engine)
@@ -378,11 +392,13 @@ class DatabaseUtils:
                         "Consider table partitioning for large tables"
                     )
 
-                optimization_results["recommendations"].extend([
-                    "Regularly run ANALYZE for optimal query planning",
-                    "Monitor timestamp query performance on large tables",
-                    "Consider composite indexes for timestamp + status queries"
-                ])
+                optimization_results["recommendations"].extend(
+                    [
+                        "Regularly run ANALYZE for optimal query planning",
+                        "Monitor timestamp query performance on large tables",
+                        "Consider composite indexes for timestamp + status queries",
+                    ]
+                )
 
             return optimization_results
 
@@ -419,9 +435,15 @@ class DatabaseUtils:
                 "timestamp_events_active": True,
                 "automatic_timestamp_management": True,
                 "supported_entities": [
-                    "Project", "GitBranch", "Task", "Subtask", "Agent", "Label", "Template"
+                    "Project",
+                    "GitBranch",
+                    "Task",
+                    "Subtask",
+                    "Agent",
+                    "Label",
+                    "Template",
                 ],
-                "setup_at": datetime.now(UTC).isoformat()
+                "setup_at": datetime.now(UTC).isoformat(),
             }
 
             logger.info("Clean timestamp infrastructure setup completed successfully")
@@ -446,26 +468,32 @@ class DatabaseUtils:
                 db_url = str(self.engine.url).lower()
 
                 metrics = {
-                    "database_type": "postgresql" if 'postgresql' in db_url else "sqlite",
+                    "database_type": "postgresql"
+                    if "postgresql" in db_url
+                    else "sqlite",
                     "table_count": len(inspector.get_table_names()),
                     "timestamp_tables": 0,
                     "total_records": 0,
                     "performance": {},
-                    "collected_at": datetime.now(UTC).isoformat()
+                    "collected_at": datetime.now(UTC).isoformat(),
                 }
 
                 # Collect table-specific metrics
                 for table_name in inspector.get_table_names():
                     # Check if table has timestamp columns
                     columns = inspector.get_columns(table_name)
-                    has_timestamps = any(col['name'] in ('created_at', 'updated_at') for col in columns)
+                    has_timestamps = any(
+                        col["name"] in ("created_at", "updated_at") for col in columns
+                    )
 
                     if has_timestamps:
                         metrics["timestamp_tables"] += 1
 
                     # Get record count
                     try:
-                        count_result = session.execute(text(f"SELECT COUNT(*) FROM {table_name}")).fetchone()
+                        count_result = session.execute(
+                            text(f"SELECT COUNT(*) FROM {table_name}")
+                        ).fetchone()
                         record_count = count_result[0] if count_result else 0
                         metrics["total_records"] += record_count
 
@@ -473,7 +501,9 @@ class DatabaseUtils:
                         metrics[f"table_{table_name}_count"] = record_count
 
                     except Exception as e:
-                        logger.warning(f"Could not get count for table {table_name}: {e}")
+                        logger.warning(
+                            f"Could not get count for table {table_name}: {e}"
+                        )
 
                 # Performance metrics
                 start_time = datetime.now(UTC)
@@ -481,9 +511,11 @@ class DatabaseUtils:
                 end_time = datetime.now(UTC)
 
                 metrics["performance"] = {
-                    "query_response_time_ms": round((end_time - start_time).total_seconds() * 1000, 2),
+                    "query_response_time_ms": round(
+                        (end_time - start_time).total_seconds() * 1000, 2
+                    ),
                     "timestamp_events_enabled": True,
-                    "clean_architecture_compliant": True
+                    "clean_architecture_compliant": True,
                 }
 
                 return metrics
@@ -504,22 +536,30 @@ class DatabaseUtils:
         try:
             with self.get_session() as session:
                 db_url = str(self.engine.url).lower()
-                is_postgresql = 'postgresql' in db_url
+                is_postgresql = "postgresql" in db_url
 
                 index_results = {
                     "status": "success",
                     "indexes_created": [],
                     "indexes_skipped": [],
-                    "database_type": "postgresql" if is_postgresql else "sqlite"
+                    "database_type": "postgresql" if is_postgresql else "sqlite",
                 }
 
                 # Define indexes for timestamp optimization
                 timestamp_indexes = [
                     ("idx_tasks_timestamps", "tasks", ["created_at", "updated_at"]),
-                    ("idx_projects_timestamps", "projects", ["created_at", "updated_at"]),
-                    ("idx_subtasks_timestamps", "subtasks", ["created_at", "updated_at"]),
+                    (
+                        "idx_projects_timestamps",
+                        "projects",
+                        ["created_at", "updated_at"],
+                    ),
+                    (
+                        "idx_subtasks_timestamps",
+                        "subtasks",
+                        ["created_at", "updated_at"],
+                    ),
                     ("idx_tasks_status_created", "tasks", ["status", "created_at"]),
-                    ("idx_tasks_priority_updated", "tasks", ["priority", "updated_at"])
+                    ("idx_tasks_priority_updated", "tasks", ["priority", "updated_at"]),
                 ]
 
                 inspector = inspect(self.engine)
@@ -529,26 +569,27 @@ class DatabaseUtils:
                 for table_name in inspector.get_table_names():
                     try:
                         table_indexes = inspector.get_indexes(table_name)
-                        existing_indexes.update([idx['name'] for idx in table_indexes])
+                        existing_indexes.update([idx["name"] for idx in table_indexes])
                     except Exception:
                         pass  # Some tables might not have indexes
 
                 # Create new indexes
                 for idx_name, table_name, columns in timestamp_indexes:
                     if idx_name in existing_indexes:
-                        index_results["indexes_skipped"].append({
-                            "name": idx_name,
-                            "reason": "already_exists"
-                        })
+                        index_results["indexes_skipped"].append(
+                            {"name": idx_name, "reason": "already_exists"}
+                        )
                         continue
 
                     try:
                         # Check if table exists
                         if table_name not in inspector.get_table_names():
-                            index_results["indexes_skipped"].append({
-                                "name": idx_name,
-                                "reason": f"table_{table_name}_not_found"
-                            })
+                            index_results["indexes_skipped"].append(
+                                {
+                                    "name": idx_name,
+                                    "reason": f"table_{table_name}_not_found",
+                                }
+                            )
                             continue
 
                         # Create index
@@ -556,28 +597,29 @@ class DatabaseUtils:
                         if is_postgresql:
                             # PostgreSQL supports DESC in indexes
                             if "created_at" in columns or "updated_at" in columns:
-                                columns_str = ", ".join([
-                                    f"{col} DESC" if col in ("created_at", "updated_at") else col
-                                    for col in columns
-                                ])
+                                columns_str = ", ".join(
+                                    [
+                                        f"{col} DESC"
+                                        if col in ("created_at", "updated_at")
+                                        else col
+                                        for col in columns
+                                    ]
+                                )
 
                         create_index_sql = f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table_name} ({columns_str})"
                         session.execute(text(create_index_sql))
 
-                        index_results["indexes_created"].append({
-                            "name": idx_name,
-                            "table": table_name,
-                            "columns": columns
-                        })
+                        index_results["indexes_created"].append(
+                            {"name": idx_name, "table": table_name, "columns": columns}
+                        )
 
                         logger.info(f"Created index {idx_name} on {table_name}")
 
                     except Exception as e:
                         logger.warning(f"Could not create index {idx_name}: {e}")
-                        index_results["indexes_skipped"].append({
-                            "name": idx_name,
-                            "reason": f"error: {str(e)}"
-                        })
+                        index_results["indexes_skipped"].append(
+                            {"name": idx_name, "reason": f"error: {str(e)}"}
+                        )
 
                 session.commit()
                 return index_results

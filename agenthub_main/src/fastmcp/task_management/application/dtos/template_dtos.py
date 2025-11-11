@@ -9,6 +9,7 @@ from typing import Any
 @dataclass
 class TemplateCreateDTO:
     """DTO for creating a new template"""
+
     name: str
     description: str
     content: str
@@ -19,7 +20,7 @@ class TemplateCreateDTO:
     file_patterns: list[str] = None
     variables: list[str] = None
     metadata: dict[str, Any] = None
-    
+
     def __post_init__(self):
         if self.compatible_agents is None:
             self.compatible_agents = ["*"]
@@ -34,6 +35,7 @@ class TemplateCreateDTO:
 @dataclass
 class TemplateUpdateDTO:
     """DTO for updating an existing template"""
+
     template_id: str
     name: str | None = None
     description: str | None = None
@@ -51,6 +53,7 @@ class TemplateUpdateDTO:
 @dataclass
 class TemplateResponseDTO:
     """DTO for template response"""
+
     id: str
     name: str
     description: str
@@ -72,6 +75,7 @@ class TemplateResponseDTO:
 @dataclass
 class TemplateListDTO:
     """DTO for template list response"""
+
     templates: list[TemplateResponseDTO]
     total_count: int
     page: int
@@ -83,6 +87,7 @@ class TemplateListDTO:
 @dataclass
 class TemplateRenderRequestDTO:
     """DTO for template render request"""
+
     template_id: str
     variables: dict[str, Any]
     task_context: dict[str, Any] | None = None
@@ -94,6 +99,7 @@ class TemplateRenderRequestDTO:
 @dataclass
 class TemplateRenderResponseDTO:
     """DTO for template render response"""
+
     content: str
     template_id: str
     variables_used: dict[str, Any]
@@ -106,6 +112,7 @@ class TemplateRenderResponseDTO:
 @dataclass
 class TemplateSuggestionDTO:
     """DTO for template suggestion"""
+
     template_id: str
     name: str
     description: str
@@ -122,6 +129,7 @@ class TemplateSuggestionDTO:
 @dataclass
 class TemplateSuggestionRequestDTO:
     """DTO for template suggestion request"""
+
     task_context: dict[str, Any]
     agent_type: str | None = None
     file_patterns: list[str] | None = None
@@ -131,15 +139,18 @@ class TemplateSuggestionRequestDTO:
 @dataclass
 class TemplateUsageDTO:
     """DTO for template usage tracking following clean relationship chain"""
+
     template_id: str
-    task_id: str | None = None  # Contains all necessary context via task -> git_branch -> project -> user
+    task_id: str | None = (
+        None  # Contains all necessary context via task -> git_branch -> project -> user
+    )
     agent_name: str | None = None
     variables_used: dict[str, Any] = None
     output_path: str | None = None
     generation_time_ms: int = 0
     cache_hit: bool = False
     used_at: str | None = None
-    
+
     def __post_init__(self):
         if self.variables_used is None:
             self.variables_used = {}
@@ -150,6 +161,7 @@ class TemplateUsageDTO:
 @dataclass
 class TemplateAnalyticsDTO:
     """DTO for template analytics following clean relationship chain"""
+
     template_id: str | None = None
     usage_count: int = 0
     success_rate: float = 0.0
@@ -158,9 +170,11 @@ class TemplateAnalyticsDTO:
     cache_hit_rate: float = 0.0
     most_used_variables: list[dict[str, Any]] = None
     usage_by_agent: dict[str, int] = None
-    usage_by_task: dict[str, int] = None  # Task usage instead of project (follows clean relationship chain)
+    usage_by_task: dict[str, int] = (
+        None  # Task usage instead of project (follows clean relationship chain)
+    )
     usage_over_time: list[dict[str, Any]] = None
-    
+
     def __post_init__(self):
         if self.most_used_variables is None:
             self.most_used_variables = []
@@ -175,6 +189,7 @@ class TemplateAnalyticsDTO:
 @dataclass
 class TemplateSearchDTO:
     """DTO for template search"""
+
     query: str
     template_type: str | None = None
     category: str | None = None
@@ -187,11 +202,12 @@ class TemplateSearchDTO:
 @dataclass
 class TemplateValidationDTO:
     """DTO for template validation response"""
+
     is_valid: bool
     errors: list[str]
     warnings: list[str]
     template_id: str | None = None
-    
+
     def __post_init__(self):
         if self.errors is None:
             self.errors = []
@@ -202,8 +218,9 @@ class TemplateValidationDTO:
 @dataclass
 class TemplateCacheDTO:
     """DTO for template cache operations"""
+
     template_id: str | None = None
     cache_key: str | None = None
     operation: str = "get"  # get, set, delete, clear
     ttl: int | None = None
-    data: dict[str, Any] | None = None 
+    data: dict[str, Any] | None = None

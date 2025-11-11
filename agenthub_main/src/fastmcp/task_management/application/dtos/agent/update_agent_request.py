@@ -10,13 +10,13 @@ from dataclasses import dataclass
 @dataclass
 class UpdateAgentRequest:
     """Request DTO for updating agent information."""
-    
+
     project_id: str
     agent_id: str
     name: str | None = None
     call_agent: str | None = None
     user_id: str | None = None
-    
+
     def validate(self) -> None:
         """Validate the request data."""
         if not self.project_id:

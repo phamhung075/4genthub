@@ -17,7 +17,9 @@ _notification_cache = {}
 _cache_ttl = 5  # 5 seconds TTL for deduplication
 
 
-def _is_duplicate_notification(event_type: str, entity_type: str, entity_id: str, user_id: str) -> bool:
+def _is_duplicate_notification(
+    event_type: str, entity_type: str, entity_id: str, user_id: str
+) -> bool:
     """
     Check if this notification is a duplicate based on recent cache.
     Returns True if this is a duplicate that should be skipped.
@@ -29,7 +31,11 @@ def _is_duplicate_notification(event_type: str, entity_type: str, entity_id: str
     current_time = time.time()
 
     # Clean expired entries from cache
-    expired_keys = [k for k, timestamp in _notification_cache.items() if current_time - timestamp > _cache_ttl]
+    expired_keys = [
+        k
+        for k, timestamp in _notification_cache.items()
+        if current_time - timestamp > _cache_ttl
+    ]
     for key in expired_keys:
         del _notification_cache[key]
 
@@ -37,7 +43,9 @@ def _is_duplicate_notification(event_type: str, entity_type: str, entity_id: str
     if notification_key in _notification_cache:
         time_since_last = current_time - _notification_cache[notification_key]
         if time_since_last < _cache_ttl:
-            logger.warning(f"🚫 DUPLICATE NOTIFICATION BLOCKED: {notification_key} (last sent {time_since_last:.2f}s ago)")
+            logger.warning(
+                f"🚫 DUPLICATE NOTIFICATION BLOCKED: {notification_key} (last sent {time_since_last:.2f}s ago)"
+            )
             return True
 
     # Record this notification
@@ -70,9 +78,11 @@ class WebSocketNotificationService:
 
             with get_session() as session:
                 # Query with proper relationships
-                query = session.query(Task, ProjectGitBranch).join(
-                    ProjectGitBranch, Task.git_branch_id == ProjectGitBranch.id
-                ).filter(Task.id == task_id)
+                query = (
+                    session.query(Task, ProjectGitBranch)
+                    .join(ProjectGitBranch, Task.git_branch_id == ProjectGitBranch.id)
+                    .filter(Task.id == task_id)
+                )
 
                 # Add user filtering if provided
                 if user_id:
@@ -86,7 +96,7 @@ class WebSocketNotificationService:
                         "task_title": task.title,
                         "parent_branch_id": branch.id,
                         "parent_branch_title": branch.name,
-                        "task_user_id": task.user_id  # Include task owner's user_id for proper authorization
+                        "task_user_id": task.user_id,  # Include task owner's user_id for proper authorization
                     }
                 else:
                     logger.warning(f"Task {task_id} not found for context lookup")
@@ -94,7 +104,7 @@ class WebSocketNotificationService:
                         "task_title": f"Task {task_id[:8]}",
                         "parent_branch_id": None,
                         "parent_branch_title": "Unknown Branch",
-                        "task_user_id": None  # No user_id available if task not found
+                        "task_user_id": None,  # No user_id available if task not found
                     }
 
         except Exception as e:
@@ -103,11 +113,13 @@ class WebSocketNotificationService:
                 "task_title": f"Task {task_id[:8]}",
                 "parent_branch_id": None,
                 "parent_branch_title": "Unknown Branch",
-                "task_user_id": None  # No user_id available on error
+                "task_user_id": None,  # No user_id available on error
             }
 
     @staticmethod
-    def _get_subtask_context(subtask_id: str, task_id: str, user_id: str = None) -> dict[str, Any]:
+    def _get_subtask_context(
+        subtask_id: str, task_id: str, user_id: str = None
+    ) -> dict[str, Any]:
         """
         Fetch subtask context including subtask title and parent task information.
 
@@ -125,11 +137,10 @@ class WebSocketNotificationService:
 
             with get_session() as session:
                 # Query with proper relationships
-                query = session.query(Subtask, Task).join(
-                    Task, Subtask.task_id == Task.id
-                ).filter(
-                    Subtask.id == subtask_id,
-                    Subtask.task_id == task_id
+                query = (
+                    session.query(Subtask, Task)
+                    .join(Task, Subtask.task_id == Task.id)
+                    .filter(Subtask.id == subtask_id, Subtask.task_id == task_id)
                 )
 
                 # Add user filtering if provided
@@ -143,14 +154,14 @@ class WebSocketNotificationService:
                     return {
                         "subtask_title": subtask.title,
                         "parent_task_id": task.id,
-                        "parent_task_title": task.title
+                        "parent_task_title": task.title,
                     }
                 else:
                     logger.warning(f"Subtask {subtask_id} not found for context lookup")
                     return {
                         "subtask_title": f"Subtask {subtask_id[:8]}",
                         "parent_task_id": task_id,
-                        "parent_task_title": f"Task {task_id[:8]}"
+                        "parent_task_title": f"Task {task_id[:8]}",
                     }
 
         except Exception as e:
@@ -158,7 +169,7 @@ class WebSocketNotificationService:
             return {
                 "subtask_title": f"Subtask {subtask_id[:8]}",
                 "parent_task_id": task_id,
-                "parent_task_title": f"Task {task_id[:8]}"
+                "parent_task_title": f"Task {task_id[:8]}",
             }
 
     @staticmethod
@@ -178,7 +189,9 @@ class WebSocketNotificationService:
             from ...infrastructure.database.models import ProjectGitBranch
 
             with get_session() as session:
-                query = session.query(ProjectGitBranch).filter(ProjectGitBranch.id == branch_id)
+                query = session.query(ProjectGitBranch).filter(
+                    ProjectGitBranch.id == branch_id
+                )
 
                 # Add user filtering if provided
                 if user_id:
@@ -187,20 +200,14 @@ class WebSocketNotificationService:
                 branch = query.first()
 
                 if branch:
-                    return {
-                        "branch_title": branch.name
-                    }
+                    return {"branch_title": branch.name}
                 else:
                     logger.warning(f"Branch {branch_id} not found for context lookup")
-                    return {
-                        "branch_title": f"Branch {branch_id[:8]}"
-                    }
+                    return {"branch_title": f"Branch {branch_id[:8]}"}
 
         except Exception as e:
             logger.error(f"Failed to get branch context for {branch_id}: {e}")
-            return {
-                "branch_title": f"Branch {branch_id[:8]}"
-            }
+            return {"branch_title": f"Branch {branch_id[:8]}"}
 
     @staticmethod
     def _get_branch_cascade_data(branch_id: str, user_id: str = None) -> dict[str, Any]:
@@ -274,7 +281,11 @@ class WebSocketNotificationService:
                     if last_activity:
                         # If it's already a string (from SQLite), use it directly
                         # If it's a datetime object (from PostgreSQL), convert to ISO format
-                        last_activity_str = last_activity if isinstance(last_activity, str) else last_activity.isoformat()
+                        last_activity_str = (
+                            last_activity
+                            if isinstance(last_activity, str)
+                            else last_activity.isoformat()
+                        )
                     else:
                         last_activity_str = None
 
@@ -288,10 +299,12 @@ class WebSocketNotificationService:
                         "completed_tasks": result[6] or 0,
                         "todo_tasks": result[7] or 0,
                         "progress_percentage": float(result[8] or 0),
-                        "last_activity": last_activity_str
+                        "last_activity": last_activity_str,
                     }
                 else:
-                    logger.warning(f"Branch {branch_id} not found for cascade data lookup")
+                    logger.warning(
+                        f"Branch {branch_id} not found for cascade data lookup"
+                    )
                     return None
 
         except Exception as e:
@@ -305,7 +318,7 @@ class WebSocketNotificationService:
         user_id: str,
         task_data: dict[str, Any] | None = None,
         git_branch_id: str | None = None,
-        project_id: str | None = None
+        project_id: str | None = None,
     ):
         """
         Broadcast task-related events to WebSocket clients.
@@ -318,10 +331,12 @@ class WebSocketNotificationService:
             git_branch_id: Optional branch ID for filtering
             project_id: Optional project ID for filtering
         """
-        logger.info(f"📡 🚨 DELETE DEBUG: broadcast_task_event called - event: {event_type}, task_id: {task_id}, user: {user_id}")
+        logger.info(
+            f"📡 🚨 DELETE DEBUG: broadcast_task_event called - event: {event_type}, task_id: {task_id}, user: {user_id}"
+        )
 
         # Special detailed logging for DELETE operations
-        if event_type.lower() in ['delete', 'deleted']:
+        if event_type.lower() in ["delete", "deleted"]:
             logger.warning("🗑️ BACKEND DELETE EVENT BROADCAST:")
             logger.warning(f"   Event Type: {event_type}")
             logger.warning(f"   Task ID: {task_id}")
@@ -333,23 +348,30 @@ class WebSocketNotificationService:
 
         # DUPLICATE DETECTION: Check if this is a duplicate notification
         if _is_duplicate_notification(event_type, "task", task_id, user_id):
-            if event_type.lower() in ['delete', 'deleted']:
-                logger.warning(f"🚫 🗑️ DELETE DUPLICATE BLOCKED: {event_type} for task {task_id}")
+            if event_type.lower() in ["delete", "deleted"]:
+                logger.warning(
+                    f"🚫 🗑️ DELETE DUPLICATE BLOCKED: {event_type} for task {task_id}"
+                )
             else:
-                logger.info(f"🚫 Skipping duplicate task notification: {event_type} for task {task_id}")
+                logger.info(
+                    f"🚫 Skipping duplicate task notification: {event_type} for task {task_id}"
+                )
             return  # Skip this notification
 
         # Special logging for DELETE continuing after duplicate check
-        if event_type.lower() in ['delete', 'deleted']:
+        if event_type.lower() in ["delete", "deleted"]:
             logger.warning("✅ DELETE NOT DUPLICATE - proceeding with broadcast")
 
         try:
             # Try direct import first (for when running in same process)
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
+
             logger.info("✅ Using direct WebSocket broadcast (same process)")
 
             # Get enhanced task context (title and parent branch info)
-            task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
+            task_context = WebSocketNotificationService._get_task_context(
+                task_id, user_id
+            )
 
             # Prepare enhanced metadata with titles and parent context
             metadata = {}
@@ -371,15 +393,21 @@ class WebSocketNotificationService:
                 entity_id=task_id,
                 user_id=user_id,
                 data=task_data,
-                metadata=metadata
+                metadata=metadata,
             )
 
             # Enhanced success logging for DELETE operations
-            if event_type.lower() in ['delete', 'deleted']:
-                logger.warning(f"✅ 🗑️ DELETE SUCCESSFULLY BROADCASTED: task {event_type} event for {task_id}")
-                logger.warning(f"   Payload sent to broadcast_data_change: entity_type=task, event_type={event_type}, entity_id={task_id}")
+            if event_type.lower() in ["delete", "deleted"]:
+                logger.warning(
+                    f"✅ 🗑️ DELETE SUCCESSFULLY BROADCASTED: task {event_type} event for {task_id}"
+                )
+                logger.warning(
+                    f"   Payload sent to broadcast_data_change: entity_type=task, event_type={event_type}, entity_id={task_id}"
+                )
             else:
-                logger.info(f"✅ Successfully broadcasted task {event_type} event for {task_id}")
+                logger.info(
+                    f"✅ Successfully broadcasted task {event_type} event for {task_id}"
+                )
 
         except (ImportError, RuntimeError):
             # Fallback to HTTP broadcast for cross-process communication
@@ -394,7 +422,9 @@ class WebSocketNotificationService:
                 broadcast_url = f"{api_url}/api/v2/broadcast/notify"
 
                 # Get enhanced task context (title and parent branch info)
-                task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
+                task_context = WebSocketNotificationService._get_task_context(
+                    task_id, user_id
+                )
 
                 # Prepare enhanced metadata with titles and parent context
                 metadata = {}
@@ -417,13 +447,17 @@ class WebSocketNotificationService:
                         "entity_id": task_id,
                         "user_id": user_id,
                         "data": task_data,
-                        "metadata": metadata
+                        "metadata": metadata,
                     }
                     async with session.post(broadcast_url, json=payload) as resp:
                         if resp.status == 200:
-                            logger.info(f"✅ Successfully sent HTTP broadcast for task {event_type}")
+                            logger.info(
+                                f"✅ Successfully sent HTTP broadcast for task {event_type}"
+                            )
                         else:
-                            logger.error(f"HTTP broadcast failed with status {resp.status}")
+                            logger.error(
+                                f"HTTP broadcast failed with status {resp.status}"
+                            )
 
             except Exception as http_error:
                 logger.error(f"Failed to send HTTP broadcast: {http_error}")
@@ -438,7 +472,7 @@ class WebSocketNotificationService:
         subtask_id: str,
         task_id: str,
         user_id: str,
-        subtask_data: dict[str, Any] | None = None
+        subtask_data: dict[str, Any] | None = None,
     ):
         """
         Broadcast subtask-related events to WebSocket clients.
@@ -454,14 +488,16 @@ class WebSocketNotificationService:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
 
             # Get enhanced subtask context (subtask title and parent task info)
-            subtask_context = WebSocketNotificationService._get_subtask_context(subtask_id, task_id, user_id)
+            subtask_context = WebSocketNotificationService._get_subtask_context(
+                subtask_id, task_id, user_id
+            )
 
             metadata = {
                 "parent_task_id": task_id,
                 "timestamp": datetime.now(UTC).isoformat(),
                 # Enhanced payload with titles and parent context
                 "subtask_title": subtask_context["subtask_title"],
-                "parent_task_title": subtask_context["parent_task_title"]
+                "parent_task_title": subtask_context["parent_task_title"],
             }
 
             await broadcast_data_change(
@@ -470,7 +506,7 @@ class WebSocketNotificationService:
                 entity_id=subtask_id,
                 user_id=user_id,
                 data=subtask_data,
-                metadata=metadata
+                metadata=metadata,
             )
 
             logger.debug(f"Broadcasted subtask {event_type} event for {subtask_id}")
@@ -485,7 +521,7 @@ class WebSocketNotificationService:
         event_type: str,
         project_id: str,
         user_id: str,
-        project_data: dict[str, Any] | None = None
+        project_data: dict[str, Any] | None = None,
     ):
         """
         Broadcast project-related events to WebSocket clients.
@@ -499,9 +535,7 @@ class WebSocketNotificationService:
         try:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
 
-            metadata = {
-                "timestamp": datetime.now(UTC).isoformat()
-            }
+            metadata = {"timestamp": datetime.now(UTC).isoformat()}
 
             await broadcast_data_change(
                 event_type=event_type,
@@ -509,7 +543,7 @@ class WebSocketNotificationService:
                 entity_id=project_id,
                 user_id=user_id,
                 data=project_data,
-                metadata=metadata
+                metadata=metadata,
             )
 
             logger.debug(f"Broadcasted project {event_type} event for {project_id}")
@@ -525,7 +559,7 @@ class WebSocketNotificationService:
         branch_id: str,
         project_id: str,
         user_id: str,
-        branch_data: dict[str, Any] | None = None
+        branch_data: dict[str, Any] | None = None,
     ):
         """
         Broadcast branch-related events to WebSocket clients.
@@ -541,13 +575,15 @@ class WebSocketNotificationService:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
 
             # Get enhanced branch context (branch title)
-            branch_context = WebSocketNotificationService._get_branch_context(branch_id, user_id)
+            branch_context = WebSocketNotificationService._get_branch_context(
+                branch_id, user_id
+            )
 
             metadata = {
                 "project_id": project_id,
                 "timestamp": datetime.now(UTC).isoformat(),
                 # Enhanced payload with branch title
-                "branch_title": branch_context["branch_title"]
+                "branch_title": branch_context["branch_title"],
             }
 
             await broadcast_data_change(
@@ -556,7 +592,7 @@ class WebSocketNotificationService:
                 entity_id=branch_id,
                 user_id=user_id,
                 data=branch_data,
-                metadata=metadata
+                metadata=metadata,
             )
 
             logger.debug(f"Broadcasted branch {event_type} event for {branch_id}")
@@ -573,7 +609,7 @@ class WebSocketNotificationService:
         level: str,
         user_id: str,
         context_data: dict[str, Any] | None = None,
-        metadata: dict[str, Any] | None = None
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Broadcast context-related events to WebSocket clients.
@@ -600,10 +636,12 @@ class WebSocketNotificationService:
                 entity_id=context_id,
                 user_id=user_id,
                 data=context_data,
-                metadata=metadata
+                metadata=metadata,
             )
 
-            logger.debug(f"Broadcasted context {event_type} event for {context_id} at level {level}")
+            logger.debug(
+                f"Broadcasted context {event_type} event for {context_id} at level {level}"
+            )
 
         except ImportError:
             logger.warning("WebSocket routes not available, skipping broadcast")
@@ -616,7 +654,7 @@ class WebSocketNotificationService:
         agent_id: str,
         project_id: str,
         user_id: str,
-        agent_data: dict[str, Any] | None = None
+        agent_data: dict[str, Any] | None = None,
     ):
         """
         Broadcast agent-related events to WebSocket clients.
@@ -633,7 +671,7 @@ class WebSocketNotificationService:
 
             metadata = {
                 "project_id": project_id,
-                "timestamp": datetime.now(UTC).isoformat()
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             # Add agent name to metadata if available
@@ -646,7 +684,7 @@ class WebSocketNotificationService:
                 entity_id=agent_id,
                 user_id=user_id,
                 data=agent_data,
-                metadata=metadata
+                metadata=metadata,
             )
 
             logger.debug(f"Broadcasted agent {event_type} event for {agent_id}")
@@ -662,21 +700,23 @@ class WebSocketNotificationService:
         logger.info("🔔 sync_broadcast_agent_event called from MCP server")
 
         # Extract arguments
-        event_type = kwargs.get('event_type', args[0] if args else 'unknown')
-        agent_id = kwargs.get('agent_id', args[1] if len(args) > 1 else 'unknown')
-        project_id = kwargs.get('project_id', args[2] if len(args) > 2 else 'unknown')
-        user_id = kwargs.get('user_id', args[3] if len(args) > 3 else 'system')
-        agent_data = kwargs.get('agent_data', args[4] if len(args) > 4 else None)
+        event_type = kwargs.get("event_type", args[0] if args else "unknown")
+        agent_id = kwargs.get("agent_id", args[1] if len(args) > 1 else "unknown")
+        project_id = kwargs.get("project_id", args[2] if len(args) > 2 else "unknown")
+        user_id = kwargs.get("user_id", args[3] if len(args) > 3 else "system")
+        agent_data = kwargs.get("agent_data", args[4] if len(args) > 4 else None)
 
         # DUPLICATE DETECTION: Check if this is a duplicate notification
         if _is_duplicate_notification(event_type, "agent_instance", agent_id, user_id):
-            logger.info(f"🚫 Skipping duplicate agent notification: {event_type} for agent {agent_id}")
+            logger.info(
+                f"🚫 Skipping duplicate agent notification: {event_type} for agent {agent_id}"
+            )
             return  # Skip this notification
 
         # Prepare metadata
         metadata = {
             "project_id": project_id,
-            "timestamp": datetime.now(UTC).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         # Add agent name to metadata if available
@@ -686,57 +726,73 @@ class WebSocketNotificationService:
         # Try direct WebSocket broadcast first (same process)
         try:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
+
             logger.info("✅ Using direct WebSocket broadcast (same process)")
 
             # Create a task to run the async broadcast
             import asyncio
+
             try:
                 # Get the current event loop
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     # If there's already a running loop, create a task
-                    asyncio.create_task(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="agent_instance",
-                        entity_id=agent_id,
-                        user_id=user_id,
-                        data=agent_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully scheduled WebSocket broadcast for agent {event_type}")
+                    asyncio.create_task(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="agent_instance",
+                            entity_id=agent_id,
+                            user_id=user_id,
+                            data=agent_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully scheduled WebSocket broadcast for agent {event_type}"
+                    )
                     return  # Exit here - broadcast scheduled successfully
                 else:
                     # If no running loop, run until complete
-                    loop.run_until_complete(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="agent_instance",
-                        entity_id=agent_id,
-                        user_id=user_id,
-                        data=agent_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully completed WebSocket broadcast for agent {event_type}")
+                    loop.run_until_complete(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="agent_instance",
+                            entity_id=agent_id,
+                            user_id=user_id,
+                            data=agent_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully completed WebSocket broadcast for agent {event_type}"
+                    )
                     return  # Exit here - broadcast completed successfully
             except RuntimeError:
                 # If we can't use the current loop, create a new one
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:
-                    new_loop.run_until_complete(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="agent_instance",
-                        entity_id=agent_id,
-                        user_id=user_id,
-                        data=agent_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully completed WebSocket broadcast for agent {event_type}")
+                    new_loop.run_until_complete(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="agent_instance",
+                            entity_id=agent_id,
+                            user_id=user_id,
+                            data=agent_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully completed WebSocket broadcast for agent {event_type}"
+                    )
                     return  # Exit here - broadcast completed successfully
                 finally:
                     new_loop.close()
 
         except (ImportError, RuntimeError) as direct_error:
-            logger.warning(f"Direct WebSocket broadcast failed: {direct_error}, trying HTTP fallback")
+            logger.warning(
+                f"Direct WebSocket broadcast failed: {direct_error}, trying HTTP fallback"
+            )
 
         # Fallback to HTTP broadcast for cross-process communication
         try:
@@ -755,38 +811,50 @@ class WebSocketNotificationService:
                 "entity_id": agent_id,
                 "user_id": user_id,
                 "data": agent_data,
-                "metadata": metadata
+                "metadata": metadata,
             }
 
             logger.info(f"📡 Sending HTTP broadcast to {broadcast_url}")
             response = requests.post(broadcast_url, json=payload, timeout=2)
 
             if response.status_code == 200:
-                logger.info(f"✅ Successfully sent HTTP broadcast for agent {event_type}")
+                logger.info(
+                    f"✅ Successfully sent HTTP broadcast for agent {event_type}"
+                )
             else:
-                logger.error(f"HTTP broadcast failed with status {response.status_code}")
+                logger.error(
+                    f"HTTP broadcast failed with status {response.status_code}"
+                )
 
         except requests.exceptions.RequestException as e:
-            logger.warning(f"Could not send HTTP broadcast (API server may be down): {e}")
+            logger.warning(
+                f"Could not send HTTP broadcast (API server may be down): {e}"
+            )
         except Exception as e:
             logger.error(f"Failed to sync broadcast agent event: {e}")
 
     @staticmethod
     def sync_broadcast_task_event(*args, **kwargs):
         """Synchronous wrapper for broadcast_task_event - tries direct WebSocket first, then HTTP fallback"""
-        logger.warning("🔔 🎯 WEBSOCKET SERVICE: sync_broadcast_task_event called from MCP server")
+        logger.warning(
+            "🔔 🎯 WEBSOCKET SERVICE: sync_broadcast_task_event called from MCP server"
+        )
         print("🚀 🎯 WEBSOCKET SERVICE: sync_broadcast_task_event called")
 
         # Extract arguments for debugging
-        event_type = kwargs.get('event_type', args[0] if args else 'unknown')
-        task_id = kwargs.get('task_id', args[1] if len(args) > 1 else 'unknown')
-        user_id = kwargs.get('user_id', args[2] if len(args) > 2 else 'system')
+        event_type = kwargs.get("event_type", args[0] if args else "unknown")
+        task_id = kwargs.get("task_id", args[1] if len(args) > 1 else "unknown")
+        user_id = kwargs.get("user_id", args[2] if len(args) > 2 else "system")
 
-        logger.warning(f"🎯 WEBSOCKET SERVICE: Event details - Type: {event_type}, Task: {task_id}, User: {user_id}")
+        logger.warning(
+            f"🎯 WEBSOCKET SERVICE: Event details - Type: {event_type}, Task: {task_id}, User: {user_id}"
+        )
 
         # Enhanced logging for CREATE events
-        if event_type.lower() == 'created':
-            logger.warning("✨ CREATE EVENT DETECTED: Processing task creation notification")
+        if event_type.lower() == "created":
+            logger.warning(
+                "✨ CREATE EVENT DETECTED: Processing task creation notification"
+            )
             logger.warning(f"✨ CREATE EVENT: Task ID = {task_id}")
             logger.warning(f"✨ CREATE EVENT: User ID = {user_id}")
             logger.warning(f"✨ CREATE EVENT: Args = {args}")
@@ -796,28 +864,38 @@ class WebSocketNotificationService:
         print("🚀 BACKEND DELETE DEBUG: This is EVENT 1 of 2 - TASK DELETION")
 
         # Extract arguments
-        event_type = kwargs.get('event_type', args[0] if args else 'unknown')
-        task_id = kwargs.get('task_id', args[1] if len(args) > 1 else 'unknown')
-        user_id = kwargs.get('user_id', args[2] if len(args) > 2 else 'system')
-        task_data = kwargs.get('task_data', args[3] if len(args) > 3 else None)
-        git_branch_id = kwargs.get('git_branch_id', args[4] if len(args) > 4 else None)
-        project_id = kwargs.get('project_id', args[5] if len(args) > 5 else None)
-        pre_fetched_context = kwargs.get('pre_fetched_context', None)
-        custom_metadata = kwargs.get('metadata', None)  # FIX: Accept custom metadata parameter
+        event_type = kwargs.get("event_type", args[0] if args else "unknown")
+        task_id = kwargs.get("task_id", args[1] if len(args) > 1 else "unknown")
+        user_id = kwargs.get("user_id", args[2] if len(args) > 2 else "system")
+        task_data = kwargs.get("task_data", args[3] if len(args) > 3 else None)
+        git_branch_id = kwargs.get("git_branch_id", args[4] if len(args) > 4 else None)
+        project_id = kwargs.get("project_id", args[5] if len(args) > 5 else None)
+        pre_fetched_context = kwargs.get("pre_fetched_context", None)
+        custom_metadata = kwargs.get(
+            "metadata", None
+        )  # FIX: Accept custom metadata parameter
 
         # DUPLICATE DETECTION: Check if this is a duplicate notification
         if _is_duplicate_notification(event_type, "task", task_id, user_id):
-            logger.info(f"🚫 Skipping duplicate task notification: {event_type} for task {task_id}")
+            logger.info(
+                f"🚫 Skipping duplicate task notification: {event_type} for task {task_id}"
+            )
             return  # Skip this notification
 
         # Get enhanced task context (title and parent branch info)
         # CRITICAL FIX: Use pre-fetched context for deletion events to avoid querying deleted task
         if pre_fetched_context:
-            logger.info(f"✅ Using pre-fetched context for {event_type} event: {pre_fetched_context}")
+            logger.info(
+                f"✅ Using pre-fetched context for {event_type} event: {pre_fetched_context}"
+            )
             task_context = pre_fetched_context
         else:
-            logger.info(f"🔍 Fetching task context from database for {event_type} event")
-            task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
+            logger.info(
+                f"🔍 Fetching task context from database for {event_type} event"
+            )
+            task_context = WebSocketNotificationService._get_task_context(
+                task_id, user_id
+            )
 
         # Prepare enhanced metadata with titles and parent context
         # FIX: Start with custom metadata if provided, then add standard fields
@@ -840,9 +918,15 @@ class WebSocketNotificationService:
             # DEBUG LOGGING: Log raw task_data BEFORE enrichment
             logger.info(f"🔍 DEBUG: Raw task_data keys: {list(task_data.keys())}")
             logger.info(f"🔍 DEBUG: task_data['status'] = {task_data.get('status')}")
-            logger.info(f"🔍 DEBUG: task_data['completion_summary'] = {task_data.get('completion_summary')}")
-            logger.info(f"🔍 DEBUG: task_data['testing_notes'] = {task_data.get('testing_notes')}")
-            logger.info(f"🔍 DEBUG: task_data['progress_percentage'] = {task_data.get('progress_percentage')}")
+            logger.info(
+                f"🔍 DEBUG: task_data['completion_summary'] = {task_data.get('completion_summary')}"
+            )
+            logger.info(
+                f"🔍 DEBUG: task_data['testing_notes'] = {task_data.get('testing_notes')}"
+            )
+            logger.info(
+                f"🔍 DEBUG: task_data['progress_percentage'] = {task_data.get('progress_percentage')}"
+            )
             logger.info(f"🔍 DEBUG: task_data['title'] = {task_data.get('title')}")
 
             # Add completion-specific fields that poll_mcp_websocket.py expects
@@ -859,81 +943,115 @@ class WebSocketNotificationService:
             metadata["blockers"] = task_data.get("blockers", [])
 
             # DEBUG LOGGING: Log enriched metadata AFTER enrichment
-            logger.info(f"🔍 DEBUG: Enriched metadata['status'] = {metadata.get('status')}")
-            logger.info(f"🔍 DEBUG: Enriched metadata['completion_summary'] = {metadata.get('completion_summary')}")
-            logger.info(f"🔍 DEBUG: Enriched metadata['testing_notes'] = {metadata.get('testing_notes')}")
-            logger.info(f"🔍 DEBUG: Enriched metadata['progress_percentage'] = {metadata.get('progress_percentage')}")
-            logger.info(f"✅ Enriched completion metadata with {len(metadata)} fields for task {task_id}")
+            logger.info(
+                f"🔍 DEBUG: Enriched metadata['status'] = {metadata.get('status')}"
+            )
+            logger.info(
+                f"🔍 DEBUG: Enriched metadata['completion_summary'] = {metadata.get('completion_summary')}"
+            )
+            logger.info(
+                f"🔍 DEBUG: Enriched metadata['testing_notes'] = {metadata.get('testing_notes')}"
+            )
+            logger.info(
+                f"🔍 DEBUG: Enriched metadata['progress_percentage'] = {metadata.get('progress_percentage')}"
+            )
+            logger.info(
+                f"✅ Enriched completion metadata with {len(metadata)} fields for task {task_id}"
+            )
 
         # CRITICAL FIX: Add branch cascade data for task events to trigger frontend animations
         if event_type in ["created", "deleted"] and git_branch_id:
             logger.info(f"🎯 Adding branch cascade data for task {event_type} event")
             # Extract UUID string from GitBranchId value object if needed
-            git_branch_id_str = git_branch_id.value if hasattr(git_branch_id, 'value') else str(git_branch_id)
-            branch_cascade_data = WebSocketNotificationService._get_branch_cascade_data(git_branch_id_str, user_id)
+            git_branch_id_str = (
+                git_branch_id.value
+                if hasattr(git_branch_id, "value")
+                else str(git_branch_id)
+            )
+            branch_cascade_data = WebSocketNotificationService._get_branch_cascade_data(
+                git_branch_id_str, user_id
+            )
             if branch_cascade_data:
                 # Add cascade data to metadata for frontend consumption
-                metadata["cascade"] = {
-                    "branches": [branch_cascade_data]
-                }
-                logger.info(f"✅ Added cascade data for {event_type} with task_count: {branch_cascade_data.get('task_count', 0)}")
+                metadata["cascade"] = {"branches": [branch_cascade_data]}
+                logger.info(
+                    f"✅ Added cascade data for {event_type} with task_count: {branch_cascade_data.get('task_count', 0)}"
+                )
             else:
-                logger.warning(f"⚠️ Could not fetch branch cascade data for branch {git_branch_id}")
+                logger.warning(
+                    f"⚠️ Could not fetch branch cascade data for branch {git_branch_id}"
+                )
 
         # Try direct WebSocket broadcast first (same process)
         try:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
+
             logger.info("✅ Using direct WebSocket broadcast (same process)")
 
             # Create a task to run the async broadcast
             import asyncio
+
             try:
                 # Get the current event loop
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     # If there's already a running loop, create a task
-                    asyncio.create_task(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="task",
-                        entity_id=task_id,
-                        user_id=user_id,
-                        data=task_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully scheduled WebSocket broadcast for task {event_type}")
+                    asyncio.create_task(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="task",
+                            entity_id=task_id,
+                            user_id=user_id,
+                            data=task_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully scheduled WebSocket broadcast for task {event_type}"
+                    )
                     return  # Exit here - broadcast scheduled successfully
                 else:
                     # If no running loop, run until complete
-                    loop.run_until_complete(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="task",
-                        entity_id=task_id,
-                        user_id=user_id,
-                        data=task_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully completed WebSocket broadcast for task {event_type}")
+                    loop.run_until_complete(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="task",
+                            entity_id=task_id,
+                            user_id=user_id,
+                            data=task_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully completed WebSocket broadcast for task {event_type}"
+                    )
                     return  # Exit here - broadcast completed successfully
             except RuntimeError:
                 # If we can't use the current loop, create a new one
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:
-                    new_loop.run_until_complete(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="task",
-                        entity_id=task_id,
-                        user_id=user_id,
-                        data=task_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully completed WebSocket broadcast for task {event_type}")
+                    new_loop.run_until_complete(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="task",
+                            entity_id=task_id,
+                            user_id=user_id,
+                            data=task_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully completed WebSocket broadcast for task {event_type}"
+                    )
                     return  # Exit here - broadcast completed successfully
                 finally:
                     new_loop.close()
 
         except (ImportError, RuntimeError) as direct_error:
-            logger.warning(f"Direct WebSocket broadcast failed: {direct_error}, trying HTTP fallback")
+            logger.warning(
+                f"Direct WebSocket broadcast failed: {direct_error}, trying HTTP fallback"
+            )
 
         # Fallback to HTTP broadcast for cross-process communication
         try:
@@ -952,19 +1070,25 @@ class WebSocketNotificationService:
                 "entity_id": task_id,
                 "user_id": user_id,
                 "data": task_data,
-                "metadata": metadata
+                "metadata": metadata,
             }
 
             logger.info(f"📡 Sending HTTP broadcast to {broadcast_url}")
             response = requests.post(broadcast_url, json=payload, timeout=2)
 
             if response.status_code == 200:
-                logger.info(f"✅ Successfully sent HTTP broadcast for task {event_type}")
+                logger.info(
+                    f"✅ Successfully sent HTTP broadcast for task {event_type}"
+                )
             else:
-                logger.error(f"HTTP broadcast failed with status {response.status_code}")
+                logger.error(
+                    f"HTTP broadcast failed with status {response.status_code}"
+                )
 
         except requests.exceptions.RequestException as e:
-            logger.warning(f"Could not send HTTP broadcast (API server may be down): {e}")
+            logger.warning(
+                f"Could not send HTTP broadcast (API server may be down): {e}"
+            )
         except Exception as e:
             logger.error(f"Failed to sync broadcast task event: {e}")
 
@@ -975,11 +1099,15 @@ class WebSocketNotificationService:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 asyncio.create_task(
-                    WebSocketNotificationService.broadcast_project_event(*args, **kwargs)
+                    WebSocketNotificationService.broadcast_project_event(
+                        *args, **kwargs
+                    )
                 )
             else:
                 loop.run_until_complete(
-                    WebSocketNotificationService.broadcast_project_event(*args, **kwargs)
+                    WebSocketNotificationService.broadcast_project_event(
+                        *args, **kwargs
+                    )
                 )
         except Exception as e:
             logger.error(f"Failed to sync broadcast project event: {e}")
@@ -992,77 +1120,95 @@ class WebSocketNotificationService:
         print("🚀 BACKEND DELETE DEBUG: This is EVENT 2 of 2 - BRANCH UPDATE")
 
         # Extract arguments
-        event_type = kwargs.get('event_type', args[0] if args else 'unknown')
-        branch_id = kwargs.get('branch_id', args[1] if len(args) > 1 else 'unknown')
-        project_id = kwargs.get('project_id', args[2] if len(args) > 2 else 'unknown')
-        user_id = kwargs.get('user_id', args[3] if len(args) > 3 else 'system')
-        branch_data = kwargs.get('branch_data', args[4] if len(args) > 4 else None)
+        event_type = kwargs.get("event_type", args[0] if args else "unknown")
+        branch_id = kwargs.get("branch_id", args[1] if len(args) > 1 else "unknown")
+        project_id = kwargs.get("project_id", args[2] if len(args) > 2 else "unknown")
+        user_id = kwargs.get("user_id", args[3] if len(args) > 3 else "system")
+        branch_data = kwargs.get("branch_data", args[4] if len(args) > 4 else None)
 
         # Get enhanced branch context (branch title)
-        branch_context = WebSocketNotificationService._get_branch_context(branch_id, user_id)
+        branch_context = WebSocketNotificationService._get_branch_context(
+            branch_id, user_id
+        )
 
         # Prepare enhanced metadata with branch title
         metadata = {
             "project_id": project_id,
             "timestamp": datetime.now(UTC).isoformat(),
             # Enhanced payload with branch title
-            "branch_title": branch_context["branch_title"]
+            "branch_title": branch_context["branch_title"],
         }
 
         # Try direct WebSocket broadcast first (same process)
         try:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
+
             logger.info("✅ Using direct WebSocket broadcast (same process)")
 
             # Create a task to run the async broadcast
             import asyncio
+
             try:
                 # Get the current event loop
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     # If there's already a running loop, create a task
-                    asyncio.create_task(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="branch",
-                        entity_id=branch_id,
-                        user_id=user_id,
-                        data=branch_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully scheduled WebSocket broadcast for branch {event_type}")
+                    asyncio.create_task(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="branch",
+                            entity_id=branch_id,
+                            user_id=user_id,
+                            data=branch_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully scheduled WebSocket broadcast for branch {event_type}"
+                    )
                     return  # Exit here - broadcast scheduled successfully
                 else:
                     # If no running loop, run until complete
-                    loop.run_until_complete(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="branch",
-                        entity_id=branch_id,
-                        user_id=user_id,
-                        data=branch_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully completed WebSocket broadcast for branch {event_type}")
+                    loop.run_until_complete(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="branch",
+                            entity_id=branch_id,
+                            user_id=user_id,
+                            data=branch_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully completed WebSocket broadcast for branch {event_type}"
+                    )
                     return  # Exit here - broadcast completed successfully
             except RuntimeError:
                 # If we can't use the current loop, create a new one
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:
-                    new_loop.run_until_complete(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="branch",
-                        entity_id=branch_id,
-                        user_id=user_id,
-                        data=branch_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully completed WebSocket broadcast for branch {event_type}")
+                    new_loop.run_until_complete(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="branch",
+                            entity_id=branch_id,
+                            user_id=user_id,
+                            data=branch_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully completed WebSocket broadcast for branch {event_type}"
+                    )
                     return  # Exit here - broadcast completed successfully
                 finally:
                     new_loop.close()
 
         except (ImportError, RuntimeError) as direct_error:
-            logger.warning(f"Direct WebSocket broadcast failed: {direct_error}, trying HTTP fallback")
+            logger.warning(
+                f"Direct WebSocket broadcast failed: {direct_error}, trying HTTP fallback"
+            )
 
         # Fallback to HTTP broadcast for cross-process communication
         try:
@@ -1081,19 +1227,25 @@ class WebSocketNotificationService:
                 "entity_id": branch_id,
                 "user_id": user_id,
                 "data": branch_data,
-                "metadata": metadata
+                "metadata": metadata,
             }
 
             logger.info(f"📡 Sending HTTP broadcast to {broadcast_url}")
             response = requests.post(broadcast_url, json=payload, timeout=2)
 
             if response.status_code == 200:
-                logger.info(f"✅ Successfully sent HTTP broadcast for branch {event_type}")
+                logger.info(
+                    f"✅ Successfully sent HTTP broadcast for branch {event_type}"
+                )
             else:
-                logger.error(f"HTTP broadcast failed with status {response.status_code}")
+                logger.error(
+                    f"HTTP broadcast failed with status {response.status_code}"
+                )
 
         except requests.exceptions.RequestException as e:
-            logger.warning(f"Could not send HTTP broadcast (API server may be down): {e}")
+            logger.warning(
+                f"Could not send HTTP broadcast (API server may be down): {e}"
+            )
         except Exception as e:
             logger.error(f"Failed to sync broadcast branch event: {e}")
 
@@ -1103,14 +1255,16 @@ class WebSocketNotificationService:
         logger.info("🔔 sync_broadcast_subtask_event called from MCP server")
 
         # Extract arguments
-        event_type = kwargs.get('event_type', args[0] if args else 'unknown')
-        subtask_id = kwargs.get('subtask_id', args[1] if len(args) > 1 else 'unknown')
-        task_id = kwargs.get('task_id', args[2] if len(args) > 2 else 'unknown')
-        user_id = kwargs.get('user_id', args[3] if len(args) > 3 else 'system')
-        subtask_data = kwargs.get('subtask_data', args[4] if len(args) > 4 else None)
+        event_type = kwargs.get("event_type", args[0] if args else "unknown")
+        subtask_id = kwargs.get("subtask_id", args[1] if len(args) > 1 else "unknown")
+        task_id = kwargs.get("task_id", args[2] if len(args) > 2 else "unknown")
+        user_id = kwargs.get("user_id", args[3] if len(args) > 3 else "system")
+        subtask_data = kwargs.get("subtask_data", args[4] if len(args) > 4 else None)
 
         # Get enhanced subtask context (subtask title and parent task info)
-        subtask_context = WebSocketNotificationService._get_subtask_context(subtask_id, task_id, user_id)
+        subtask_context = WebSocketNotificationService._get_subtask_context(
+            subtask_id, task_id, user_id
+        )
 
         # Prepare enhanced metadata with titles and parent context
         metadata = {
@@ -1118,28 +1272,42 @@ class WebSocketNotificationService:
             "timestamp": datetime.now(UTC).isoformat(),
             # Enhanced payload with titles and parent context
             "subtask_title": subtask_context["subtask_title"],
-            "parent_task_title": subtask_context["parent_task_title"]
+            "parent_task_title": subtask_context["parent_task_title"],
         }
 
         # COMPLETION EVENT: Add completion details to metadata for cclaude-wait polling (matching task pattern)
         if event_type == "completed" and subtask_data:
-            logger.info(f"📋 Adding completion details to subtask metadata for {subtask_id}")
+            logger.info(
+                f"📋 Adding completion details to subtask metadata for {subtask_id}"
+            )
 
             # DEBUG: Log raw subtask_data BEFORE extraction
-            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: subtask_data keys = {list(subtask_data.keys())}")
+            logger.info(
+                f"🔍 DEBUG PROGRESS_HISTORY: subtask_data keys = {list(subtask_data.keys())}"
+            )
             progress_history_raw = subtask_data.get("progress_history", {})
-            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: Raw progress_history type = {type(progress_history_raw)}")
-            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: Raw progress_history length = {len(progress_history_raw) if progress_history_raw else 0}")
+            logger.info(
+                f"🔍 DEBUG PROGRESS_HISTORY: Raw progress_history type = {type(progress_history_raw)}"
+            )
+            logger.info(
+                f"🔍 DEBUG PROGRESS_HISTORY: Raw progress_history length = {len(progress_history_raw) if progress_history_raw else 0}"
+            )
             if progress_history_raw:
-                logger.info(f"🔍 DEBUG PROGRESS_HISTORY: Raw progress_history keys = {list(progress_history_raw.keys())[:5]}")  # First 5 keys
-                logger.info(f"🔍 DEBUG PROGRESS_HISTORY: First entry = {list(progress_history_raw.values())[0] if progress_history_raw else 'N/A'}")
+                logger.info(
+                    f"🔍 DEBUG PROGRESS_HISTORY: Raw progress_history keys = {list(progress_history_raw.keys())[:5]}"
+                )  # First 5 keys
+                logger.info(
+                    f"🔍 DEBUG PROGRESS_HISTORY: First entry = {list(progress_history_raw.values())[0] if progress_history_raw else 'N/A'}"
+                )
 
             # Add completion-specific fields that poll_mcp_websocket.py expects
             metadata["status"] = subtask_data.get("status", "done")
             metadata["title"] = subtask_data.get("title", metadata["subtask_title"])
             metadata["completion_summary"] = subtask_data.get("completion_summary", "")
             metadata["testing_notes"] = subtask_data.get("testing_notes", "")
-            metadata["progress_percentage"] = subtask_data.get("progress_percentage", 100)
+            metadata["progress_percentage"] = subtask_data.get(
+                "progress_percentage", 100
+            )
             metadata["progress_history"] = progress_history_raw
             metadata["progress_count"] = subtask_data.get("progress_count", 0)
             metadata["assignees"] = subtask_data.get("assignees", [])
@@ -1149,65 +1317,92 @@ class WebSocketNotificationService:
             metadata["is_subtask"] = True  # Flag to distinguish from task completions
 
             # DEBUG: Verify metadata AFTER assignment
-            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: metadata['progress_history'] type = {type(metadata['progress_history'])}")
-            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: metadata['progress_history'] length = {len(metadata['progress_history']) if metadata['progress_history'] else 0}")
-            logger.info(f"🔍 DEBUG PROGRESS_HISTORY: metadata['progress_count'] = {metadata['progress_count']}")
+            logger.info(
+                f"🔍 DEBUG PROGRESS_HISTORY: metadata['progress_history'] type = {type(metadata['progress_history'])}"
+            )
+            logger.info(
+                f"🔍 DEBUG PROGRESS_HISTORY: metadata['progress_history'] length = {len(metadata['progress_history']) if metadata['progress_history'] else 0}"
+            )
+            logger.info(
+                f"🔍 DEBUG PROGRESS_HISTORY: metadata['progress_count'] = {metadata['progress_count']}"
+            )
 
-            logger.info(f"✅ Enriched subtask completion metadata with {len(metadata)} fields for subtask {subtask_id}")
+            logger.info(
+                f"✅ Enriched subtask completion metadata with {len(metadata)} fields for subtask {subtask_id}"
+            )
 
         # Try direct WebSocket broadcast first (same process)
         try:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
+
             logger.info("✅ Using direct WebSocket broadcast (same process)")
 
             # Create a task to run the async broadcast
             import asyncio
+
             try:
                 # Get the current event loop
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     # If there's already a running loop, create a task
-                    asyncio.create_task(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="subtask",
-                        entity_id=subtask_id,
-                        user_id=user_id,
-                        data=subtask_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully scheduled WebSocket broadcast for subtask {event_type}")
+                    asyncio.create_task(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="subtask",
+                            entity_id=subtask_id,
+                            user_id=user_id,
+                            data=subtask_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully scheduled WebSocket broadcast for subtask {event_type}"
+                    )
                     return  # Exit here - broadcast scheduled successfully
                 else:
                     # If no running loop, run until complete
-                    loop.run_until_complete(broadcast_data_change(
-                        event_type=event_type,
-                        entity_type="subtask",
-                        entity_id=subtask_id,
-                        user_id=user_id,
-                        data=subtask_data,
-                        metadata=metadata
-                    ))
-                    logger.info(f"✅ Successfully completed WebSocket broadcast for subtask {event_type}")
+                    loop.run_until_complete(
+                        broadcast_data_change(
+                            event_type=event_type,
+                            entity_type="subtask",
+                            entity_id=subtask_id,
+                            user_id=user_id,
+                            data=subtask_data,
+                            metadata=metadata,
+                        )
+                    )
+                    logger.info(
+                        f"✅ Successfully completed WebSocket broadcast for subtask {event_type}"
+                    )
                     return  # Exit here - broadcast completed successfully
 
             except RuntimeError:
                 # No event loop in current thread, create new one
                 import asyncio
-                asyncio.run(broadcast_data_change(
-                    event_type=event_type,
-                    entity_type="subtask",
-                    entity_id=subtask_id,
-                    user_id=user_id,
-                    data=subtask_data,
-                    metadata=metadata
-                ))
-                logger.info(f"✅ Successfully created new loop and broadcast subtask {event_type}")
+
+                asyncio.run(
+                    broadcast_data_change(
+                        event_type=event_type,
+                        entity_type="subtask",
+                        entity_id=subtask_id,
+                        user_id=user_id,
+                        data=subtask_data,
+                        metadata=metadata,
+                    )
+                )
+                logger.info(
+                    f"✅ Successfully created new loop and broadcast subtask {event_type}"
+                )
                 return  # Exit here - broadcast completed successfully
 
         except ImportError:
-            logger.warning("WebSocket routes not available, falling back to HTTP broadcast")
+            logger.warning(
+                "WebSocket routes not available, falling back to HTTP broadcast"
+            )
         except Exception as e:
-            logger.warning(f"Direct WebSocket broadcast failed: {e}, falling back to HTTP")
+            logger.warning(
+                f"Direct WebSocket broadcast failed: {e}, falling back to HTTP"
+            )
 
         # Fallback to HTTP broadcast for cross-process communication
         try:
@@ -1226,18 +1421,24 @@ class WebSocketNotificationService:
                 "entity_id": subtask_id,
                 "user_id": user_id,
                 "data": subtask_data,
-                "metadata": metadata
+                "metadata": metadata,
             }
 
             logger.info(f"📡 Sending HTTP broadcast to {broadcast_url}")
             response = requests.post(broadcast_url, json=payload, timeout=2)
 
             if response.status_code == 200:
-                logger.info(f"✅ Successfully sent HTTP broadcast for subtask {event_type}")
+                logger.info(
+                    f"✅ Successfully sent HTTP broadcast for subtask {event_type}"
+                )
             else:
-                logger.error(f"HTTP broadcast failed with status {response.status_code}")
+                logger.error(
+                    f"HTTP broadcast failed with status {response.status_code}"
+                )
 
         except requests.exceptions.RequestException as e:
-            logger.warning(f"Could not send HTTP broadcast (API server may be down): {e}")
+            logger.warning(
+                f"Could not send HTTP broadcast (API server may be down): {e}"
+            )
         except Exception as e:
             logger.error(f"Failed to sync broadcast subtask event: {e}")

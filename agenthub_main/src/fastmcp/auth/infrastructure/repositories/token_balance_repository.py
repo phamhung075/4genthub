@@ -33,7 +33,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
     async def get_balance(self, user_id: str) -> dict[str, Any] | None:
         """Get token balance for a user"""
         try:
-            balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            balance = (
+                self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            )
 
             if not balance:
                 return None
@@ -49,17 +51,14 @@ class TokenBalanceRepository(ITokenBalanceRepository):
                 "last_reset_at": balance.last_reset_at,
                 "next_reset_at": balance.next_reset_at,
                 "created_at": balance.created_at,
-                "updated_at": balance.updated_at
+                "updated_at": balance.updated_at,
             }
         except Exception as e:
             logger.error(f"Error getting balance for user {user_id}: {e}")
             raise
 
     async def create_balance(
-        self,
-        user_id: str,
-        initial_tokens: int = 10000,
-        monthly_quota: int = 10000
+        self, user_id: str, initial_tokens: int = 10000, monthly_quota: int = 10000
     ) -> dict[str, Any]:
         """Create new token balance for a user"""
         try:
@@ -80,7 +79,7 @@ class TokenBalanceRepository(ITokenBalanceRepository):
                 next_reset_at=next_reset,
                 tokens_consumed_today=0,
                 tokens_consumed_this_month=0,
-                total_tokens_consumed=0
+                total_tokens_consumed=0,
             )
 
             self.session.add(balance)
@@ -97,7 +96,7 @@ class TokenBalanceRepository(ITokenBalanceRepository):
                 "last_reset_at": balance.last_reset_at,
                 "next_reset_at": balance.next_reset_at,
                 "created_at": balance.created_at,
-                "updated_at": balance.updated_at
+                "updated_at": balance.updated_at,
             }
         except IntegrityError as e:
             logger.error(f"Balance already exists for user {user_id}: {e}")
@@ -119,7 +118,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
             # Check and perform auto-reset if needed
             await self.check_and_auto_reset(user_id)
 
-            balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            balance = (
+                self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            )
 
             if not balance:
                 logger.warning(f"No balance found for user {user_id}")
@@ -140,7 +141,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
             balance.total_tokens_consumed += amount
 
             self.session.flush()
-            logger.info(f"Consumed {amount} tokens for user {user_id}, remaining: {balance.available_tokens}")
+            logger.info(
+                f"Consumed {amount} tokens for user {user_id}, remaining: {balance.available_tokens}"
+            )
             return True
 
         except Exception as e:
@@ -153,7 +156,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
             raise ValueError("Amount must be positive")
 
         try:
-            balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            balance = (
+                self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            )
 
             if not balance:
                 logger.warning(f"No balance found for user {user_id}")
@@ -162,7 +167,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
             balance.available_tokens += amount
             self.session.flush()
 
-            logger.info(f"Added {amount} tokens for user {user_id}, new balance: {balance.available_tokens}")
+            logger.info(
+                f"Added {amount} tokens for user {user_id}, new balance: {balance.available_tokens}"
+            )
             return True
 
         except Exception as e:
@@ -175,7 +182,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
             raise ValueError("Quota cannot be negative")
 
         try:
-            balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            balance = (
+                self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            )
 
             if not balance:
                 logger.warning(f"No balance found for user {user_id}")
@@ -195,7 +204,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
     async def get_usage_stats(self, user_id: str) -> dict[str, Any] | None:
         """Get detailed usage statistics for a user"""
         try:
-            balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            balance = (
+                self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            )
 
             if not balance:
                 return None
@@ -222,7 +233,7 @@ class TokenBalanceRepository(ITokenBalanceRepository):
                 "utilization_percentage": round(utilization, 2),
                 "days_until_reset": days_until_reset,
                 "last_reset_at": balance.last_reset_at,
-                "next_reset_at": balance.next_reset_at
+                "next_reset_at": balance.next_reset_at,
             }
         except Exception as e:
             logger.error(f"Error getting usage stats for user {user_id}: {e}")
@@ -231,7 +242,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
     async def reset_monthly_quota(self, user_id: str) -> bool:
         """Reset monthly quota for a user"""
         try:
-            balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            balance = (
+                self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            )
 
             if not balance:
                 logger.warning(f"No balance found for user {user_id}")
@@ -250,7 +263,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
                 balance.next_reset_at = datetime(now.year, now.month + 1, 1, tzinfo=UTC)
 
             self.session.flush()
-            logger.info(f"Reset monthly quota for user {user_id}, new balance: {balance.available_tokens}")
+            logger.info(
+                f"Reset monthly quota for user {user_id}, new balance: {balance.available_tokens}"
+            )
             return True
 
         except Exception as e:
@@ -260,7 +275,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
     async def reset_daily_consumption(self, user_id: str) -> bool:
         """Reset daily consumption counter"""
         try:
-            balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            balance = (
+                self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            )
 
             if not balance:
                 logger.warning(f"No balance found for user {user_id}")
@@ -279,7 +296,9 @@ class TokenBalanceRepository(ITokenBalanceRepository):
     async def check_and_auto_reset(self, user_id: str) -> bool:
         """Check if quota should be reset and auto-reset if needed"""
         try:
-            balance = self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            balance = (
+                self.session.query(UserTokenBalance).filter_by(user_id=user_id).first()
+            )
 
             if not balance or not balance.next_reset_at:
                 return False

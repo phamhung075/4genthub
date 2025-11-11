@@ -9,6 +9,7 @@ from ....domain.value_objects.task_status import TaskStatus
 @dataclass
 class SubtaskInfo:
     """Information about a subtask from tasks.json"""
+
     id: int
     title: str
     description: str
@@ -20,10 +21,10 @@ class SubtaskInfo:
     details: str
     test_strategy: str
     estimated_effort: str
-    subtasks: list['SubtaskInfo']
-    
+    subtasks: list["SubtaskInfo"]
+
     def to_dict(self) -> dict:
         subtask_dict = asdict(self)
-        subtask_dict['status'] = self.status.value
-        subtask_dict['priority'] = self.priority.value
-        return subtask_dict 
+        subtask_dict["status"] = self.status.value
+        subtask_dict["priority"] = self.priority.value
+        return subtask_dict

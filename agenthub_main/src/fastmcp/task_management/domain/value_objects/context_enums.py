@@ -11,30 +11,33 @@ class ContextLevel(str, Enum):
     Enumeration of context hierarchy levels.
     Global → Project → Branch → Task
     """
+
     GLOBAL = "global"
-    PROJECT = "project" 
+    PROJECT = "project"
     BRANCH = "branch"
     TASK = "task"
-    
+
     @classmethod
-    def from_string(cls, value: str) -> 'ContextLevel':
+    def from_string(cls, value: str) -> "ContextLevel":
         """Create ContextLevel from string value."""
         value_lower = value.lower()
         for level in cls:
             if level.value == value_lower:
                 return level
-        raise ValueError(f"Invalid context level: {value}. Valid levels are: {', '.join([level.value for level in cls])}")
-    
+        raise ValueError(
+            f"Invalid context level: {value}. Valid levels are: {', '.join([level.value for level in cls])}"
+        )
+
     def __str__(self) -> str:
         """String representation."""
         return self.value
-    
-    def get_parent_level(self) -> Optional['ContextLevel']:
+
+    def get_parent_level(self) -> Optional["ContextLevel"]:
         """Get the parent level in the hierarchy."""
         hierarchy = {
             ContextLevel.TASK: ContextLevel.BRANCH,
             ContextLevel.BRANCH: ContextLevel.PROJECT,
             ContextLevel.PROJECT: ContextLevel.GLOBAL,
-            ContextLevel.GLOBAL: None
+            ContextLevel.GLOBAL: None,
         }
         return hierarchy.get(self)

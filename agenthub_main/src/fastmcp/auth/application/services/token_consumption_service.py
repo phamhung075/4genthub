@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TokenConsumptionResult:
     """Result of a token consumption attempt"""
+
     success: bool
     remaining_balance: int | None = None
     consumed: int | None = None
@@ -36,6 +37,7 @@ class TokenConsumptionResult:
 @dataclass
 class TokenBalanceResult:
     """Result of getting token balance"""
+
     success: bool
     balance: dict[str, Any] | None = None
     error_message: str | None = None
@@ -44,6 +46,7 @@ class TokenBalanceResult:
 @dataclass
 class TokenAdditionResult:
     """Result of adding tokens"""
+
     success: bool
     new_balance: int | None = None
     added: int | None = None
@@ -61,7 +64,9 @@ class TokenConsumptionService:
     - Managing quotas and resets
     """
 
-    def __init__(self, session: Session, token_repository: ITokenBalanceRepository | None = None):
+    def __init__(
+        self, session: Session, token_repository: ITokenBalanceRepository | None = None
+    ):
         """
         Initialize token consumption service
 
@@ -73,10 +78,7 @@ class TokenConsumptionService:
         self.token_repository = token_repository or TokenBalanceRepository(session)
 
     async def consume_tokens_for_operation(
-        self,
-        user_id: str,
-        operation: str,
-        custom_cost: int | None = None
+        self, user_id: str, operation: str, custom_cost: int | None = None
     ) -> TokenConsumptionResult:
         """
         Consume tokens for a specific MCP operation
@@ -94,7 +96,11 @@ class TokenConsumptionService:
         """
         try:
             # Determine token cost
-            cost = custom_cost if custom_cost is not None else get_operation_cost(operation, default=1)
+            cost = (
+                custom_cost
+                if custom_cost is not None
+                else get_operation_cost(operation, default=1)
+            )
 
             # Skip if operation is free
             if cost == 0:
@@ -102,7 +108,7 @@ class TokenConsumptionService:
                     success=True,
                     consumed=0,
                     operation=operation,
-                    error_message="Operation is free - no tokens consumed"
+                    error_message="Operation is free - no tokens consumed",
                 )
 
             # Ensure user has a token balance record
@@ -124,7 +130,7 @@ class TokenConsumptionService:
                     success=False,
                     error_message=f"Insufficient tokens. Required: {cost}, Available: {available}",
                     error_code="INSUFFICIENT_TOKENS",
-                    operation=operation
+                    operation=operation,
                 )
 
             # Get updated balance
@@ -139,23 +145,22 @@ class TokenConsumptionService:
                 success=True,
                 remaining_balance=balance["available_tokens"],
                 consumed=cost,
-                operation=operation
+                operation=operation,
             )
 
         except Exception as e:
-            logger.error(f"Error consuming tokens for user {user_id}, operation {operation}: {e}")
+            logger.error(
+                f"Error consuming tokens for user {user_id}, operation {operation}: {e}"
+            )
             return TokenConsumptionResult(
                 success=False,
                 error_message=f"Token consumption failed: {str(e)}",
                 error_code="CONSUMPTION_ERROR",
-                operation=operation
+                operation=operation,
             )
 
     async def consume_tokens(
-        self,
-        user_id: str,
-        amount: int,
-        operation: str | None = None
+        self, user_id: str, amount: int, operation: str | None = None
     ) -> TokenConsumptionResult:
         """
         Consume a specific amount of tokens
@@ -175,7 +180,7 @@ class TokenConsumptionService:
                 return TokenConsumptionResult(
                     success=False,
                     error_message="Token amount must be positive",
-                    error_code="INVALID_AMOUNT"
+                    error_code="INVALID_AMOUNT",
                 )
 
             # Ensure user has a token balance record
@@ -194,7 +199,7 @@ class TokenConsumptionService:
                     success=False,
                     error_message=f"Insufficient tokens. Required: {amount}, Available: {available}",
                     error_code="INSUFFICIENT_TOKENS",
-                    operation=operation
+                    operation=operation,
                 )
 
             # Get updated balance
@@ -204,7 +209,7 @@ class TokenConsumptionService:
                 success=True,
                 remaining_balance=balance["available_tokens"],
                 consumed=amount,
-                operation=operation
+                operation=operation,
             )
 
         except Exception as e:
@@ -212,14 +217,11 @@ class TokenConsumptionService:
             return TokenConsumptionResult(
                 success=False,
                 error_message=f"Token consumption failed: {str(e)}",
-                error_code="CONSUMPTION_ERROR"
+                error_code="CONSUMPTION_ERROR",
             )
 
     async def add_tokens(
-        self,
-        user_id: str,
-        amount: int,
-        reason: str | None = None
+        self, user_id: str, amount: int, reason: str | None = None
     ) -> TokenAdditionResult:
         """
         Add tokens to user's balance
@@ -241,39 +243,41 @@ class TokenConsumptionService:
         try:
             if amount <= 0:
                 return TokenAdditionResult(
-                    success=False,
-                    error_message="Token amount must be positive"
+                    success=False, error_message="Token amount must be positive"
                 )
 
             # Ensure user has a token balance record
             balance = await self.token_repository.get_balance(user_id)
             if not balance:
-                await self.token_repository.create_balance(user_id, initial_tokens=amount)
+                await self.token_repository.create_balance(
+                    user_id, initial_tokens=amount
+                )
                 balance = await self.token_repository.get_balance(user_id)
-                logger.info(f"Created balance with {amount} tokens for user {user_id} - {reason or 'No reason'}")
+                logger.info(
+                    f"Created balance with {amount} tokens for user {user_id} - {reason or 'No reason'}"
+                )
             else:
                 # Add tokens
                 success = await self.token_repository.add_tokens(user_id, amount)
                 if not success:
                     return TokenAdditionResult(
                         success=False,
-                        error_message="Failed to add tokens - user not found"
+                        error_message="Failed to add tokens - user not found",
                     )
 
                 balance = await self.token_repository.get_balance(user_id)
-                logger.info(f"Added {amount} tokens for user {user_id} - {reason or 'No reason'}")
+                logger.info(
+                    f"Added {amount} tokens for user {user_id} - {reason or 'No reason'}"
+                )
 
             return TokenAdditionResult(
-                success=True,
-                new_balance=balance["available_tokens"],
-                added=amount
+                success=True, new_balance=balance["available_tokens"], added=amount
             )
 
         except Exception as e:
             logger.error(f"Error adding tokens for user {user_id}: {e}")
             return TokenAdditionResult(
-                success=False,
-                error_message=f"Failed to add tokens: {str(e)}"
+                success=False, error_message=f"Failed to add tokens: {str(e)}"
             )
 
     async def get_balance(self, user_id: str) -> TokenBalanceResult:
@@ -294,16 +298,12 @@ class TokenConsumptionService:
                 await self.token_repository.create_balance(user_id)
                 balance = await self.token_repository.get_balance(user_id)
 
-            return TokenBalanceResult(
-                success=True,
-                balance=balance
-            )
+            return TokenBalanceResult(success=True, balance=balance)
 
         except Exception as e:
             logger.error(f"Error getting balance for user {user_id}: {e}")
             return TokenBalanceResult(
-                success=False,
-                error_message=f"Failed to get balance: {str(e)}"
+                success=False, error_message=f"Failed to get balance: {str(e)}"
             )
 
     async def get_usage_stats(self, user_id: str) -> TokenBalanceResult:
@@ -324,23 +324,16 @@ class TokenConsumptionService:
                 await self.token_repository.create_balance(user_id)
                 stats = await self.token_repository.get_usage_stats(user_id)
 
-            return TokenBalanceResult(
-                success=True,
-                balance=stats
-            )
+            return TokenBalanceResult(success=True, balance=stats)
 
         except Exception as e:
             logger.error(f"Error getting usage stats for user {user_id}: {e}")
             return TokenBalanceResult(
-                success=False,
-                error_message=f"Failed to get usage stats: {str(e)}"
+                success=False, error_message=f"Failed to get usage stats: {str(e)}"
             )
 
     async def update_quota(
-        self,
-        user_id: str,
-        new_quota: int,
-        reason: str | None = None
+        self, user_id: str, new_quota: int, reason: str | None = None
     ) -> TokenAdditionResult:
         """
         Update user's monthly quota
@@ -356,8 +349,7 @@ class TokenConsumptionService:
         try:
             if new_quota < 0:
                 return TokenAdditionResult(
-                    success=False,
-                    error_message="Quota cannot be negative"
+                    success=False, error_message="Quota cannot be negative"
                 )
 
             success = await self.token_repository.update_quota(user_id, new_quota)
@@ -365,22 +357,22 @@ class TokenConsumptionService:
             if not success:
                 return TokenAdditionResult(
                     success=False,
-                    error_message="Failed to update quota - user not found"
+                    error_message="Failed to update quota - user not found",
                 )
 
-            logger.info(f"Updated quota for user {user_id} to {new_quota} - {reason or 'No reason'}")
+            logger.info(
+                f"Updated quota for user {user_id} to {new_quota} - {reason or 'No reason'}"
+            )
 
             balance = await self.token_repository.get_balance(user_id)
             return TokenAdditionResult(
-                success=True,
-                new_balance=balance["available_tokens"]
+                success=True, new_balance=balance["available_tokens"]
             )
 
         except Exception as e:
             logger.error(f"Error updating quota for user {user_id}: {e}")
             return TokenAdditionResult(
-                success=False,
-                error_message=f"Failed to update quota: {str(e)}"
+                success=False, error_message=f"Failed to update quota: {str(e)}"
             )
 
     async def reset_monthly_quota(self, user_id: str) -> TokenBalanceResult:
@@ -399,29 +391,22 @@ class TokenConsumptionService:
             if not success:
                 return TokenBalanceResult(
                     success=False,
-                    error_message="Failed to reset quota - user not found"
+                    error_message="Failed to reset quota - user not found",
                 )
 
             balance = await self.token_repository.get_balance(user_id)
             logger.info(f"Manually reset monthly quota for user {user_id}")
 
-            return TokenBalanceResult(
-                success=True,
-                balance=balance
-            )
+            return TokenBalanceResult(success=True, balance=balance)
 
         except Exception as e:
             logger.error(f"Error resetting quota for user {user_id}: {e}")
             return TokenBalanceResult(
-                success=False,
-                error_message=f"Failed to reset quota: {str(e)}"
+                success=False, error_message=f"Failed to reset quota: {str(e)}"
             )
 
     async def check_sufficient_balance(
-        self,
-        user_id: str,
-        operation: str,
-        custom_cost: int | None = None
+        self, user_id: str, operation: str, custom_cost: int | None = None
     ) -> tuple[bool, int, int]:
         """
         Check if user has sufficient balance for an operation
@@ -437,7 +422,11 @@ class TokenConsumptionService:
             Tuple of (has_sufficient_balance, required_cost, available_balance)
         """
         try:
-            cost = custom_cost if custom_cost is not None else get_operation_cost(operation, default=1)
+            cost = (
+                custom_cost
+                if custom_cost is not None
+                else get_operation_cost(operation, default=1)
+            )
 
             balance = await self.token_repository.get_balance(user_id)
             if not balance:

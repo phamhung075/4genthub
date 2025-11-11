@@ -7,11 +7,10 @@ This module provides performance enhancements for task loading including:
 - Response payload optimization
 """
 
-from .task_performance_optimizer import TaskPerformanceOptimizer, get_performance_optimizer
+from .task_performance_optimizer import (
+    TaskPerformanceOptimizer,
+    get_performance_optimizer,
+)
 from .performance_config import PerformanceConfig
 
-__all__ = [
-    'TaskPerformanceOptimizer',
-    'get_performance_optimizer',
-    'PerformanceConfig'
-]
+__all__ = ["TaskPerformanceOptimizer", "get_performance_optimizer", "PerformanceConfig"]

@@ -26,11 +26,17 @@ class CORSFactory:
 
         if cors_origins_str:
             # Parse comma-separated origins
-            origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+            origins = [
+                origin.strip()
+                for origin in cors_origins_str.split(",")
+                if origin.strip()
+            ]
 
             # Allow wildcard for MCP endpoints - required for Claude Code integration
             if "*" in origins:
-                logger.info("Wildcard (*) CORS enabled for MCP/Claude Code compatibility")
+                logger.info(
+                    "Wildcard (*) CORS enabled for MCP/Claude Code compatibility"
+                )
                 return ["*"]
 
             logger.info(f"CORS origins configured: {origins}")
@@ -38,13 +44,17 @@ class CORSFactory:
         else:
             # Default to wildcard for MCP compatibility
             default_origins = ["*"]
-            logger.info(f"Using default CORS origins: {default_origins} (for MCP compatibility)")
+            logger.info(
+                f"Using default CORS origins: {default_origins} (for MCP compatibility)"
+            )
             return default_origins
 
     @staticmethod
-    def configure_cors(app: FastAPI,
-                      allow_credentials: bool = True,
-                      custom_origins: list[str] | None = None) -> None:
+    def configure_cors(
+        app: FastAPI,
+        allow_credentials: bool = True,
+        custom_origins: list[str] | None = None,
+    ) -> None:
         """
         Configure CORS middleware for a FastAPI application.
 
@@ -74,7 +84,9 @@ class CORSFactory:
             max_age=600,  # Cache preflight requests for 10 minutes
         )
 
-        logger.info(f"CORS configured for origins={origins} with credentials={allow_credentials}")
+        logger.info(
+            f"CORS configured for origins={origins} with credentials={allow_credentials}"
+        )
 
     @staticmethod
     def get_cors_config() -> dict:

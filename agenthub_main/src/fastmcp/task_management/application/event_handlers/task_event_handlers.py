@@ -39,7 +39,7 @@ class TaskEventHandlers:
         self,
         event_store: EventStore,
         task_repository: Any | None = None,
-        notification_service: Any | None = None
+        notification_service: Any | None = None,
     ):
         self.event_store = event_store
         self.task_repository = task_repository
@@ -53,7 +53,7 @@ class TaskEventHandlers:
                 "completed": 0,
                 "deleted": 0,
                 "status_changes": 0,
-                "moved": 0
+                "moved": 0,
             }
         )
 
@@ -75,17 +75,19 @@ class TaskEventHandlers:
         )
 
         # Update statistics by project
-        project_key = str(event.project_id) if hasattr(event, 'project_id') else 'unknown'
+        project_key = (
+            str(event.project_id) if hasattr(event, "project_id") else "unknown"
+        )
         self.task_stats[project_key]["created"] += 1
 
         # Send notifications to assignees
-        if self.notification_service and hasattr(event, 'assignees'):
+        if self.notification_service and hasattr(event, "assignees"):
             for assignee in event.assignees:
                 await self.notification_service.notify_task_assignment(
                     assignee=assignee,
                     task_id=event.task_id,
                     title=event.title,
-                    priority=event.priority
+                    priority=event.priority,
                 )
 
         # Initialize task tracking
@@ -104,19 +106,23 @@ class TaskEventHandlers:
         )
 
         # Update statistics
-        project_key = str(event.project_id) if hasattr(event, 'project_id') else 'unknown'
+        project_key = (
+            str(event.project_id) if hasattr(event, "project_id") else "unknown"
+        )
         self.task_stats[project_key]["updated"] += 1
 
         # Track significant changes
-        significant_fields = ['status', 'priority', 'assignees', 'due_date']
-        significant_changes = [f for f in event.changed_fields if f in significant_fields]
+        significant_fields = ["status", "priority", "assignees", "due_date"]
+        significant_changes = [
+            f for f in event.changed_fields if f in significant_fields
+        ]
 
         if significant_changes and self.notification_service:
             await self.notification_service.notify_task_updated(
                 task_id=event.task_id,
                 changed_fields=significant_changes,
                 previous_values=event.previous_values,
-                new_values=event.new_values
+                new_values=event.new_values,
             )
 
     async def handle_task_deleted(self, event: TaskDeletedEvent) -> None:
@@ -131,7 +137,9 @@ class TaskEventHandlers:
         )
 
         # Update statistics
-        project_key = str(event.project_id) if hasattr(event, 'project_id') else 'unknown'
+        project_key = (
+            str(event.project_id) if hasattr(event, "project_id") else "unknown"
+        )
         self.task_stats[project_key]["deleted"] += 1
 
         # Archive task data
@@ -141,8 +149,7 @@ class TaskEventHandlers:
         # Notify stakeholders
         if self.notification_service:
             await self.notification_service.notify_task_deleted(
-                task_id=event.task_id,
-                deleted_by=event.user_id
+                task_id=event.task_id, deleted_by=event.user_id
             )
 
     async def handle_task_status_changed(self, event: TaskStatusChangedEvent) -> None:
@@ -157,7 +164,9 @@ class TaskEventHandlers:
         )
 
         # Update statistics
-        project_key = str(event.project_id) if hasattr(event, 'project_id') else 'unknown'
+        project_key = (
+            str(event.project_id) if hasattr(event, "project_id") else "unknown"
+        )
         self.task_stats[project_key]["status_changes"] += 1
 
         # Track status transition
@@ -166,7 +175,7 @@ class TaskEventHandlers:
             "from": event.previous_status,
             "to": event.new_status,
             "timestamp": event.occurred_at.isoformat(),
-            "user": event.user_id
+            "user": event.user_id,
         }
         self.status_transitions[str(event.task_id)].append(transition)
 
@@ -190,7 +199,9 @@ class TaskEventHandlers:
         )
 
         # Update statistics
-        project_key = str(event.project_id) if hasattr(event, 'project_id') else 'unknown'
+        project_key = (
+            str(event.project_id) if hasattr(event, "project_id") else "unknown"
+        )
         self.task_stats[project_key]["completed"] += 1
 
         # Track completion time
@@ -199,7 +210,9 @@ class TaskEventHandlers:
 
         # Calculate completion metrics
         if len(self.completion_times) >= 5:
-            avg_completion = sum(self.completion_times[-10:]) / min(len(self.completion_times), 10)
+            avg_completion = sum(self.completion_times[-10:]) / min(
+                len(self.completion_times), 10
+            )
             logger.info(f"Average completion time (last 10): {avg_completion:.2f}s")
 
         # Notify stakeholders
@@ -208,12 +221,14 @@ class TaskEventHandlers:
                 task_id=event.task_id,
                 title=event.title,
                 completed_by=event.user_id,
-                completion_time=event.completion_time_seconds
+                completion_time=event.completion_time_seconds,
             )
 
         # Check for dependent tasks that can now start
         if self.task_repository:
-            dependent_tasks = await self.task_repository.get_dependent_tasks(event.task_id)
+            dependent_tasks = await self.task_repository.get_dependent_tasks(
+                event.task_id
+            )
             for dep_task in dependent_tasks:
                 await self._check_dependencies_and_notify(dep_task)
 
@@ -223,16 +238,14 @@ class TaskEventHandlers:
 
         Tracks access patterns for analytics.
         """
-        logger.debug(
-            f"Task retrieved: {event.task_id} by {event.user_id}"
-        )
+        logger.debug(f"Task retrieved: {event.task_id} by {event.user_id}")
 
         # Track access patterns (for analytics)
         if self.task_repository:
             await self.task_repository.track_task_access(
                 task_id=event.task_id,
                 user_id=event.user_id,
-                accessed_at=event.occurred_at
+                accessed_at=event.occurred_at,
             )
 
     async def handle_task_moved_to_branch(self, event: TaskMovedToBranchEvent) -> None:
@@ -247,7 +260,9 @@ class TaskEventHandlers:
         )
 
         # Update statistics
-        project_key = str(event.project_id) if hasattr(event, 'project_id') else 'unknown'
+        project_key = (
+            str(event.project_id) if hasattr(event, "project_id") else "unknown"
+        )
         self.task_stats[project_key]["moved"] += 1
 
         # Notify affected branch members
@@ -256,7 +271,7 @@ class TaskEventHandlers:
                 task_id=event.task_id,
                 previous_branch=event.previous_branch_id,
                 new_branch=event.new_branch_id,
-                moved_by=event.user_id
+                moved_by=event.user_id,
             )
 
     async def _handle_task_started(self, event: TaskStatusChangedEvent) -> None:
@@ -265,8 +280,7 @@ class TaskEventHandlers:
 
         if self.notification_service:
             await self.notification_service.notify_task_started(
-                task_id=event.task_id,
-                started_by=event.user_id
+                task_id=event.task_id, started_by=event.user_id
             )
 
     async def _handle_task_blocked(self, event: TaskStatusChangedEvent) -> None:
@@ -275,9 +289,7 @@ class TaskEventHandlers:
 
         if self.notification_service:
             await self.notification_service.notify_task_blocked(
-                task_id=event.task_id,
-                blocked_by=event.user_id,
-                urgent=True
+                task_id=event.task_id, blocked_by=event.user_id, urgent=True
             )
 
     async def _handle_task_needs_review(self, event: TaskStatusChangedEvent) -> None:
@@ -286,8 +298,7 @@ class TaskEventHandlers:
 
         if self.notification_service:
             await self.notification_service.notify_task_needs_review(
-                task_id=event.task_id,
-                submitted_by=event.user_id
+                task_id=event.task_id, submitted_by=event.user_id
             )
 
     async def _check_dependencies_and_notify(self, task_id: UUID) -> None:
@@ -301,10 +312,12 @@ class TaskEventHandlers:
         if all_complete and self.notification_service:
             await self.notification_service.notify_task_ready(
                 task_id=task_id,
-                message="All dependencies completed, task is ready to start"
+                message="All dependencies completed, task is ready to start",
             )
 
-    async def get_task_statistics(self, project_id: UUID | None = None) -> dict[str, Any]:
+    async def get_task_statistics(
+        self, project_id: UUID | None = None
+    ) -> dict[str, Any]:
         """
         Get task statistics for a project or all projects.
 
@@ -317,10 +330,7 @@ class TaskEventHandlers:
         if project_id:
             project_key = str(project_id)
             stats = self.task_stats.get(project_key, {})
-            return {
-                "project_id": project_key,
-                "statistics": dict(stats)
-            }
+            return {"project_id": project_key, "statistics": dict(stats)}
 
         # Aggregate across all projects
         total_stats = {
@@ -328,7 +338,9 @@ class TaskEventHandlers:
             "updated": sum(s.get("updated", 0) for s in self.task_stats.values()),
             "completed": sum(s.get("completed", 0) for s in self.task_stats.values()),
             "deleted": sum(s.get("deleted", 0) for s in self.task_stats.values()),
-            "status_changes": sum(s.get("status_changes", 0) for s in self.task_stats.values()),
+            "status_changes": sum(
+                s.get("status_changes", 0) for s in self.task_stats.values()
+            ),
             "moved": sum(s.get("moved", 0) for s in self.task_stats.values()),
         }
 
@@ -342,13 +354,13 @@ class TaskEventHandlers:
 
         # Add average completion time
         if self.completion_times:
-            total_stats["avg_completion_time_seconds"] = (
-                sum(self.completion_times) / len(self.completion_times)
-            )
+            total_stats["avg_completion_time_seconds"] = sum(
+                self.completion_times
+            ) / len(self.completion_times)
 
         return {
             "summary": total_stats,
-            "by_project": {k: dict(v) for k, v in self.task_stats.items()}
+            "by_project": {k: dict(v) for k, v in self.task_stats.items()},
         }
 
     async def process_event(self, event: BaseDomainEvent) -> None:

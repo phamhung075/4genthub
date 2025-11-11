@@ -9,14 +9,14 @@ from ..value_objects import ErrorSeverity
 
 class TaskDomainError(Exception):
     """Base exception for task domain errors"""
-    
+
     def __init__(
         self,
         message: str,
         error_code: str | None = None,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
         context: dict[str, Any] | None = None,
-        recoverable: bool = True
+        recoverable: bool = True,
     ):
         """Initialize base task domain error."""
         super().__init__(message)
@@ -28,7 +28,7 @@ class TaskDomainError(Exception):
 
 class TaskNotFoundError(TaskDomainError):
     """Raised when a task is not found"""
-    
+
     def __init__(self, message_or_task_id):
         if isinstance(message_or_task_id, str) and "not found" in message_or_task_id:
             # Already a formatted message
@@ -36,7 +36,8 @@ class TaskNotFoundError(TaskDomainError):
             # Extract task_id from message if possible
             try:
                 import re
-                match = re.search(r'Task (\w+) not found', message_or_task_id)
+
+                match = re.search(r"Task (\w+) not found", message_or_task_id)
                 self.task_id = match.group(1) if match else message_or_task_id
             except Exception:
                 self.task_id = message_or_task_id
@@ -44,30 +45,32 @@ class TaskNotFoundError(TaskDomainError):
             # Raw task_id passed
             self.task_id = message_or_task_id
             message = f"Task with ID {message_or_task_id} not found"
-            
+
         super().__init__(
             message=message,
             error_code="TASK_NOT_FOUND",
             severity=ErrorSeverity.MEDIUM,
             context={"task_id": self.task_id},
-            recoverable=False
+            recoverable=False,
         )
 
 
 class InvalidTaskStateError(TaskDomainError):
     """Raised when a task operation is invalid for the current state"""
-    
+
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class InvalidTaskTransitionError(TaskDomainError):
     """Raised when a task status transition is invalid"""
-    
+
     def __init__(self, current_status: str, target_status: str):
         self.current_status = current_status
         self.target_status = target_status
-        super().__init__(f"Cannot transition from '{current_status}' to '{target_status}'")
+        super().__init__(
+            f"Cannot transition from '{current_status}' to '{target_status}'"
+        )
 
 
 class AutoRuleGenerationError(TaskDomainError):
@@ -80,21 +83,21 @@ class AutoRuleGenerationError(TaskDomainError):
 
 class AgentNotFoundError(TaskDomainError):
     """Raised when an agent is not found"""
-    
+
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class ProjectNotFoundError(TaskDomainError):
     """Raised when a project is not found"""
-    
+
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class TaskValidationError(TaskDomainError):
     """Raised when task validation fails"""
-    
+
     def __init__(self, message: str, validation_errors: list[str] | None = None):
         self.validation_errors = validation_errors or []
         super().__init__(
@@ -102,14 +105,16 @@ class TaskValidationError(TaskDomainError):
             error_code="TASK_VALIDATION_ERROR",
             severity=ErrorSeverity.MEDIUM,
             context={"validation_errors": self.validation_errors},
-            recoverable=True
+            recoverable=True,
         )
 
 
 class TaskCompletionError(TaskDomainError):
     """Raised when a task cannot be completed due to business rule violations"""
 
-    def __init__(self, message: str, incomplete_subtasks: list[dict[str, Any]] | None = None):
+    def __init__(
+        self, message: str, incomplete_subtasks: list[dict[str, Any]] | None = None
+    ):
         self.incomplete_subtasks = incomplete_subtasks or []
         context = {}
         if incomplete_subtasks:
@@ -121,33 +126,33 @@ class TaskCompletionError(TaskDomainError):
             error_code="SUBTASKS_NOT_COMPLETE",
             severity=ErrorSeverity.MEDIUM,
             context=context,
-            recoverable=True
+            recoverable=True,
         )
 
 
 class TaskCreationError(TaskDomainError):
     """Raised when a task cannot be created"""
-    
+
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class TaskUpdateError(TaskDomainError):
     """Raised when a task cannot be updated"""
-    
+
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class DuplicateTaskError(TaskDomainError):
     """Raised when attempting to create a duplicate task"""
-    
+
     def __init__(self, message: str):
         super().__init__(message)
 
 
 class TaskStateTransitionError(TaskDomainError):
     """Raised when a task state transition fails"""
-    
+
     def __init__(self, message: str):
-        super().__init__(message) 
+        super().__init__(message)

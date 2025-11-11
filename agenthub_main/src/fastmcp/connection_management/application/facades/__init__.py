@@ -2,4 +2,4 @@
 
 from .connection_application_facade import ConnectionApplicationFacade
 
-__all__ = ["ConnectionApplicationFacade"] 
+__all__ = ["ConnectionApplicationFacade"]

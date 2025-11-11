@@ -5,7 +5,6 @@ This module contains the comprehensive documentation for the manage_subtask MCP 
 Separated from the controller logic for better maintainability and organization.
 """
 
-
 from __future__ import annotations
 
 

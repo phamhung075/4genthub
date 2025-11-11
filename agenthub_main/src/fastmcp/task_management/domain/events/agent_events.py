@@ -17,6 +17,7 @@ from .base import BaseDomainEvent
 @dataclass(frozen=True)
 class AgentAssigned(BaseDomainEvent):
     """Event raised when an agent is assigned to a task"""
+
     agent_id: str = ""
     task_id: str = ""
     role: str = ""
@@ -29,6 +30,7 @@ class AgentAssigned(BaseDomainEvent):
 @dataclass(frozen=True)
 class AgentUnassigned(BaseDomainEvent):
     """Event raised when an agent is unassigned from a task"""
+
     agent_id: str = ""
     task_id: str = ""
     unassigned_by: str = ""
@@ -40,6 +42,7 @@ class AgentUnassigned(BaseDomainEvent):
 @dataclass(frozen=True)
 class WorkHandoffRequested(BaseDomainEvent):
     """Event raised when work handoff is requested"""
+
     handoff_id: str = ""
     from_agent_id: str = ""
     to_agent_id: str = ""
@@ -53,6 +56,7 @@ class WorkHandoffRequested(BaseDomainEvent):
 @dataclass(frozen=True)
 class WorkHandoffAccepted(BaseDomainEvent):
     """Event raised when work handoff is accepted"""
+
     handoff_id: str = ""
     accepted_by: str = ""
     task_id: str = ""
@@ -62,6 +66,7 @@ class WorkHandoffAccepted(BaseDomainEvent):
 @dataclass(frozen=True)
 class WorkHandoffRejected(BaseDomainEvent):
     """Event raised when work handoff is rejected"""
+
     handoff_id: str = ""
     rejected_by: str = ""
     task_id: str = ""
@@ -71,6 +76,7 @@ class WorkHandoffRejected(BaseDomainEvent):
 @dataclass(frozen=True)
 class WorkHandoffCompleted(BaseDomainEvent):
     """Event raised when work handoff is completed"""
+
     handoff_id: str = ""
     from_agent_id: str = ""
     to_agent_id: str = ""
@@ -82,6 +88,7 @@ class WorkHandoffCompleted(BaseDomainEvent):
 @dataclass(frozen=True)
 class ConflictDetected(BaseDomainEvent):
     """Event raised when a conflict is detected"""
+
     conflict_id: str = ""
     conflict_type: str = ""  # concurrent_edit, resource_contention, etc.
     involved_agents: list[str] = field(default_factory=list)
@@ -95,6 +102,7 @@ class ConflictDetected(BaseDomainEvent):
 @dataclass(frozen=True)
 class ConflictResolved(BaseDomainEvent):
     """Event raised when a conflict is resolved"""
+
     conflict_id: str = ""
     resolution_strategy: str = ""  # merge, override, vote, escalate, etc.
     resolved_by: str = ""
@@ -107,11 +115,14 @@ class ConflictResolved(BaseDomainEvent):
 @dataclass(frozen=True)
 class AgentCollaborationStarted(BaseDomainEvent):
     """Event raised when agents start collaborating"""
+
     collaboration_id: str = ""
     initiating_agent: str = ""
     collaborating_agents: list[str] = field(default_factory=list)
     task_id: str = ""
-    collaboration_type: str = "general"  # general, pair_programming, review, brainstorming
+    collaboration_type: str = (
+        "general"  # general, pair_programming, review, brainstorming
+    )
     objectives: list[str] = field(default_factory=list)
     expected_duration_hours: float | None = None
 
@@ -119,6 +130,7 @@ class AgentCollaborationStarted(BaseDomainEvent):
 @dataclass(frozen=True)
 class AgentCollaborationEnded(BaseDomainEvent):
     """Event raised when collaboration ends"""
+
     collaboration_id: str = ""
     task_id: str = ""
     outcomes: list[str] = field(default_factory=list)
@@ -130,6 +142,7 @@ class AgentCollaborationEnded(BaseDomainEvent):
 @dataclass(frozen=True)
 class AgentStatusBroadcast(BaseDomainEvent):
     """Event raised when agent broadcasts status"""
+
     agent_id: str = ""
     status: str = ""  # available, busy, blocked, offline
     current_task_id: str | None = None
@@ -142,12 +155,17 @@ class AgentStatusBroadcast(BaseDomainEvent):
 @dataclass(frozen=True)
 class AgentWorkloadRebalanced(BaseDomainEvent):
     """Event raised when workload is rebalanced"""
+
     rebalance_id: str = ""
     initiated_by: str = ""
     agents_affected: list[str] = field(default_factory=list)
-    tasks_reassigned: dict[str, str] = field(default_factory=dict)  # task_id -> new_agent_id
+    tasks_reassigned: dict[str, str] = field(
+        default_factory=dict
+    )  # task_id -> new_agent_id
     reason: str = ""
-    workload_before: dict[str, int] = field(default_factory=dict)  # agent_id -> task_count
+    workload_before: dict[str, int] = field(
+        default_factory=dict
+    )  # agent_id -> task_count
     workload_after: dict[str, int] = field(default_factory=dict)
 
 
@@ -158,6 +176,7 @@ class AgentWorkloadChanged(BaseDomainEvent):
 
     This is a new event added in Phase 5 to track workload metrics changes.
     """
+
     agent_id: str = ""
     old_task_count: int = 0
     new_task_count: int = 0
@@ -169,6 +188,7 @@ class AgentWorkloadChanged(BaseDomainEvent):
 @dataclass(frozen=True)
 class AgentEscalationRaised(BaseDomainEvent):
     """Event raised when escalation is needed"""
+
     escalation_id: str = ""
     escalating_agent: str = ""
     escalated_to: str = ""  # manager or senior agent
@@ -183,6 +203,7 @@ class AgentEscalationRaised(BaseDomainEvent):
 @dataclass(frozen=True)
 class AgentEscalationResolved(BaseDomainEvent):
     """Event raised when escalation is resolved"""
+
     escalation_id: str = ""
     resolved_by: str = ""
     task_id: str = ""
@@ -194,10 +215,13 @@ class AgentEscalationResolved(BaseDomainEvent):
 @dataclass(frozen=True)
 class AgentCommunicationSent(BaseDomainEvent):
     """Event raised when agent sends communication"""
+
     message_id: str = ""
     from_agent_id: str = ""
     to_agent_ids: list[str] = field(default_factory=list)
-    message_type: str = "status_update"  # status_update, question, response, notification
+    message_type: str = (
+        "status_update"  # status_update, question, response, notification
+    )
     subject: str = ""
     priority: str = "normal"  # low, normal, high, urgent
     task_id: str | None = None
@@ -207,6 +231,7 @@ class AgentCommunicationSent(BaseDomainEvent):
 @dataclass(frozen=True)
 class AgentPerformanceEvaluated(BaseDomainEvent):
     """Event raised when agent performance is evaluated"""
+
     agent_id: str = ""
     evaluation_id: str = ""
     evaluated_by: str | None = None  # None if system-generated
@@ -220,21 +245,21 @@ class AgentPerformanceEvaluated(BaseDomainEvent):
 
 
 __all__ = [
-    'AgentAssigned',
-    'AgentUnassigned',
-    'WorkHandoffRequested',
-    'WorkHandoffAccepted',
-    'WorkHandoffRejected',
-    'WorkHandoffCompleted',
-    'ConflictDetected',
-    'ConflictResolved',
-    'AgentCollaborationStarted',
-    'AgentCollaborationEnded',
-    'AgentStatusBroadcast',
-    'AgentWorkloadRebalanced',
-    'AgentWorkloadChanged',
-    'AgentEscalationRaised',
-    'AgentEscalationResolved',
-    'AgentCommunicationSent',
-    'AgentPerformanceEvaluated',
+    "AgentAssigned",
+    "AgentUnassigned",
+    "WorkHandoffRequested",
+    "WorkHandoffAccepted",
+    "WorkHandoffRejected",
+    "WorkHandoffCompleted",
+    "ConflictDetected",
+    "ConflictResolved",
+    "AgentCollaborationStarted",
+    "AgentCollaborationEnded",
+    "AgentStatusBroadcast",
+    "AgentWorkloadRebalanced",
+    "AgentWorkloadChanged",
+    "AgentEscalationRaised",
+    "AgentEscalationResolved",
+    "AgentCommunicationSent",
+    "AgentPerformanceEvaluated",
 ]

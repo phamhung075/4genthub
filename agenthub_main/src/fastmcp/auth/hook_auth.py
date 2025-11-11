@@ -26,56 +26,63 @@ HOOK_JWT_ALGORITHM = os.getenv("HOOK_JWT_ALGORITHM", "HS256")
 HOOK_JWT_SECRET = os.getenv("HOOK_JWT_SECRET")
 
 if not HOOK_JWT_SECRET:
-    raise ValueError("HOOK_JWT_SECRET environment variable is required for hook authentication")
+    raise ValueError(
+        "HOOK_JWT_SECRET environment variable is required for hook authentication"
+    )
 
 security = HTTPBearer()
 
 
 class HookAuthValidator:
     """Validates tokens from Claude hooks (from .mcp.json file)"""
-    
+
     def __init__(self):
         self.algorithm = HOOK_JWT_ALGORITHM
         self.secret = HOOK_JWT_SECRET
         self.logger = logger
-        
+
     def validate_hook_token(self, token: str) -> dict[str, Any]:
         """
         Validate a hook JWT token
-        
+
         Args:
             token: JWT token from hook request
-            
+
         Returns:
             Decoded token payload if valid
-            
+
         Raises:
             HTTPException: If token is invalid
         """
         try:
             # Decode without verification first to check the structure
             unverified = jwt.get_unverified_claims(token)
-            
+
             # Check if it's a hook/MCP token (has specific fields)
-            if unverified.get("type") == "api_token" or unverified.get("iss") == "agenthub":
+            if (
+                unverified.get("type") == "api_token"
+                or unverified.get("iss") == "agenthub"
+            ):
                 # This is a hook token, validate with our secret
                 try:
                     payload = jwt.decode(
                         token,
                         self.secret,
                         algorithms=[self.algorithm],
-                        audience="mcp-server"  # Expected audience for MCP tokens
+                        audience="mcp-server",  # Expected audience for MCP tokens
                     )
-                    
+
                     # Check expiration
                     if "exp" in payload:
                         exp_timestamp = payload["exp"]
                         if datetime.now(UTC).timestamp() > exp_timestamp:
                             raise HTTPException(status_code=401, detail="Token expired")
-                    
-                    self.logger.info(f"Hook token validated successfully: {payload.get('sub', 'unknown')}")
+
+                    self.logger.info(
+                        f"Hook token validated successfully: {payload.get('sub', 'unknown')}"
+                    )
                     return payload
-                    
+
                 except ExpiredSignatureError as e:
                     self.logger.warning(f"Hook token expired: {e}")
                     raise HTTPException(status_code=401, detail="Token expired")
@@ -84,12 +91,16 @@ class HookAuthValidator:
                     # Token structure is correct but signature invalid
                     # For development, we can be lenient
                     if os.getenv("AUTH_ENABLED", "true").lower() == "false":
-                        self.logger.warning("AUTH_ENABLED=false, allowing invalid signature")
+                        self.logger.warning(
+                            "AUTH_ENABLED=false, allowing invalid signature"
+                        )
                         return unverified
-                    raise HTTPException(status_code=401, detail="Invalid hook token signature")
+                    raise HTTPException(
+                        status_code=401, detail="Invalid hook token signature"
+                    )
             else:
                 raise HTTPException(status_code=401, detail="Not a valid hook token")
-                
+
         except JWTError as e:
             self.logger.error(f"Token decode error: {e}")
             raise HTTPException(status_code=401, detail="Invalid token format")
@@ -106,39 +117,39 @@ hook_auth_validator = HookAuthValidator()
 
 
 async def get_hook_authenticated_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(security)
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> dict[str, Any]:
     """
     FastAPI dependency for hook authentication
-    
+
     Returns user data from validated hook token
     """
     if not credentials:
         raise HTTPException(status_code=401, detail="No authentication provided")
-    
+
     token = credentials.credentials
     user_data = hook_auth_validator.validate_hook_token(token)
-    
+
     # Add hook-specific metadata
     user_data["auth_type"] = "hook"
     user_data["auth_method"] = "jwt_token"
-    
+
     return user_data
 
 
 def is_hook_request(request_headers: dict) -> bool:
     """
     Check if a request is coming from a Claude hook
-    
+
     Args:
         request_headers: Request headers
-        
+
     Returns:
         True if this appears to be a hook request
     """
     # Check for specific headers that hooks might send
     user_agent = request_headers.get("user-agent", "").lower()
-    
+
     # Hooks typically use python requests or similar
     hook_indicators = [
         "python",
@@ -146,16 +157,16 @@ def is_hook_request(request_headers: dict) -> bool:
         "aiohttp",
         "httpx",
         "claude-hook",
-        "mcp-client"
+        "mcp-client",
     ]
-    
+
     return any(indicator in user_agent for indicator in hook_indicators)
 
 
 def get_token_from_mcp_json() -> str | None:
     """
     Extract the Bearer token from .mcp.json file if available
-    
+
     Returns:
         Token string if found, None otherwise
     """
@@ -163,40 +174,40 @@ def get_token_from_mcp_json() -> str | None:
         # Look for .mcp.json in project root
         project_root = Path(__file__).parent.parent.parent.parent.parent
         mcp_json_path = project_root / ".mcp.json"
-        
+
         if mcp_json_path.exists():
             with open(mcp_json_path) as f:
                 mcp_config = json.load(f)
-                
+
             # Extract token from agenthub_http configuration
             agenthub_config = mcp_config.get("mcpServers", {}).get("agenthub_http", {})
             auth_header = agenthub_config.get("headers", {}).get("Authorization", "")
-            
+
             if auth_header.startswith("Bearer "):
                 token = auth_header[7:]  # Remove "Bearer " prefix
                 logger.info("Found token in .mcp.json")
                 return token
-                
+
     except Exception as e:
         logger.debug(f"Could not read .mcp.json token: {e}")
-    
+
     return None
 
 
 def create_hook_token(user_id: str = "hook-user", expires_in_days: int = 30) -> str:
     """
     Create a new hook authentication token
-    
+
     Args:
         user_id: User identifier for the hook
         expires_in_days: Token validity period
-        
+
     Returns:
         JWT token string
     """
     now = datetime.now(UTC)
     expire = now + timedelta(days=expires_in_days)
-    
+
     payload = {
         "sub": user_id,
         "type": "api_token",
@@ -212,11 +223,13 @@ def create_hook_token(user_id: str = "hook-user", expires_in_days: int = 30) -> 
             "tasks:update",
             "contexts:read",
             "projects:read",
-            "branches:read"
-        ]
+            "branches:read",
+        ],
     }
-    
+
     # Use environment variables for JWT configuration
     token = jwt.encode(payload, HOOK_JWT_SECRET, algorithm=HOOK_JWT_ALGORITHM)
-    logger.info(f"Created hook token for user {user_id} with algorithm {HOOK_JWT_ALGORITHM}")
+    logger.info(
+        f"Created hook token for user {user_id} with algorithm {HOOK_JWT_ALGORITHM}"
+    )
     return token

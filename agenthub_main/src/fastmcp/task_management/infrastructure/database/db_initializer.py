@@ -68,12 +68,16 @@ class DatabaseInitializer:
             # Check if database is already initialized
             existing_tables = self._get_existing_tables()
             if existing_tables:
-                logger.info(f"Found {len(existing_tables)} existing tables - database appears initialized")
+                logger.info(
+                    f"Found {len(existing_tables)} existing tables - database appears initialized"
+                )
                 # Still run structure verification
                 if self._verify_table_structure():
                     logger.info("✅ Table structure verified")
                 else:
-                    logger.warning("⚠️ Table structure verification failed - may need migration")
+                    logger.warning(
+                        "⚠️ Table structure verification failed - may need migration"
+                    )
                 self.initialized = True
                 return True
 
@@ -82,10 +86,10 @@ class DatabaseInitializer:
 
             # Determine database type and use appropriate init file
             db_url = str(self.engine.url).lower()
-            if 'postgresql' in db_url:
-                init_file = 'init_schema_postgresql.sql'
+            if "postgresql" in db_url:
+                init_file = "init_schema_postgresql.sql"
             else:
-                init_file = 'init_schema_sqlite.sql'
+                init_file = "init_schema_sqlite.sql"
 
             # Execute init SQL file
             if self._execute_init_sql_file(init_file):
@@ -171,7 +175,7 @@ class DatabaseInitializer:
                 return False
 
             # Read the SQL file
-            with open(sql_file_path, encoding='utf-8') as f:
+            with open(sql_file_path, encoding="utf-8") as f:
                 sql_content = f.read()
 
             logger.info(f"Executing init SQL file: {filename}")
@@ -179,18 +183,24 @@ class DatabaseInitializer:
             # Execute SQL in a transaction
             with self.engine.begin() as conn:
                 # Split SQL by statements and execute each one
-                statements = [stmt.strip() for stmt in sql_content.split(';') if stmt.strip()]
+                statements = [
+                    stmt.strip() for stmt in sql_content.split(";") if stmt.strip()
+                ]
 
                 for i, statement in enumerate(statements, 1):
-                    if statement.lower().startswith(('--', '/*')) or not statement:
+                    if statement.lower().startswith(("--", "/*")) or not statement:
                         continue
 
                     try:
                         conn.execute(text(statement))
                         if i % 10 == 0:  # Log progress every 10 statements
-                            logger.debug(f"Executed {i}/{len(statements)} SQL statements")
+                            logger.debug(
+                                f"Executed {i}/{len(statements)} SQL statements"
+                            )
                     except Exception as e:
-                        logger.error(f"Failed to execute SQL statement {i}: {statement[:100]}...")
+                        logger.error(
+                            f"Failed to execute SQL statement {i}: {statement[:100]}..."
+                        )
                         logger.error(f"Error: {e}")
                         raise
 
@@ -214,9 +224,17 @@ class DatabaseInitializer:
 
             # Define required core tables
             required_tables = {
-                'projects', 'project_git_branchs', 'tasks', 'subtasks',
-                'task_assignees', 'labels', 'task_labels',
-                'global_contexts', 'project_contexts', 'branch_contexts', 'task_contexts'
+                "projects",
+                "project_git_branchs",
+                "tasks",
+                "subtasks",
+                "task_assignees",
+                "labels",
+                "task_labels",
+                "global_contexts",
+                "project_contexts",
+                "branch_contexts",
+                "task_contexts",
             }
 
             missing_tables = required_tables - existing_tables

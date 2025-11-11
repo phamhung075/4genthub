@@ -32,6 +32,7 @@ AUTH_PROVIDER = os.getenv("AUTH_PROVIDER", "keycloak")
 # Cache for Keycloak public keys
 _keycloak_jwks_client = None
 
+
 def get_keycloak_jwks_client():
     """Get or create JWKS client for Keycloak token validation."""
     global _keycloak_jwks_client
@@ -55,17 +56,21 @@ def get_keycloak_jwks_client():
         ssl_context.verify_mode = ssl.CERT_NONE
 
         # Create custom URL opener with unverified SSL
-        opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ssl_context))
+        opener = urllib.request.build_opener(
+            urllib.request.HTTPSHandler(context=ssl_context)
+        )
         urllib.request.install_opener(opener)
 
-        jwks_url = f"{keycloak_url}/realms/{keycloak_realm}/protocol/openid-connect/certs"
+        jwks_url = (
+            f"{keycloak_url}/realms/{keycloak_realm}/protocol/openid-connect/certs"
+        )
         logger.info(f"Fetching JWKS from: {jwks_url}")
         _keycloak_jwks_client = PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
     return _keycloak_jwks_client
 
 
 async def get_current_user_universal(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """
     Get the current authenticated user from either Keycloak or local JWT token.
@@ -78,12 +83,16 @@ async def get_current_user_universal(
 
     if not auth_enabled:
         # Return default dev user
-        logger.warning("🔓 AUTH_ENABLED=false - Returning default user (development mode)")
+        logger.warning(
+            "🔓 AUTH_ENABLED=false - Returning default user (development mode)"
+        )
         return User(
-            id=os.getenv("DEFAULT_USER_ID", "dev-user-00000000-0000-0000-0000-000000000000"),
+            id=os.getenv(
+                "DEFAULT_USER_ID", "dev-user-00000000-0000-0000-0000-000000000000"
+            ),
             email=os.getenv("DEFAULT_USER_EMAIL", "dev@localhost"),
             username=os.getenv("DEFAULT_USERNAME", "developer"),
-            password_hash="bypass-no-auth"
+            password_hash="bypass-no-auth",
         )
 
     token = credentials.credentials
@@ -118,20 +127,20 @@ async def validate_keycloak_token(token: str) -> User:
         if auth_provider != "keycloak" or not keycloak_url:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Keycloak not configured"
+                detail="Keycloak not configured",
             )
-        
+
         # Get JWKS client for key validation
         jwks_client = get_keycloak_jwks_client()
         if not jwks_client:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Keycloak JWKS client not available"
+                detail="Keycloak JWKS client not available",
             )
-        
+
         # Get the signing key from Keycloak
         signing_key = jwks_client.get_signing_key_from_jwt(token)
-        
+
         # Decode and validate the token with clock skew tolerance
         payload = jwt.decode(
             token,
@@ -141,54 +150,51 @@ async def validate_keycloak_token(token: str) -> User:
             options={
                 "verify_aud": False,  # Disable audience verification for now
                 "verify_exp": True,
-                "verify_iat": True
+                "verify_iat": True,
             },
-            leeway=30  # Allow 30 seconds of clock skew
+            leeway=30,  # Allow 30 seconds of clock skew
         )
-        
+
         # Extract user information from Keycloak token
         user_id = payload.get("sub")
         email = payload.get("email")
         username = payload.get("preferred_username") or email
-        
+
         if not user_id:
             logger.error("Keycloak token missing 'sub' claim")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: missing user ID"
+                detail="Invalid token: missing user ID",
             )
-        
+
         # Check token expiration
         exp = payload.get("exp")
         if exp and datetime.now(UTC).timestamp() > exp:
             logger.error("Keycloak token expired")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token expired"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
             )
-        
+
         # Create User object
         user = User(
             id=user_id,
             email=email or f"{username}@keycloak.local",
             username=username or user_id,
-            password_hash="keycloak-authenticated"
+            password_hash="keycloak-authenticated",
         )
-        
+
         logger.info(f"Authenticated Keycloak user: {user.id} ({user.email})")
         return user
-        
+
     except jwt.ExpiredSignatureError:
         logger.error("Keycloak token expired")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
         )
     except jwt.InvalidTokenError as e:
         logger.error(f"Invalid Keycloak token: {e}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {str(e)}"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}"
         )
     except HTTPException:
         # Re-raise HTTPExceptions (like configuration errors) as-is
@@ -196,8 +202,7 @@ async def validate_keycloak_token(token: str) -> User:
     except Exception as e:
         logger.error(f"Keycloak token validation error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token validation failed"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token validation failed"
         )
 
 
@@ -209,9 +214,9 @@ def validate_local_token(token: str) -> User:
         logger.error("JWT_SECRET_KEY not configured")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server configuration error: JWT secret not set"
+            detail="Server configuration error: JWT secret not set",
         )
-    
+
     try:
         # Decode the local JWT token with clock skew tolerance
         # Skip audience validation for local tokens - they work across different audiences
@@ -220,51 +225,48 @@ def validate_local_token(token: str) -> User:
             jwt_secret,
             algorithms=[JWT_ALGORITHM],
             leeway=30,  # Allow 30 seconds of clock skew
-            options={"verify_aud": False}  # Don't validate audience for local tokens
+            options={"verify_aud": False},  # Don't validate audience for local tokens
         )
-        
+
         # Extract user information
         user_id = payload.get("sub") or payload.get("user_id")
         email = payload.get("email")
-        
+
         if not user_id:
             logger.error("Local token missing user_id/sub claim")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: missing user ID"
+                detail="Invalid token: missing user ID",
             )
-        
+
         # Check token expiration
         exp = payload.get("exp")
         if exp and datetime.now(UTC).timestamp() > exp:
             logger.error("Local token expired")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token expired"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
             )
-        
+
         # Create User object
         user = User(
             id=user_id,
             email=email or f"{user_id}@local.dev",
             username=payload.get("username") or email or user_id,
-            password_hash="local-jwt-authenticated"
+            password_hash="local-jwt-authenticated",
         )
-        
+
         logger.info(f"Authenticated local user: {user.id}")
         return user
-        
+
     except jwt.ExpiredSignatureError:
         logger.error("Local token expired")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
         )
     except jwt.InvalidTokenError as e:
         logger.error(f"Invalid local token: {e}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
 
 
@@ -286,18 +288,8 @@ async def get_current_user_from_ws(websocket, token: str) -> dict:
     if AUTH_PROVIDER == "keycloak" and KEYCLOAK_URL:
         user = await validate_keycloak_token(token)
         if user:
-            return {
-                "sub": user.id,
-                "email": user.email,
-                "username": user.username
-            }
+            return {"sub": user.id, "email": user.email, "username": user.username}
 
     # Fall back to local JWT validation
     user = validate_local_token(token)
-    return {
-        "sub": user.id,
-        "email": user.email,
-        "username": user.username
-    }
-
-
+    return {"sub": user.id, "email": user.email, "username": user.username}

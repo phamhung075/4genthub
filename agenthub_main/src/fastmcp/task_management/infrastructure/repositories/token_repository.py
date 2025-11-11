@@ -26,249 +26,256 @@ logger = logging.getLogger(__name__)
 class TokenRepository(ITokenRepository):
     """
     Concrete implementation of the token repository interface.
-    
+
     This class handles all database operations for tokens using SQLAlchemy,
     ensuring proper abstraction from upper layers.
     """
-    
+
     def __init__(self, session: Session):
         """
         Initialize the repository with a database session.
-        
+
         Args:
             session: SQLAlchemy database session
         """
         self.session = session
-    
+
     async def create_token(self, token_data: dict[str, Any]) -> APIToken | None:
         """
         Create a new token in the database.
-        
+
         Args:
             token_data: Dictionary containing token information
-            
+
         Returns:
             Created token object or None if failed
         """
         try:
             # Create new token instance with None value handling
             db_token = APIToken(
-                id=token_data.get('id'),
-                user_id=token_data.get('user_id'),
-                name=token_data.get('name'),
-                token_hash=token_data.get('token_hash'),
-                scopes=token_data.get('scopes') or [],
-                expires_at=token_data.get('expires_at'),
-                rate_limit=token_data.get('rate_limit') or 1000,
-                token_metadata=token_data.get('token_metadata') or {}
+                id=token_data.get("id"),
+                user_id=token_data.get("user_id"),
+                name=token_data.get("name"),
+                token_hash=token_data.get("token_hash"),
+                scopes=token_data.get("scopes") or [],
+                expires_at=token_data.get("expires_at"),
+                rate_limit=token_data.get("rate_limit") or 1000,
+                token_metadata=token_data.get("token_metadata") or {},
             )
-            
+
             # Add to session and commit
             self.session.add(db_token)
             self.session.commit()
             self.session.refresh(db_token)
-            
+
             return db_token
-            
+
         except Exception as e:
             logger.error(f"Error creating token: {e}")
             self.session.rollback()
             return None
-    
+
     async def get_token(self, token_id: str, user_id: str) -> APIToken | None:
         """
         Get a specific token for a user.
-        
+
         Args:
             token_id: Token identifier
             user_id: User identifier
-            
+
         Returns:
             Token object or None if not found
         """
         try:
-            return self.session.query(APIToken).filter(
-                APIToken.id == token_id,
-                APIToken.user_id == user_id
-            ).first()
-            
+            return (
+                self.session.query(APIToken)
+                .filter(APIToken.id == token_id, APIToken.user_id == user_id)
+                .first()
+            )
+
         except Exception as e:
             logger.error(f"Error getting token: {e}")
             return None
-    
+
     async def get_token_by_id(self, token_id: str) -> APIToken | None:
         """
         Get a token by ID regardless of user.
-        
+
         Args:
             token_id: Token identifier
-            
+
         Returns:
             Token object or None if not found
         """
         try:
             # Try APIToken model first
-            token = self.session.query(APIToken).filter(
-                APIToken.id == token_id
-            ).first()
-            
+            token = self.session.query(APIToken).filter(APIToken.id == token_id).first()
+
             if token:
                 return token
-            
+
             # Fallback to ApiToken model if needed
-            token = self.session.query(ApiToken).filter(
-                ApiToken.id == token_id
-            ).first()
-            
+            token = self.session.query(ApiToken).filter(ApiToken.id == token_id).first()
+
             return token
-            
+
         except Exception as e:
             logger.error(f"Error getting token by ID: {e}")
             return None
-    
-    async def get_user_tokens(self, user_id: str, skip: int = 0, limit: int = 100) -> list[APIToken]:
+
+    async def get_user_tokens(
+        self, user_id: str, skip: int = 0, limit: int = 100
+    ) -> list[APIToken]:
         """
         Get all tokens for a user with pagination.
-        
+
         Args:
             user_id: User identifier
             skip: Number of records to skip
             limit: Maximum number of records to return
-            
+
         Returns:
             List of token objects
         """
         try:
-            query = self.session.query(APIToken).filter(
-                APIToken.user_id == user_id
-            ).order_by(desc(APIToken.created_at))
-            
+            query = (
+                self.session.query(APIToken)
+                .filter(APIToken.user_id == user_id)
+                .order_by(desc(APIToken.created_at))
+            )
+
             return query.offset(skip).limit(limit).all()
-            
+
         except Exception as e:
             logger.error(f"Error getting user tokens: {e}")
             return []
-    
+
     async def count_user_tokens(self, user_id: str) -> int:
         """
         Count total tokens for a user.
-        
+
         Args:
             user_id: User identifier
-            
+
         Returns:
             Total count of user tokens
         """
         try:
-            return self.session.query(APIToken).filter(
-                APIToken.user_id == user_id
-            ).count()
-            
+            return (
+                self.session.query(APIToken).filter(APIToken.user_id == user_id).count()
+            )
+
         except Exception as e:
             logger.error(f"Error counting user tokens: {e}")
             return 0
-    
+
     async def revoke_token(self, token_id: str, user_id: str) -> bool:
         """
         Revoke a token (mark as inactive).
-        
+
         Args:
             token_id: Token identifier
             user_id: User identifier
-            
+
         Returns:
             True if successful, False otherwise
         """
         try:
             token = await self.get_token(token_id, user_id)
-            
+
             if not token:
                 return False
-            
+
             token.is_active = False
             self.session.commit()
             return True
-            
+
         except Exception as e:
             logger.error(f"Error revoking token: {e}")
             self.session.rollback()
             return False
-    
+
     async def reactivate_token(self, token_id: str, user_id: str) -> bool:
         """
         Reactivate a revoked token.
-        
+
         Args:
             token_id: Token identifier
             user_id: User identifier
-            
+
         Returns:
             True if successful, False otherwise
         """
         try:
             # Try APIToken model first
-            token = self.session.query(APIToken).filter(
-                APIToken.id == token_id,
-                APIToken.user_id == user_id
-            ).first()
-            
+            token = (
+                self.session.query(APIToken)
+                .filter(APIToken.id == token_id, APIToken.user_id == user_id)
+                .first()
+            )
+
             if not token:
                 # Fallback to ApiToken model
-                token = self.session.query(ApiToken).filter(
-                    ApiToken.id == token_id,
-                    ApiToken.user_id == user_id
-                ).first()
-            
+                token = (
+                    self.session.query(ApiToken)
+                    .filter(ApiToken.id == token_id, ApiToken.user_id == user_id)
+                    .first()
+                )
+
             if not token:
                 return False
-            
+
             token.is_active = True
             self.session.commit()
             return True
-            
+
         except Exception as e:
             logger.error(f"Error reactivating token: {e}")
             self.session.rollback()
             return False
-    
+
     async def delete_token(self, token_id: str, user_id: str) -> bool:
         """
         Permanently delete a token.
-        
+
         Args:
             token_id: Token identifier
             user_id: User identifier
-            
+
         Returns:
             True if successful, False otherwise
         """
         try:
             # Try APIToken model first
-            token = self.session.query(APIToken).filter(
-                APIToken.id == token_id,
-                APIToken.user_id == user_id
-            ).first()
-            
+            token = (
+                self.session.query(APIToken)
+                .filter(APIToken.id == token_id, APIToken.user_id == user_id)
+                .first()
+            )
+
             if not token:
                 # Fallback to ApiToken model
-                token = self.session.query(ApiToken).filter(
-                    ApiToken.id == token_id,
-                    ApiToken.user_id == user_id
-                ).first()
-            
+                token = (
+                    self.session.query(ApiToken)
+                    .filter(ApiToken.id == token_id, ApiToken.user_id == user_id)
+                    .first()
+                )
+
             if not token:
                 return False
-            
+
             self.session.delete(token)
             self.session.commit()
             return True
-            
+
         except Exception as e:
             logger.error(f"Error deleting token: {e}")
             self.session.rollback()
             return False
-    
-    async def update_token_usage(self, token_id: str, operation: str | None = None) -> bool:
+
+    async def update_token_usage(
+        self, token_id: str, operation: str | None = None
+    ) -> bool:
         """
         Update token usage statistics (last used, usage count, and operation-specific tracking).
 
@@ -281,15 +288,13 @@ class TokenRepository(ITokenRepository):
         """
         try:
             # Try APIToken model first
-            token = self.session.query(APIToken).filter(
-                APIToken.id == token_id
-            ).first()
+            token = self.session.query(APIToken).filter(APIToken.id == token_id).first()
 
             if not token:
                 # Fallback to ApiToken model
-                token = self.session.query(ApiToken).filter(
-                    ApiToken.id == token_id
-                ).first()
+                token = (
+                    self.session.query(ApiToken).filter(ApiToken.id == token_id).first()
+                )
 
             if not token:
                 return False
@@ -304,6 +309,7 @@ class TokenRepository(ITokenRepository):
                 token.usage_stats = usage_stats
                 # Mark as modified for SQLAlchemy to detect JSON changes
                 from sqlalchemy.orm.attributes import flag_modified
+
                 flag_modified(token, "usage_stats")
 
             self.session.commit()
@@ -313,31 +319,33 @@ class TokenRepository(ITokenRepository):
             logger.error(f"Error updating token usage: {e}")
             self.session.rollback()
             return False
-    
+
     async def cleanup_expired_tokens(self, expiry_date: datetime) -> int:
         """
         Remove tokens that have expired before the given date.
-        
+
         Args:
             expiry_date: Cutoff date for expired tokens
-            
+
         Returns:
             Number of tokens cleaned up
         """
         try:
             # Count tokens to be deleted
-            count = self.session.query(APIToken).filter(
-                APIToken.expires_at < expiry_date
-            ).count()
-            
+            count = (
+                self.session.query(APIToken)
+                .filter(APIToken.expires_at < expiry_date)
+                .count()
+            )
+
             # Delete expired tokens
             self.session.query(APIToken).filter(
                 APIToken.expires_at < expiry_date
             ).delete(synchronize_session=False)
-            
+
             self.session.commit()
             return count
-            
+
         except Exception as e:
             logger.error(f"Error cleaning up expired tokens: {e}")
             self.session.rollback()

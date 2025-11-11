@@ -10,14 +10,14 @@ from dataclasses import dataclass
 @dataclass
 class CreateSubtaskRequest:
     """Request DTO for creating a new subtask."""
-    
+
     task_id: str
     title: str
     description: str | None = None
     status: str | None = "todo"
     priority: str | None = "medium"
     assignees: list[str] | None = None
-    
+
     def validate(self) -> None:
         """Validate the request data."""
         if not self.task_id:

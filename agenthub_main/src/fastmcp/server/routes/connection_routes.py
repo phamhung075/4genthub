@@ -44,7 +44,7 @@ connection_facade = ConnectionApplicationFacade(
     connection_repository=_connection_repository,
     health_service=_health_service,
     diagnostics_service=_diagnostics_service,
-    broadcasting_service=_broadcasting_service
+    broadcasting_service=_broadcasting_service,
 )
 
 
@@ -68,7 +68,7 @@ async def health_check(include_details: bool = True):
         # Get health status from facade
         health_response = connection_facade.check_server_health(
             include_details=include_details,
-            user_id=None  # Health checks don't require user context
+            user_id=None,  # Health checks don't require user context
         )
 
         # Convert HealthCheckResponse to dict for JSON response
@@ -93,7 +93,7 @@ async def health_check(include_details: bool = True):
                 response_data["connections"] = health_response.connections
 
         # Add error if present
-        if hasattr(health_response, 'error') and health_response.error:
+        if hasattr(health_response, "error") and health_response.error:
             response_data["error"] = health_response.error
 
         logger.info(f"Health check completed: {health_response.status}")
@@ -110,7 +110,7 @@ async def health_check(include_details: bool = True):
             "version": "unknown",
             "uptime_seconds": 0,
             "timestamp": 0,
-            "error": str(e)
+            "error": str(e),
         }
 
 
@@ -130,8 +130,7 @@ async def connection_status():
 
         # Get server capabilities which includes connection information
         capabilities_response = connection_facade.get_server_capabilities(
-            include_details=True,
-            user_id=None
+            include_details=True, user_id=None
         )
 
         return {
@@ -139,14 +138,18 @@ async def connection_status():
             "status": "connected",
             "capabilities": {
                 "version": capabilities_response.version,
-                "features": capabilities_response.features if hasattr(capabilities_response, 'features') else [],
-                "limits": capabilities_response.limits if hasattr(capabilities_response, 'limits') else {}
-            }
+                "features": capabilities_response.features
+                if hasattr(capabilities_response, "features")
+                else [],
+                "limits": capabilities_response.limits
+                if hasattr(capabilities_response, "limits")
+                else {},
+            },
         }
 
     except Exception as e:
         logger.error(f"Connection status check failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get connection status: {str(e)}"
+            detail=f"Failed to get connection status: {str(e)}",
         )

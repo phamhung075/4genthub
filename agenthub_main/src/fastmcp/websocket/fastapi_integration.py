@@ -117,8 +117,8 @@ def get_websocket_endpoints_info() -> dict:
             "Cascade data integration",
             "JWT authentication",
             "Connection management",
-            "Health monitoring"
-        ]
+            "Health monitoring",
+        ],
     }
 
 
@@ -135,7 +135,9 @@ def add_websocket_routes_to_existing_app(app: FastAPI) -> None:
         # Get database session factory
         db_config = get_db_config()
         if not db_config or not db_config.get_async_session:
-            logger.warning("Database not configured - WebSocket routes will not work properly")
+            logger.warning(
+                "Database not configured - WebSocket routes will not work properly"
+            )
             return
 
         session_factory = db_config.get_async_session
@@ -165,9 +167,9 @@ def integrate_websocket_with_fastmcp(fastmcp_server) -> WebSocketServer | None:
     """
     try:
         # Get the FastAPI app from FastMCP server
-        if hasattr(fastmcp_server, 'app'):
+        if hasattr(fastmcp_server, "app"):
             app = fastmcp_server.app
-        elif hasattr(fastmcp_server, '_app'):
+        elif hasattr(fastmcp_server, "_app"):
             app = fastmcp_server._app
         else:
             logger.error("Cannot find FastAPI app in FastMCP server")
@@ -185,7 +187,9 @@ def integrate_websocket_with_fastmcp(fastmcp_server) -> WebSocketServer | None:
 
 
 # Health check integration
-def add_websocket_health_to_main_health(main_health_response: dict, websocket_server: WebSocketServer | None) -> dict:
+def add_websocket_health_to_main_health(
+    main_health_response: dict, websocket_server: WebSocketServer | None
+) -> dict:
     """
     Add WebSocket health information to main server health response.
 
@@ -200,6 +204,7 @@ def add_websocket_health_to_main_health(main_health_response: dict, websocket_se
         try:
             # Get WebSocket health status
             import asyncio
+
             ws_health = asyncio.run(websocket_server.get_health_status())
 
             main_health_response["websocket"] = {
@@ -207,17 +212,12 @@ def add_websocket_health_to_main_health(main_health_response: dict, websocket_se
                 "version": ws_health["version"],
                 "connections": ws_health["connections"]["total"],
                 "active_users": ws_health["connections"]["active_users"],
-                "batch_processing": ws_health["batch_processing"]["is_running"]
+                "batch_processing": ws_health["batch_processing"]["is_running"],
             }
 
         except Exception as e:
-            main_health_response["websocket"] = {
-                "status": "error",
-                "error": str(e)
-            }
+            main_health_response["websocket"] = {"status": "error", "error": str(e)}
     else:
-        main_health_response["websocket"] = {
-            "status": "not_configured"
-        }
+        main_health_response["websocket"] = {"status": "not_configured"}
 
     return main_health_response

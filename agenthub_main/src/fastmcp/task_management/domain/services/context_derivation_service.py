@@ -20,27 +20,25 @@ logger = logging.getLogger(__name__)
 class ContextDerivationService:
     """
     Domain service responsible for deriving context information from domain entities.
-    
+
     This service encapsulates the business rules for:
     - Deriving context from tasks
     - Deriving context from git branches
     - Resolving context hierarchies
     - Determining default contexts
     """
-    
+
     def __init__(
         self,
         task_repository: TaskRepository | None = None,
-        git_branch_repository: GitBranchRepository | None = None
+        git_branch_repository: GitBranchRepository | None = None,
     ):
         """Initialize the context derivation service with repositories"""
         self._task_repository = task_repository
         self._git_branch_repository = git_branch_repository
-    
+
     async def derive_context_from_task(
-        self,
-        task_id: str,
-        default_user_id: str | None = None
+        self, task_id: str, default_user_id: str | None = None
     ) -> dict[str, str]:
         """
         Derive context parameters from a task.
@@ -60,14 +58,17 @@ class ContextDerivationService:
         try:
             if self._task_repository:
                 # Find the task using repository
-                task = await self._task_repository.find_by_id(TaskId.from_string(task_id))
+                task = await self._task_repository.find_by_id(
+                    TaskId.from_string(task_id)
+                )
 
                 if task and task.git_branch_id:
-                    logger.debug(f"Task {task_id} found with git_branch_id: {task.git_branch_id}")
+                    logger.debug(
+                        f"Task {task_id} found with git_branch_id: {task.git_branch_id}"
+                    )
                     # Delegate to git branch context derivation
                     return await self.derive_context_from_git_branch(
-                        task.git_branch_id,
-                        default_user_id
+                        task.git_branch_id, default_user_id
                     )
                 elif task:
                     logger.debug(f"Task {task_id} found but no git_branch_id")
@@ -79,11 +80,9 @@ class ContextDerivationService:
 
         # Return default context if derivation fails
         return self._get_default_context(default_user_id)
-    
+
     async def derive_context_from_git_branch(
-        self,
-        git_branch_id: str,
-        default_user_id: str | None = None
+        self, git_branch_id: str, default_user_id: str | None = None
     ) -> dict[str, str]:
         """
         Derive context parameters from a git branch.
@@ -115,12 +114,12 @@ class ContextDerivationService:
                     context = {
                         "project_id": git_branch.project_id,
                         "git_branch_name": git_branch.name,
-                        "user_id": default_user_id  # Will be resolved below
+                        "user_id": default_user_id,  # Will be resolved below
                     }
 
                     # Try to get user from project if available
-                    if hasattr(git_branch, 'project') and git_branch.project:
-                        if hasattr(git_branch.project, 'user_id'):
+                    if hasattr(git_branch, "project") and git_branch.project:
+                        if hasattr(git_branch.project, "user_id"):
                             context["user_id"] = git_branch.project.user_id
 
                     # Ensure user_id is set
@@ -130,17 +129,19 @@ class ContextDerivationService:
                     return context
 
         except Exception as e:
-            logger.warning(f"Failed to derive context from git_branch {git_branch_id}: {e}")
+            logger.warning(
+                f"Failed to derive context from git_branch {git_branch_id}: {e}"
+            )
 
         # Return default context if derivation fails
         return self._get_default_context(default_user_id)
-    
+
     async def derive_context_hierarchy(
         self,
         task_id: str | None = None,
         git_branch_id: str | None = None,
         project_id: str | None = None,
-        user_id: str | None = None
+        user_id: str | None = None,
     ) -> dict[str, Any]:
         """
         Derive complete context hierarchy from available identifiers.
@@ -159,12 +160,7 @@ class ContextDerivationService:
         Returns:
             Dictionary containing complete context hierarchy
         """
-        context_hierarchy = {
-            "global": {},
-            "project": {},
-            "branch": {},
-            "task": {}
-        }
+        context_hierarchy = {"global": {}, "project": {}, "branch": {}, "task": {}}
 
         # Start with user context (global level)
         if user_id:
@@ -176,12 +172,16 @@ class ContextDerivationService:
 
         # Derive branch context
         if git_branch_id:
-            branch_context = await self.derive_context_from_git_branch(git_branch_id, user_id)
+            branch_context = await self.derive_context_from_git_branch(
+                git_branch_id, user_id
+            )
             context_hierarchy["branch"] = branch_context
 
             # Propagate to project if not set
             if not context_hierarchy["project"].get("project_id"):
-                context_hierarchy["project"]["project_id"] = branch_context.get("project_id")
+                context_hierarchy["project"]["project_id"] = branch_context.get(
+                    "project_id"
+                )
 
         # Derive task context
         if task_id:
@@ -192,14 +192,18 @@ class ContextDerivationService:
             if not context_hierarchy["branch"]:
                 context_hierarchy["branch"] = {
                     "git_branch_name": task_context.get("git_branch_name"),
-                    "project_id": task_context.get("project_id")
+                    "project_id": task_context.get("project_id"),
                 }
             if not context_hierarchy["project"].get("project_id"):
-                context_hierarchy["project"]["project_id"] = task_context.get("project_id")
+                context_hierarchy["project"]["project_id"] = task_context.get(
+                    "project_id"
+                )
 
         return context_hierarchy
-    
-    def _get_default_context(self, default_user_id: str | None = None) -> dict[str, str]:
+
+    def _get_default_context(
+        self, default_user_id: str | None = None
+    ) -> dict[str, str]:
         """
         Get default context when derivation fails.
 
@@ -217,54 +221,54 @@ class ContextDerivationService:
         return {
             "project_id": "default_project",
             "git_branch_name": "main",
-            "user_id": self._resolve_user_id(default_user_id)
+            "user_id": self._resolve_user_id(default_user_id),
         }
-    
+
     def _resolve_user_id(self, default_user_id: str | None = None) -> str:
         """
         Resolve user ID with authentication requirements.
-        
+
         Business Rules:
         - User authentication is required for all operations
         - System user is used as fallback for background operations
-        
+
         Args:
             default_user_id: Default user ID to use
-            
+
         Returns:
             Resolved user ID
-            
+
         Raises:
             ValueError: If user authentication cannot be resolved
         """
         if default_user_id:
             return default_user_id
-        
+
         # In a domain service, we don't directly access authentication
         # This would typically be passed from the application layer
         logger.warning("No user ID provided, using system user")
         return "system"
-    
+
     def determine_context_level(
         self,
         task_id: str | None = None,
         git_branch_id: str | None = None,
-        project_id: str | None = None
+        project_id: str | None = None,
     ) -> str:
         """
         Determine the appropriate context level based on available identifiers.
-        
+
         Business Rules:
         - Task level if task_id is provided
         - Branch level if only git_branch_id is provided
         - Project level if only project_id is provided
         - Global level if no identifiers provided
-        
+
         Args:
             task_id: Optional task identifier
             git_branch_id: Optional git branch identifier
             project_id: Optional project identifier
-            
+
         Returns:
             Context level string: "task", "branch", "project", or "global"
         """

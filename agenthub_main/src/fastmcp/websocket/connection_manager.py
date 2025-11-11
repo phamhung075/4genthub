@@ -71,7 +71,9 @@ class ConnectionManager:
 
         logger.info("ConnectionManager initialized for WebSocket v2.0 protocol")
 
-    async def connect(self, websocket: WebSocket, user_id: str, session_id: str | None = None) -> str:
+    async def connect(
+        self, websocket: WebSocket, user_id: str, session_id: str | None = None
+    ) -> str:
         """
         Accept a new WebSocket connection and perform initial sync.
 
@@ -149,7 +151,9 @@ class ConnectionManager:
             # Validate v2.0 protocol (NO backward compatibility)
             validated_message = validate_message(message_dict)
 
-            logger.debug(f"Processing v2.0 message from {user_id}: {validated_message.type}")
+            logger.debug(
+                f"Processing v2.0 message from {user_id}: {validated_message.type}"
+            )
 
             # Route message based on source
             if validated_message.metadata.source == "user":
@@ -157,7 +161,9 @@ class ConnectionManager:
             elif validated_message.metadata.source == "mcp-ai":
                 await self._queue_ai_message(validated_message)
             else:
-                logger.warning(f"Unknown message source: {validated_message.metadata.source}")
+                logger.warning(
+                    f"Unknown message source: {validated_message.metadata.source}"
+                )
 
         except json.JSONDecodeError as e:
             await self.send_error(user_id, f"Invalid JSON: {e}")
@@ -191,7 +197,9 @@ class ConnectionManager:
         if isinstance(primary_data, dict):
             entity_id = primary_data.get("id")
         elif isinstance(primary_data, list) and primary_data:
-            entity_id = primary_data[0].get("id") if isinstance(primary_data[0], dict) else None
+            entity_id = (
+                primary_data[0].get("id") if isinstance(primary_data[0], dict) else None
+            )
 
         async with self.session_factory() as db_session:
             cascade_calculator = CascadeCalculator(db_session)
@@ -206,7 +214,7 @@ class ConnectionManager:
                 user_id=user_id,
                 session_id=session_id,
                 correlation_id=message.metadata.correlation_id,
-                sequence=self._next_sequence()
+                sequence=self._next_sequence(),
             )
 
             # Broadcast immediately to all connected users
@@ -286,7 +294,9 @@ class ConnectionManager:
             logger.error(f"Error sending message to {user_id}: {e}")
             return False
 
-    async def send_error(self, user_id: str, error_message: str, error_code: str | None = None) -> None:
+    async def send_error(
+        self, user_id: str, error_message: str, error_code: str | None = None
+    ) -> None:
         """
         Send error message to specific user.
 
@@ -301,7 +311,7 @@ class ConnectionManager:
             error_message=error_message,
             error_code=error_code,
             session_id=session_id,
-            sequence=self._next_sequence()
+            sequence=self._next_sequence(),
         )
 
         await self.send_to_user(user_id, error_msg)
@@ -323,14 +333,14 @@ class ConnectionManager:
                 "type": "initial_sync",
                 "user_id": user_id,
                 "timestamp": datetime.now(UTC).isoformat(),
-                "message": "WebSocket v2.0 connection established"
+                "message": "WebSocket v2.0 connection established",
             }
 
             sync_message = create_sync(
                 sync_data=sync_data,
                 session_id=session_id,
                 user_id=user_id,
-                sequence=self._next_sequence()
+                sequence=self._next_sequence(),
             )
 
             await self.send_to_user(user_id, sync_message)
@@ -350,8 +360,7 @@ class ConnectionManager:
         session_id = self.user_sessions.get(user_id)
 
         heartbeat = create_heartbeat(
-            session_id=session_id,
-            sequence=self._next_sequence()
+            session_id=session_id, sequence=self._next_sequence()
         )
 
         await self.send_to_user(user_id, heartbeat)
@@ -380,8 +389,8 @@ class ConnectionManager:
             "sequence_counter": self.sequence_counter,
             "sessions": {
                 "user_sessions": dict(self.user_sessions),
-                "session_users": dict(self.session_users)
-            }
+                "session_users": dict(self.session_users),
+            },
         }
 
     async def cleanup(self) -> None:

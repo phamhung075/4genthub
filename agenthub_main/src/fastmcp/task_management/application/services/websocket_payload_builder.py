@@ -30,9 +30,7 @@ class WebSocketPayloadBuilder:
 
     @staticmethod
     def build_task_payload(
-        task,
-        task_response=None,
-        include_progress_history: bool = True
+        task, task_response=None, include_progress_history: bool = True
     ) -> dict[str, Any]:
         """Build complete WebSocket payload for task events.
 
@@ -88,10 +86,14 @@ class WebSocketPayloadBuilder:
         # Core identifiers from domain task
         # CRITICAL FIX: Ensure enums are serialized to their string values, not enum objects
         payload = {
-            "id": str(task.id.value if hasattr(task.id, 'value') else task.id),
+            "id": str(task.id.value if hasattr(task.id, "value") else task.id),
             "title": task.title,
-            "status": task.status.value if hasattr(task.status, 'value') else str(task.status),
-            "priority": task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
+            "status": task.status.value
+            if hasattr(task.status, "value")
+            else str(task.status),
+            "priority": task.priority.value
+            if hasattr(task.priority, "value")
+            else str(task.priority),
         }
 
         # Relationship data (from task_response if available, else from task)
@@ -115,46 +117,68 @@ class WebSocketPayloadBuilder:
         else:
             # Fallback to task entity data (less complete but still functional)
             payload["project_id"] = None  # Not available without repository join
-            payload["git_branch_id"] = task.git_branch_id if hasattr(task, 'git_branch_id') else None
-            payload["subtask_count"] = len(task.subtasks) if hasattr(task, 'subtasks') and task.subtasks else 0
-            payload["completed_subtasks"] = 0  # Cannot determine without loading subtask entities
-            payload["progress_percentage"] = task.progress_percentage if hasattr(task, 'progress_percentage') else 0
-            payload["progress_count"] = task.progress_count if hasattr(task, 'progress_count') else 0
+            payload["git_branch_id"] = (
+                task.git_branch_id if hasattr(task, "git_branch_id") else None
+            )
+            payload["subtask_count"] = (
+                len(task.subtasks) if hasattr(task, "subtasks") and task.subtasks else 0
+            )
+            payload["completed_subtasks"] = (
+                0  # Cannot determine without loading subtask entities
+            )
+            payload["progress_percentage"] = (
+                task.progress_percentage if hasattr(task, "progress_percentage") else 0
+            )
+            payload["progress_count"] = (
+                task.progress_count if hasattr(task, "progress_count") else 0
+            )
 
             # Progress history from task entity
             if include_progress_history:
-                payload["progress_history"] = task.progress_history if hasattr(task, 'progress_history') else {}
-                payload["details"] = task.get_progress_history_text() if hasattr(task, 'get_progress_history_text') else ""
+                payload["progress_history"] = (
+                    task.progress_history if hasattr(task, "progress_history") else {}
+                )
+                payload["details"] = (
+                    task.get_progress_history_text()
+                    if hasattr(task, "get_progress_history_text")
+                    else ""
+                )
             else:
                 payload["progress_history"] = {}
                 payload["details"] = ""
 
         # Team & assignment (from task entity)
-        payload["assignees"] = task.assignees if hasattr(task, 'assignees') and task.assignees else []
+        payload["assignees"] = (
+            task.assignees if hasattr(task, "assignees") and task.assignees else []
+        )
 
         # Metadata (from task entity)
         payload["has_dependencies"] = (
             len(task.dependencies) > 0
-            if hasattr(task, 'dependencies') and task.dependencies
+            if hasattr(task, "dependencies") and task.dependencies
             else False
         )
-        payload["has_context"] = task.context_id is not None if hasattr(task, 'context_id') else False
-        payload["labels"] = task.labels if hasattr(task, 'labels') and task.labels else []
+        payload["has_context"] = (
+            task.context_id is not None if hasattr(task, "context_id") else False
+        )
+        payload["labels"] = (
+            task.labels if hasattr(task, "labels") and task.labels else []
+        )
 
         # Timestamps (from task entity)
         payload["created_at"] = (
             task.created_at.isoformat()
-            if hasattr(task, 'created_at') and task.created_at
+            if hasattr(task, "created_at") and task.created_at
             else None
         )
         payload["updated_at"] = (
             task.updated_at.isoformat()
-            if hasattr(task, 'updated_at') and task.updated_at
+            if hasattr(task, "updated_at") and task.updated_at
             else None
         )
 
         # Optional rich fields (truncated to keep message size reasonable)
-        description = task.description if hasattr(task, 'description') else None
+        description = task.description if hasattr(task, "description") else None
         if description and len(description) > 200:
             # Truncate long descriptions to avoid bloating WebSocket messages
             payload["description"] = description[:200] + "..."
@@ -177,7 +201,8 @@ class WebSocketPayloadBuilder:
             Approximate size in bytes
         """
         import json
-        return len(json.dumps(payload).encode('utf-8'))
+
+        return len(json.dumps(payload).encode("utf-8"))
 
     @staticmethod
     def build_lightweight_payload(task, task_response=None) -> dict[str, Any]:
@@ -194,7 +219,5 @@ class WebSocketPayloadBuilder:
             Dictionary with essential task data (no progress history)
         """
         return WebSocketPayloadBuilder.build_task_payload(
-            task,
-            task_response,
-            include_progress_history=False
+            task, task_response, include_progress_history=False
         )

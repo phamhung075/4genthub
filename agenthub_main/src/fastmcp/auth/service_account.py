@@ -22,91 +22,98 @@ from jwt import PyJWKClient
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class ServiceAccountConfig:
     """Service account configuration"""
+
     keycloak_url: str
     realm: str
     client_id: str
     client_secret: str
     scopes: list[str] = None
-    
+
     def __post_init__(self):
         if not self.scopes:
             self.scopes = ["openid", "profile", "email", "mcp:read", "mcp:write"]
 
+
 @dataclass
 class ServiceToken:
     """Service account token data"""
+
     access_token: str
     refresh_token: str | None = None
     token_type: str = "Bearer"
     expires_in: int = 300
     scope: str = ""
     created_at: datetime = None
-    
+
     def __post_init__(self):
         if not self.created_at:
             self.created_at = datetime.now(UTC)
-    
+
     @property
     def expires_at(self) -> datetime:
         """Calculate token expiration time"""
         return self.created_at + timedelta(seconds=self.expires_in)
-    
+
     @property
     def is_expired(self) -> bool:
         """Check if token has expired (with 30 second buffer)"""
         buffer_seconds = 30
         expiry_with_buffer = self.expires_at - timedelta(seconds=buffer_seconds)
         return datetime.now(UTC) >= expiry_with_buffer
-    
+
     @property
     def seconds_until_expiry(self) -> int:
         """Get seconds until token expires"""
         delta = self.expires_at - datetime.now(UTC)
         return max(0, int(delta.total_seconds()))
 
+
 class ServiceAccountAuth:
     """
     Keycloak Service Account Authentication for MCP.
-    
+
     Handles client credentials flow for service-to-service authentication,
     token caching, automatic refresh, and secure credential management.
     """
-    
+
     def __init__(self, config: ServiceAccountConfig | None = None):
         """Initialize service account authentication"""
         self.config = config or self._load_config_from_env()
         self._validate_config()
-        
+
         # Build endpoint URLs
         self.realm_url = f"{self.config.keycloak_url}/realms/{self.config.realm}"
         self.token_endpoint = f"{self.realm_url}/protocol/openid-connect/token"
         self.userinfo_endpoint = f"{self.realm_url}/protocol/openid-connect/userinfo"
         self.jwks_endpoint = f"{self.realm_url}/protocol/openid-connect/certs"
-        
+
         # HTTP client configuration
         self.client = httpx.AsyncClient(
             timeout=30.0,
             verify=True,  # Always verify SSL in production
-            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5)
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
         )
-        
+
         # Token management
         self._current_token: ServiceToken | None = None
         self._token_lock = threading.RLock()
         self._refresh_task: asyncio.Task | None = None
-        
+
         # JWKS client for token validation
         self._jwks_client: PyJWKClient | None = None
-        
+
         # Rate limiting
         self._last_request_time = 0
         self._min_request_interval = 1  # 1 second between requests
-        
-        logger.info(f"✅ Service account auth initialized for client: {self.config.client_id}")
-    
+
+        logger.info(
+            f"✅ Service account auth initialized for client: {self.config.client_id}"
+        )
+
     def _load_config_from_env(self) -> ServiceAccountConfig:
         """Load service account configuration from environment variables"""
         return ServiceAccountConfig(
@@ -114,13 +121,15 @@ class ServiceAccountAuth:
             realm=os.getenv("KEYCLOAK_REALM", "agenthub"),
             client_id=os.getenv("KEYCLOAK_SERVICE_CLIENT_ID", "mcp-service-account"),
             client_secret=os.getenv("KEYCLOAK_SERVICE_CLIENT_SECRET"),
-            scopes=os.getenv("KEYCLOAK_SERVICE_SCOPES", "openid profile email mcp:read mcp:write").split()
+            scopes=os.getenv(
+                "KEYCLOAK_SERVICE_SCOPES", "openid profile email mcp:read mcp:write"
+            ).split(),
         )
-    
+
     def _validate_config(self):
         """Validate service account configuration"""
-        required_fields = ['keycloak_url', 'realm', 'client_id', 'client_secret']
-        
+        required_fields = ["keycloak_url", "realm", "client_id", "client_secret"]
+
         for field in required_fields:
             value = getattr(self.config, field)
             if not value:
@@ -128,10 +137,10 @@ class ServiceAccountAuth:
                     f"Missing required service account configuration: {field.upper()}. "
                     f"Please set KEYCLOAK_{field.upper()} environment variable."
                 )
-        
+
         # Remove trailing slash from URL
         self.config.keycloak_url = self.config.keycloak_url.rstrip("/")
-    
+
     @property
     def jwks_client(self) -> PyJWKClient:
         """Get or create JWKS client for token validation"""
@@ -139,60 +148,66 @@ class ServiceAccountAuth:
             self._jwks_client = PyJWKClient(
                 self.jwks_endpoint,
                 cache_keys=True,
-                lifespan=3600  # 1 hour
+                lifespan=3600,  # 1 hour
             )
         return self._jwks_client
-    
+
     async def _rate_limit(self):
         """Simple rate limiting to prevent overwhelming Keycloak"""
         now = time.time()
         elapsed = now - self._last_request_time
-        
+
         if elapsed < self._min_request_interval:
             sleep_time = self._min_request_interval - elapsed
             await asyncio.sleep(sleep_time)
-        
+
         self._last_request_time = time.time()
-    
+
     async def authenticate(self, force_refresh: bool = False) -> ServiceToken | None:
         """
         Authenticate service account and get access token.
-        
+
         Args:
             force_refresh: Force token refresh even if current token is valid
-            
+
         Returns:
             ServiceToken if successful, None otherwise
         """
         async with asyncio.Lock():
             # Check if current token is still valid
-            if not force_refresh and self._current_token and not self._current_token.is_expired:
+            if (
+                not force_refresh
+                and self._current_token
+                and not self._current_token.is_expired
+            ):
                 logger.debug("Using cached service account token")
                 return self._current_token
-            
+
             # Rate limiting
             await self._rate_limit()
-            
+
             try:
                 # Prepare client credentials request
                 data = {
                     "grant_type": "client_credentials",
                     "client_id": self.config.client_id,
                     "client_secret": self.config.client_secret,
-                    "scope": " ".join(self.config.scopes)
+                    "scope": " ".join(self.config.scopes),
                 }
-                
-                logger.debug(f"Requesting service account token for client: {self.config.client_id}")
-                
+
+                logger.debug(
+                    f"Requesting service account token for client: {self.config.client_id}"
+                )
+
                 response = await self.client.post(
                     self.token_endpoint,
                     data=data,
-                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
                 )
-                
+
                 if response.status_code == 200:
                     token_data = response.json()
-                    
+
                     # Create service token
                     self._current_token = ServiceToken(
                         access_token=token_data["access_token"],
@@ -200,33 +215,37 @@ class ServiceAccountAuth:
                         token_type=token_data.get("token_type", "Bearer"),
                         expires_in=token_data.get("expires_in", 300),
                         scope=token_data.get("scope", ""),
-                        created_at=datetime.now(UTC)
+                        created_at=datetime.now(UTC),
                     )
-                    
-                    logger.info(f"✅ Service account authenticated successfully. Token expires in {self._current_token.expires_in}s")
-                    
+
+                    logger.info(
+                        f"✅ Service account authenticated successfully. Token expires in {self._current_token.expires_in}s"
+                    )
+
                     # Start automatic refresh if not already running
                     self._start_token_refresh_task()
-                    
+
                     return self._current_token
-                
+
                 else:
                     error_data = response.json() if response.content else {}
-                    error_msg = error_data.get("error_description", f"HTTP {response.status_code}")
+                    error_msg = error_data.get(
+                        "error_description", f"HTTP {response.status_code}"
+                    )
                     logger.error(f"Service account authentication failed: {error_msg}")
                     return None
-                    
+
             except Exception as e:
                 logger.error(f"Service account authentication error: {e}")
                 return None
-    
+
     def _start_token_refresh_task(self):
         """Start background task to refresh tokens automatically"""
         if self._refresh_task and not self._refresh_task.done():
             return  # Already running
-        
+
         self._refresh_task = asyncio.create_task(self._token_refresh_loop())
-    
+
     async def _token_refresh_loop(self):
         """Background loop to refresh tokens before expiry"""
         try:
@@ -234,60 +253,62 @@ class ServiceAccountAuth:
                 if self._current_token.is_expired:
                     logger.info("Token expired, refreshing...")
                     await self.authenticate(force_refresh=True)
-                
+
                 # Sleep until 30 seconds before expiry
                 sleep_seconds = max(30, self._current_token.seconds_until_expiry - 30)
                 await asyncio.sleep(sleep_seconds)
-                
+
         except asyncio.CancelledError:
             logger.debug("Token refresh task cancelled")
         except Exception as e:
             logger.error(f"Error in token refresh loop: {e}")
-    
+
     async def get_valid_token(self) -> str | None:
         """
         Get a valid access token, refreshing if necessary.
-        
+
         Returns:
             Valid access token string or None
         """
         token = await self.authenticate()
         return token.access_token if token else None
-    
+
     async def validate_token(self, token: str) -> dict[str, Any] | None:
         """
         Validate a service account token.
-        
+
         Args:
             token: JWT token to validate
-            
+
         Returns:
             Token payload if valid, None otherwise
         """
         try:
             # Get signing key
             signing_key = self.jwks_client.get_signing_key_from_jwt(token)
-            
+
             # Validate token
             payload = jwt.decode(
                 token,
                 signing_key.key,
                 algorithms=["RS256"],
                 audience=self.config.client_id,
-                issuer=f"{self.realm_url}"
+                issuer=f"{self.realm_url}",
             )
-            
+
             # Additional service account validation
             if payload.get("typ") != "Bearer":
                 logger.warning("Token is not a Bearer token")
                 return None
-            
+
             if payload.get("azp") != self.config.client_id:
-                logger.warning(f"Token not authorized for client: {self.config.client_id}")
+                logger.warning(
+                    f"Token not authorized for client: {self.config.client_id}"
+                )
                 return None
-                
+
             return payload
-            
+
         except jwt.ExpiredSignatureError:
             logger.debug("Service account token expired")
             return None
@@ -297,57 +318,58 @@ class ServiceAccountAuth:
         except Exception as e:
             logger.error(f"Token validation error: {e}")
             return None
-    
+
     async def get_service_info(self) -> dict[str, Any] | None:
         """
         Get service account information from Keycloak.
-        
+
         Returns:
             Service account info or None
         """
         token = await self.get_valid_token()
         if not token:
             return None
-        
+
         try:
             response = await self.client.get(
-                self.userinfo_endpoint,
-                headers={"Authorization": f"Bearer {token}"}
+                self.userinfo_endpoint, headers={"Authorization": f"Bearer {token}"}
             )
-            
+
             if response.status_code == 200:
                 return response.json()
-            
+
             logger.warning(f"Failed to get service info: HTTP {response.status_code}")
             return None
-            
+
         except Exception as e:
             logger.error(f"Failed to get service info: {e}")
             return None
-    
+
     def get_auth_headers(self) -> dict[str, str]:
         """
         Get authorization headers for authenticated requests.
-        
+
         Note: This is a sync method for convenience, but it won't refresh expired tokens.
         Use get_valid_token() for async token management.
-        
+
         Returns:
             Dictionary with Authorization header
         """
         if self._current_token and not self._current_token.is_expired:
             return {"Authorization": f"Bearer {self._current_token.access_token}"}
         return {}
-    
+
     async def health_check(self) -> dict[str, Any]:
         """
         Check service account authentication health.
-        
+
         Returns:
             Health status information
         """
         health = {
-            "service_account_configured": bool(self.config.client_id and self.config.client_secret),
+            "service_account_configured": bool(
+                self.config.client_id and self.config.client_secret
+            ),
             "token_available": bool(self._current_token),
             "token_valid": False,
             "token_expires_in": 0,
@@ -357,25 +379,27 @@ class ServiceAccountAuth:
                 "keycloak_url": self.config.keycloak_url,
                 "realm": self.config.realm,
                 "client_id": self.config.client_id,
-                "scopes": self.config.scopes
-            }
+                "scopes": self.config.scopes,
+            },
         }
-        
+
         # Check token status
         if self._current_token:
             health["token_valid"] = not self._current_token.is_expired
             health["token_expires_in"] = self._current_token.seconds_until_expiry
             health["last_auth_success"] = self._current_token.created_at.isoformat()
-        
+
         # Check Keycloak connectivity
         try:
-            response = await self.client.get(f"{self.realm_url}/.well-known/openid-configuration")
+            response = await self.client.get(
+                f"{self.realm_url}/.well-known/openid-configuration"
+            )
             health["keycloak_reachable"] = response.status_code == 200
         except Exception as e:
             health["keycloak_error"] = str(e)
-        
+
         return health
-    
+
     async def close(self):
         """Clean up resources"""
         # Cancel refresh task
@@ -385,17 +409,17 @@ class ServiceAccountAuth:
                 await self._refresh_task
             except asyncio.CancelledError:
                 pass
-        
+
         # Close HTTP client
         await self.client.aclose()
-        
+
         logger.info("Service account auth closed")
-    
+
     async def __aenter__(self):
         """Async context manager entry"""
         await self.authenticate()
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit"""
         await self.close()
@@ -404,10 +428,11 @@ class ServiceAccountAuth:
 # Singleton instance for easy access
 _service_auth_instance: ServiceAccountAuth | None = None
 
+
 def get_service_account_auth() -> ServiceAccountAuth:
     """
     Get or create singleton service account auth instance.
-    
+
     Returns:
         ServiceAccountAuth instance
     """
@@ -416,33 +441,36 @@ def get_service_account_auth() -> ServiceAccountAuth:
         _service_auth_instance = ServiceAccountAuth()
     return _service_auth_instance
 
-async def authenticate_service_request(authorization_header: str | None = None) -> dict[str, Any] | None:
+
+async def authenticate_service_request(
+    authorization_header: str | None = None,
+) -> dict[str, Any] | None:
     """
     Authenticate a service request using service account token.
-    
+
     Args:
         authorization_header: Authorization header from request
-        
+
     Returns:
         Service account context if valid, None otherwise
     """
     if not authorization_header:
         return None
-    
+
     # Extract token from header
     parts = authorization_header.split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
         return None
-    
+
     token = parts[1]
-    
+
     # Validate with service account auth
     auth = get_service_account_auth()
     payload = await auth.validate_token(token)
-    
+
     if not payload:
         return None
-    
+
     # Build service context
     return {
         "service_account": True,
@@ -452,5 +480,5 @@ async def authenticate_service_request(authorization_header: str | None = None) 
         "authenticated": True,
         "auth_provider": "keycloak_service_account",
         "token_exp": payload.get("exp"),
-        "permissions": ["mcp:*"]  # Service accounts have full permissions
+        "permissions": ["mcp:*"],  # Service accounts have full permissions
     }

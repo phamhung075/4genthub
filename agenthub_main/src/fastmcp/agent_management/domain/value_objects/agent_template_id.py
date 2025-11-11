@@ -23,4 +23,5 @@ class AgentTemplateId(EntityId):
         >>> template_id = AgentTemplateId.generate_new()
         >>> template_id_from_string = AgentTemplateId.from_string("550e8400-e29b-41d4-a716-446655440000")
     """
+
     pass

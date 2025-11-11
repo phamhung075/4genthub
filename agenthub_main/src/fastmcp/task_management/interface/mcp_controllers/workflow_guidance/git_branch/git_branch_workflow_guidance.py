@@ -354,8 +354,12 @@ class GitBranchWorkflowGuidance(BaseWorkflowGuidance):
         """Get examples for the NEXT action after current operation."""
         examples = []
 
-        project_id = context.get("project_id", "project_id") if context else "project_id"
-        git_branch_id = context.get("git_branch_id", "branch_id") if context else "branch_id"
+        project_id = (
+            context.get("project_id", "project_id") if context else "project_id"
+        )
+        git_branch_id = (
+            context.get("git_branch_id", "branch_id") if context else "branch_id"
+        )
 
         if action == "create":
             # After creating, show how to START WORK on the branch (what comes next)

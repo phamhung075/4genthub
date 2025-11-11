@@ -66,13 +66,12 @@ class LabelValidator:
     MAX_NAME_LENGTH = 50
     MIN_NAME_LENGTH = 1
     MAX_DESCRIPTION_LENGTH = 2000
-    HEX_COLOR_PATTERN = re.compile(r'^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$')
-    ALLOWED_NAME_PATTERN = re.compile(r'^[a-zA-Z0-9\s\-_]+$')
+    HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$")
+    ALLOWED_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9\s\-_]+$")
 
     @staticmethod
     def validate_timestamp(
-        timestamp: datetime | None,
-        field_name: str = "timestamp"
+        timestamp: datetime | None, field_name: str = "timestamp"
     ) -> None:
         """Validate timestamp is not None and is UTC-aware.
 
@@ -93,21 +92,21 @@ class LabelValidator:
             raise LabelValidationError(
                 field=field_name,
                 message=f"{field_name} cannot be None",
-                hint="Use datetime.now(UTC) to create UTC timestamps"
+                hint="Use datetime.now(UTC) to create UTC timestamps",
             )
 
         if timestamp.tzinfo is None:
             raise LabelValidationError(
                 field=field_name,
                 message="Timestamp must be timezone-aware",
-                hint="Use datetime.now(UTC) instead of datetime.now()"
+                hint="Use datetime.now(UTC) instead of datetime.now()",
             )
 
         if timestamp.tzinfo != UTC:
             raise LabelValidationError(
                 field=field_name,
                 message="Timestamp must be in UTC timezone",
-                hint=f"Convert to UTC using: {field_name}.astimezone(UTC)"
+                hint=f"Convert to UTC using: {field_name}.astimezone(UTC)",
             )
 
     @classmethod
@@ -137,28 +136,28 @@ class LabelValidator:
             raise LabelValidationError(
                 field="name",
                 message="Label name cannot be empty or whitespace",
-                hint="Provide a meaningful label name (e.g., 'backend', 'frontend', 'api')"
+                hint="Provide a meaningful label name (e.g., 'backend', 'frontend', 'api')",
             )
 
         if len(name) < cls.MIN_NAME_LENGTH:
             raise LabelValidationError(
                 field="name",
                 message=f"Label name must be at least {cls.MIN_NAME_LENGTH} character(s)",
-                hint=f"Current length: {len(name)}"
+                hint=f"Current length: {len(name)}",
             )
 
         if len(name) > cls.MAX_NAME_LENGTH:
             raise LabelValidationError(
                 field="name",
                 message=f"Label name cannot exceed {cls.MAX_NAME_LENGTH} characters",
-                hint=f"Current length: {len(name)}. Consider abbreviating the name."
+                hint=f"Current length: {len(name)}. Consider abbreviating the name.",
             )
 
         if not cls.ALLOWED_NAME_PATTERN.match(name):
             raise LabelValidationError(
                 field="name",
                 message="Label name contains invalid characters",
-                hint="Only alphanumeric characters, spaces, hyphens (-), and underscores (_) are allowed"
+                hint="Only alphanumeric characters, spaces, hyphens (-), and underscores (_) are allowed",
             )
 
     @classmethod
@@ -190,21 +189,21 @@ class LabelValidator:
             raise LabelValidationError(
                 field="color",
                 message="Color must be a string",
-                hint="Use hex color format (e.g., '#ff0000' or '#f00')"
+                hint="Use hex color format (e.g., '#ff0000' or '#f00')",
             )
 
         if not color.startswith("#"):
             raise LabelValidationError(
                 field="color",
                 message="Color must start with '#'",
-                hint=f"Did you mean '#{color}'? Use hex color format (e.g., '#ff0000')"
+                hint=f"Did you mean '#{color}'? Use hex color format (e.g., '#ff0000')",
             )
 
         if not cls.HEX_COLOR_PATTERN.match(color):
             raise LabelValidationError(
                 field="color",
                 message=f"Invalid hex color format: {color}",
-                hint="Use format #RGB (e.g., '#f00') or #RRGGBB (e.g., '#ff0000')"
+                hint="Use format #RGB (e.g., '#f00') or #RRGGBB (e.g., '#ff0000')",
             )
 
     @classmethod
@@ -235,14 +234,14 @@ class LabelValidator:
             raise LabelValidationError(
                 field="description",
                 message="Description must be a string",
-                hint="Provide a text description or leave empty"
+                hint="Provide a text description or leave empty",
             )
 
         if len(description) > cls.MAX_DESCRIPTION_LENGTH:
             raise LabelValidationError(
                 field="description",
                 message=f"Description cannot exceed {cls.MAX_DESCRIPTION_LENGTH} characters",
-                hint=f"Current length: {len(description)}. Consider shortening the description."
+                hint=f"Current length: {len(description)}. Consider shortening the description.",
             )
 
     @classmethod
@@ -252,7 +251,7 @@ class LabelValidator:
         color: str | None = None,
         description: str | None = None,
         created_at: datetime | None = None,
-        updated_at: datetime | None = None
+        updated_at: datetime | None = None,
     ) -> tuple[bool, str | None]:
         """Validate all requirements for label creation.
 
@@ -308,7 +307,7 @@ class LabelValidator:
                     raise LabelValidationError(
                         field="updated_at",
                         message="updated_at cannot be earlier than created_at",
-                        hint="Ensure updated_at >= created_at"
+                        hint="Ensure updated_at >= created_at",
                     )
 
             return True, None
@@ -321,7 +320,7 @@ class LabelValidator:
         cls,
         name: str | None = None,
         color: str | None = None,
-        description: str | None = None
+        description: str | None = None,
     ) -> tuple[bool, str | None]:
         """Validate requirements for label update.
 
@@ -359,8 +358,7 @@ class LabelValidator:
 
     @staticmethod
     def validate_timestamps_consistency(
-        created_at: datetime,
-        updated_at: datetime
+        created_at: datetime, updated_at: datetime
     ) -> None:
         """Validate that timestamps are consistent and logical.
 
@@ -391,5 +389,5 @@ class LabelValidator:
             raise LabelValidationError(
                 field="updated_at",
                 message="updated_at cannot be earlier than created_at",
-                hint=f"created_at: {created_at.isoformat()}, updated_at: {updated_at.isoformat()}"
+                hint=f"created_at: {created_at.isoformat()}, updated_at: {updated_at.isoformat()}",
             )

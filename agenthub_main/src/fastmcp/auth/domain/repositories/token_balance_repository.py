@@ -29,10 +29,7 @@ class ITokenBalanceRepository(ABC):
 
     @abstractmethod
     async def create_balance(
-        self,
-        user_id: str,
-        initial_tokens: int = 10000,
-        monthly_quota: int = 10000
+        self, user_id: str, initial_tokens: int = 10000, monthly_quota: int = 10000
     ) -> dict[str, Any]:
         """
         Create new token balance for a user

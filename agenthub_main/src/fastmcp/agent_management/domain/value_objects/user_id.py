@@ -27,4 +27,5 @@ class UserId(EntityId):
         if user_id == another_user_id:
             print("Same user")
     """
+
     pass

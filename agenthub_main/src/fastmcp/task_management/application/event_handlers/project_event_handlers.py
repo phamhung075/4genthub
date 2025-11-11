@@ -40,7 +40,7 @@ class ProjectEventHandlers:
         event_store: EventStore,
         project_repository: Any | None = None,
         notification_service: Any | None = None,
-        analytics_service: Any | None = None
+        analytics_service: Any | None = None,
     ):
         self.event_store = event_store
         self.project_repository = project_repository
@@ -57,7 +57,7 @@ class ProjectEventHandlers:
                 "total_branches": 0,
                 "total_agents": 0,
                 "updates": 0,
-                "health_changes": 0
+                "health_changes": 0,
             }
         )
 
@@ -80,27 +80,31 @@ class ProjectEventHandlers:
 
         # Initialize statistics
         project_key = str(event.project_id)
-        self.project_stats[project_key].update({
-            "created_at": event.occurred_at,
-            "name": event.project_name,
-            "created_by": event.created_by,
-            "description": getattr(event, 'description', ''),
-        })
+        self.project_stats[project_key].update(
+            {
+                "created_at": event.occurred_at,
+                "name": event.project_name,
+                "created_by": event.created_by,
+                "description": getattr(event, "description", ""),
+            }
+        )
 
         # Initialize health tracking
-        self.health_history[project_key].append({
-            "status": "healthy",
-            "score": 100.0,
-            "timestamp": event.occurred_at.isoformat(),
-            "reason": "Project initialized"
-        })
+        self.health_history[project_key].append(
+            {
+                "status": "healthy",
+                "score": 100.0,
+                "timestamp": event.occurred_at.isoformat(),
+                "reason": "Project initialized",
+            }
+        )
 
         # Send notifications
         if self.notification_service:
             await self.notification_service.notify_project_created(
                 project_id=event.project_id,
                 project_name=event.project_name,
-                created_by=event.created_by
+                created_by=event.created_by,
             )
 
         # Initialize analytics tracking
@@ -110,8 +114,8 @@ class ProjectEventHandlers:
                 metadata={
                     "name": event.project_name,
                     "created_at": event.occurred_at.isoformat(),
-                    "created_by": event.created_by
-                }
+                    "created_by": event.created_by,
+                },
             )
 
     async def handle_project_updated(self, event: ProjectUpdatedEvent) -> None:
@@ -131,8 +135,10 @@ class ProjectEventHandlers:
         self.project_stats[project_key]["last_updated"] = event.occurred_at
 
         # Track significant changes
-        significant_fields = ['name', 'status', 'owner', 'due_date']
-        significant_changes = [f for f in event.changed_fields if f in significant_fields]
+        significant_fields = ["name", "status", "owner", "due_date"]
+        significant_changes = [
+            f for f in event.changed_fields if f in significant_fields
+        ]
 
         if significant_changes and self.notification_service:
             await self.notification_service.notify_project_updated(
@@ -140,14 +146,13 @@ class ProjectEventHandlers:
                 changed_fields=significant_changes,
                 previous_values=event.previous_values,
                 new_values=event.new_values,
-                updated_by=event.updated_by
+                updated_by=event.updated_by,
             )
 
         # Update analytics
         if self.analytics_service:
             await self.analytics_service.track_project_update(
-                project_id=event.project_id,
-                changes=event.changed_fields
+                project_id=event.project_id, changes=event.changed_fields
             )
 
     async def handle_project_deleted(self, event: ProjectDeletedEvent) -> None:
@@ -156,9 +161,7 @@ class ProjectEventHandlers:
 
         Archives project data and notifies stakeholders.
         """
-        logger.info(
-            f"Project deleted: {event.project_id} by {event.deleted_by}"
-        )
+        logger.info(f"Project deleted: {event.project_id} by {event.deleted_by}")
 
         project_key = str(event.project_id)
 
@@ -168,7 +171,7 @@ class ProjectEventHandlers:
                 **self.project_stats[project_key],
                 "deleted_at": event.occurred_at,
                 "deleted_by": event.deleted_by,
-                "health_history": self.health_history.get(project_key, [])
+                "health_history": self.health_history.get(project_key, []),
             }
             self.archived_projects[project_key] = archived_data
 
@@ -180,18 +183,18 @@ class ProjectEventHandlers:
         # Notify stakeholders
         if self.notification_service:
             await self.notification_service.notify_project_deleted(
-                project_id=event.project_id,
-                deleted_by=event.deleted_by
+                project_id=event.project_id, deleted_by=event.deleted_by
             )
 
         # Finalize analytics
         if self.analytics_service:
             await self.analytics_service.finalize_project_tracking(
-                project_id=event.project_id,
-                deleted_at=event.occurred_at
+                project_id=event.project_id, deleted_at=event.occurred_at
             )
 
-    async def handle_project_statistics_updated(self, event: ProjectStatisticsUpdatedEvent) -> None:
+    async def handle_project_statistics_updated(
+        self, event: ProjectStatisticsUpdatedEvent
+    ) -> None:
         """
         Handle project statistics updated event.
 
@@ -205,14 +208,16 @@ class ProjectEventHandlers:
         project_key = str(event.project_id)
 
         # Update statistics
-        self.project_stats[project_key].update({
-            "branch_count": event.branch_count,
-            "total_tasks": event.total_tasks,
-            "completed_tasks": event.completed_tasks,
-            "active_tasks": event.active_tasks,
-            "completion_rate": event.overall_progress_percentage / 100.0,
-            "stats_updated_at": event.occurred_at
-        })
+        self.project_stats[project_key].update(
+            {
+                "branch_count": event.branch_count,
+                "total_tasks": event.total_tasks,
+                "completed_tasks": event.completed_tasks,
+                "active_tasks": event.active_tasks,
+                "completion_rate": event.overall_progress_percentage / 100.0,
+                "stats_updated_at": event.occurred_at,
+            }
+        )
 
         # Send WebSocket notification to update frontend cache
         try:
@@ -223,7 +228,9 @@ class ProjectEventHandlers:
             await WebSocketNotificationService.broadcast_project_event(
                 event_type="updated",
                 project_id=str(event.project_id),
-                user_id=event.user_id if hasattr(event, 'user_id') and event.user_id else "system",
+                user_id=event.user_id
+                if hasattr(event, "user_id") and event.user_id
+                else "system",
                 project_data={
                     "id": str(event.project_id),
                     "branch_count": event.branch_count,
@@ -231,12 +238,16 @@ class ProjectEventHandlers:
                     "completed_tasks": event.completed_tasks,
                     "in_progress_tasks": event.in_progress_tasks,
                     "todo_tasks": event.todo_tasks,
-                    "progress_percentage": event.overall_progress_percentage
-                }
+                    "progress_percentage": event.overall_progress_percentage,
+                },
             )
-            logger.info(f"✅ Sent WebSocket notification for project {event.project_id} statistics update")
+            logger.info(
+                f"✅ Sent WebSocket notification for project {event.project_id} statistics update"
+            )
         except Exception as ws_error:
-            logger.warning(f"Failed to send WebSocket notification for project statistics: {ws_error}")
+            logger.warning(
+                f"Failed to send WebSocket notification for project statistics: {ws_error}"
+            )
 
         # Check if health assessment is needed
         await self._assess_project_health(event.project_id, event)
@@ -249,8 +260,8 @@ class ProjectEventHandlers:
                     "total_tasks": event.total_tasks,
                     "completed_tasks": event.completed_tasks,
                     "active_tasks": event.active_tasks,
-                    "completion_percentage": event.overall_progress_percentage
-                }
+                    "completion_percentage": event.overall_progress_percentage,
+                },
             )
 
     async def handle_project_health_changed(self, event: ProjectHealthChanged) -> None:
@@ -275,7 +286,7 @@ class ProjectEventHandlers:
             "previous_status": event.previous_health_status,
             "timestamp": event.occurred_at.isoformat(),
             "indicators": event.health_indicators,
-            "issues": event.identified_issues
+            "issues": event.identified_issues,
         }
         self.health_history[project_key].append(health_record)
 
@@ -295,7 +306,7 @@ class ProjectEventHandlers:
                     previous_status=event.previous_health_status,
                     new_status=event.new_health_status,
                     health_score=event.health_score,
-                    issues=event.identified_issues
+                    issues=event.identified_issues,
                 )
 
     async def handle_project_archived(self, event: ProjectArchived) -> None:
@@ -318,7 +329,7 @@ class ProjectEventHandlers:
                 "archived_at": event.occurred_at,
                 "archived_by": event.archived_by,
                 "archive_reason": event.archive_reason,
-                "final_health_history": self.health_history.get(project_key, [])
+                "final_health_history": self.health_history.get(project_key, []),
             }
             self.archived_projects[project_key] = archived_data
 
@@ -331,20 +342,17 @@ class ProjectEventHandlers:
             await self.notification_service.notify_project_archived(
                 project_id=event.project_id,
                 archived_by=event.archived_by,
-                reason=event.archive_reason
+                reason=event.archive_reason,
             )
 
         # Archive analytics data
         if self.analytics_service:
             await self.analytics_service.archive_project_data(
-                project_id=event.project_id,
-                archived_at=event.occurred_at
+                project_id=event.project_id, archived_at=event.occurred_at
             )
 
     async def _assess_project_health(
-        self,
-        project_id: UUID,
-        stats_event: ProjectStatisticsUpdatedEvent
+        self, project_id: UUID, stats_event: ProjectStatisticsUpdatedEvent
     ) -> None:
         """
         Assess project health based on current statistics.
@@ -354,7 +362,11 @@ class ProjectEventHandlers:
             stats_event: The statistics update event
         """
         project_key = str(project_id)
-        current_health = self.health_history[project_key][-1] if self.health_history[project_key] else None
+        current_health = (
+            self.health_history[project_key][-1]
+            if self.health_history[project_key]
+            else None
+        )
 
         # Calculate health score based on multiple factors
         health_score = 100.0
@@ -399,11 +411,13 @@ class ProjectEventHandlers:
                 occurred_at=datetime.now(UTC),
                 user_id="system_health_check",
                 project_id=project_id,
-                previous_health_status=current_health["status"] if current_health else "unknown",
+                previous_health_status=current_health["status"]
+                if current_health
+                else "unknown",
                 new_health_status=health_status,
                 health_score=health_score,
                 health_indicators=indicators,
-                identified_issues=issues
+                identified_issues=issues,
             )
 
             await self.event_store.append(health_event)
@@ -428,26 +442,31 @@ class ProjectEventHandlers:
                 health_status=event.new_health_status,
                 health_score=event.health_score,
                 issues=event.identified_issues,
-                urgency="high" if event.new_health_status == "critical" else "medium"
+                urgency="high" if event.new_health_status == "critical" else "medium",
             )
 
         # Suggest corrective actions based on issues
         suggestions = []
         for issue in event.identified_issues:
             if "completion rate" in issue.lower():
-                suggestions.append("Consider reviewing task priorities and removing blockers")
+                suggestions.append(
+                    "Consider reviewing task priorities and removing blockers"
+                )
             elif "active tasks" in issue.lower():
-                suggestions.append("Consider completing or postponing some active tasks")
+                suggestions.append(
+                    "Consider completing or postponing some active tasks"
+                )
             elif "declining" in issue.lower():
                 suggestions.append("Review recent changes and identify root causes")
 
         if suggestions and self.notification_service:
             await self.notification_service.send_health_suggestions(
-                project_id=event.project_id,
-                suggestions=suggestions
+                project_id=event.project_id, suggestions=suggestions
             )
 
-    async def get_project_statistics(self, project_id: UUID | None = None) -> dict[str, Any]:
+    async def get_project_statistics(
+        self, project_id: UUID | None = None
+    ) -> dict[str, Any]:
         """
         Get project statistics for a specific project or all projects.
 
@@ -466,13 +485,12 @@ class ProjectEventHandlers:
                 "project_id": project_key,
                 "statistics": dict(stats),
                 "current_health": health[-1] if health else None,
-                "health_history": health[-10:] if health else []
+                "health_history": health[-10:] if health else [],
             }
 
         # Aggregate across all projects
         active_projects = {
-            k: v for k, v in self.project_stats.items()
-            if not v.get("archived", False)
+            k: v for k, v in self.project_stats.items() if not v.get("archived", False)
         }
 
         return {
@@ -480,25 +498,34 @@ class ProjectEventHandlers:
             "active_projects": len(active_projects),
             "archived_projects": len(self.archived_projects),
             "summary": {
-                "total_tasks": sum(p.get("total_tasks", 0) for p in active_projects.values()),
-                "completed_tasks": sum(p.get("completed_tasks", 0) for p in active_projects.values()),
+                "total_tasks": sum(
+                    p.get("total_tasks", 0) for p in active_projects.values()
+                ),
+                "completed_tasks": sum(
+                    p.get("completed_tasks", 0) for p in active_projects.values()
+                ),
                 "average_completion_rate": (
-                    sum(p.get("completion_rate", 0) for p in active_projects.values()) /
-                    max(len(active_projects), 1)
-                ) if active_projects else 0.0,
-                "projects_at_risk": len([
-                    p for p in self.health_history.values()
-                    if p and p[-1].get("status") in ["at_risk", "critical"]
-                ])
+                    sum(p.get("completion_rate", 0) for p in active_projects.values())
+                    / max(len(active_projects), 1)
+                )
+                if active_projects
+                else 0.0,
+                "projects_at_risk": len(
+                    [
+                        p
+                        for p in self.health_history.values()
+                        if p and p[-1].get("status") in ["at_risk", "critical"]
+                    ]
+                ),
             },
-            "by_project": {k: dict(v) for k, v in active_projects.items()}
+            "by_project": {k: dict(v) for k, v in active_projects.items()},
         }
 
     async def get_archived_projects(self) -> dict[str, Any]:
         """Get all archived projects."""
         return {
             "total_archived": len(self.archived_projects),
-            "projects": self.archived_projects
+            "projects": self.archived_projects,
         }
 
     async def process_event(self, event: BaseDomainEvent) -> None:

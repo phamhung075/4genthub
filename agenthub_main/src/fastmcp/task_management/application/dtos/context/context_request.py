@@ -10,6 +10,7 @@ from typing import Any
 @dataclass
 class CreateContextRequest:
     """Request DTO for creating a new context following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     title: str
     description: str = ""
@@ -25,6 +26,7 @@ class CreateContextRequest:
 @dataclass
 class UpdateContextRequest:
     """Request DTO for updating a context following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     data: dict[str, Any] | None = None
 
@@ -32,25 +34,31 @@ class UpdateContextRequest:
 @dataclass
 class GetContextRequest:
     """Request DTO for getting a context following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
 
 
 @dataclass
 class DeleteContextRequest:
     """Request DTO for deleting a context following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
 
 
 @dataclass
 class ListContextsRequest:
     """Request DTO for listing contexts following clean relationship chain"""
-    user_id: str | None = None  # Only user_id needed since contexts are accessed via tasks
+
+    user_id: str | None = (
+        None  # Only user_id needed since contexts are accessed via tasks
+    )
     project_id: str = ""  # Optional project_id for filtering contexts
 
 
 @dataclass
 class GetPropertyRequest:
     """Request DTO for getting a context property following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     property_path: str
 
@@ -58,6 +66,7 @@ class GetPropertyRequest:
 @dataclass
 class UpdatePropertyRequest:
     """Request DTO for updating a context property following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     property_path: str
     value: Any
@@ -66,6 +75,7 @@ class UpdatePropertyRequest:
 @dataclass
 class MergeContextRequest:
     """Request DTO for merging data into a context following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     data: dict[str, Any]
 
@@ -73,6 +83,7 @@ class MergeContextRequest:
 @dataclass
 class MergeDataRequest:
     """Request DTO for merging data into a context following clean relationship chain (alias for MergeContextRequest)"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     data: dict[str, Any]
 
@@ -80,6 +91,7 @@ class MergeDataRequest:
 @dataclass
 class AddInsightRequest:
     """Request DTO for adding an insight following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     agent: str
     category: str
@@ -90,6 +102,7 @@ class AddInsightRequest:
 @dataclass
 class AddProgressRequest:
     """Request DTO for adding progress following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     action: str
     agent: str
@@ -100,5 +113,6 @@ class AddProgressRequest:
 @dataclass
 class UpdateNextStepsRequest:
     """Request DTO for updating next steps following clean relationship chain"""
+
     task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     next_steps: list[str]

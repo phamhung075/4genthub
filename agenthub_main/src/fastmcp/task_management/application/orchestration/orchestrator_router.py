@@ -37,6 +37,7 @@ def get_orchestrator(strategy=None):
         orchestrator = get_orchestrator(strategy=CapabilityBasedStrategy())
     """
     from .project_orchestrator import ProjectOrchestrator
+
     logger.debug("Using application layer orchestrator")
     return ProjectOrchestrator(strategy=strategy)
 
@@ -52,7 +53,9 @@ class OrchestratorRouter:
     def __init__(self, strategy=None):
         """Initialize router with application layer orchestrator"""
         self._orchestrator = get_orchestrator(strategy)
-        logger.debug("OrchestratorRouter initialized with application layer implementation")
+        logger.debug(
+            "OrchestratorRouter initialized with application layer implementation"
+        )
 
     def orchestrate_project(self, project: Project):
         """

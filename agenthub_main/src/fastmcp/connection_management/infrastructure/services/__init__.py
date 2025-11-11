@@ -7,5 +7,5 @@ from .mcp_status_broadcasting_service import MCPStatusBroadcastingService
 __all__ = [
     "MCPServerHealthService",
     "MCPConnectionDiagnosticsService",
-    "MCPStatusBroadcastingService"
-] 
+    "MCPStatusBroadcastingService",
+]

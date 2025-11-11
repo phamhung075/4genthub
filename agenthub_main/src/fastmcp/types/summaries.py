@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class TaskSummaryDTO(BaseModel):
     """Task summary matching frontend TaskSummary interface"""
+
     id: str
     title: str
     status: str
@@ -32,6 +33,7 @@ class TaskSummaryDTO(BaseModel):
 
 class SubtaskSummaryDTO(BaseModel):
     """Subtask summary matching frontend SubtaskSummary interface"""
+
     id: str
     task_id: str  # Parent task ID - required by frontend validation
     title: str
@@ -48,6 +50,7 @@ class SubtaskSummaryDTO(BaseModel):
 
 class BranchSummaryDTO(BaseModel):
     """Branch summary matching frontend BranchSummary interface"""
+
     id: str
     project_id: str
     name: str
@@ -70,6 +73,7 @@ class BranchSummaryDTO(BaseModel):
 
 class ProjectSummaryDTO(BaseModel):
     """Project summary matching frontend ProjectSummary interface"""
+
     id: str
     name: str
     description: str | None = None
@@ -78,5 +82,3 @@ class ProjectSummaryDTO(BaseModel):
     completedTasks: int = Field(alias="completedTasks")
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
-
-

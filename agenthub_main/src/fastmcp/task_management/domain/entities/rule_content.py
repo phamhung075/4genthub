@@ -14,6 +14,7 @@ from typing import Any
 
 class RuleFormat(Enum):
     """Rule file format types"""
+
     MDC = "mdc"
     MD = "md"
     JSON = "json"
@@ -23,6 +24,7 @@ class RuleFormat(Enum):
 
 class RuleType(Enum):
     """Rule classification types"""
+
     TASK = "task"
     CONTEXT = "context"
     CONFIG = "config"
@@ -32,6 +34,7 @@ class RuleType(Enum):
 
 class ConflictResolution(Enum):
     """Conflict resolution strategies"""
+
     OVERRIDE = "override"
     MERGE = "merge"
     SKIP = "skip"
@@ -40,6 +43,7 @@ class ConflictResolution(Enum):
 
 class InheritanceType(Enum):
     """Rule inheritance types"""
+
     FULL = "full"
     PARTIAL = "partial"
     OVERRIDE = "override"
@@ -49,6 +53,7 @@ class InheritanceType(Enum):
 @dataclass
 class RuleMetadata:
     """Metadata for rule files"""
+
     path: str
     format: RuleFormat
     type: RuleType
@@ -56,7 +61,7 @@ class RuleMetadata:
     modified: float
     checksum: str
     dependencies: list[str] = field(default_factory=list)
-    
+
     @property
     def modified_datetime(self) -> datetime:
         """Get modification time as datetime"""
@@ -66,13 +71,14 @@ class RuleMetadata:
 @dataclass
 class RuleContent:
     """Complete rule content with metadata and parsed data"""
+
     metadata: RuleMetadata
     raw_content: str
     parsed_content: dict[str, Any]
     sections: dict[str, str]
     references: list[str]
     variables: dict[str, Any]
-    
+
     def __post_init__(self):
         """Post-initialization validation"""
         if not self.raw_content:
@@ -84,6 +90,7 @@ class RuleContent:
 @dataclass
 class RuleInheritance:
     """Rule inheritance relationship"""
+
     parent_path: str
     child_path: str
     inheritance_type: InheritanceType
@@ -94,6 +101,7 @@ class RuleInheritance:
 @dataclass
 class CompositionResult:
     """Result of rule composition operation"""
+
     success: bool
     composed_content: dict[str, Any]
     applied_rules: list[str]
@@ -104,6 +112,7 @@ class CompositionResult:
 @dataclass
 class RuleConflict:
     """Represents a conflict between rules"""
+
     rule1_path: str
     rule2_path: str
     conflict_section: str

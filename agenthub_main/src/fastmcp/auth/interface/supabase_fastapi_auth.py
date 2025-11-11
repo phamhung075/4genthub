@@ -24,6 +24,7 @@ security = HTTPBearer()
 # Initialize Supabase auth service lazily
 supabase_auth = None
 
+
 def get_supabase_auth():
     """Get or create Supabase auth service instance."""
     global supabase_auth
@@ -33,49 +34,52 @@ def get_supabase_auth():
 
 
 async def get_current_user_from_middleware(
-    request: Request,
-    db: Session = Depends(get_db)
+    request: Request, db: Session = Depends(get_db)
 ) -> User:
     """
     Get current user from middleware authentication context.
-    
+
     This dependency uses the user authentication processed by DualAuthMiddleware
     instead of re-validating tokens.
-    
+
     Args:
         request: FastAPI request object
         db: Database session
-        
+
     Returns:
         Current user object
-        
+
     Raises:
         HTTPException: 401 if not authenticated
     """
     # Check if middleware has processed authentication
-    if not hasattr(request.state, 'user_id') or not request.state.user_id:
-        logger.warning("No authentication found in request state - middleware may not be working")
+    if not hasattr(request.state, "user_id") or not request.state.user_id:
+        logger.warning(
+            "No authentication found in request state - middleware may not be working"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required - no user context found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     user_id = request.state.user_id
     logger.debug(f"Retrieved user_id from middleware: {user_id}")
-    
+
     # Get user from database
     try:
         user_repository = UserRepository(db)
         user = user_repository.find_by_id(user_id)
-        
+
         if not user:
             # If user doesn't exist in local DB, create from auth info
-            auth_info = getattr(request.state, 'auth_info', {})
-            email = auth_info.get('email') if isinstance(auth_info, dict) else None
+            auth_info = getattr(request.state, "auth_info", {})
+            email = auth_info.get("email") if isinstance(auth_info, dict) else None
 
             if email:
-                logger.info(f"Creating new user record for authenticated user: {user_id}")
+                logger.info(
+                    f"Creating new user record for authenticated user: {user_id}"
+                )
 
                 from sqlalchemy.exc import IntegrityError
 
@@ -86,10 +90,12 @@ async def get_current_user_from_middleware(
                     domain_user = User(
                         id=user_id,
                         email=email,
-                        username=email.split('@')[0],  # Use email prefix as username
+                        username=email.split("@")[0],  # Use email prefix as username
                         password_hash="",  # Empty for JWT-authenticated users
                         status=UserStatus.ACTIVE,
-                        roles=[UserRole.USER]  # Fixed: roles is a list, not singular role
+                        roles=[
+                            UserRole.USER
+                        ],  # Fixed: roles is a list, not singular role
                     )
 
                     # Save to database with transaction handling
@@ -99,17 +105,21 @@ async def get_current_user_from_middleware(
 
                 except IntegrityError:
                     # Race condition: another request created the user first
-                    logger.warning(f"User {user_id} was created by another request, fetching...")
+                    logger.warning(
+                        f"User {user_id} was created by another request, fetching..."
+                    )
                     db.rollback()  # Rollback the failed transaction
 
                     # Retry fetching the user
                     user = user_repository.find_by_id(user_id)
                     if not user:
                         # Still not found - this shouldn't happen but handle it
-                        logger.error(f"User {user_id} still not found after race condition")
+                        logger.error(
+                            f"User {user_id} still not found after race condition"
+                        )
                         raise HTTPException(
                             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Failed to create or retrieve user"
+                            detail="Failed to create or retrieve user",
                         )
             else:
                 raise HTTPException(
@@ -117,7 +127,7 @@ async def get_current_user_from_middleware(
                     detail="User not found in database and no email available for creation",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-        
+
         return user
 
     except HTTPException:
@@ -127,26 +137,26 @@ async def get_current_user_from_middleware(
         logger.error(f"Error retrieving user {user_id} from database: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error while retrieving user"
+            detail="Internal server error while retrieving user",
         )
 
 
 async def get_current_user_supabase(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     """
     Validate Supabase token and return current user
-    
+
     This dependency validates tokens issued by Supabase Auth.
-    
+
     Args:
         credentials: Bearer token extracted by HTTPBearer
         db: Database session
-        
+
     Returns:
         Current user object
-        
+
     Raises:
         HTTPException: 401 if token is invalid or user not found
     """
@@ -156,40 +166,52 @@ async def get_current_user_supabase(
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Extract the token
     token = credentials.credentials
-    
+
     try:
         # Verify token with Supabase
         result = await get_supabase_auth().verify_token(token)
-        
+
         if not result.success or not result.user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=result.error_message or "Invalid or expired token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         # Extract user ID from Supabase user data
         supabase_user = result.user
-        user_id = supabase_user.id if hasattr(supabase_user, 'id') else supabase_user.get('id')
-        
+        user_id = (
+            supabase_user.id
+            if hasattr(supabase_user, "id")
+            else supabase_user.get("id")
+        )
+
         if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token: missing user ID",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         # Get or create user in local database
         user_repository = UserRepository(db)
         user = user_repository.find_by_id(user_id)
-        
+
         if not user:
             # Create user from Supabase data if not exists
-            email = supabase_user.email if hasattr(supabase_user, 'email') else supabase_user.get('email')
-            user_metadata = supabase_user.user_metadata if hasattr(supabase_user, 'user_metadata') else supabase_user.get('user_metadata', {})
+            email = (
+                supabase_user.email
+                if hasattr(supabase_user, "email")
+                else supabase_user.get("email")
+            )
+            user_metadata = (
+                supabase_user.user_metadata
+                if hasattr(supabase_user, "user_metadata")
+                else supabase_user.get("user_metadata", {})
+            )
 
             from sqlalchemy.exc import IntegrityError
 
@@ -201,12 +223,14 @@ async def get_current_user_supabase(
                 domain_user = User(
                     id=user_id,
                     email=email,
-                    username=user_metadata.get('username', email.split('@')[0] if email else 'user'),
-                    full_name=user_metadata.get('full_name', ''),
+                    username=user_metadata.get(
+                        "username", email.split("@")[0] if email else "user"
+                    ),
+                    full_name=user_metadata.get("full_name", ""),
                     password_hash="",  # No password stored for Supabase users
                     status=UserStatus.ACTIVE,
                     roles=[UserRole.USER],
-                    email_verified=True  # Supabase users are verified through Supabase
+                    email_verified=True,  # Supabase users are verified through Supabase
                 )
 
                 # Convert to database model and save
@@ -221,21 +245,25 @@ async def get_current_user_supabase(
 
             except IntegrityError:
                 # Race condition: another request created the user first
-                logger.warning(f"User {user_id} was created by another request during Supabase auth, fetching...")
+                logger.warning(
+                    f"User {user_id} was created by another request during Supabase auth, fetching..."
+                )
                 db.rollback()  # Rollback the failed transaction
 
                 # Retry fetching the user
                 user = user_repository.find_by_id(user_id)
                 if not user:
                     # Still not found - this shouldn't happen but handle it
-                    logger.error(f"User {user_id} still not found after race condition in Supabase auth")
+                    logger.error(
+                        f"User {user_id} still not found after race condition in Supabase auth"
+                    )
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Failed to create or retrieve user from Supabase"
+                        detail="Failed to create or retrieve user from Supabase",
                     )
-        
+
         return user
-        
+
     except HTTPException:
         raise
     except Exception as e:
