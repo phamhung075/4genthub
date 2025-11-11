@@ -101,14 +101,13 @@ class TestProjectManagementServiceWebSocketIntegration:
     @patch('fastmcp.task_management.application.services.project_management_service.WebSocketNotificationService')
     async def test_successful_payload_validation_and_broadcast(self, mock_ws_service, mock_logger):
         """Test successful ProjectDeletePayload validation and WebSocket broadcast"""
-        from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
-            ORMProjectRepository,
-        )
-
         from fastmcp.task_management.application.services.project_management_service import (
             ProjectManagementService,
         )
         from fastmcp.task_management.domain.entities.project import Project
+        from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
+            ORMProjectRepository,
+        )
 
         # Setup mock repository with async methods
         mock_repo = MagicMock(spec=ORMProjectRepository)
@@ -171,14 +170,13 @@ class TestProjectManagementServiceWebSocketIntegration:
                 [{'type': 'value_error', 'loc': ('id',), 'msg': 'Test validation error', 'input': ''}]
             )
 
-            from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
-                ORMProjectRepository,
-            )
-
             from fastmcp.task_management.application.services.project_management_service import (
                 ProjectManagementService,
             )
             from fastmcp.task_management.domain.entities.project import Project
+            from fastmcp.task_management.infrastructure.repositories.orm.project_repository import (
+                ORMProjectRepository,
+            )
 
             # Setup mock repository with async methods
             mock_repo = MagicMock(spec=ORMProjectRepository)
