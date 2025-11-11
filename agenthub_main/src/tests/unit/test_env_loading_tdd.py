@@ -33,27 +33,30 @@ def mock_database_connections():
 
     # Set minimal database environment variables if not already set
     env_vars = {}
-    if 'DATABASE_TYPE' not in os.environ:
-        env_vars['DATABASE_TYPE'] = 'postgresql'
-    if 'DATABASE_HOST' not in os.environ:
-        env_vars['DATABASE_HOST'] = 'localhost'
-    if 'DATABASE_PORT' not in os.environ:
-        env_vars['DATABASE_PORT'] = '5432'
-    if 'DATABASE_NAME' not in os.environ:
-        env_vars['DATABASE_NAME'] = 'test_db'
-    if 'DATABASE_USER' not in os.environ:
-        env_vars['DATABASE_USER'] = 'test_user'
-    if 'DATABASE_PASSWORD' not in os.environ:
-        env_vars['DATABASE_PASSWORD'] = 'test_pass'
+    if "DATABASE_TYPE" not in os.environ:
+        env_vars["DATABASE_TYPE"] = "postgresql"
+    if "DATABASE_HOST" not in os.environ:
+        env_vars["DATABASE_HOST"] = "localhost"
+    if "DATABASE_PORT" not in os.environ:
+        env_vars["DATABASE_PORT"] = "5432"
+    if "DATABASE_NAME" not in os.environ:
+        env_vars["DATABASE_NAME"] = "test_db"
+    if "DATABASE_USER" not in os.environ:
+        env_vars["DATABASE_USER"] = "test_user"
+    if "DATABASE_PASSWORD" not in os.environ:
+        env_vars["DATABASE_PASSWORD"] = "test_pass"
 
-    with patch.dict('sys.modules', {
-        'psycopg2': mock_psycopg2,
-        'sqlalchemy': mock_sqlalchemy,
-        'sqlalchemy.orm': mock_sqlalchemy.orm,
-        'sqlalchemy.pool': mock_sqlalchemy.pool,
-        'sqlalchemy.exc': mock_sqlalchemy.exc,
-        'sqlalchemy.engine': mock_sqlalchemy.engine
-    }), patch.dict(os.environ, env_vars):
+    with patch.dict(
+        "sys.modules",
+        {
+            "psycopg2": mock_psycopg2,
+            "sqlalchemy": mock_sqlalchemy,
+            "sqlalchemy.orm": mock_sqlalchemy.orm,
+            "sqlalchemy.pool": mock_sqlalchemy.pool,
+            "sqlalchemy.exc": mock_sqlalchemy.exc,
+            "sqlalchemy.engine": mock_sqlalchemy.engine,
+        },
+    ), patch.dict(os.environ, env_vars):
         yield
 
 

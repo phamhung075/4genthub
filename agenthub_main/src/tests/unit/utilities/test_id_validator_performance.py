@@ -37,9 +37,9 @@ class TestIDValidatorPerformance:
         elapsed_time = end_time - start_time
 
         # Should complete very quickly (< 1ms for single validation)
-        assert elapsed_time < 0.001, (
-            f"Single validation took too long: {elapsed_time:.6f}s"
-        )
+        assert (
+            elapsed_time < 0.001
+        ), f"Single validation took too long: {elapsed_time:.6f}s"
         assert result.is_valid is True
 
     def test_batch_validation_performance(self):
@@ -63,9 +63,9 @@ class TestIDValidatorPerformance:
         assert all(results), "Some valid UUIDs were rejected"
 
         # Average time per validation should be very fast (< 62.5μs - adjusted for CI environment, 25% increase)
-        assert avg_time_per_validation < 0.0000625, (
-            f"Average validation time too slow: {avg_time_per_validation:.8f}s"
-        )
+        assert (
+            avg_time_per_validation < 0.0000625
+        ), f"Average validation time too slow: {avg_time_per_validation:.8f}s"
 
         print(
             f"Batch validation: {batch_size} UUIDs in {elapsed_time:.6f}s "
@@ -103,9 +103,9 @@ class TestIDValidatorPerformance:
         assert valid_count == batch_size - expected_invalid
 
         # Should complete within reasonable time (< 1 second for 10k validations)
-        assert elapsed_time < 1.0, (
-            f"Large scale validation took too long: {elapsed_time:.3f}s"
-        )
+        assert (
+            elapsed_time < 1.0
+        ), f"Large scale validation took too long: {elapsed_time:.3f}s"
 
         print(
             f"Large scale: {batch_size} validations in {elapsed_time:.3f}s "
@@ -178,9 +178,9 @@ class TestIDValidatorPerformance:
         # Expect minimal or no speedup in CI environment - mainly testing thread safety
         sequential_estimate = sum(times)
         # Relaxed threshold for CI: threads may not show speedup due to GIL
-        assert total_elapsed < sequential_estimate * 1.5, (
-            f"Thread overhead too high: {total_elapsed:.3f}s vs sequential estimate {sequential_estimate:.3f}s"
-        )
+        assert (
+            total_elapsed < sequential_estimate * 1.5
+        ), f"Thread overhead too high: {total_elapsed:.3f}s vs sequential estimate {sequential_estimate:.3f}s"
 
     def test_memory_usage_stability(self):
         """Test memory usage remains stable during extended operations."""
@@ -406,9 +406,9 @@ class TestIDValidatorPerformance:
             len(test_uuids) * 0.00005
         )  # 50μs per validation estimate
         # Thread pool adds overhead and GIL prevents true parallelism for CPU-bound tasks
-        assert elapsed_time < single_thread_estimate * 2, (
-            f"Thread pool performance unacceptable: {elapsed_time:.3f}s vs estimate {single_thread_estimate * 2:.3f}s"
-        )
+        assert (
+            elapsed_time < single_thread_estimate * 2
+        ), f"Thread pool performance unacceptable: {elapsed_time:.3f}s vs estimate {single_thread_estimate * 2:.3f}s"
 
 
 class TestConvenienceFunctionPerformance:
@@ -441,9 +441,9 @@ class TestConvenienceFunctionPerformance:
 
         # Should be reasonably fast
         assert strict_time < 0.1, f"validate_uuid strict too slow: {strict_time:.6f}s"
-        assert relaxed_time < 0.1, (
-            f"validate_uuid relaxed too slow: {relaxed_time:.6f}s"
-        )
+        assert (
+            relaxed_time < 0.1
+        ), f"validate_uuid relaxed too slow: {relaxed_time:.6f}s"
 
     def test_prevent_id_confusion_performance(self):
         """Test performance of prevent_id_confusion function."""
@@ -472,7 +472,9 @@ class TestConvenienceFunctionPerformance:
         )
 
         # Should be fast (< 312.5μs per call - adjusted for CI environment, 25% increase)
-        assert avg_time < 0.0003125, f"prevent_id_confusion too slow: {avg_time:.8f}s avg"
+        assert (
+            avg_time < 0.0003125
+        ), f"prevent_id_confusion too slow: {avg_time:.8f}s avg"
 
 
 @pytest.mark.performance

@@ -554,9 +554,7 @@ class _MockFastAPIClient:
             strength = (
                 "strong"
                 if is_valid and len(password) >= 12
-                else "weak"
-                if not is_valid
-                else "medium"
+                else "weak" if not is_valid else "medium"
             )
             score = sum([has_upper, has_lower, has_digit, has_special, is_long_enough])
 
@@ -567,9 +565,11 @@ class _MockFastAPIClient:
                     "strength": strength,
                     "score": score,
                     "issues": issues,
-                    "suggestions": ["Add more characters", "Include special characters"]
-                    if not is_valid
-                    else [],
+                    "suggestions": (
+                        ["Add more characters", "Include special characters"]
+                        if not is_valid
+                        else []
+                    ),
                 },
             )
         elif url.startswith("/api/auth/registration-success"):
@@ -584,9 +584,9 @@ class _MockFastAPIClient:
                 json_data={
                     "success": True,
                     "user_id": user_id_match.group(1) if user_id_match else "unknown",
-                    "email": email_match.group(1)
-                    if email_match
-                    else "unknown@example.com",
+                    "email": (
+                        email_match.group(1) if email_match else "unknown@example.com"
+                    ),
                     "onboarding_steps": [
                         "Complete your profile",
                         "Set up preferences",
@@ -799,9 +799,7 @@ class _MockFastAPIClient:
             strength = (
                 "strong"
                 if is_valid and len(password) >= 12
-                else "weak"
-                if not is_valid
-                else "medium"
+                else "weak" if not is_valid else "medium"
             )
             score = sum([has_upper, has_lower, has_digit, has_special, is_long_enough])
 
@@ -812,9 +810,11 @@ class _MockFastAPIClient:
                     "strength": strength,
                     "score": score,
                     "issues": issues,
-                    "suggestions": ["Add more characters", "Include special characters"]
-                    if not is_valid
-                    else [],
+                    "suggestions": (
+                        ["Add more characters", "Include special characters"]
+                        if not is_valid
+                        else []
+                    ),
                 },
             )
 
@@ -1117,7 +1117,9 @@ def performance_tracker():
         def start(self):
             self.start_time = time.time()
             if HAS_PSUTIL and psutil:
-                self.start_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
+                self.start_memory = (
+                    psutil.Process().memory_info().rss / 1024 / 1024
+                )  # MB
 
         def end(self) -> dict[str, Any]:
             self.end_time = time.time()
@@ -1126,9 +1128,9 @@ def performance_tracker():
 
             return {
                 "duration": self.end_time - self.start_time if self.start_time else 0,
-                "memory_delta": self.end_memory - self.start_memory
-                if self.start_memory
-                else 0,
+                "memory_delta": (
+                    self.end_memory - self.start_memory if self.start_memory else 0
+                ),
                 "memory_start": self.start_memory,
                 "memory_end": self.end_memory,
             }
@@ -1260,9 +1262,9 @@ def test_data_validator():
         @staticmethod
         def assert_using_test_files(file_path: Path):
             """Assert that a file path is a test file, not production"""
-            assert is_test_data_file(file_path), (
-                f"File {file_path} is not a test file! Tests must use .test.json files"
-            )
+            assert is_test_data_file(
+                file_path
+            ), f"File {file_path} is not a test file! Tests must use .test.json files"
 
         @staticmethod
         def assert_no_production_data_modified():
@@ -1290,10 +1292,12 @@ def _truncate_all_tables():
         with db_config.get_session() as session:
             # Get all table names
             result = session.execute(
-                text("""
+                text(
+                    """
                 SELECT tablename FROM pg_tables
                 WHERE schemaname = 'public'
-            """)
+            """
+                )
             )
             tables = [row[0] for row in result.fetchall()]
 
@@ -1342,14 +1346,16 @@ def _initialize_test_database_with_basic_data():
             # Create default test project
             try:
                 session.execute(
-                    text("""
+                    text(
+                        """
                     INSERT INTO projects (id, name, description, user_id, status, created_at, updated_at, metadata)
                     VALUES (:id, :name, :description, :user_id, :status, :created_at, :updated_at, :metadata)
                     ON CONFLICT (id) DO UPDATE SET
                         name = EXCLUDED.name,
                         description = EXCLUDED.description,
                         updated_at = EXCLUDED.updated_at
-                """),
+                """
+                    ),
                     {
                         "id": default_project_id,
                         "name": "Default Test Project",
@@ -1364,14 +1370,16 @@ def _initialize_test_database_with_basic_data():
 
                 # Create main git branch for default project
                 session.execute(
-                    text("""
+                    text(
+                        """
                     INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id)
                     VALUES (:id, :project_id, :name, :description, :created_at, :updated_at, :priority, :status, :metadata, :task_count, :completed_task_count, :user_id)
                     ON CONFLICT (id) DO UPDATE SET
                         name = EXCLUDED.name,
                         description = EXCLUDED.description,
                         updated_at = EXCLUDED.updated_at
-                """),
+                """
+                    ),
                     {
                         "id": main_branch_id,
                         "project_id": default_project_id,

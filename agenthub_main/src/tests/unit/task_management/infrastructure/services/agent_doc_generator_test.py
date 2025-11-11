@@ -135,7 +135,9 @@ class TestAgentDocGenerator:
         """Test initialization with default paths"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -251,7 +253,9 @@ class TestAgentDocGenerator:
         """Test generating documentation for a single agent"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -298,7 +302,9 @@ class TestAgentDocGenerator:
         """Test generating doc when job_desc.yaml is missing"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -316,7 +322,9 @@ class TestAgentDocGenerator:
         """Test generating docs for a single agent"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -338,7 +346,9 @@ class TestAgentDocGenerator:
         """Test generating docs for all agents"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -370,7 +380,9 @@ class TestAgentDocGenerator:
         """Test generating docs with clear_all option"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 

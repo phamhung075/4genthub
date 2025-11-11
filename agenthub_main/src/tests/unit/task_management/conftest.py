@@ -22,7 +22,9 @@ def mock_database_config():
     - get_session() returning a mock session context manager with execute() support
     - get_database_info() returning mock database information
     """
-    with patch('fastmcp.task_management.infrastructure.database.database_config.DatabaseConfig') as mock_db_class:
+    with patch(
+        "fastmcp.task_management.infrastructure.database.database_config.DatabaseConfig"
+    ) as mock_db_class:
         # Create mock instance
         mock_instance = MagicMock()
 
@@ -47,9 +49,9 @@ def mock_database_config():
 
         # Mock get_database_info
         mock_instance.get_database_info.return_value = {
-            'type': 'sqlite',
-            'path': ':memory:',
-            'status': 'mocked'
+            "type": "sqlite",
+            "path": ":memory:",
+            "status": "mocked",
         }
 
         # Mock get_instance to return our mock instance
@@ -69,7 +71,9 @@ def mock_get_db_config():
     This fixture complements mock_database_config by also mocking the
     get_db_config() helper function that many tests use directly.
     """
-    with patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db:
+    with patch(
+        "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+    ) as mock_get_db:
         # Create mock config instance
         mock_config = MagicMock()
 
@@ -94,9 +98,9 @@ def mock_get_db_config():
 
         # Mock get_database_info
         mock_config.get_database_info.return_value = {
-            'type': 'sqlite',
-            'path': ':memory:',
-            'status': 'mocked'
+            "type": "sqlite",
+            "path": ":memory:",
+            "status": "mocked",
         }
 
         # Return the mock config
@@ -113,9 +117,11 @@ def mock_database_source_manager():
     This prevents tests from trying to detect whether they should use
     PostgreSQL or SQLite, which can cause connection attempts.
     """
-    with patch('fastmcp.task_management.infrastructure.database.database_source_manager.DatabaseSourceManager') as mock_dsm:
+    with patch(
+        "fastmcp.task_management.infrastructure.database.database_source_manager.DatabaseSourceManager"
+    ) as mock_dsm:
         mock_instance = MagicMock()
-        mock_instance.get_mode.return_value = 'TEST'
+        mock_instance.get_mode.return_value = "TEST"
         mock_dsm.get_instance.return_value = mock_instance
         yield mock_dsm
 
@@ -125,6 +131,8 @@ def mock_database_initializer():
     """
     Mock database initialization functions to prevent schema creation attempts.
     """
-    with patch('fastmcp.task_management.infrastructure.database.database_initializer.initialize_database') as mock_init:
+    with patch(
+        "fastmcp.task_management.infrastructure.database.database_initializer.initialize_database"
+    ) as mock_init:
         mock_init.return_value = None
         yield mock_init

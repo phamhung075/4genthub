@@ -32,14 +32,17 @@ def mock_database_connections():
     mock_engine = MagicMock()
     mock_sqlalchemy.create_engine.return_value = mock_engine
 
-    with patch.dict('sys.modules', {
-        'psycopg2': mock_psycopg2,
-        'sqlalchemy': mock_sqlalchemy,
-        'sqlalchemy.orm': mock_sqlalchemy.orm,
-        'sqlalchemy.pool': mock_sqlalchemy.pool,
-        'sqlalchemy.exc': mock_sqlalchemy.exc,
-        'sqlalchemy.engine': mock_sqlalchemy.engine
-    }):
+    with patch.dict(
+        "sys.modules",
+        {
+            "psycopg2": mock_psycopg2,
+            "sqlalchemy": mock_sqlalchemy,
+            "sqlalchemy.orm": mock_sqlalchemy.orm,
+            "sqlalchemy.pool": mock_sqlalchemy.pool,
+            "sqlalchemy.exc": mock_sqlalchemy.exc,
+            "sqlalchemy.engine": mock_sqlalchemy.engine,
+        },
+    ):
         yield
 
 
