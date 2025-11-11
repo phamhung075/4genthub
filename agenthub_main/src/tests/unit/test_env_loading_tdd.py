@@ -18,42 +18,21 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 @pytest.fixture(autouse=True)
 def mock_database_connections():
     """Prevent real database connections in unit tests."""
-    # Mock psycopg2 module
-    mock_psycopg2 = MagicMock()
-    mock_psycopg2.connect.return_value = MagicMock()
+    # Set required database environment variables
+    env_vars = {
+        'DATABASE_TYPE': 'postgresql',
+        'DATABASE_HOST': 'localhost',
+        'DATABASE_PORT': '5432',
+        'DATABASE_NAME': 'test_db',
+        'DATABASE_USER': 'test_user',
+        'DATABASE_PASSWORD': 'test_pass'
+    }
 
-    # Mock sqlalchemy module and submodules
-    mock_sqlalchemy = MagicMock()
-    mock_sqlalchemy.orm = MagicMock()
-    mock_sqlalchemy.pool = MagicMock()
-    mock_sqlalchemy.exc = MagicMock()
-    mock_sqlalchemy.engine = MagicMock()
-    mock_engine = MagicMock()
-    mock_sqlalchemy.create_engine.return_value = mock_engine
-
-    # Set minimal database environment variables if not already set
-    env_vars = {}
-    if 'DATABASE_TYPE' not in os.environ:
-        env_vars['DATABASE_TYPE'] = 'postgresql'
-    if 'DATABASE_HOST' not in os.environ:
-        env_vars['DATABASE_HOST'] = 'localhost'
-    if 'DATABASE_PORT' not in os.environ:
-        env_vars['DATABASE_PORT'] = '5432'
-    if 'DATABASE_NAME' not in os.environ:
-        env_vars['DATABASE_NAME'] = 'test_db'
-    if 'DATABASE_USER' not in os.environ:
-        env_vars['DATABASE_USER'] = 'test_user'
-    if 'DATABASE_PASSWORD' not in os.environ:
-        env_vars['DATABASE_PASSWORD'] = 'test_pass'
-
-    with patch.dict('sys.modules', {
-        'psycopg2': mock_psycopg2,
-        'sqlalchemy': mock_sqlalchemy,
-        'sqlalchemy.orm': mock_sqlalchemy.orm,
-        'sqlalchemy.pool': mock_sqlalchemy.pool,
-        'sqlalchemy.exc': mock_sqlalchemy.exc,
-        'sqlalchemy.engine': mock_sqlalchemy.engine
-    }), patch.dict(os.environ, env_vars):
+    with patch('psycopg2.connect') as mock_pg, \
+         patch('sqlalchemy.create_engine') as mock_engine, \
+         patch.dict(os.environ, env_vars):
+        mock_pg.return_value = MagicMock()
+        mock_engine.return_value = MagicMock()
         yield
 
 
