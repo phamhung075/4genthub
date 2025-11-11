@@ -81,19 +81,23 @@ def reset_database():
         # Verify tables were created
         with engine.connect() as conn:
             if db_config.config.database_type == "postgresql":
-                result = conn.execute(text("""
+                result = conn.execute(
+                    text("""
                     SELECT tablename
                     FROM pg_tables
                     WHERE schemaname = 'public'
                     ORDER BY tablename
-                """))
+                """)
+                )
             else:  # SQLite
-                result = conn.execute(text("""
+                result = conn.execute(
+                    text("""
                     SELECT name
                     FROM sqlite_master
                     WHERE type='table'
                     ORDER BY name
-                """))
+                """)
+                )
 
             tables = [row[0] for row in result]
 
@@ -119,6 +123,7 @@ def reset_database():
         print("=" * 60)
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

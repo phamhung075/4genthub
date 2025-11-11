@@ -21,12 +21,12 @@ class CoverageHTMLParser(HTMLParser):
         attrs_dict = dict(attrs)
 
         # Check for paragraph with line number
-        if tag == 'p':
-            class_attr = attrs_dict.get('class', '')
-            if 'mis' in class_attr:
+        if tag == "p":
+            class_attr = attrs_dict.get("class", "")
+            if "mis" in class_attr:
                 self.in_paragraph = True
                 self.is_missing = True
-            elif 'par' in class_attr:
+            elif "par" in class_attr:
                 self.in_paragraph = True
                 self.is_partial = True
             else:
@@ -35,9 +35,9 @@ class CoverageHTMLParser(HTMLParser):
                 self.is_partial = False
 
         # Get line number from anchor
-        if tag == 'a' and self.in_paragraph:
-            line_id = attrs_dict.get('id', '')
-            if line_id.startswith('t'):
+        if tag == "a" and self.in_paragraph:
+            line_id = attrs_dict.get("id", "")
+            if line_id.startswith("t"):
                 try:
                     line_num = int(line_id[1:])
                     if self.is_missing:
@@ -47,63 +47,72 @@ class CoverageHTMLParser(HTMLParser):
                 except ValueError:
                     pass
 
+
 def find_html_file(source_file: str, htmlcov_dir: Path) -> Path:
     """Find the HTML coverage file for a source file."""
     # Try different patterns
     file_basename = Path(source_file).stem
 
     # Search for HTML files containing the basename
-    for html_file in htmlcov_dir.glob(f'*_{file_basename}_py.html'):
+    for html_file in htmlcov_dir.glob(f"*_{file_basename}_py.html"):
         return html_file
 
     return None
+
 
 def analyze_file_coverage(html_file: Path) -> tuple[list[int], list[int]]:
     """Extract uncovered and partial lines from HTML coverage file."""
     parser = CoverageHTMLParser()
 
-    with open(html_file, encoding='utf-8') as f:
+    with open(html_file, encoding="utf-8") as f:
         content = f.read()
 
     parser.feed(content)
 
     return sorted(set(parser.uncovered_lines)), sorted(set(parser.partial_lines))
 
+
 def categorize_file(filepath: str) -> tuple[str, str]:
     """Categorize file by type and importance."""
-    if '/domain/services/' in filepath:
-        return ('Domain Service', 'HIGH')
-    elif '/domain/entities/' in filepath:
-        return ('Domain Entity', 'HIGH')
-    elif '/application/use_cases/' in filepath:
-        return ('Use Case', 'HIGH')
-    elif '/application/services/' in filepath:
-        return ('Application Service', 'MEDIUM')
-    elif '/application/facades/' in filepath:
-        return ('Application Facade', 'MEDIUM')
-    elif '/infrastructure/' in filepath:
-        return ('Infrastructure', 'LOW')
-    elif '/interface/' in filepath:
-        return ('Interface/Controller', 'MEDIUM')
+    if "/domain/services/" in filepath:
+        return ("Domain Service", "HIGH")
+    elif "/domain/entities/" in filepath:
+        return ("Domain Entity", "HIGH")
+    elif "/application/use_cases/" in filepath:
+        return ("Use Case", "HIGH")
+    elif "/application/services/" in filepath:
+        return ("Application Service", "MEDIUM")
+    elif "/application/facades/" in filepath:
+        return ("Application Facade", "MEDIUM")
+    elif "/infrastructure/" in filepath:
+        return ("Infrastructure", "LOW")
+    elif "/interface/" in filepath:
+        return ("Interface/Controller", "MEDIUM")
     else:
-        return ('Other', 'LOW')
+        return ("Other", "LOW")
 
-def estimate_effort(uncovered_count: int, partial_count: int, file_category: str) -> int:
+
+def estimate_effort(
+    uncovered_count: int, partial_count: int, file_category: str
+) -> int:
     """Estimate effort in minutes to cover uncovered lines."""
-    base_effort = uncovered_count * 3 + partial_count * 2  # 3 min per missing, 2 min per partial
+    base_effort = (
+        uncovered_count * 3 + partial_count * 2
+    )  # 3 min per missing, 2 min per partial
 
     # Adjust by file category complexity
-    if file_category == 'Domain Service':
+    if file_category == "Domain Service":
         multiplier = 1.5
-    elif file_category == 'Infrastructure':
+    elif file_category == "Infrastructure":
         multiplier = 2.0
     else:
         multiplier = 1.0
 
     return int(base_effort * multiplier)
 
+
 def main():
-    htmlcov_dir = Path('/home/daihungpham/__projects__/4genthub/agenthub_main/htmlcov')
+    htmlcov_dir = Path("/home/daihungpham/__projects__/4genthub/agenthub_main/htmlcov")
 
     # Top priority files (91-93% coverage)
     tier1_files = [
@@ -138,22 +147,22 @@ def main():
         effort_min = estimate_effort(len(uncovered), len(partial), category)
 
         result = {
-            'file': source_file,
-            'html_file': html_file.name,
-            'category': category,
-            'importance': importance,
-            'uncovered_lines': uncovered,
-            'partial_lines': partial,
-            'uncovered_count': len(uncovered),
-            'partial_count': len(partial),
-            'total_gaps': len(uncovered) + len(partial),
-            'estimated_effort_minutes': effort_min
+            "file": source_file,
+            "html_file": html_file.name,
+            "category": category,
+            "importance": importance,
+            "uncovered_lines": uncovered,
+            "partial_lines": partial,
+            "uncovered_count": len(uncovered),
+            "partial_count": len(partial),
+            "total_gaps": len(uncovered) + len(partial),
+            "estimated_effort_minutes": effort_min,
         }
 
         results.append(result)
 
     # Sort by easiest wins (fewest gaps, highest importance)
-    results.sort(key=lambda x: (x['total_gaps'], -ord(x['importance'][0])))
+    results.sort(key=lambda x: (x["total_gaps"], -ord(x["importance"][0])))
 
     # Print summary
     print("=" * 100)
@@ -164,29 +173,40 @@ def main():
     for i, result in enumerate(results, 1):
         print(f"{i}. {Path(result['file']).name}")
         print(f"   Category: {result['category']} | Priority: {result['importance']}")
-        print(f"   Gaps: {result['uncovered_count']} missing, {result['partial_count']} partial")
-        if result['uncovered_lines']:
-            print(f"   Missing lines: {', '.join(map(str, result['uncovered_lines'][:20]))}")
-        if result['partial_lines']:
-            print(f"   Partial lines: {', '.join(map(str, result['partial_lines'][:20]))}")
+        print(
+            f"   Gaps: {result['uncovered_count']} missing, {result['partial_count']} partial"
+        )
+        if result["uncovered_lines"]:
+            print(
+                f"   Missing lines: {', '.join(map(str, result['uncovered_lines'][:20]))}"
+            )
+        if result["partial_lines"]:
+            print(
+                f"   Partial lines: {', '.join(map(str, result['partial_lines'][:20]))}"
+            )
         print(f"   Estimated effort: {result['estimated_effort_minutes']} minutes")
         print()
 
     # Summary statistics
     total_files = len(results)
-    total_gaps = sum(r['total_gaps'] for r in results)
-    total_effort = sum(r['estimated_effort_minutes'] for r in results)
+    total_gaps = sum(r["total_gaps"] for r in results)
+    total_effort = sum(r["estimated_effort_minutes"] for r in results)
 
     print("=" * 100)
-    print(f"SUMMARY: {total_files} files analyzed, {total_gaps} total gaps, ~{total_effort} minutes ({total_effort/60:.1f} hours)")
+    print(
+        f"SUMMARY: {total_files} files analyzed, {total_gaps} total gaps, ~{total_effort} minutes ({total_effort / 60:.1f} hours)"
+    )
     print("=" * 100)
 
     # Save detailed JSON
-    output_file = Path('/home/daihungpham/__projects__/4genthub/agenthub_main/scripts/coverage_analysis_tier1.json')
-    with open(output_file, 'w') as f:
+    output_file = Path(
+        "/home/daihungpham/__projects__/4genthub/agenthub_main/scripts/coverage_analysis_tier1.json"
+    )
+    with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
 
     print(f"\nDetailed analysis saved to: {output_file}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

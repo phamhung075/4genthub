@@ -44,6 +44,7 @@ try:
 
         # Verify tables exist
         from sqlalchemy import inspect
+
         inspector = inspect(engine)
         tables = inspector.get_table_names()
 
@@ -51,7 +52,7 @@ try:
         for table in sorted(tables):
             print(f"  - {table}")
 
-        if 'agent_templates' in tables and 'user_agent_instances' in tables:
+        if "agent_templates" in tables and "user_agent_instances" in tables:
             print("\n✅ Agent management tables confirmed!")
         else:
             print("\n⚠️  Some tables may be missing")
@@ -59,6 +60,7 @@ try:
 except Exception as e:
     print(f"\n❌ Error creating tables: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
 

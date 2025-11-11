@@ -42,7 +42,7 @@ def read_sql_file(file_path: Path) -> str:
     if not file_path.exists():
         raise FileNotFoundError(f"SQL file not found: {file_path}")
 
-    with open(file_path, encoding='utf-8') as f:
+    with open(file_path, encoding="utf-8") as f:
         return f.read()
 
 
@@ -86,7 +86,7 @@ def init_postgresql_database(connection_params: dict, sql_file: Path) -> bool:
 
         # Drop all tables (cascade will handle dependencies)
         # Get the current user from connection params
-        db_user = connection_params.get('user', 'postgres')
+        db_user = connection_params.get("user", "postgres")
         cursor.execute(f"""
             DROP SCHEMA IF EXISTS public CASCADE;
             CREATE SCHEMA public;
@@ -104,7 +104,9 @@ def init_postgresql_database(connection_params: dict, sql_file: Path) -> bool:
         return True
 
     except ImportError:
-        print("❌ Error: psycopg2 not installed. Install with: pip install psycopg2-binary")
+        print(
+            "❌ Error: psycopg2 not installed. Install with: pip install psycopg2-binary"
+        )
         return False
     except Exception as e:
         print(f"❌ Error initializing PostgreSQL database: {e}")
@@ -123,21 +125,23 @@ def get_database_config():
 
 def main():
     """Main initialization function."""
-    parser = argparse.ArgumentParser(description="Initialize database with complete schema")
+    parser = argparse.ArgumentParser(
+        description="Initialize database with complete schema"
+    )
     parser.add_argument(
         "--database-type",
         choices=["postgresql", "sqlite"],
-        help="Database type to initialize (auto-detected if not specified)"
+        help="Database type to initialize (auto-detected if not specified)",
     )
     parser.add_argument(
         "--confirm",
         action="store_true",
-        help="Confirm database initialization (required to prevent accidental runs)"
+        help="Confirm database initialization (required to prevent accidental runs)",
     )
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Force initialization without confirmation prompts"
+        help="Force initialization without confirmation prompts",
     )
 
     args = parser.parse_args()
@@ -150,7 +154,14 @@ def main():
 
     # Get project root and SQL files
     project_root = Path(__file__).parent
-    sql_dir = project_root / "src" / "fastmcp" / "task_management" / "infrastructure" / "database"
+    sql_dir = (
+        project_root
+        / "src"
+        / "fastmcp"
+        / "task_management"
+        / "infrastructure"
+        / "database"
+    )
 
     postgresql_sql = sql_dir / "init_schema_postgresql.sql"
     sqlite_sql = sql_dir / "init_schema_sqlite.sql"
@@ -174,17 +185,19 @@ def main():
     db_type = args.database_type
     if not db_type:
         # Auto-detect from config
-        if hasattr(config, 'database_type'):
+        if hasattr(config, "database_type"):
             db_type = config.database_type
         else:
-            print("❌ Could not auto-detect database type. Please specify --database-type")
+            print(
+                "❌ Could not auto-detect database type. Please specify --database-type"
+            )
             sys.exit(1)
 
     print(f"🗄️  Initializing {db_type.upper()} database...")
 
     # Initialize based on database type
     if db_type == "sqlite":
-        db_path = os.getenv('DATABASE_PATH', '/data/agenthub.db')
+        db_path = os.getenv("DATABASE_PATH", "/data/agenthub.db")
         if not db_path:
             print("❌ SQLite database path not found in configuration")
             sys.exit(1)
@@ -193,29 +206,36 @@ def main():
 
     elif db_type == "postgresql":
         # Get database URL from the config object
-        db_url = config.database_url if hasattr(config, 'database_url') else config._get_secure_database_url()
-        if not db_url or not db_url.startswith('postgresql'):
+        db_url = (
+            config.database_url
+            if hasattr(config, "database_url")
+            else config._get_secure_database_url()
+        )
+        if not db_url or not db_url.startswith("postgresql"):
             print("❌ PostgreSQL connection URL not found in configuration")
             sys.exit(1)
 
         # Extract connection parameters
         # Example: postgresql://user:password@localhost:5432/dbname
         import urllib.parse
+
         parsed = urllib.parse.urlparse(db_url)
 
         connection_params = {
-            'host': parsed.hostname or 'localhost',
-            'port': parsed.port or 5432,
-            'database': parsed.path.lstrip('/') or 'agenthub',
-            'user': parsed.username,
-            'password': parsed.password
+            "host": parsed.hostname or "localhost",
+            "port": parsed.port or 5432,
+            "database": parsed.path.lstrip("/") or "agenthub",
+            "user": parsed.username,
+            "password": parsed.password,
         }
 
         success = init_postgresql_database(connection_params, postgresql_sql)
 
     if success:
         print("🎉 Database initialization completed successfully!")
-        print(f"📝 Schema loaded from: {sqlite_sql if db_type == 'sqlite' else postgresql_sql}")
+        print(
+            f"📝 Schema loaded from: {sqlite_sql if db_type == 'sqlite' else postgresql_sql}"
+        )
         print("✨ You can now start the application with a clean database")
     else:
         print("❌ Database initialization failed!")

@@ -2,12 +2,13 @@
 """
 Test runner script to run tests individually to avoid SQLAlchemy table redefinition errors
 """
+
 import os
 import subprocess
 import sys
 
 # Set up environment
-os.environ['PYTHONPATH'] = os.path.join(os.getcwd(), 'src')
+os.environ["PYTHONPATH"] = os.path.join(os.getcwd(), "src")
 
 # List of test files to run
 test_files = [
@@ -21,16 +22,16 @@ test_files = [
 # Run each test file separately
 for test_file in test_files:
     if os.path.exists(test_file):
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Running: {test_file}")
-        print(f"{'='*60}")
-        
+        print(f"{'=' * 60}")
+
         # Run the test
         result = subprocess.run(
             [sys.executable, "-m", "pytest", test_file, "-v", "--tb=short"],
-            capture_output=False
+            capture_output=False,
         )
-        
+
         if result.returncode != 0:
             print(f"\n❌ Test failed: {test_file}")
         else:
@@ -38,5 +39,5 @@ for test_file in test_files:
     else:
         print(f"\n⚠️  Test file not found: {test_file}")
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("Test run complete!")

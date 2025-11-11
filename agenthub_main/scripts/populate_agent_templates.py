@@ -25,8 +25,7 @@ from fastmcp.agent_management.infrastructure.repositories import (
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -110,6 +109,7 @@ def populate_templates():
     except Exception as e:
         logger.error(f"\n❌ Fatal error during population: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

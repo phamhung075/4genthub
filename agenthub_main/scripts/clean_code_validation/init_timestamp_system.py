@@ -21,6 +21,7 @@ try:
         cleanup_timestamp_events,
         setup_timestamp_events,
     )
+
     print("✅ Successfully imported timestamp event handlers")
 except ImportError as e:
     print(f"❌ Failed to import timestamp event handlers: {e}")
@@ -55,6 +56,7 @@ def initialize_timestamp_system():
     except Exception as e:
         print(f"❌ Failed to initialize timestamp system: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -94,7 +96,9 @@ def verify_timestamp_system():
         print("🧪 Testing touch functionality...")
         original_updated = test_entity.updated_at
         test_entity.touch("verification_touch")
-        assert test_entity.updated_at > original_updated, "Touch should update timestamp"
+        assert test_entity.updated_at > original_updated, (
+            "Touch should update timestamp"
+        )
         print("✅ Touch functionality working")
 
         # Test domain events
@@ -111,6 +115,7 @@ def verify_timestamp_system():
     except Exception as e:
         print(f"❌ Verification failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -136,14 +141,10 @@ def main():
         description="Initialize or verify the timestamp management system"
     )
     parser.add_argument(
-        "--verify",
-        action="store_true",
-        help="Verify the system after initialization"
+        "--verify", action="store_true", help="Verify the system after initialization"
     )
     parser.add_argument(
-        "--cleanup",
-        action="store_true",
-        help="Clean up the system (for testing)"
+        "--cleanup", action="store_true", help="Clean up the system (for testing)"
     )
 
     args = parser.parse_args()

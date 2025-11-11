@@ -10,15 +10,15 @@ import requests
 def test_mcp_server():
     """Test basic MCP server functionality."""
     base_url = "http://localhost:8000"
-    
+
     print("=" * 60)
     print("Simple MCP Server Test")
     print(f"Time: {datetime.now()}")
     print("=" * 60)
-    
+
     tests_passed = 0
     tests_failed = 0
-    
+
     # Test 1: Health Check
     print("\n[TEST 1] Health Check")
     try:
@@ -35,7 +35,7 @@ def test_mcp_server():
     except Exception as e:
         print(f"❌ Health check error: {e}")
         tests_failed += 1
-    
+
     # Test 2: API Documentation
     print("\n[TEST 2] API Documentation")
     try:
@@ -49,7 +49,7 @@ def test_mcp_server():
     except Exception as e:
         print(f"❌ API documentation error: {e}")
         tests_failed += 1
-    
+
     # Test 3: OpenAPI Schema
     print("\n[TEST 3] OpenAPI Schema")
     try:
@@ -66,21 +66,22 @@ def test_mcp_server():
     except Exception as e:
         print(f"❌ OpenAPI schema error: {e}")
         tests_failed += 1
-    
+
     # Summary
     print("\n" + "=" * 60)
     print("Test Summary:")
     print(f"✅ Passed: {tests_passed}")
     print(f"❌ Failed: {tests_failed}")
-    
+
     if tests_failed == 0:
         print("\n🎉 All tests passed! MCP server is working correctly.")
     else:
         print(f"\n⚠️ {tests_failed} test(s) failed. Check the server logs.")
-    
+
     print("=" * 60)
-    
+
     return tests_failed == 0
+
 
 if __name__ == "__main__":
     success = test_mcp_server()

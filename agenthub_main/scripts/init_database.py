@@ -22,10 +22,10 @@ sys.path.insert(0, str(src_path))
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 def initialize_database():
     """Initialize PostgreSQL database schema and populate agent templates"""
@@ -77,7 +77,9 @@ def initialize_database():
             existing_templates = repository.find_all()
 
             if existing_templates and len(existing_templates) > 0:
-                logger.info(f"✅ Found {len(existing_templates)} existing agent templates")
+                logger.info(
+                    f"✅ Found {len(existing_templates)} existing agent templates"
+                )
                 logger.info("Skipping agent population (already populated)")
             else:
                 logger.info("No agent templates found, populating from YAML files...")
@@ -86,7 +88,9 @@ def initialize_database():
                 agent_library_path = Path(__file__).parent.parent / "agent-library"
 
                 if not agent_library_path.exists():
-                    logger.warning(f"⚠️  Agent library not found at: {agent_library_path}")
+                    logger.warning(
+                        f"⚠️  Agent library not found at: {agent_library_path}"
+                    )
                     logger.warning("Skipping agent population")
                 else:
                     # Load and populate templates
@@ -94,7 +98,9 @@ def initialize_database():
                     templates = loader.load_all_agents()
 
                     if templates:
-                        logger.info(f"📖 Loaded {len(templates)} agent templates from YAML")
+                        logger.info(
+                            f"📖 Loaded {len(templates)} agent templates from YAML"
+                        )
 
                         saved_count = 0
                         for template in templates:
@@ -102,9 +108,13 @@ def initialize_database():
                                 repository.save(template)
                                 saved_count += 1
                             except Exception as e:
-                                logger.error(f"❌ Error saving template {template.slug}: {e}")
+                                logger.error(
+                                    f"❌ Error saving template {template.slug}: {e}"
+                                )
 
-                        logger.info(f"✅ Successfully populated {saved_count} agent templates")
+                        logger.info(
+                            f"✅ Successfully populated {saved_count} agent templates"
+                        )
                     else:
                         logger.warning("⚠️  No agent templates found in YAML files")
 
@@ -112,6 +122,7 @@ def initialize_database():
             logger.error(f"⚠️  Agent template population failed: {e}")
             logger.error("Continuing without agent templates...")
             import traceback
+
             traceback.print_exc()
 
         logger.info("=" * 60)
@@ -131,9 +142,11 @@ def initialize_database():
         logger.error(f"❌ CRITICAL ERROR: {e}")
         logger.error("=" * 60)
         import traceback
+
         traceback.print_exc()
         # Return 0 anyway to not break container startup
         return 0
+
 
 if __name__ == "__main__":
     sys.exit(initialize_database())

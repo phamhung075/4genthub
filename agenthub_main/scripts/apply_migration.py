@@ -36,11 +36,11 @@ def ensure_migration_table(engine):
     metadata = MetaData()
 
     migration_table = Table(
-        'schema_migrations',
+        "schema_migrations",
         metadata,
-        Column('migration_name', String, primary_key=True),
-        Column('applied_at', DateTime, nullable=False),
-        Column('checksum', String, nullable=True)
+        Column("migration_name", String, primary_key=True),
+        Column("applied_at", DateTime, nullable=False),
+        Column("checksum", String, nullable=True),
     )
 
     metadata.create_all(engine)
@@ -50,22 +50,22 @@ def ensure_migration_table(engine):
 def get_applied_migrations(engine):
     """Get list of already applied migrations."""
     with engine.connect() as conn:
-        result = conn.execute(text(
-            "SELECT migration_name FROM schema_migrations ORDER BY applied_at"
-        ))
+        result = conn.execute(
+            text("SELECT migration_name FROM schema_migrations ORDER BY applied_at")
+        )
         return {row[0] for row in result}
 
 
 def mark_migration_applied(engine, migration_name):
     """Mark a migration as applied."""
     with engine.connect() as conn:
-        conn.execute(text(
-            "INSERT INTO schema_migrations (migration_name, applied_at) "
-            "VALUES (:name, :timestamp)"
-        ), {
-            "name": migration_name,
-            "timestamp": datetime.now(UTC)
-        })
+        conn.execute(
+            text(
+                "INSERT INTO schema_migrations (migration_name, applied_at) "
+                "VALUES (:name, :timestamp)"
+            ),
+            {"name": migration_name, "timestamp": datetime.now(UTC)},
+        )
         conn.commit()
 
 
@@ -120,7 +120,7 @@ def apply_migration(migration_file: Path):
 
         # Confirm execution
         response = input("Apply this migration? (y/N): ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("❌ Cancelled")
             return
 
@@ -130,11 +130,11 @@ def apply_migration(migration_file: Path):
         # Execute migration
         with engine.connect() as conn:
             # Split by semicolons for multiple statements
-            statements = [s.strip() for s in sql_content.split(';') if s.strip()]
+            statements = [s.strip() for s in sql_content.split(";") if s.strip()]
 
             for i, statement in enumerate(statements, 1):
                 # Skip comments-only statements
-                if statement.startswith('--'):
+                if statement.startswith("--"):
                     continue
 
                 print(f"   Executing statement {i}/{len(statements)}...")
@@ -158,6 +158,7 @@ def apply_migration(migration_file: Path):
         print("=" * 60)
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

@@ -49,19 +49,21 @@ try:
 
         # Verify tables exist and show schema
         from sqlalchemy import inspect
+
         inspector = inspect(engine)
 
         print("\n📋 agent_templates columns:")
-        for column in inspector.get_columns('agent_templates'):
+        for column in inspector.get_columns("agent_templates"):
             print(f"  - {column['name']}: {column['type']}")
 
         print("\n📋 user_agent_instances columns:")
-        for column in inspector.get_columns('user_agent_instances'):
+        for column in inspector.get_columns("user_agent_instances"):
             print(f"  - {column['name']}: {column['type']}")
 
 except Exception as e:
     print(f"\n❌ Error: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
 

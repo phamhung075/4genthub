@@ -18,7 +18,7 @@ OUTPUT_DIR = Path("./generated-agents")
 # Agent categories and their descriptions
 AGENT_CATEGORIES = {
     "orchestrator": "High-level coordination and project management",
-    "coding": "Implementation, development, and code-related work", 
+    "coding": "Implementation, development, and code-related work",
     "debugging": "Bug fixes, troubleshooting, and error resolution",
     "testing": "Quality assurance, testing, and validation",
     "design": "UI/UX design, architecture, and system design",
@@ -26,17 +26,18 @@ AGENT_CATEGORIES = {
     "devops": "Deployment, infrastructure, and operations",
     "documentation": "Technical writing, guides, and documentation",
     "research": "Investigation, analysis, and research tasks",
-    "specialized": "Domain-specific and specialized functionality"
+    "specialized": "Domain-specific and specialized functionality",
 }
 
 # MCP tools commonly used with agents
 COMMON_MCP_TOOLS = [
     "mcp__agenthub_http__call_agent",
-    "mcp__agenthub_http__manage_task", 
+    "mcp__agenthub_http__manage_task",
     "mcp__agenthub_http__manage_context",
     "mcp__agenthub_http__manage_subtask",
-    "mcp__agenthub_http__manage_project"
+    "mcp__agenthub_http__manage_project",
 ]
+
 
 def get_available_agents() -> list[str]:
     """Get list of available agents from agenthub_http system."""
@@ -44,7 +45,7 @@ def get_available_agents() -> list[str]:
     # For now, returning the known agents from the documentation
     return [
         "master-orchestrator-agent",
-        "coding-agent", 
+        "coding-agent",
         "debugger-agent",
         "test-orchestrator-agent",
         "@ui_designer_agent",
@@ -61,17 +62,24 @@ def get_available_agents() -> list[str]:
         "root-cause-analysis-agent",
         "prototyping-agent",
         "performance-load-tester-agent",
-        "@ui_designer_expert_shadcn_agent"
+        "@ui_designer_expert_shadcn_agent",
         # Add more agents as needed
     ]
+
 
 def categorize_agent(agent_name: str) -> str:
     """Categorize an agent based on its name."""
     name_lower = agent_name.lower()
-    
-    if "orchestrator" in name_lower or "uber" in name_lower or "coordinator" in name_lower:
+
+    if (
+        "orchestrator" in name_lower
+        or "uber" in name_lower
+        or "coordinator" in name_lower
+    ):
         return "orchestrator"
-    elif "coding" in name_lower or "architect" in name_lower or "algorithm" in name_lower:
+    elif (
+        "coding" in name_lower or "architect" in name_lower or "algorithm" in name_lower
+    ):
         return "coding"
     elif "debug" in name_lower or "root_cause" in name_lower:
         return "debugging"
@@ -79,7 +87,9 @@ def categorize_agent(agent_name: str) -> str:
         return "testing"
     elif "ui" in name_lower or "design" in name_lower or "ux" in name_lower:
         return "design"
-    elif "security" in name_lower or "audit" in name_lower or "compliance" in name_lower:
+    elif (
+        "security" in name_lower or "audit" in name_lower or "compliance" in name_lower
+    ):
         return "security"
     elif "devops" in name_lower or "deploy" in name_lower:
         return "devops"
@@ -89,6 +99,7 @@ def categorize_agent(agent_name: str) -> str:
         return "research"
     else:
         return "specialized"
+
 
 def generate_agent_description(agent_name: str, category: str) -> str:
     """Generate appropriate description for Claude Code agent."""
@@ -102,34 +113,36 @@ def generate_agent_description(agent_name: str, category: str) -> str:
         "devops": f"Infrastructure and deployment expertise. Use for {agent_name} operations.",
         "documentation": f"Technical writing and documentation. Ideal for {agent_name} documentation needs.",
         "research": f"Research and analysis capabilities. Best for {agent_name} investigation tasks.",
-        "specialized": f"Specialized functionality for {agent_name} specific requirements."
+        "specialized": f"Specialized functionality for {agent_name} specific requirements.",
     }
-    
+
     return base_descriptions.get(category, f"Specialized agent for {agent_name} tasks.")
+
 
 def get_relevant_tools(category: str) -> list[str]:
     """Get relevant MCP tools for a category."""
     category_tools = {
         "orchestrator": COMMON_MCP_TOOLS,
         "coding": COMMON_MCP_TOOLS[:4],  # Exclude project management for basic coding
-        "debugging": COMMON_MCP_TOOLS[:3], 
+        "debugging": COMMON_MCP_TOOLS[:3],
         "testing": COMMON_MCP_TOOLS,
         "design": COMMON_MCP_TOOLS[:4],
         "security": COMMON_MCP_TOOLS[:3],
         "devops": COMMON_MCP_TOOLS,
         "documentation": COMMON_MCP_TOOLS[:3],
         "research": COMMON_MCP_TOOLS[:3],
-        "specialized": COMMON_MCP_TOOLS[:3]
+        "specialized": COMMON_MCP_TOOLS[:3],
     }
-    
+
     return category_tools.get(category, COMMON_MCP_TOOLS[:3])
+
 
 def generate_agent_content(agent_name: str, category: str) -> str:
     """Generate the content for a Claude Code agent."""
     clean_name = agent_name.replace("@", "").replace("_", "-")
     description = generate_agent_description(agent_name, category)
     tools = ", ".join(get_relevant_tools(category))
-    
+
     content = f"""---
 name: {clean_name}
 description: {description}
@@ -137,7 +150,7 @@ tools: {tools}
 model: sonnet
 ---
 
-# {agent_name.replace('@', '').replace('_', ' ').title()} Bridge
+# {agent_name.replace("@", "").replace("_", " ").title()} Bridge
 
 I am your bridge to the advanced {agent_name} in your agenthub_http system. I provide seamless integration between Claude Code and your sophisticated agent orchestration platform.
 
@@ -211,51 +224,54 @@ By using me, you get:
 
 This bridge ensures you get the full power of your specialized agent while maintaining natural integration with Claude Code's development environment.
 """
-    
+
     return content
+
 
 def create_agent_file(agent_name: str, output_dir: Path) -> None:
     """Create a Claude Code agent file for the given agent."""
     category = categorize_agent(agent_name)
     content = generate_agent_content(agent_name, category)
-    
+
     clean_name = agent_name.replace("@", "").replace("_", "-")
     filename = f"{clean_name}.md"
     filepath = output_dir / filename
-    
-    with open(filepath, 'w', encoding='utf-8') as f:
+
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
-    
+
     print(f"Generated: {filepath}")
+
 
 def main():
     """Main function to generate all agent files."""
     print("Claude Code Agent Generator")
     print("=" * 40)
-    
+
     # Create output directories
     OUTPUT_DIR.mkdir(exist_ok=True)
     CLAUDE_AGENTS_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     # Get available agents
     agents = get_available_agents()
     print(f"Found {len(agents)} agents to process")
-    
+
     # Generate agent files
     for agent in agents:
         try:
             create_agent_file(agent, OUTPUT_DIR)
         except Exception as e:
             print(f"Error generating agent {agent}: {e}")
-    
+
     print(f"\\nGenerated {len(agents)} agent files in {OUTPUT_DIR}")
     print("\\nTo install agents to Claude Code:")
     print(f"1. Review generated files in {OUTPUT_DIR}")
     print(f"2. Copy desired agents to {CLAUDE_AGENTS_DIR}")
     print("3. Restart Claude Code to load new agents")
-    
+
     print("\\nExample install commands:")
     print(f"cp {OUTPUT_DIR}/*.md {CLAUDE_AGENTS_DIR}/")
+
 
 if __name__ == "__main__":
     main()
