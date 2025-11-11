@@ -320,7 +320,7 @@ class TaskStateTransitionService:
             "review": ["in_progress", "testing", "done", "blocked"],
             "testing": ["review", "done", "in_progress", "blocked"],
             "blocked": ["todo", "in_progress", "cancelled"],
-            "done": [],  # Done tasks generally shouldn't change status
+            "done": ["in_progress"],  # Allow rework by moving back to in_progress
             "cancelled": [],  # Cancelled tasks shouldn't change status
         }
 

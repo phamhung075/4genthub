@@ -49,6 +49,29 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**Domain Services - Missing Feature Flag and Transition Rules** (2025-11-11)
+
+Fixed domain service tests by adding missing feature flag attribute and updating state transition rules for task rework scenarios.
+
+**Issues Fixed**:
+1. **PaginationService**: Missing `FEATURE_CLEAN_REPOSITORIES` class attribute - Added as `False` by default
+2. **TaskStateTransitionService**: Empty transition rules for "done" status - Updated to allow "in_progress" for rework scenarios
+
+**Files Modified**:
+- `agenthub_main/src/fastmcp/task_management/domain/services/pagination_service.py:28` - Added FEATURE_CLEAN_REPOSITORIES class attribute
+- `agenthub_main/src/fastmcp/task_management/domain/services/task_state_transition_service.py:323` - Updated done status transition rules
+
+**Test Fixes**:
+- ✅ `pagination_service_test.py::test_feature_flag_default_value` - Feature flag attribute now exists
+- ✅ `test_task_state_transition_service.py::test_get_allowed_transitions_empty_status` - Done tasks can transition to in_progress for rework
+
+**Impact**:
+- ✅ Domain service tests now pass
+- ✅ Supports task rework workflow (done → in_progress)
+- ✅ Clean repository feature flag ready for implementation
+
+---
+
 **Python 3.11 Compatibility and Import Sorting** (2025-11-11)
 
 Fixed syntax errors and import sorting issues to ensure Python 3.11 compatibility and PEP 8 compliance.

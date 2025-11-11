@@ -24,6 +24,9 @@ class PaginationService(Generic[T]):
     - Handle edge cases (empty results, single page, etc.)
     """
 
+    # Feature flag for clean repository implementation
+    FEATURE_CLEAN_REPOSITORIES: bool = False
+
     @classmethod
     def create_pagination_result(
         cls, items: list[T], total_count: int, pagination: PaginationRequest
