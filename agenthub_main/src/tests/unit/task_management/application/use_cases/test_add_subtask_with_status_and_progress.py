@@ -28,7 +28,7 @@ def mock_task_repository():
     )
     task.id = TaskId.from_string("test-task-id")
     task.subtasks = []
-    task.subtask_count = 0
+    # subtask_count is now a computed property from len(subtasks), no need to set it
 
     repository.find_by_id = Mock(return_value=task)
     repository.save = Mock()

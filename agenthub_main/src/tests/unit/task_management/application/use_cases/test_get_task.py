@@ -166,7 +166,7 @@ class TestGetTaskUseCase:
             assert str(called_task_id) == task_id
             
             # Verify response creation
-            mock_response.from_domain.assert_called_once_with(sample_task, context_data=None)
+            mock_response.from_domain.assert_called_once_with(sample_task, git_branch_repository=None, context_data=None)
     
     @pytest.mark.asyncio
     async def test_execute_successful_with_sync_context(self, use_case_with_sync_context, 
@@ -199,7 +199,7 @@ class TestGetTaskUseCase:
             )
             
             # Verify response creation with context data
-            mock_response.from_domain.assert_called_once_with(sample_task, context_data=sample_context_data)
+            mock_response.from_domain.assert_called_once_with(sample_task, git_branch_repository=None, context_data=sample_context_data)
     
     @pytest.mark.asyncio
     async def test_execute_successful_with_async_context(self, use_case_with_async_context, 
@@ -233,7 +233,7 @@ class TestGetTaskUseCase:
             assert call_args.task_id == task_id
             
             # Verify response creation with context data
-            mock_response.from_domain.assert_called_once_with(sample_task, context_data=sample_context_data)
+            mock_response.from_domain.assert_called_once_with(sample_task, git_branch_repository=None, context_data=sample_context_data)
     
     @pytest.mark.asyncio
     async def test_execute_task_not_found_raises_exception(self, use_case_without_context, mock_task_repository):
@@ -314,9 +314,9 @@ class TestGetTaskUseCase:
             # Assert
             assert result == mock_task_response
             assert "Failed to fetch context data" in caplog.text
-            
+
             # Verify response creation without context data
-            mock_response.from_domain.assert_called_once_with(sample_task, context_data=None)
+            mock_response.from_domain.assert_called_once_with(sample_task, git_branch_repository=None, context_data=None)
     
     @pytest.mark.asyncio
     async def test_execute_sync_context_with_data_field(self, use_case_with_sync_context, 
@@ -340,8 +340,8 @@ class TestGetTaskUseCase:
             
             # Assert
             assert result == mock_task_response
-            mock_response.from_domain.assert_called_once_with(sample_task, context_data=sample_context_data)
-    
+            mock_response.from_domain.assert_called_once_with(sample_task, git_branch_repository=None, context_data=sample_context_data)
+
     @pytest.mark.asyncio
     async def test_execute_sync_context_no_success(self, use_case_with_sync_context, 
                                                   mock_task_repository, sample_task, 
@@ -366,7 +366,7 @@ class TestGetTaskUseCase:
             # Assert
             assert result == mock_task_response
             assert "No context data found" in caplog.text
-            mock_response.from_domain.assert_called_once_with(sample_task, context_data=None)
+            mock_response.from_domain.assert_called_once_with(sample_task, git_branch_repository=None, context_data=None)
     
     @pytest.mark.asyncio
     async def test_execute_async_context_with_data_field(self, use_case_with_async_context, 
@@ -392,8 +392,8 @@ class TestGetTaskUseCase:
             
             # Assert
             assert result == mock_task_response
-            mock_response.from_domain.assert_called_once_with(sample_task, context_data=sample_context_data)
-    
+            mock_response.from_domain.assert_called_once_with(sample_task, git_branch_repository=None, context_data=sample_context_data)
+
     @pytest.mark.asyncio
     async def test_execute_async_context_with_to_dict_method(self, use_case_with_async_context, 
                                                             mock_task_repository, sample_task, 
@@ -421,7 +421,7 @@ class TestGetTaskUseCase:
             # Assert
             assert result == mock_task_response
             mock_context_obj.to_dict.assert_called_once()
-            mock_response.from_domain.assert_called_once_with(sample_task, context_data=sample_context_data)
+            mock_response.from_domain.assert_called_once_with(sample_task, git_branch_repository=None, context_data=sample_context_data)
     
     @pytest.mark.asyncio
     async def test_execute_domain_event_creation(self, use_case_without_context, 

@@ -136,7 +136,7 @@ class TestUpdateTaskUseCase:
                 mock_task_repository.save.assert_called_once_with(sample_task)
                 
                 # Verify response creation
-                mock_task_response.from_domain.assert_called_once_with(sample_task)
+                mock_task_response.from_domain.assert_called_once_with(sample_task, git_branch_repository=None)
                 mock_update_response.success_response.assert_called_once_with(mock_response_instance)
     
     def test_execute_comprehensive_update(self, use_case, mock_task_repository, 

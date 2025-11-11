@@ -457,9 +457,9 @@ class TestTaskStatusIntegration:
         task_status = TaskStatus.done()
         assert task_status.is_done()
         assert task_status.is_completed()
-        
-        # Cannot transition from done
-        assert not task_status.can_transition_to("in_progress")
+
+        # Business rule: Can reopen done tasks for rework
+        assert task_status.can_transition_to("in_progress")  # Can transition back to in_progress for rework
     
     def test_blocked_task_flow(self):
         """Test task flow when blocked."""
