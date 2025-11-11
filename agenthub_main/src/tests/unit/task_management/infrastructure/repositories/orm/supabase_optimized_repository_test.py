@@ -30,16 +30,15 @@ class TestSupabaseOptimizedRepository:
     def repository(self, mock_session):
         """Create a repository instance"""
         with patch('fastmcp.task_management.infrastructure.repositories.orm.supabase_optimized_repository.logger'):
-            # Mock get_session to avoid database connection in ORMTaskRepository.__init__
-            with patch('fastmcp.task_management.infrastructure.database.database_config.get_session', return_value=mock_session):
-                # Mock BaseORMRepository and BaseUserScopedRepository to avoid their initialization
-                with patch('fastmcp.task_management.infrastructure.repositories.orm.task_repository.BaseORMRepository.__init__'):
-                    with patch('fastmcp.task_management.infrastructure.repositories.orm.task_repository.BaseUserScopedRepository.__init__'):
-                        with patch('fastmcp.task_management.infrastructure.repositories.orm.task_repository.CacheInvalidationMixin.__init__'):
-                            repo = SupabaseOptimizedRepository(git_branch_id="branch-123")
-                            repo.get_db_session = Mock(return_value=mock_session)
-                            repo.git_branch_id = "branch-123"
-                            return repo
+            # Inject mock session directly via constructor (get_session no longer exists)
+            # Mock BaseORMRepository and BaseUserScopedRepository to avoid their initialization
+            with patch('fastmcp.task_management.infrastructure.repositories.orm.task_repository.BaseORMRepository.__init__'):
+                with patch('fastmcp.task_management.infrastructure.repositories.orm.task_repository.BaseUserScopedRepository.__init__'):
+                    with patch('fastmcp.task_management.infrastructure.repositories.orm.task_repository.CacheInvalidationMixin.__init__'):
+                        repo = SupabaseOptimizedRepository(session=mock_session, git_branch_id="branch-123")
+                        repo.get_db_session = Mock(return_value=mock_session)
+                        repo.git_branch_id = "branch-123"
+                        return repo
     
     def test_list_tasks_minimal_basic(self, repository, mock_session):
         """Test list_tasks_minimal with basic parameters"""
