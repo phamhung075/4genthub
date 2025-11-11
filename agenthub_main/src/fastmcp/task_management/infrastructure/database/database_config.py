@@ -131,7 +131,6 @@ class DatabaseConfig:
                     "❌ DATABASE_TYPE environment variable is NOT configured!\n"
                     "The server cannot start without explicit database configuration.\n"
                     "Please set DATABASE_TYPE in your .env or .env.dev file:\n"
-                    "  - DATABASE_TYPE=sqlite (for development)\n"
                     "  - DATABASE_TYPE=postgresql (for production)\n"
                     "  - DATABASE_TYPE=supabase (for cloud deployment)\n"
                     "\nNo fallback will be used - configuration is required!"
@@ -141,23 +140,20 @@ class DatabaseConfig:
 
             self.database_type = self.database_type.lower()
 
-            # Validate database type
-            if self.database_type in ["postgresql", "supabase"]:
-                # Get database URL from environment variables
-                self.database_url = self._get_secure_database_url()
-                if not self.database_url:
-                    raise ValueError(
-                        f"Database configuration missing for {self.database_type}.\n"
-                        "Required environment variables:\n"
-                        f"{'DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD' if self.database_type == 'postgresql' else 'SUPABASE_DB_HOST, SUPABASE_DB_PASSWORD'}"
-                    )
-            elif self.database_type == "sqlite":
-                # SQLite uses file-based database - no URL validation needed
-                self.database_url = None  # Will be constructed in _get_database_url()
-            else:
+            # Validate database type - ONLY postgresql and supabase are supported
+            if self.database_type not in ["postgresql", "supabase"]:
                 raise ValueError(
                     f"Invalid DATABASE_TYPE: {self.database_type}\n"
-                    "Supported types: 'postgresql', 'supabase', or 'sqlite'"
+                    "Supported types: 'postgresql' or 'supabase'"
+                )
+
+            # Get database URL from environment variables
+            self.database_url = self._get_secure_database_url()
+            if not self.database_url:
+                raise ValueError(
+                    f"Database configuration missing for {self.database_type}.\n"
+                    "Required environment variables:\n"
+                    f"{'DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD' if self.database_type == 'postgresql' else 'SUPABASE_DB_HOST, SUPABASE_DB_PASSWORD'}"
                 )
 
             logger.info(f"Database type: {self.database_type}")
@@ -171,10 +167,6 @@ class DatabaseConfig:
             elif self.database_type == "postgresql":
                 logger.info(
                     "✅ POSTGRESQL DATABASE SELECTED - Great choice for production workloads!"
-                )
-            elif self.database_type == "sqlite":
-                logger.info(
-                    "💾 SQLITE DATABASE SELECTED - Perfect for development and testing!"
                 )
 
             # Initialize database connection
@@ -267,50 +259,16 @@ class DatabaseConfig:
             logger.info("✅ Using PostgreSQL database")
             return self.database_url
 
-        elif self.database_type == "sqlite":
-            # Use SQLite with file-based database
-            logger.info("💾 Using SQLite database")
-            # Check for DATABASE_URL first (for explicit configuration)
-            db_url = os.getenv("DATABASE_URL")
-            if db_url:
-                logger.info(f"✅ Using DATABASE_URL: {db_url}")
-                return db_url
-
-            # Check for MCP_DB_PATH (for test environments)
-            db_path = os.getenv("MCP_DB_PATH")
-            if db_path:
-                logger.info(f"✅ Using MCP_DB_PATH: {db_path}")
-                return f"sqlite:///{db_path}"
-
-            # Default to development database
-            default_db = "agenthub_dev.db"
-            logger.info(f"✅ Using default SQLite database: {default_db}")
-            return f"sqlite:///{default_db}"
-
         else:
             # This should never happen due to validation in __init__
             raise ValueError(f"Unsupported database type: {self.database_type}")
 
     def _create_engine(self, database_url: str) -> Engine:
         """Create SQLAlchemy engine for database connection"""
-        # Handle SQLite URLs
-        if database_url.startswith("sqlite"):
-            logger.info("🔧 Creating SQLite engine for development/testing")
-            engine = create_engine(
-                database_url,
-                echo=os.getenv("SQL_DEBUG", "false").lower() == "true",
-                future=True,  # Use SQLAlchemy 2.0 style
-                connect_args={
-                    "check_same_thread": False
-                },  # Allow SQLite to be used across threads
-            )
-            logger.info("✅ SQLite engine created successfully")
-            return engine
-
         # Validate PostgreSQL URL
         if not database_url.startswith("postgresql"):
             raise ValueError(
-                f"Invalid database URL. Expected PostgreSQL or SQLite URL but got: {database_url[:20]}..."
+                f"Invalid database URL. Expected PostgreSQL URL but got: {database_url[:20]}..."
             )
 
         # PostgreSQL/Supabase configuration optimized for cloud
@@ -384,14 +342,6 @@ class DatabaseConfig:
     def _test_connection(self, database_url: str):
         """Test database connection with retry logic"""
         with self.engine.connect() as conn:
-            # Handle SQLite
-            if database_url.startswith("sqlite"):
-                result = conn.execute(text("SELECT sqlite_version()"))
-                version = result.scalar()
-                logger.info(f"✅ Connected to SQLite: {version}")
-                DatabaseConfig._connection_info = f"SQLite {version}"
-                return
-
             # PostgreSQL test query
             result = conn.execute(text("SELECT version()"))
             version = result.scalar()
