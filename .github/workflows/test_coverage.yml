@@ -100,6 +100,12 @@ jobs:
         cat > .env.test << EOF
         TESTING=true
         FASTMCP_TEST_MODE=1
+        DATABASE_TYPE=postgresql
+        DATABASE_HOST=localhost
+        DATABASE_PORT=5432
+        DATABASE_NAME=agenthub_test
+        DATABASE_USER=testuser
+        DATABASE_PASSWORD=testpass
         DATABASE_URL=postgresql://testuser:testpass@localhost:5432/agenthub_test
         REDIS_URL=redis://localhost:6379/0
         LOG_LEVEL=WARNING
