@@ -81,6 +81,7 @@ jobs:
       with:
         enable-cache: true
         cache-dependency-glob: "agenthub_main/pyproject.toml"
+        version: "latest"  # Ensure latest uv with full PEP 735 support
 
     - name: Install system dependencies
       run: |
@@ -97,6 +98,14 @@ jobs:
 
         # Install package in editable mode so imports work
         uv pip install -e .
+
+        # Verify freezegun is installed (debug step)
+        echo "Verifying freezegun installation..."
+        if ! uv run python -c "import freezegun; print(f'✓ freezegun {freezegun.__version__} installed')" 2>/dev/null; then
+          echo "✗ freezegun NOT installed via uv sync, installing explicitly..."
+          uv pip install freezegun>=1.2.2
+          uv run python -c "import freezegun; print(f'✓ freezegun {freezegun.__version__} installed after explicit install')"
+        fi
 
     - name: Setup test environment
       working-directory: agenthub_main
@@ -222,6 +231,7 @@ jobs:
       with:
         enable-cache: true
         cache-dependency-glob: "agenthub_main/pyproject.toml"
+        version: "latest"  # Ensure latest uv with full PEP 735 support
 
     - name: Install dependencies
       working-directory: agenthub_main
