@@ -28,6 +28,7 @@ from typing import Any, Dict, List
 @dataclass
 class ViolationReport:
     """Represents a timestamp handling violation."""
+
     file_path: str
     line_number: int
     line_content: str
@@ -47,48 +48,87 @@ class ObsoleteTimestampDetector:
         # Patterns that indicate manual timestamp handling (VIOLATIONS)
         self.violation_patterns = [
             # Direct updated_at assignments
-            (r'self\.updated_at\s*=\s*datetime\.now', 'manual_updated_at_assignment', 'error',
-             'Use entity.touch() instead of manual updated_at assignment'),
-
+            (
+                r"self\.updated_at\s*=\s*datetime\.now",
+                "manual_updated_at_assignment",
+                "error",
+                "Use entity.touch() instead of manual updated_at assignment",
+            ),
             # Direct created_at assignments (except in __init__)
-            (r'self\.created_at\s*=\s*datetime\.now', 'manual_created_at_assignment', 'error',
-             'Remove manual created_at assignment - BaseTimestampEntity handles this'),
-
+            (
+                r"self\.created_at\s*=\s*datetime\.now",
+                "manual_created_at_assignment",
+                "error",
+                "Remove manual created_at assignment - BaseTimestampEntity handles this",
+            ),
             # Manual timezone handling
-            (r'\.replace\(tzinfo=timezone\.utc\)', 'manual_timezone_handling', 'warning',
-             'BaseTimestampEntity handles UTC timezone automatically'),
-
+            (
+                r"\.replace\(tzinfo=timezone\.utc\)",
+                "manual_timezone_handling",
+                "warning",
+                "BaseTimestampEntity handles UTC timezone automatically",
+            ),
             # Direct datetime.now() in entity methods
-            (r'datetime\.now\(timezone\.utc\)', 'manual_datetime_now', 'warning',
-             'Use entity.touch() or repository methods instead'),
-
+            (
+                r"datetime\.now\(timezone\.utc\)",
+                "manual_datetime_now",
+                "warning",
+                "Use entity.touch() or repository methods instead",
+            ),
             # Context timestamp validation (should be in service layer)
-            (r'context_updated_at.*<=.*updated_at', 'context_timestamp_validation', 'error',
-             'Move timestamp validation to application service layer'),
-
+            (
+                r"context_updated_at.*<=.*updated_at",
+                "context_timestamp_validation",
+                "error",
+                "Move timestamp validation to application service layer",
+            ),
             # Manual timestamp comparisons in entities
-            (r'self\.updated_at\s*[<>=].*datetime', 'manual_timestamp_comparison', 'warning',
-             'Use BaseTimestampEntity comparison methods'),
-
+            (
+                r"self\.updated_at\s*[<>=].*datetime",
+                "manual_timestamp_comparison",
+                "warning",
+                "Use BaseTimestampEntity comparison methods",
+            ),
             # Hardcoded timestamp strings
-            (r'"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"', 'hardcoded_timestamp', 'info',
-             'Use proper datetime objects instead of hardcoded strings'),
-
+            (
+                r'"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"',
+                "hardcoded_timestamp",
+                "info",
+                "Use proper datetime objects instead of hardcoded strings",
+            ),
             # Database trigger usage
-            (r'ON\s+UPDATE\s+CURRENT_TIMESTAMP', 'database_trigger_usage', 'error',
-             'Remove database triggers; manage timestamps in the application layer'),
-            (r'DEFAULT\s+CURRENT_TIMESTAMP', 'database_default_timestamp', 'warning',
-             'Use BaseTimestampEntity for default timestamps instead of database defaults'),
-
+            (
+                r"ON\s+UPDATE\s+CURRENT_TIMESTAMP",
+                "database_trigger_usage",
+                "error",
+                "Remove database triggers; manage timestamps in the application layer",
+            ),
+            (
+                r"DEFAULT\s+CURRENT_TIMESTAMP",
+                "database_default_timestamp",
+                "warning",
+                "Use BaseTimestampEntity for default timestamps instead of database defaults",
+            ),
             # Legacy/compatibility flags
-            (r'legacy.*timestamp', 'legacy_timestamp_code', 'warning',
-             'Remove legacy timestamp compatibility code'),
-            (r'backward.*compat', 'legacy_timestamp_code', 'warning',
-             'Remove backward compatibility timestamp code'),
-
+            (
+                r"legacy.*timestamp",
+                "legacy_timestamp_code",
+                "warning",
+                "Remove legacy timestamp compatibility code",
+            ),
+            (
+                r"backward.*compat",
+                "legacy_timestamp_code",
+                "warning",
+                "Remove backward compatibility timestamp code",
+            ),
             # Attribute manipulation fallbacks
-            (r'setattr\(.*updated_at', 'manual_updated_at_assignment', 'error',
-             'Use entity.touch() instead of setattr for timestamps'),
+            (
+                r"setattr\(.*updated_at",
+                "manual_updated_at_assignment",
+                "error",
+                "Use entity.touch() instead of setattr for timestamps",
+            ),
         ]
 
         # File patterns to scan
@@ -147,7 +187,7 @@ class ObsoleteTimestampDetector:
     def _scan_file(self, file_path: Path) -> None:
         """Scan a single file for timestamp violations."""
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 lines = f.readlines()
 
             for line_num, line in enumerate(lines, 1):
@@ -159,7 +199,9 @@ class ObsoleteTimestampDetector:
         except Exception as e:
             print(f"⚠️ Error reading {file_path}: {e}")
 
-    def _check_line_for_violations(self, file_path: Path, line_num: int, line: str) -> None:
+    def _check_line_for_violations(
+        self, file_path: Path, line_num: int, line: str
+    ) -> None:
         """Check a single line for timestamp violations."""
         for pattern, violation_type, severity, suggestion in self.violation_patterns:
             if re.search(pattern, line, re.IGNORECASE):
@@ -173,15 +215,17 @@ class ObsoleteTimestampDetector:
                     violation_type=violation_type,
                     severity=severity,
                     suggestion=suggestion,
-                    context=context
+                    context=context,
                 )
 
                 self.violations.append(violation)
 
-    def _get_line_context(self, file_path: Path, line_num: int, context_lines: int = 2) -> str:
+    def _get_line_context(
+        self, file_path: Path, line_num: int, context_lines: int = 2
+    ) -> str:
         """Get context lines around a violation."""
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 all_lines = f.readlines()
 
             start = max(0, line_num - context_lines - 1)
@@ -239,23 +283,33 @@ class ObsoleteTimestampDetector:
         report_lines.append("-" * 40)
 
         # Sort by severity: error -> warning -> info
-        severity_order = ['error', 'warning', 'info']
+        severity_order = ["error", "warning", "info"]
         sorted_violations = sorted(
             self.violations,
-            key=lambda v: (severity_order.index(v.severity), v.file_path, v.line_number)
+            key=lambda v: (
+                severity_order.index(v.severity),
+                v.file_path,
+                v.line_number,
+            ),
         )
 
         for violation in sorted_violations:
-            severity_icon = {'error': '❌', 'warning': '⚠️', 'info': 'ℹ️'}[violation.severity]
+            severity_icon = {"error": "❌", "warning": "⚠️", "info": "ℹ️"}[
+                violation.severity
+            ]
 
-            report_lines.append(f"{severity_icon} {violation.severity.upper()}: {violation.violation_type}")
-            report_lines.append(f"   📁 File: {violation.file_path}:{violation.line_number}")
+            report_lines.append(
+                f"{severity_icon} {violation.severity.upper()}: {violation.violation_type}"
+            )
+            report_lines.append(
+                f"   📁 File: {violation.file_path}:{violation.line_number}"
+            )
             report_lines.append(f"   📝 Line: {violation.line_content}")
             report_lines.append(f"   💡 Fix: {violation.suggestion}")
 
             if violation.context and len(violation.context) < 200:
                 report_lines.append("   🔍 Context:")
-                for ctx_line in violation.context.split('\n')[:3]:
+                for ctx_line in violation.context.split("\n")[:3]:
                     if ctx_line.strip():
                         report_lines.append(f"      {ctx_line.strip()}")
 
@@ -264,7 +318,9 @@ class ObsoleteTimestampDetector:
         # Recommendations
         report_lines.append("🎯 CLEAN CODE RECOMMENDATIONS")
         report_lines.append("-" * 40)
-        report_lines.append("1. Replace manual timestamp assignments with entity.touch()")
+        report_lines.append(
+            "1. Replace manual timestamp assignments with entity.touch()"
+        )
         report_lines.append("2. Use BaseTimestampRepository for database operations")
         report_lines.append("3. Move timestamp validation to application service layer")
         report_lines.append("4. Inherit all entities from BaseTimestampEntity")
@@ -285,7 +341,7 @@ class ObsoleteTimestampDetector:
 
         if output_file:
             try:
-                with open(output_file, 'w', encoding='utf-8') as f:
+                with open(output_file, "w", encoding="utf-8") as f:
                     f.write(report_content)
                 print(f"📄 Report written to: {output_file}")
             except Exception as e:
@@ -313,7 +369,7 @@ class ObsoleteTimestampDetector:
             "violations_by_severity": dict(violations_by_severity),
             "violations_by_type": dict(violations_by_type),
             "files_with_violations": len(files_with_violations),
-            "affected_files": sorted(files_with_violations)
+            "affected_files": sorted(files_with_violations),
         }
 
 
@@ -325,28 +381,19 @@ def main():
         description="Detect obsolete timestamp handling patterns"
     )
     parser.add_argument(
-        "--project-root",
-        default=".",
-        help="Project root directory to scan"
+        "--project-root", default=".", help="Project root directory to scan"
+    )
+    parser.add_argument("--output", help="Output file for report")
+    parser.add_argument(
+        "--fix-suggestions", action="store_true", help="Show detailed fix suggestions"
     )
     parser.add_argument(
-        "--output",
-        help="Output file for report"
-    )
-    parser.add_argument(
-        "--fix-suggestions",
-        action="store_true",
-        help="Show detailed fix suggestions"
-    )
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="Treat warnings as errors"
+        "--strict", action="store_true", help="Treat warnings as errors"
     )
     parser.add_argument(
         "--summary-only",
         action="store_true",
-        help="Show only summary, not detailed violations"
+        help="Show only summary, not detailed violations",
     )
 
     args = parser.parse_args()
@@ -364,9 +411,11 @@ def main():
     # Generate and display report
     if args.summary_only:
         summary = detector.get_violation_summary()
-        print(f"📊 Summary: {summary['total_violations']} violations in {summary['files_with_violations']} files")
-        for severity, count in summary['violations_by_severity'].items():
-            severity_icon = {'error': '❌', 'warning': '⚠️', 'info': 'ℹ️'}[severity]
+        print(
+            f"📊 Summary: {summary['total_violations']} violations in {summary['files_with_violations']} files"
+        )
+        for severity, count in summary["violations_by_severity"].items():
+            severity_icon = {"error": "❌", "warning": "⚠️", "info": "ℹ️"}[severity]
             print(f"  {severity_icon} {severity}: {count}")
     else:
         report = detector.generate_report(args.output)
@@ -375,8 +424,8 @@ def main():
 
     # Return appropriate exit code
     summary = detector.get_violation_summary()
-    error_count = summary['violations_by_severity'].get('error', 0)
-    warning_count = summary['violations_by_severity'].get('warning', 0)
+    error_count = summary["violations_by_severity"].get("error", 0)
+    warning_count = summary["violations_by_severity"].get("warning", 0)
 
     if error_count > 0:
         print(f"❌ Found {error_count} error-level violations")

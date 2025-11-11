@@ -38,11 +38,7 @@ def run_alembic(args):
     print(f"🔧 Running: {' '.join(cmd)}")
     print()
 
-    result = subprocess.run(
-        cmd,
-        cwd=alembic_dir,
-        capture_output=False
-    )
+    result = subprocess.run(cmd, cwd=alembic_dir, capture_output=False)
 
     return result.returncode
 
@@ -159,7 +155,7 @@ def main():
     if command == "create":
         if len(sys.argv) < 3:
             print("❌ Error: Migration message required")
-            print("Usage: python scripts/migrate.py create \"message\"")
+            print('Usage: python scripts/migrate.py create "message"')
             sys.exit(1)
         message = sys.argv[2]
         return run_alembic(["revision", "-m", message])
@@ -167,7 +163,7 @@ def main():
     elif command == "auto":
         if len(sys.argv) < 3:
             print("❌ Error: Migration message required")
-            print("Usage: python scripts/migrate.py auto \"message\"")
+            print('Usage: python scripts/migrate.py auto "message"')
             sys.exit(1)
         message = sys.argv[2]
         print("🔍 Auto-detecting changes from ORM models...")
@@ -202,12 +198,14 @@ def main():
             print("Usage: python scripts/migrate.py apply migrations/file.sql")
             sys.exit(1)
         from apply_migration import apply_migration
+
         migration_path = Path(sys.argv[2])
         apply_migration(migration_path)
 
     elif command == "list":
         # List raw SQL migrations
         from apply_migration import list_migrations
+
         list_migrations()
 
     elif command == "help" or command == "--help" or command == "-h":
@@ -230,5 +228,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

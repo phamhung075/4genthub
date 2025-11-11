@@ -28,7 +28,7 @@ AGENT_DEFINITIONS = {
             "Strategic planning and decision making",
             "Resource allocation and optimization",
             "Complex workflow orchestration",
-            "Cross-functional team management"
+            "Cross-functional team management",
         ],
         "tools": ["All MCP tools available"],
         "specializations": [
@@ -36,9 +36,9 @@ AGENT_DEFINITIONS = {
             "Cross-functional coordination",
             "System-wide optimization",
             "Agent delegation and task distribution",
-            "Conflict resolution between agents"
+            "Conflict resolution between agents",
         ],
-        "guidelines": "Use as the primary entry point for complex tasks requiring multiple specialists. This agent will analyze requirements and delegate to appropriate specialist agents."
+        "guidelines": "Use as the primary entry point for complex tasks requiring multiple specialists. This agent will analyze requirements and delegate to appropriate specialist agents.",
     },
     "coding-agent": {
         "name": "Coding Agent",
@@ -52,7 +52,7 @@ AGENT_DEFINITIONS = {
             "API development with FastAPI/FastMCP",
             "Frontend development with React",
             "Database design and optimization",
-            "Algorithm design and optimization"
+            "Algorithm design and optimization",
         ],
         "tools": ["Edit", "Write", "Read", "MultiEdit", "Bash", "Grep", "Glob"],
         "specializations": [
@@ -60,9 +60,9 @@ AGENT_DEFINITIONS = {
             "React component development",
             "FastAPI/FastMCP backend development",
             "TypeScript/JavaScript implementation",
-            "Python development with type hints"
+            "Python development with type hints",
         ],
-        "guidelines": "Use for all coding tasks including new feature implementation, refactoring, and code optimization. Follows project conventions and patterns."
+        "guidelines": "Use for all coding tasks including new feature implementation, refactoring, and code optimization. Follows project conventions and patterns.",
     },
     "debugger-agent": {
         "name": "Debugger Agent",
@@ -76,7 +76,7 @@ AGENT_DEFINITIONS = {
             "Performance profiling and optimization",
             "Memory leak detection and resolution",
             "Test failure investigation",
-            "Runtime error debugging"
+            "Runtime error debugging",
         ],
         "tools": ["Read", "Grep", "Bash", "Edit", "mcp__ide__getDiagnostics"],
         "specializations": [
@@ -84,9 +84,9 @@ AGENT_DEFINITIONS = {
             "TypeScript/JavaScript debugging",
             "Async/await issues resolution",
             "Database query optimization",
-            "API endpoint debugging"
+            "API endpoint debugging",
         ],
-        "guidelines": "Deploy when encountering errors, test failures, performance issues, or unexpected behavior. Provides detailed root cause analysis."
+        "guidelines": "Deploy when encountering errors, test failures, performance issues, or unexpected behavior. Provides detailed root cause analysis.",
     },
     "test-orchestrator-agent": {
         "name": "Test Orchestrator Agent",
@@ -100,7 +100,7 @@ AGENT_DEFINITIONS = {
             "Test suite orchestration",
             "Code coverage analysis",
             "Test automation implementation",
-            "CI/CD pipeline integration"
+            "CI/CD pipeline integration",
         ],
         "tools": ["Bash", "Write", "Read", "Edit", "TodoWrite"],
         "specializations": [
@@ -108,9 +108,9 @@ AGENT_DEFINITIONS = {
             "Jest/React Testing Library",
             "Integration testing strategies",
             "E2E testing with Playwright/Cypress",
-            "Performance testing frameworks"
+            "Performance testing frameworks",
         ],
-        "guidelines": "Use for designing test strategies, writing test cases, and ensuring comprehensive test coverage. Coordinates with other agents for test implementation."
+        "guidelines": "Use for designing test strategies, writing test cases, and ensuring comprehensive test coverage. Coordinates with other agents for test implementation.",
     },
     "@ui_designer_agent": {
         "name": "UI Designer Agent",
@@ -124,7 +124,7 @@ AGENT_DEFINITIONS = {
             "Responsive design implementation",
             "State management with Redux/Context",
             "User interaction flow design",
-            "Accessibility compliance (WCAG)"
+            "Accessibility compliance (WCAG)",
         ],
         "tools": ["Edit", "Write", "Read", "WebFetch", "mcp__shadcn-ui-server__*"],
         "specializations": [
@@ -132,9 +132,9 @@ AGENT_DEFINITIONS = {
             "TypeScript for React",
             "Tailwind CSS styling",
             "shadcn/ui component integration",
-            "Mobile-first responsive design"
+            "Mobile-first responsive design",
         ],
-        "guidelines": "Deploy for all frontend tasks including component creation, UI improvements, and user experience enhancements."
+        "guidelines": "Deploy for all frontend tasks including component creation, UI improvements, and user experience enhancements.",
     },
     "documentation-agent": {
         "name": "Documentation Agent",
@@ -148,7 +148,7 @@ AGENT_DEFINITIONS = {
             "User guide creation",
             "Technical specification writing",
             "README and setup guide creation",
-            "Code documentation and comments"
+            "Code documentation and comments",
         ],
         "tools": ["Write", "Read", "Edit", "Glob"],
         "specializations": [
@@ -156,9 +156,9 @@ AGENT_DEFINITIONS = {
             "API endpoint documentation",
             "Architecture documentation",
             "Migration and upgrade guides",
-            "Best practices documentation"
+            "Best practices documentation",
         ],
-        "guidelines": "Use for creating or updating any form of documentation. Ensures consistency with existing documentation structure."
+        "guidelines": "Use for creating or updating any form of documentation. Ensures consistency with existing documentation structure.",
     },
     "task-planning-agent": {
         "name": "Task Planning Agent",
@@ -172,17 +172,21 @@ AGENT_DEFINITIONS = {
             "Dependency mapping and management",
             "Timeline and milestone estimation",
             "Resource planning and allocation",
-            "Risk assessment and mitigation"
+            "Risk assessment and mitigation",
         ],
-        "tools": ["TodoWrite", "mcp__agenthub_http__manage_task", "mcp__agenthub_http__manage_subtask"],
+        "tools": [
+            "TodoWrite",
+            "mcp__agenthub_http__manage_task",
+            "mcp__agenthub_http__manage_subtask",
+        ],
         "specializations": [
             "Agile methodology planning",
             "Sprint planning and management",
             "Milestone tracking",
             "Critical path analysis",
-            "Dependency resolution"
+            "Dependency resolution",
         ],
-        "guidelines": "Deploy at the beginning of complex projects or when tasks need to be broken down into manageable pieces."
+        "guidelines": "Deploy at the beginning of complex projects or when tasks need to be broken down into manageable pieces.",
     },
     "security-auditor-agent": {
         "name": "Security Auditor Agent",
@@ -196,7 +200,7 @@ AGENT_DEFINITIONS = {
             "Authentication/authorization review",
             "Data protection assessment",
             "OWASP compliance checking",
-            "Security best practices enforcement"
+            "Security best practices enforcement",
         ],
         "tools": ["Read", "Grep", "Bash", "mcp__agenthub_http__manage_compliance"],
         "specializations": [
@@ -204,9 +208,9 @@ AGENT_DEFINITIONS = {
             "SQL injection prevention",
             "XSS and CSRF protection",
             "Security headers configuration",
-            "Secrets management"
+            "Secrets management",
         ],
-        "guidelines": "Deploy for security reviews, vulnerability assessments, and when implementing authentication/authorization features."
+        "guidelines": "Deploy for security reviews, vulnerability assessments, and when implementing authentication/authorization features.",
     },
     "@database_architect_agent": {
         "name": "Database Architect Agent",
@@ -220,7 +224,7 @@ AGENT_DEFINITIONS = {
             "Query optimization",
             "Index strategy planning",
             "Data migration planning",
-            "Performance tuning"
+            "Performance tuning",
         ],
         "tools": ["Bash", "Read", "Write", "Edit"],
         "specializations": [
@@ -228,9 +232,9 @@ AGENT_DEFINITIONS = {
             "SQLite configuration",
             "Supabase integration",
             "Redis caching strategies",
-            "Database migration scripts"
+            "Database migration scripts",
         ],
-        "guidelines": "Use for database-related tasks including schema changes, query optimization, and data migration planning."
+        "guidelines": "Use for database-related tasks including schema changes, query optimization, and data migration planning.",
     },
     "@devops_engineer_agent": {
         "name": "DevOps Engineer Agent",
@@ -244,7 +248,7 @@ AGENT_DEFINITIONS = {
             "CI/CD pipeline configuration",
             "Kubernetes orchestration",
             "Infrastructure as Code",
-            "Monitoring and logging setup"
+            "Monitoring and logging setup",
         ],
         "tools": ["Bash", "Write", "Read", "Edit"],
         "specializations": [
@@ -252,10 +256,10 @@ AGENT_DEFINITIONS = {
             "GitHub Actions workflows",
             "Environment configuration",
             "Service monitoring",
-            "Log aggregation"
+            "Log aggregation",
         ],
-        "guidelines": "Deploy for infrastructure tasks, deployment issues, and containerization requirements."
-    }
+        "guidelines": "Deploy for infrastructure tasks, deployment issues, and containerization requirements.",
+    },
 }
 
 # Agent template for Claude
@@ -307,12 +311,13 @@ This agent integrates with the agenthub system and can be called via the MCP too
 *Auto-generated from agenthub agent definitions*
 """
 
+
 class AgentGenerator:
     """Generate Claude agent files from definitions"""
-    
+
     def __init__(self, claude_dir: str = DEFAULT_CLAUDE_DIR):
         self.claude_dir = Path(claude_dir)
-        
+
     def generate_agent_file(self, agent_id: str, agent_data: dict[str, Any]) -> str:
         """Generate markdown content for an agent"""
         # Format the agent details
@@ -323,75 +328,74 @@ class AgentGenerator:
             category=agent_data.get("category", "general"),
             priority=agent_data.get("priority", "normal"),
             capabilities=self._format_list(agent_data.get("capabilities", [])),
-            tools=self._format_list(agent_data.get("tools", ["All available MCP tools"])),
+            tools=self._format_list(
+                agent_data.get("tools", ["All available MCP tools"])
+            ),
             specializations=self._format_list(agent_data.get("specializations", [])),
             guidelines=agent_data.get("guidelines", "Follow standard agent protocols"),
             agent_id=agent_id,
             agent_type=agent_data.get("type", "specialist"),
-            updated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            updated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
-        
+
         return content
-    
+
     def _format_list(self, items: list[Any]) -> str:
         """Format a list for markdown"""
         if not items:
             return "- None specified"
         return "\n".join(f"- {item}" for item in items)
-    
+
     def save_agent_file(self, agent_id: str, agent_data: dict[str, Any]) -> Path:
         """Save agent configuration to file"""
         # Create directory if it doesn't exist
         self.claude_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Generate filename from agent ID
         filename = f"{agent_id.replace('@', '').replace(' ', '_').lower()}.md"
         filepath = self.claude_dir / filename
-        
+
         # Generate and save content
         content = self.generate_agent_file(agent_id, agent_data)
         filepath.write_text(content)
-        
+
         return filepath
-    
+
     def generate_all_agents(self, filter_category: str = None) -> dict[str, Any]:
         """Generate all agent files"""
-        results = {
-            "generated": [],
-            "failed": [],
-            "total": 0
-        }
-        
+        results = {"generated": [], "failed": [], "total": 0}
+
         agents_to_generate = AGENT_DEFINITIONS.items()
         if filter_category:
             agents_to_generate = [
-                (id, data) for id, data in agents_to_generate 
+                (id, data)
+                for id, data in agents_to_generate
                 if data.get("category") == filter_category
             ]
-        
+
         results["total"] = len(list(agents_to_generate))
-        
+
         for agent_id, agent_data in AGENT_DEFINITIONS.items():
             try:
                 # Apply category filter if specified
                 if filter_category and agent_data.get("category") != filter_category:
                     continue
-                
+
                 filepath = self.save_agent_file(agent_id, agent_data)
-                results["generated"].append({
-                    "agent_id": agent_id,
-                    "name": agent_data.get("name"),
-                    "file": str(filepath)
-                })
+                results["generated"].append(
+                    {
+                        "agent_id": agent_id,
+                        "name": agent_data.get("name"),
+                        "file": str(filepath),
+                    }
+                )
                 print(f"✓ Generated: {agent_data.get('name', 'Unknown')} -> {filepath}")
             except Exception as e:
-                results["failed"].append({
-                    "agent_id": agent_id,
-                    "error": str(e)
-                })
+                results["failed"].append({"agent_id": agent_id, "error": str(e)})
                 print(f"✗ Failed: {agent_data.get('name', 'Unknown')} - {e}")
-        
+
         return results
+
 
 def main():
     """Main entry point"""
@@ -401,58 +405,60 @@ def main():
     parser.add_argument(
         "--claude-dir",
         default=DEFAULT_CLAUDE_DIR,
-        help="Claude agents directory (default: .claude/agents)"
+        help="Claude agents directory (default: .claude/agents)",
     )
     parser.add_argument(
         "--category",
-        help="Filter agents by category (e.g., development, frontend, security)"
+        help="Filter agents by category (e.g., development, frontend, security)",
     )
     parser.add_argument(
-        "--agent-id",
-        help="Generate specific agent by ID (e.g., coding-agent)"
+        "--agent-id", help="Generate specific agent by ID (e.g., coding-agent)"
     )
     parser.add_argument(
         "--clean",
         action="store_true",
-        help="Clean existing agent files before generating"
+        help="Clean existing agent files before generating",
     )
     parser.add_argument(
         "--list",
         action="store_true",
-        help="List available agents without generating files"
+        help="List available agents without generating files",
     )
-    
+
     args = parser.parse_args()
-    
+
     # List agents if requested
     if args.list:
         print("Available Agents:")
-        print("="*60)
+        print("=" * 60)
         for agent_id, agent_data in AGENT_DEFINITIONS.items():
             print(f"{agent_id:<30} {agent_data.get('name', 'Unknown')}")
             print(f"  Category: {agent_data.get('category', 'N/A')}")
             print(f"  Role: {agent_data.get('role', 'N/A')}")
             print()
         return
-    
+
     # Create generator
     generator = AgentGenerator(args.claude_dir)
-    
+
     # Clean directory if requested
     if args.clean:
         print(f"Cleaning {args.claude_dir}...")
         for file in Path(args.claude_dir).glob("*.md"):
-            if file.name not in ["claude-code-troubleshooter.md", "coding-agent.md"]:  # Preserve existing special agents
+            if file.name not in [
+                "claude-code-troubleshooter.md",
+                "coding-agent.md",
+            ]:  # Preserve existing special agents
                 file.unlink()
                 print(f"  Removed: {file.name}")
-    
+
     # Generate specific agent or all
     if args.agent_id:
         if args.agent_id not in AGENT_DEFINITIONS:
             print(f"Error: Agent '{args.agent_id}' not found")
             print("Use --list to see available agents")
             return
-        
+
         print(f"Generating agent: {args.agent_id}")
         agent_data = AGENT_DEFINITIONS[args.agent_id]
         filepath = generator.save_agent_file(args.agent_id, agent_data)
@@ -460,22 +466,23 @@ def main():
     else:
         # Generate all agents
         print(f"Generating agent files in {args.claude_dir}")
-        print("="*60)
+        print("=" * 60)
         results = generator.generate_all_agents(filter_category=args.category)
-        
+
         # Print summary
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Generation Summary:")
         print(f"  Total agents: {len(AGENT_DEFINITIONS)}")
         print(f"  Successfully generated: {len(results['generated'])}")
         print(f"  Failed: {len(results['failed'])}")
-        
-        if results['failed']:
+
+        if results["failed"]:
             print("\nFailed agents:")
-            for failure in results['failed']:
+            for failure in results["failed"]:
                 print(f"  - {failure['agent_id']}: {failure['error']}")
-        
+
         print(f"\nAgent files are ready in: {Path(args.claude_dir).absolute()}")
+
 
 if __name__ == "__main__":
     main()

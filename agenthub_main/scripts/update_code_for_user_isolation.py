@@ -14,9 +14,10 @@ SRC_PATH = BASE_PATH / "src"
 TEST_PATH = BASE_PATH / "src" / "tests"
 FRONTEND_PATH = BASE_PATH.parent / "agenthub-frontend"
 
+
 def find_files_to_update() -> dict[str, list[str]]:
     """Find all files that need updating for user isolation."""
-    
+
     files_to_update = {
         "repositories": [],
         "services": [],
@@ -24,53 +25,62 @@ def find_files_to_update() -> dict[str, list[str]]:
         "models": [],
         "schemas": [],
         "tests": [],
-        "frontend": []
+        "frontend": [],
     }
-    
+
     # Find repository files
-    repo_path = SRC_PATH / "fastmcp" / "task_management" / "infrastructure" / "repositories"
+    repo_path = (
+        SRC_PATH / "fastmcp" / "task_management" / "infrastructure" / "repositories"
+    )
     if repo_path.exists():
         for file in repo_path.rglob("*.py"):
             if "repository" in file.name.lower() and not file.name.startswith("__"):
                 files_to_update["repositories"].append(str(file))
-    
+
     # Find service files
     service_path = SRC_PATH / "fastmcp" / "task_management" / "application" / "services"
     if service_path.exists():
         for file in service_path.rglob("*.py"):
             if "service" in file.name.lower() and not file.name.startswith("__"):
                 files_to_update["services"].append(str(file))
-    
+
     # Find route files
     routes_path = SRC_PATH / "fastmcp" / "server" / "routes"
     if routes_path.exists():
         for file in routes_path.rglob("*.py"):
             if "route" in file.name.lower() and not file.name.startswith("__"):
                 files_to_update["routes"].append(str(file))
-    
+
     # Find model files
-    models_path = SRC_PATH / "fastmcp" / "task_management" / "infrastructure" / "database" / "models"
+    models_path = (
+        SRC_PATH
+        / "fastmcp"
+        / "task_management"
+        / "infrastructure"
+        / "database"
+        / "models"
+    )
     if models_path.exists():
         for file in models_path.rglob("*.py"):
             if not file.name.startswith("__"):
                 files_to_update["models"].append(str(file))
-    
+
     # Find schema files
     schema_paths = [
         SRC_PATH / "fastmcp" / "task_management" / "domain" / "entities",
-        SRC_PATH / "fastmcp" / "task_management" / "infrastructure" / "schemas"
+        SRC_PATH / "fastmcp" / "task_management" / "infrastructure" / "schemas",
     ]
     for schema_path in schema_paths:
         if schema_path.exists():
             for file in schema_path.rglob("*.py"):
                 if not file.name.startswith("__"):
                     files_to_update["schemas"].append(str(file))
-    
+
     # Find test files
     if TEST_PATH.exists():
         for file in TEST_PATH.rglob("test_*.py"):
             files_to_update["tests"].append(str(file))
-    
+
     # Find frontend files
     if FRONTEND_PATH.exists():
         frontend_src = FRONTEND_PATH / "src"
@@ -80,15 +90,19 @@ def find_files_to_update() -> dict[str, list[str]]:
             if services_dir.exists():
                 for file in services_dir.rglob("*.ts"):
                     files_to_update["frontend"].append(str(file))
-            
+
             # Component files that might need updates
             components_dir = frontend_src / "components"
             if components_dir.exists():
                 for file in components_dir.rglob("*.tsx"):
-                    if any(keyword in file.name.lower() for keyword in ["task", "project", "context"]):
+                    if any(
+                        keyword in file.name.lower()
+                        for keyword in ["task", "project", "context"]
+                    ):
                         files_to_update["frontend"].append(str(file))
-    
+
     return files_to_update
+
 
 def check_file_needs_update(filepath: str) -> dict[str, bool]:
     """Check what updates a file needs."""
@@ -96,35 +110,39 @@ def check_file_needs_update(filepath: str) -> dict[str, bool]:
         "user_id_field": False,
         "user_filter": False,
         "auth_check": False,
-        "test_coverage": False
+        "test_coverage": False,
     }
-    
+
     if not os.path.exists(filepath):
         return needs
-    
+
     with open(filepath) as f:
         content = f.read()
-    
+
     # Check for user_id field/parameter
     if "user_id" not in content:
         needs["user_id_field"] = True
-    
+
     # Check for user filtering in repositories
     if "repository" in filepath.lower():
-        if "apply_user_filter" not in content and "BaseUserScopedRepository" not in content:
+        if (
+            "apply_user_filter" not in content
+            and "BaseUserScopedRepository" not in content
+        ):
             needs["user_filter"] = True
-    
+
     # Check for auth in routes
     if "route" in filepath.lower():
         if "current_user" not in content and "get_current_user" not in content:
             needs["auth_check"] = True
-    
+
     # Check for test coverage
     if "test_" in os.path.basename(filepath):
         if "user_id" not in content:
             needs["test_coverage"] = True
-    
+
     return needs
+
 
 def generate_update_report(files_to_update: dict[str, list[str]]) -> str:
     """Generate a detailed report of required updates."""
@@ -133,19 +151,21 @@ def generate_update_report(files_to_update: dict[str, list[str]]) -> str:
     report.append("USER ISOLATION MIGRATION - CODE UPDATE REPORT")
     report.append("=" * 80)
     report.append("")
-    
+
     total_files = sum(len(files) for files in files_to_update.values())
     report.append(f"Total files to review: {total_files}")
     report.append("")
-    
+
     for category, files in files_to_update.items():
         report.append(f"\n{category.upper()} ({len(files)} files)")
         report.append("-" * 40)
-        
+
         for filepath in sorted(files):
-            relative_path = filepath.replace(str(BASE_PATH), "").replace(str(BASE_PATH.parent), "")
+            relative_path = filepath.replace(str(BASE_PATH), "").replace(
+                str(BASE_PATH.parent), ""
+            )
             needs = check_file_needs_update(filepath)
-            
+
             updates_needed = [k for k, v in needs.items() if v]
             if updates_needed:
                 report.append(f"❌ {relative_path}")
@@ -153,13 +173,13 @@ def generate_update_report(files_to_update: dict[str, list[str]]) -> str:
                     report.append(f"   - Needs: {update}")
             else:
                 report.append(f"✅ {relative_path} (may already be updated)")
-    
+
     report.append("")
     report.append("=" * 80)
     report.append("IMPLEMENTATION CHECKLIST (Follow TDD)")
     report.append("=" * 80)
     report.append("")
-    
+
     checklist = [
         "PHASE 1: Repository Layer (Foundation)",
         "  [ ] Write tests for BaseUserScopedRepository",
@@ -231,18 +251,19 @@ def generate_update_report(files_to_update: dict[str, list[str]]) -> str:
         "  [ ] Update developer guide",
         "  [ ] Create migration runbook",
         "  [ ] Update README files",
-        "  [ ] Create troubleshooting guide"
+        "  [ ] Create troubleshooting guide",
     ]
-    
+
     report.extend(checklist)
-    
+
     return "\n".join(report)
+
 
 def create_test_templates():
     """Create test template files for TDD."""
     templates_dir = BASE_PATH / "scripts" / "test_templates"
     templates_dir.mkdir(exist_ok=True)
-    
+
     # Repository test template
     repo_test = '''"""Test template for repository with user isolation."""
 import pytest
@@ -295,10 +316,10 @@ class TestRepositoryUserIsolation:
         # Test implementation here
         pass
 '''
-    
+
     with open(templates_dir / "test_repository_template.py", "w") as f:
         f.write(repo_test)
-    
+
     # Service test template
     service_test = '''"""Test template for service with user context."""
 import pytest
@@ -328,10 +349,10 @@ class TestServiceUserContext:
         # Test implementation here
         pass
 '''
-    
+
     with open(templates_dir / "test_service_template.py", "w") as f:
         f.write(service_test)
-    
+
     # Route test template
     route_test = '''"""Test template for routes with authentication."""
 import pytest
@@ -371,37 +392,38 @@ class TestRouteAuthentication:
         # Test implementation here
         pass
 '''
-    
+
     with open(templates_dir / "test_route_template.py", "w") as f:
         f.write(route_test)
-    
+
     print(f"✅ Test templates created in {templates_dir}")
+
 
 def main():
     """Main execution function."""
     print("Analyzing codebase for user isolation updates...")
     print("")
-    
+
     # Find all files that need updating
     files_to_update = find_files_to_update()
-    
+
     # Generate report
     report = generate_update_report(files_to_update)
-    
+
     # Save report
     report_path = BASE_PATH / "USER_ISOLATION_UPDATE_REPORT.md"
     with open(report_path, "w") as f:
         f.write(report)
-    
+
     print(report)
     print("")
     print(f"📄 Report saved to: {report_path}")
     print("")
-    
+
     # Create test templates
     create_test_templates()
     print("")
-    
+
     print("🚀 NEXT STEPS:")
     print("1. Start with PHASE 1 (Repository Layer)")
     print("2. For each file:")
@@ -413,6 +435,7 @@ def main():
     print("")
     print("⚠️  CRITICAL: This migration affects data security.")
     print("   Ensure thorough testing at each step!")
+
 
 if __name__ == "__main__":
     main()

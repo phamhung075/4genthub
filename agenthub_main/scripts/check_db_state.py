@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check database state for token balance migration"""
+
 import sys
 from pathlib import Path
 
@@ -31,22 +32,22 @@ def check_database_state():
         # Check if user_token_balances exists
         print("\n=== TABLE user_token_balances ===")
         inspector = inspect(engine)
-        if 'user_token_balances' in inspector.get_table_names():
+        if "user_token_balances" in inspector.get_table_names():
             print("✓ Table EXISTS")
 
             # Check columns
-            columns = inspector.get_columns('user_token_balances')
+            columns = inspector.get_columns("user_token_balances")
             print(f"\nColumns ({len(columns)}):")
             for col in columns:
                 print(f"  - {col['name']}: {col['type']}")
 
             # Check constraints
             print("\nForeign Keys:")
-            for fk in inspector.get_foreign_keys('user_token_balances'):
+            for fk in inspector.get_foreign_keys("user_token_balances"):
                 print(f"  - {fk}")
 
             print("\nIndexes:")
-            for idx in inspector.get_indexes('user_token_balances'):
+            for idx in inspector.get_indexes("user_token_balances"):
                 print(f"  - {idx}")
 
             # Check data
@@ -55,16 +56,21 @@ def check_database_state():
             print(f"\nRows: {count}")
 
             if count > 0:
-                result = conn.execute(text("""
+                result = conn.execute(
+                    text("""
                     SELECT id, user_id, available_tokens, monthly_quota
                     FROM user_token_balances
                     LIMIT 5
-                """))
+                """)
+                )
                 print("\nSample data:")
                 for row in result:
-                    print(f"  ID: {row[0][:8]}..., User: {row[1][:8]}..., Tokens: {row[2]}, Quota: {row[3]}")
+                    print(
+                        f"  ID: {row[0][:8]}..., User: {row[1][:8]}..., Tokens: {row[2]}, Quota: {row[3]}"
+                    )
         else:
             print("✗ Table DOES NOT EXIST")
+
 
 if __name__ == "__main__":
     check_database_state()

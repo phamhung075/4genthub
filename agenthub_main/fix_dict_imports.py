@@ -18,6 +18,7 @@ FILES_NEEDING_DICT = [
     "src/tests/unit/utilities/test_id_validator_behavioral.py",
 ]
 
+
 def add_dict_to_typing_import(file_path: Path) -> bool:
     """
     Add Dict to existing typing import or create new import line.
@@ -25,7 +26,7 @@ def add_dict_to_typing_import(file_path: Path) -> bool:
     Returns True if file was modified, False otherwise.
     """
     content = file_path.read_text()
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     modified = False
     new_lines = []
@@ -33,25 +34,25 @@ def add_dict_to_typing_import(file_path: Path) -> bool:
 
     for i, line in enumerate(lines):
         # Check if this is a typing import line
-        if re.match(r'from typing import ', line):
+        if re.match(r"from typing import ", line):
             typing_import_found = True
             # Check if Dict is already in the import
-            if 'Dict' not in line:
+            if "Dict" not in line:
                 # Add Dict to the import
                 # Handle both single-line and multi-line imports
-                if line.rstrip().endswith(','):
+                if line.rstrip().endswith(","):
                     # Multi-line import continuation
                     new_lines.append(line)
-                elif '(' in line:
+                elif "(" in line:
                     # Parenthesized import
                     new_lines.append(line)
                 else:
                     # Simple single-line import
                     # Insert Dict at the beginning for alphabetical order
-                    import_part = line.split('import ', 1)[1]
-                    imports = [imp.strip() for imp in import_part.split(',')]
-                    if 'Dict' not in imports:
-                        imports.insert(0, 'Dict')
+                    import_part = line.split("import ", 1)[1]
+                    imports = [imp.strip() for imp in import_part.split(",")]
+                    if "Dict" not in imports:
+                        imports.insert(0, "Dict")
                         imports.sort()  # Keep alphabetical
                         new_line = f"from typing import {', '.join(imports)}"
                         new_lines.append(new_line)
@@ -62,24 +63,25 @@ def add_dict_to_typing_import(file_path: Path) -> bool:
             new_lines.append(line)
 
     # If no typing import found, add it after other imports
-    if not typing_import_found and 'Dict' in content:
+    if not typing_import_found and "Dict" in content:
         # Find the last import line
         import_end_idx = 0
         for i, line in enumerate(new_lines):
-            if line.startswith('import ') or line.startswith('from '):
+            if line.startswith("import ") or line.startswith("from "):
                 import_end_idx = i
 
         # Insert after last import
-        new_lines.insert(import_end_idx + 1, 'from typing import Dict')
+        new_lines.insert(import_end_idx + 1, "from typing import Dict")
         modified = True
 
     if modified:
-        file_path.write_text('\n'.join(new_lines))
+        file_path.write_text("\n".join(new_lines))
         print(f"✅ Fixed: {file_path}")
         return True
     else:
         print(f"⏭️  Skipped: {file_path} (already has Dict or doesn't need it)")
         return False
+
 
 def main():
     root = Path("/home/daihu/__projects__/4genthub/agenthub_main")
@@ -95,6 +97,7 @@ def main():
 
     print(f"\n📊 Summary: Modified {modified_count} files")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check if there are existing users without token balances"""
+
 import sys
 from pathlib import Path
 
@@ -30,13 +31,15 @@ def check_users():
         print(f"Token balances: {balance_count}")
 
         # Find users without balances
-        result = conn.execute(text("""
+        result = conn.execute(
+            text("""
             SELECT u.id, u.email, u.created_at
             FROM users u
             LEFT JOIN user_token_balances utb ON u.id = utb.user_id
             WHERE utb.id IS NULL
             LIMIT 10
-        """))
+        """)
+        )
 
         users_without_balances = list(result)
         if users_without_balances:
@@ -45,6 +48,7 @@ def check_users():
                 print(f"  - {row[1]} (ID: {row[0][:8]}..., created: {row[2]})")
         else:
             print("\n✓ All users have token balances")
+
 
 if __name__ == "__main__":
     check_users()

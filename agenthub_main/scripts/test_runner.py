@@ -55,7 +55,7 @@ class TestRunner:
                 cwd=self.base_dir,
                 capture_output=True,
                 text=True,
-                timeout=600  # 10 minutes timeout
+                timeout=600,  # 10 minutes timeout
             )
             duration = time.time() - start_time
 
@@ -65,7 +65,7 @@ class TestRunner:
                 "stdout": result.stdout,
                 "stderr": result.stderr,
                 "duration": duration,
-                "command": " ".join(cmd)
+                "command": " ".join(cmd),
             }
         except subprocess.TimeoutExpired:
             duration = time.time() - start_time
@@ -75,48 +75,59 @@ class TestRunner:
                 "stdout": "",
                 "stderr": "Command timed out",
                 "duration": duration,
-                "command": " ".join(cmd)
+                "command": " ".join(cmd),
             }
 
     def run_unit_tests(self) -> dict[str, Any]:
         """Run unit tests with coverage."""
         cmd = [
-            "python", "-m", "pytest",
-            "-m", "unit",
+            "python",
+            "-m",
+            "pytest",
+            "-m",
+            "unit",
             "--cov=src",
             "--cov-report=html",
             "--cov-report=term-missing",
             "--cov-report=xml",
             "--cov-fail-under=80",
             "--junit-xml=test_reports/unit_tests.xml",
-            "-v"
+            "-v",
         ]
         return self.run_command(cmd, "Running unit tests with coverage")
 
     def run_integration_tests(self) -> dict[str, Any]:
         """Run integration tests."""
         cmd = [
-            "python", "-m", "pytest",
-            "-m", "integration",
+            "python",
+            "-m",
+            "pytest",
+            "-m",
+            "integration",
             "--junit-xml=test_reports/integration_tests.xml",
-            "-v"
+            "-v",
         ]
         return self.run_command(cmd, "Running integration tests")
 
     def run_e2e_tests(self) -> dict[str, Any]:
         """Run end-to-end tests."""
         cmd = [
-            "python", "-m", "pytest",
-            "-m", "e2e",
+            "python",
+            "-m",
+            "pytest",
+            "-m",
+            "e2e",
             "--junit-xml=test_reports/e2e_tests.xml",
-            "-v"
+            "-v",
         ]
         return self.run_command(cmd, "Running end-to-end tests")
 
     def run_all_tests(self) -> dict[str, Any]:
         """Run all tests with comprehensive coverage."""
         cmd = [
-            "python", "-m", "pytest",
+            "python",
+            "-m",
+            "pytest",
             "--cov=src",
             "--cov-report=html",
             "--cov-report=term-missing",
@@ -124,31 +135,37 @@ class TestRunner:
             "--cov-fail-under=80",
             "--junit-xml=test_reports/all_tests.xml",
             "--durations=10",
-            "-v"
+            "-v",
         ]
         return self.run_command(cmd, "Running all tests with coverage")
 
     def run_performance_tests(self) -> dict[str, Any]:
         """Run performance tests."""
         cmd = [
-            "python", "-m", "pytest",
-            "-m", "performance",
+            "python",
+            "-m",
+            "pytest",
+            "-m",
+            "performance",
             "--junit-xml=test_reports/performance_tests.xml",
-            "-v"
+            "-v",
         ]
         return self.run_command(cmd, "Running performance tests")
 
     def run_parallel_tests(self) -> dict[str, Any]:
         """Run tests in parallel for faster execution."""
         cmd = [
-            "python", "-m", "pytest",
-            "-n", "auto",
+            "python",
+            "-m",
+            "pytest",
+            "-n",
+            "auto",
             "--cov=src",
             "--cov-report=html",
             "--cov-report=term-missing",
             "--cov-report=xml",
             "--junit-xml=test_reports/parallel_tests.xml",
-            "-v"
+            "-v",
         ]
         return self.run_command(cmd, "Running tests in parallel")
 
@@ -169,7 +186,9 @@ class TestRunner:
             if coverage_json_path.exists():
                 with open(coverage_json_path) as f:
                     coverage_data = json.load(f)
-                total_coverage = coverage_data.get("totals", {}).get("percent_covered", 0)
+                total_coverage = coverage_data.get("totals", {}).get(
+                    "percent_covered", 0
+                )
                 print(f"📊 Total coverage: {total_coverage:.2f}%")
                 return total_coverage >= threshold
             return False
@@ -180,20 +199,31 @@ class TestRunner:
     def save_test_results(self, results: dict[str, Any], output_file: str):
         """Save test results to JSON file."""
         results_file = self.reports_dir / output_file
-        with open(results_file, 'w') as f:
+        with open(results_file, "w") as f:
             json.dump(results, f, indent=2)
         print(f"💾 Test results saved to: {results_file}")
 
+
 def main():
     parser = argparse.ArgumentParser(description="Enhanced Test Runner")
-    parser.add_argument("--type", choices=["unit", "integration", "e2e", "all", "performance", "parallel"],
-                       default="all", help="Type of tests to run")
-    parser.add_argument("--coverage-threshold", type=float, default=80.0,
-                       help="Coverage threshold percentage")
-    parser.add_argument("--output", default="test_results.json",
-                       help="Output file for test results")
-    parser.add_argument("--ci", action="store_true",
-                       help="CI mode - generate machine-readable reports")
+    parser.add_argument(
+        "--type",
+        choices=["unit", "integration", "e2e", "all", "performance", "parallel"],
+        default="all",
+        help="Type of tests to run",
+    )
+    parser.add_argument(
+        "--coverage-threshold",
+        type=float,
+        default=80.0,
+        help="Coverage threshold percentage",
+    )
+    parser.add_argument(
+        "--output", default="test_results.json", help="Output file for test results"
+    )
+    parser.add_argument(
+        "--ci", action="store_true", help="CI mode - generate machine-readable reports"
+    )
 
     args = parser.parse_args()
 
@@ -248,13 +278,20 @@ def main():
     if args.ci:
         # Output JSON for CI tools
         print("\n📋 CI Results:")
-        print(json.dumps({
-            "success": result["success"],
-            "duration": result["duration"],
-            "coverage_threshold_met": result.get("coverage_threshold_met", True)
-        }))
+        print(
+            json.dumps(
+                {
+                    "success": result["success"],
+                    "duration": result["duration"],
+                    "coverage_threshold_met": result.get(
+                        "coverage_threshold_met", True
+                    ),
+                }
+            )
+        )
 
     sys.exit(exit_code)
+
 
 if __name__ == "__main__":
     main()

@@ -8,8 +8,10 @@ import sys
 from pathlib import Path
 
 # Set up environment for PostgreSQL
-os.environ['DATABASE_TYPE'] = 'postgresql'
-os.environ['DATABASE_URL'] = 'postgresql://agenthub_user:agenthub_password@localhost:5432/agenthub'
+os.environ["DATABASE_TYPE"] = "postgresql"
+os.environ["DATABASE_URL"] = (
+    "postgresql://agenthub_user:agenthub_password@localhost:5432/agenthub"
+)
 
 # Add the project to Python path
 project_root = Path(__file__).parent
@@ -24,16 +26,17 @@ from sqlalchemy import text
 def create_tables_manually():
     """Create missing database tables with correct types"""
     print("🔧 Creating missing database tables manually...")
-    
+
     try:
         # Get database configuration
         db = get_db_config()
         print("✅ Database connection established")
-        
+
         with db.get_session() as session:
             # Create project_git_branchs table
             print("📋 Creating project_git_branchs table...")
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS project_git_branchs (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -49,21 +52,27 @@ def create_tables_manually():
                     completed_task_count INTEGER DEFAULT 0,
                     UNIQUE(id, project_id)
                 );
-            """))
-            
+            """)
+            )
+
             # Create indexes for project_git_branchs
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE INDEX IF NOT EXISTS idx_project_git_branchs_project_id ON project_git_branchs(project_id);
-            """))
-            session.execute(text("""
+            """)
+            )
+            session.execute(
+                text("""
                 CREATE INDEX IF NOT EXISTS idx_project_git_branchs_status ON project_git_branchs(status);
-            """))
-            
+            """)
+            )
+
             print("✅ project_git_branchs table created")
-            
-            # Create task_subtasks table  
+
+            # Create task_subtasks table
             print("📋 Creating task_subtasks table...")
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS task_subtasks (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                     task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
@@ -83,23 +92,29 @@ def create_tables_manually():
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                     completed_at TIMESTAMP WITH TIME ZONE
                 );
-            """))
-            
+            """)
+            )
+
             # Create indexes for task_subtasks
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE INDEX IF NOT EXISTS idx_task_subtasks_task_id ON task_subtasks(task_id);
-            """))
-            session.execute(text("""
+            """)
+            )
+            session.execute(
+                text("""
                 CREATE INDEX IF NOT EXISTS idx_task_subtasks_status ON task_subtasks(status);
-            """))
-            
+            """)
+            )
+
             print("✅ task_subtasks table created")
-            
+
             # Create other missing tables that might be needed
             print("📋 Creating additional tables...")
-            
+
             # task_assignees table
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS task_assignees (
                     id SERIAL PRIMARY KEY,
                     task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
@@ -108,10 +123,12 @@ def create_tables_manually():
                     assigned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                     UNIQUE(task_id, assignee_id)
                 );
-            """))
-            
+            """)
+            )
+
             # task_dependencies table
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS task_dependencies (
                     id SERIAL PRIMARY KEY,
                     task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
@@ -121,10 +138,12 @@ def create_tables_manually():
                     UNIQUE(task_id, depends_on_task_id),
                     CHECK(task_id != depends_on_task_id)
                 );
-            """))
-            
+            """)
+            )
+
             # task_labels table
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS task_labels (
                     id SERIAL PRIMARY KEY,
                     task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
@@ -133,10 +152,12 @@ def create_tables_manually():
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                     UNIQUE(task_id, label_name)
                 );
-            """))
-            
+            """)
+            )
+
             # agents table
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS agents (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -149,10 +170,12 @@ def create_tables_manually():
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                     metadata JSONB DEFAULT '{}'
                 );
-            """))
-            
+            """)
+            )
+
             # labels table
-            session.execute(text("""
+            session.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS labels (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -161,32 +184,39 @@ def create_tables_manually():
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                 );
-            """))
-            
+            """)
+            )
+
             # Commit all changes
             session.commit()
             print("✅ All tables created and committed")
-            
+
             # Verify tables were created
-            result = session.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name"))
+            result = session.execute(
+                text(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name"
+                )
+            )
             all_tables = [row[0] for row in result.fetchall()]
             print(f"📋 Total tables now: {len(all_tables)}")
             print(f"📋 All tables: {all_tables}")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Failed to create tables: {e}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 if __name__ == "__main__":
     print("🚀 Manual Database Schema Creation Tool")
     print("=" * 60)
-    
+
     success = create_tables_manually()
-    
+
     if success:
         print("\n🎉 SUCCESS: All database tables are now available!")
         sys.exit(0)

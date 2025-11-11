@@ -24,9 +24,18 @@ AGENT_DEFINITIONS = {
         "category": "orchestration",
         "type": "orchestrator",
         "priority": "critical",
-        "capabilities": ["Multi-agent coordination", "Strategic planning", "Resource allocation", "Workflow orchestration"],
+        "capabilities": [
+            "Multi-agent coordination",
+            "Strategic planning",
+            "Resource allocation",
+            "Workflow orchestration",
+        ],
         "tools": ["All MCP tools available"],
-        "specializations": ["Complex project management", "Cross-functional coordination", "Agent delegation"]
+        "specializations": [
+            "Complex project management",
+            "Cross-functional coordination",
+            "Agent delegation",
+        ],
     },
     "@development_orchestrator_agent": {
         "name": "Development Orchestrator Agent",
@@ -35,9 +44,17 @@ AGENT_DEFINITIONS = {
         "category": "orchestration",
         "type": "orchestrator",
         "priority": "high",
-        "capabilities": ["Development workflow management", "Code review coordination", "Sprint planning"],
+        "capabilities": [
+            "Development workflow management",
+            "Code review coordination",
+            "Sprint planning",
+        ],
         "tools": ["All development tools"],
-        "specializations": ["Agile development", "CI/CD coordination", "Development best practices"]
+        "specializations": [
+            "Agile development",
+            "CI/CD coordination",
+            "Development best practices",
+        ],
     },
     "test-orchestrator-agent": {
         "name": "Test Orchestrator Agent",
@@ -46,9 +63,13 @@ AGENT_DEFINITIONS = {
         "category": "quality",
         "type": "orchestrator",
         "priority": "high",
-        "capabilities": ["Test strategy design", "Test suite orchestration", "Coverage analysis"],
+        "capabilities": [
+            "Test strategy design",
+            "Test suite orchestration",
+            "Coverage analysis",
+        ],
         "tools": ["Bash", "Write", "Read", "Edit", "TodoWrite"],
-        "specializations": ["Pytest", "Jest", "E2E testing", "Performance testing"]
+        "specializations": ["Pytest", "Jest", "E2E testing", "Performance testing"],
     },
     "marketing-strategy-orchestrator-agent": {
         "name": "Marketing Strategy Orchestrator Agent",
@@ -59,9 +80,12 @@ AGENT_DEFINITIONS = {
         "priority": "normal",
         "capabilities": ["Campaign planning", "Content strategy", "Market analysis"],
         "tools": ["Documentation tools", "Analytics tools"],
-        "specializations": ["Digital marketing", "Content marketing", "Growth strategies"]
+        "specializations": [
+            "Digital marketing",
+            "Content marketing",
+            "Growth strategies",
+        ],
     },
-    
     # Core Development Agents
     "coding-agent": {
         "name": "Coding Agent",
@@ -70,9 +94,19 @@ AGENT_DEFINITIONS = {
         "category": "development",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["Code implementation", "API development", "Algorithm optimization"],
+        "capabilities": [
+            "Code implementation",
+            "API development",
+            "Algorithm optimization",
+        ],
         "tools": ["Edit", "Write", "Read", "MultiEdit", "Bash", "Grep", "Glob"],
-        "specializations": ["Python", "TypeScript", "React", "FastAPI", "DDD architecture"]
+        "specializations": [
+            "Python",
+            "TypeScript",
+            "React",
+            "FastAPI",
+            "DDD architecture",
+        ],
     },
     "debugger-agent": {
         "name": "Debugger Agent",
@@ -81,9 +115,13 @@ AGENT_DEFINITIONS = {
         "category": "development",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["Error analysis", "Performance debugging", "Memory leak detection"],
+        "capabilities": [
+            "Error analysis",
+            "Performance debugging",
+            "Memory leak detection",
+        ],
         "tools": ["Read", "Grep", "Bash", "Edit", "mcp__ide__getDiagnostics"],
-        "specializations": ["Runtime errors", "Logic bugs", "Performance optimization"]
+        "specializations": ["Runtime errors", "Logic bugs", "Performance optimization"],
     },
     "code-reviewer-agent": {
         "name": "Code Reviewer Agent",
@@ -92,9 +130,13 @@ AGENT_DEFINITIONS = {
         "category": "development",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["Code review", "Standards enforcement", "Best practices validation"],
+        "capabilities": [
+            "Code review",
+            "Standards enforcement",
+            "Best practices validation",
+        ],
         "tools": ["Read", "Grep", "Edit"],
-        "specializations": ["Clean code", "SOLID principles", "Design patterns"]
+        "specializations": ["Clean code", "SOLID principles", "Design patterns"],
     },
     "@backend_agent": {
         "name": "Backend Agent",
@@ -103,9 +145,13 @@ AGENT_DEFINITIONS = {
         "category": "development",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["API development", "Database integration", "Server optimization"],
+        "capabilities": [
+            "API development",
+            "Database integration",
+            "Server optimization",
+        ],
         "tools": ["Edit", "Write", "Read", "Bash"],
-        "specializations": ["FastAPI", "Node.js", "Database design", "Microservices"]
+        "specializations": ["FastAPI", "Node.js", "Database design", "Microservices"],
     },
     "@frontend_agent": {
         "name": "Frontend Agent",
@@ -114,11 +160,14 @@ AGENT_DEFINITIONS = {
         "category": "frontend",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["Component development", "State management", "UI optimization"],
+        "capabilities": [
+            "Component development",
+            "State management",
+            "UI optimization",
+        ],
         "tools": ["Edit", "Write", "Read", "WebFetch"],
-        "specializations": ["React", "Vue", "Angular", "TypeScript"]
+        "specializations": ["React", "Vue", "Angular", "TypeScript"],
     },
-    
     # Architecture and Design Agents
     "system-architect-agent": {
         "name": "System Architect Agent",
@@ -127,9 +176,17 @@ AGENT_DEFINITIONS = {
         "category": "architecture",
         "type": "specialist",
         "priority": "critical",
-        "capabilities": ["Architecture design", "System modeling", "Technology selection"],
+        "capabilities": [
+            "Architecture design",
+            "System modeling",
+            "Technology selection",
+        ],
         "tools": ["Documentation tools", "Diagramming tools"],
-        "specializations": ["Microservices", "Cloud architecture", "Scalability patterns"]
+        "specializations": [
+            "Microservices",
+            "Cloud architecture",
+            "Scalability patterns",
+        ],
     },
     "@code_architect_agent": {
         "name": "Code Architect Agent",
@@ -138,9 +195,13 @@ AGENT_DEFINITIONS = {
         "category": "architecture",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["Code structure design", "Pattern implementation", "Refactoring strategies"],
+        "capabilities": [
+            "Code structure design",
+            "Pattern implementation",
+            "Refactoring strategies",
+        ],
         "tools": ["Read", "Write", "Edit"],
-        "specializations": ["DDD", "Clean architecture", "Design patterns"]
+        "specializations": ["DDD", "Clean architecture", "Design patterns"],
     },
     "@database_architect_agent": {
         "name": "Database Architect Agent",
@@ -151,7 +212,7 @@ AGENT_DEFINITIONS = {
         "priority": "high",
         "capabilities": ["Schema design", "Query optimization", "Data migration"],
         "tools": ["Bash", "Read", "Write", "Edit"],
-        "specializations": ["PostgreSQL", "MongoDB", "Redis", "Database migrations"]
+        "specializations": ["PostgreSQL", "MongoDB", "Redis", "Database migrations"],
     },
     "@workflow_architect_agent": {
         "name": "Workflow Architect Agent",
@@ -160,9 +221,13 @@ AGENT_DEFINITIONS = {
         "category": "architecture",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Workflow design", "Process optimization", "Automation planning"],
+        "capabilities": [
+            "Workflow design",
+            "Process optimization",
+            "Automation planning",
+        ],
         "tools": ["Documentation tools", "TodoWrite"],
-        "specializations": ["BPMN", "Workflow automation", "Process improvement"]
+        "specializations": ["BPMN", "Workflow automation", "Process improvement"],
     },
     "@prd_architect_agent": {
         "name": "PRD Architect Agent",
@@ -171,11 +236,18 @@ AGENT_DEFINITIONS = {
         "category": "product",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["Requirements gathering", "Specification writing", "User story creation"],
+        "capabilities": [
+            "Requirements gathering",
+            "Specification writing",
+            "User story creation",
+        ],
         "tools": ["Write", "Read", "Documentation tools"],
-        "specializations": ["Product planning", "Feature specification", "Acceptance criteria"]
+        "specializations": [
+            "Product planning",
+            "Feature specification",
+            "Acceptance criteria",
+        ],
     },
-    
     # UI/UX and Design Agents
     "@ui_designer_agent": {
         "name": "UI Designer Agent",
@@ -186,7 +258,12 @@ AGENT_DEFINITIONS = {
         "priority": "normal",
         "capabilities": ["Component design", "Responsive layouts", "Accessibility"],
         "tools": ["Edit", "Write", "Read", "WebFetch", "mcp__shadcn-ui-server__*"],
-        "specializations": ["React", "Tailwind CSS", "Material-UI", "Mobile responsiveness"]
+        "specializations": [
+            "React",
+            "Tailwind CSS",
+            "Material-UI",
+            "Mobile responsiveness",
+        ],
     },
     "@ui_designer_expert_shadcn_agent": {
         "name": "UI Designer Expert Shadcn Agent",
@@ -195,9 +272,13 @@ AGENT_DEFINITIONS = {
         "category": "frontend",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Shadcn component integration", "Theme customization", "Component composition"],
+        "capabilities": [
+            "Shadcn component integration",
+            "Theme customization",
+            "Component composition",
+        ],
         "tools": ["mcp__shadcn-ui-server__*", "Edit", "Write"],
-        "specializations": ["shadcn/ui", "Radix UI", "Tailwind CSS", "React hooks"]
+        "specializations": ["shadcn/ui", "Radix UI", "Tailwind CSS", "React hooks"],
     },
     "@ux_researcher_agent": {
         "name": "UX Researcher Agent",
@@ -208,7 +289,7 @@ AGENT_DEFINITIONS = {
         "priority": "normal",
         "capabilities": ["User research", "Usability testing", "Persona development"],
         "tools": ["Documentation tools", "Analytics tools"],
-        "specializations": ["User interviews", "A/B testing", "User journey mapping"]
+        "specializations": ["User interviews", "A/B testing", "User journey mapping"],
     },
     "@design_qa_analyst_agent": {
         "name": "Design QA Analyst Agent",
@@ -217,11 +298,18 @@ AGENT_DEFINITIONS = {
         "category": "design",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Design review", "Consistency checking", "Accessibility validation"],
+        "capabilities": [
+            "Design review",
+            "Consistency checking",
+            "Accessibility validation",
+        ],
         "tools": ["Read", "WebFetch"],
-        "specializations": ["Design systems", "WCAG compliance", "Visual regression testing"]
+        "specializations": [
+            "Design systems",
+            "WCAG compliance",
+            "Visual regression testing",
+        ],
     },
-    
     # Testing and QA Agents
     "@qa_engineer": {
         "name": "QA Engineer Agent",
@@ -232,7 +320,7 @@ AGENT_DEFINITIONS = {
         "priority": "high",
         "capabilities": ["Test planning", "Bug tracking", "Quality metrics"],
         "tools": ["Bash", "Read", "Write"],
-        "specializations": ["Test automation", "Manual testing", "Test documentation"]
+        "specializations": ["Test automation", "Manual testing", "Test documentation"],
     },
     "@functional_tester_agent": {
         "name": "Functional Tester Agent",
@@ -241,9 +329,17 @@ AGENT_DEFINITIONS = {
         "category": "quality",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Functional testing", "Feature validation", "Regression testing"],
+        "capabilities": [
+            "Functional testing",
+            "Feature validation",
+            "Regression testing",
+        ],
         "tools": ["Bash", "Read", "Test tools"],
-        "specializations": ["Black-box testing", "User acceptance testing", "Smoke testing"]
+        "specializations": [
+            "Black-box testing",
+            "User acceptance testing",
+            "Smoke testing",
+        ],
     },
     "@exploratory_tester_agent": {
         "name": "Exploratory Tester Agent",
@@ -252,9 +348,17 @@ AGENT_DEFINITIONS = {
         "category": "quality",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Exploratory testing", "Edge case discovery", "Usability testing"],
+        "capabilities": [
+            "Exploratory testing",
+            "Edge case discovery",
+            "Usability testing",
+        ],
         "tools": ["Bash", "Read", "WebFetch"],
-        "specializations": ["Ad-hoc testing", "Scenario-based testing", "Risk-based testing"]
+        "specializations": [
+            "Ad-hoc testing",
+            "Scenario-based testing",
+            "Risk-based testing",
+        ],
     },
     "@integration_specialist_agent": {
         "name": "Integration Specialist Agent",
@@ -265,7 +369,7 @@ AGENT_DEFINITIONS = {
         "priority": "high",
         "capabilities": ["Integration testing", "API testing", "Contract testing"],
         "tools": ["Bash", "Read", "API testing tools"],
-        "specializations": ["REST APIs", "GraphQL", "Microservices testing"]
+        "specializations": ["REST APIs", "GraphQL", "Microservices testing"],
     },
     "performance-load-tester-agent": {
         "name": "Performance Load Tester Agent",
@@ -276,7 +380,7 @@ AGENT_DEFINITIONS = {
         "priority": "high",
         "capabilities": ["Load testing", "Stress testing", "Performance profiling"],
         "tools": ["Bash", "Performance tools"],
-        "specializations": ["JMeter", "Locust", "Performance optimization"]
+        "specializations": ["JMeter", "Locust", "Performance optimization"],
     },
     "@security_penetration_tester_agent": {
         "name": "Security Penetration Tester Agent",
@@ -285,9 +389,17 @@ AGENT_DEFINITIONS = {
         "category": "security",
         "type": "specialist",
         "priority": "critical",
-        "capabilities": ["Penetration testing", "Vulnerability scanning", "Security assessment"],
+        "capabilities": [
+            "Penetration testing",
+            "Vulnerability scanning",
+            "Security assessment",
+        ],
         "tools": ["Security tools", "Bash"],
-        "specializations": ["OWASP testing", "Network security", "Application security"]
+        "specializations": [
+            "OWASP testing",
+            "Network security",
+            "Application security",
+        ],
     },
     "uat-coordinator-agent": {
         "name": "UAT Coordinator Agent",
@@ -296,11 +408,18 @@ AGENT_DEFINITIONS = {
         "category": "quality",
         "type": "coordinator",
         "priority": "normal",
-        "capabilities": ["UAT planning", "Stakeholder coordination", "Test scenario creation"],
+        "capabilities": [
+            "UAT planning",
+            "Stakeholder coordination",
+            "Test scenario creation",
+        ],
         "tools": ["Documentation tools", "Communication tools"],
-        "specializations": ["UAT processes", "Stakeholder management", "Test documentation"]
+        "specializations": [
+            "UAT processes",
+            "Stakeholder management",
+            "Test documentation",
+        ],
     },
-    
     # Security and Compliance Agents
     "security-auditor-agent": {
         "name": "Security Auditor Agent",
@@ -311,7 +430,7 @@ AGENT_DEFINITIONS = {
         "priority": "critical",
         "capabilities": ["Security auditing", "Compliance checking", "Risk assessment"],
         "tools": ["Read", "Grep", "Bash", "mcp__agenthub_http__manage_compliance"],
-        "specializations": ["OWASP", "GDPR", "Security best practices"]
+        "specializations": ["OWASP", "GDPR", "Security best practices"],
     },
     "@security_agent": {
         "name": "Security Agent",
@@ -322,9 +441,8 @@ AGENT_DEFINITIONS = {
         "priority": "high",
         "capabilities": ["Security implementation", "Authentication", "Authorization"],
         "tools": ["Read", "Write", "Edit"],
-        "specializations": ["JWT", "OAuth", "Encryption"]
+        "specializations": ["JWT", "OAuth", "Encryption"],
     },
-    
     # DevOps and Infrastructure Agents
     "devops-agent": {
         "name": "DevOps Agent",
@@ -333,9 +451,13 @@ AGENT_DEFINITIONS = {
         "category": "infrastructure",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["CI/CD setup", "Container management", "Infrastructure automation"],
+        "capabilities": [
+            "CI/CD setup",
+            "Container management",
+            "Infrastructure automation",
+        ],
         "tools": ["Bash", "Docker tools", "Kubernetes tools"],
-        "specializations": ["Docker", "Kubernetes", "GitHub Actions", "Terraform"]
+        "specializations": ["Docker", "Kubernetes", "GitHub Actions", "Terraform"],
     },
     "@devops_engineer_agent": {
         "name": "DevOps Engineer Agent",
@@ -344,9 +466,13 @@ AGENT_DEFINITIONS = {
         "category": "infrastructure",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["Pipeline engineering", "Infrastructure as Code", "Monitoring setup"],
+        "capabilities": [
+            "Pipeline engineering",
+            "Infrastructure as Code",
+            "Monitoring setup",
+        ],
         "tools": ["Bash", "Write", "Read", "Edit"],
-        "specializations": ["Jenkins", "GitLab CI", "AWS", "Azure"]
+        "specializations": ["Jenkins", "GitLab CI", "AWS", "Azure"],
     },
     "health-monitor-agent": {
         "name": "Health Monitor Agent",
@@ -355,9 +481,13 @@ AGENT_DEFINITIONS = {
         "category": "monitoring",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["Health monitoring", "Alert configuration", "Performance tracking"],
+        "capabilities": [
+            "Health monitoring",
+            "Alert configuration",
+            "Performance tracking",
+        ],
         "tools": ["Monitoring tools", "Bash"],
-        "specializations": ["Prometheus", "Grafana", "ELK stack", "APM tools"]
+        "specializations": ["Prometheus", "Grafana", "ELK stack", "APM tools"],
     },
     "@system_health_agent": {
         "name": "System Health Agent",
@@ -368,9 +498,12 @@ AGENT_DEFINITIONS = {
         "priority": "normal",
         "capabilities": ["Health checks", "Diagnostics", "System analysis"],
         "tools": ["Bash", "Read"],
-        "specializations": ["System diagnostics", "Resource monitoring", "Log analysis"]
+        "specializations": [
+            "System diagnostics",
+            "Resource monitoring",
+            "Log analysis",
+        ],
     },
-    
     # Planning and Management Agents
     "task-planning-agent": {
         "name": "Task Planning Agent",
@@ -379,9 +512,13 @@ AGENT_DEFINITIONS = {
         "category": "planning",
         "type": "specialist",
         "priority": "high",
-        "capabilities": ["Task decomposition", "Timeline estimation", "Dependency analysis"],
+        "capabilities": [
+            "Task decomposition",
+            "Timeline estimation",
+            "Dependency analysis",
+        ],
         "tools": ["TodoWrite", "mcp__agenthub_http__manage_task"],
-        "specializations": ["Agile planning", "Sprint planning", "Milestone tracking"]
+        "specializations": ["Agile planning", "Sprint planning", "Milestone tracking"],
     },
     "@task_deep_manager_agent": {
         "name": "Task Deep Manager Agent",
@@ -390,9 +527,17 @@ AGENT_DEFINITIONS = {
         "category": "planning",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Deep task analysis", "Complexity assessment", "Risk identification"],
+        "capabilities": [
+            "Deep task analysis",
+            "Complexity assessment",
+            "Risk identification",
+        ],
         "tools": ["TodoWrite", "Analysis tools"],
-        "specializations": ["Complex project management", "Risk management", "Resource planning"]
+        "specializations": [
+            "Complex project management",
+            "Risk management",
+            "Resource planning",
+        ],
     },
     "@campaign_manager_agent": {
         "name": "Campaign Manager Agent",
@@ -401,11 +546,18 @@ AGENT_DEFINITIONS = {
         "category": "business",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Campaign management", "Timeline coordination", "Resource allocation"],
+        "capabilities": [
+            "Campaign management",
+            "Timeline coordination",
+            "Resource allocation",
+        ],
         "tools": ["TodoWrite", "Documentation tools"],
-        "specializations": ["Marketing campaigns", "Product launches", "Event management"]
+        "specializations": [
+            "Marketing campaigns",
+            "Product launches",
+            "Event management",
+        ],
     },
-    
     # Documentation and Research Agents
     "documentation-agent": {
         "name": "Documentation Agent",
@@ -416,7 +568,7 @@ AGENT_DEFINITIONS = {
         "priority": "normal",
         "capabilities": ["API documentation", "User guides", "Technical specs"],
         "tools": ["Write", "Read", "Edit", "Glob"],
-        "specializations": ["Markdown", "API docs", "Architecture docs"]
+        "specializations": ["Markdown", "API docs", "Architecture docs"],
     },
     "deep-research-agent": {
         "name": "Deep Research Agent",
@@ -425,9 +577,17 @@ AGENT_DEFINITIONS = {
         "category": "research",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Technology research", "Solution analysis", "Best practices research"],
+        "capabilities": [
+            "Technology research",
+            "Solution analysis",
+            "Best practices research",
+        ],
         "tools": ["WebFetch", "Read", "Documentation tools"],
-        "specializations": ["Technology evaluation", "Market research", "Competitive analysis"]
+        "specializations": [
+            "Technology evaluation",
+            "Market research",
+            "Competitive analysis",
+        ],
     },
     "@mcp_researcher_agent": {
         "name": "MCP Researcher Agent",
@@ -438,7 +598,7 @@ AGENT_DEFINITIONS = {
         "priority": "normal",
         "capabilities": ["MCP research", "Tool analysis", "Integration patterns"],
         "tools": ["Read", "WebFetch", "Documentation tools"],
-        "specializations": ["MCP tools", "Agent systems", "Integration patterns"]
+        "specializations": ["MCP tools", "Agent systems", "Integration patterns"],
     },
     "technology-advisor-agent": {
         "name": "Technology Advisor Agent",
@@ -447,11 +607,18 @@ AGENT_DEFINITIONS = {
         "category": "advisory",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Technology selection", "Architecture advice", "Best practices guidance"],
+        "capabilities": [
+            "Technology selection",
+            "Architecture advice",
+            "Best practices guidance",
+        ],
         "tools": ["Documentation tools", "Research tools"],
-        "specializations": ["Technology trends", "Architecture patterns", "Tool selection"]
+        "specializations": [
+            "Technology trends",
+            "Architecture patterns",
+            "Tool selection",
+        ],
     },
-    
     # Specialized Testing Agents
     "@test_agent": {
         "name": "Test Agent",
@@ -462,7 +629,7 @@ AGENT_DEFINITIONS = {
         "priority": "normal",
         "capabilities": ["General testing", "Test execution", "Result validation"],
         "tools": ["Bash", "Read", "Test tools"],
-        "specializations": ["Unit testing", "Integration testing", "Test automation"]
+        "specializations": ["Unit testing", "Integration testing", "Test automation"],
     },
     "@testing_agent": {
         "name": "Testing Agent",
@@ -473,9 +640,8 @@ AGENT_DEFINITIONS = {
         "priority": "normal",
         "capabilities": ["Test execution", "Result analysis", "Test reporting"],
         "tools": ["Bash", "Read", "Write"],
-        "specializations": ["Test frameworks", "Test reporting", "Test metrics"]
+        "specializations": ["Test frameworks", "Test reporting", "Test metrics"],
     },
-    
     # Plugin and Extension Agents
     "@plugin_manager": {
         "name": "Plugin Manager Agent",
@@ -484,11 +650,18 @@ AGENT_DEFINITIONS = {
         "category": "integration",
         "type": "specialist",
         "priority": "normal",
-        "capabilities": ["Plugin management", "Integration setup", "Extension configuration"],
+        "capabilities": [
+            "Plugin management",
+            "Integration setup",
+            "Extension configuration",
+        ],
         "tools": ["Bash", "Read", "Write", "Edit"],
-        "specializations": ["Plugin architecture", "API integrations", "Extension development"]
+        "specializations": [
+            "Plugin architecture",
+            "API integrations",
+            "Extension development",
+        ],
     },
-    
     # Enhanced Orchestrators
     "@enhanced_orchestrator": {
         "name": "Enhanced Orchestrator Agent",
@@ -497,10 +670,18 @@ AGENT_DEFINITIONS = {
         "category": "orchestration",
         "type": "orchestrator",
         "priority": "high",
-        "capabilities": ["Advanced coordination", "Cross-domain orchestration", "Complex workflow management"],
+        "capabilities": [
+            "Advanced coordination",
+            "Cross-domain orchestration",
+            "Complex workflow management",
+        ],
         "tools": ["All MCP tools"],
-        "specializations": ["Multi-domain coordination", "Advanced workflows", "System optimization"]
-    }
+        "specializations": [
+            "Multi-domain coordination",
+            "Advanced workflows",
+            "System optimization",
+        ],
+    },
 }
 
 # Agent template for Claude
@@ -563,12 +744,13 @@ This agent can work with other specialized agents for complex tasks. Common coll
 *Auto-generated from agenthub complete agent registry*
 """
 
+
 class AgentGenerator:
     """Generate Claude agent files from definitions"""
-    
+
     def __init__(self, claude_dir: str = DEFAULT_CLAUDE_DIR):
         self.claude_dir = Path(claude_dir)
-        
+
     def generate_agent_file(self, agent_id: str, agent_data: dict[str, Any]) -> str:
         """Generate markdown content for an agent"""
         # Default guidelines based on category
@@ -589,12 +771,15 @@ class AgentGenerator:
             "design": "Deploy for design and UX tasks",
             "product": "Use for product planning and requirements",
             "integration": "Deploy for integrations and plugin management",
-            "advisory": "Use for technology advice and recommendations"
+            "advisory": "Use for technology advice and recommendations",
         }
-        
+
         category = agent_data.get("category", "general")
-        guidelines = agent_data.get("guidelines", default_guidelines.get(category, "Follow standard agent protocols"))
-        
+        guidelines = agent_data.get(
+            "guidelines",
+            default_guidelines.get(category, "Follow standard agent protocols"),
+        )
+
         # Format the agent details
         content = AGENT_TEMPLATE.format(
             name=agent_data.get("name", "Unknown Agent"),
@@ -604,83 +789,83 @@ class AgentGenerator:
             agent_type=agent_data.get("type", "specialist"),
             priority=agent_data.get("priority", "normal"),
             capabilities=self._format_list(agent_data.get("capabilities", [])),
-            tools=self._format_list(agent_data.get("tools", ["All available MCP tools"])),
+            tools=self._format_list(
+                agent_data.get("tools", ["All available MCP tools"])
+            ),
             specializations=self._format_list(agent_data.get("specializations", [])),
             guidelines=guidelines,
             agent_id=agent_id,
-            updated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            updated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
-        
+
         return content
-    
+
     def _format_list(self, items: list[Any]) -> str:
         """Format a list for markdown"""
         if not items:
             return "- None specified"
         return "\n".join(f"- {item}" for item in items)
-    
+
     def save_agent_file(self, agent_id: str, agent_data: dict[str, Any]) -> Path:
         """Save agent configuration to file"""
         # Create directory if it doesn't exist
         self.claude_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Generate filename from agent ID
         filename = f"{agent_id.replace('@', '').replace(' ', '_').lower()}.md"
         filepath = self.claude_dir / filename
-        
+
         # Generate and save content
         content = self.generate_agent_file(agent_id, agent_data)
         filepath.write_text(content)
-        
+
         return filepath
-    
+
     def generate_all_agents(self, filter_category: str = None) -> dict[str, Any]:
         """Generate all agent files"""
-        results = {
-            "generated": [],
-            "failed": [],
-            "total": 0,
-            "categories": {}
-        }
-        
+        results = {"generated": [], "failed": [], "total": 0, "categories": {}}
+
         # Count agents by category
         for agent_id, agent_data in AGENT_DEFINITIONS.items():
             category = agent_data.get("category", "general")
             if category not in results["categories"]:
                 results["categories"][category] = 0
             results["categories"][category] += 1
-        
+
         agents_to_generate = AGENT_DEFINITIONS.items()
         if filter_category:
             agents_to_generate = [
-                (id, data) for id, data in agents_to_generate 
+                (id, data)
+                for id, data in agents_to_generate
                 if data.get("category") == filter_category
             ]
-        
+
         results["total"] = len(list(agents_to_generate))
-        
+
         for agent_id, agent_data in AGENT_DEFINITIONS.items():
             try:
                 # Apply category filter if specified
                 if filter_category and agent_data.get("category") != filter_category:
                     continue
-                
+
                 filepath = self.save_agent_file(agent_id, agent_data)
-                results["generated"].append({
-                    "agent_id": agent_id,
-                    "name": agent_data.get("name"),
-                    "category": agent_data.get("category"),
-                    "file": str(filepath)
-                })
-                print(f"✓ Generated: {agent_data.get('name', 'Unknown')} [{agent_data.get('category')}]")
+                results["generated"].append(
+                    {
+                        "agent_id": agent_id,
+                        "name": agent_data.get("name"),
+                        "category": agent_data.get("category"),
+                        "file": str(filepath),
+                    }
+                )
+                print(
+                    f"✓ Generated: {agent_data.get('name', 'Unknown')} [{agent_data.get('category')}]"
+                )
             except Exception as e:
-                results["failed"].append({
-                    "agent_id": agent_id,
-                    "error": str(e)
-                })
+                results["failed"].append({"agent_id": agent_id, "error": str(e)})
                 print(f"✗ Failed: {agent_data.get('name', 'Unknown')} - {e}")
-        
+
         return results
+
 
 def main():
     """Main entry point"""
@@ -690,58 +875,57 @@ def main():
     parser.add_argument(
         "--claude-dir",
         default=DEFAULT_CLAUDE_DIR,
-        help="Claude agents directory (default: .claude/agents)"
+        help="Claude agents directory (default: .claude/agents)",
     )
     parser.add_argument(
         "--category",
-        help="Filter agents by category (e.g., development, frontend, security)"
+        help="Filter agents by category (e.g., development, frontend, security)",
     )
     parser.add_argument(
-        "--agent-id",
-        help="Generate specific agent by ID (e.g., coding-agent)"
+        "--agent-id", help="Generate specific agent by ID (e.g., coding-agent)"
     )
     parser.add_argument(
         "--clean",
         action="store_true",
-        help="Clean existing agent files before generating"
+        help="Clean existing agent files before generating",
     )
     parser.add_argument(
         "--list",
         action="store_true",
-        help="List available agents without generating files"
+        help="List available agents without generating files",
     )
     parser.add_argument(
-        "--categories",
-        action="store_true",
-        help="List all categories and agent counts"
+        "--categories", action="store_true", help="List all categories and agent counts"
     )
-    
+
     args = parser.parse_args()
-    
+
     # List categories if requested
     if args.categories:
         print("Agent Categories:")
-        print("="*60)
+        print("=" * 60)
         categories = {}
         for agent_id, agent_data in AGENT_DEFINITIONS.items():
             category = agent_data.get("category", "general")
             if category not in categories:
                 categories[category] = []
             categories[category].append(agent_data.get("name"))
-        
+
         for category in sorted(categories.keys()):
             print(f"\n{category.upper()} ({len(categories[category])} agents):")
             for agent_name in sorted(categories[category]):
                 print(f"  - {agent_name}")
-        
-        print(f"\nTotal: {len(AGENT_DEFINITIONS)} agents across {len(categories)} categories")
+
+        print(
+            f"\nTotal: {len(AGENT_DEFINITIONS)} agents across {len(categories)} categories"
+        )
         return
-    
+
     # List agents if requested
     if args.list:
         print("Available Agents (60+ Total):")
-        print("="*60)
-        
+        print("=" * 60)
+
         # Group by category for better readability
         by_category = {}
         for agent_id, agent_data in AGENT_DEFINITIONS.items():
@@ -749,19 +933,21 @@ def main():
             if category not in by_category:
                 by_category[category] = []
             by_category[category].append((agent_id, agent_data))
-        
+
         for category in sorted(by_category.keys()):
             print(f"\n{category.upper()} AGENTS:")
-            for agent_id, agent_data in sorted(by_category[category], key=lambda x: x[0]):
+            for agent_id, agent_data in sorted(
+                by_category[category], key=lambda x: x[0]
+            ):
                 print(f"  {agent_id:<40} {agent_data.get('name', 'Unknown')}")
                 print(f"    Role: {agent_data.get('role', 'N/A')}")
-        
+
         print(f"\nTotal: {len(AGENT_DEFINITIONS)} agents")
         return
-    
+
     # Create generator
     generator = AgentGenerator(args.claude_dir)
-    
+
     # Clean directory if requested
     if args.clean:
         print(f"Cleaning {args.claude_dir}...")
@@ -770,41 +956,46 @@ def main():
             if file.name not in ["claude-code-troubleshooter.md"]:
                 file.unlink()
                 print(f"  Removed: {file.name}")
-    
+
     # Generate specific agent or all
     if args.agent_id:
         if args.agent_id not in AGENT_DEFINITIONS:
             print(f"Error: Agent '{args.agent_id}' not found")
             print("Use --list to see available agents")
             return
-        
+
         print(f"Generating agent: {args.agent_id}")
         agent_data = AGENT_DEFINITIONS[args.agent_id]
         filepath = generator.save_agent_file(args.agent_id, agent_data)
         print(f"✓ Saved: {filepath}")
     else:
         # Generate all agents
-        print(f"Generating ALL {len(AGENT_DEFINITIONS)} agent files in {args.claude_dir}")
-        print("="*60)
+        print(
+            f"Generating ALL {len(AGENT_DEFINITIONS)} agent files in {args.claude_dir}"
+        )
+        print("=" * 60)
         results = generator.generate_all_agents(filter_category=args.category)
-        
+
         # Print summary
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Generation Summary:")
         print(f"  Total agents defined: {len(AGENT_DEFINITIONS)}")
         print(f"  Successfully generated: {len(results['generated'])}")
         print(f"  Failed: {len(results['failed'])}")
-        
+
         print("\nAgents by Category:")
-        for category, count in sorted(results['categories'].items()):
+        for category, count in sorted(results["categories"].items()):
             print(f"  {category}: {count} agents")
-        
-        if results['failed']:
+
+        if results["failed"]:
             print("\nFailed agents:")
-            for failure in results['failed']:
+            for failure in results["failed"]:
                 print(f"  - {failure['agent_id']}: {failure['error']}")
-        
-        print(f"\nAll {len(results['generated'])} agent files are ready in: {Path(args.claude_dir).absolute()}")
+
+        print(
+            f"\nAll {len(results['generated'])} agent files are ready in: {Path(args.claude_dir).absolute()}"
+        )
+
 
 if __name__ == "__main__":
     main()
