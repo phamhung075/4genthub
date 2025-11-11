@@ -30,9 +30,9 @@ class TestORMGitBranchRepository:
 
     def setup_method(self):
         """Set up test fixtures."""
-        # Inject mock session directly via constructor (get_session no longer exists)
+        # Create repository with user_id (session is managed internally via get_db_session)
         self.mock_session = Mock(spec=Session)
-        self.repo = ORMGitBranchRepository(session=self.mock_session, user_id="test_user")
+        self.repo = ORMGitBranchRepository(user_id="test_user")
 
         # Patch _model_to_entity to avoid database access in tests
         self._patch_model_to_entity()
@@ -91,9 +91,8 @@ class TestORMGitBranchRepository:
 
     def test_initialization(self):
         """Test repository initialization."""
-        # Inject mock session directly via constructor (get_session no longer exists)
-        mock_session = Mock()
-        repo = ORMGitBranchRepository(session=mock_session, user_id="test_user")
+        # Create repository with user_id (session is managed internally)
+        repo = ORMGitBranchRepository(user_id="test_user")
         assert repo.user_id == "test_user"
         assert repo.model_class == ProjectGitBranch
 
