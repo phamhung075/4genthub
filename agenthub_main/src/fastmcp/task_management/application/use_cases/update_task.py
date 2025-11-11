@@ -253,51 +253,6 @@ class UpdateTaskUseCase:
                     f"⚠️ Failed to schedule metadata sync for updated task {task_id_str}: {sync_error}"
                 )
 
-            # Check if we're already in an async context
-            try:
-                asyncio.get_running_loop()
-                # We're in an async context, but this is a sync method
-                # We'll use run_in_executor to avoid blocking
-                logger.debug(
-                    "[UpdateTaskUseCase] Running in async context, using task creation for context sync"
-                )
-
-                # Since we can't await in a sync method, we'll just trigger context update
-                # The context will be updated on next access or through background task
-
-                # For now, we'll just log that sync was triggered
-                logger.info(
-                    f"[UpdateTaskUseCase] Context sync triggered for task {task_id_str}"
-                )
-
-            except RuntimeError:
-                # No event loop, we can create one
-                logger.debug(
-                    "[UpdateTaskUseCase] No async context, creating new event loop for context sync"
-                )
-
-                async def sync_context():
-                    if not project_id:
-                        raise ValueError("project_id is required for context sync")
-                    return await self._context_sync_service.sync_context_and_get_task(
-                        task_id=task_id_str,
-                        user_id="system_update",
-                        project_id=project_id,
-                        git_branch_name=git_branch_name,
-                    )
-
-                # Run the async context sync
-                result = asyncio.run(sync_context())
-
-                if result:
-                    logger.info(
-                        f"[UpdateTaskUseCase] Successfully synced context for task {task_id_str}"
-                    )
-                else:
-                    logger.warning(
-                        f"[UpdateTaskUseCase] Context sync returned None for task {task_id_str}"
-                    )
-
         except Exception as e:
             # Don't fail the update operation if context sync fails
             logger.warning(
