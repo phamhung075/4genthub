@@ -66,6 +66,7 @@ from .mcp_controllers.workflow_hint_enhancer.workflow_hint_enhancer import (
 
 # Application layer imports (proper DDD dependency direction)
 # Use case imports for tool registration (call_agent)
+from ..application.use_cases import CallAgentUseCase
 
 logger = logging.getLogger(__name__)
 
