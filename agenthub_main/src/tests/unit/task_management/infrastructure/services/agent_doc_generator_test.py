@@ -27,8 +27,10 @@ from fastmcp.task_management.infrastructure.services.agent_doc_generator import 
 @pytest.fixture(autouse=True)
 def mock_database_connections():
     """Prevent real database connections in unit tests."""
-    with patch('psycopg2.connect') as mock_pg, \
-         patch('sqlalchemy.create_engine') as mock_engine:
+    with (
+        patch("psycopg2.connect") as mock_pg,
+        patch("sqlalchemy.create_engine") as mock_engine,
+    ):
         mock_pg.return_value = MagicMock()
         mock_engine.return_value = MagicMock()
         yield
@@ -145,7 +147,9 @@ class TestAgentDocGenerator:
         """Test initialization with default paths"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -261,7 +265,9 @@ class TestAgentDocGenerator:
         """Test generating documentation for a single agent"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -308,7 +314,9 @@ class TestAgentDocGenerator:
         """Test generating doc when job_desc.yaml is missing"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -326,7 +334,9 @@ class TestAgentDocGenerator:
         """Test generating docs for a single agent"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -348,7 +358,9 @@ class TestAgentDocGenerator:
         """Test generating docs for all agents"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -380,7 +392,9 @@ class TestAgentDocGenerator:
         """Test generating docs with clear_all option"""
         # Clear environment variables that could override defaults
         with patch.dict(
-            os.environ, {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""}, clear=False
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
         ):
             generator = AgentDocGenerator()
 
@@ -418,29 +432,35 @@ class TestAgentDocGenerator:
 
     def test_generate_docs_for_assignees(self, mock_project_root):
         """Test generating docs for list of assignees"""
-        generator = AgentDocGenerator()
+        # Clear environment variables that could override defaults
+        with patch.dict(
+            os.environ,
+            {"AGENT_LIBRARY_DIR_PATH": "", "AGENTS_OUTPUT_DIR": ""},
+            clear=False,
+        ):
+            generator = AgentDocGenerator()
 
-        # Create agents
-        for name in ["coding_agent", "testing_agent"]:
-            agent_dir = generator.agent_yaml_lib / name
-            agent_dir.mkdir(parents=True)
-            job_desc_file = agent_dir / "job_desc.yaml"
-            with open(job_desc_file, "w") as f:
-                yaml.dump({"name": name}, f)
+            # Create agents
+            for name in ["coding_agent", "testing_agent"]:
+                agent_dir = generator.agent_yaml_lib / name
+                agent_dir.mkdir(parents=True)
+                job_desc_file = agent_dir / "job_desc.yaml"
+                with open(job_desc_file, "w") as f:
+                    yaml.dump({"name": name}, f)
 
-        # Test various assignee formats
-        assignees = [
-            "@coding",  # With @, without _agent
-            "testing_agent",  # Without @, with _agent
-            "@coding",  # Duplicate (should be skipped)
-            "nonexistent",  # Non-existent agent
-        ]
+            # Test various assignee formats
+            assignees = [
+                "@coding",  # With @, without _agent
+                "testing_agent",  # Without @, with _agent
+                "@coding",  # Duplicate (should be skipped)
+                "nonexistent",  # Non-existent agent
+            ]
 
-        generator.generate_docs_for_assignees(assignees)
+            generator.generate_docs_for_assignees(assignees)
 
-        # Check outputs
-        assert (generator.agents_output_dir / "coding_agent.mdc").exists()
-        assert (generator.agents_output_dir / "testing_agent.mdc").exists()
+            # Check outputs
+            assert (generator.agents_output_dir / "coding_agent.mdc").exists()
+            assert (generator.agents_output_dir / "testing_agent.mdc").exists()
 
     def test_generate_docs_for_assignees_empty(self, mock_project_root):
         """Test generating docs with empty assignees list"""

@@ -472,7 +472,9 @@ class TestConvenienceFunctionPerformance:
         )
 
         # Should be fast (< 312.5μs per call - adjusted for CI environment, 25% increase)
-        assert avg_time < 0.0003125, f"prevent_id_confusion too slow: {avg_time:.8f}s avg"
+        assert avg_time < 0.0003125, (
+            f"prevent_id_confusion too slow: {avg_time:.8f}s avg"
+        )
 
 
 @pytest.mark.performance

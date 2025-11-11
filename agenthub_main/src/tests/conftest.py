@@ -1117,7 +1117,9 @@ def performance_tracker():
         def start(self):
             self.start_time = time.time()
             if HAS_PSUTIL and psutil:
-                self.start_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
+                self.start_memory = (
+                    psutil.Process().memory_info().rss / 1024 / 1024
+                )  # MB
 
         def end(self) -> dict[str, Any]:
             self.end_time = time.time()

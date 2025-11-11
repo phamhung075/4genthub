@@ -32,17 +32,18 @@ class TestSupabaseOptimizedRepository:
         with patch(
             "fastmcp.task_management.infrastructure.repositories.orm.supabase_optimized_repository.logger"
         ):
-            # Inject mock session directly via constructor (get_session no longer exists)
-            # Mock BaseUserScopedRepository to avoid their initialization
+            # Mock parent initializations to avoid database setup
             with patch(
-                "fastmcp.task_management.infrastructure.repositories.base_user_scoped_repository.BaseUserScopedRepository.__init__"
+                "fastmcp.task_management.infrastructure.repositories.base_user_scoped_repository.BaseUserScopedRepository.__init__",
+                return_value=None,
             ):
                 with patch(
-                    "fastmcp.task_management.infrastructure.cache.cache_invalidation_mixin.CacheInvalidationMixin.__init__"
+                    "fastmcp.task_management.infrastructure.cache.cache_invalidation_mixin.CacheInvalidationMixin.__init__",
+                    return_value=None,
                 ):
-                    repo = SupabaseOptimizedRepository(
-                        session=mock_session, git_branch_id="branch-123"
-                    )
+                    # Constructor signature changed - only accepts git_branch_id, not session
+                    repo = SupabaseOptimizedRepository(git_branch_id="branch-123")
+                    # Manually inject mock session after construction
                     repo.get_db_session = Mock(return_value=mock_session)
                     repo.git_branch_id = "branch-123"
                     return repo

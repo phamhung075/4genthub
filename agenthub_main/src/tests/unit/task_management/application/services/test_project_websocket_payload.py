@@ -119,7 +119,9 @@ class TestProjectManagementServiceWebSocketIntegration:
         mock_repo.user_id = (
             "test-user-123"  # Set user_id attribute for _get_user_scoped_repository()
         )
-        mock_repo.with_user = MagicMock(return_value=mock_repo)  # Return self for user scoping
+        mock_repo.with_user = MagicMock(
+            return_value=mock_repo
+        )  # Return self for user scoping
 
         # Mock RepositoryFactory for git_branch_repo
         with patch(
@@ -203,7 +205,9 @@ class TestProjectManagementServiceWebSocketIntegration:
             mock_repo.find_by_id = AsyncMock(side_effect=[mock_project, None])
             mock_repo.delete = AsyncMock(return_value=True)
             mock_repo.user_id = "test-user-123"  # Set user_id attribute for _get_user_scoped_repository()
-            mock_repo.with_user = MagicMock(return_value=mock_repo)  # Return self for user scoping
+            mock_repo.with_user = MagicMock(
+                return_value=mock_repo
+            )  # Return self for user scoping
 
             # Mock RepositoryFactory for git_branch_repo
             with patch(
@@ -232,7 +236,9 @@ class TestProjectManagementServiceWebSocketIntegration:
 
                 # Verify error logging for validation failure
                 # Note: The exact logging format may vary, so we just check that an error was logged
-                assert mock_logger.error.call_count > 0, "Expected error logging for validation failure"
+                assert mock_logger.error.call_count > 0, (
+                    "Expected error logging for validation failure"
+                )
 
                 # Verify WebSocket service was still called with fallback dict
                 mock_ws_service.sync_broadcast_project_event.assert_called_once()
