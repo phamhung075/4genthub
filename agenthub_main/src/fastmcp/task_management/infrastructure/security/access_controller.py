@@ -3,6 +3,8 @@
 Infrastructure component for managing security access control and validation.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from datetime import datetime
@@ -11,15 +13,16 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from ...domain.value_objects.compliance_objects import SecurityContext
+
+logger = logging.getLogger(__name__)
+
 
 class SecurityLevel(Enum):
     """Simplified security levels"""
     PUBLIC = "public"
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
-from ...domain.value_objects.compliance_objects import SecurityContext
-
-logger = logging.getLogger(__name__)
 
 
 class AccessController:

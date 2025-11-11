@@ -8,6 +8,8 @@ All events follow the BaseDomainEvent pattern with:
 - Consistent serialization
 """
 
+from __future__ import annotations
+
 # Base event class
 from .base import BaseDomainEvent, DomainEvent, create_domain_event
 

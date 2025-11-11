@@ -8,34 +8,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 from .base.base_timestamp_entity import BaseTimestampEntity
-
-logger = logging.getLogger(__name__)
-
-
-def normalize_datetime(dt_input: str | datetime) -> datetime:
-    """Convert naive or aware datetime to UTC-aware datetime.
-
-    Args:
-        dt_input: Either a datetime object or ISO format datetime string
-
-    Returns:
-        UTC-aware datetime object
-    """
-    if isinstance(dt_input, str):
-        dt = datetime.fromisoformat(dt_input)
-    else:
-        dt = dt_input
-
-    # If naive, assume UTC
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
-    # If aware but not UTC, convert to UTC
-    elif dt.tzinfo != UTC:
-        dt = dt.astimezone(UTC)
-
-    return dt
-
-
 from ...domain.value_objects.task_status import TaskStatusEnum
 from ..events import TaskCreated, TaskDeleted, TaskRetrieved, TaskUpdated
 from ..events.progress_events import (
@@ -62,6 +34,32 @@ from ..value_objects.progress import (
 )
 from ..value_objects.task_id import TaskId
 from ..value_objects.task_status import TaskStatus
+
+logger = logging.getLogger(__name__)
+
+
+def normalize_datetime(dt_input: str | datetime) -> datetime:
+    """Convert naive or aware datetime to UTC-aware datetime.
+
+    Args:
+        dt_input: Either a datetime object or ISO format datetime string
+
+    Returns:
+        UTC-aware datetime object
+    """
+    if isinstance(dt_input, str):
+        dt = datetime.fromisoformat(dt_input)
+    else:
+        dt = dt_input
+
+    # If naive, assume UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    # If aware but not UTC, convert to UTC
+    elif dt.tzinfo != UTC:
+        dt = dt.astimezone(UTC)
+
+    return dt
 
 
 @dataclass

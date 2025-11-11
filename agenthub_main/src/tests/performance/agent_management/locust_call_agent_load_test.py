@@ -58,8 +58,11 @@ except ImportError:
 
     class HttpUser:
         wait_time = None
-    class MasterRunner: pass
-    class LoadTestShape: pass
+    class MasterRunner:
+        pass
+
+    class LoadTestShape:
+        pass
 
     # task can be used as @task or @task(weight)
     def task(weight_or_func=1):

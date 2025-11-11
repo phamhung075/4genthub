@@ -17,6 +17,8 @@ Test Categories:
 8. FastMCP Transport - In-memory communication
 """
 
+from __future__ import annotations
+
 import asyncio
 import sys
 import tempfile
@@ -30,12 +32,6 @@ import mcp.types
 import pytest
 from pydantic import AnyUrl
 
-# Mock the missing oauth_callback module before importing
-oauth_callback_mock = MagicMock()
-oauth_callback_mock.create_oauth_callback_server = MagicMock()
-sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
-
-# Import transport components
 from fastmcp.client.transports import (
     ClientTransport,
     FastMCPStdioTransport,
@@ -53,6 +49,11 @@ from fastmcp.client.transports import (
 )
 from fastmcp.server.server import FastMCP
 from fastmcp.utilities.mcp_config import MCPConfig
+
+# Mock the missing oauth_callback module before importing
+oauth_callback_mock = MagicMock()
+oauth_callback_mock.create_oauth_callback_server = MagicMock()
+sys.modules['fastmcp.client.oauth_callback'] = oauth_callback_mock
 
 # Test markers
 pytestmark = [

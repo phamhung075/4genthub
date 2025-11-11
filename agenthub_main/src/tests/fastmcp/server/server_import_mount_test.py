@@ -38,11 +38,7 @@ from fastmcp.server.server import (
 # Import related components for testing
 try:
     from mcp.server.lowlevel.server import Server as MCPServer
-
-    from fastmcp.prompts import Prompt, PromptManager
-    from fastmcp.resources import Resource, ResourceManager
     from fastmcp.settings import Settings
-    from fastmcp.tools import Tool, ToolManager
 except ImportError as e:
     pytest.skip(f"Required imports not available: {e}", allow_module_level=True)
 

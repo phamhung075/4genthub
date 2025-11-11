@@ -71,10 +71,9 @@ class ContextImportService:
 
     def _import_starlette(self):
         """Import Starlette for dual auth"""
-        try:
-            from starlette.middleware.base import RequestCycle
-            from starlette.requests import Request
+        import importlib.util
 
+        if importlib.util.find_spec("starlette") is not None:
             self.starlette_available = True
-        except ImportError:
+        else:
             logger.debug("Starlette not available - request state not accessible")

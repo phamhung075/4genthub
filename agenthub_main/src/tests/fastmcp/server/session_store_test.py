@@ -32,7 +32,7 @@ from fastmcp.server.session_store import (
 # Import MCP types
 try:
     from mcp.server.streamable_http import EventMessage
-    from mcp.types import JSONRPCNotification, JSONRPCRequest
+    from mcp.types import JSONRPCRequest
 
     # Use JSONRPCRequest as the default message type for testing
     def create_test_message(method="test", params=None):

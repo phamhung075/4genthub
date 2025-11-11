@@ -7,11 +7,19 @@ NOTE: This is a standalone script, not a pytest test suite.
 Run directly with: python src/tests/test_agent_role_display.py
 """
 
+from __future__ import annotations
+
 import sys
 import uuid
 from pathlib import Path
 
 import pytest
+
+from utils.agent_state_manager import (
+    get_agent_role_from_session,
+    get_current_agent,
+    set_current_agent,
+)
 
 # Skip pytest collection - this is a standalone script
 pytestmark = pytest.mark.skip(reason="Standalone script - run directly, not via pytest")
@@ -19,11 +27,6 @@ pytestmark = pytest.mark.skip(reason="Standalone script - run directly, not via 
 # Add hooks to path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root / ".claude" / "hooks"))
-from utils.agent_state_manager import (
-    get_agent_role_from_session,
-    get_current_agent,
-    set_current_agent,
-)
 
 
 def test_agent_role_mapping():

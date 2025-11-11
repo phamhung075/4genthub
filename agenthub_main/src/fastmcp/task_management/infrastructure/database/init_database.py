@@ -6,6 +6,7 @@ supporting both SQLite and PostgreSQL databases.
 """
 
 import asyncio
+import importlib.util
 import logging
 
 from .database_config import get_db_config
@@ -68,26 +69,24 @@ async def _run_migrations(db_config):
     async_database_url = None
 
     if database_url.startswith("sqlite:///"):
-        # For SQLite, try aiosqlite
-        try:
-            import aiosqlite
+        # For SQLite, check for aiosqlite availability
+        if importlib.util.find_spec("aiosqlite") is not None:
             async_database_url = database_url.replace("sqlite:///", "sqlite+aiosqlite:///")
-        except ImportError:
+        else:
             logger.warning("aiosqlite not available - skipping async migrations for SQLite")
             logger.info("Install aiosqlite with: pip install aiosqlite")
             return
 
     elif database_url.startswith("postgresql://") or "postgresql" in database_url:
-        # For PostgreSQL, try asyncpg
-        try:
-            import asyncpg
+        # For PostgreSQL, check for asyncpg availability
+        if importlib.util.find_spec("asyncpg") is not None:
             if database_url.startswith("postgresql://"):
                 async_database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
             else:
                 async_database_url = database_url
                 if not async_database_url.startswith("postgresql+asyncpg://"):
                     async_database_url = async_database_url.replace("postgresql://", "postgresql+asyncpg://")
-        except ImportError:
+        else:
             logger.warning("asyncpg not available - skipping async migrations for PostgreSQL")
             logger.info("Install asyncpg with: pip install asyncpg")
             return

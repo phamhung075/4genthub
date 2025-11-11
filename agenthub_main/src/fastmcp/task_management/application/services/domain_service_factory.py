@@ -9,8 +9,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-logger = logging.getLogger(__name__)
-
 from fastmcp.task_management.domain.interfaces.cache_service import ICacheService
 from fastmcp.task_management.domain.interfaces.database_session import (
     IDatabaseSessionFactory,
@@ -42,6 +40,8 @@ from fastmcp.task_management.domain.interfaces.validation_service import (
 
 if TYPE_CHECKING:
     from .hint_manager import HintManager
+
+logger = logging.getLogger(__name__)
 
 
 class DomainServiceFactory:

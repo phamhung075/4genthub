@@ -11,6 +11,8 @@ FEATURES:
 - Attack simulation utilities
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
@@ -21,18 +23,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import jwt
 import pytest
 
-# Store original environment state for restoration
-_original_auth_enabled = os.environ.get('AUTH_ENABLED')
-_original_jwt_secret = os.environ.get('JWT_SECRET_KEY')
-_original_keycloak_url = os.environ.get('KEYCLOAK_URL')
-_original_auth_provider = os.environ.get('AUTH_PROVIDER')
-
 from fastmcp.auth.domain.entities.user import User
 from fastmcp.server.routes.websocket_routes import (
     active_connections,
     connection_subscriptions,
     connection_users,
 )
+
+# Store original environment state for restoration
+_original_auth_enabled = os.environ.get('AUTH_ENABLED')
+_original_jwt_secret = os.environ.get('JWT_SECRET_KEY')
+_original_keycloak_url = os.environ.get('KEYCLOAK_URL')
+_original_auth_provider = os.environ.get('AUTH_PROVIDER')
 
 logger = logging.getLogger(__name__)
 

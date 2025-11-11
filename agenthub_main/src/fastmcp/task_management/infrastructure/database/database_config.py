@@ -35,19 +35,16 @@ from typing import Any
 from sqlalchemy import Engine, create_engine, event, text
 from sqlalchemy.orm import DeclarativeBase, Session, scoped_session, sessionmaker
 
-logger = logging.getLogger(__name__)
-
-# Thread-local storage for database sessions (Bug #2 Fix)
-_thread_local = local()
-
-# Import exception for better error handling
 from ...domain.exceptions.base_exceptions import DatabaseException
-
-# Import retry logic for connection resilience
 from .connection_retry import (
     DEFAULT_RETRY_CONFIG,
     with_connection_retry,
 )
+
+logger = logging.getLogger(__name__)
+
+# Thread-local storage for database sessions (Bug #2 Fix)
+_thread_local = local()
 
 
 class Base(DeclarativeBase):

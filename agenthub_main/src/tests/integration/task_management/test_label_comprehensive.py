@@ -223,7 +223,7 @@ class LabelIntegrationTestSuite:
         # Verify all labels assigned
         task_labels = self.label_repo.get_labels_by_task(task_id)
         assert len(task_labels) == 3, "Task should have 3 labels"
-        task_label_names = [l.name for l in task_labels]
+        task_label_names = [label.name for label in task_labels]
         for name in label_names:
             assert name in task_label_names, f"{name} should be in task labels"
         print("  ✓ Multiple labels assigned successfully")

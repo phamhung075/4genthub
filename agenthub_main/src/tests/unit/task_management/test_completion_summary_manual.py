@@ -6,9 +6,16 @@ This test validates that completion_summary is properly stored in the context sy
 using a simplified approach that avoids authentication complications.
 """
 
+from __future__ import annotations
+
 import os
 import sys
+import uuid
 from pathlib import Path
+
+from fastmcp.task_management.infrastructure.database.database_config import (
+    get_db_config,
+)
 
 # Set up environment for SQLite (for testing)
 os.environ['DATABASE_TYPE'] = 'sqlite'
@@ -17,13 +24,6 @@ os.environ['PYTEST_CURRENT_TEST'] = 'test_completion_summary_manual.py::test_com
 # Add the project to Python path
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
-
-# Import after setting environment
-import uuid
-
-from fastmcp.task_management.infrastructure.database.database_config import (
-    get_db_config,
-)
 
 
 def test_completion_summary_storage():

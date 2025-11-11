@@ -18,7 +18,7 @@ Requirements:
 """
 
 import uuid
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -341,7 +341,7 @@ class TestLabelAssociation:
         # Assert
         task_labels = label_repository.get_labels_by_task(task_id)
         assert len(task_labels) == 3
-        task_label_names = [l.name for l in task_labels]
+        task_label_names = [label.name for label in task_labels]
         for name in label_names:
             assert name in task_label_names
 
@@ -446,7 +446,7 @@ class TestLabelQueries:
 
         # Assert
         assert len(labels) >= 3
-        label_names_result = [l.name for l in labels]
+        label_names_result = [label.name for label in labels]
         for name in label_names:
             assert name in label_names_result
 

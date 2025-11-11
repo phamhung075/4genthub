@@ -6,19 +6,20 @@ This test validates that the database_config.py can create a proper database
 connection and execute queries successfully.
 """
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 
-# Add the project to Python path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
-# Import after setting environment
 from sqlalchemy import text
 
 from fastmcp.task_management.infrastructure.database.database_config import (
     get_db_config,
 )
+
+# Add the project to Python path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
 
 
 def test_sqlite_connection():

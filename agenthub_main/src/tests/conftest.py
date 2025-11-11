@@ -37,9 +37,9 @@ os.environ['KEYCLOAK_CLIENT_ID'] = 'mcp-client'
 os.environ['KEYCLOAK_CLIENT_SECRET'] = 'test-secret'
 
 # Mock numpy globally for tests when not available
-try:
-    import numpy
-except ImportError:
+import importlib.util
+
+if importlib.util.find_spec("numpy") is None:
     # Create a comprehensive numpy mock
     class MockNdarray(list):
         """Mock ndarray that behaves like a list but has shape attribute"""
@@ -261,9 +261,7 @@ except ImportError:
     sys.modules['numpy.array'] = MockNumpy().array
 
 # Mock sentence_transformers when not available
-try:
-    import sentence_transformers
-except ImportError:
+if importlib.util.find_spec("sentence_transformers") is None:
     class MockSentenceTransformer:
         def __init__(self, *args, **kwargs):
             pass
@@ -283,10 +281,8 @@ except ImportError:
     
     sys.modules['sentence_transformers'] = MockSentenceTransformers()
 
-# Mock faiss when not available  
-try:
-    import faiss
-except ImportError:
+# Mock faiss when not available
+if importlib.util.find_spec("faiss") is None:
     class MockIndex:
         def add(self, vectors): pass
         def search(self, query_vectors, k):
