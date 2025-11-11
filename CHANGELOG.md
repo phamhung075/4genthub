@@ -49,6 +49,37 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**GitHub Actions - Workflow Run Deletion Permissions** (2025-11-11)
+
+Fixed 403 "Resource not accessible by integration" errors when cleanup job attempts to delete old workflow runs.
+
+**Issue**:
+- Cleanup job in production deployment workflow failing with 403 errors
+- Default `github.token` lacks permissions to delete workflow runs (GitHub security restriction)
+- Error: "Resource not accessible by integration" on DELETE /repos/.../actions/runs/...
+
+**Root Cause**:
+- Cleanup job (`.github/workflows/production-deployment.yml:510-522`) using default token without explicit permissions
+- GitHub Actions requires explicit `actions: write` permission for workflow run deletion
+
+**Solution**:
+- Added explicit permissions block to cleanup job:
+  ```yaml
+  permissions:
+    actions: write
+    contents: read
+  ```
+
+**Files Modified**:
+- `.github/workflows/production-deployment.yml:515-517` - Added permissions block to cleanup job
+
+**Impact**:
+- ✅ Cleanup job can now successfully delete old workflow runs
+- ✅ Eliminates recurring 403 errors in workflow logs
+- 🧹 Automated cleanup of workflow runs older than 30 days (keeping minimum 10 runs)
+
+---
+
 **CI Test Collection - TYPE_CHECKING Import and uv Dependency Syntax** (2025-11-11)
 
 Fixed final test collection errors preventing CI test execution.
