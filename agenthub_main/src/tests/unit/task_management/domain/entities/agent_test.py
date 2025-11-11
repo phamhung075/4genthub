@@ -1,6 +1,6 @@
 """Test suite for Agent Domain Entity"""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timezone
 from unittest.mock import Mock, patch
 
 import pytest

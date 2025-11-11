@@ -95,7 +95,7 @@ class DockerTestManager:
         self.test_volumes = []
         self.test_port = None  # Will be dynamically assigned
         
-    async def build_test_image(self, force_rebuild: bool = False) -> Dict:
+    async def build_test_image(self, force_rebuild: bool = False) -> dict:
         """Build the agenthub Docker image for testing"""
         try:
             dockerfile_path = self.project_root / "docker" / "Dockerfile"
@@ -167,7 +167,7 @@ class DockerTestManager:
                                  container_name: str = "agenthub-test",
                                  ports: dict[str, int] = None,
                                  environment: dict[str, str] = None,
-                                 volumes: dict[str, Dict] = None) -> Dict:
+                                 volumes: dict[str, dict] = None) -> dict:
         """Start a test container with specified configuration"""
         try:
             # Find a free port if not specified
@@ -258,7 +258,7 @@ class DockerTestManager:
         logger.error(f"❌ Container {container_name} failed to become ready within {timeout}s")
         return False
     
-    async def stop_test_container(self, container_name: str) -> Dict:
+    async def stop_test_container(self, container_name: str) -> dict:
         """Stop and remove a test container"""
         try:
             try:
@@ -279,7 +279,7 @@ class DockerTestManager:
             logger.error(f"Failed to stop container {container_name}: {e}")
             return {"success": False, "error": str(e)}
     
-    async def test_container_health(self, container_name: str) -> Dict:
+    async def test_container_health(self, container_name: str) -> dict:
         """Test container health and connectivity"""
         try:
             container = self.docker_client.containers.get(container_name)
@@ -314,7 +314,7 @@ class DockerTestManager:
             logger.error(f"Container health check failed: {e}")
             return {"success": False, "error": str(e)}
     
-    async def test_mcp_functionality(self, base_url: str = None) -> Dict:
+    async def test_mcp_functionality(self, base_url: str = None) -> dict:
         """Test MCP server functionality through HTTP endpoints"""
         try:
             # Use dynamic port if base_url not provided
@@ -460,7 +460,7 @@ class DockerTestManager:
             logger.error(f"MCP functionality test failed: {e}")
             return {"success": False, "error": str(e)}
     
-    async def test_container_persistence(self, container_name: str) -> Dict:
+    async def test_container_persistence(self, container_name: str) -> dict:
         """Test data persistence across container restarts"""
         try:
             # Use dynamic port
@@ -590,7 +590,7 @@ class DockerTestManager:
             logger.error(f"Persistence test failed: {e}")
             return {"success": False, "error": str(e)}
     
-    async def restart_test_container(self, container_name: str) -> Dict:
+    async def restart_test_container(self, container_name: str) -> dict:
         """Restart a test container"""
         try:
             container = self.docker_client.containers.get(container_name)
@@ -666,7 +666,7 @@ class PerformanceMonitor:
         
         return result, response_time
     
-    def get_performance_summary(self) -> Dict:
+    def get_performance_summary(self) -> dict:
         """Get summary of performance metrics"""
         if not self.metrics:
             return {"message": "No metrics collected"}

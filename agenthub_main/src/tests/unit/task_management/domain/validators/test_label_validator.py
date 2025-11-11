@@ -4,7 +4,7 @@ This module tests all validation rules for label creation and updates,
 ensuring that business rules are properly enforced at the domain layer.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
@@ -53,7 +53,7 @@ class TestTimestampValidation:
         from datetime import timedelta
 
         # Create a timezone offset (e.g., UTC+5)
-        eastern = dt_timezone(timedelta(hours=-5))
+        eastern = timezone(timedelta(hours=-5))
         non_utc_time = datetime.now(eastern)
 
         with pytest.raises(LabelValidationError) as exc_info:

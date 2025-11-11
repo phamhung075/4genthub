@@ -26,6 +26,7 @@ from fastmcp.task_management.domain.entities.global_context_schema import (
 #     ensure_global_context_compatibility
 # )
 from fastmcp.task_management.infrastructure.validation.global_context_validator import (
+    MIGRATION_FIELD_MAPPING,
     GlobalContextValidationError,
     GlobalContextValidator,
     validate_global_context,
@@ -266,10 +267,10 @@ class TestGlobalContextMigrator:
         """Test the convenience migration function."""
         # nested_dict, warnings = migrate_global_context_data(self.sample_flat_data)
         pytest.skip("Migration functionality not yet implemented")
-        
-        assert isinstance(nested_dict, dict)
-        assert "organization" in nested_dict
-        assert nested_dict["_schema_version"] == "2.0"
+
+        # assert isinstance(nested_dict, dict)
+        # assert "organization" in nested_dict
+        # assert nested_dict["_schema_version"] == "2.0"
 
 
 class TestGlobalContextEntity:
@@ -611,22 +612,22 @@ class TestEnsureCompatibility:
     
     def test_ensure_compatibility_flat_data(self):
         """Test ensuring compatibility with flat data."""
-        
+
         # context = ensure_global_context_compatibility(flat_data)
         pytest.skip("Compatibility functionality not yet implemented")
-        
-        assert isinstance(context, GlobalContext)
-        assert context._is_migrated is True
-        assert context.get_nested_value("organization.standards")["test"] == "value"
+
+        # assert isinstance(context, GlobalContext)
+        # assert context._is_migrated is True
+        # assert context.get_nested_value("organization.standards")["test"] == "value"
     
     def test_ensure_compatibility_nested_data(self):
         """Test ensuring compatibility with nested data."""
-        
+
         # context = ensure_global_context_compatibility(nested_data)
         pytest.skip("Compatibility functionality not yet implemented")
-        
-        assert isinstance(context, GlobalContext)
-        assert context.get_nested_value("organization.standards")["test"] == "value"
+
+        # assert isinstance(context, GlobalContext)
+        # assert context.get_nested_value("organization.standards")["test"] == "value"
 
 
 if __name__ == "__main__":

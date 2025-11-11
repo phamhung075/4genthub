@@ -11,7 +11,7 @@ Tests the ProjectRepository ORM implementation including:
 - Query operations and filtering
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest

@@ -91,7 +91,8 @@ jobs:
       working-directory: agenthub_main
       run: |
         # Install dependencies using uv (includes all dev dependencies from pyproject.toml)
-        uv sync --group dev
+        # Note: --dev flag installs all dependency-groups including dev dependencies
+        uv sync --dev
 
         # Install package in editable mode so imports work
         uv pip install -e .
@@ -223,7 +224,9 @@ jobs:
 
     - name: Install dependencies
       working-directory: agenthub_main
-      run: uv sync --group dev
+      run: |
+        # Install all dependency groups including dev dependencies
+        uv sync --dev
 
     - name: Run performance tests
       working-directory: agenthub_main

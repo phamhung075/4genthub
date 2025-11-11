@@ -49,7 +49,7 @@ class TestSubtaskDialogFlow:
             "subtask_id": "test-subtask-id"
         }
 
-    def test_subtask_detail_button_opens_correct_dialog(self, page: Page, base_url: str, test_project_data: Dict):
+    def test_subtask_detail_button_opens_correct_dialog(self, page: Page, base_url: str, test_project_data: dict):
         """Test that clicking subtask detail button opens the subtask dialog (not task dialog)"""
 
         # Navigate to the task page containing subtasks
@@ -108,7 +108,7 @@ class TestSubtaskDialogFlow:
         assert "subtask" in current_url.lower(), \
             f"URL should contain 'subtask' but got: {current_url}"
 
-    def test_subtask_url_remains_stable_after_dialog_open(self, page: Page, base_url: str, test_project_data: Dict):
+    def test_subtask_url_remains_stable_after_dialog_open(self, page: Page, base_url: str, test_project_data: dict):
         """Test that the URL doesn't revert after opening subtask dialog"""
 
         # Navigate to task page
@@ -152,7 +152,7 @@ class TestSubtaskDialogFlow:
         assert "subtask" in url_after_wait.lower(), \
             "URL should still contain 'subtask' after waiting"
 
-    def test_subtask_api_calls_use_correct_task_id_format(self, page: Page, base_url: str, test_project_data: Dict):
+    def test_subtask_api_calls_use_correct_task_id_format(self, page: Page, base_url: str, test_project_data: dict):
         """Test that API calls for subtasks use correct task_id (not MCP format)"""
 
         # Track API calls
@@ -208,7 +208,7 @@ class TestSubtaskDialogFlow:
                 assert len(task_id_in_url) == 36, \
                     f"Task ID should be standard UUID length (36): {task_id_in_url}"
 
-    def test_subtask_dialog_displays_correct_content(self, page: Page, base_url: str, test_project_data: Dict):
+    def test_subtask_dialog_displays_correct_content(self, page: Page, base_url: str, test_project_data: dict):
         """Test that subtask dialog displays subtask-specific content"""
 
         # Navigate to task page
@@ -267,7 +267,7 @@ class TestSubtaskDialogFlow:
         assert has_subtask_indicator, \
             "Dialog should contain subtask-specific content"
 
-    def test_closing_subtask_dialog_updates_url_correctly(self, page: Page, base_url: str, test_project_data: Dict):
+    def test_closing_subtask_dialog_updates_url_correctly(self, page: Page, base_url: str, test_project_data: dict):
         """Test that closing subtask dialog correctly updates the URL"""
 
         # Navigate to task page
@@ -317,7 +317,7 @@ class TestSubtaskDialogFlow:
         assert "subtask" not in url_after_close.lower() or url_after_close == original_url, \
             f"URL should revert after closing dialog: {url_after_close}"
 
-    def test_multiple_subtask_dialogs_maintain_correct_urls(self, page: Page, base_url: str, test_project_data: Dict):
+    def test_multiple_subtask_dialogs_maintain_correct_urls(self, page: Page, base_url: str, test_project_data: dict):
         """Test opening multiple subtask dialogs maintains correct URLs"""
 
         # Navigate to task page

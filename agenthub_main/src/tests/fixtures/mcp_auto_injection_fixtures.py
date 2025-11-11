@@ -169,7 +169,7 @@ def mock_keycloak_server():
             
             return datetime.now(UTC) < token_data["expires_at"]
         
-        def get_token_info(self, token: str) -> Dict | None:
+        def get_token_info(self, token: str) -> dict | None:
             """Get token information."""
             return self.issued_tokens.get(token)
         
