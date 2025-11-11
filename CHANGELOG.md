@@ -49,28 +49,49 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
-**CI/CD Test Coverage Workflow - Missing Editable Package Install** (2025-11-11)
+**CI/CD Workflows - Production Docker Alignment** (2025-11-11)
 
-Fixed test collection errors caused by missing editable package installation in CI environment.
+Aligned CI/CD workflows with production Docker configuration for consistency and reliability.
 
-**Issue**:
+**Issues Fixed**:
 - 15 test files failing with `NameError: name 'TaskApplicationFacade' is not defined`
-- Root cause: `uv sync` only installs dependencies, not the package itself in editable mode
-- conftest.py files couldn't import from `fastmcp.*` modules
-- Blocked 7,968 tests from executing (15 collection errors)
+- Root cause: `uv sync` only installs dependencies, not the package itself
+- Missing Python environment variables (PYTHONUNBUFFERED, PYTHONDONTWRITEBYTECODE)
+- Inconsistent PYTHONPATH configuration across environments
+- No database connection validation before running migrations
 
-**Solution**:
-- Added `uv pip install -e .` after `uv sync --group dev` in test workflow
-- Package now installed in editable mode, making all `fastmcp.*` imports work
-- Aligns with production-deployment.yml which already had editable install
+**Solutions Applied**:
+
+1. **Package Installation**:
+   - Added `uv pip install -e .` after `uv sync --group dev` in test workflow
+   - Package now installed in editable mode, matching production Docker (line 32)
+
+2. **Python Environment Variables** (matching Dockerfile.backend.production:100-102):
+   - `PYTHONPATH="/app/agenthub_main/src:/app"` - Explicit module search path
+   - `PYTHONUNBUFFERED=1` - Real-time log output (no buffering)
+   - `PYTHONDONTWRITEBYTECODE=1` - Skip .pyc files for faster startup
+
+3. **Database Connection Validation** (matching Dockerfile entrypoint):
+   - Added 10-retry connection check before migrations
+   - Prevents race conditions with PostgreSQL service startup
+   - Fails fast with clear error message if database unavailable
+
+4. **Test Runner Script**:
+   - Updated `run_tests_enhanced.sh` with production environment variables
+   - Consistent PYTHONPATH across local dev and CI
 
 **Files Modified**:
-- `.github/workflows/test_coverage.yml:96-97` - Added editable install step
+- `.github/workflows/test_coverage.yml:96-97,125-148` - Editable install + env vars + DB validation
+- `.github/workflows/production-deployment.yml:167,182-185,197,212-215` - Env vars consistency
+- `agenthub_main/scripts/run_tests_enhanced.sh:118-123` - Production environment alignment
 
 **Impact**:
 - ✅ All 7,968 tests now collect successfully (0 errors)
 - ✅ conftest.py imports resolve correctly in CI
-- ✅ Test workflow matches production workflow pattern
+- ✅ CI environment matches production Docker configuration
+- ✅ Real-time test output (no log buffering)
+- ✅ Database connection validated before migrations
+- ✅ Consistent Python environment across all workflows
 
 **CI/CD Test Coverage Workflow - Database Setup Import Error** (2025-11-10)
 

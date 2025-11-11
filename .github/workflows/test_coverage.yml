@@ -121,11 +121,34 @@ jobs:
     - name: Run database migrations
       working-directory: agenthub_main
       run: |
-        export PYTHONPATH="$(pwd)/src"
+        # Set Python environment (matching production Docker)
+        export PYTHONPATH="$(pwd)/src:$(pwd):${PYTHONPATH}"
+        export PYTHONUNBUFFERED=1
+        export PYTHONDONTWRITEBYTECODE=1
+
+        # Load test environment
         export $(cat .env.test | grep -v '^#' | xargs)
+
+        # Validate database connection with retries (matching production)
+        echo "Validating database connection..."
+        RETRIES=10
+        while [ $RETRIES -gt 0 ]; do
+          if pg_isready -h localhost -p 5432 -U testuser 2>/dev/null; then
+            echo "✅ Database connection verified"
+            break
+          fi
+          echo "  Waiting for database... ($RETRIES retries left)"
+          RETRIES=$((RETRIES - 1))
+          sleep 3
+        done
+
+        if [ $RETRIES -eq 0 ]; then
+          echo "❌ ERROR: Database connection failed"
+          exit 1
+        fi
+
+        # Run migrations using the installed package
         uv run python -c "
-        import sys
-        sys.path.append('src')
         from fastmcp.task_management.infrastructure.database.database_initializer import initialize_database
         initialize_database()
         "

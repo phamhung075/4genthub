@@ -164,6 +164,7 @@ jobs:
           pip install pytest pytest-cov pytest-asyncio
 
       - name: Set up test environment
+        working-directory: agenthub_main
         env:
           DATABASE_TYPE: postgresql
           DATABASE_HOST: localhost
@@ -177,7 +178,12 @@ jobs:
           KEYCLOAK_URL: http://localhost:8080
           KEYCLOAK_CLIENT_SECRET: test-secret
         run: |
-          cd agenthub_main
+          # Set Python environment (matching production Docker)
+          export PYTHONPATH="$(pwd)/src:$(pwd):${PYTHONPATH}"
+          export PYTHONUNBUFFERED=1
+          export PYTHONDONTWRITEBYTECODE=1
+          export TESTING=true
+
           python -m pytest src/tests/unit --cov=src --cov-report=xml --cov-report=html
 
       - name: Upload coverage reports to Codecov
@@ -188,6 +194,7 @@ jobs:
           name: codecov-umbrella
 
       - name: Run integration tests
+        working-directory: agenthub_main
         env:
           DATABASE_TYPE: postgresql
           DATABASE_HOST: localhost
@@ -201,7 +208,12 @@ jobs:
           KEYCLOAK_URL: http://localhost:8080
           KEYCLOAK_CLIENT_SECRET: test-secret
         run: |
-          cd agenthub_main
+          # Set Python environment (matching production Docker)
+          export PYTHONPATH="$(pwd)/src:$(pwd):${PYTHONPATH}"
+          export PYTHONUNBUFFERED=1
+          export PYTHONDONTWRITEBYTECODE=1
+          export TESTING=true
+
           python -m pytest src/tests/integration -v
 
   # Build and push Docker images
