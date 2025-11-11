@@ -202,10 +202,6 @@ class UpdateTaskUseCase:
             # Extract task ID and git_branch_id for context sync
             task_id_str = str(task.id.value if hasattr(task.id, "value") else task.id)
             git_branch_id = getattr(task, "git_branch_id", None)
-            project_id = getattr(task, "project_id", None)
-
-            # Get git_branch_name if needed (fallback to 'main')
-            git_branch_name = "main"
 
             logger.info(
                 f"[UpdateTaskUseCase] Auto-syncing context for task {task_id_str} after update"
