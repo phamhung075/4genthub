@@ -750,9 +750,15 @@ class SubtaskApplicationFacade:
         # Broadcast subtask deletion event via WebSocket (only if successful)
         if result["success"]:
             try:
-                # Get user_id from context derivation
-                context = self._derive_context_from_task(task_id)
-                user_id = context.get("user_id", "system")
+                # Get parent task once and reuse for user_id and broadcast (works with mocks and real DB)
+                parent_task = None
+                user_id = "system"
+                try:
+                    parent_task = task_repository.find_by_id(TaskId.from_string(task_id))
+                    if parent_task and parent_task.user_id:
+                        user_id = str(parent_task.user_id)
+                except Exception as e:
+                    logger.warning(f"Failed to get parent task for user_id: {e}")
 
                 # 🎯 USE SubtaskDeletePayload (type-safe, validated payload)
                 # ✅ FIX: Get title from use case result (returned in result['subtask']['title'])
@@ -787,48 +793,40 @@ class SubtaskApplicationFacade:
                 )
 
                 # CRITICAL: Broadcast parent task update to refresh data in frontend
-                try:
-                    # Reload parent task to get updated data
-                    parent_task = task_repository.find_by_id(
-                        TaskId.from_string(task_id)
-                    )
-                    if parent_task:
-                        # Convert to dict for WebSocket broadcast
-                        # CRITICAL FIX: Serialize enums to their string values for JSON compatibility
-                        parent_task_dict = {
-                            "id": str(parent_task.id),
-                            "title": parent_task.title,
-                            "status": parent_task.status.value
-                            if hasattr(parent_task.status, "value")
-                            else str(parent_task.status),
-                            "priority": parent_task.priority.value
-                            if hasattr(parent_task.priority, "value")
-                            else str(parent_task.priority),
-                            "assignees": parent_task.assignees or [],
-                            "has_dependencies": len(parent_task.dependencies) > 0
-                            if parent_task.dependencies
-                            else False,
-                            "has_context": bool(parent_task.context_id),
-                        }
+                # Reuse parent_task already fetched above
+                if parent_task:
+                    # Convert to dict for WebSocket broadcast
+                    # CRITICAL FIX: Serialize enums to their string values for JSON compatibility
+                    parent_task_dict = {
+                        "id": str(parent_task.id),
+                        "title": parent_task.title,
+                        "status": parent_task.status.value
+                        if hasattr(parent_task.status, "value")
+                        else str(parent_task.status),
+                        "priority": parent_task.priority.value
+                        if hasattr(parent_task.priority, "value")
+                        else str(parent_task.priority),
+                        "assignees": parent_task.assignees or [],
+                        "has_dependencies": len(parent_task.dependencies) > 0
+                        if parent_task.dependencies
+                        else False,
+                        "has_context": bool(parent_task.context_id),
+                    }
 
-                        # FIX: Add metadata to suppress duplicate notification toasts
-                        # Frontend checks for source='system' to skip showing toasts for automatic updates
-                        WebSocketNotificationService.sync_broadcast_task_event(
-                            event_type="updated",
-                            task_id=task_id,
-                            user_id=user_id,
-                            task_data=parent_task_dict,
-                            metadata={
-                                "source": "system",
-                                "event_type": "subtask_count_update",
-                            },
-                        )
-                        logger.info(
-                            "✅ Broadcasted parent task update after subtask deletion"
-                        )
-                except Exception as parent_error:
-                    logger.warning(
-                        f"Failed to broadcast parent task update: {parent_error}"
+                    # FIX: Add metadata to suppress duplicate notification toasts
+                    # Frontend checks for source='system' to skip showing toasts for automatic updates
+                    WebSocketNotificationService.sync_broadcast_task_event(
+                        event_type="updated",
+                        task_id=task_id,
+                        user_id=user_id,
+                        task_data=parent_task_dict,
+                        metadata={
+                            "source": "system",
+                            "event_type": "subtask_count_update",
+                        },
+                    )
+                    logger.info(
+                        "✅ Broadcasted parent task update after subtask deletion"
                     )
 
             except Exception as e:

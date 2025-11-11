@@ -224,7 +224,7 @@ class TestORMProjectRepositoryCRUDOperations:
         mock_project_model = Mock(spec=Project)
         mock_project_model.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_project_model.git_branchs = []
-        
+
         # Mock entity
         mock_project_entity = ProjectEntity(
             id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
@@ -233,29 +233,36 @@ class TestORMProjectRepositoryCRUDOperations:
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC)
         )
-        
-        # Mock query
+
+        # Mock query chain
         mock_query = Mock()
         mock_options = Mock()
         mock_filter = Mock()
-        
+
         mock_query.options.return_value = mock_options
         mock_options.filter.return_value = mock_filter
         mock_filter.first.return_value = mock_project_model
-        
-        self.mock_session.query.return_value = mock_query
-        
-        with patch.object(self.repo, '_model_to_entity', return_value=mock_project_entity):
-            with patch.object(self.repo, 'apply_user_filter', return_value=mock_options):
 
-                result = await self.repo.find_by_id("50ebbfda-bdc9-4349-8c64-315c4e9fb9fa")
-                
-                # Verify query was built correctly
-                self.mock_session.query.assert_called_once_with(Project)
-                mock_query.options.assert_called_once()
-                mock_filter.first.assert_called_once()
-                
-                assert result == mock_project_entity
+        self.mock_session.query.return_value = mock_query
+
+        # Mock session context manager
+        mock_session_ctx = Mock()
+        mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
+        mock_session_ctx.__exit__ = Mock(return_value=None)
+
+        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
+            with patch.object(self.repo, '_model_to_entity', return_value=mock_project_entity):
+                with patch.object(self.repo, 'apply_user_filter', return_value=mock_options):
+                    with patch.object(self.repo, 'log_access'):
+
+                        result = await self.repo.find_by_id("50ebbfda-bdc9-4349-8c64-315c4e9fb9fa")
+
+                        # Verify query was built correctly
+                        self.mock_session.query.assert_called_once_with(Project)
+                        mock_query.options.assert_called_once()
+                        mock_filter.first.assert_called_once()
+
+                        assert result == mock_project_entity
     
     @pytest.mark.asyncio
     async def test_get_project_by_id_not_found(self):
@@ -360,11 +367,17 @@ class TestORMProjectRepositoryCRUDOperations:
         mock_filter = Mock()
         mock_query.filter.return_value = mock_filter
         mock_filter.first.return_value = None  # Project not found
-        
+
         self.mock_session.query.return_value = mock_query
-        
-        with pytest.raises(ResourceNotFoundException, match="Project with id 'nonexistent' not found"):
-            await self.repo.update(entity)
+
+        # Mock session context manager
+        mock_session_ctx = Mock()
+        mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
+        mock_session_ctx.__exit__ = Mock(return_value=None)
+
+        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
+            with pytest.raises(ResourceNotFoundException, match="Project with id 'nonexistent' not found"):
+                await self.repo.update(entity)
     
     @pytest.mark.asyncio
     async def test_delete_project_success(self):
@@ -677,33 +690,49 @@ class TestORMProjectRepositoryCacheIntegration:
     @pytest.mark.asyncio
     async def test_cache_invalidation_on_delete(self):
         """Test cache is invalidated on project deletion."""
+        project_id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
+
+        # Mock project model
         mock_project = Mock(spec=Project)
-        # Add required attributes for _model_to_entity
-        mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
+        mock_project.id = project_id
         mock_project.name = "Test Project"
         mock_project.description = "Test Description"
         mock_project.created_at = datetime.now(UTC)
         mock_project.updated_at = datetime.now(UTC)
         mock_project.git_branchs = []  # Empty list to avoid iteration issues
-        
-        # Mock query
+
+        # Mock query chain
         mock_query = Mock()
         mock_filter = Mock()
         mock_query.filter.return_value = mock_filter
         mock_filter.first.return_value = mock_project
-        
+
         self.mock_session.query.return_value = mock_query
-        
-        with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
-            with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
-                # Mock the delete operation to succeed
-                mock_filter.delete.return_value = 1  # 1 row deleted
-                
-                result = await self.repo.delete("50ebbfda-bdc9-4349-8c64-315c4e9fb9fa")
-                assert result is True
-                
-                # Should invalidate cache after deletion
-                mock_invalidate.assert_called_once()
+
+        # Mock session context manager
+        mock_session_ctx = Mock()
+        mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
+        mock_session_ctx.__exit__ = Mock(return_value=None)
+
+        # Mock the entity for super().delete()
+        mock_entity = ProjectEntity(
+            id=project_id,
+            name="Test Project",
+            description="Test Description",
+            created_at=mock_project.created_at,
+            updated_at=mock_project.updated_at
+        )
+
+        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
+            with patch.object(self.repo, '_model_to_entity', return_value=mock_entity):
+                with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
+                    # Mock BaseTimestampRepository.delete to succeed
+                    with patch('fastmcp.task_management.infrastructure.repositories.orm.project_repository.BaseTimestampRepository.delete', return_value=None):
+                        result = await self.repo.delete(project_id)
+                        assert result is True
+
+                        # Should invalidate cache after deletion
+                        mock_invalidate.assert_called_once()
 
 
 class TestORMProjectRepositoryErrorHandling:
