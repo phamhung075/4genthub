@@ -22,10 +22,11 @@ from fastmcp.task_management.infrastructure.database.database_config import (
 @pytest.fixture(autouse=True)
 def mock_database_connections():
     """Prevent real database connections in unit tests."""
-    with patch('psycopg2.connect') as mock_pg_connect, \
-         patch('sqlalchemy.create_engine') as mock_engine_patch, \
-         patch('sqlalchemy.engine.Engine.connect') as mock_connect_patch:
-
+    with (
+        patch("psycopg2.connect") as mock_pg_connect,
+        patch("sqlalchemy.create_engine") as mock_engine_patch,
+        patch("sqlalchemy.engine.Engine.connect") as mock_connect_patch,
+    ):
         # Mock psycopg2 connection
         mock_pg_conn = MagicMock()
         mock_pg_connect.return_value = mock_pg_conn
@@ -47,16 +48,17 @@ def mock_database_connections():
 @pytest.fixture
 def mock_db_connection():
     """Mock database connection to prevent actual database authentication."""
-    with patch(
-        "fastmcp.task_management.infrastructure.database.database_config.create_engine"
-    ) as mock_engine, \
-         patch(
-             "fastmcp.task_management.infrastructure.database.database_config.event.listens_for"
-         ) as mock_event_listener, \
-         patch(
-             "fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist"
-         ) as mock_ai_columns:
-
+    with (
+        patch(
+            "fastmcp.task_management.infrastructure.database.database_config.create_engine"
+        ) as mock_engine,
+        patch(
+            "fastmcp.task_management.infrastructure.database.database_config.event.listens_for"
+        ) as mock_event_listener,
+        patch(
+            "fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist"
+        ) as mock_ai_columns,
+    ):
         # Create a mock engine that behaves like a real one
         mock_engine_instance = MagicMock()
         mock_connection = MagicMock()
@@ -116,19 +118,23 @@ class TestDatabaseTypeValidation:
 
         # Add appropriate connection details based on type
         if valid_type.lower() == "supabase":
-            env_vars.update({
-                "SUPABASE_URL": "https://test.supabase.co",
-                "SUPABASE_ANON_KEY": "test_anon_key",
-                "SUPABASE_DB_HOST": "localhost",
-                "SUPABASE_DB_PASSWORD": "test_pass",
-            })
+            env_vars.update(
+                {
+                    "SUPABASE_URL": "https://test.supabase.co",
+                    "SUPABASE_ANON_KEY": "test_anon_key",
+                    "SUPABASE_DB_HOST": "localhost",
+                    "SUPABASE_DB_PASSWORD": "test_pass",
+                }
+            )
         else:  # postgresql
-            env_vars.update({
-                "DATABASE_HOST": "localhost",
-                "DATABASE_USER": "test_user",
-                "DATABASE_PASSWORD": "test_pass",
-                "DATABASE_NAME": "test_db",
-            })
+            env_vars.update(
+                {
+                    "DATABASE_HOST": "localhost",
+                    "DATABASE_USER": "test_user",
+                    "DATABASE_PASSWORD": "test_pass",
+                    "DATABASE_NAME": "test_db",
+                }
+            )
 
         with patch.dict(os.environ, env_vars, clear=True):
             try:
@@ -245,18 +251,22 @@ class TestDatabaseTypeValidation:
             # Prepare environment variables based on expected normalized type
             env_vars = {"DATABASE_TYPE": input_type}
             if expected_normalized == "supabase":
-                env_vars.update({
-                    "SUPABASE_URL": "https://test.supabase.co",
-                    "SUPABASE_ANON_KEY": "test_anon_key",
-                    "SUPABASE_DB_HOST": "localhost",
-                    "SUPABASE_DB_PASSWORD": "test_pass",
-                })
+                env_vars.update(
+                    {
+                        "SUPABASE_URL": "https://test.supabase.co",
+                        "SUPABASE_ANON_KEY": "test_anon_key",
+                        "SUPABASE_DB_HOST": "localhost",
+                        "SUPABASE_DB_PASSWORD": "test_pass",
+                    }
+                )
             else:  # postgresql
-                env_vars.update({
-                    "DATABASE_HOST": "localhost",
-                    "DATABASE_USER": "test_user",
-                    "DATABASE_PASSWORD": "test_pass",
-                })
+                env_vars.update(
+                    {
+                        "DATABASE_HOST": "localhost",
+                        "DATABASE_USER": "test_user",
+                        "DATABASE_PASSWORD": "test_pass",
+                    }
+                )
 
             with patch.dict(os.environ, env_vars, clear=True):
                 config = DatabaseConfig()
