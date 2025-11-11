@@ -100,6 +100,20 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**Removed Unused Importlib Import** (2025-11-11)
+
+Fixed linting error F401 in test_env_loading_tdd.py by removing unused importlib import.
+
+**Changes Made**:
+- Removed unused `import importlib` statement from line 6
+
+**Files Modified**:
+- `agenthub_main/src/tests/unit/test_env_loading_tdd.py:6` - Removed unused import
+
+**Impact**:
+- ✅ Eliminates F401 linting error
+- 🧹 Cleaner code with only necessary imports
+
 **WebSocket Asyncio Test Mocks Completed** (2025-11-11)
 
 Fixed remaining 2 asyncio WebSocket tests in project payload validation suite:
