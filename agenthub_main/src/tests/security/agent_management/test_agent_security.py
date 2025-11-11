@@ -18,7 +18,12 @@ TODO: This test file needs to be updated to use the correct imports from agent_m
 instead of task_management. File is skipped to unblock test collection.
 """
 
+from typing import TYPE_CHECKING
+
 import pytest
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 #Try to import dependencies - if they fail, skip all tests in this module
 try:

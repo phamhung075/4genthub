@@ -36,10 +36,10 @@ from uuid import uuid4
 
 import pytest
 
+from fastmcp.auth.domain.value_objects.user_id import UserId
 from fastmcp.task_management.domain.value_objects import (
     GitBranchId,
     ProjectId,
-    UserId,
 )
 
 
