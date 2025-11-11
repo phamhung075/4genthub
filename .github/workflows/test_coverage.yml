@@ -15,11 +15,11 @@ env:
   COVERAGE_THRESHOLD: 80
   # Database configuration (required for Python module imports)
   DATABASE_TYPE: postgresql
-  POSTGRES_HOST: localhost
-  POSTGRES_PORT: 5432
-  POSTGRES_DB: agenthub_test
-  POSTGRES_USER: testuser
-  POSTGRES_PASSWORD: testpass
+  DATABASE_HOST: localhost
+  DATABASE_PORT: 5432
+  DATABASE_NAME: agenthub_test
+  DATABASE_USER: testuser
+  DATABASE_PASSWORD: testpass
 
 jobs:
   test-matrix:
@@ -44,9 +44,9 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_PASSWORD: testpass
-          POSTGRES_USER: testuser
           POSTGRES_DB: agenthub_test
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
         options: >-
           --health-cmd pg_isready
           --health-interval 10s

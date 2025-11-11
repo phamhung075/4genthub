@@ -6,11 +6,11 @@ env:
   PY_COLORS: 1
   # Database configuration for static analysis
   DATABASE_TYPE: postgresql
-  POSTGRES_HOST: localhost
-  POSTGRES_PORT: 5432
-  POSTGRES_DB: agenthub_test
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
+  DATABASE_HOST: localhost
+  DATABASE_PORT: 5432
+  DATABASE_NAME: agenthub_test
+  DATABASE_USER: postgres
+  DATABASE_PASSWORD: postgres
 
 on:
   push:
@@ -52,9 +52,9 @@ jobs:
       - name: Run pre-commit
         run: |
           export DATABASE_TYPE=postgresql
-          export POSTGRES_HOST=localhost
-          export POSTGRES_PORT=5432
-          export POSTGRES_DB=agenthub_test
-          export POSTGRES_USER=postgres
-          export POSTGRES_PASSWORD=postgres
+          export DATABASE_HOST=localhost
+          export DATABASE_PORT=5432
+          export DATABASE_NAME=agenthub_test
+          export DATABASE_USER=postgres
+          export DATABASE_PASSWORD=postgres
           uv run pre-commit run --all-files
