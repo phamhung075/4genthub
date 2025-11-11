@@ -2,11 +2,19 @@
 """
 Test script for dynamic agent role display functionality.
 Tests the agent state manager and status line role mapping.
+
+NOTE: This is a standalone script, not a pytest test suite.
+Run directly with: python src/tests/test_agent_role_display.py
 """
 
 import sys
 import uuid
 from pathlib import Path
+
+import pytest
+
+# Skip pytest collection - this is a standalone script
+pytestmark = pytest.mark.skip(reason="Standalone script - run directly, not via pytest")
 
 # Add hooks to path
 project_root = Path(__file__).parent.parent.parent.parent
