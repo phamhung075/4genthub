@@ -33,22 +33,19 @@ class TestSupabaseOptimizedRepository:
             "fastmcp.task_management.infrastructure.repositories.orm.supabase_optimized_repository.logger"
         ):
             # Inject mock session directly via constructor (get_session no longer exists)
-            # Mock BaseORMRepository and BaseUserScopedRepository to avoid their initialization
+            # Mock BaseUserScopedRepository to avoid their initialization
             with patch(
-                "fastmcp.task_management.infrastructure.repositories.orm.task_repository.BaseORMRepository.__init__"
+                "fastmcp.task_management.infrastructure.repositories.base_user_scoped_repository.BaseUserScopedRepository.__init__"
             ):
                 with patch(
-                    "fastmcp.task_management.infrastructure.repositories.orm.task_repository.BaseUserScopedRepository.__init__"
+                    "fastmcp.task_management.infrastructure.cache.cache_invalidation_mixin.CacheInvalidationMixin.__init__"
                 ):
-                    with patch(
-                        "fastmcp.task_management.infrastructure.repositories.orm.task_repository.CacheInvalidationMixin.__init__"
-                    ):
-                        repo = SupabaseOptimizedRepository(
-                            session=mock_session, git_branch_id="branch-123"
-                        )
-                        repo.get_db_session = Mock(return_value=mock_session)
-                        repo.git_branch_id = "branch-123"
-                        return repo
+                    repo = SupabaseOptimizedRepository(
+                        session=mock_session, git_branch_id="branch-123"
+                    )
+                    repo.get_db_session = Mock(return_value=mock_session)
+                    repo.git_branch_id = "branch-123"
+                    return repo
 
     def test_list_tasks_minimal_basic(self, repository, mock_session):
         """Test list_tasks_minimal with basic parameters"""
