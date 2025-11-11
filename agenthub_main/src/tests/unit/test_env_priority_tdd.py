@@ -50,6 +50,7 @@ def mock_database_connections():
         from fastmcp.task_management.infrastructure.database.database_config import (
             DatabaseConfig,
         )
+
         DatabaseConfig.reset_instance()
 
         yield
