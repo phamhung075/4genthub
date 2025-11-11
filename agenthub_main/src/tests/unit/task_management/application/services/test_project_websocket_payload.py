@@ -88,7 +88,7 @@ class TestProjectDeletePayload:
 class TestProjectManagementServiceWebSocketIntegration:
     """Test integration of ProjectDeletePayload in project_management_service.py"""
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     @patch(
         "fastmcp.task_management.application.services.project_management_service.logger"
     )
@@ -160,7 +160,7 @@ class TestProjectManagementServiceWebSocketIntegration:
                 f"✅ Project delete payload validated: {project_data}"
             )
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     @patch(
         "fastmcp.task_management.application.services.project_management_service.logger"
     )
