@@ -3,6 +3,7 @@ TDD Test Suite for Environment File Loading
 Written BEFORE implementation to define expected behavior
 """
 
+import importlib
 import os
 import sys
 import tempfile
@@ -92,19 +93,22 @@ def mock_project_root_with_env(tmp_path, monkeypatch):
         "FASTMCP_PORT=8000\n"
     )
 
-    # Patch the Settings class to use this temp directory
+    # Import Settings before patching
     from fastmcp.settings import Settings
 
-    original_project_root = Settings._project_root
-    Settings._project_root = tmp_path
-    Settings._env_path = tmp_path / ".env"
-    Settings._env_dev_path = tmp_path / ".env.dev"
-    Settings._env_file = str(env_file)
+    # Use monkeypatch to update the Settings class attributes
+    # This is cleaner than trying to reload the module
+    monkeypatch.setattr(Settings, "_project_root", tmp_path)
+    monkeypatch.setattr(Settings, "_env_path", tmp_path / ".env")
+    monkeypatch.setattr(Settings, "_env_dev_path", tmp_path / ".env.dev")
+    monkeypatch.setattr(Settings, "_env_file", str(env_file))
+
+    # Also update model_config to ensure Pydantic uses the correct env file
+    monkeypatch.setitem(Settings.model_config, "env_file", str(env_file))
 
     yield tmp_path
 
-    # Restore original values
-    Settings._project_root = original_project_root
+    # monkeypatch automatically restores original values on teardown
 
 
 @pytest.mark.unit
