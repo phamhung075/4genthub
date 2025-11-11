@@ -49,6 +49,18 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**WebSocket Asyncio Test Mocks Completed** (2025-11-11)
+
+Fixed remaining 2 asyncio WebSocket tests in project payload validation suite:
+- Configured `mock_repo.with_user` to return properly mocked repository for user scoping
+- Fixed `find_by_id` mock to use `side_effect` returning project first, then None (for deletion verification)
+- All 4 tests in `TestProjectManagementServiceWebSocketIntegration` now pass
+
+**Files Modified**:
+- `agenthub_main/src/tests/unit/task_management/application/services/test_project_websocket_payload.py`
+
+**Impact**: Completes WebSocket async test migration (subtask 50% → 100%)
+
 **Subtask Description Character Limit Increased** (2025-11-11)
 
 Fixed inconsistency between Task and Subtask entity validation where subtask descriptions were limited to 500 characters while task descriptions allowed 2000 characters.
