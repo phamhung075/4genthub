@@ -297,6 +297,18 @@ class SubtaskMCPController(ContextPropagationMixin):
             )
             log_authentication_details(user_id, f"manage_subtask:{action}")
 
+            # Validate basic requirements
+            if not task_id:
+                return self._response_formatter.create_error_response(
+                    operation=action,
+                    error="Missing required field: task_id. Expected: A valid task_id string",
+                    error_code=ErrorCodes.VALIDATION_ERROR,
+                    metadata={
+                        "field": "task_id",
+                        "hint": "Include 'task_id' in your request",
+                    },
+                )
+
             # Check if using legacy facade factory interface (backward compatibility)
             if self._subtask_facade_factory:
                 # Legacy path - call facade methods directly (for tests)
@@ -322,32 +334,88 @@ class SubtaskMCPController(ContextPropagationMixin):
                         error_code=ErrorCodes.VALIDATION_ERROR,
                     )
             else:
-                # New path - use operation factory
+                # New path - validate parent task and get facade (this also validates parent exists)
                 facade = self._get_facade_for_request(task_id, user_id)
-
-                # Validate basic requirements
-                if not task_id:
-                    return self._response_formatter.create_error_response(
-                        operation=action,
-                        error="Missing required field: task_id. Expected: A valid task_id string",
-                        error_code=ErrorCodes.VALIDATION_ERROR,
-                        metadata={
-                            "field": "task_id",
-                            "hint": "Include 'task_id' in your request",
-                        },
-                    )
 
                 # Coerce parameter types before processing
                 coerced_kwargs = coerce_parameter_types(kwargs)
 
-                # Execute operation using factory
-                result = self._operation_factory.handle_operation(
-                    operation=action,
-                    facade=facade,
-                    task_id=task_id,
-                    user_id=user_id,
-                    **coerced_kwargs,
-                )
+                # Build subtask_data from kwargs for create/update/complete actions
+                if action in ["create", "update", "complete"]:
+                    subtask_data = {}
+
+                    # Extract fields that go into subtask_data
+                    data_fields = [
+                        "title", "description", "status", "priority",
+                        "assignees", "progress_percentage", "progress_notes",
+                        "completion_summary", "testing_notes", "insights_found",
+                        "challenges_overcome", "skills_learned", "next_recommendations",
+                        "deliverables", "completion_quality", "impact_on_parent", "blockers"
+                    ]
+
+                    for field in data_fields:
+                        if field in coerced_kwargs and coerced_kwargs[field] is not None:
+                            subtask_data[field] = coerced_kwargs[field]
+
+                    # For complete action, ensure status is set to 'done'
+                    if action == "complete":
+                        subtask_data["status"] = "done"
+                        subtask_data["progress_percentage"] = 100
+                        if "completed_at" not in subtask_data:
+                            from datetime import UTC, datetime
+                            subtask_data["completed_at"] = datetime.now(UTC).isoformat()
+
+                    # Extract subtask_id if present
+                    subtask_id = coerced_kwargs.get("subtask_id")
+
+                    # Route to facade.handle_manage_subtask
+                    result = facade.handle_manage_subtask(
+                        action=action,
+                        task_id=task_id,
+                        subtask_id=subtask_id,
+                        subtask_data=subtask_data,
+                        user_id=user_id,
+                    )
+                elif action == "list":
+                    # For list, pass filter parameters in subtask_data
+                    filter_data = {}
+                    if "status" in coerced_kwargs:
+                        filter_data["status"] = coerced_kwargs["status"]
+                    if "priority" in coerced_kwargs:
+                        filter_data["priority"] = coerced_kwargs["priority"]
+                    if "limit" in coerced_kwargs:
+                        filter_data["limit"] = coerced_kwargs["limit"]
+                    if "offset" in coerced_kwargs:
+                        filter_data["offset"] = coerced_kwargs["offset"]
+
+                    result = facade.handle_manage_subtask(
+                        action="list",
+                        task_id=task_id,
+                        subtask_data=filter_data if filter_data else None,
+                        user_id=user_id,
+                    )
+                elif action == "get":
+                    subtask_id = coerced_kwargs.get("subtask_id")
+                    result = facade.handle_manage_subtask(
+                        action="get",
+                        task_id=task_id,
+                        subtask_id=subtask_id,
+                        user_id=user_id,
+                    )
+                elif action == "delete":
+                    subtask_id = coerced_kwargs.get("subtask_id")
+                    result = facade.handle_manage_subtask(
+                        action="delete",
+                        task_id=task_id,
+                        subtask_id=subtask_id,
+                        user_id=user_id,
+                    )
+                else:
+                    return self._response_formatter.create_error_response(
+                        operation=action,
+                        error=f"Unknown action: {action}",
+                        error_code=ErrorCodes.VALIDATION_ERROR,
+                    )
 
             # Apply workflow guidance enhancement
             if result.get("success"):
