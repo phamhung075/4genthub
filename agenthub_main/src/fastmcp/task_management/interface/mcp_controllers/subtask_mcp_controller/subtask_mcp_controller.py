@@ -16,7 +16,8 @@ from pydantic import Field
 if TYPE_CHECKING:
     from fastmcp.server.server import FastMCP
 
-# Import modular components
+# Import modular components - order intentional to group by layer (application, infrastructure, utils)
+# ruff: noqa: I001
 from ....application.facades.subtask_application_facade import SubtaskApplicationFacade
 from ....application.services.facade_service import FacadeService
 from ....infrastructure.configuration.tool_config import ToolConfig
@@ -189,7 +190,7 @@ class SubtaskMCPController(ContextPropagationMixin):
             # No event loop, create one
             return asyncio.run(coro)
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):  # Type string quotes removed (annotations from __future__)
         """Register MCP tools with the server."""
 
         @mcp.tool(description=get_manage_subtask_description())

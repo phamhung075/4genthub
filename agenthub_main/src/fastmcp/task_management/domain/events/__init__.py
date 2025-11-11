@@ -31,8 +31,8 @@ TaskDeleted = TaskDeletedEvent
 TaskCompleted = TaskCompletedEvent
 TaskRetrieved = TaskRetrievedEvent
 
-# Agent events
-from .agent_events import (
+# Agent events - imported after base types to avoid circular imports
+from .agent_events import (  # noqa: E402 - Import after aliases to avoid circular dependency
     AgentAssigned,
     AgentUnassigned,
     AgentWorkloadChanged,
@@ -52,8 +52,8 @@ from .agent_events import (
     AgentPerformanceEvaluated,
 )
 
-# Project events
-from .project_lifecycle_events import (
+# Project events - imported after base types to avoid circular imports
+from .project_lifecycle_events import (  # noqa: E402 - Import after aliases to avoid circular dependency
     ProjectCreatedEvent,
     ProjectUpdatedEvent,
     ProjectDeletedEvent,
@@ -62,8 +62,8 @@ from .project_lifecycle_events import (
     ProjectArchived,
 )
 
-# Context events
-from .context_events import (
+# Context events - imported after base types to avoid circular imports
+from .context_events import (  # noqa: E402 - Import after aliases to avoid circular dependency
     ContextCreated,
     ContextUpdated,
     ContextDelegated,

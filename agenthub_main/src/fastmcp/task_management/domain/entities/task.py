@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+# ruff: noqa: I001 - Import order intentional: future imports, stdlib, local, events last to avoid circular imports
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
