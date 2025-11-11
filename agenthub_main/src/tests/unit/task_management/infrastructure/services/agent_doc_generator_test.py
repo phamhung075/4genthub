@@ -9,7 +9,7 @@ Tests the agent documentation generator that converts YAML agent definitions to 
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 import pytest
 import yaml
@@ -22,6 +22,16 @@ from fastmcp.task_management.infrastructure.services.agent_doc_generator import 
     generate_agent_docs,
     generate_docs_for_assignees,
 )
+
+
+@pytest.fixture(autouse=True)
+def mock_database_connections():
+    """Prevent real database connections in unit tests."""
+    with patch('psycopg2.connect') as mock_pg, \
+         patch('sqlalchemy.create_engine') as mock_engine:
+        mock_pg.return_value = MagicMock()
+        mock_engine.return_value = MagicMock()
+        yield
 
 
 class TestFindProjectRoot:
