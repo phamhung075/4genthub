@@ -49,6 +49,26 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**BaseORMRepository Import Errors** (2025-11-11)
+
+Fixed 12 test failures in `supabase_optimized_repository_test.py` caused by `BaseORMRepository` not being properly exported from `task_repository.py`.
+
+**Root Cause**:
+- `BaseORMRepository` was imported for "backward compatibility" but not included in `__all__` export list
+- Python's import system doesn't automatically re-export imported names without explicit `__all__` declaration
+- Tests failed with: `AttributeError: module 'task_repository' has no attribute 'BaseORMRepository'`
+
+**Fix**:
+- Added explicit `__all__ = ["ORMTaskRepository", "BaseORMRepository"]` to `task_repository.py:54`
+- Properly exports both the main repository class and the base class for backward compatibility
+
+**Files Modified**:
+- `agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py:54` - Added __all__ export list
+
+**Impact**:
+- ✅ Fixes 12 failing tests in supabase_optimized_repository_test.py
+- ✅ Restores backward compatibility for code importing BaseORMRepository from task_repository module
+
 **Subtask Description Character Limit Increased** (2025-11-11)
 
 Fixed inconsistency between Task and Subtask entity validation where subtask descriptions were limited to 500 characters while task descriptions allowed 2000 characters.
