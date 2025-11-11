@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip install uv
 
 # Copy dependency files first for better caching (pyproject.toml is the single source of truth)
-COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md ./agenthub_main/
+COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md* ./agenthub_main/
 
 # Install dependencies with editable mode for development
 WORKDIR /app/agenthub_main
