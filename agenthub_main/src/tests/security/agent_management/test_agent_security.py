@@ -18,6 +18,8 @@ TODO: This test file needs to be updated to use the correct imports from agent_m
 instead of task_management. File is skipped to unblock test collection.
 """
 
+from __future__ import annotations
+
 import pytest
 
 # Skip entire module - needs refactoring to use correct agent_management imports

@@ -23,11 +23,20 @@ pytestmark = pytest.mark.skip(reason="Standalone script - run directly, not via 
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root / ".claude" / "hooks"))
 
-from utils.agent_state_manager import (  # noqa: E402 - Import must come after sys.path modification
-    get_agent_role_from_session,
-    get_current_agent,
-    set_current_agent,
-)
+# Try to import dependencies - if they fail, module is already skipped via pytestmark
+try:
+    from utils.agent_state_manager import (  # noqa: E402 - Import must come after sys.path modification
+        get_agent_role_from_session,
+        get_current_agent,
+        set_current_agent,
+    )
+    IMPORTS_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    IMPORTS_AVAILABLE = False
+    # Create dummy functions for pytest collection (module already skipped)
+    get_agent_role_from_session = None
+    get_current_agent = None
+    set_current_agent = None
 
 
 def test_agent_role_mapping():

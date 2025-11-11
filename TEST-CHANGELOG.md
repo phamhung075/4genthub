@@ -14,6 +14,23 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ---
 
+## [2025-11-11]
+
+### Fixed
+
+**Pytest Collection Errors for Skipped Test Modules** (2025-11-11)
+- Fixed 2 test collection errors preventing test suite from running
+- Problem: Type hints evaluated at import time before skip markers take effect
+- Solution:
+  - `test_agent_security.py`: Added `from __future__ import annotations` to defer type hint evaluation
+  - `test_agent_role_display.py`: Wrapped imports in try-except with dummy values for collection
+- Files:
+  - agenthub_main/src/tests/security/agent_management/test_agent_security.py:21
+  - agenthub_main/src/tests/test_agent_role_display.py:26-39
+- Result: Test collection succeeds, modules properly skipped during execution
+
+---
+
 ## [2025-10-29]
 
 ### Fixed
