@@ -19,6 +19,31 @@ from fastmcp.task_management.infrastructure.database.database_config import (
 )
 
 
+@pytest.fixture(autouse=True)
+def mock_database_connections():
+    """Prevent real database connections in unit tests."""
+    with patch('psycopg2.connect') as mock_pg_connect, \
+         patch('sqlalchemy.create_engine') as mock_engine_patch, \
+         patch('sqlalchemy.engine.Engine.connect') as mock_connect_patch:
+
+        # Mock psycopg2 connection
+        mock_pg_conn = MagicMock()
+        mock_pg_connect.return_value = mock_pg_conn
+
+        # Mock SQLAlchemy engine
+        mock_engine_instance = MagicMock()
+        mock_connection = MagicMock()
+
+        # Setup connection behavior
+        mock_connection.__enter__ = MagicMock(return_value=mock_connection)
+        mock_connection.__exit__ = MagicMock(return_value=False)
+        mock_engine_instance.connect.return_value = mock_connection
+        mock_engine_patch.return_value = mock_engine_instance
+        mock_connect_patch.return_value = mock_connection
+
+        yield
+
+
 @pytest.fixture
 def mock_db_connection():
     """Mock database connection to prevent actual database authentication."""
