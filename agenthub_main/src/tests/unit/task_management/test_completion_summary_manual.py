@@ -17,8 +17,12 @@ from fastmcp.task_management.infrastructure.database.database_config import (
     get_db_config,
 )
 
-# Set up environment for SQLite (for testing)
-os.environ['DATABASE_TYPE'] = 'sqlite'
+# Set up environment for testing
+# Note: This manual test is deprecated - use proper unit/integration tests instead
+os.environ['DATABASE_TYPE'] = 'postgresql'
+os.environ['DATABASE_HOST'] = 'localhost'
+os.environ['DATABASE_USER'] = 'test_user'
+os.environ['DATABASE_PASSWORD'] = 'test_password'
 os.environ['PYTEST_CURRENT_TEST'] = 'test_completion_summary_manual.py::test_completion_summary_storage'
 
 # Add the project to Python path
