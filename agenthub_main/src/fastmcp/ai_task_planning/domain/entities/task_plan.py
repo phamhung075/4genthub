@@ -172,7 +172,7 @@ class PlannedTask:
         {chr(10).join(f"- {file}" for file in self.file_references)}
         
         **Code References**:
-        {chr(10).join(f"- {file}: {", ".join(ranges)}" for file, ranges in self.code_references.items())}
+        {chr(10).join(f"- {file}: {', '.join(ranges)}" for file, ranges in self.code_references.items())}
         
         **Risks**:
         {chr(10).join(f"- {risk}" for risk in self.risks)}
