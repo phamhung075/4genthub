@@ -260,7 +260,7 @@ class TestDualAuthMiddleware:
         mock_call_next.assert_called_once_with(mock_request)
     
     @pytest.mark.asyncio
-    @patch.dict(os.environ, {"PRODUCTION": "true"})
+    @patch.dict(os.environ, {"PRODUCTION": "true", "AUTH_ENABLED": "true"})
     async def test_dispatch_with_mock_token_user(self, middleware, mock_request, mock_call_next):
         """Test dispatch with mock JWT token containing user ID."""
         from datetime import UTC, datetime, timedelta
@@ -288,7 +288,7 @@ class TestDualAuthMiddleware:
         assert mock_request.state.auth_type == 'local_jwt'
     
     @pytest.mark.asyncio
-    @patch.dict(os.environ, {"PRODUCTION": "false"})
+    @patch.dict(os.environ, {"PRODUCTION": "false", "AUTH_ENABLED": "true"})
     async def test_dispatch_authenticated_request(self, middleware, mock_request, mock_call_next):
         """Test dispatch with successful authentication."""
         mock_request.headers = Headers({'authorization': 'Bearer test_token'})
@@ -307,7 +307,7 @@ class TestDualAuthMiddleware:
             assert mock_request.state.auth_type == 'supabase'
     
     @pytest.mark.asyncio
-    @patch.dict(os.environ, {"PRODUCTION": "false"})
+    @patch.dict(os.environ, {"PRODUCTION": "false", "AUTH_ENABLED": "true"})
     async def test_dispatch_token_validation_error(self, middleware, mock_request, mock_call_next):
         """Test dispatch handles token validation errors."""
         mock_request.headers = Headers({'authorization': 'Bearer invalid_token'})
@@ -321,7 +321,7 @@ class TestDualAuthMiddleware:
             assert isinstance(response, JSONResponse)
     
     @pytest.mark.asyncio
-    @patch.dict(os.environ, {"PRODUCTION": "false"})
+    @patch.dict(os.environ, {"PRODUCTION": "false", "AUTH_ENABLED": "true"})
     async def test_dispatch_rate_limit_error(self, middleware, mock_request, mock_call_next):
         """Test dispatch handles rate limit errors."""
         mock_request.headers = Headers({'authorization': 'Bearer test_token'})
