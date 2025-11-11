@@ -29,34 +29,77 @@ def mock_database_connections():
         "DATABASE_PASSWORD": "test_pass",
     }
 
-    with (
-        patch("psycopg2.connect") as mock_pg,
-        patch("psycopg2.extras.register_uuid") as mock_uuid,
-        patch("sqlalchemy.create_engine") as mock_engine,
-        patch("sqlalchemy.event.listens_for") as mock_event,
-        patch.dict(os.environ, env_vars),
-    ):
-        # Create a proper mock connection with server_version attribute
-        mock_conn = MagicMock()
-        mock_conn.server_version = 140000  # PostgreSQL 14.0
-        mock_pg.return_value = mock_conn
-        mock_uuid.return_value = None  # register_uuid returns None
-        mock_engine.return_value = MagicMock()
-        mock_event.return_value = (
-            lambda func: func
-        )  # Return decorator that does nothing
+    # Build list of patches conditionally based on what's available
+    patches = []
+
+    # Try to patch psycopg2 only if it's available
+    try:
+        import psycopg2
+        patches.append(patch("psycopg2.connect"))
+        patches.append(patch("psycopg2.extras.register_uuid"))
+    except ImportError:
+        pass
+
+    # Try to patch sqlalchemy only if it's available
+    try:
+        import sqlalchemy
+        patches.append(patch("sqlalchemy.create_engine"))
+        patches.append(patch("sqlalchemy.event.listens_for"))
+    except ImportError:
+        pass
+
+    # Always patch environment variables
+    patches.append(patch.dict(os.environ, env_vars))
+
+    # Apply all patches using contextlib.ExitStack
+    from contextlib import ExitStack
+
+    with ExitStack() as stack:
+        mocks = [stack.enter_context(p) for p in patches]
+
+        # Configure mocks based on what was patched
+        # Count how many patches we have (excluding env_vars patch which is always last)
+        num_patches = len(mocks) - 1
+
+        if num_patches == 4:  # Has both psycopg2 and sqlalchemy mocks
+            mock_pg = mocks[0]
+            mock_uuid = mocks[1]
+            mock_engine = mocks[2]
+            mock_event = mocks[3]
+
+            # Create a proper mock connection with server_version attribute
+            mock_conn = MagicMock()
+            mock_conn.server_version = 140000  # PostgreSQL 14.0
+            mock_pg.return_value = mock_conn
+            mock_uuid.return_value = None  # register_uuid returns None
+            mock_engine.return_value = MagicMock()
+            mock_event.return_value = lambda func: func
+        elif num_patches == 2:  # Only sqlalchemy or psycopg2 mocks
+            # Could be either psycopg2 or sqlalchemy, configure generically
+            if len(mocks) >= 2:
+                for mock_obj in mocks[:-1]:  # Skip env_vars patch
+                    if isinstance(mock_obj, MagicMock):
+                        mock_obj.return_value = MagicMock()
 
         # Reset DatabaseConfig singleton AFTER mocks are set up
-        from fastmcp.task_management.infrastructure.database.database_config import (
-            DatabaseConfig,
-        )
-
-        DatabaseConfig.reset_instance()
+        try:
+            from fastmcp.task_management.infrastructure.database.database_config import (
+                DatabaseConfig,
+            )
+            DatabaseConfig.reset_instance()
+        except ImportError:
+            pass
 
         yield
 
         # Reset again after test
-        DatabaseConfig.reset_instance()
+        try:
+            from fastmcp.task_management.infrastructure.database.database_config import (
+                DatabaseConfig,
+            )
+            DatabaseConfig.reset_instance()
+        except ImportError:
+            pass
 
 
 @pytest.fixture
@@ -339,8 +382,8 @@ class TestEnvPriorityImplementation:
         # Create settings instance
         settings = Settings()
 
-        # Get the env file being used
-        env_file = settings.model_config.get("env_file")
+        # Get the env file being used (check both model_config and effective_env_file property)
+        env_file = getattr(settings, "effective_env_file", None) or settings.model_config.get("env_file")
 
         # With both files present, should use .env.dev
         env_dev_file = mock_project_root_with_both_env / ".env.dev"
