@@ -5,7 +5,7 @@ the existing MCP task management with AI-driven planning capabilities.
 
 The system integrates with the existing task_management module to provide:
 - Smart requirement analysis and parsing
-- Intelligent task breakdown and decomposition  
+- Intelligent task breakdown and decomposition
 - Automated dependency detection and mapping
 - Agent selection optimization
 - Progress tracking and plan adjustment

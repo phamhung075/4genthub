@@ -9,6 +9,7 @@ from enum import Enum
 
 class ComplianceLevel(Enum):
     """Compliance levels for audit and validation"""
+
     NONE = "none"
     BASIC = "basic"
     STANDARD = "standard"
@@ -22,6 +23,7 @@ class ComplianceLevel(Enum):
 
 class ValidationResult(Enum):
     """Validation result types"""
+
     VALID = "valid"
     INVALID = "invalid"
     WARNING = "warning"
@@ -31,6 +33,7 @@ class ValidationResult(Enum):
 
 class AuditLevel(Enum):
     """Audit detail levels"""
+
     MINIMAL = "minimal"
     STANDARD = "standard"
     DETAILED = "detailed"
@@ -39,6 +42,7 @@ class AuditLevel(Enum):
 
 class ComplianceStatus(Enum):
     """Overall compliance status"""
+
     COMPLIANT = "compliant"
     NON_COMPLIANT = "non_compliant"
     PARTIAL_COMPLIANT = "partial_compliant"
@@ -48,6 +52,7 @@ class ComplianceStatus(Enum):
 
 class ValidationSeverity(Enum):
     """Severity levels for validation issues"""
+
     INFO = "info"
     LOW = "low"
     MEDIUM = "medium"

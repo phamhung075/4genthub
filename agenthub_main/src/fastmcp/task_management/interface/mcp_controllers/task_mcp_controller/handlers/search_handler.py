@@ -77,7 +77,7 @@ class SearchHandler:
                     "limit": request.limit,
                     "offset": offset or 0,
                     "has_more": len(minimal_tasks) == request.limit,
-                    "tip": "Use manage_task(action='get', task_id='...') for full details"
+                    "tip": "Use manage_task(action='get', task_id='...') for full details",
                 }
 
             return result
@@ -128,12 +128,14 @@ class SearchHandler:
                 # Convert to minimal representation (only 4 essential fields)
                 minimal_tasks = []
                 for task in tasks:
-                    minimal_tasks.append({
-                        "id": task.get("id"),
-                        "title": task.get("title"),
-                        "status": task.get("status"),
-                        "priority": task.get("priority")
-                    })
+                    minimal_tasks.append(
+                        {
+                            "id": task.get("id"),
+                            "title": task.get("title"),
+                            "status": task.get("status"),
+                            "priority": task.get("priority"),
+                        }
+                    )
 
                 result["tasks"] = minimal_tasks
 
@@ -142,7 +144,7 @@ class SearchHandler:
                     "query": query,
                     "git_branch_id": git_branch_id,
                     "total_results": len(minimal_tasks),
-                    "tip": "Use manage_task(action='get', task_id='...') for full details"
+                    "tip": "Use manage_task(action='get', task_id='...') for full details",
                 }
 
             return result

@@ -1,6 +1,5 @@
 """AgentTemplateRepository - Repository interface for AgentTemplate aggregate"""
 
-
 from abc import ABC, abstractmethod
 
 from ..entities.agent_template import AgentTemplate

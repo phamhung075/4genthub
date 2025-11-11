@@ -14,33 +14,47 @@ from .global_context_schema import GlobalContextNestedData
 
 # Unified Context System Entities
 
+
 @dataclass
 class GlobalContext:
     """
     Global context entity for organization-wide settings with nested categorization support.
-    
+
     This entity uses a modern nested structure for global context data organization.
     """
+
     id: str  # User-scoped global context ID
     organization_name: str
     global_settings: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     # Nested structure support (v2.0)
     _nested_data: GlobalContextNestedData | None = field(default=None, init=False)
-    
+
     def __post_init__(self):
         """Initialize nested structure if not already present."""
         if self._nested_data is None:
             self._ensure_nested_structure()
             # If global_settings contains nested structure data, populate it
             # Handle Mock objects in testing scenarios
-            if (self.global_settings and
-                isinstance(self.global_settings, dict) and
-                any(key in self.global_settings for key in
-                    ["organization", "development", "security", "operations", "preferences"])):
-                self._nested_data = GlobalContextNestedData.from_dict(self.global_settings)
-    
+            if (
+                self.global_settings
+                and isinstance(self.global_settings, dict)
+                and any(
+                    key in self.global_settings
+                    for key in [
+                        "organization",
+                        "development",
+                        "security",
+                        "operations",
+                        "preferences",
+                    ]
+                )
+            ):
+                self._nested_data = GlobalContextNestedData.from_dict(
+                    self.global_settings
+                )
+
     def _ensure_nested_structure(self) -> None:
         """Ensure nested structure is initialized without overwriting custom data."""
         if self._nested_data is None:
@@ -55,7 +69,15 @@ class GlobalContext:
             return True
 
         # Known nested structure keys that don't count as custom data
-        nested_keys = {"organization", "development", "security", "operations", "preferences", "_schema_version", "_custom_categories"}
+        nested_keys = {
+            "organization",
+            "development",
+            "security",
+            "operations",
+            "preferences",
+            "_schema_version",
+            "_custom_categories",
+        }
 
         # Check if all keys in global_settings are nested structure keys
         for key in self.global_settings.keys():
@@ -65,32 +87,34 @@ class GlobalContext:
 
         # Only nested structure data found
         return True
-    
+
     def get_nested_data(self) -> GlobalContextNestedData:
         """Get the nested data structure, ensuring it's initialized."""
         self._ensure_nested_structure()
         return self._nested_data
-    
+
     def set_nested_value(self, path: str, value: Any) -> None:
         """Set a value in the nested structure using dot notation."""
         nested_data = self.get_nested_data()
         nested_data.set_nested_value(path, value)
         self._sync_to_flat_structure()
-    
+
     def get_nested_value(self, path: str, default: Any = None) -> Any:
         """Get a value from the nested structure using dot notation."""
         nested_data = self.get_nested_data()
         return nested_data.get_nested_value(path, default)
-    
+
     def _sync_to_flat_structure(self) -> None:
         """Convert nested structure to flat format."""
         if self._nested_data:
             self.global_settings = self._nested_data.to_dict()
-    
-    def update_global_settings(self, settings: dict[str, Any], use_nested: bool = True) -> None:
+
+    def update_global_settings(
+        self, settings: dict[str, Any], use_nested: bool = True
+    ) -> None:
         """
         Update global settings with support for both flat and nested structures.
-        
+
         Args:
             settings: Settings to update
             use_nested: If True, use nested structure directly
@@ -99,14 +123,29 @@ class GlobalContext:
             # Update nested structure and sync back
             if not isinstance(settings, dict):
                 raise ValueError("Settings must be a dictionary")
-            
+
             nested_data = self.get_nested_data()
-            
+
             # If settings contain nested structure directly
-            if (isinstance(settings, dict) and
-                any(key in ["organization", "development", "security", "operations", "preferences"] for key in settings.keys())):
+            if isinstance(settings, dict) and any(
+                key
+                in [
+                    "organization",
+                    "development",
+                    "security",
+                    "operations",
+                    "preferences",
+                ]
+                for key in settings.keys()
+            ):
                 # Direct nested update - deep merge to preserve existing data
-                for category in ["organization", "development", "security", "operations", "preferences"]:
+                for category in [
+                    "organization",
+                    "development",
+                    "security",
+                    "operations",
+                    "preferences",
+                ]:
                     if category in settings:
                         # Deep merge: update existing subcategories without losing others
                         if hasattr(nested_data, category):
@@ -119,51 +158,63 @@ class GlobalContext:
             else:
                 # If no nested keys, recreate nested structure from all settings
                 self._nested_data = GlobalContextNestedData.from_dict(settings)
-            
+
             self._sync_to_flat_structure()
         else:
             # Direct flat structure update
             self.global_settings.update(settings)
             # Also update nested structure from the updated flat structure
-            if (isinstance(self.global_settings, dict) and
-                any(key in self.global_settings for key in ["organization", "development", "security", "operations", "preferences"])):
-                self._nested_data = GlobalContextNestedData.from_dict(self.global_settings)
-    
+            if isinstance(self.global_settings, dict) and any(
+                key in self.global_settings
+                for key in [
+                    "organization",
+                    "development",
+                    "security",
+                    "operations",
+                    "preferences",
+                ]
+            ):
+                self._nested_data = GlobalContextNestedData.from_dict(
+                    self.global_settings
+                )
+
     def get_organization_standards(self) -> dict[str, Any]:
         """Get organization standards from nested structure."""
         return self.get_nested_value("organization.standards", {})
-    
+
     def get_security_policies(self) -> dict[str, Any]:
         """Get security policies from nested structure."""
         security_data = self.get_nested_data().security
         return {
             "authentication": security_data.get("authentication", {}),
             "encryption": security_data.get("encryption", {}),
-            "access_control": security_data.get("access_control", {})
+            "access_control": security_data.get("access_control", {}),
         }
-    
+
     def get_development_patterns(self) -> dict[str, Any]:
         """Get development patterns from nested structure."""
         return self.get_nested_value("development.patterns", {})
-    
+
     def get_user_preferences(self) -> dict[str, Any]:
         """Get user preferences from nested structure."""
         preferences = self.get_nested_data().preferences
         return {
             "user_interface": preferences.get("user_interface", {}),
             "agent_behavior": preferences.get("agent_behavior", {}),
-            "workflow": preferences.get("workflow", {})
+            "workflow": preferences.get("workflow", {}),
         }
-    
+
     def dict(self) -> dict[str, Any]:
         """Convert to dictionary with support for both structures."""
         self._ensure_nested_structure()
 
         # CRITICAL FIX: Only sync nested to flat format if NO custom data exists
         # This prevents overwriting custom data with empty nested structure
-        has_custom_data = (isinstance(self.global_settings, dict) and
-                          len(self.global_settings) > 0 and
-                          not self._is_only_nested_structure_data())
+        has_custom_data = (
+            isinstance(self.global_settings, dict)
+            and len(self.global_settings) > 0
+            and not self._is_only_nested_structure_data()
+        )
 
         if not has_custom_data:
             # Only sync if no custom data - this preserves nested structure behavior
@@ -173,7 +224,7 @@ class GlobalContext:
         result = {
             "id": self.id,
             "organization_name": self.organization_name,
-            "metadata": self.metadata.copy()
+            "metadata": self.metadata.copy(),
         }
 
         # CRITICAL FIX: Merge global_settings at root level to expose custom fields
@@ -194,7 +245,7 @@ class GlobalContext:
             result["metadata"]["nested_structure"] = self._nested_data.to_dict()
 
         return result
-    
+
     @classmethod
     def from_dict(cls, data: builtins.dict[str, Any]) -> GlobalContext:
         """Create GlobalContext from dictionary with nested structure support."""
@@ -202,9 +253,9 @@ class GlobalContext:
             id=data.get("id", ""),
             organization_name=data.get("organization_name", ""),
             global_settings=data.get("global_settings", {}),
-            metadata=data.get("metadata", {})
+            metadata=data.get("metadata", {}),
         )
-        
+
         # Check if nested structure exists in metadata
         if "nested_structure" in instance.metadata:
             nested_dict = instance.metadata["nested_structure"]
@@ -212,24 +263,39 @@ class GlobalContext:
         else:
             # Force migration from flat structure
             instance._ensure_nested_structure()
-        
+
         return instance
 
 
 @dataclass
 class ProjectContext:
     """Project context entity for project-specific settings."""
+
     id: str  # Project UUID
     project_name: str
-    project_info: dict[str, Any] = field(default_factory=dict)  # Name, description, version, status
-    team_preferences: dict[str, Any] = field(default_factory=dict)  # Review requirements, merge strategy
-    technology_stack: dict[str, Any] = field(default_factory=dict)  # Frontend, backend, database, infrastructure
-    project_workflow: dict[str, Any] = field(default_factory=dict)  # Phases, gates, approval processes
-    local_standards: dict[str, Any] = field(default_factory=dict)  # Project-specific standards
-    project_settings: dict[str, Any] = field(default_factory=dict)  # Build configs, deployment settings
-    technical_specifications: dict[str, Any] = field(default_factory=dict)  # API specs, schemas, architecture
+    project_info: dict[str, Any] = field(
+        default_factory=dict
+    )  # Name, description, version, status
+    team_preferences: dict[str, Any] = field(
+        default_factory=dict
+    )  # Review requirements, merge strategy
+    technology_stack: dict[str, Any] = field(
+        default_factory=dict
+    )  # Frontend, backend, database, infrastructure
+    project_workflow: dict[str, Any] = field(
+        default_factory=dict
+    )  # Phases, gates, approval processes
+    local_standards: dict[str, Any] = field(
+        default_factory=dict
+    )  # Project-specific standards
+    project_settings: dict[str, Any] = field(
+        default_factory=dict
+    )  # Build configs, deployment settings
+    technical_specifications: dict[str, Any] = field(
+        default_factory=dict
+    )  # API specs, schemas, architecture
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     def dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -242,24 +308,35 @@ class ProjectContext:
             "local_standards": self.local_standards,
             "project_settings": self.project_settings,
             "technical_specifications": self.technical_specifications,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class BranchContext:
     """Branch context entity for git branch-specific settings."""
+
     id: str  # Git branch UUID
     project_id: str
     git_branch_name: str
-    branch_info: dict[str, Any] = field(default_factory=dict)  # Feature name, type, status, parent
-    branch_workflow: dict[str, Any] = field(default_factory=dict)  # Implementation status, dependencies
+    branch_info: dict[str, Any] = field(
+        default_factory=dict
+    )  # Feature name, type, status, parent
+    branch_workflow: dict[str, Any] = field(
+        default_factory=dict
+    )  # Implementation status, dependencies
     feature_flags: dict[str, Any] = field(default_factory=dict)  # Feature toggles
-    discovered_patterns: dict[str, Any] = field(default_factory=dict)  # Patterns discovered
-    branch_decisions: dict[str, Any] = field(default_factory=dict)  # Technical decisions
-    branch_settings: dict[str, Any] = field(default_factory=dict)  # Legacy/general settings
+    discovered_patterns: dict[str, Any] = field(
+        default_factory=dict
+    )  # Patterns discovered
+    branch_decisions: dict[str, Any] = field(
+        default_factory=dict
+    )  # Technical decisions
+    branch_settings: dict[str, Any] = field(
+        default_factory=dict
+    )  # Legacy/general settings
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     def dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -272,7 +349,7 @@ class BranchContext:
             "discovered_patterns": self.discovered_patterns,
             "branch_decisions": self.branch_decisions,
             "branch_settings": self.branch_settings,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -283,13 +360,22 @@ class TaskContextUnified:
 
     Rich Domain Model: Contains business logic for context validation, merging, and management.
     """
+
     id: str  # Task UUID
     branch_id: str
-    task_data: dict[str, Any] = field(default_factory=dict)  # Title, status, progress, assignees
-    execution_context: dict[str, Any] = field(default_factory=dict)  # Files modified, tests added
+    task_data: dict[str, Any] = field(
+        default_factory=dict
+    )  # Title, status, progress, assignees
+    execution_context: dict[str, Any] = field(
+        default_factory=dict
+    )  # Files modified, tests added
     discovered_patterns: dict[str, Any] = field(default_factory=dict)  # Patterns found
-    implementation_notes: dict[str, Any] = field(default_factory=dict)  # Challenges, solutions
-    test_results: dict[str, Any] = field(default_factory=dict)  # Test outcomes, coverage
+    implementation_notes: dict[str, Any] = field(
+        default_factory=dict
+    )  # Challenges, solutions
+    test_results: dict[str, Any] = field(
+        default_factory=dict
+    )  # Test outcomes, coverage
     blockers: dict[str, Any] = field(default_factory=dict)  # Current impediments
     progress: int = 0
     insights: list[dict[str, Any]] = field(default_factory=list)
@@ -316,7 +402,7 @@ class TaskContextUnified:
             errors.append(f"Progress must be between 0-100, got {self.progress}")
 
         # Validate task_data has title
-        if not self.task_data.get('title'):
+        if not self.task_data.get("title"):
             errors.append("task_data must contain a title")
 
         # Validate insights structure
@@ -325,20 +411,29 @@ class TaskContextUnified:
                 errors.append(f"Insight {idx} must be a dictionary")
                 continue
 
-            required_fields = ['timestamp', 'category', 'content']
+            required_fields = ["timestamp", "category", "content"]
             for field_name in required_fields:
                 if field_name not in insight:
                     errors.append(f"Insight {idx} missing required field: {field_name}")
 
             # Validate category
-            valid_categories = ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']
-            if insight.get('category') and insight['category'] not in valid_categories:
-                errors.append(f"Insight {idx} has invalid category: {insight['category']}")
+            valid_categories = [
+                "insight",
+                "challenge",
+                "solution",
+                "decision",
+                "technical",
+                "business",
+            ]
+            if insight.get("category") and insight["category"] not in valid_categories:
+                errors.append(
+                    f"Insight {idx} has invalid category: {insight['category']}"
+                )
 
         # Validate blockers have description
         if self.blockers:
             for key, blocker in self.blockers.items():
-                if isinstance(blocker, dict) and not blocker.get('description'):
+                if isinstance(blocker, dict) and not blocker.get("description"):
                     errors.append(f"Blocker '{key}' must have a description")
 
         return len(errors) == 0, errors
@@ -358,33 +453,40 @@ class TaskContextUnified:
         """
         # Business logic for merging
         for key, value in updates.items():
-            if key == 'progress':
+            if key == "progress":
                 # Progress validation: can only increase unless explicitly allowed
                 new_progress = value
-                if new_progress < self.progress and not updates.get('_allow_progress_decrease'):
+                if new_progress < self.progress and not updates.get(
+                    "_allow_progress_decrease"
+                ):
                     # Ignore decrease unless explicitly allowed
                     continue
                 self.progress = max(0, min(100, new_progress))
 
-            elif key == 'insights':
+            elif key == "insights":
                 # Insights are append-only
                 if isinstance(value, list):
                     self.insights.extend(value)
                 elif isinstance(value, dict):
                     self.insights.append(value)
 
-            elif key == 'blockers':
+            elif key == "blockers":
                 # Merge blockers (can add or update)
                 if isinstance(value, dict):
                     self.blockers.update(value)
 
-            elif key == 'metadata':
+            elif key == "metadata":
                 # Deep merge metadata
                 if isinstance(value, dict):
                     self.metadata.update(value)
 
-            elif key in ['task_data', 'execution_context', 'discovered_patterns',
-                        'implementation_notes', 'test_results']:
+            elif key in [
+                "task_data",
+                "execution_context",
+                "discovered_patterns",
+                "implementation_notes",
+                "test_results",
+            ]:
                 # Deep merge for nested dictionaries
                 if isinstance(value, dict) and hasattr(self, key):
                     current = getattr(self, key)
@@ -395,11 +497,11 @@ class TaskContextUnified:
                 else:
                     setattr(self, key, value)
 
-            elif key == 'next_steps':
+            elif key == "next_steps":
                 # Replace next_steps (not append)
                 self.next_steps = value if isinstance(value, list) else [value]
 
-            elif key.startswith('_'):
+            elif key.startswith("_"):
                 # Skip internal flags
                 continue
 
@@ -408,8 +510,13 @@ class TaskContextUnified:
                 if hasattr(self, key):
                     setattr(self, key, value)
 
-    def add_insight(self, category: str, content: str, agent: str = "system",
-                   importance: str = "medium") -> None:
+    def add_insight(
+        self,
+        category: str,
+        content: str,
+        agent: str = "system",
+        importance: str = "medium",
+    ) -> None:
         """
         Add categorized insight to the context.
 
@@ -423,30 +530,42 @@ class TaskContextUnified:
             ValueError: If category is invalid or content is empty
         """
         # Validation
-        valid_categories = ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']
+        valid_categories = [
+            "insight",
+            "challenge",
+            "solution",
+            "decision",
+            "technical",
+            "business",
+        ]
         if category not in valid_categories:
-            raise ValueError(f"Invalid category: {category}. Must be one of {valid_categories}")
+            raise ValueError(
+                f"Invalid category: {category}. Must be one of {valid_categories}"
+            )
 
         if not content or not content.strip():
             raise ValueError("Insight content cannot be empty")
 
-        valid_importance = ['low', 'medium', 'high', 'critical']
+        valid_importance = ["low", "medium", "high", "critical"]
         if importance not in valid_importance:
-            raise ValueError(f"Invalid importance: {importance}. Must be one of {valid_importance}")
+            raise ValueError(
+                f"Invalid importance: {importance}. Must be one of {valid_importance}"
+            )
 
         # Add insight with timestamp
         insight = {
-            'timestamp': datetime.now(UTC).isoformat(),
-            'category': category,
-            'content': content.strip(),
-            'agent': agent,
-            'importance': importance
+            "timestamp": datetime.now(UTC).isoformat(),
+            "category": category,
+            "content": content.strip(),
+            "agent": agent,
+            "importance": importance,
         }
 
         self.insights.append(insight)
 
-    def update_progress(self, new_progress: int, notes: str | None = None,
-                       allow_decrease: bool = False) -> None:
+    def update_progress(
+        self, new_progress: int, notes: str | None = None, allow_decrease: bool = False
+    ) -> None:
         """
         Update progress with validation and tracking.
 
@@ -474,25 +593,29 @@ class TaskContextUnified:
         self.progress = new_progress
 
         # Track progress change in metadata
-        if 'progress_history' not in self.metadata:
-            self.metadata['progress_history'] = []
+        if "progress_history" not in self.metadata:
+            self.metadata["progress_history"] = []
 
-        self.metadata['progress_history'].append({
-            'timestamp': datetime.now(UTC).isoformat(),
-            'old_progress': old_progress,
-            'new_progress': new_progress,
-            'notes': notes
-        })
+        self.metadata["progress_history"].append(
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "old_progress": old_progress,
+                "new_progress": new_progress,
+                "notes": notes,
+            }
+        )
 
         # Update implementation notes if provided
         if notes:
-            if 'progress_updates' not in self.implementation_notes:
-                self.implementation_notes['progress_updates'] = []
-            self.implementation_notes['progress_updates'].append({
-                'timestamp': datetime.now(UTC).isoformat(),
-                'progress': new_progress,
-                'notes': notes
-            })
+            if "progress_updates" not in self.implementation_notes:
+                self.implementation_notes["progress_updates"] = []
+            self.implementation_notes["progress_updates"].append(
+                {
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "progress": new_progress,
+                    "notes": notes,
+                }
+            )
 
     def dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -508,7 +631,7 @@ class TaskContextUnified:
             "progress": self.progress,
             "insights": self.insights,
             "next_steps": self.next_steps,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -518,6 +641,7 @@ class TaskContextUnified:
 @dataclass
 class ContextMetadata(BaseTimestampEntity):
     """Context metadata structure following clean relationship chain (uses Priority and TaskStatus value objects)"""
+
     task_id: str = ""  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     status: TaskStatus = field(default_factory=TaskStatus.todo)
     priority: Priority = field(default_factory=Priority.medium)
@@ -538,6 +662,7 @@ class ContextMetadata(BaseTimestampEntity):
 @dataclass
 class ContextObjective:
     """Task objective and description"""
+
     title: str
     description: str = ""
     estimated_effort: str | None = None
@@ -547,6 +672,7 @@ class ContextObjective:
 @dataclass
 class ContextRequirement:
     """Individual requirement item (uses Priority value object)"""
+
     id: str
     title: str
     completed: bool = False
@@ -557,6 +683,7 @@ class ContextRequirement:
 @dataclass
 class ContextRequirements:
     """Requirements section"""
+
     checklist: list[ContextRequirement] = field(default_factory=list)
     custom_requirements: list[str] = field(default_factory=list)
     completion_criteria: list[str] = field(default_factory=list)
@@ -565,6 +692,7 @@ class ContextRequirements:
 @dataclass
 class ContextTechnical:
     """Technical details section"""
+
     technologies: list[str] = field(default_factory=list)
     frameworks: list[str] = field(default_factory=list)
     database: str = ""
@@ -577,6 +705,7 @@ class ContextTechnical:
 @dataclass
 class ContextDependency:
     """Dependency information (uses TaskStatus value object)"""
+
     task_id: str
     title: str = ""
     status: TaskStatus = field(default_factory=TaskStatus.todo)
@@ -586,6 +715,7 @@ class ContextDependency:
 @dataclass
 class ContextDependencies:
     """Dependencies section"""
+
     task_dependencies: list[ContextDependency] = field(default_factory=list)
     external_dependencies: list[str] = field(default_factory=list)
     blocked_by: list[str] = field(default_factory=list)
@@ -594,6 +724,7 @@ class ContextDependencies:
 @dataclass
 class ContextProgressAction:
     """Individual progress action"""
+
     timestamp: str
     action: str
     agent: str
@@ -604,6 +735,7 @@ class ContextProgressAction:
 @dataclass
 class ContextProgress:
     """Progress tracking section"""
+
     completed_actions: list[ContextProgressAction] = field(default_factory=list)
     current_session_summary: str = ""
     next_steps: list[str] = field(default_factory=list)
@@ -619,6 +751,7 @@ class ContextProgress:
 @dataclass
 class ContextInsight:
     """Agent insight or note"""
+
     timestamp: str
     agent: str
     category: str  # "insight", "challenge", "solution", "decision"
@@ -629,6 +762,7 @@ class ContextInsight:
 @dataclass
 class ContextNotes:
     """Context notes and insights"""
+
     agent_insights: list[ContextInsight] = field(default_factory=list)
     challenges_encountered: list[ContextInsight] = field(default_factory=list)
     solutions_applied: list[ContextInsight] = field(default_factory=list)
@@ -639,6 +773,7 @@ class ContextNotes:
 @dataclass
 class ContextSubtask:
     """Subtask information (uses TaskStatus value object)"""
+
     id: str
     title: str
     description: str = ""
@@ -651,6 +786,7 @@ class ContextSubtask:
 @dataclass
 class ContextSubtasks:
     """Subtasks section"""
+
     items: list[ContextSubtask] = field(default_factory=list)
     total_count: int = 0
     completed_count: int = 0
@@ -660,6 +796,7 @@ class ContextSubtasks:
 @dataclass
 class ContextCustomSection:
     """Custom extensible section"""
+
     name: str
     data: dict[str, Any] = field(default_factory=dict)
     schema_version: str = "1.0"
@@ -668,6 +805,7 @@ class ContextCustomSection:
 @dataclass
 class TaskContext:
     """Complete task context structure"""
+
     metadata: ContextMetadata
     objective: ContextObjective
     requirements: ContextRequirements = field(default_factory=ContextRequirements)
@@ -677,55 +815,62 @@ class TaskContext:
     subtasks: ContextSubtasks = field(default_factory=ContextSubtasks)
     notes: ContextNotes = field(default_factory=ContextNotes)
     custom_sections: list[ContextCustomSection] = field(default_factory=list)
-    
+
     # Phase 2: Progress tracking fields
     progress_timeline: list[dict[str, Any]] | None = None  # Snapshot history
     progress_milestones: dict[str, float] | None = None  # Milestone definitions
     progress_by_type: dict[str, float] | None = None  # Current progress per type
-    
-    def update_completion_summary(self, completion_summary: str, 
-                                testing_notes: str | None = None,
-                                next_recommendations: str | None = None) -> None:
+
+    def update_completion_summary(
+        self,
+        completion_summary: str,
+        testing_notes: str | None = None,
+        next_recommendations: str | None = None,
+    ) -> None:
         """Update context with completion information (Vision System requirement)"""
         if not completion_summary or not completion_summary.strip():
             raise ValueError("completion_summary cannot be empty")
-        
+
         self.progress.completion_summary = completion_summary
         if testing_notes:
             self.progress.testing_notes = testing_notes
         if next_recommendations:
             self.progress.next_recommendations = next_recommendations
-        
+
         # Update metadata timestamp
         self.metadata.touch("completion_summary_updated")
-    
+
     def has_completion_summary(self) -> bool:
         """Check if context has a completion summary"""
-        return bool(self.progress.completion_summary and self.progress.completion_summary.strip())
-    
+        return bool(
+            self.progress.completion_summary
+            and self.progress.completion_summary.strip()
+        )
+
     def validate_for_task_completion(self) -> tuple[bool, list[str]]:
         """Validate context is ready for task completion"""
         errors = []
-        
+
         if not self.has_completion_summary():
             errors.append("completion_summary is required for task completion")
-        
+
         # Additional validations can be added here
-        
+
         return len(errors) == 0, errors
-    
+
     def to_dict(self, embedded: bool = False) -> dict[str, Any]:
         """Convert context to dictionary for JSON serialization
 
         Args:
             embedded: If True, omits fields that duplicate parent task data (optimization)
         """
+
         def convert_dataclass(obj):
             if isinstance(obj, Priority) or isinstance(obj, TaskStatus):
                 return str(obj)
             elif isinstance(obj, datetime):
                 return obj.isoformat()
-            elif hasattr(obj, '__dataclass_fields__'):
+            elif hasattr(obj, "__dataclass_fields__"):
                 return {k: convert_dataclass(v) for k, v in obj.__dict__.items()}
             elif isinstance(obj, list):
                 return [convert_dataclass(item) for item in obj]
@@ -737,207 +882,240 @@ class TaskContext:
         result = convert_dataclass(self)
 
         # OPTIMIZATION: When embedded in task response, remove duplicate fields
-        if embedded and 'metadata' in result and isinstance(result['metadata'], dict):
+        if embedded and "metadata" in result and isinstance(result["metadata"], dict):
             # Remove duplicates: task_id, status, priority (already in task root)
             # Keep unique fields: version, assignees, labels
             metadata_optimized = {}
-            if 'version' in result['metadata']:
-                metadata_optimized['version'] = result['metadata']['version']
-            if 'assignees' in result['metadata']:
-                metadata_optimized['assignees'] = result['metadata']['assignees']
-            if 'labels' in result['metadata']:
-                metadata_optimized['labels'] = result['metadata']['labels']
-            result['metadata'] = metadata_optimized
+            if "version" in result["metadata"]:
+                metadata_optimized["version"] = result["metadata"]["version"]
+            if "assignees" in result["metadata"]:
+                metadata_optimized["assignees"] = result["metadata"]["assignees"]
+            if "labels" in result["metadata"]:
+                metadata_optimized["labels"] = result["metadata"]["labels"]
+            result["metadata"] = metadata_optimized
 
             # Remove 'id' field when embedded (use task.context_id instead)
-            if 'id' in result:
-                del result['id']
+            if "id" in result:
+                del result["id"]
         else:
             # Add task_id at root level for backward compatibility (non-embedded)
-            result['task_id'] = self.metadata.task_id
+            result["task_id"] = self.metadata.task_id
 
         # Restore custom fields from custom_sections to root level
-        if 'custom_sections' in result:
+        if "custom_sections" in result:
             custom_sections_to_keep = []
-            for section in result['custom_sections']:
-                if section.get('name') == 'root_level_custom_fields':
+            for section in result["custom_sections"]:
+                if section.get("name") == "root_level_custom_fields":
                     # Restore custom fields to root level
-                    if 'data' in section and isinstance(section['data'], dict):
-                        result.update(section['data'])
+                    if "data" in section and isinstance(section["data"], dict):
+                        result.update(section["data"])
                 else:
                     # Keep other custom sections
                     custom_sections_to_keep.append(section)
-            result['custom_sections'] = custom_sections_to_keep
+            result["custom_sections"] = custom_sections_to_keep
 
         return result
-    
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> TaskContext:
         """Create TaskContext from dictionary"""
         # Handle nested format
-        if 'metadata' in data:
+        if "metadata" in data:
             # New nested format - extract metadata section (clean relationship chain)
-            metadata_data = data['metadata']
+            metadata_data = data["metadata"]
             metadata = ContextMetadata(
-                task_id=metadata_data['task_id'],  # Only task_id following clean relationship chain
-                status=TaskStatus.from_string(metadata_data.get('status', 'todo')),
-                priority=Priority.from_string(metadata_data.get('priority', 'medium')),
-                assignees=metadata_data.get('assignees', []),
-                labels=metadata_data.get('labels', []),
-                version=metadata_data.get('version', 1)
+                task_id=metadata_data[
+                    "task_id"
+                ],  # Only task_id following clean relationship chain
+                status=TaskStatus.from_string(metadata_data.get("status", "todo")),
+                priority=Priority.from_string(metadata_data.get("priority", "medium")),
+                assignees=metadata_data.get("assignees", []),
+                labels=metadata_data.get("labels", []),
+                version=metadata_data.get("version", 1),
             )
         else:
             # Flat format - extract from data directly
             metadata = ContextMetadata(
-                task_id=data['task_id'],  # Only task_id following clean relationship chain
-                status=TaskStatus.from_string(data.get('status', 'todo')),
-                priority=Priority.from_string(data.get('priority', 'medium')),
-                assignees=data.get('assignees', []),
-                labels=data.get('labels', [])
+                task_id=data[
+                    "task_id"
+                ],  # Only task_id following clean relationship chain
+                status=TaskStatus.from_string(data.get("status", "todo")),
+                priority=Priority.from_string(data.get("priority", "medium")),
+                assignees=data.get("assignees", []),
+                labels=data.get("labels", []),
             )
-        
+
         # Extract objective section
-        if 'objective' in data:
-            objective_data = data['objective']
+        if "objective" in data:
+            objective_data = data["objective"]
             objective = ContextObjective(
-                title=objective_data['title'],
-                description=objective_data.get('description', ''),
-                estimated_effort=objective_data.get('estimated_effort'),
-                due_date=datetime.fromisoformat(objective_data.get('due_date', '').replace('Z', '+00:00')) if objective_data.get('due_date') else None
+                title=objective_data["title"],
+                description=objective_data.get("description", ""),
+                estimated_effort=objective_data.get("estimated_effort"),
+                due_date=datetime.fromisoformat(
+                    objective_data.get("due_date", "").replace("Z", "+00:00")
+                )
+                if objective_data.get("due_date")
+                else None,
             )
         else:
             # Fallback for old format or missing objective
             objective = ContextObjective(
-                title=data.get('title', f"Context for task {metadata.task_id}"),
-                description=data.get('description', ''),
-                estimated_effort=data.get('estimated_effort'),
-                due_date=datetime.fromisoformat(data.get('due_date', '').replace('Z', '+00:00')) if data.get('due_date') else None
+                title=data.get("title", f"Context for task {metadata.task_id}"),
+                description=data.get("description", ""),
+                estimated_effort=data.get("estimated_effort"),
+                due_date=datetime.fromisoformat(
+                    data.get("due_date", "").replace("Z", "+00:00")
+                )
+                if data.get("due_date")
+                else None,
             )
-        
+
         context = cls(metadata=metadata, objective=objective)
-        
+
         # Load other sections if present with value object conversion
-        if 'requirements' in data:
-            req_data = data['requirements']
+        if "requirements" in data:
+            req_data = data["requirements"]
             context.requirements = ContextRequirements(
                 checklist=[
                     ContextRequirement(
-                        id=item.get('id', ''),
-                        title=item.get('title', ''),
-                        completed=item.get('completed', False),
-                        priority=Priority.from_string(item.get('priority', 'medium')),
-                        notes=item.get('notes', '')
-                    ) for item in req_data.get('checklist', [])
+                        id=item.get("id", ""),
+                        title=item.get("title", ""),
+                        completed=item.get("completed", False),
+                        priority=Priority.from_string(item.get("priority", "medium")),
+                        notes=item.get("notes", ""),
+                    )
+                    for item in req_data.get("checklist", [])
                 ],
-                custom_requirements=req_data.get('custom_requirements', []),
-                completion_criteria=req_data.get('completion_criteria', [])
+                custom_requirements=req_data.get("custom_requirements", []),
+                completion_criteria=req_data.get("completion_criteria", []),
             )
-        
-        if 'technical' in data:
-            context.technical = ContextTechnical(**data['technical'])
-            
-        if 'dependencies' in data:
-            dep_data = data['dependencies']
+
+        if "technical" in data:
+            context.technical = ContextTechnical(**data["technical"])
+
+        if "dependencies" in data:
+            dep_data = data["dependencies"]
             context.dependencies = ContextDependencies(
                 task_dependencies=[
                     ContextDependency(
-                        task_id=item.get('task_id', ''),
-                        title=item.get('title', ''),
-                        status=TaskStatus.from_string(item.get('status', 'todo')),
-                        blocking_reason=item.get('blocking_reason', '')
-                    ) for item in dep_data.get('task_dependencies', [])
+                        task_id=item.get("task_id", ""),
+                        title=item.get("title", ""),
+                        status=TaskStatus.from_string(item.get("status", "todo")),
+                        blocking_reason=item.get("blocking_reason", ""),
+                    )
+                    for item in dep_data.get("task_dependencies", [])
                 ],
-                external_dependencies=dep_data.get('external_dependencies', []),
-                blocked_by=dep_data.get('blocked_by', [])
+                external_dependencies=dep_data.get("external_dependencies", []),
+                blocked_by=dep_data.get("blocked_by", []),
             )
-            
-        if 'progress' in data:
-            prog_data = data['progress']
+
+        if "progress" in data:
+            prog_data = data["progress"]
             context.progress = ContextProgress(
-                completed_actions=[ContextProgressAction(**item) for item in prog_data.get('completed_actions', [])],
-                current_session_summary=prog_data.get('current_session_summary', ''),
-                next_steps=prog_data.get('next_steps', []),
-                completion_percentage=prog_data.get('completion_percentage', 0.0),
-                time_spent_minutes=prog_data.get('time_spent_minutes', 0),
+                completed_actions=[
+                    ContextProgressAction(**item)
+                    for item in prog_data.get("completed_actions", [])
+                ],
+                current_session_summary=prog_data.get("current_session_summary", ""),
+                next_steps=prog_data.get("next_steps", []),
+                completion_percentage=prog_data.get("completion_percentage", 0.0),
+                time_spent_minutes=prog_data.get("time_spent_minutes", 0),
                 # Vision System fields
-                completion_summary=prog_data.get('completion_summary'),
-                testing_notes=prog_data.get('testing_notes'),
-                next_recommendations=prog_data.get('next_recommendations'),
-                vision_alignment_score=prog_data.get('vision_alignment_score')
+                completion_summary=prog_data.get("completion_summary"),
+                testing_notes=prog_data.get("testing_notes"),
+                next_recommendations=prog_data.get("next_recommendations"),
+                vision_alignment_score=prog_data.get("vision_alignment_score"),
             )
-            
-        if 'subtasks' in data:
-            sub_data = data['subtasks']
+
+        if "subtasks" in data:
+            sub_data = data["subtasks"]
             context.subtasks = ContextSubtasks(
                 items=[
                     ContextSubtask(
-                        id=item.get('id', ''),
-                        title=item.get('title', ''),
-                        description=item.get('description', ''),
-                        status=TaskStatus.from_string(item.get('status', 'todo')),
-                        assignees=item.get('assignees', []),
-                        completed=item.get('completed', False),
-                        progress_notes=item.get('progress_notes', '')
-                    ) for item in sub_data.get('items', [])
+                        id=item.get("id", ""),
+                        title=item.get("title", ""),
+                        description=item.get("description", ""),
+                        status=TaskStatus.from_string(item.get("status", "todo")),
+                        assignees=item.get("assignees", []),
+                        completed=item.get("completed", False),
+                        progress_notes=item.get("progress_notes", ""),
+                    )
+                    for item in sub_data.get("items", [])
                 ],
-                total_count=sub_data.get('total_count', 0),
-                completed_count=sub_data.get('completed_count', 0),
-                progress_percentage=sub_data.get('progress_percentage', 0.0)
+                total_count=sub_data.get("total_count", 0),
+                completed_count=sub_data.get("completed_count", 0),
+                progress_percentage=sub_data.get("progress_percentage", 0.0),
             )
-            
-        if 'notes' in data:
-            notes_data = data['notes']
+
+        if "notes" in data:
+            notes_data = data["notes"]
             context.notes = ContextNotes(
-                agent_insights=[ContextInsight(**item) for item in notes_data.get('agent_insights', [])],
-                challenges_encountered=[ContextInsight(**item) for item in notes_data.get('challenges_encountered', [])],
-                solutions_applied=[ContextInsight(**item) for item in notes_data.get('solutions_applied', [])],
-                decisions_made=[ContextInsight(**item) for item in notes_data.get('decisions_made', [])],
-                general_notes=notes_data.get('general_notes', '')
+                agent_insights=[
+                    ContextInsight(**item)
+                    for item in notes_data.get("agent_insights", [])
+                ],
+                challenges_encountered=[
+                    ContextInsight(**item)
+                    for item in notes_data.get("challenges_encountered", [])
+                ],
+                solutions_applied=[
+                    ContextInsight(**item)
+                    for item in notes_data.get("solutions_applied", [])
+                ],
+                decisions_made=[
+                    ContextInsight(**item)
+                    for item in notes_data.get("decisions_made", [])
+                ],
+                general_notes=notes_data.get("general_notes", ""),
             )
-            
-        if 'custom_sections' in data:
-            context.custom_sections = [ContextCustomSection(**section) for section in data['custom_sections']]
-        
+
+        if "custom_sections" in data:
+            context.custom_sections = [
+                ContextCustomSection(**section) for section in data["custom_sections"]
+            ]
+
         # Handle custom fields at root level by storing them in custom_sections
         known_fields = {
-            'metadata', 
-            'objective', 
-            'requirements', 
-            'technical', 
-            'dependencies', 
-            'progress', 
-            'subtasks', 
-            'notes', 
-            'custom_sections', 
-            'task_id'  # task_id is added by to_dict
-            'user_id', 'status', 
-            'priority', 
-            'assignees', 
-            'labels',
-            'title', 
-            'description', 
-            'estimated_effort', 
-            'due_date'
+            "metadata",
+            "objective",
+            "requirements",
+            "technical",
+            "dependencies",
+            "progress",
+            "subtasks",
+            "notes",
+            "custom_sections",
+            "task_id"  # task_id is added by to_dict
+            "user_id",
+            "status",
+            "priority",
+            "assignees",
+            "labels",
+            "title",
+            "description",
+            "estimated_effort",
+            "due_date",
         }
-        
+
         custom_fields = {k: v for k, v in data.items() if k not in known_fields}
         if custom_fields:
             # Add custom fields as a special custom section
             custom_section = ContextCustomSection(
                 name="root_level_custom_fields",
                 data=custom_fields,
-                schema_version="1.0"
+                schema_version="1.0",
             )
             context.custom_sections.append(custom_section)
-        
+
         return context
 
 
 class ContextSchema:
     """Context schema management and validation"""
-    
+
     SCHEMA_VERSION = "1.0"
-    
+
     @staticmethod
     def get_default_schema() -> dict[str, Any]:
         """Get the default context JSON schema"""
@@ -954,14 +1132,28 @@ class ContextSchema:
                     "required": ["task_id"],
                     "properties": {
                         "task_id": {"type": "string"},
-                        "status": {"type": "string", "enum": ["todo", "in_progress", "blocked", "review", "testing", "done", "cancelled"]},
-                        "priority": {"type": "string", "enum": ["low", "medium", "high", "urgent", "critical"]},
+                        "status": {
+                            "type": "string",
+                            "enum": [
+                                "todo",
+                                "in_progress",
+                                "blocked",
+                                "review",
+                                "testing",
+                                "done",
+                                "cancelled",
+                            ],
+                        },
+                        "priority": {
+                            "type": "string",
+                            "enum": ["low", "medium", "high", "urgent", "critical"],
+                        },
                         "assignees": {"type": "array", "items": {"type": "string"}},
                         "labels": {"type": "array", "items": {"type": "string"}},
                         "created_at": {"type": "string", "format": "date-time"},
                         "updated_at": {"type": "string", "format": "date-time"},
-                        "version": {"type": "integer", "minimum": 1}
-                    }
+                        "version": {"type": "integer", "minimum": 1},
+                    },
                 },
                 "objective": {
                     "type": "object",
@@ -969,9 +1161,21 @@ class ContextSchema:
                     "properties": {
                         "title": {"type": "string"},
                         "description": {"type": "string"},
-                        "estimated_effort": {"type": "string", "enum": ["quick", "short", "small", "medium", "large", "xlarge", "epic", "massive"]},
-                        "due_date": {"type": ["string", "null"], "format": "date"}
-                    }
+                        "estimated_effort": {
+                            "type": "string",
+                            "enum": [
+                                "quick",
+                                "short",
+                                "small",
+                                "medium",
+                                "large",
+                                "xlarge",
+                                "epic",
+                                "massive",
+                            ],
+                        },
+                        "due_date": {"type": ["string", "null"], "format": "date"},
+                    },
                 },
                 "requirements": {
                     "type": "object",
@@ -985,14 +1189,23 @@ class ContextSchema:
                                     "id": {"type": "string"},
                                     "title": {"type": "string"},
                                     "completed": {"type": "boolean", "default": False},
-                                    "priority": {"type": "string", "enum": ["low", "medium", "high"]},
-                                    "notes": {"type": "string"}
-                                }
-                            }
+                                    "priority": {
+                                        "type": "string",
+                                        "enum": ["low", "medium", "high"],
+                                    },
+                                    "notes": {"type": "string"},
+                                },
+                            },
                         },
-                        "custom_requirements": {"type": "array", "items": {"type": "string"}},
-                        "completion_criteria": {"type": "array", "items": {"type": "string"}}
-                    }
+                        "custom_requirements": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                        "completion_criteria": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                    },
                 },
                 "technical": {
                     "type": "object",
@@ -1001,10 +1214,13 @@ class ContextSchema:
                         "frameworks": {"type": "array", "items": {"type": "string"}},
                         "database": {"type": "string"},
                         "key_files": {"type": "array", "items": {"type": "string"}},
-                        "key_directories": {"type": "array", "items": {"type": "string"}},
+                        "key_directories": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
                         "architecture_notes": {"type": "string"},
-                        "patterns_used": {"type": "array", "items": {"type": "string"}}
-                    }
+                        "patterns_used": {"type": "array", "items": {"type": "string"}},
+                    },
                 },
                 "dependencies": {
                     "type": "object",
@@ -1018,13 +1234,16 @@ class ContextSchema:
                                     "task_id": {"type": "string"},
                                     "title": {"type": "string"},
                                     "status": {"type": "string"},
-                                    "blocking_reason": {"type": "string"}
-                                }
-                            }
+                                    "blocking_reason": {"type": "string"},
+                                },
+                            },
                         },
-                        "external_dependencies": {"type": "array", "items": {"type": "string"}},
-                        "blocked_by": {"type": "array", "items": {"type": "string"}}
-                    }
+                        "external_dependencies": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                        "blocked_by": {"type": "array", "items": {"type": "string"}},
+                    },
                 },
                 "progress": {
                     "type": "object",
@@ -1035,19 +1254,29 @@ class ContextSchema:
                                 "type": "object",
                                 "required": ["timestamp", "action", "agent"],
                                 "properties": {
-                                    "timestamp": {"type": "string", "format": "date-time"},
+                                    "timestamp": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                    },
                                     "action": {"type": "string"},
                                     "agent": {"type": "string"},
                                     "details": {"type": "string"},
-                                    "status": {"type": "string", "enum": ["completed", "in_progress", "failed"]}
-                                }
-                            }
+                                    "status": {
+                                        "type": "string",
+                                        "enum": ["completed", "in_progress", "failed"],
+                                    },
+                                },
+                            },
                         },
                         "current_session_summary": {"type": "string"},
                         "next_steps": {"type": "array", "items": {"type": "string"}},
-                        "completion_percentage": {"type": "number", "minimum": 0, "maximum": 100},
-                        "time_spent_minutes": {"type": "integer", "minimum": 0}
-                    }
+                        "completion_percentage": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100,
+                        },
+                        "time_spent_minutes": {"type": "integer", "minimum": 0},
+                    },
                 },
                 "subtasks": {
                     "type": "object",
@@ -1061,17 +1290,32 @@ class ContextSchema:
                                     "id": {"type": "string"},
                                     "title": {"type": "string"},
                                     "description": {"type": "string"},
-                                    "status": {"type": "string", "enum": ["todo", "in_progress", "done", "cancelled"]},
-                                    "assignees": {"type": "array", "items": {"type": "string"}},
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "todo",
+                                            "in_progress",
+                                            "done",
+                                            "cancelled",
+                                        ],
+                                    },
+                                    "assignees": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                    },
                                     "completed": {"type": "boolean"},
-                                    "progress_notes": {"type": "string"}
-                                }
-                            }
+                                    "progress_notes": {"type": "string"},
+                                },
+                            },
                         },
                         "total_count": {"type": "integer", "minimum": 0},
                         "completed_count": {"type": "integer", "minimum": 0},
-                        "progress_percentage": {"type": "number", "minimum": 0, "maximum": 100}
-                    }
+                        "progress_percentage": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100,
+                        },
+                    },
                 },
                 "notes": {
                     "type": "object",
@@ -1080,21 +1324,55 @@ class ContextSchema:
                             "type": "array",
                             "items": {
                                 "type": "object",
-                                "required": ["timestamp", "agent", "category", "content"],
+                                "required": [
+                                    "timestamp",
+                                    "agent",
+                                    "category",
+                                    "content",
+                                ],
                                 "properties": {
-                                    "timestamp": {"type": "string", "format": "date-time"},
+                                    "timestamp": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                    },
                                     "agent": {"type": "string"},
-                                    "category": {"type": "string", "enum": ["insight", "challenge", "solution", "decision"]},
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "insight",
+                                            "challenge",
+                                            "solution",
+                                            "decision",
+                                        ],
+                                    },
                                     "content": {"type": "string"},
-                                    "importance": {"type": "string", "enum": ["low", "medium", "high", "critical"]}
-                                }
-                            }
+                                    "importance": {
+                                        "type": "string",
+                                        "enum": ["low", "medium", "high", "critical"],
+                                    },
+                                },
+                            },
                         },
-                        "challenges_encountered": {"type": "array", "items": {"$ref": "#/properties/notes/properties/agent_insights/items"}},
-                        "solutions_applied": {"type": "array", "items": {"$ref": "#/properties/notes/properties/agent_insights/items"}},
-                        "decisions_made": {"type": "array", "items": {"$ref": "#/properties/notes/properties/agent_insights/items"}},
-                        "general_notes": {"type": "string"}
-                    }
+                        "challenges_encountered": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/properties/notes/properties/agent_insights/items"
+                            },
+                        },
+                        "solutions_applied": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/properties/notes/properties/agent_insights/items"
+                            },
+                        },
+                        "decisions_made": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/properties/notes/properties/agent_insights/items"
+                            },
+                        },
+                        "general_notes": {"type": "string"},
+                    },
                 },
                 "custom_sections": {
                     "type": "array",
@@ -1104,59 +1382,59 @@ class ContextSchema:
                         "properties": {
                             "name": {"type": "string"},
                             "data": {"type": "object"},
-                            "schema_version": {"type": "string", "default": "1.0"}
-                        }
-                    }
-                }
-            }
+                            "schema_version": {"type": "string", "default": "1.0"},
+                        },
+                    },
+                },
+            },
         }
-    
+
     @staticmethod
     def validate_context(context_data: dict[str, Any]) -> tuple[bool, list[str]]:
         """Validate context data against schema"""
         errors = []
-        
+
         # Basic validation
         if not isinstance(context_data, dict):
             errors.append("Context data must be a dictionary")
             return False, errors
-        
+
         # Check required fields
-        if 'metadata' not in context_data:
+        if "metadata" not in context_data:
             errors.append("Missing required field: metadata")
-        if 'objective' not in context_data:
+        if "objective" not in context_data:
             errors.append("Missing required field: objective")
-        
+
         # Validate metadata
-        if 'metadata' in context_data:
-            metadata = context_data['metadata']
-            if 'task_id' not in metadata:
+        if "metadata" in context_data:
+            metadata = context_data["metadata"]
+            if "task_id" not in metadata:
                 errors.append("Missing required field: metadata.task_id")
-        
+
         # Validate objective
-        if 'objective' in context_data:
-            objective = context_data['objective']
-            if 'title' not in objective:
+        if "objective" in context_data:
+            objective = context_data["objective"]
+            if "title" not in objective:
                 errors.append("Missing required field: objective.title")
-        
+
         return len(errors) == 0, errors
-    
+
     @staticmethod
     def create_empty_context(task_id: str, title: str, **kwargs) -> TaskContext:
         """Create an empty context with minimal required fields (clean relationship chain)"""
         metadata = ContextMetadata(
             task_id=task_id,  # Only task_id following clean relationship chain
-            status=TaskStatus(kwargs.get('status', TaskStatusEnum.TODO.value)),
-            priority=Priority(kwargs.get('priority', PriorityLevel.MEDIUM.label)),
-            assignees=kwargs.get('assignees', []),
-            labels=kwargs.get('labels', [])
+            status=TaskStatus(kwargs.get("status", TaskStatusEnum.TODO.value)),
+            priority=Priority(kwargs.get("priority", PriorityLevel.MEDIUM.label)),
+            assignees=kwargs.get("assignees", []),
+            labels=kwargs.get("labels", []),
         )
-        
+
         objective = ContextObjective(
             title=title,
-            description=kwargs.get('description', ''),
-            estimated_effort=kwargs.get('estimated_effort'),
-            due_date=kwargs.get('due_date')
+            description=kwargs.get("description", ""),
+            estimated_effort=kwargs.get("estimated_effort"),
+            due_date=kwargs.get("due_date"),
         )
-        
-        return TaskContext(metadata=metadata, objective=objective) 
+
+        return TaskContext(metadata=metadata, objective=objective)

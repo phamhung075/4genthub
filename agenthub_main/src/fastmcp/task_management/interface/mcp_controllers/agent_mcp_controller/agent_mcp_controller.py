@@ -76,7 +76,11 @@ class AgentMCPController:
     - Workflow guidance system integration
     """
 
-    def __init__(self, facade_service: FacadeService | None = None, config: ToolConfig | None = None):
+    def __init__(
+        self,
+        facade_service: FacadeService | None = None,
+        config: ToolConfig | None = None,
+    ):
         """
         Initialize controller with facade service and modular components.
 
@@ -93,7 +97,9 @@ class AgentMCPController:
             logger.info("AgentMCPController initialized with workflow guidance enabled")
         else:
             self._workflow_guidance = None
-            logger.info("AgentMCPController initialized with workflow guidance disabled (token optimization)")
+            logger.info(
+                "AgentMCPController initialized with workflow guidance disabled (token optimization)"
+            )
 
         # Initialize modular components
         self._response_formatter = StandardResponseFormatter()
@@ -105,21 +111,40 @@ class AgentMCPController:
 
         @mcp.tool(name="manage_agent", description=get_manage_agent_description())
         def manage_agent(
-            action: Annotated[str, Field(description="[OPTIONAL] " + params["action"]["description"])],
+            action: Annotated[
+                str, Field(description="[OPTIONAL] " + params["action"]["description"])
+            ],
             project_id: Annotated[
-                str | None, Field(description="[REQUIRED for all actions] " + params["project_id"]["description"])
+                str | None,
+                Field(
+                    description="[REQUIRED for all actions] "
+                    + params["project_id"]["description"]
+                ),
             ] = None,
             agent_id: Annotated[
-                str, Field(description="[REQUIRED for most actions except 'register', 'list', and 'rebalance'] " + params["agent_id"]["description"])
+                str,
+                Field(
+                    description="[REQUIRED for most actions except 'register', 'list', and 'rebalance'] "
+                    + params["agent_id"]["description"]
+                ),
             ] = None,
             name: Annotated[
-                str, Field(description="[REQUIRED for 'register' action] " + params["name"]["description"])
+                str,
+                Field(
+                    description="[REQUIRED for 'register' action] "
+                    + params["name"]["description"]
+                ),
             ] = None,
             call_agent: Annotated[
-                str, Field(description="[OPTIONAL] " + params["call_agent"]["description"])
+                str,
+                Field(description="[OPTIONAL] " + params["call_agent"]["description"]),
             ] = None,
             git_branch_id: Annotated[
-                str, Field(description="[REQUIRED for 'assign' and 'unassign' actions] " + params["git_branch_id"]["description"])
+                str,
+                Field(
+                    description="[REQUIRED for 'assign' and 'unassign' actions] "
+                    + params["git_branch_id"]["description"]
+                ),
             ] = None,
             user_id: Annotated[
                 str, Field(description="[OPTIONAL] " + params["user_id"]["description"])
@@ -276,7 +301,9 @@ class AgentMCPController:
         if action == "register" and not name:
             return {
                 "valid": False,
-                "response": self._response_factory.create_missing_field_error("name", action),
+                "response": self._response_factory.create_missing_field_error(
+                    "name", action
+                ),
             }
 
         if (
@@ -285,13 +312,17 @@ class AgentMCPController:
         ):
             return {
                 "valid": False,
-                "response": self._response_factory.create_missing_field_error("agent_id", action),
+                "response": self._response_factory.create_missing_field_error(
+                    "agent_id", action
+                ),
             }
 
         if action in ["assign", "unassign"] and not git_branch_id:
             return {
                 "valid": False,
-                "response": self._response_factory.create_missing_field_error("git_branch_id", action),
+                "response": self._response_factory.create_missing_field_error(
+                    "git_branch_id", action
+                ),
             }
 
         return {"valid": True}

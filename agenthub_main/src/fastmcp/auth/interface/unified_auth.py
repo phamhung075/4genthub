@@ -1,4 +1,3 @@
-
 """
 Unified Authentication Interface
 
@@ -27,7 +26,7 @@ AUTH_PROVIDER = os.getenv("AUTH_PROVIDER", "keycloak").lower()
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """
     Get current authenticated user from the appropriate provider.
@@ -66,6 +65,7 @@ async def get_current_user(
     if AUTH_PROVIDER == "keycloak":
         # Use Keycloak authentication with proper user ID extraction
         from ..keycloak_dependencies import get_current_user_universal
+
         user = await get_current_user_universal(credentials)
         logger.info(f"Authenticated Keycloak user: {user.id} ({user.email})")
         return user
@@ -73,6 +73,7 @@ async def get_current_user(
     elif AUTH_PROVIDER == "supabase":
         # Use Supabase authentication
         from .supabase_fastapi_auth import get_current_user_supabase
+
         user = await get_current_user_supabase(credentials)
         logger.info(f"Authenticated Supabase user: {user.id} ({user.email})")
         return user
@@ -80,13 +81,14 @@ async def get_current_user(
     else:
         # Fallback to local JWT authentication or test mode
         from .fastapi_auth import get_current_user as get_local_user
+
         user = await get_local_user(credentials)
         logger.info(f"Authenticated local/test user: {user.id} ({user.email})")
         return user
 
 
 async def get_current_active_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """
     Get current active user (alias for get_current_user).
@@ -103,7 +105,7 @@ async def get_current_active_user(
 
 
 async def get_optional_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(security)
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> User | None:
     """
     Get optional user - returns user if authenticated, None otherwise.
@@ -127,7 +129,7 @@ async def get_optional_user(
 
 
 async def require_admin(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """
     Require admin role for access.
@@ -151,8 +153,7 @@ async def require_admin(
 
 
 async def require_roles(
-    *required_roles: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    *required_roles: str, credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     """
     Require specific roles for access.
@@ -178,10 +179,10 @@ async def require_roles(
 
 # Export commonly used functions for convenience
 __all__ = [
-    'get_current_user',
-    'get_current_active_user',
-    'get_optional_user',
-    'require_admin',
-    'require_roles',
-    'security'
+    "get_current_user",
+    "get_current_active_user",
+    "get_optional_user",
+    "require_admin",
+    "require_roles",
+    "security",
 ]

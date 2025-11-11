@@ -8,7 +8,7 @@ from pathlib import Path
 def find_project_root(start_path: Path = None) -> Path:
     """
     Dynamically find the project root directory with support for multiple project locations.
-    
+
     Priority order:
     1. PROJECT_ROOT_PATH environment variable (if set)
     2. Search upwards for ___root___:Zone.Identifier file (highest priority explicit marker)
@@ -16,7 +16,7 @@ def find_project_root(start_path: Path = None) -> Path:
     4. Search upwards for .git directory
     5. Search upwards for other project markers (.cursor/rules/, etc.)
     6. Fallback to current working directory
-    
+
     This makes the system project-agnostic and portable across different locations.
 
     Args:
@@ -26,73 +26,74 @@ def find_project_root(start_path: Path = None) -> Path:
         Path: The project root directory as a pathlib.Path object.
     """
     # Priority 1: Check environment variable for explicit project root
-    env_project_root = os.environ.get('PROJECT_ROOT_PATH')
+    env_project_root = os.environ.get("PROJECT_ROOT_PATH")
     if env_project_root:
         project_root = Path(env_project_root).resolve()
         if project_root.exists():
             return project_root
-    
+
     # Priority 2: Check current working directory first for ___root___:Zone.Identifier file
     cwd = Path.cwd()
     if (cwd / "___root___:Zone.Identifier").exists():
         return cwd
-    
+
     # Priority 3: Search upwards from start_path
     if start_path is None:
         # Get the caller's file location
         frame = inspect.stack()[1]
         module = inspect.getmodule(frame[0])
-        if module and hasattr(module, '__file__'):
+        if module and hasattr(module, "__file__"):
             current = Path(module.__file__).resolve()
         else:
             current = cwd
     else:
         current = Path(start_path).resolve()
-    
+
     # If current is a file, start from its parent
     if current.is_file():
         current = current.parent
-    
+
     # Search upwards for ___root___:Zone.Identifier file first (highest priority)
     for parent in [current] + list(current.parents):
         if (parent / "___root___:Zone.Identifier").exists():
             return parent
-    
+
     # Search upwards for .git second (high priority)
     for parent in [current] + list(current.parents):
         if (parent / ".git").exists():
             return parent
-    
+
     # If no ___root___:Zone.Identifier or .git found, search for other project markers
     for parent in [current] + list(current.parents):
         if _is_project_root(parent):
             return parent
-    
+
     # Fallback: return current working directory
     return cwd
+
 
 def _is_project_root(path: Path) -> bool:
     """
     Check if a path is a project root by looking for common project markers.
-    
+
     Args:
         path (Path): Path to check
-        
+
     Returns:
         bool: True if path appears to be a project root
     """
     # Check for ___root___:Zone.Identifier file (highest priority explicit marker)
     if (path / "___root___:Zone.Identifier").exists():
         return True
-    
+
     # Check for .git directory (high priority)
     if (path / ".git").exists():
         return True
-    
+
     # Check for .cursor/rules/ directory (our task management structure)
     if (path / ".cursor" / "rules").exists():
         return True
-    
+
     # Check for other common project markers
     project_markers = [
         "pyproject.toml",
@@ -100,13 +101,13 @@ def _is_project_root(path: Path) -> bool:
         "Cargo.toml",
         "go.mod",
         "requirements.txt",
-        "cursor_agent"
+        "cursor_agent",
     ]
-    
+
     for marker in project_markers:
         if (path / marker).exists():
             return True
-    
+
     return False
 
 

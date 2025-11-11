@@ -14,6 +14,7 @@ from .dependency_info import DependencyRelationships
 @dataclass
 class TaskResponse:
     """Response DTO for task operations following clean relationship chain"""
+
     id: str
     title: str
     description: str
@@ -28,11 +29,17 @@ class TaskResponse:
     due_date: str | None
     created_at: datetime | None
     updated_at: datetime | None
-    git_branch_id: str | None = None  # Links to git_branch which contains project and user info
-    project_id: str | None = None  # Project ID fetched via repository join (maintains normalization)
+    git_branch_id: str | None = (
+        None  # Links to git_branch which contains project and user info
+    )
+    project_id: str | None = (
+        None  # Project ID fetched via repository join (maintains normalization)
+    )
     context_id: str | None = None
     context_data: dict[str, Any] | None = None
-    dependency_relationships: DependencyRelationships | None = None  # Enhanced dependency information
+    dependency_relationships: DependencyRelationships | None = (
+        None  # Enhanced dependency information
+    )
     progress_percentage: int = 0  # Task completion progress (0-100)
     progress_history: dict[str, Any] | None = None  # Full progress history structure
     progress_count: int = 0  # Number of progress entries
@@ -40,31 +47,31 @@ class TaskResponse:
     completed_subtasks: int = 0  # Number of completed subtasks
 
     def __init__(
-            self,
-            id: str,
-            title: str,
-            description: str,
-            status: str,
-            priority: str,
-            details: str,
-            estimated_effort: str,
-            assignees: list[str],
-            labels: list[str],
-            dependencies: list[str],
-            subtasks: list[dict[str, Any]],
-            due_date: str | None,
-            created_at: datetime | None,
-            updated_at: datetime | None,
-            git_branch_id: str | None = None,  # Following clean relationship chain
-            project_id: str | None = None,  # Project ID from repository join
-            context_id: str | None = None,
-            context_data: dict[str, Any] | None = None,
-            dependency_relationships: DependencyRelationships | None = None,
-            progress_percentage: int = 0,
-            progress_history: dict[str, Any] | None = None,
-            progress_count: int = 0,
-            completed_subtasks: int = 0
-        ):
+        self,
+        id: str,
+        title: str,
+        description: str,
+        status: str,
+        priority: str,
+        details: str,
+        estimated_effort: str,
+        assignees: list[str],
+        labels: list[str],
+        dependencies: list[str],
+        subtasks: list[dict[str, Any]],
+        due_date: str | None,
+        created_at: datetime | None,
+        updated_at: datetime | None,
+        git_branch_id: str | None = None,  # Following clean relationship chain
+        project_id: str | None = None,  # Project ID from repository join
+        context_id: str | None = None,
+        context_data: dict[str, Any] | None = None,
+        dependency_relationships: DependencyRelationships | None = None,
+        progress_percentage: int = 0,
+        progress_history: dict[str, Any] | None = None,
+        progress_count: int = 0,
+        completed_subtasks: int = 0,
+    ):
         """Initialize TaskResponse following clean relationship chain with git_branch_id, context_id, and context_data"""
         self.id = id
         self.title = title
@@ -105,10 +112,15 @@ class TaskResponse:
         return len(self.subtasks) if self.subtasks else 0
 
     @classmethod
-    def from_domain(cls, task, git_branch_repository=None, context_data: dict[str, Any] | None = None,
-                   dependency_relationships: DependencyRelationships | None = None,
-                   project_id: str | None = None,
-                   completed_subtasks: int | None = None) -> TaskResponse:
+    def from_domain(
+        cls,
+        task,
+        git_branch_repository=None,
+        context_data: dict[str, Any] | None = None,
+        dependency_relationships: DependencyRelationships | None = None,
+        project_id: str | None = None,
+        completed_subtasks: int | None = None,
+    ) -> TaskResponse:
         """Create response DTO from domain entity with optional context data.
 
         Args:
@@ -138,7 +150,7 @@ class TaskResponse:
                 # CRITICAL: project_id is required by frontend TypeScript contract
                 logging.error(
                     f"CRITICAL: Failed to fetch project_id for git_branch {task_dict.get('git_branch_id')}: {e}",
-                    exc_info=True
+                    exc_info=True,
                 )
                 raise RepositoryProviderError(
                     f"Failed to fetch required project_id: {e}"
@@ -156,16 +168,21 @@ class TaskResponse:
         if isinstance(updated_at, str):
             updated_at = datetime.fromisoformat(updated_at)
 
-
         # Get progress_history and format details for backward compatibility
         progress_history = task_dict.get("progress_history", {})
         progress_count = task_dict.get("progress_count", 0)
 
         # Use task's get_progress_history_text() method for details field (backward compatibility)
-        details = task.get_progress_history_text() if hasattr(task, 'get_progress_history_text') else ""
+        details = (
+            task.get_progress_history_text()
+            if hasattr(task, "get_progress_history_text")
+            else ""
+        )
 
         # Fix 3: Add @ prefix to assignees if not present
-        assignees_with_prefix = [f"@{a}" if not a.startswith("@") else a for a in task_dict["assignees"]]
+        assignees_with_prefix = [
+            f"@{a}" if not a.startswith("@") else a for a in task_dict["assignees"]
+        ]
 
         # Fix 2: Get completed_subtasks count
         # Note: subtask_count is now a derived @property, not computed here
@@ -193,7 +210,9 @@ class TaskResponse:
             due_date=task_dict["dueDate"],
             created_at=created_at,
             updated_at=updated_at,
-            git_branch_id=task_dict.get("git_branch_id"),  # Following clean relationship chain
+            git_branch_id=task_dict.get(
+                "git_branch_id"
+            ),  # Following clean relationship chain
             project_id=project_id,  # Fix 4: Project ID via repository join (maintains normalization)
             context_id=task_dict.get("context_id"),
             context_data=context_data,
@@ -202,9 +221,9 @@ class TaskResponse:
             progress_history=progress_history,
             progress_count=progress_count,
             # subtask_count is now a derived @property - not passed to constructor
-            completed_subtasks=actual_completed  # Fix 2: Accurate completed subtask count from batch query
+            completed_subtasks=actual_completed,  # Fix 2: Accurate completed subtask count from batch query
         )
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert TaskResponse to dictionary representation with JSON-safe datetime serialization"""
         # OPTIMIZATION: Serialize context_data with embedded=True to remove duplicates
@@ -244,10 +263,12 @@ class TaskResponse:
             "project_id": self.project_id,
             "context_id": self.context_id,
             "context_data": context_data_serialized,
-            "dependency_relationships": self.dependency_relationships.to_dict() if self.dependency_relationships else None,
+            "dependency_relationships": self.dependency_relationships.to_dict()
+            if self.dependency_relationships
+            else None,
             "progress_percentage": self.progress_percentage,
             "progress_history": self.progress_history,  # Full progress history structure
             "progress_count": self.progress_count,  # Number of progress entries
             "subtask_count": self.subtask_count,  # Total number of subtasks
-            "completed_subtasks": self.completed_subtasks  # Number of completed subtasks
-        } 
+            "completed_subtasks": self.completed_subtasks,  # Number of completed subtasks
+        }

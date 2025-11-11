@@ -28,13 +28,22 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # Configuration
-LOG_WEBSOCKET_MESSAGES = os.getenv("LOG_WEBSOCKET_MESSAGES", "true").lower() in ("true", "1", "yes")
+LOG_WEBSOCKET_MESSAGES = os.getenv("LOG_WEBSOCKET_MESSAGES", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+)
 WS_LOG_LEVEL = os.getenv("WS_LOG_LEVEL", "info").lower()
-WS_VALIDATION_ENABLED = os.getenv("WS_VALIDATION_ENABLED", "true").lower() in ("true", "1", "yes")
+WS_VALIDATION_ENABLED = os.getenv("WS_VALIDATION_ENABLED", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+)
 
 
 class WebSocketEventType(str, Enum):
     """Known WebSocket event types"""
+
     TASK_CREATED = "task.created"
     TASK_UPDATED = "task.updated"
     TASK_DELETED = "task.deleted"
@@ -143,10 +152,14 @@ class WebSocketMessageValidator:
 
             if field_name not in data:
                 if is_required:
-                    errors.append(f"Task event '{event}': Missing required field '{field_name}'")
+                    errors.append(
+                        f"Task event '{event}': Missing required field '{field_name}'"
+                    )
             elif data[field_name] is None:
                 if is_required:
-                    errors.append(f"Task event '{event}': Required field '{field_name}' is null")
+                    errors.append(
+                        f"Task event '{event}': Required field '{field_name}' is null"
+                    )
             elif expected_type and not isinstance(data[field_name], expected_type):
                 errors.append(
                     f"Task event '{event}': Field '{field_name}' has wrong type "
@@ -167,16 +180,22 @@ class WebSocketMessageValidator:
         if "assignees" in data:
             assignees = data.get("assignees", [])
             if not isinstance(assignees, list):
-                errors.append(f"Task event '{event}': assignees must be a list, got {type(assignees).__name__}")
+                errors.append(
+                    f"Task event '{event}': assignees must be a list, got {type(assignees).__name__}"
+                )
             elif assignees:  # If not empty, validate format
                 for idx, assignee in enumerate(assignees):
                     if not isinstance(assignee, str):
-                        errors.append(f"Task event '{event}': assignees[{idx}] must be string")
+                        errors.append(
+                            f"Task event '{event}': assignees[{idx}] must be string"
+                        )
 
         return errors
 
     @classmethod
-    def _validate_subtask_event_data(cls, data: dict[str, Any], event: str) -> list[str]:
+    def _validate_subtask_event_data(
+        cls, data: dict[str, Any], event: str
+    ) -> list[str]:
         """Validate subtask event data"""
         errors = []
 
@@ -186,10 +205,14 @@ class WebSocketMessageValidator:
 
             if field_name not in data:
                 if is_required:
-                    errors.append(f"Subtask event '{event}': Missing required field '{field_name}'")
+                    errors.append(
+                        f"Subtask event '{event}': Missing required field '{field_name}'"
+                    )
             elif data[field_name] is None:
                 if is_required:
-                    errors.append(f"Subtask event '{event}': Required field '{field_name}' is null")
+                    errors.append(
+                        f"Subtask event '{event}': Required field '{field_name}' is null"
+                    )
             elif expected_type and not isinstance(data[field_name], expected_type):
                 errors.append(
                     f"Subtask event '{event}': Field '{field_name}' has wrong type "
@@ -211,14 +234,16 @@ class WebSocketMessageLogger:
         self.message_count = 0
         self.error_count = 0
         self.validation_errors = []
-        logger.info(f"WebSocketMessageLogger initialized (logging={LOG_WEBSOCKET_MESSAGES}, validation={WS_VALIDATION_ENABLED})")
+        logger.info(
+            f"WebSocketMessageLogger initialized (logging={LOG_WEBSOCKET_MESSAGES}, validation={WS_VALIDATION_ENABLED})"
+        )
 
     def log_message(
         self,
         event: str,
         data: dict[str, Any],
         user_id: str | None = None,
-        validate: bool = True
+        validate: bool = True,
     ) -> list[str]:
         """
         Log and optionally validate a WebSocket message.
@@ -262,8 +287,8 @@ class WebSocketMessageLogger:
                 self.validation_errors.extend(validation_errors)
 
                 logger.error(
-                    f"🚨 WebSocket Message Validation FAILED for event '{event}':\n" +
-                    "\n".join([f"  - {error}" for error in validation_errors])
+                    f"🚨 WebSocket Message Validation FAILED for event '{event}':\n"
+                    + "\n".join([f"  - {error}" for error in validation_errors])
                 )
 
         return validation_errors
@@ -274,7 +299,9 @@ class WebSocketMessageLogger:
             "total_messages": self.message_count,
             "validation_errors": self.error_count,
             "error_rate": f"{(self.error_count / max(self.message_count, 1)) * 100:.1f}%",
-            "recent_errors": self.validation_errors[-10:] if self.validation_errors else []
+            "recent_errors": self.validation_errors[-10:]
+            if self.validation_errors
+            else [],
         }
 
 
@@ -283,10 +310,7 @@ _global_logger = WebSocketMessageLogger()
 
 
 def log_websocket_message(
-    event: str,
-    data: dict[str, Any],
-    user_id: str | None = None,
-    validate: bool = True
+    event: str, data: dict[str, Any], user_id: str | None = None, validate: bool = True
 ) -> list[str]:
     """
     Log a WebSocket message using the global logger.

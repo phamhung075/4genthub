@@ -33,7 +33,13 @@ from ..event_publishing_mixin import EventPublishingMixin
 logger = logging.getLogger(__name__)
 
 
-class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project], BaseUserScopedRepository, CacheInvalidationMixin, ProjectRepository):
+class ORMProjectRepository(
+    EventPublishingMixin,
+    BaseTimestampRepository[Project],
+    BaseUserScopedRepository,
+    CacheInvalidationMixin,
+    ProjectRepository,
+):
     """
     Project repository implementation using SQLAlchemy ORM.
 
@@ -69,23 +75,20 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
 
         # Initialize field selector for selective queries
         self._field_selector = ContextFieldSelector()
-    
+
     def with_user(self, user_id: str) -> ORMProjectRepository:
         """
         Create a new instance of this repository scoped to a specific user.
         Overrides base implementation to preserve all constructor parameters.
-        
+
         Args:
             user_id: ID of the user to scope operations to
-            
+
         Returns:
             New repository instance scoped to the user
         """
-        return ORMProjectRepository(
-            session=self.session,
-            user_id=user_id
-        )
-    
+        return ORMProjectRepository(session=self.session, user_id=user_id)
+
     def _model_to_entity(self, project: Project) -> ProjectEntity:
         """Convert SQLAlchemy model to domain entity"""
         entity = ProjectEntity(
@@ -93,12 +96,13 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             name=project.name,
             description=project.description,
             created_at=project.created_at,
-            updated_at=project.updated_at
+            updated_at=project.updated_at,
         )
-        
+
         # Load git branches from the database model
-        if hasattr(project, 'git_branchs') and project.git_branchs:
+        if hasattr(project, "git_branchs") and project.git_branchs:
             from ....domain.entities.git_branch import GitBranch
+
             for db_branch in project.git_branchs:
                 git_branch = GitBranch(
                     id=db_branch.id,
@@ -106,21 +110,25 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                     description=db_branch.description,
                     project_id=db_branch.project_id,
                     created_at=db_branch.created_at,
-                    updated_at=db_branch.updated_at
+                    updated_at=db_branch.updated_at,
                 )
-                
+
                 # Query actual task count and status breakdown from the database
                 # This ensures accurate statistics even without loading full task entities
                 with self.get_db_session() as session:
                     from ...database.models import Task
 
                     # Get all tasks for this branch
-                    tasks = session.query(Task).filter(
-                        and_(
-                            Task.git_branch_id == db_branch.id,
-                            Task.user_id == self.user_id
+                    tasks = (
+                        session.query(Task)
+                        .filter(
+                            and_(
+                                Task.git_branch_id == db_branch.id,
+                                Task.user_id == self.user_id,
+                            )
                         )
-                    ).all()
+                        .all()
+                    )
 
                     # Create task objects with status information for statistics
                     for task in tasks:
@@ -128,12 +136,14 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                         task_dict = {
                             "id": task.id,
                             "status": task.status,  # Need status for get_completed_task_count, get_tree_status
-                            "priority": task.priority if hasattr(task, 'priority') else "medium"
+                            "priority": task.priority
+                            if hasattr(task, "priority")
+                            else "medium",
                         }
                         git_branch.all_tasks[task.id] = task_dict
-                
+
                 entity.git_branchs[db_branch.id] = git_branch
-        
+
         return entity
 
     def _entity_to_model_dict(self, project: ProjectEntity) -> dict[str, Any]:
@@ -152,27 +162,45 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             "id": str(project.id) if project.id else "",
             "name": project.name,
             "description": project.description,
-            "status": getattr(project, 'status', 'active'),
-            "metadata": getattr(project, 'metadata', {}),
+            "status": getattr(project, "status", "active"),
+            "metadata": getattr(project, "metadata", {}),
             "model_metadata": {
                 # Complex domain fields stored as metadata for ORM
-                "git_branchs_count": len(project.git_branchs) if hasattr(project, 'git_branchs') else 0,
-                "registered_agents_count": len(project.registered_agents) if hasattr(project, 'registered_agents') else 0,
-                "agent_assignments": dict(project.agent_assignments) if hasattr(project, 'agent_assignments') else {},
-                "cross_tree_dependencies_count": len(project.cross_tree_dependencies) if hasattr(project, 'cross_tree_dependencies') else 0,
-                "active_work_sessions_count": len(project.active_work_sessions) if hasattr(project, 'active_work_sessions') else 0,
-                "resource_locks": dict(project.resource_locks) if hasattr(project, 'resource_locks') else {}
-            }
+                "git_branchs_count": len(project.git_branchs)
+                if hasattr(project, "git_branchs")
+                else 0,
+                "registered_agents_count": len(project.registered_agents)
+                if hasattr(project, "registered_agents")
+                else 0,
+                "agent_assignments": dict(project.agent_assignments)
+                if hasattr(project, "agent_assignments")
+                else {},
+                "cross_tree_dependencies_count": len(project.cross_tree_dependencies)
+                if hasattr(project, "cross_tree_dependencies")
+                else 0,
+                "active_work_sessions_count": len(project.active_work_sessions)
+                if hasattr(project, "active_work_sessions")
+                else 0,
+                "resource_locks": dict(project.resource_locks)
+                if hasattr(project, "resource_locks")
+                else {},
+            },
         }
 
     async def save(self, project: ProjectEntity) -> None:
         """Save a project to the repository"""
         try:
             # Convert project ID to string for database query
-            project_id_str = str(project.id.value if hasattr(project.id, 'value') else project.id) if project.id else ""
+            project_id_str = (
+                str(project.id.value if hasattr(project.id, "value") else project.id)
+                if project.id
+                else ""
+            )
 
             with self.get_db_session() as session:
-                existing = session.query(Project).filter(Project.id == project_id_str).first()
+                existing = (
+                    session.query(Project).filter(Project.id == project_id_str).first()
+                )
 
                 if existing:
                     # Update existing project using DDD conversion pattern
@@ -180,72 +208,86 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
 
                     # Update model attributes from converted dict
                     for key, value in model_dict.items():
-                        if key != 'model_metadata' and hasattr(existing, key):
+                        if key != "model_metadata" and hasattr(existing, key):
                             setattr(existing, key, value)
 
                     # Store model_metadata in metadata field
-                    if 'model_metadata' in model_dict:
+                    if "model_metadata" in model_dict:
                         current_metadata = existing.metadata or {}
-                        current_metadata.update(model_dict['model_metadata'])
+                        current_metadata.update(model_dict["model_metadata"])
                         existing.metadata = current_metadata
 
                     existing.touch("project_updated")
                 else:
                     # Create new project with user isolation
                     project_data = {
-                        'id': project_id_str,
-                        'name': project.name,
-                        'description': project.description,
-                        'created_at': project.created_at,
-                        'updated_at': project.updated_at,
-                        'status': "active",
-                        'metadata': {}
+                        "id": project_id_str,
+                        "name": project.name,
+                        "description": project.description,
+                        "created_at": project.created_at,
+                        "updated_at": project.updated_at,
+                        "status": "active",
+                        "metadata": {},
                     }
-                    
+
                     # Add user_id for data isolation
                     project_data = self.set_user_id(project_data)
-                    
+
                     new_project = Project(**project_data)
                     session.add(new_project)
                     session.flush()  # Flush to get the project ID available for branches
-                
+
                 # Save git branches from the domain entity
-                if hasattr(project, 'git_branchs') and project.git_branchs:
+                if hasattr(project, "git_branchs") and project.git_branchs:
                     for branch_id, branch in project.git_branchs.items():
                         # Check if branch already exists
-                        existing_branch = session.query(ProjectGitBranch).filter(
-                            ProjectGitBranch.id == branch_id,
-                            ProjectGitBranch.project_id == project_id_str
-                        ).first()
+                        existing_branch = (
+                            session.query(ProjectGitBranch)
+                            .filter(
+                                ProjectGitBranch.id == branch_id,
+                                ProjectGitBranch.project_id == project_id_str,
+                            )
+                            .first()
+                        )
 
                         if not existing_branch:
                             # Create new branch with user_id for data isolation
                             branch_data = {
-                                'id': branch_id,
-                                'project_id': project_id_str,
-                                'name': branch.name,
-                                'description': branch.description,
-                                'created_at': branch.created_at,
-                                'updated_at': branch.updated_at,
-                                'assigned_agent_id': getattr(branch, 'assigned_agent_id', None),
-                                'priority': str(getattr(branch, 'priority', 'medium')),
-                                'status': str(getattr(branch, 'status', 'todo')),
-                                'task_count': getattr(branch, '_task_count', 0),
-                                'completed_task_count': getattr(branch, '_completed_task_count', 0),
-                                'metadata': {}
+                                "id": branch_id,
+                                "project_id": project_id_str,
+                                "name": branch.name,
+                                "description": branch.description,
+                                "created_at": branch.created_at,
+                                "updated_at": branch.updated_at,
+                                "assigned_agent_id": getattr(
+                                    branch, "assigned_agent_id", None
+                                ),
+                                "priority": str(getattr(branch, "priority", "medium")),
+                                "status": str(getattr(branch, "status", "todo")),
+                                "task_count": getattr(branch, "_task_count", 0),
+                                "completed_task_count": getattr(
+                                    branch, "_completed_task_count", 0
+                                ),
+                                "metadata": {},
                             }
-                            
+
                             # Add user_id for data isolation
-                            logger.info(f"🔍 PROJECT_REPO: self.user_id = {self.user_id}, _is_system_mode = {self._is_system_mode}")
+                            logger.info(
+                                f"🔍 PROJECT_REPO: self.user_id = {self.user_id}, _is_system_mode = {self._is_system_mode}"
+                            )
                             branch_data = self.set_user_id(branch_data)
-                            logger.info(f"🔍 PROJECT_REPO: branch_data after set_user_id: user_id = {branch_data.get('user_id')}")
-                            
+                            logger.info(
+                                f"🔍 PROJECT_REPO: branch_data after set_user_id: user_id = {branch_data.get('user_id')}"
+                            )
+
                             # Ensure we have a user_id for data isolation
-                            if branch_data.get('user_id') is None:
-                                logger.error("❌ PROJECT_REPO: No user_id provided - authentication is required!")
+                            if branch_data.get("user_id") is None:
+                                logger.error(
+                                    "❌ PROJECT_REPO: No user_id provided - authentication is required!"
+                                )
                             new_branch = ProjectGitBranch(**branch_data)
                             session.add(new_branch)
-                
+
                 session.commit()
 
                 # Publish domain events after successful save
@@ -256,43 +298,39 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             raise DatabaseException(
                 message=f"Failed to save project: {str(e)}",
                 operation="save",
-                table="projects"
+                table="projects",
             )
-    
+
     async def find_by_id(self, project_id: str) -> ProjectEntity | None:
         """Find a project by its ID with user isolation"""
         with self.get_db_session() as session:
-            query = session.query(Project).options(
-                joinedload(Project.git_branchs)
-            )
-            
+            query = session.query(Project).options(joinedload(Project.git_branchs))
+
             # Apply user filter for data isolation
             query = self.apply_user_filter(query)
-            
+
             project = query.filter(Project.id == project_id).first()
-            
+
             # Log access for audit
-            self.log_access('read', 'project', project_id)
-            
+            self.log_access("read", "project", project_id)
+
             return self._model_to_entity(project) if project else None
-    
+
     async def find_all(self) -> list[ProjectEntity]:
         """Find all projects with user isolation"""
         with self.get_db_session() as session:
-            query = session.query(Project).options(
-                joinedload(Project.git_branchs)
-            )
-            
+            query = session.query(Project).options(joinedload(Project.git_branchs))
+
             # Apply user filter for data isolation
             query = self.apply_user_filter(query)
-            
+
             projects = query.order_by(desc(Project.created_at)).all()
-            
+
             # Log access for audit
-            self.log_access('list', 'project')
-            
+            self.log_access("list", "project")
+
             return [self._model_to_entity(project) for project in projects]
-    
+
     async def delete(self, project_id: str) -> bool:
         """Delete a project by its ID"""
         try:
@@ -304,32 +342,37 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
         except Exception as e:
             logger.error(f"Failed to delete project {project_id}: {e}")
             return False
-    
+
     async def exists(self, project_id: str) -> bool:
         """Check if a project exists"""
         return self.exists(id=project_id)
-    
+
     async def update(self, project: ProjectEntity) -> None:
         """Update an existing project"""
         try:
             # Convert project ID to string for database query
-            project_id_str = str(project.id.value if hasattr(project.id, 'value') else project.id) if project.id else ""
+            project_id_str = (
+                str(project.id.value if hasattr(project.id, "value") else project.id)
+                if project.id
+                else ""
+            )
 
             # Check if project exists first
             with self.get_db_session() as session:
-                existing = session.query(Project).filter(Project.id == project_id_str).first()
+                existing = (
+                    session.query(Project).filter(Project.id == project_id_str).first()
+                )
                 if not existing:
                     raise ResourceNotFoundException(
-                        resource_type="Project",
-                        resource_id=project_id_str
+                        resource_type="Project", resource_id=project_id_str
                     )
-            
+
             # Touch the entity to update timestamp
             project.touch("repository_update_project")
-            
+
             # Use async save instead of calling sync parent update
             await self.save(project)
-            
+
         except ResourceNotFoundException:
             raise
         except Exception as e:
@@ -337,92 +380,96 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             raise DatabaseException(
                 message=f"Failed to update project: {str(e)}",
                 operation="update",
-                table="projects"
+                table="projects",
             )
-    
+
     async def find_by_name(self, name: str) -> ProjectEntity | None:
         """Find a project by its name with user isolation"""
         with self.get_db_session() as session:
             query = session.query(Project)
-            
+
             # Apply user filter for data isolation (CRITICAL)
             query = self.apply_user_filter(query)
-            
+
             project = query.filter(Project.name == name).first()
-            
+
             # Log access for audit
             if project:
-                self.log_access('read', 'project', project.id)
-            
+                self.log_access("read", "project", project.id)
+
             return self._model_to_entity(project) if project else None
-    
+
     async def count(self) -> int:
         """Count total number of projects"""
         return super().count()
-    
+
     async def find_projects_with_agent(self, agent_id: str) -> list[ProjectEntity]:
         """Find projects that have a specific agent registered with user isolation"""
         with self.get_db_session() as session:
             # Find projects with git branches assigned to the agent
             query = session.query(Project).join(ProjectGitBranch)
-            
+
             # Apply user filter for data isolation (CRITICAL)
             query = self.apply_user_filter(query)
-            
-            projects = query.filter(
-                ProjectGitBranch.assigned_agent_id == agent_id
-            ).distinct().all()
-            
+
+            projects = (
+                query.filter(ProjectGitBranch.assigned_agent_id == agent_id)
+                .distinct()
+                .all()
+            )
+
             # Log access for audit
-            self.log_access('list', 'project', f'agent={agent_id}')
-            
+            self.log_access("list", "project", f"agent={agent_id}")
+
             return [self._model_to_entity(project) for project in projects]
-    
+
     async def find_projects_by_status(self, status: str) -> list[ProjectEntity]:
         """Find projects by their status with user isolation"""
         with self.get_db_session() as session:
             query = session.query(Project)
-            
+
             # Apply user filter for data isolation (CRITICAL)
             query = self.apply_user_filter(query)
-            
-            projects = query.filter(
-                Project.status == status
-            ).order_by(desc(Project.created_at)).all()
-            
+
+            projects = (
+                query.filter(Project.status == status)
+                .order_by(desc(Project.created_at))
+                .all()
+            )
+
             # Log access for audit
-            self.log_access('list', 'project', f'status={status}')
-            
+            self.log_access("list", "project", f"status={status}")
+
             return [self._model_to_entity(project) for project in projects]
-    
+
     async def get_project_health_summary(self) -> dict[str, Any]:
         """Get health summary of all projects"""
         with self.get_db_session() as session:
             # Get total projects
             total_projects = session.query(Project).count()
-            
+
             # Get projects by status
             status_counts = {}
             statuses = session.query(Project.status).distinct().all()
             for (status,) in statuses:
-                count = session.query(Project).filter(
-                    Project.status == status
-                ).count()
+                count = session.query(Project).filter(Project.status == status).count()
                 status_counts[status] = count
-            
+
             # Get projects with branches
-            projects_with_branches = session.query(Project).join(
-                ProjectGitBranch
-            ).distinct().count()
-            
+            projects_with_branches = (
+                session.query(Project).join(ProjectGitBranch).distinct().count()
+            )
+
             # Get total branches
             total_branches = session.query(ProjectGitBranch).count()
-            
+
             # Get branches with assigned agents
-            assigned_branches = session.query(ProjectGitBranch).filter(
-                ProjectGitBranch.assigned_agent_id.isnot(None)
-            ).count()
-            
+            assigned_branches = (
+                session.query(ProjectGitBranch)
+                .filter(ProjectGitBranch.assigned_agent_id.isnot(None))
+                .count()
+            )
+
             return {
                 "total_projects": total_projects,
                 "projects_by_status": status_counts,
@@ -432,26 +479,31 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                 "unassigned_branches": total_branches - assigned_branches,
                 "average_branches_per_project": (
                     total_branches / total_projects if total_projects > 0 else 0
-                )
+                ),
             }
-    
-    async def unassign_agent_from_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> dict[str, Any]:
+
+    async def unassign_agent_from_tree(
+        self, project_id: str, agent_id: str, git_branch_id: str
+    ) -> dict[str, Any]:
         """Unassign an agent from a specific task tree within a project."""
         try:
             with self.transaction() as session:
                 # Find the git branch
-                branch = session.query(ProjectGitBranch).filter(
-                    and_(
-                        ProjectGitBranch.id == git_branch_id,
-                        ProjectGitBranch.project_id == project_id,
-                        ProjectGitBranch.assigned_agent_id == agent_id
+                branch = (
+                    session.query(ProjectGitBranch)
+                    .filter(
+                        and_(
+                            ProjectGitBranch.id == git_branch_id,
+                            ProjectGitBranch.project_id == project_id,
+                            ProjectGitBranch.assigned_agent_id == agent_id,
+                        )
                     )
-                ).first()
+                    .first()
+                )
 
                 if not branch:
                     raise ResourceNotFoundException(
-                        resource_type="Git Branch",
-                        resource_id=git_branch_id
+                        resource_type="Git Branch", resource_id=git_branch_id
                     )
 
                 # Unassign the agent
@@ -462,18 +514,22 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                     "success": True,
                     "project_id": project_id,
                     "git_branch_id": git_branch_id,
-                    "unassigned_agent_id": agent_id
+                    "unassigned_agent_id": agent_id,
                 }
         except Exception as e:
-            logger.error(f"Failed to unassign agent {agent_id} from tree {git_branch_id}: {e}")
+            logger.error(
+                f"Failed to unassign agent {agent_id} from tree {git_branch_id}: {e}"
+            )
             raise DatabaseException(
                 message=f"Failed to unassign agent: {str(e)}",
                 operation="unassign_agent_from_tree",
-                table="project_git_branchs"
+                table="project_git_branchs",
             )
-    
+
     # Additional ORM-specific methods
-    def create_project(self, name: str, description: str = "", user_id: str = None) -> ProjectEntity:
+    def create_project(
+        self, name: str, description: str = "", user_id: str = None
+    ) -> ProjectEntity:
         """Create a new project with ORM"""
         try:
             with self.transaction():
@@ -483,15 +539,15 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                 from ....domain.exceptions.authentication_exceptions import (
                     UserAuthenticationRequiredError,
                 )
-                
+
                 project_id = str(uuid.uuid4())
-                
+
                 # Validate user authentication is provided
                 if user_id is None:
                     raise UserAuthenticationRequiredError("Project creation")
-                
+
                 user_id = validate_user_id(user_id, "Project creation")
-                
+
                 # Create new project model instance
                 project = Project(
                     id=project_id,
@@ -499,70 +555,74 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                     description=description,
                     user_id=user_id,
                     status="active",
-                    metadata={}
+                    metadata={},
                 )
 
                 # Add to session
                 with self.get_db_session() as session:
                     session.add(project)
                     session.commit()
-                
+
                 # Invalidate cache after create
                 self.invalidate_cache_for_entity(
                     entity_type="project",
                     entity_id=project_id,
                     operation=CacheOperation.CREATE,
-                    user_id=user_id
+                    user_id=user_id,
                 )
-                
+
                 return self._model_to_entity(project)
         except Exception as e:
             logger.error(f"Failed to create project: {e}")
             raise DatabaseException(
                 message=f"Failed to create project: {str(e)}",
                 operation="create_project",
-                table="projects"
+                table="projects",
             )
-    
+
     def get_project(self, project_id: str) -> ProjectEntity | None:
         """Synchronous version of find_by_id for compatibility"""
         with self.get_db_session() as session:
-            project = session.query(Project).options(
-                joinedload(Project.git_branchs)
-            ).filter(Project.id == project_id).first()
-            
+            project = (
+                session.query(Project)
+                .options(joinedload(Project.git_branchs))
+                .filter(Project.id == project_id)
+                .first()
+            )
+
             return self._model_to_entity(project) if project else None
-    
+
     def update_project(self, project_id: str, **updates) -> ProjectEntity:
         """Update a project with ORM using proper DDD conversion pattern"""
         try:
             with self.transaction() as session:
                 # Get the project entity first
-                project_model = session.query(Project).filter(
-                    Project.id == project_id
-                ).first()
+                project_model = (
+                    session.query(Project).filter(Project.id == project_id).first()
+                )
 
                 if not project_model:
                     raise ResourceNotFoundException(
-                        resource_type="Project",
-                        resource_id=project_id
+                        resource_type="Project", resource_id=project_id
                     )
 
                 # If updating with a ProjectEntity, use conversion method
-                if 'entity' in updates:
-                    project_entity = updates.pop('entity')
+                if "entity" in updates:
+                    project_entity = updates.pop("entity")
                     # Convert entity to model dict using DDD pattern
                     model_dict = self._entity_to_model_dict(project_entity)
 
                     # Update model attributes from converted dict
                     for key, value in model_dict.items():
-                        if key != 'model_metadata' and hasattr(project_model, key):
+                        if key != "model_metadata" and hasattr(project_model, key):
                             setattr(project_model, key, value)
 
                     # Store model_metadata in metadata field if exists
-                    if 'model_metadata' in model_dict and hasattr(project_model, 'metadata'):
+                    if "model_metadata" in model_dict and hasattr(
+                        project_model, "metadata"
+                    ):
                         current_metadata = project_model.metadata or {}
-                        current_metadata.update(model_dict['model_metadata'])
+                        current_metadata.update(model_dict["model_metadata"])
                         project_model.metadata = current_metadata
 
                 # Apply any additional direct updates (legacy support)
@@ -583,7 +643,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                 self.invalidate_cache_for_entity(
                     entity_type="project",
                     entity_id=project_id,
-                    operation=CacheOperation.UPDATE
+                    operation=CacheOperation.UPDATE,
                 )
 
                 return updated_project
@@ -592,25 +652,25 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             raise DatabaseException(
                 message=f"Failed to update project: {str(e)}",
                 operation="update_project",
-                table="projects"
+                table="projects",
             )
-    
+
     def delete_project(self, project_id: str) -> bool:
         """Delete a project with ORM"""
         logger.info(f"delete_project called for {project_id}")
-        
+
         # For delete operations, we need to ensure the project can be found
         # If user scoping is preventing the delete, try without user scoping
         with self.get_db_session() as session:
             # First, check if the project exists at all (without user filtering)
-            project_model = session.query(Project).filter(
-                Project.id == project_id
-            ).first()
-            
+            project_model = (
+                session.query(Project).filter(Project.id == project_id).first()
+            )
+
             if not project_model:
                 logger.warning(f"Project {project_id} does not exist in database")
                 return False
-            
+
             # Try to delete with user scoping first
             # Convert to entity first as BaseTimestampRepository.delete expects an entity
             entity = self._model_to_entity(project_model)
@@ -620,92 +680,105 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             except Exception as e:
                 logger.warning(f"Delete with user scoping failed: {e}")
                 result = False
-            
+
             # If deletion failed but project exists, it might be a user scoping issue
             if not result:
-                logger.warning(f"Project {project_id} exists but delete failed, likely due to user scoping. Attempting system-level delete.")
+                logger.warning(
+                    f"Project {project_id} exists but delete failed, likely due to user scoping. Attempting system-level delete."
+                )
                 # Delete directly without user scoping for demo/MVP mode
-                deleted_count = session.query(Project).filter(
-                    Project.id == project_id
-                ).delete()
+                deleted_count = (
+                    session.query(Project).filter(Project.id == project_id).delete()
+                )
                 session.commit()
                 result = deleted_count > 0
-                logger.info(f"System-level delete returned: {result} for project {project_id}")
-        
+                logger.info(
+                    f"System-level delete returned: {result} for project {project_id}"
+                )
+
         logger.info(f"Final delete result: {result} for project {project_id}")
-        
+
         # Invalidate cache after delete
         if result:
             self.invalidate_cache_for_entity(
                 entity_type="project",
                 entity_id=project_id,
-                operation=CacheOperation.DELETE
+                operation=CacheOperation.DELETE,
             )
-        
+
         return result
-    
-    def list_projects(self, status: str | None = None, limit: int = 100, offset: int = 0) -> list[ProjectEntity]:
+
+    def list_projects(
+        self, status: str | None = None, limit: int = 100, offset: int = 0
+    ) -> list[ProjectEntity]:
         """List projects with filters"""
         with self.get_db_session() as session:
-            query = session.query(Project).options(
-                joinedload(Project.git_branchs)
-            )
-            
+            query = session.query(Project).options(joinedload(Project.git_branchs))
+
             if status:
                 query = query.filter(Project.status == status)
-            
+
             query = query.order_by(desc(Project.created_at))
             query = query.offset(offset).limit(limit)
-            
+
             projects = query.all()
             return [self._model_to_entity(project) for project in projects]
-    
+
     def get_project_by_name(self, name: str) -> ProjectEntity | None:
         """Get a project by name"""
         with self.get_db_session() as session:
-            project = session.query(Project).filter(
-                Project.name == name
-            ).first()
-            
+            project = session.query(Project).filter(Project.name == name).first()
+
             return self._model_to_entity(project) if project else None
-    
+
     def search_projects(self, query: str, limit: int = 50) -> list[ProjectEntity]:
         """Search projects by name or description"""
         with self.get_db_session() as session:
             search_pattern = f"%{query}%"
-            
-            projects = session.query(Project).filter(
-                or_(
-                    Project.name.ilike(search_pattern),
-                    Project.description.ilike(search_pattern)
+
+            projects = (
+                session.query(Project)
+                .filter(
+                    or_(
+                        Project.name.ilike(search_pattern),
+                        Project.description.ilike(search_pattern),
+                    )
                 )
-            ).order_by(desc(Project.created_at)).limit(limit).all()
-            
+                .order_by(desc(Project.created_at))
+                .limit(limit)
+                .all()
+            )
+
             return [self._model_to_entity(project) for project in projects]
-    
+
     def get_project_statistics(self, project_id: str) -> dict[str, Any]:
         """Get statistics for a specific project"""
         with self.get_db_session() as session:
-            project = session.query(Project).options(
-                joinedload(Project.git_branchs)
-            ).filter(Project.id == project_id).first()
-            
+            project = (
+                session.query(Project)
+                .options(joinedload(Project.git_branchs))
+                .filter(Project.id == project_id)
+                .first()
+            )
+
             if not project:
                 raise ResourceNotFoundException(
-                    resource_type="Project",
-                    resource_id=project_id
+                    resource_type="Project", resource_id=project_id
                 )
-            
+
             # Calculate statistics
             total_branches = len(project.git_branchs)
             assigned_branches = sum(
-                1 for branch in project.git_branchs 
+                1
+                for branch in project.git_branchs
                 if branch.assigned_agent_id is not None
             )
-            
+
             total_tasks = sum(branch.task_count for branch in project.git_branchs)
-            completed_tasks = sum(branch.completed_task_count for branch in project.git_branchs)
-            
+            completed_tasks = sum(
+                branch.completed_task_count for branch in project.git_branchs
+            )
+
             return {
                 "project_id": project_id,
                 "project_name": project.name,
@@ -719,35 +792,35 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                     (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
                 ),
                 "created_at": project.created_at.isoformat(),
-                "updated_at": project.updated_at.isoformat()
+                "updated_at": project.updated_at.isoformat(),
             }
-    
+
     def get_project_selective_fields(
-        self, 
-        project_id: str, 
-        fields: list[str] | FieldSet | None = None
+        self, project_id: str, fields: list[str] | FieldSet | None = None
     ) -> dict[str, Any]:
         """
         Get project with only specified fields for performance optimization
-        
+
         Args:
             project_id: The project ID to fetch
             fields: List of field names or a FieldSet enum value
-            
+
         Returns:
             Dictionary containing only requested fields
         """
         try:
             # Get field specification from the selector
             field_spec = self._field_selector.get_project_fields(project_id, fields)
-            
+
             with self.get_db_session() as session:
                 # Check cache first
                 if field_spec.get("optimized") and field_spec["fields"]:
-                    cached_data = self._field_selector.get_cached_fields(project_id, field_spec["fields"])
+                    cached_data = self._field_selector.get_cached_fields(
+                        project_id, field_spec["fields"]
+                    )
                     if cached_data:
                         return cached_data
-                
+
                 # Build selective query
                 if field_spec.get("optimized") and field_spec["fields"]:
                     # Build SQLAlchemy query with only requested fields
@@ -757,25 +830,29 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                             field_attrs.append(getattr(Project, field))
                         else:
                             logger.warning(f"Field {field} not found in Project model")
-                    
+
                     if field_attrs:
                         # Apply user filter and project ID filter
                         base_query = session.query(*field_attrs)
                         base_query = self.apply_user_filter(base_query)
                         base_query = base_query.filter(Project.id == project_id)
-                        
+
                         result = base_query.first()
-                        
+
                         if result:
                             # Convert tuple result to dictionary
                             data = dict(zip(field_spec["fields"], result))
-                            
+
                             # Cache the result
-                            self._field_selector.cache_field_mapping(project_id, field_spec["fields"], data)
-                            
+                            self._field_selector.cache_field_mapping(
+                                project_id, field_spec["fields"], data
+                            )
+
                             # Log access for audit
-                            self.log_access('get_selective_fields', 'project', project_id)
-                            
+                            self.log_access(
+                                "get_selective_fields", "project", project_id
+                            )
+
                             return data
                 else:
                     # Fall back to full entity query if no field optimization
@@ -783,36 +860,38 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                     if project:
                         # Convert entity to dictionary
                         return {
-                            'id': project.id,
-                            'name': project.name,
-                            'description': project.description,
-                            'created_at': project.created_at,
-                            'updated_at': project.updated_at,
-                            'status': getattr(project, 'status', 'active')
+                            "id": project.id,
+                            "name": project.name,
+                            "description": project.description,
+                            "created_at": project.created_at,
+                            "updated_at": project.updated_at,
+                            "status": getattr(project, "status", "active"),
                         }
-                
+
                 return None
-                
+
         except Exception as e:
-            logger.error(f"Failed to get project {project_id} with selective fields: {e}")
+            logger.error(
+                f"Failed to get project {project_id} with selective fields: {e}"
+            )
             return None
-    
+
     def list_projects_selective_fields(
         self,
         fields: list[str] | FieldSet | None = None,
         status: str | None = None,
         limit: int = 100,
-        offset: int = 0
+        offset: int = 0,
     ) -> list[dict[str, Any]]:
         """
         List projects with only specified fields for performance optimization
-        
+
         Args:
             fields: List of field names or a FieldSet enum value
             status: Optional status filter
             limit: Maximum number of results
             offset: Result offset for pagination
-            
+
         Returns:
             List of project dictionaries with only requested fields
         """
@@ -820,10 +899,12 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             # Determine optimal field set based on operation
             if fields is None:
                 fields = self._field_selector.get_optimal_field_set("list", "project")
-            
+
             # Get field specification from the selector
-            field_spec = self._field_selector.get_project_fields("list_operation", fields)
-            
+            field_spec = self._field_selector.get_project_fields(
+                "list_operation", fields
+            )
+
             with self.get_db_session() as session:
                 # Build selective query
                 if field_spec.get("optimized") and field_spec["fields"]:
@@ -834,79 +915,82 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                             field_attrs.append(getattr(Project, field))
                         else:
                             logger.warning(f"Field {field} not found in Project model")
-                    
+
                     if field_attrs:
                         # Build base query with selective fields
                         base_query = session.query(*field_attrs)
-                        
+
                         # Apply user filter for data isolation
                         base_query = self.apply_user_filter(base_query)
-                        
+
                         # Apply filters
                         if status:
                             base_query = base_query.filter(Project.status == status)
-                        
+
                         # Apply ordering and pagination
                         base_query = base_query.order_by(desc(Project.created_at))
                         base_query = base_query.offset(offset).limit(limit)
-                        
+
                         results = base_query.all()
-                        
+
                         # Convert tuple results to dictionaries
                         projects = []
                         for result in results:
                             project_data = dict(zip(field_spec["fields"], result))
                             projects.append(project_data)
-                        
+
                         # Log access for audit
-                        self.log_access('list_selective_fields', 'project')
-                        
+                        self.log_access("list_selective_fields", "project")
+
                         return projects
-                
+
                 # Fall back to regular list if no optimization
                 project_entities = self.list_projects(status, limit, offset)
-                
+
                 # Convert entities to minimal dictionaries
                 projects = []
                 for project in project_entities:
-                    projects.append({
-                        'id': project.id,
-                        'name': project.name,
-                        'status': getattr(project, 'status', 'active'),
-                        'updated_at': project.updated_at
-                    })
-                
+                    projects.append(
+                        {
+                            "id": project.id,
+                            "name": project.name,
+                            "status": getattr(project, "status", "active"),
+                            "updated_at": project.updated_at,
+                        }
+                    )
+
                 return projects
-                
+
         except Exception as e:
             logger.error(f"Failed to list projects with selective fields: {e}")
             return []
-    
+
     def get_field_selector_metrics(self) -> dict[str, int]:
         """
         Get performance metrics from the field selector
-        
+
         Returns:
             Dictionary of performance metrics
         """
         return self._field_selector.get_metrics()
-    
+
     def estimate_field_optimization_savings(
-        self, 
-        field_set: FieldSet
+        self, field_set: FieldSet
     ) -> dict[str, float]:
         """
         Estimate performance savings for using selective fields
-        
+
         Args:
             field_set: The field set to evaluate
-            
+
         Returns:
             Dictionary with estimated savings percentages
         """
         return self._field_selector.estimate_savings("project", field_set)
 
-    async def check_name_exists(self, name: str, exclude_project_id: str | None = None) -> bool:
+    async def check_name_exists(
+        self, name: str, exclude_project_id: str | None = None
+    ) -> bool:
         """
         Check if a project name already exists for the current user.
 
@@ -933,6 +1017,6 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
             existing = query.first()
 
             # Log access for audit
-            self.log_access('check_name_exists', 'project', f'name={name}')
+            self.log_access("check_name_exists", "project", f"name={name}")
 
             return existing is not None

@@ -29,22 +29,29 @@ logger = logging.getLogger(__name__)
 
 class AccessLevel(Enum):
     """Access levels for health check responses"""
-    CLIENT = "client"           # Basic status only
+
+    CLIENT = "client"  # Basic status only
     AUTHENTICATED = "authenticated"  # Limited details
-    ADMIN = "admin"            # Full administrative details
+    ADMIN = "admin"  # Full administrative details
 
 
 @dataclass
 class SecurityContext:
     """Security context for health check requests"""
+
     access_level: AccessLevel
     user_id: str | None = None
     is_internal: bool = False
     environment: str = "production"  # production, development, testing
-    
+
     @classmethod
-    def from_request(cls, user_id: str = None, is_admin: bool = False, 
-                    is_internal: bool = False, environment: str = None) -> SecurityContext:
+    def from_request(
+        cls,
+        user_id: str = None,
+        is_admin: bool = False,
+        is_internal: bool = False,
+        environment: str = None,
+    ) -> SecurityContext:
         """Create security context from request parameters"""
         # Determine access level
         if is_admin and is_internal:
@@ -53,39 +60,39 @@ class SecurityContext:
             access_level = AccessLevel.AUTHENTICATED
         else:
             access_level = AccessLevel.CLIENT
-            
+
         # Get environment from ENV if not provided
         env = environment or os.environ.get("ENVIRONMENT", "production")
-        
+
         return cls(
             access_level=access_level,
             user_id=user_id,
             is_internal=is_internal,
-            environment=env
+            environment=env,
         )
 
 
 class SecureHealthChecker:
     """Secure health checker with information filtering"""
-    
+
     def __init__(self):
         self.server_name = "agenthub Server"
         self.version = "2.1.0"
-        
+
     async def check_health(self, security_context: SecurityContext) -> dict[str, Any]:
         """
         Perform health check with security-filtered response
-        
+
         Args:
             security_context: Security context determining response level
-            
+
         Returns:
             Filtered health check response
         """
         try:
             # Get basic health status (always safe)
             basic_status = await self._get_basic_status()
-            
+
             # Filter response based on access level
             if security_context.access_level == AccessLevel.CLIENT:
                 return self._get_client_response(basic_status)
@@ -93,36 +100,39 @@ class SecureHealthChecker:
                 return self._get_authenticated_response(basic_status, security_context)
             else:  # ADMIN
                 return self._get_admin_response(basic_status, security_context)
-                
+
         except Exception as e:
             logger.error(f"Health check failed: {e}")
             return self._get_error_response(str(e), security_context)
-    
+
     async def _get_basic_status(self) -> dict[str, Any]:
         """Get basic server status (internal method)"""
         try:
             # Import here to avoid circular imports
             from .connection_manager import get_connection_manager
             from .connection_status_broadcaster import get_status_broadcaster
-            
+
             # Get connection stats
             connection_manager = await get_connection_manager()
             connection_stats = await connection_manager.get_connection_stats()
-            
+
             # Get broadcaster status
             status_broadcaster = await get_status_broadcaster()
-            
+
             return {
                 "server_healthy": True,
-                "active_connections": connection_stats["connections"]["active_connections"],
+                "active_connections": connection_stats["connections"][
+                    "active_connections"
+                ],
                 "uptime_seconds": connection_stats["server_info"]["uptime_seconds"],
                 "restart_count": connection_stats["server_info"]["restart_count"],
                 "broadcaster_active": True,
                 "registered_clients": status_broadcaster.get_client_count(),
-                "auth_enabled": os.environ.get("AUTH_ENABLED", "true").lower() == "true",
-                "mvp_mode": os.environ.get("PRODUCTION", "false").lower() == "true"
+                "auth_enabled": os.environ.get("AUTH_ENABLED", "true").lower()
+                == "true",
+                "mvp_mode": os.environ.get("PRODUCTION", "false").lower() == "true",
             }
-            
+
         except Exception as e:
             logger.warning(f"Could not get full status: {e}")
             return {
@@ -135,19 +145,20 @@ class SecureHealthChecker:
                 "auth_enabled": True,
                 "mvp_mode": False,
                 "partial_status": True,
-                "status_error": str(e)
+                "status_error": str(e),
             }
-    
+
     def _get_client_response(self, basic_status: dict[str, Any]) -> dict[str, Any]:
         """Get client-safe response (minimal information)"""
         return {
             "success": True,
             "status": "healthy" if basic_status["server_healthy"] else "unhealthy",
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
-    
-    def _get_authenticated_response(self, basic_status: dict[str, Any], 
-                                  security_context: SecurityContext) -> dict[str, Any]:
+
+    def _get_authenticated_response(
+        self, basic_status: dict[str, Any], security_context: SecurityContext
+    ) -> dict[str, Any]:
         """Get authenticated user response (limited details)"""
         response = {
             "success": True,
@@ -156,25 +167,26 @@ class SecureHealthChecker:
             "version": self.version,
             "uptime_seconds": basic_status["uptime_seconds"],
             "active_connections": basic_status["active_connections"],
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
-        
+
         # Add restart info if relevant
         if basic_status["restart_count"] > 0:
             response["restart_count"] = basic_status["restart_count"]
             response["restart_notice"] = "Server has been restarted"
-        
+
         return response
-    
-    def _get_admin_response(self, basic_status: dict[str, Any], 
-                           security_context: SecurityContext) -> dict[str, Any]:
+
+    def _get_admin_response(
+        self, basic_status: dict[str, Any], security_context: SecurityContext
+    ) -> dict[str, Any]:
         """Get full administrative response (all details)"""
         # Get full environment information (admin only)
         environment = self._get_environment_info()
         authentication = self._get_authentication_info()
         task_management = self._get_task_management_info()
         connections = self._get_connections_info(basic_status)
-        
+
         return {
             "success": True,
             "status": "healthy" if basic_status["server_healthy"] else "unhealthy",
@@ -187,11 +199,11 @@ class SecureHealthChecker:
             "security_context": {
                 "access_level": security_context.access_level.value,
                 "user_id": security_context.user_id,
-                "environment": security_context.environment
+                "environment": security_context.environment,
             },
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
-    
+
     def _get_environment_info(self) -> dict[str, Any]:
         """Get environment information (admin only)"""
         return {
@@ -200,56 +212,60 @@ class SecureHealthChecker:
             "projects_file_path": os.environ.get("PROJECTS_FILE_PATH", "not set"),
             "agent_library_dir": os.environ.get("AGENT_LIBRARY_DIR_PATH", "not set"),
             "auth_enabled": os.environ.get("AUTH_ENABLED", "true"),
-            "cursor_tools_disabled": os.environ.get("AGENTHUB_DISABLE_CURSOR_TOOLS", "false"),
+            "cursor_tools_disabled": os.environ.get(
+                "AGENTHUB_DISABLE_CURSOR_TOOLS", "false"
+            ),
             "mvp_mode": os.environ.get("PRODUCTION", "false"),
-            "supabase_configured": bool(os.environ.get("SUPABASE_URL"))
+            "supabase_configured": bool(os.environ.get("SUPABASE_URL")),
         }
-    
+
     def _get_authentication_info(self) -> dict[str, Any]:
         """Get authentication information"""
         return {
             "enabled": os.environ.get("AUTH_ENABLED", "true").lower() == "true",
-            "mvp_mode": os.environ.get("PRODUCTION", "false").lower() == "true"
+            "mvp_mode": os.environ.get("PRODUCTION", "false").lower() == "true",
         }
-    
+
     def _get_task_management_info(self) -> dict[str, Any]:
         """Get task management information"""
         return {
             "task_management_enabled": True,
             "enabled_tools_count": 0,
             "total_tools_count": 0,
-            "enabled_tools": []
+            "enabled_tools": [],
         }
-    
+
     def _get_connections_info(self, basic_status: dict[str, Any]) -> dict[str, Any]:
         """Get connections information"""
         return {
             "active_connections": basic_status["active_connections"],
             "server_restart_count": basic_status["restart_count"],
             "uptime_seconds": basic_status["uptime_seconds"],
-            "recommended_action": "no_action_needed" if basic_status["active_connections"] > 0 else "check_client_connection",
+            "recommended_action": "no_action_needed"
+            if basic_status["active_connections"] > 0
+            else "check_client_connection",
             "status_broadcasting": {
                 "active": basic_status["broadcaster_active"],
                 "registered_clients": basic_status["registered_clients"],
                 "last_broadcast": None,
-                "last_broadcast_time": None
-            }
+                "last_broadcast_time": None,
+            },
         }
-    
-    def _get_error_response(self, error: str, security_context: SecurityContext) -> dict[str, Any]:
+
+    def _get_error_response(
+        self, error: str, security_context: SecurityContext
+    ) -> dict[str, Any]:
         """Get error response filtered by access level"""
         if security_context.access_level == AccessLevel.CLIENT:
-            return {
-                "success": False,
-                "status": "error",
-                "timestamp": time.time()
-            }
+            return {"success": False, "status": "error", "timestamp": time.time()}
         else:
             return {
                 "success": False,
                 "status": "error",
-                "error": error if security_context.access_level == AccessLevel.ADMIN else "Service temporarily unavailable",
-                "timestamp": time.time()
+                "error": error
+                if security_context.access_level == AccessLevel.ADMIN
+                else "Service temporarily unavailable",
+                "timestamp": time.time(),
             }
 
 
@@ -257,17 +273,21 @@ class SecureHealthChecker:
 _secure_health_checker = SecureHealthChecker()
 
 
-async def secure_health_check(user_id: str = None, is_admin: bool = False, 
-                             is_internal: bool = False, environment: str = None) -> dict[str, Any]:
+async def secure_health_check(
+    user_id: str = None,
+    is_admin: bool = False,
+    is_internal: bool = False,
+    environment: str = None,
+) -> dict[str, Any]:
     """
     Perform secure health check with automatic access level determination
-    
+
     Args:
         user_id: User identifier (None for anonymous)
         is_admin: Whether user has admin privileges
         is_internal: Whether request is from internal system
         environment: Environment context (production, development, etc.)
-        
+
     Returns:
         Security-filtered health check response
     """
@@ -275,9 +295,9 @@ async def secure_health_check(user_id: str = None, is_admin: bool = False,
         user_id=user_id,
         is_admin=is_admin,
         is_internal=is_internal,
-        environment=environment
+        environment=environment,
     )
-    
+
     return await _secure_health_checker.check_health(security_context)
 
 
@@ -288,8 +308,4 @@ async def client_health_check() -> dict[str, Any]:
 
 async def admin_health_check(user_id: str = "admin") -> dict[str, Any]:
     """Get full admin health check (all details)"""
-    return await secure_health_check(
-        user_id=user_id,
-        is_admin=True,
-        is_internal=True
-    ) 
+    return await secure_health_check(user_id=user_id, is_admin=True, is_internal=True)

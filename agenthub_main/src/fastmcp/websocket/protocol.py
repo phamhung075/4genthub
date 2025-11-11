@@ -43,16 +43,19 @@ MAX_MESSAGE_SIZE_BYTES = 64 * 1024
 
 class ProtocolError(Exception):
     """Base exception for WebSocket protocol errors."""
+
     pass
 
 
 class MessageSizeError(ProtocolError):
     """Exception raised when message exceeds size limit."""
+
     pass
 
 
 class InvalidVersionError(ProtocolError):
     """Exception raised when message version is not v2.0."""
+
     pass
 
 
@@ -73,11 +76,13 @@ def validate_message(message: dict[str, Any]) -> WSMessage:
     """
     # CRITICAL: NO backward compatibility - only v2.0
     if message.get("version") != "2.0":
-        raise InvalidVersionError(f"Only protocol v2.0 is supported, got: {message.get('version')}")
+        raise InvalidVersionError(
+            f"Only protocol v2.0 is supported, got: {message.get('version')}"
+        )
 
     # Check message size
     message_json = json.dumps(message)
-    message_size = len(message_json.encode('utf-8'))
+    message_size = len(message_json.encode("utf-8"))
 
     if message_size > MAX_MESSAGE_SIZE_BYTES:
         raise MessageSizeError(
@@ -100,7 +105,7 @@ async def create_user_update(
     user_id: str | None = None,
     session_id: str | None = None,
     correlation_id: str | None = None,
-    sequence: int = 0
+    sequence: int = 0,
 ) -> UserUpdateMessage:
     """
     Create a user-initiated update message with cascade data.
@@ -126,25 +131,17 @@ async def create_user_update(
             # Map entity types
             cascade_entity_type = _map_entity_type(entity_type)
             cascade_result = await cascade_calculator.calculate_cascade(
-                entity_id=entity_id,
-                entity_type=cascade_entity_type
+                entity_id=entity_id, entity_type=cascade_entity_type
             )
             cascade_data = _convert_cascade_result(cascade_result)
         except Exception as e:
             logger.warning(f"Failed to calculate cascade for {entity_id}: {e}")
 
     # Create WSData with cascade
-    ws_data = WSData(
-        primary=primary_data,
-        cascade=cascade_data
-    )
+    ws_data = WSData(primary=primary_data, cascade=cascade_data)
 
     # Create payload
-    payload = WSPayload(
-        entity=entity_type,
-        action=action,
-        data=ws_data
-    )
+    payload = WSPayload(entity=entity_type, action=action, data=ws_data)
 
     # Create metadata for user update
     metadata = WSMetadata(
@@ -152,14 +149,11 @@ async def create_user_update(
         user_id=user_id,
         session_id=session_id,
         correlation_id=correlation_id,
-        immediate=True
+        immediate=True,
     )
 
     return UserUpdateMessage(
-        type="update",
-        sequence=sequence,
-        payload=payload,
-        metadata=metadata
+        type="update", sequence=sequence, payload=payload, metadata=metadata
     )
 
 
@@ -168,7 +162,7 @@ async def create_ai_batch(
     batch_id: str,
     cascade_calculator: CascadeCalculator | None = None,
     user_id: str | None = None,
-    sequence: int = 0
+    sequence: int = 0,
 ) -> AIBatchMessage:
     """
     Create an AI-initiated batch update message.
@@ -188,15 +182,14 @@ async def create_ai_batch(
 
     if cascade_calculator:
         for update in updates:
-            entity_id = update.get('entity_id')
-            entity_type = update.get('entity_type')
+            entity_id = update.get("entity_id")
+            entity_type = update.get("entity_type")
 
             if entity_id and entity_type:
                 try:
                     cascade_entity_type = _map_entity_type(entity_type)
                     cascade_result = await cascade_calculator.calculate_cascade(
-                        entity_id=entity_id,
-                        entity_type=cascade_entity_type
+                        entity_id=entity_id, entity_type=cascade_entity_type
                     )
                     _merge_cascade_data(combined_cascade, cascade_result)
                 except Exception as e:
@@ -205,35 +198,24 @@ async def create_ai_batch(
     # Create WSData with combined updates
     ws_data = WSData(
         primary=updates,
-        cascade=combined_cascade if not combined_cascade.is_empty() else None
+        cascade=combined_cascade if not combined_cascade.is_empty() else None,
     )
 
     # Create payload for multiple entities
-    payload = WSPayload(
-        entity="multiple",
-        action="batch",
-        data=ws_data
-    )
+    payload = WSPayload(entity="multiple", action="batch", data=ws_data)
 
     # Create metadata for AI batch
     metadata = WSMetadata(
-        source="mcp-ai",
-        user_id=user_id,
-        batch_id=batch_id,
-        immediate=False
+        source="mcp-ai", user_id=user_id, batch_id=batch_id, immediate=False
     )
 
     return AIBatchMessage(
-        type="bulk",
-        sequence=sequence,
-        payload=payload,
-        metadata=metadata
+        type="bulk", sequence=sequence, payload=payload, metadata=metadata
     )
 
 
 def create_heartbeat(
-    session_id: str | None = None,
-    sequence: int = 0
+    session_id: str | None = None, sequence: int = 0
 ) -> HeartbeatMessage:
     """
     Create a heartbeat message for connection management.
@@ -248,23 +230,11 @@ def create_heartbeat(
     # Heartbeat payload is minimal
     ws_data = WSData(primary={"status": "alive"})
 
-    payload = WSPayload(
-        entity="multiple",
-        action="update",
-        data=ws_data
-    )
+    payload = WSPayload(entity="multiple", action="update", data=ws_data)
 
-    metadata = WSMetadata(
-        source="system",
-        session_id=session_id,
-        immediate=True
-    )
+    metadata = WSMetadata(source="system", session_id=session_id, immediate=True)
 
-    return HeartbeatMessage(
-        sequence=sequence,
-        payload=payload,
-        metadata=metadata
-    )
+    return HeartbeatMessage(sequence=sequence, payload=payload, metadata=metadata)
 
 
 def create_error(
@@ -273,7 +243,7 @@ def create_error(
     error_details: dict[str, Any] | None = None,
     session_id: str | None = None,
     correlation_id: str | None = None,
-    sequence: int = 0
+    sequence: int = 0,
 ) -> ErrorMessage:
     """
     Create an error message with detailed context.
@@ -289,10 +259,7 @@ def create_error(
     Returns:
         ErrorMessage
     """
-    error_data = {
-        "message": error_message,
-        "timestamp": datetime.now(UTC).isoformat()
-    }
+    error_data = {"message": error_message, "timestamp": datetime.now(UTC).isoformat()}
 
     if error_code:
         error_data["code"] = error_code
@@ -302,31 +269,23 @@ def create_error(
 
     ws_data = WSData(primary=error_data)
 
-    payload = WSPayload(
-        entity="multiple",
-        action="update",
-        data=ws_data
-    )
+    payload = WSPayload(entity="multiple", action="update", data=ws_data)
 
     metadata = WSMetadata(
         source="system",
         session_id=session_id,
         correlation_id=correlation_id,
-        immediate=True
+        immediate=True,
     )
 
-    return ErrorMessage(
-        sequence=sequence,
-        payload=payload,
-        metadata=metadata
-    )
+    return ErrorMessage(sequence=sequence, payload=payload, metadata=metadata)
 
 
 def create_sync(
     sync_data: dict[str, Any],
     session_id: str | None = None,
     user_id: str | None = None,
-    sequence: int = 0
+    sequence: int = 0,
 ) -> SyncMessage:
     """
     Create a sync message for client reconnection.
@@ -342,27 +301,17 @@ def create_sync(
     """
     ws_data = WSData(primary=sync_data)
 
-    payload = WSPayload(
-        entity="multiple",
-        action="update",
-        data=ws_data
-    )
+    payload = WSPayload(entity="multiple", action="update", data=ws_data)
 
     metadata = WSMetadata(
-        source="system",
-        session_id=session_id,
-        user_id=user_id,
-        immediate=True
+        source="system", session_id=session_id, user_id=user_id, immediate=True
     )
 
-    return SyncMessage(
-        sequence=sequence,
-        payload=payload,
-        metadata=metadata
-    )
+    return SyncMessage(sequence=sequence, payload=payload, metadata=metadata)
 
 
 # Helper Functions
+
 
 def _map_entity_type(entity_type: EntityType) -> CascadeEntityType:
     """Map WebSocket entity type to cascade calculator entity type."""
@@ -437,7 +386,7 @@ def get_message_size(message: WSMessage) -> int:
         Size in bytes
     """
     message_json = message.model_dump_json()
-    return len(message_json.encode('utf-8'))
+    return len(message_json.encode("utf-8"))
 
 
 def is_message_size_valid(message: WSMessage) -> bool:

@@ -41,9 +41,11 @@ class TimestampUpdatedEvent(DomainEvent):
         return {
             "event_type": self.event_type,
             "entity_id": self.entity_id,
-            "old_timestamp": self.old_timestamp.isoformat() if self.old_timestamp else None,
+            "old_timestamp": self.old_timestamp.isoformat()
+            if self.old_timestamp
+            else None,
             "new_timestamp": self.new_timestamp.isoformat(),
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -64,7 +66,7 @@ class TimestampCreatedEvent(DomainEvent):
             "event_type": self.event_type,
             "entity_id": self.entity_id,
             "created_timestamp": self.created_timestamp.isoformat(),
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -100,7 +102,9 @@ class BaseTimestampEntity(ABC):
     updated_at: datetime | None = None
 
     # Domain events collection
-    _domain_events: list[DomainEvent] = field(default_factory=list, init=False, repr=False)
+    _domain_events: list[DomainEvent] = field(
+        default_factory=list, init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         """Initialise timestamps and validate entity state."""
@@ -153,11 +157,9 @@ class BaseTimestampEntity(ABC):
 
         if is_new_entity:
             event = TimestampCreatedEvent(
-                entity_id=self._get_entity_id(),
-                created_timestamp=self.created_at
+                entity_id=self._get_entity_id(), created_timestamp=self.created_at
             )
             self._add_domain_event(event)
-
 
     @staticmethod
     def _coerce_to_utc(value: datetime) -> datetime:
@@ -186,7 +188,7 @@ class BaseTimestampEntity(ABC):
         event = TimestampUpdatedEvent(
             entity_id=self._get_entity_id(),
             old_timestamp=old_timestamp,
-            new_timestamp=self.updated_at
+            new_timestamp=self.updated_at,
         )
         self._add_domain_event(event)
 
@@ -236,7 +238,7 @@ class BaseTimestampEntity(ABC):
         Args:
             event: Domain event to add
         """
-        if not hasattr(self, '_domain_events'):
+        if not hasattr(self, "_domain_events"):
             self._domain_events = []
         self._domain_events.append(event)
         logger.debug(f"Added domain event: {event}")
@@ -247,7 +249,7 @@ class BaseTimestampEntity(ABC):
         Returns:
             list[DomainEvent]: Copy of domain events list
         """
-        if not hasattr(self, '_domain_events'):
+        if not hasattr(self, "_domain_events"):
             return []
         return self._domain_events.copy()
 
@@ -256,7 +258,7 @@ class BaseTimestampEntity(ABC):
 
         Typically called by repository after persisting events.
         """
-        if hasattr(self, '_domain_events'):
+        if hasattr(self, "_domain_events"):
             self._domain_events.clear()
         logger.debug(f"Cleared domain events for entity {self._get_entity_id()}")
 
@@ -274,7 +276,7 @@ class BaseTimestampEntity(ABC):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "age_seconds": self.get_age_seconds(),
             "staleness_seconds": self.get_staleness_seconds(),
-            "domain_events_count": len(self.get_domain_events())
+            "domain_events_count": len(self.get_domain_events()),
         }
 
     def __repr__(self) -> str:

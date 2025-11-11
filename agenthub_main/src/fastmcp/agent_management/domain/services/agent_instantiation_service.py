@@ -28,7 +28,7 @@ class AgentInstantiationService:
     def __init__(
         self,
         template_repository: AgentTemplateRepository,
-        instance_repository: UserAgentInstanceRepository
+        instance_repository: UserAgentInstanceRepository,
     ):
         """Initialize the service with repository dependencies.
 
@@ -40,9 +40,7 @@ class AgentInstantiationService:
         self.instance_repository = instance_repository
 
     def get_or_create_instance(
-        self,
-        user_id: UserId,
-        template_slug: str
+        self, user_id: UserId, template_slug: str
     ) -> UserAgentInstance | None:
         """Get existing instance or create new one for user and template.
 
@@ -85,8 +83,7 @@ class AgentInstantiationService:
 
         # Step 2: Check if instance already exists
         existing_instance = self.instance_repository.find_by_user_and_template(
-            user_id=user_id,
-            template_id=template.id
+            user_id=user_id, template_id=template.id
         )
 
         if existing_instance:
@@ -98,8 +95,7 @@ class AgentInstantiationService:
 
         # Step 3: Create new instance from template
         new_instance = self._create_instance_from_template(
-            user_id=user_id,
-            template=template
+            user_id=user_id, template=template
         )
 
         # Step 4: Save and return
@@ -113,9 +109,7 @@ class AgentInstantiationService:
         return saved_instance
 
     def _create_instance_from_template(
-        self,
-        user_id: UserId,
-        template: AgentTemplate
+        self, user_id: UserId, template: AgentTemplate
     ) -> UserAgentInstance:
         """Create a new user agent instance from a template.
 
@@ -136,21 +130,20 @@ class AgentInstantiationService:
             agent_name=template.name,  # Default to template name
             is_customized=False,  # Not customized initially
             configuration=template.get_configuration_copy(),  # Copy default config
-            visibility='private',  # Default to private for new instances
+            visibility="private",  # Default to private for new instances
             share_token=None,  # No share token initially
             original_creator_id=None,  # Not imported
             usage_count=0,  # No usage yet
             last_used_at=None,  # Never used
             metadata={
-                'instantiated_from_template': str(template.id),
-                'template_slug': template.slug,
-                'template_version': template.version
-            }
+                "instantiated_from_template": str(template.id),
+                "template_slug": template.slug,
+                "template_version": template.version,
+            },
         )
 
     def get_instance_by_id(
-        self,
-        instance_id: UserAgentInstanceId
+        self, instance_id: UserAgentInstanceId
     ) -> UserAgentInstance | None:
         """Get an agent instance by its ID.
 

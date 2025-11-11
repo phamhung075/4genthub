@@ -36,6 +36,7 @@ class CRUDHandler:
             from fastmcp.auth.middleware.request_context_middleware import (
                 get_current_token_id,
             )
+
             token_id = get_current_token_id()
 
             if not token_id:
@@ -44,6 +45,7 @@ class CRUDHandler:
 
             # Get database session
             from .....infrastructure.database.database_config import get_db_config
+
             db_config = get_db_config()
             session = db_config.get_session()
 
@@ -52,6 +54,7 @@ class CRUDHandler:
                 from .....infrastructure.repositories.token_repository import (
                     TokenRepository,
                 )
+
                 repository = TokenRepository(session)
                 await repository.update_token_usage(token_id, operation=operation)
                 logger.info(f"✅ Tracked operation: {operation} for token: {token_id}")
@@ -59,7 +62,9 @@ class CRUDHandler:
                 session.close()
 
         except Exception as e:
-            logger.warning(f"Failed to track token operation {operation}: {e}", exc_info=True)
+            logger.warning(
+                f"Failed to track token operation {operation}: {e}", exc_info=True
+            )
 
     def create_task(
         self,
@@ -207,8 +212,8 @@ class CRUDHandler:
             )
 
         # Track successful task creation (run in background)
-        if result.get('success', False):
-            asyncio.create_task(self._track_token_operation('task_create'))
+        if result.get("success", False):
+            asyncio.create_task(self._track_token_operation("task_create"))
 
         return result
 
@@ -253,8 +258,8 @@ class CRUDHandler:
                 metadata={
                     "field": "details",
                     "requirement": "Minimum 10 characters describing what was done (required when updating status or progress_percentage)",
-                    "example": "Completed JWT implementation, starting refresh token logic"
-                }
+                    "example": "Completed JWT implementation, starting refresh token logic",
+                },
             )
 
         # Create update request with provided fields
@@ -304,8 +309,8 @@ class CRUDHandler:
         result = facade.update_task(request)
 
         # Track successful task update (run in background)
-        if isinstance(result, dict) and result.get('success', False):
-            asyncio.create_task(self._track_token_operation('task_update'))
+        if isinstance(result, dict) and result.get("success", False):
+            asyncio.create_task(self._track_token_operation("task_update"))
 
         return result
 
@@ -410,8 +415,8 @@ class CRUDHandler:
         result = facade.delete_task(task_id, user_id)
 
         # Track successful task deletion (run in background)
-        if isinstance(result, dict) and result.get('success', False):
-            asyncio.create_task(self._track_token_operation('task_delete'))
+        if isinstance(result, dict) and result.get("success", False):
+            asyncio.create_task(self._track_token_operation("task_delete"))
 
         return result
 
@@ -440,8 +445,8 @@ class CRUDHandler:
                 metadata={
                     "field": "completion_summary",
                     "requirement": "Minimum 20 characters describing what was accomplished",
-                    "example": "Implemented JWT authentication with refresh tokens, added 2FA support, all tests passing"
-                }
+                    "example": "Implemented JWT authentication with refresh tokens, added 2FA support, all tests passing",
+                },
             )
 
         # Extract user_id from facade's repository if available
@@ -453,11 +458,13 @@ class CRUDHandler:
 
         # Use the facade's complete_task method directly
         # This properly handles both transitioning to done and updating already-done tasks
-        result = facade.complete_task(task_id, completion_summary, testing_notes, user_id)
+        result = facade.complete_task(
+            task_id, completion_summary, testing_notes, user_id
+        )
 
         # Track successful task completion (run in background)
-        if isinstance(result, dict) and result.get('success', False):
-            asyncio.create_task(self._track_token_operation('task_complete'))
+        if isinstance(result, dict) and result.get("success", False):
+            asyncio.create_task(self._track_token_operation("task_complete"))
 
         return result
 

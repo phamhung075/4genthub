@@ -12,6 +12,7 @@ from sqlalchemy import create_engine, text
 
 logger = logging.getLogger(__name__)
 
+
 class DatabaseInitializer:
     """Handles initial database setup with default projects and branches"""
 
@@ -21,17 +22,21 @@ class DatabaseInitializer:
             self.database_url = database_url
         else:
             # Build database URL from environment variables
-            db_type = os.getenv('DATABASE_TYPE', 'postgresql')
-            if db_type == 'postgresql':
-                host = os.getenv('DATABASE_HOST', 'localhost')
-                port = os.getenv('DATABASE_PORT', '5432')
-                name = os.getenv('DATABASE_NAME', 'postgresdb')
-                user = os.getenv('DATABASE_USER', 'agenthub_user')
-                password = os.getenv('DATABASE_PASSWORD', 'agenthub_password')
-                self.database_url = f"postgresql://{user}:{password}@{host}:{port}/{name}"
+            db_type = os.getenv("DATABASE_TYPE", "postgresql")
+            if db_type == "postgresql":
+                host = os.getenv("DATABASE_HOST", "localhost")
+                port = os.getenv("DATABASE_PORT", "5432")
+                name = os.getenv("DATABASE_NAME", "postgresdb")
+                user = os.getenv("DATABASE_USER", "agenthub_user")
+                password = os.getenv("DATABASE_PASSWORD", "agenthub_password")
+                self.database_url = (
+                    f"postgresql://{user}:{password}@{host}:{port}/{name}"
+                )
             else:
                 # SQLite or other database types
-                self.database_url = os.getenv('DATABASE_URL', 'sqlite:///agenthub_dev.db')
+                self.database_url = os.getenv(
+                    "DATABASE_URL", "sqlite:///agenthub_dev.db"
+                )
 
     def create_default_project(self, user_id: str) -> str | None:
         """Create a default project for a user if they don't have any"""
@@ -43,11 +48,14 @@ class DatabaseInitializer:
 
                 try:
                     # Check if user has any projects
-                    result = conn.execute(text("""
+                    result = conn.execute(
+                        text("""
                         SELECT id FROM projects
                         WHERE user_id = :user_id
                         LIMIT 1;
-                    """), {"user_id": user_id})
+                    """),
+                        {"user_id": user_id},
+                    )
 
                     existing_project = result.fetchone()
 
@@ -60,23 +68,27 @@ class DatabaseInitializer:
                     now = datetime.now(UTC)
 
                     logger.info(f"Creating default project for user {user_id}")
-                    conn.execute(text("""
+                    conn.execute(
+                        text("""
                         INSERT INTO projects (id, name, description, user_id, status, metadata, created_at, updated_at)
                         VALUES (:id, :name, :description, :user_id, :status, :metadata, :created_at, :updated_at);
-                    """), {
-                        "id": project_id,
-                        "name": "My First Project",
-                        "description": "Welcome to agenthub! This is your default project.",
-                        "user_id": user_id,
-                        "status": "active",
-                        "metadata": "{}",
-                        "created_at": now,
-                        "updated_at": now
-                    })
+                    """),
+                        {
+                            "id": project_id,
+                            "name": "My First Project",
+                            "description": "Welcome to agenthub! This is your default project.",
+                            "user_id": user_id,
+                            "status": "active",
+                            "metadata": "{}",
+                            "created_at": now,
+                            "updated_at": now,
+                        },
+                    )
 
                     # Create default branch for the project
                     branch_id = str(uuid.uuid4())
-                    conn.execute(text("""
+                    conn.execute(
+                        text("""
                         INSERT INTO project_git_branchs (
                             id, project_id, name, description, user_id,
                             priority, status, metadata, task_count, completed_task_count,
@@ -87,23 +99,27 @@ class DatabaseInitializer:
                             :priority, :status, :metadata, :task_count, :completed_task_count,
                             :created_at, :updated_at
                         );
-                    """), {
-                        "id": branch_id,
-                        "project_id": project_id,
-                        "name": "main",
-                        "description": "Main development branch",
-                        "user_id": user_id,
-                        "priority": "medium",
-                        "status": "active",
-                        "metadata": "{}",
-                        "task_count": 0,
-                        "completed_task_count": 0,
-                        "created_at": now,
-                        "updated_at": now
-                    })
+                    """),
+                        {
+                            "id": branch_id,
+                            "project_id": project_id,
+                            "name": "main",
+                            "description": "Main development branch",
+                            "user_id": user_id,
+                            "priority": "medium",
+                            "status": "active",
+                            "metadata": "{}",
+                            "task_count": 0,
+                            "completed_task_count": 0,
+                            "created_at": now,
+                            "updated_at": now,
+                        },
+                    )
 
                     trans.commit()
-                    logger.info(f"✅ Created default project {project_id} and branch {branch_id}")
+                    logger.info(
+                        f"✅ Created default project {project_id} and branch {branch_id}"
+                    )
                     return project_id
 
                 except Exception as e:
@@ -141,15 +157,19 @@ class DatabaseInitializer:
 
             with engine.connect() as conn:
                 # Check if main tables exist
-                result = conn.execute(text("""
+                result = conn.execute(
+                    text("""
                     SELECT COUNT(*) FROM information_schema.tables
                     WHERE table_name IN ('projects', 'project_git_branchs', 'tasks', 'subtasks');
-                """))
+                """)
+                )
 
                 table_count = result.scalar()
 
                 if table_count < 4:
-                    logger.warning("Not all required tables exist. Please run database migrations first.")
+                    logger.warning(
+                        "Not all required tables exist. Please run database migrations first."
+                    )
                     return False
 
                 logger.info("✅ All required tables exist")
@@ -164,11 +184,11 @@ def initialize_database_for_current_user() -> bool:
     """Initialize database for the current authenticated user"""
     try:
         # Get current user ID from environment or authentication context
-        user_id = os.getenv('CURRENT_USER_ID')
+        user_id = os.getenv("CURRENT_USER_ID")
 
         if not user_id:
             # Try to get from a test/default user
-            user_id = os.getenv('DEFAULT_USER_ID', 'default-user-001')
+            user_id = os.getenv("DEFAULT_USER_ID", "default-user-001")
             logger.info(f"Using default user ID: {user_id}")
 
         initializer = DatabaseInitializer()

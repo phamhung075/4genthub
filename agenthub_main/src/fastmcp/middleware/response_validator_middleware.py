@@ -32,7 +32,11 @@ from starlette.responses import Response, StreamingResponse
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-VALIDATE_RESPONSES = os.getenv("VALIDATE_RESPONSES", "true").lower() in ("true", "1", "yes")
+VALIDATE_RESPONSES = os.getenv("VALIDATE_RESPONSES", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+)
 VALIDATION_LOG_LEVEL = os.getenv("VALIDATION_LOG_LEVEL", "warning").lower()
 VALIDATION_SAMPLE_RATE = int(os.getenv("VALIDATION_SAMPLE_RATE", "100"))
 
@@ -47,7 +51,7 @@ class ValidationIssue:
         issue_type: str,
         expected: Any,
         actual: Any,
-        message: str
+        message: str,
     ):
         self.severity = severity  # error, warning, info
         self.field_path = field_path
@@ -109,7 +113,7 @@ class ResponseValidator:
         field_path: str,
         value: Any,
         schema_def: dict[str, Any],
-        issues: list[ValidationIssue]
+        issues: list[ValidationIssue],
     ) -> None:
         """Validate a single field against its schema definition"""
 
@@ -120,42 +124,48 @@ class ResponseValidator:
         # Check if field is missing
         if value is None:
             if is_required and default_value is None:
-                issues.append(ValidationIssue(
-                    severity="error",
-                    field_path=field_path,
-                    issue_type="missing",
-                    expected=expected_type.__name__ if expected_type else "any",
-                    actual=None,
-                    message=f"Required field '{field_path}' is missing or null"
-                ))
+                issues.append(
+                    ValidationIssue(
+                        severity="error",
+                        field_path=field_path,
+                        issue_type="missing",
+                        expected=expected_type.__name__ if expected_type else "any",
+                        actual=None,
+                        message=f"Required field '{field_path}' is missing or null",
+                    )
+                )
             elif is_required and default_value is not None:
-                issues.append(ValidationIssue(
-                    severity="warning",
-                    field_path=field_path,
-                    issue_type="null",
-                    expected=default_value,
-                    actual=None,
-                    message=f"Field '{field_path}' is null but should default to {default_value}"
-                ))
+                issues.append(
+                    ValidationIssue(
+                        severity="warning",
+                        field_path=field_path,
+                        issue_type="null",
+                        expected=default_value,
+                        actual=None,
+                        message=f"Field '{field_path}' is null but should default to {default_value}",
+                    )
+                )
             return
 
         # Check type
         if expected_type and not isinstance(value, expected_type):
-            issues.append(ValidationIssue(
-                severity="error",
-                field_path=field_path,
-                issue_type="wrong_type",
-                expected=expected_type.__name__,
-                actual=type(value).__name__,
-                message=f"Field '{field_path}' has wrong type: expected {expected_type.__name__}, got {type(value).__name__}"
-            ))
+            issues.append(
+                ValidationIssue(
+                    severity="error",
+                    field_path=field_path,
+                    issue_type="wrong_type",
+                    expected=expected_type.__name__,
+                    actual=type(value).__name__,
+                    message=f"Field '{field_path}' has wrong type: expected {expected_type.__name__}, got {type(value).__name__}",
+                )
+            )
 
     @classmethod
     def validate_object(
         cls,
         obj: dict[str, Any],
         schema: dict[str, dict[str, Any]],
-        parent_path: str = ""
+        parent_path: str = "",
     ) -> list[ValidationIssue]:
         """Validate an object against a schema"""
         issues = []
@@ -173,14 +183,18 @@ class ResponseValidator:
 
         if unexpected_fields:
             for unexpected_field in unexpected_fields:
-                issues.append(ValidationIssue(
-                    severity="info",
-                    field_path=f"{parent_path}.{unexpected_field}" if parent_path else unexpected_field,
-                    issue_type="unexpected",
-                    expected="not in schema",
-                    actual=type(obj[unexpected_field]).__name__,
-                    message=f"Unexpected field '{unexpected_field}' not in schema (possible schema drift)"
-                ))
+                issues.append(
+                    ValidationIssue(
+                        severity="info",
+                        field_path=f"{parent_path}.{unexpected_field}"
+                        if parent_path
+                        else unexpected_field,
+                        issue_type="unexpected",
+                        expected="not in schema",
+                        actual=type(obj[unexpected_field]).__name__,
+                        message=f"Unexpected field '{unexpected_field}' not in schema (possible schema drift)",
+                    )
+                )
 
         return issues
 
@@ -190,7 +204,9 @@ class ResponseValidator:
         return cls.validate_object(task_data, cls.TASK_SCHEMA, "task")
 
     @classmethod
-    def validate_subtask_response(cls, subtask_data: dict[str, Any]) -> list[ValidationIssue]:
+    def validate_subtask_response(
+        cls, subtask_data: dict[str, Any]
+    ) -> list[ValidationIssue]:
         """Validate a subtask response"""
         return cls.validate_object(subtask_data, cls.SUBTASK_SCHEMA, "subtask")
 
@@ -199,7 +215,7 @@ class ResponseValidator:
         cls,
         items: list[dict[str, Any]],
         item_schema: dict[str, dict[str, Any]],
-        item_type: str = "item"
+        item_type: str = "item",
     ) -> list[ValidationIssue]:
         """Validate a list of items"""
         all_issues = []
@@ -223,7 +239,9 @@ class ResponseValidatorMiddleware(BaseHTTPMiddleware):
             "errors": 0,
             "warnings": 0,
         }
-        logger.info(f"ResponseValidatorMiddleware initialized (enabled={VALIDATE_RESPONSES}, sample_rate={VALIDATION_SAMPLE_RATE}%)")
+        logger.info(
+            f"ResponseValidatorMiddleware initialized (enabled={VALIDATE_RESPONSES}, sample_rate={VALIDATION_SAMPLE_RATE}%)"
+        )
 
     async def dispatch(self, request: Request, call_next) -> Response:
         """Process request and validate response"""
@@ -313,7 +331,9 @@ class ResponseValidatorMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.error(f"Error validating response: {e}", exc_info=True)
 
-    def _validate_task_endpoint(self, data: dict[str, Any], path: str) -> list[ValidationIssue]:
+    def _validate_task_endpoint(
+        self, data: dict[str, Any], path: str
+    ) -> list[ValidationIssue]:
         """Validate task-related endpoint responses"""
         issues = []
 
@@ -323,40 +343,48 @@ class ResponseValidatorMiddleware(BaseHTTPMiddleware):
             if "task" in data:
                 issues.extend(ResponseValidator.validate_task_response(data["task"]))
             elif "tasks" in data and isinstance(data["tasks"], list):
-                issues.extend(ResponseValidator.validate_list_response(
-                    data["tasks"],
-                    ResponseValidator.TASK_SCHEMA,
-                    "task"
-                ))
+                issues.extend(
+                    ResponseValidator.validate_list_response(
+                        data["tasks"], ResponseValidator.TASK_SCHEMA, "task"
+                    )
+                )
             elif "data" in data and isinstance(data["data"], dict):
                 if "task" in data["data"]:
-                    issues.extend(ResponseValidator.validate_task_response(data["data"]["task"]))
+                    issues.extend(
+                        ResponseValidator.validate_task_response(data["data"]["task"])
+                    )
                 elif "tasks" in data["data"]:
-                    issues.extend(ResponseValidator.validate_list_response(
-                        data["data"]["tasks"],
-                        ResponseValidator.TASK_SCHEMA,
-                        "task"
-                    ))
+                    issues.extend(
+                        ResponseValidator.validate_list_response(
+                            data["data"]["tasks"], ResponseValidator.TASK_SCHEMA, "task"
+                        )
+                    )
 
         return issues
 
-    def _validate_subtask_endpoint(self, data: dict[str, Any], path: str) -> list[ValidationIssue]:
+    def _validate_subtask_endpoint(
+        self, data: dict[str, Any], path: str
+    ) -> list[ValidationIssue]:
         """Validate subtask-related endpoint responses"""
         issues = []
 
         if isinstance(data, dict):
             if "subtask" in data:
-                issues.extend(ResponseValidator.validate_subtask_response(data["subtask"]))
+                issues.extend(
+                    ResponseValidator.validate_subtask_response(data["subtask"])
+                )
             elif "subtasks" in data and isinstance(data["subtasks"], list):
-                issues.extend(ResponseValidator.validate_list_response(
-                    data["subtasks"],
-                    ResponseValidator.SUBTASK_SCHEMA,
-                    "subtask"
-                ))
+                issues.extend(
+                    ResponseValidator.validate_list_response(
+                        data["subtasks"], ResponseValidator.SUBTASK_SCHEMA, "subtask"
+                    )
+                )
 
         return issues
 
-    def _log_validation_issues(self, request: Request, issues: list[ValidationIssue]) -> None:
+    def _log_validation_issues(
+        self, request: Request, issues: list[ValidationIssue]
+    ) -> None:
         """Log validation issues with appropriate severity"""
 
         error_issues = [i for i in issues if i.severity == "error"]
@@ -365,20 +393,20 @@ class ResponseValidatorMiddleware(BaseHTTPMiddleware):
 
         if error_issues:
             logger.error(
-                f"🚨 VALIDATION ERRORS in {request.method} {request.url.path}\n" +
-                "\n".join([f"  - {issue.message}" for issue in error_issues])
+                f"🚨 VALIDATION ERRORS in {request.method} {request.url.path}\n"
+                + "\n".join([f"  - {issue.message}" for issue in error_issues])
             )
 
         if warning_issues and VALIDATION_LOG_LEVEL in ("warning", "info", "debug"):
             logger.warning(
-                f"⚠️  VALIDATION WARNINGS in {request.method} {request.url.path}\n" +
-                "\n".join([f"  - {issue.message}" for issue in warning_issues])
+                f"⚠️  VALIDATION WARNINGS in {request.method} {request.url.path}\n"
+                + "\n".join([f"  - {issue.message}" for issue in warning_issues])
             )
 
         if info_issues and VALIDATION_LOG_LEVEL in ("info", "debug"):
             logger.info(
-                f"ℹ️  VALIDATION INFO in {request.method} {request.url.path}\n" +
-                "\n".join([f"  - {issue.message}" for issue in info_issues])
+                f"ℹ️  VALIDATION INFO in {request.method} {request.url.path}\n"
+                + "\n".join([f"  - {issue.message}" for issue in info_issues])
             )
 
     def get_stats(self) -> dict[str, Any]:
@@ -387,5 +415,5 @@ class ResponseValidatorMiddleware(BaseHTTPMiddleware):
             **self.validation_stats,
             "validation_rate": (
                 f"{(self.validation_stats['validated_requests'] / max(self.validation_stats['total_requests'], 1)) * 100:.1f}%"
-            )
+            ),
         }

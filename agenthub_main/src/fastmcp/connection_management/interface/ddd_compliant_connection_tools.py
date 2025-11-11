@@ -44,50 +44,52 @@ logger = logging.getLogger(__name__)
 class DDDCompliantConnectionTools:
     """
     DDD-compliant MCP tools for connection management.
-    
+
     This class follows proper DDD architecture by:
     - Delegating to application facades instead of containing business logic
     - Using dependency injection for proper layer separation
     - Maintaining clean boundaries between layers
     """
-    
+
     def __init__(self):
         """Initialize DDD-compliant connection tools with proper dependency injection"""
         # Infrastructure layer - Repository implementations
         self._server_repository = InMemoryServerRepository()
         self._connection_repository = InMemoryConnectionRepository()
-        
+
         # Infrastructure layer - Service implementations
         self._health_service = MCPServerHealthService()
         self._diagnostics_service = MCPConnectionDiagnosticsService()
         self._broadcasting_service = MCPStatusBroadcastingService()
-        
+
         # Application layer - Facade
         self._connection_facade = ConnectionApplicationFacade(
             server_repository=self._server_repository,
             connection_repository=self._connection_repository,
             health_service=self._health_service,
             diagnostics_service=self._diagnostics_service,
-            broadcasting_service=self._broadcasting_service
+            broadcasting_service=self._broadcasting_service,
         )
-        
+
         # Interface layer - Controller
         self._controller = ConnectionMCPController(self._connection_facade)
-        
-        logger.info("DDDCompliantConnectionTools initialized with proper DDD architecture")
-    
-    def register_tools(self, server: 'FastMCP') -> None:
+
+        logger.info(
+            "DDDCompliantConnectionTools initialized with proper DDD architecture"
+        )
+
+    def register_tools(self, server: "FastMCP") -> None:
         """Register DDD-compliant connection management tools via controller"""
-        
+
         # Delegate tool registration to the controller
         # This follows the same pattern as task management
         self._controller.register_tools(server)
-        
+
         logger.info("DDD-compliant connection management tools registered successfully")
 
 
-def register_ddd_connection_tools(server: 'FastMCP') -> None:
+def register_ddd_connection_tools(server: "FastMCP") -> None:
     """Register DDD-compliant connection management tools with the FastMCP server"""
     tools = DDDCompliantConnectionTools()
     tools.register_tools(server)
-    logger.info("DDD-compliant connection management tools registered") 
+    logger.info("DDD-compliant connection management tools registered")

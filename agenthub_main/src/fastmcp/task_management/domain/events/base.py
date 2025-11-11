@@ -54,13 +54,13 @@ class BaseDomainEvent(ABC):
         """
         data = asdict(self)
         # Convert UUID to string
-        if isinstance(data.get('event_id'), UUID):
-            data['event_id'] = str(data['event_id'])
+        if isinstance(data.get("event_id"), UUID):
+            data["event_id"] = str(data["event_id"])
         # Convert datetime to ISO format
-        if isinstance(data.get('occurred_at'), datetime):
-            data['occurred_at'] = data['occurred_at'].isoformat()
+        if isinstance(data.get("occurred_at"), datetime):
+            data["occurred_at"] = data["occurred_at"].isoformat()
         # Add event type
-        data['event_type'] = self.event_type
+        data["event_type"] = self.event_type
         return data
 
     def __repr__(self) -> str:
@@ -91,7 +91,7 @@ def create_domain_event(
     aggregate_id: str | None = None,
     aggregate_type: str | None = None,
     user_id: str | None = None,
-    **kwargs
+    **kwargs,
 ) -> BaseDomainEvent:
     """
     Factory function to create domain events with automatic metadata.
@@ -120,5 +120,5 @@ def create_domain_event(
         aggregate_id=aggregate_id,
         aggregate_type=aggregate_type,
         user_id=user_id,
-        **kwargs
+        **kwargs,
     )

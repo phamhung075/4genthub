@@ -16,9 +16,11 @@ from jose import jwt
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class AuthResult:
     """Authentication result data class"""
+
     success: bool
     access_token: str | None = None
     refresh_token: str | None = None
@@ -28,15 +30,18 @@ class AuthResult:
     mcp_permissions: list[str] | None = None
     error: str | None = None
 
+
 @dataclass
 class TokenValidation:
     """Token validation result"""
+
     valid: bool
     user_id: str | None = None
     email: str | None = None
     roles: list[str] | None = None
     mcp_permissions: list[str] | None = None
     error: str | None = None
+
 
 class KeycloakAuth:
     """
@@ -63,11 +68,19 @@ class KeycloakAuth:
         self.keycloak_url = self.keycloak_url.rstrip("/")
 
         # Build endpoint URLs
-        self.token_endpoint = f"{self.keycloak_url}/realms/{self.realm}/protocol/openid-connect/token"
-        self.userinfo_endpoint = f"{self.keycloak_url}/realms/{self.realm}/protocol/openid-connect/userinfo"
+        self.token_endpoint = (
+            f"{self.keycloak_url}/realms/{self.realm}/protocol/openid-connect/token"
+        )
+        self.userinfo_endpoint = (
+            f"{self.keycloak_url}/realms/{self.realm}/protocol/openid-connect/userinfo"
+        )
         self.introspect_endpoint = f"{self.keycloak_url}/realms/{self.realm}/protocol/openid-connect/token/introspect"
-        self.logout_endpoint = f"{self.keycloak_url}/realms/{self.realm}/protocol/openid-connect/logout"
-        self.jwks_endpoint = f"{self.keycloak_url}/realms/{self.realm}/protocol/openid-connect/certs"
+        self.logout_endpoint = (
+            f"{self.keycloak_url}/realms/{self.realm}/protocol/openid-connect/logout"
+        )
+        self.jwks_endpoint = (
+            f"{self.keycloak_url}/realms/{self.realm}/protocol/openid-connect/certs"
+        )
 
         # HTTP client with timeout
         self.client = httpx.AsyncClient(timeout=30.0)
@@ -97,13 +110,13 @@ class KeycloakAuth:
                 "client_secret": self.client_secret,
                 "username": username,
                 "password": password,
-                "scope": "openid profile email"
+                "scope": "openid profile email",
             }
 
             response = await self.client.post(
                 self.token_endpoint,
                 data=data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
 
             if response.status_code == 200:
@@ -113,7 +126,9 @@ class KeycloakAuth:
                 user_info = self._parse_id_token(token_data.get("id_token"))
 
                 # Extract roles and permissions from access token
-                access_token_data = self._parse_access_token(token_data.get("access_token"))
+                access_token_data = self._parse_access_token(
+                    token_data.get("access_token")
+                )
 
                 return AuthResult(
                     success=True,
@@ -122,21 +137,18 @@ class KeycloakAuth:
                     expires_in=token_data.get("expires_in"),
                     user=user_info,
                     roles=access_token_data.get("roles", []),
-                    mcp_permissions=access_token_data.get("mcp_permissions", [])
+                    mcp_permissions=access_token_data.get("mcp_permissions", []),
                 )
             else:
                 error_data = response.json()
                 return AuthResult(
                     success=False,
-                    error=error_data.get("error_description", "Authentication failed")
+                    error=error_data.get("error_description", "Authentication failed"),
                 )
 
         except Exception as e:
             logger.error(f"Login error: {e}")
-            return AuthResult(
-                success=False,
-                error=str(e)
-            )
+            return AuthResult(success=False, error=str(e))
 
     async def validate_token(self, token: str) -> TokenValidation:
         """
@@ -153,13 +165,13 @@ class KeycloakAuth:
             data = {
                 "token": token,
                 "client_id": self.client_id,
-                "client_secret": self.client_secret
+                "client_secret": self.client_secret,
             }
 
             response = await self.client.post(
                 self.introspect_endpoint,
                 data=data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
 
             if response.status_code == 200:
@@ -174,25 +186,16 @@ class KeycloakAuth:
                         user_id=introspection.get("sub"),
                         email=introspection.get("email"),
                         roles=access_token_data.get("roles", []),
-                        mcp_permissions=access_token_data.get("mcp_permissions", [])
+                        mcp_permissions=access_token_data.get("mcp_permissions", []),
                     )
                 else:
-                    return TokenValidation(
-                        valid=False,
-                        error="Token is not active"
-                    )
+                    return TokenValidation(valid=False, error="Token is not active")
             else:
-                return TokenValidation(
-                    valid=False,
-                    error="Failed to introspect token"
-                )
+                return TokenValidation(valid=False, error="Failed to introspect token")
 
         except Exception as e:
             logger.error(f"Token validation error: {e}")
-            return TokenValidation(
-                valid=False,
-                error=str(e)
-            )
+            return TokenValidation(valid=False, error=str(e))
 
     async def refresh_token(self, refresh_token: str) -> AuthResult:
         """
@@ -209,13 +212,13 @@ class KeycloakAuth:
                 "grant_type": "refresh_token",
                 "refresh_token": refresh_token,
                 "client_id": self.client_id,
-                "client_secret": self.client_secret
+                "client_secret": self.client_secret,
             }
 
             response = await self.client.post(
                 self.token_endpoint,
                 data=data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
 
             if response.status_code == 200:
@@ -225,7 +228,9 @@ class KeycloakAuth:
                 user_info = self._parse_id_token(token_data.get("id_token"))
 
                 # Extract roles and permissions
-                access_token_data = self._parse_access_token(token_data.get("access_token"))
+                access_token_data = self._parse_access_token(
+                    token_data.get("access_token")
+                )
 
                 return AuthResult(
                     success=True,
@@ -234,21 +239,18 @@ class KeycloakAuth:
                     expires_in=token_data.get("expires_in"),
                     user=user_info,
                     roles=access_token_data.get("roles", []),
-                    mcp_permissions=access_token_data.get("mcp_permissions", [])
+                    mcp_permissions=access_token_data.get("mcp_permissions", []),
                 )
             else:
                 error_data = response.json()
                 return AuthResult(
                     success=False,
-                    error=error_data.get("error_description", "Token refresh failed")
+                    error=error_data.get("error_description", "Token refresh failed"),
                 )
 
         except Exception as e:
             logger.error(f"Token refresh error: {e}")
-            return AuthResult(
-                success=False,
-                error=str(e)
-            )
+            return AuthResult(success=False, error=str(e))
 
     async def logout(self, refresh_token: str) -> bool:
         """
@@ -264,13 +266,13 @@ class KeycloakAuth:
             data = {
                 "refresh_token": refresh_token,
                 "client_id": self.client_id,
-                "client_secret": self.client_secret
+                "client_secret": self.client_secret,
             }
 
             response = await self.client.post(
                 self.logout_endpoint,
                 data=data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
 
             return response.status_code in [200, 204]
@@ -292,7 +294,7 @@ class KeycloakAuth:
                 "name": decoded.get("name"),
                 "given_name": decoded.get("given_name"),
                 "family_name": decoded.get("family_name"),
-                "email_verified": decoded.get("email_verified", False)
+                "email_verified": decoded.get("email_verified", False),
             }
         except Exception as e:
             logger.error(f"Failed to parse ID token: {e}")
@@ -329,12 +331,16 @@ class KeycloakAuth:
                 elif "permissions" in decoded:
                     # Filter for MCP-related permissions
                     all_permissions = decoded["permissions"]
-                    mcp_permissions = [p for p in all_permissions if p.startswith("mcp:")]
+                    mcp_permissions = [
+                        p for p in all_permissions if p.startswith("mcp:")
+                    ]
 
             return {
                 "roles": roles,
                 "mcp_permissions": mcp_permissions,
-                "scope": decoded.get("scope", "").split() if decoded.get("scope") else []
+                "scope": decoded.get("scope", "").split()
+                if decoded.get("scope")
+                else [],
             }
 
         except Exception as e:
@@ -354,7 +360,7 @@ class KeycloakAuth:
         try:
             response = await self.client.get(
                 self.userinfo_endpoint,
-                headers={"Authorization": f"Bearer {access_token}"}
+                headers={"Authorization": f"Bearer {access_token}"},
             )
 
             if response.status_code == 200:

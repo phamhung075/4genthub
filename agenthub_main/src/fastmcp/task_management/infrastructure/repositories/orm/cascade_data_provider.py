@@ -85,7 +85,9 @@ class SQLAlchemyCascadeDataProvider:
         result = await self.session.execute(query, {"task_id": task_id})
         return {row[0] for row in result}
 
-    async def get_subtask_cascade_data(self, subtask_id: str) -> SubtaskCascadeData | None:
+    async def get_subtask_cascade_data(
+        self, subtask_id: str
+    ) -> SubtaskCascadeData | None:
         """Get cascade-relevant data for a subtask"""
         query = text("""
             SELECT s.id, s.task_id, t.git_branch_id, b.project_id, t.context_id
@@ -140,7 +142,9 @@ class SQLAlchemyCascadeDataProvider:
             subtask_ids=subtask_ids,
         )
 
-    async def get_project_cascade_data(self, project_id: str) -> ProjectCascadeData | None:
+    async def get_project_cascade_data(
+        self, project_id: str
+    ) -> ProjectCascadeData | None:
         """Get cascade-relevant data for a project"""
         query = text("""
             SELECT DISTINCT b.id as branch_id, t.id as task_id, s.id as subtask_id
@@ -168,7 +172,9 @@ class SQLAlchemyCascadeDataProvider:
             subtask_ids=subtask_ids,
         )
 
-    async def get_context_cascade_data(self, context_id: str) -> ContextCascadeData | None:
+    async def get_context_cascade_data(
+        self, context_id: str
+    ) -> ContextCascadeData | None:
         """Get cascade-relevant data for a context"""
         query = text("""
             SELECT DISTINCT t.id as task_id, t.git_branch_id, b.project_id, s.id as subtask_id
@@ -198,7 +204,9 @@ class SQLAlchemyCascadeDataProvider:
             subtask_ids=subtask_ids,
         )
 
-    async def get_related_context_ids(self, branch_id: str, project_id: str) -> set[str]:
+    async def get_related_context_ids(
+        self, branch_id: str, project_id: str
+    ) -> set[str]:
         """Get context IDs related to a branch and project"""
         query = text("""
             SELECT DISTINCT context_id
@@ -228,7 +236,9 @@ class SQLAlchemyCascadeDataProvider:
             return EntityType.SUBTASK
 
         # Check branches table
-        branch_query = text("SELECT COUNT(*) FROM project_git_branchs WHERE id = :entity_id")
+        branch_query = text(
+            "SELECT COUNT(*) FROM project_git_branchs WHERE id = :entity_id"
+        )
         result = await self.session.execute(branch_query, {"entity_id": entity_id})
         if result.scalar() > 0:
             return EntityType.BRANCH

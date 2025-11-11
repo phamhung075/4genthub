@@ -259,7 +259,12 @@ class ContextAPIController:
             )
 
     def resolve_context(
-        self, level: str, context_id: str, user_id: str, session, force_refresh: bool = False
+        self,
+        level: str,
+        context_id: str,
+        user_id: str,
+        session,
+        force_refresh: bool = False,
     ) -> ContextResponse:
         """
         Resolve a context with full inheritance chain.

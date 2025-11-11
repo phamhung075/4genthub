@@ -61,6 +61,7 @@ class EventPublishingMixin:
         """
         if self._event_bus is None:
             from ...infrastructure.event_bus import get_event_bus
+
             self._event_bus = get_event_bus()
         return self._event_bus
 
@@ -92,7 +93,7 @@ class EventPublishingMixin:
             return 0
 
         # Check if entity has events
-        if not hasattr(entity, 'get_events'):
+        if not hasattr(entity, "get_events"):
             logger.debug(f"Entity {type(entity).__name__} does not support events")
             return 0
 
@@ -118,7 +119,7 @@ class EventPublishingMixin:
             except Exception as e:
                 logger.error(
                     f"Failed to publish event {type(event).__name__}: {e}",
-                    exc_info=True
+                    exc_info=True,
                 )
                 # Continue publishing other events even if one fails
 
@@ -142,7 +143,7 @@ class EventPublishingMixin:
             return 0
 
         # Check if entity has events
-        if not hasattr(entity, 'get_events'):
+        if not hasattr(entity, "get_events"):
             logger.debug(f"Entity {type(entity).__name__} does not support events")
             return 0
 
@@ -168,7 +169,7 @@ class EventPublishingMixin:
             except Exception as e:
                 logger.error(
                     f"Failed to publish event {type(event).__name__}: {e}",
-                    exc_info=True
+                    exc_info=True,
                 )
                 # Continue publishing other events even if one fails
 

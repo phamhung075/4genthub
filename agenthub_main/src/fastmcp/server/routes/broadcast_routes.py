@@ -14,14 +14,12 @@ from .websocket_routes import broadcast_data_change
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(
-    prefix="/api/v2/broadcast",
-    tags=["broadcast"]
-)
+router = APIRouter(prefix="/api/v2/broadcast", tags=["broadcast"])
 
 
 class BroadcastRequest(BaseModel):
     """Request model for broadcast endpoint"""
+
     event_type: str
     entity_type: str
     entity_id: str
@@ -37,7 +35,9 @@ async def trigger_broadcast(request: BroadcastRequest):
     This allows external processes (like MCP server) to notify about data changes.
     """
     try:
-        logger.info(f"HTTP broadcast trigger: {request.entity_type} {request.event_type}")
+        logger.info(
+            f"HTTP broadcast trigger: {request.entity_type} {request.event_type}"
+        )
 
         # Call the WebSocket broadcast function
         await broadcast_data_change(
@@ -46,10 +46,14 @@ async def trigger_broadcast(request: BroadcastRequest):
             entity_id=request.entity_id,
             user_id=request.user_id,
             data=request.data,
-            metadata=request.metadata
+            metadata=request.metadata,
         )
 
-        return {"status": "broadcast_sent", "entity_type": request.entity_type, "event_type": request.event_type}
+        return {
+            "status": "broadcast_sent",
+            "entity_type": request.entity_type,
+            "event_type": request.event_type,
+        }
 
     except Exception as e:
         logger.error(f"Failed to trigger broadcast: {e}")

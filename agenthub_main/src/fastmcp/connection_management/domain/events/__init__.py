@@ -6,14 +6,14 @@ from .connection_events import (
     ConnectionHealthChecked,
     StatusUpdateBroadcasted,
     ClientRegistered,
-    ClientUnregistered
+    ClientUnregistered,
 )
 
 __all__ = [
     "ConnectionEvent",
-    "ServerHealthChecked", 
+    "ServerHealthChecked",
     "ConnectionHealthChecked",
     "StatusUpdateBroadcasted",
     "ClientRegistered",
-    "ClientUnregistered"
-] 
+    "ClientUnregistered",
+]

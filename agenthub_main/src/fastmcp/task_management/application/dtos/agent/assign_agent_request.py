@@ -10,12 +10,12 @@ from dataclasses import dataclass
 @dataclass
 class AssignAgentRequest:
     """Request DTO for assigning an agent to a git branch."""
-    
+
     project_id: str
     agent_id: str
     git_branch_id: str
     user_id: str | None = None
-    
+
     def validate(self) -> None:
         """Validate the request data."""
         if not self.project_id:

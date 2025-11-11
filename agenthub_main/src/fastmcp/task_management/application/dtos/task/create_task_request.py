@@ -18,7 +18,7 @@ def resolve_legacy_role(assignee: str) -> str | None:
     legacy_mapping = {
         "coding-agent": "senior_developer",
         "test-orchestrator-agent": "qa_engineer",
-        "system-architect-agent": "architect"
+        "system-architect-agent": "architect",
     }
     return legacy_mapping.get(assignee, assignee)
 
@@ -26,10 +26,13 @@ def resolve_legacy_role(assignee: str) -> str | None:
 @dataclass
 class CreateTaskRequest:
     """Request DTO for creating a task with git branch ID-centric approach"""
+
     # Required fields
     title: str
-    git_branch_id: str  # uuid - Unique git branch identifier - contains all necessary context
-    
+    git_branch_id: (
+        str  # uuid - Unique git branch identifier - contains all necessary context
+    )
+
     # Optional fields with defaults
     description: str | None = None
     status: str | None = None
@@ -39,9 +42,11 @@ class CreateTaskRequest:
     assignees: list[str] = field(default_factory=list)
     labels: list[str] = None
     due_date: str | None = None
-    dependencies: list[str] = field(default_factory=list)  # List of task IDs this task depends on
+    dependencies: list[str] = field(
+        default_factory=list
+    )  # List of task IDs this task depends on
     user_id: str | None = None  # User identifier for task ownership
-    
+
     def __post_init__(self):
         if self.labels is None:
             self.labels = []
@@ -60,23 +65,27 @@ class CreateTaskRequest:
                 # Skip None or empty labels
                 if not label:
                     continue
-                
+
                 # Ensure label is a string
                 label_str = str(label).strip()
                 if not label_str:
                     continue
-                    
+
                 if LabelValidator.is_valid_label(label_str):
                     validated_labels.append(label_str)
                 else:
                     # Try to find a close match or suggest alternatives
                     suggestions = CommonLabel.suggest_labels(label_str)
                     if suggestions:
-                        validated_labels.extend(suggestions[:1])  # Take first suggestion
+                        validated_labels.extend(
+                            suggestions[:1]
+                        )  # Take first suggestion
                     else:
-                        validated_labels.append(label_str)  # Keep original if no suggestions
+                        validated_labels.append(
+                            label_str
+                        )  # Keep original if no suggestions
             self.labels = validated_labels
-        
+
         # Validate estimated effort using EstimatedEffort enum
         if self.estimated_effort:
             try:
@@ -86,7 +95,7 @@ class CreateTaskRequest:
                 # If validation fails, keep the original value
                 # The effort will be validated at the domain layer
                 pass
-        
+
         # Validate assignees using AgentRole enum
         if self.assignees:
             validated_assignees = []
@@ -109,4 +118,4 @@ class CreateTaskRequest:
                     else:
                         # Keep original if not a valid role but not empty
                         validated_assignees.append(assignee)
-            self.assignees = validated_assignees 
+            self.assignees = validated_assignees

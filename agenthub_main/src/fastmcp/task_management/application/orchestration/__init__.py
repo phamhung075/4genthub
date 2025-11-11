@@ -18,6 +18,6 @@ from .project_orchestrator import ProjectOrchestrator
 from .orchestrator_router import get_orchestrator
 
 __all__ = [
-    'ProjectOrchestrator',
-    'get_orchestrator',
+    "ProjectOrchestrator",
+    "get_orchestrator",
 ]

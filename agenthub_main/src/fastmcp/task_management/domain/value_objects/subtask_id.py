@@ -14,7 +14,9 @@ class SubtaskId:
     def __post_init__(self):
         """Validate the SubtaskId format after initialization."""
         if not isinstance(self.value, str):
-            raise TypeError(f"Subtask ID value must be a string, got {type(self.value)}")
+            raise TypeError(
+                f"Subtask ID value must be a string, got {type(self.value)}"
+            )
 
         value_str = self.value.strip()
         if not value_str:
@@ -30,37 +32,41 @@ class SubtaskId:
             # Convert hex format to canonical UUID
             hex_value = value_str.lower()
             canonical_value = f"{hex_value[:8]}-{hex_value[8:12]}-{hex_value[12:16]}-{hex_value[16:20]}-{hex_value[20:]}"
-            object.__setattr__(self, 'value', canonical_value)
-        elif value_str.isdigit() or '.' in value_str:
+            object.__setattr__(self, "value", canonical_value)
+        elif value_str.isdigit() or "." in value_str:
             # Keep hierarchical IDs and integers as-is
-            object.__setattr__(self, 'value', value_str)
+            object.__setattr__(self, "value", value_str)
         else:
             # Already in canonical format or test format
-            object.__setattr__(self, 'value', value_str.lower())
+            object.__setattr__(self, "value", value_str.lower())
 
     def _is_valid_format(self, value: str) -> bool:
         """Return True if *value* is a valid UUID string, hierarchical subtask ID, or test ID."""
         # UUID (32-char hex or canonical 36-char with hyphens)
-        uuid_pattern = r'^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$'
-        
+        uuid_pattern = (
+            r"^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$"
+        )
+
         # Hierarchical subtask ID pattern: uuid.NNN where NNN is 3-digit number
-        hierarchical_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.\d{3}$'
-        
+        hierarchical_pattern = (
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.\d{3}$"
+        )
+
         # Integer ID pattern (for backward compatibility with old tests)
-        integer_pattern = r'^\d+$'
-        
+        integer_pattern = r"^\d+$"
+
         # Test ID pattern (for backward compatibility): subtask-123, test-subtask-456, etc.
-        test_id_pattern = r'^[a-zA-Z]+(?:-[a-zA-Z]+)*-\d+$'
-        
+        test_id_pattern = r"^[a-zA-Z]+(?:-[a-zA-Z]+)*-\d+$"
+
         # Simple test ID pattern: subtask-no-assignees, test-subtask, etc.
-        simple_test_pattern = r'^[a-zA-Z]+(?:-[a-zA-Z]+)*$'
-        
+        simple_test_pattern = r"^[a-zA-Z]+(?:-[a-zA-Z]+)*$"
+
         return bool(
-            re.match(uuid_pattern, value.lower()) or
-            re.match(hierarchical_pattern, value.lower()) or
-            re.match(integer_pattern, value) or
-            re.match(test_id_pattern, value) or
-            re.match(simple_test_pattern, value)
+            re.match(uuid_pattern, value.lower())
+            or re.match(hierarchical_pattern, value.lower())
+            or re.match(integer_pattern, value)
+            or re.match(test_id_pattern, value)
+            or re.match(simple_test_pattern, value)
         )
 
     @classmethod
@@ -88,12 +94,12 @@ class SubtaskId:
 
     def __hash__(self) -> int:
         return hash(self.value)
-    
+
     def to_canonical_format(self) -> str:
         """Return the UUID in canonical format with dashes."""
         # Value is already stored in canonical format
         return self.value
-    
+
     def to_hex_format(self) -> str:
         """Return the UUID in hex format without dashes (32 characters)."""
-        return self.value.replace('-', '')
+        return self.value.replace("-", "")

@@ -27,7 +27,12 @@ from ..event_publishing_mixin import EventPublishingMixin
 logger = logging.getLogger(__name__)
 
 
-class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[SubtaskEntity], BaseUserScopedRepository, SubtaskRepository):
+class ORMSubtaskRepository(
+    EventPublishingMixin,
+    BaseTimestampRepository[SubtaskEntity],
+    BaseUserScopedRepository,
+    SubtaskRepository,
+):
     """
     ORM implementation of SubtaskRepository using SQLAlchemy.
 
@@ -52,7 +57,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         # EventPublishingMixin attributes
         self._event_bus = None
         self._event_publishing_enabled = True
-    
+
     def save(self, subtask: SubtaskEntity) -> bool:
         """
         Save a subtask to the database with retry logic for concurrent access.
@@ -65,7 +70,9 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         """
         import time
 
-        logger.info(f"🔍 SUBTASK_SAVE: Starting save for user_id={self.user_id}, subtask_title='{subtask.title}'")
+        logger.info(
+            f"🔍 SUBTASK_SAVE: Starting save for user_id={self.user_id}, subtask_title='{subtask.title}'"
+        )
 
         max_retries = 10  # Increased for high-concurrency scenarios
         retry_delay = 0.02  # 20ms base delay
@@ -76,68 +83,94 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 with self.transaction() as session:
                     # Convert domain entity to ORM model data
                     model_data = self._entity_to_model_dict(subtask)
-                    logger.info(f"🔍 SUBTASK_SAVE: Model data prepared with user_id={model_data.get('user_id')}")
+                    logger.info(
+                        f"🔍 SUBTASK_SAVE: Model data prepared with user_id={model_data.get('user_id')}"
+                    )
 
                     if subtask.id:
                         # Update existing subtask
-                        existing = session.query(SubtaskModel).filter(
-                            SubtaskModel.id == subtask.id.value
-                        ).first()
+                        existing = (
+                            session.query(SubtaskModel)
+                            .filter(SubtaskModel.id == subtask.id.value)
+                            .first()
+                        )
 
                         if existing:
                             # Update existing record
                             for key, value in model_data.items():
-                                if key != 'id':  # Don't update primary key
+                                if key != "id":  # Don't update primary key
                                     setattr(existing, key, value)
                             existing.touch("subtask_updated")
                             session.flush()
 
                             # Update the domain entity with the persisted data
                             subtask.updated_at = existing.updated_at
-                            logger.info(f"🔍 SUBTASK_SAVE: Updated existing subtask ID={subtask.id.value}")
+                            logger.info(
+                                f"🔍 SUBTASK_SAVE: Updated existing subtask ID={subtask.id.value}"
+                            )
                             return True
                         else:
                             # ID provided but doesn't exist, create new
-                            model_data['id'] = subtask.id.value
+                            model_data["id"] = subtask.id.value
                     else:
                         # Generate new ID if not provided
                         if not subtask.id:
                             new_id = self.get_next_id(subtask.parent_task_id)
                             subtask.id = new_id
-                            model_data['id'] = new_id.value
+                            model_data["id"] = new_id.value
 
                     # Create new subtask
-                    logger.info(f"🔍 SUBTASK_SAVE: Creating new subtask with data: {model_data}")
+                    logger.info(
+                        f"🔍 SUBTASK_SAVE: Creating new subtask with data: {model_data}"
+                    )
                     new_subtask = SubtaskModel(**model_data)
                     session.add(new_subtask)
                     session.flush()
-                    logger.info(f"🔍 SUBTASK_SAVE: Flushed to database, ID={new_subtask.id}")
+                    logger.info(
+                        f"🔍 SUBTASK_SAVE: Flushed to database, ID={new_subtask.id}"
+                    )
 
                     # Handle refresh gracefully - can fail in concurrent scenarios
                     try:
                         session.refresh(new_subtask)
                     except Exception as refresh_error:
-                        logger.warning(f"Could not refresh subtask after save (concurrent modification): {refresh_error}")
+                        logger.warning(
+                            f"Could not refresh subtask after save (concurrent modification): {refresh_error}"
+                        )
                         # Re-query to get fresh state
-                        new_subtask = session.query(SubtaskModel).filter(SubtaskModel.id == new_subtask.id).first()
+                        new_subtask = (
+                            session.query(SubtaskModel)
+                            .filter(SubtaskModel.id == new_subtask.id)
+                            .first()
+                        )
                         if not new_subtask:
                             raise DatabaseException(
                                 message="Subtask not found after successful save",
                                 operation="save_subtask",
-                                table="subtasks"
+                                table="subtasks",
                             )
 
                     # CRITICAL DEBUG: Verify persistence before commit
-                    verify = session.query(SubtaskModel).filter(SubtaskModel.id == new_subtask.id).first()
-                    logger.info(f"🔍 SUBTASK_SAVE: Verification query - found subtask: {verify is not None}")
+                    verify = (
+                        session.query(SubtaskModel)
+                        .filter(SubtaskModel.id == new_subtask.id)
+                        .first()
+                    )
+                    logger.info(
+                        f"🔍 SUBTASK_SAVE: Verification query - found subtask: {verify is not None}"
+                    )
                     if verify:
-                        logger.info(f"🔍 SUBTASK_SAVE: Verified subtask - ID={verify.id}, user_id={verify.user_id}, title='{verify.title}'")
+                        logger.info(
+                            f"🔍 SUBTASK_SAVE: Verified subtask - ID={verify.id}, user_id={verify.user_id}, title='{verify.title}'"
+                        )
 
                     # Update domain entity with persisted timestamps
                     subtask.created_at = new_subtask.created_at
                     subtask.updated_at = new_subtask.updated_at
 
-                    logger.info(f"✅ SUBTASK_SAVE: Successfully completed save for subtask ID={new_subtask.id}")
+                    logger.info(
+                        f"✅ SUBTASK_SAVE: Successfully completed save for subtask ID={new_subtask.id}"
+                    )
 
                     # Publish domain events after successful save
                     self.publish_entity_events(subtask)
@@ -148,33 +181,37 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 error_str = str(e).lower()
                 # Check for concurrent access errors
                 is_retryable = (
-                    "database is locked" in error_str or
-                    "concurrent" in error_str or
-                    "identity map" in error_str or
-                    "detached" in error_str or
-                    "cannot be converted" in error_str
+                    "database is locked" in error_str
+                    or "concurrent" in error_str
+                    or "identity map" in error_str
+                    or "detached" in error_str
+                    or "cannot be converted" in error_str
                 )
 
                 if is_retryable and attempt < max_retries - 1:
-                    delay = retry_delay * (2 ** attempt)
+                    delay = retry_delay * (2**attempt)
                     logger.warning(
-                        f"[SubtaskSave] Concurrent access conflict on attempt {attempt+1}/{max_retries}, "
+                        f"[SubtaskSave] Concurrent access conflict on attempt {attempt + 1}/{max_retries}, "
                         f"retrying after {delay:.3f}s... Error: {e}"
                     )
                     time.sleep(delay)
                     continue
 
                 # Not retryable or out of retries
-                logger.error(f"Failed to save subtask after {attempt+1} attempts: {e}")
+                logger.error(
+                    f"Failed to save subtask after {attempt + 1} attempts: {e}"
+                )
                 raise DatabaseException(
                     message=f"Failed to save subtask: {str(e)}",
                     operation="save_subtask",
-                    table="subtasks"
+                    table="subtasks",
                 )
             except Exception as e:
-                logger.error(f"Unexpected error saving subtask on attempt {attempt+1}: {e}")
+                logger.error(
+                    f"Unexpected error saving subtask on attempt {attempt + 1}: {e}"
+                )
                 if attempt < max_retries - 1:
-                    delay = retry_delay * (2 ** attempt)
+                    delay = retry_delay * (2**attempt)
                     time.sleep(delay)
                     continue
                 return False
@@ -182,7 +219,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         # Should never reach here but just in case
         logger.error(f"Failed to save subtask after {max_retries} attempts")
         return False
-    
+
     def find_by_id(self, id: str) -> SubtaskEntity | None:
         """
         Find a subtask by its ID with user filtering for multi-tenancy.
@@ -202,65 +239,73 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         for attempt in range(max_retries):
             try:
                 with self.get_db_session() as session:
-                    query = session.query(SubtaskModel).filter(
-                        SubtaskModel.id == id
-                    )
+                    query = session.query(SubtaskModel).filter(SubtaskModel.id == id)
 
                     # CRITICAL FIX: Apply user filter for multi-tenancy
                     # This ensures users can only access their own subtasks
                     if self.user_id:
                         query = query.filter(SubtaskModel.user_id == self.user_id)
-                        logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter for user_id={self.user_id}")
+                        logger.info(
+                            f"🔐 SUBTASK_SECURITY: Applied user filter for user_id={self.user_id}"
+                        )
                     else:
-                        logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering - this could cause data leakage")
+                        logger.warning(
+                            "🚨 SUBTASK_SECURITY: No user_id available for filtering - this could cause data leakage"
+                        )
 
                     model = query.first()
 
                     if model:
-                        logger.info(f"✅ SUBTASK_FOUND: Found subtask id={id} for user_id={self.user_id}")
+                        logger.info(
+                            f"✅ SUBTASK_FOUND: Found subtask id={id} for user_id={self.user_id}"
+                        )
                         return self._model_to_entity(model)
                     else:
-                        logger.info(f"❌ SUBTASK_NOT_FOUND: No subtask found with id={id} for user_id={self.user_id}")
+                        logger.info(
+                            f"❌ SUBTASK_NOT_FOUND: No subtask found with id={id} for user_id={self.user_id}"
+                        )
                         return None
 
             except SQLAlchemyError as e:
                 error_str = str(e).lower()
                 # Check for concurrent access errors
                 is_retryable = (
-                    "database is locked" in error_str or
-                    "concurrent" in error_str or
-                    "identity map" in error_str or
-                    "detached" in error_str or
-                    "cannot be converted" in error_str
+                    "database is locked" in error_str
+                    or "concurrent" in error_str
+                    or "identity map" in error_str
+                    or "detached" in error_str
+                    or "cannot be converted" in error_str
                 )
 
                 if is_retryable and attempt < max_retries - 1:
-                    delay = retry_delay * (2 ** attempt)
+                    delay = retry_delay * (2**attempt)
                     logger.warning(
-                        f"[SubtaskFindById] Concurrent access conflict on attempt {attempt+1}/{max_retries}, "
+                        f"[SubtaskFindById] Concurrent access conflict on attempt {attempt + 1}/{max_retries}, "
                         f"retrying after {delay:.3f}s... Error: {e}"
                     )
                     time.sleep(delay)
                     continue
 
                 # Not retryable or out of retries
-                logger.error(f"Failed to find subtask by id {id} after {attempt+1} attempts: {e}")
+                logger.error(
+                    f"Failed to find subtask by id {id} after {attempt + 1} attempts: {e}"
+                )
                 raise DatabaseException(
                     message=f"Failed to find subtask by id: {str(e)}",
                     operation="find_by_id",
-                    table="subtasks"
+                    table="subtasks",
                 )
 
         # Should never reach here
         return None
-    
+
     def find_by_parent_task_id(self, parent_task_id: TaskId) -> list[SubtaskEntity]:
         """
         Find all subtasks for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             List of subtask domain entities
         """
@@ -269,45 +314,57 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 query = session.query(SubtaskModel).filter(
                     SubtaskModel.task_id == parent_task_id.value
                 )
-                
+
                 # DEBUG: Log query before user filter
                 logger.info(f"🐛 SUBTASK_DEBUG: Query before user filter: {query}")
-                logger.info(f"🐛 SUBTASK_DEBUG: Looking for subtasks with task_id={parent_task_id.value}")
+                logger.info(
+                    f"🐛 SUBTASK_DEBUG: Looking for subtasks with task_id={parent_task_id.value}"
+                )
                 logger.info(f"🐛 SUBTASK_DEBUG: Repository user_id={self.user_id}")
-                
+
                 # Apply standard user filter - user authentication required
                 # CRITICAL FIX: Apply user filter directly to avoid model detection issues
                 if self.user_id:
                     query = query.filter(SubtaskModel.user_id == self.user_id)
-                    logger.info(f"🐛 SUBTASK_DEBUG: Applied user filter directly: user_id={self.user_id}")
+                    logger.info(
+                        f"🐛 SUBTASK_DEBUG: Applied user filter directly: user_id={self.user_id}"
+                    )
                 else:
-                    logger.warning("🐛 SUBTASK_DEBUG: No user_id available for filtering - this could cause data leakage")
-                
+                    logger.warning(
+                        "🐛 SUBTASK_DEBUG: No user_id available for filtering - this could cause data leakage"
+                    )
+
                 # query = self.apply_user_filter(query)  # Replaced with direct filter above
-                
+
                 # DEBUG: Log query after user filter
                 logger.info(f"🐛 SUBTASK_DEBUG: Query after user filter: {query}")
-                
+
                 models = query.order_by(SubtaskModel.created_at.asc()).all()
-                
+
                 # DEBUG: Log results
                 logger.info(f"🐛 SUBTASK_DEBUG: Found {len(models)} subtask models")
                 for model in models:
                     if model:  # Safety check for None models in concurrent scenarios
-                        logger.info(f"🐛 SUBTASK_DEBUG: Model - id={model.id}, task_id={model.task_id}, user_id={model.user_id}, title={model.title}")
+                        logger.info(
+                            f"🐛 SUBTASK_DEBUG: Model - id={model.id}, task_id={model.task_id}, user_id={model.user_id}, title={model.title}"
+                        )
                     else:
-                        logger.warning("🐛 SUBTASK_DEBUG: Found None model in results (concurrent access artifact)")
+                        logger.warning(
+                            "🐛 SUBTASK_DEBUG: Found None model in results (concurrent access artifact)"
+                        )
 
-                return [self._model_to_entity(model) for model in models if model]  # Filter out None models
-                
+                return [
+                    self._model_to_entity(model) for model in models if model
+                ]  # Filter out None models
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks for task {parent_task_id}: {e}")
             raise DatabaseException(
                 message=f"Failed to find subtasks for task: {str(e)}",
                 operation="find_by_parent_task_id",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def find_by_assignee(self, assignee: str) -> list[SubtaskEntity]:
         """
         Find subtasks by assignee.
@@ -331,15 +388,15 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 models = query.order_by(SubtaskModel.created_at.desc()).all()
 
                 return [self._model_to_entity(model) for model in models]
-                
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks by assignee {assignee}: {e}")
             raise DatabaseException(
                 message=f"Failed to find subtasks by assignee: {str(e)}",
                 operation="find_by_assignee",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def find_by_status(self, status: str) -> list[SubtaskEntity]:
         """
         Find subtasks by status.
@@ -362,15 +419,15 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 models = query.order_by(SubtaskModel.created_at.desc()).all()
 
                 return [self._model_to_entity(model) for model in models]
-                
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks by status {status}: {e}")
             raise DatabaseException(
                 message=f"Failed to find subtasks by status: {str(e)}",
                 operation="find_by_status",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def find_completed(self, parent_task_id: TaskId) -> list[SubtaskEntity]:
         """
         Find completed subtasks for a parent task.
@@ -386,7 +443,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 query = session.query(SubtaskModel).filter(
                     and_(
                         SubtaskModel.task_id == parent_task_id.value,
-                        SubtaskModel.status == 'done'
+                        SubtaskModel.status == "done",
                     )
                 )
 
@@ -396,15 +453,17 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 models = query.order_by(SubtaskModel.completed_at.desc()).all()
 
                 return [self._model_to_entity(model) for model in models]
-                
+
         except SQLAlchemyError as e:
-            logger.error(f"Failed to find completed subtasks for task {parent_task_id}: {e}")
+            logger.error(
+                f"Failed to find completed subtasks for task {parent_task_id}: {e}"
+            )
             raise DatabaseException(
                 message=f"Failed to find completed subtasks: {str(e)}",
                 operation="find_completed",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def find_pending(self, parent_task_id: TaskId) -> list[SubtaskEntity]:
         """
         Find pending subtasks for a parent task.
@@ -420,7 +479,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 query = session.query(SubtaskModel).filter(
                     and_(
                         SubtaskModel.task_id == parent_task_id.value,
-                        SubtaskModel.status.in_(['todo', 'in_progress', 'blocked'])
+                        SubtaskModel.status.in_(["todo", "in_progress", "blocked"]),
                     )
                 )
 
@@ -430,15 +489,17 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                 models = query.order_by(SubtaskModel.created_at.asc()).all()
 
                 return [self._model_to_entity(model) for model in models]
-                
+
         except SQLAlchemyError as e:
-            logger.error(f"Failed to find pending subtasks for task {parent_task_id}: {e}")
+            logger.error(
+                f"Failed to find pending subtasks for task {parent_task_id}: {e}"
+            )
             raise DatabaseException(
                 message=f"Failed to find pending subtasks: {str(e)}",
                 operation="find_pending",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def delete(self, id: str) -> bool:
         """
         Delete a subtask by its ID with user filtering for multi-tenancy.
@@ -453,18 +514,22 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             # CRITICAL FIX: Use transaction context manager for write operations
             with self.transaction() as session:
                 # CRITICAL SECURITY FIX: Apply user filter to prevent unauthorized deletion
-                query = session.query(SubtaskModel).filter(
-                    SubtaskModel.id == id
-                )
+                query = session.query(SubtaskModel).filter(SubtaskModel.id == id)
 
                 if self.user_id:
                     query = query.filter(SubtaskModel.user_id == self.user_id)
-                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in delete() for user_id={self.user_id}")
+                    logger.info(
+                        f"🔐 SUBTASK_SECURITY: Applied user filter in delete() for user_id={self.user_id}"
+                    )
                 else:
-                    logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering in delete() - this could allow unauthorized deletion")
+                    logger.warning(
+                        "🚨 SUBTASK_SECURITY: No user_id available for filtering in delete() - this could allow unauthorized deletion"
+                    )
 
                 result = query.delete()
-                logger.info(f"🗑️ SUBTASK_DELETE: Deleted {result} subtask(s) with id={id} for user_id={self.user_id}")
+                logger.info(
+                    f"🗑️ SUBTASK_DELETE: Deleted {result} subtask(s) with id={id} for user_id={self.user_id}"
+                )
 
                 return result > 0
 
@@ -473,35 +538,37 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             raise DatabaseException(
                 message=f"Failed to delete subtask: {str(e)}",
                 operation="delete",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def delete_by_parent_task_id(self, parent_task_id: TaskId) -> bool:
         """
         Delete all subtasks for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             True if any subtasks were deleted
         """
         try:
             with self.get_db_session() as session:
-                result = session.query(SubtaskModel).filter(
-                    SubtaskModel.task_id == parent_task_id.value
-                ).delete()
-                
+                result = (
+                    session.query(SubtaskModel)
+                    .filter(SubtaskModel.task_id == parent_task_id.value)
+                    .delete()
+                )
+
                 return result > 0
-                
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to delete subtasks for task {parent_task_id}: {e}")
             raise DatabaseException(
                 message=f"Failed to delete subtasks for task: {str(e)}",
                 operation="delete_by_parent_task_id",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def exists(self, id: str) -> bool:
         """
         Check if a subtask exists by its ID with user filtering for multi-tenancy.
@@ -514,20 +581,24 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         """
         try:
             with self.get_db_session() as session:
-                query = session.query(SubtaskModel).filter(
-                    SubtaskModel.id == id
-                )
+                query = session.query(SubtaskModel).filter(SubtaskModel.id == id)
 
                 # CRITICAL FIX: Apply user filter for multi-tenancy
                 # This ensures users can only check existence of their own subtasks
                 if self.user_id:
                     query = query.filter(SubtaskModel.user_id == self.user_id)
-                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in exists() for user_id={self.user_id}")
+                    logger.info(
+                        f"🔐 SUBTASK_SECURITY: Applied user filter in exists() for user_id={self.user_id}"
+                    )
                 else:
-                    logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering in exists() - this could cause data leakage")
+                    logger.warning(
+                        "🚨 SUBTASK_SECURITY: No user_id available for filtering in exists() - this could cause data leakage"
+                    )
 
                 result = query.first() is not None
-                logger.info(f"🔍 SUBTASK_EXISTS: Subtask id={id} exists={result} for user_id={self.user_id}")
+                logger.info(
+                    f"🔍 SUBTASK_EXISTS: Subtask id={id} exists={result} for user_id={self.user_id}"
+                )
                 return result
 
         except SQLAlchemyError as e:
@@ -535,60 +606,68 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             raise DatabaseException(
                 message=f"Failed to check subtask existence: {str(e)}",
                 operation="exists",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def count_by_parent_task_id(self, parent_task_id: TaskId) -> int:
         """
         Count subtasks for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             Number of subtasks
         """
         try:
             with self.get_db_session() as session:
-                return session.query(SubtaskModel).filter(
-                    SubtaskModel.task_id == parent_task_id.value
-                ).count()
-                
+                return (
+                    session.query(SubtaskModel)
+                    .filter(SubtaskModel.task_id == parent_task_id.value)
+                    .count()
+                )
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to count subtasks for task {parent_task_id}: {e}")
             raise DatabaseException(
                 message=f"Failed to count subtasks: {str(e)}",
                 operation="count_by_parent_task_id",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def count_completed_by_parent_task_id(self, parent_task_id: TaskId) -> int:
         """
         Count completed subtasks for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             Number of completed subtasks
         """
         try:
             with self.get_db_session() as session:
-                return session.query(SubtaskModel).filter(
-                    and_(
-                        SubtaskModel.task_id == parent_task_id.value,
-                        SubtaskModel.status == 'done'
+                return (
+                    session.query(SubtaskModel)
+                    .filter(
+                        and_(
+                            SubtaskModel.task_id == parent_task_id.value,
+                            SubtaskModel.status == "done",
+                        )
                     )
-                ).count()
-                
+                    .count()
+                )
+
         except SQLAlchemyError as e:
-            logger.error(f"Failed to count completed subtasks for task {parent_task_id}: {e}")
+            logger.error(
+                f"Failed to count completed subtasks for task {parent_task_id}: {e}"
+            )
             raise DatabaseException(
                 message=f"Failed to count completed subtasks: {str(e)}",
                 operation="count_completed_by_parent_task_id",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def get_next_id(self, parent_task_id: TaskId) -> TaskId:
         """
         Get next available subtask ID for a parent task.
@@ -600,80 +679,104 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             New TaskId
         """
         return TaskId.generate_new()
-    
+
     def get_subtask_progress(self, parent_task_id: TaskId) -> dict[str, Any]:
         """
         Get subtask progress statistics for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             Dictionary with progress statistics
         """
         try:
             with self.get_db_session() as session:
                 # Get basic counts
-                total_count = session.query(SubtaskModel).filter(
-                    SubtaskModel.task_id == parent_task_id.value
-                ).count()
-                
-                completed_count = session.query(SubtaskModel).filter(
-                    and_(
-                        SubtaskModel.task_id == parent_task_id.value,
-                        SubtaskModel.status == 'done'
+                total_count = (
+                    session.query(SubtaskModel)
+                    .filter(SubtaskModel.task_id == parent_task_id.value)
+                    .count()
+                )
+
+                completed_count = (
+                    session.query(SubtaskModel)
+                    .filter(
+                        and_(
+                            SubtaskModel.task_id == parent_task_id.value,
+                            SubtaskModel.status == "done",
+                        )
                     )
-                ).count()
-                
-                in_progress_count = session.query(SubtaskModel).filter(
-                    and_(
-                        SubtaskModel.task_id == parent_task_id.value,
-                        SubtaskModel.status == 'in_progress'
+                    .count()
+                )
+
+                in_progress_count = (
+                    session.query(SubtaskModel)
+                    .filter(
+                        and_(
+                            SubtaskModel.task_id == parent_task_id.value,
+                            SubtaskModel.status == "in_progress",
+                        )
                     )
-                ).count()
-                
-                blocked_count = session.query(SubtaskModel).filter(
-                    and_(
-                        SubtaskModel.task_id == parent_task_id.value,
-                        SubtaskModel.status == 'blocked'
+                    .count()
+                )
+
+                blocked_count = (
+                    session.query(SubtaskModel)
+                    .filter(
+                        and_(
+                            SubtaskModel.task_id == parent_task_id.value,
+                            SubtaskModel.status == "blocked",
+                        )
                     )
-                ).count()
-                
+                    .count()
+                )
+
                 # Calculate average progress percentage
-                avg_progress = session.query(func.avg(SubtaskModel.progress_percentage)).filter(
-                    SubtaskModel.task_id == parent_task_id.value
-                ).scalar() or 0
-                
+                avg_progress = (
+                    session.query(func.avg(SubtaskModel.progress_percentage))
+                    .filter(SubtaskModel.task_id == parent_task_id.value)
+                    .scalar()
+                    or 0
+                )
+
                 # Calculate completion percentage
-                completion_percentage = (completed_count / total_count * 100) if total_count > 0 else 0
-                
+                completion_percentage = (
+                    (completed_count / total_count * 100) if total_count > 0 else 0
+                )
+
                 return {
                     "total_subtasks": total_count,
                     "completed_subtasks": completed_count,
                     "in_progress_subtasks": in_progress_count,
                     "blocked_subtasks": blocked_count,
-                    "pending_subtasks": total_count - completed_count - in_progress_count - blocked_count,
+                    "pending_subtasks": total_count
+                    - completed_count
+                    - in_progress_count
+                    - blocked_count,
                     "completion_percentage": round(completion_percentage, 1),
                     "average_progress": round(float(avg_progress), 1),
-                    "has_blockers": blocked_count > 0
+                    "has_blockers": blocked_count > 0,
                 }
-                
+
         except SQLAlchemyError as e:
-            logger.error(f"Failed to get subtask progress for task {parent_task_id}: {e}")
+            logger.error(
+                f"Failed to get subtask progress for task {parent_task_id}: {e}"
+            )
             raise DatabaseException(
                 message=f"Failed to get subtask progress: {str(e)}",
                 operation="get_subtask_progress",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def bulk_update_status(self, parent_task_id: TaskId, status: str) -> bool:
         """
         Update status of all subtasks for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
             status: New status
-            
+
         Returns:
             True if any subtasks were updated
         """
@@ -683,74 +786,83 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
                     SubtaskModel.status: status
                     # BaseTimestampRepository handles updated_at automatically
                 }
-                
+
                 # Add completion timestamp if marking as done
-                if status == 'done':
+                if status == "done":
                     # BaseTimestampRepository handles completed_at automatically
                     update_data[SubtaskModel.progress_percentage] = 100
-                elif status in ['todo', 'in_progress', 'blocked']:
+                elif status in ["todo", "in_progress", "blocked"]:
                     update_data[SubtaskModel.completed_at] = None
-                
-                result = session.query(SubtaskModel).filter(
-                    SubtaskModel.task_id == parent_task_id.value
-                ).update(update_data)
-                
+
+                result = (
+                    session.query(SubtaskModel)
+                    .filter(SubtaskModel.task_id == parent_task_id.value)
+                    .update(update_data)
+                )
+
                 return result > 0
-                
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to bulk update status for task {parent_task_id}: {e}")
             raise DatabaseException(
                 message=f"Failed to bulk update status: {str(e)}",
                 operation="bulk_update_status",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     def bulk_complete(self, parent_task_id: TaskId) -> bool:
         """
         Mark all subtasks as completed for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             True if any subtasks were updated
         """
-        return self.bulk_update_status(parent_task_id, 'done')
-    
+        return self.bulk_update_status(parent_task_id, "done")
+
     def remove_subtask(self, parent_task_id: str, subtask_id: str) -> bool:
         """
         Remove a subtask from a parent task by subtask ID.
-        
+
         Args:
             parent_task_id: Parent task ID string
             subtask_id: SubtaskEntity ID string
-            
+
         Returns:
             True if removed successfully
         """
         try:
             with self.get_db_session() as session:
-                result = session.query(SubtaskModel).filter(
-                    and_(
-                        SubtaskModel.task_id == parent_task_id,
-                        SubtaskModel.id == subtask_id
+                result = (
+                    session.query(SubtaskModel)
+                    .filter(
+                        and_(
+                            SubtaskModel.task_id == parent_task_id,
+                            SubtaskModel.id == subtask_id,
+                        )
                     )
-                ).delete()
-                
+                    .delete()
+                )
+
                 return result > 0
-                
+
         except SQLAlchemyError as e:
-            logger.error(f"Failed to remove subtask {subtask_id} from task {parent_task_id}: {e}")
+            logger.error(
+                f"Failed to remove subtask {subtask_id} from task {parent_task_id}: {e}"
+            )
             raise DatabaseException(
                 message=f"Failed to remove subtask: {str(e)}",
                 operation="remove_subtask",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     # Additional ORM-specific methods
-    
-    def update_progress(self, subtask_id: str, progress_percentage: int,
-                       progress_notes: str = "") -> bool:
+
+    def update_progress(
+        self, subtask_id: str, progress_percentage: int, progress_notes: str = ""
+    ) -> bool:
         """
         Update subtask progress with user filtering for multi-tenancy.
 
@@ -772,17 +884,27 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
 
                 if self.user_id:
                     query = query.filter(SubtaskModel.user_id == self.user_id)
-                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in update_progress() for user_id={self.user_id}")
+                    logger.info(
+                        f"🔐 SUBTASK_SECURITY: Applied user filter in update_progress() for user_id={self.user_id}"
+                    )
                 else:
-                    logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering in update_progress() - this could allow unauthorized updates")
+                    logger.warning(
+                        "🚨 SUBTASK_SECURITY: No user_id available for filtering in update_progress() - this could allow unauthorized updates"
+                    )
 
-                result = query.update({
-                    SubtaskModel.progress_percentage: max(0, min(100, progress_percentage)),
-                    SubtaskModel.progress_notes: progress_notes
-                    # BaseTimestampRepository handles updated_at automatically
-                })
+                result = query.update(
+                    {
+                        SubtaskModel.progress_percentage: max(
+                            0, min(100, progress_percentage)
+                        ),
+                        SubtaskModel.progress_notes: progress_notes,
+                        # BaseTimestampRepository handles updated_at automatically
+                    }
+                )
 
-                logger.info(f"📊 SUBTASK_PROGRESS: Updated {result} subtask(s) progress to {progress_percentage}% for user_id={self.user_id}")
+                logger.info(
+                    f"📊 SUBTASK_PROGRESS: Updated {result} subtask(s) progress to {progress_percentage}% for user_id={self.user_id}"
+                )
                 return result > 0
 
         except SQLAlchemyError as e:
@@ -790,11 +912,16 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             raise DatabaseException(
                 message=f"Failed to update progress: {str(e)}",
                 operation="update_progress",
-                table="subtasks"
+                table="subtasks",
             )
-    
-    def complete_subtask(self, subtask_id: str, completion_summary: str = "",
-                        impact_on_parent: str = "", insights_found: list[str] = None) -> bool:
+
+    def complete_subtask(
+        self,
+        subtask_id: str,
+        completion_summary: str = "",
+        impact_on_parent: str = "",
+        insights_found: list[str] = None,
+    ) -> bool:
         """
         Complete a subtask with additional metadata and user filtering for multi-tenancy.
 
@@ -817,23 +944,29 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
 
                 if self.user_id:
                     query = query.filter(SubtaskModel.user_id == self.user_id)
-                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in complete_subtask() for user_id={self.user_id}")
+                    logger.info(
+                        f"🔐 SUBTASK_SECURITY: Applied user filter in complete_subtask() for user_id={self.user_id}"
+                    )
                 else:
-                    logger.warning("🚨 SUBTASK_SECURITY: No user_id available for filtering in complete_subtask() - this could allow unauthorized completion")
+                    logger.warning(
+                        "🚨 SUBTASK_SECURITY: No user_id available for filtering in complete_subtask() - this could allow unauthorized completion"
+                    )
 
                 update_data = {
-                    SubtaskModel.status: 'done',
+                    SubtaskModel.status: "done",
                     SubtaskModel.progress_percentage: 100,
                     # BaseTimestampRepository handles completed_at and updated_at automatically
                     SubtaskModel.completion_summary: completion_summary,
-                    SubtaskModel.impact_on_parent: impact_on_parent
+                    SubtaskModel.impact_on_parent: impact_on_parent,
                 }
 
                 if insights_found:
                     update_data[SubtaskModel.insights_found] = insights_found
 
                 result = query.update(update_data)
-                logger.info(f"✅ SUBTASK_COMPLETE: Completed {result} subtask(s) with id={subtask_id} for user_id={self.user_id}")
+                logger.info(
+                    f"✅ SUBTASK_COMPLETE: Completed {result} subtask(s) with id={subtask_id} for user_id={self.user_id}"
+                )
 
                 return result > 0
 
@@ -842,10 +975,12 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             raise DatabaseException(
                 message=f"Failed to complete subtask: {str(e)}",
                 operation="complete_subtask",
-                table="subtasks"
+                table="subtasks",
             )
-    
-    def get_subtasks_by_assignee(self, assignee: str, limit: int | None = None) -> list[SubtaskEntity]:
+
+    def get_subtasks_by_assignee(
+        self, assignee: str, limit: int | None = None
+    ) -> list[SubtaskEntity]:
         """
         Get subtasks assigned to a specific assignee.
 
@@ -858,40 +993,42 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
         """
         try:
             with self.get_db_session() as session:
-                query = session.query(SubtaskModel).filter(
-                    SubtaskModel.assignees.contains([assignee])
-                ).order_by(SubtaskModel.updated_at.desc())
+                query = (
+                    session.query(SubtaskModel)
+                    .filter(SubtaskModel.assignees.contains([assignee]))
+                    .order_by(SubtaskModel.updated_at.desc())
+                )
 
                 if limit:
                     query = query.limit(limit)
 
                 models = query.all()
                 return [self._model_to_entity(model) for model in models]
-                
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to get subtasks by assignee {assignee}: {e}")
             raise DatabaseException(
                 message=f"Failed to get subtasks by assignee: {str(e)}",
                 operation="get_subtasks_by_assignee",
-                table="subtasks"
+                table="subtasks",
             )
-    
+
     # Private helper methods
-    
+
     def _entity_to_model_dict(self, subtask: SubtaskEntity) -> dict[str, Any]:
         """Convert domain entity to model dictionary"""
         # Ensure assignees is a proper list of strings - use getattr for safety
         assignees = []
-        subtask_assignees = getattr(subtask, 'assignees', [])
+        subtask_assignees = getattr(subtask, "assignees", [])
         if subtask_assignees:
             for assignee in subtask_assignees:
-                if hasattr(assignee, 'value'):
+                if hasattr(assignee, "value"):
                     # Handle AgentRole enum
                     assignees.append(f"@{assignee.value}")
                 else:
                     # Handle string assignees
                     assignees.append(str(assignee))
-        
+
         model_data = {
             "task_id": subtask.parent_task_id.value,
             "title": subtask.title,
@@ -899,24 +1036,34 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             "status": subtask.status.value if subtask.status else "todo",
             "priority": subtask.priority.value if subtask.priority else "medium",
             "assignees": assignees,
-            "progress_percentage": getattr(subtask, 'progress_percentage', 0),  # Use actual progress_percentage
-            "progress_history": getattr(subtask, 'progress_history', {}),  # Detailed progress tracking
-            "progress_count": getattr(subtask, 'progress_count', 0),  # Number of progress entries
+            "progress_percentage": getattr(
+                subtask, "progress_percentage", 0
+            ),  # Use actual progress_percentage
+            "progress_history": getattr(
+                subtask, "progress_history", {}
+            ),  # Detailed progress tracking
+            "progress_count": getattr(
+                subtask, "progress_count", 0
+            ),  # Number of progress entries
             "created_at": subtask.created_at,  # BaseTimestampRepository ensures this is set
-            "updated_at": subtask.updated_at   # BaseTimestampRepository ensures this is set
+            "updated_at": subtask.updated_at,  # BaseTimestampRepository ensures this is set
         }
-        
+
         # CRITICAL FIX: Explicit user_id handling - no complex fallbacks
         if not self.user_id:
             logger.error("🚨 SUBTASK_PERSISTENCE: No user_id available in repository")
-            raise ValueError("User authentication required. No user ID provided for subtask creation.")
-        
+            raise ValueError(
+                "User authentication required. No user ID provided for subtask creation."
+            )
+
         # Explicit user_id assignment - this is the critical fix
-        model_data['user_id'] = self.user_id
-        logger.info(f"🔐 SUBTASK_PERSISTENCE_FIX: Explicitly set user_id={self.user_id} for subtask creation")
-        
+        model_data["user_id"] = self.user_id
+        logger.info(
+            f"🔐 SUBTASK_PERSISTENCE_FIX: Explicitly set user_id={self.user_id} for subtask creation"
+        )
+
         return model_data
-    
+
     def _model_to_entity(self, model: SubtaskModel) -> SubtaskEntity:
         """Convert SQLAlchemy model to domain entity"""
         # Convert assignees from JSON to list
@@ -935,7 +1082,7 @@ class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[Subtask
             progress_history=model.progress_history or {},  # Detailed progress tracking
             progress_count=model.progress_count or 0,  # Number of progress entries
             created_at=model.created_at,
-            updated_at=model.updated_at
+            updated_at=model.updated_at,
         )
-        
+
         return subtask

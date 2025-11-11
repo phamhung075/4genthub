@@ -142,15 +142,26 @@ class ProjectMCPController(ContextPropagationMixin):
 
         @mcp.tool(description=get_manage_project_description())
         async def manage_project(
-            action: Annotated[str, Field(description="[OPTIONAL] " + params["action"]["description"])],
+            action: Annotated[
+                str, Field(description="[OPTIONAL] " + params["action"]["description"])
+            ],
             project_id: Annotated[
-                str, Field(description="[REQUIRED for most actions except 'create' and 'list'] " + params["project_id"]["description"])
+                str,
+                Field(
+                    description="[REQUIRED for most actions except 'create' and 'list'] "
+                    + params["project_id"]["description"]
+                ),
             ] = None,
             name: Annotated[
-                str, Field(description="[REQUIRED for 'create' action] " + params["name"]["description"])
+                str,
+                Field(
+                    description="[REQUIRED for 'create' action] "
+                    + params["name"]["description"]
+                ),
             ] = None,
             description: Annotated[
-                str, Field(description="[OPTIONAL] " + params["description"]["description"])
+                str,
+                Field(description="[OPTIONAL] " + params["description"]["description"]),
             ] = None,
             force: Annotated[
                 str, Field(description="[OPTIONAL] " + params["force"]["description"])
@@ -283,7 +294,9 @@ class ProjectMCPController(ContextPropagationMixin):
             "rebalance_agents",
         ]:
             if not kwargs.get("project_id"):
-                return self._response_factory.create_missing_field_error("project_id", action)
+                return self._response_factory.create_missing_field_error(
+                    "project_id", action
+                )
 
         return None
 
@@ -486,7 +499,9 @@ class ProjectMCPController(ContextPropagationMixin):
         try:
             # Validate project_id is provided for maintenance operations
             if not project_id:
-                return self._response_factory.create_missing_field_error("project_id", action)
+                return self._response_factory.create_missing_field_error(
+                    "project_id", action
+                )
 
             # Delegate to _handle_maintenance_action (this is what tests mock)
             return self._handle_maintenance_action(

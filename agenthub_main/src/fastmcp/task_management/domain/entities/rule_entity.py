@@ -17,6 +17,7 @@ from ..value_objects import InheritanceType, RuleFormat, RuleType
 @dataclass
 class RuleMetadata:
     """Metadata for rule files - Domain Entity"""
+
     path: str
     format: RuleFormat
     type: RuleType
@@ -28,7 +29,7 @@ class RuleMetadata:
     version: str = "1.0"
     description: str = ""
     tags: list[str] = field(default_factory=list)
-    
+
     def __post_init__(self):
         """Ensure tags is always a list"""
         if self.tags is None:
@@ -66,6 +67,7 @@ class RuleMetadata:
 @dataclass
 class RuleContent:
     """Structured rule content - Domain Entity"""
+
     metadata: RuleMetadata
     raw_content: str
     parsed_content: dict[str, Any]
@@ -130,6 +132,7 @@ class RuleContent:
 @dataclass
 class RuleInheritance:
     """Rule inheritance configuration and tracking - Domain Entity"""
+
     parent_path: str
     child_path: str
     inheritance_type: InheritanceType
@@ -178,6 +181,7 @@ class RuleInheritance:
 @dataclass
 class Rule:
     """Main Rule aggregate - Domain Entity"""
+
     metadata: RuleMetadata
     content: RuleContent | None = None
     inheritance: RuleInheritance | None = None
@@ -191,5 +195,5 @@ class Rule:
                 parsed_content={},
                 sections={},
                 references=[],
-                variables={}
-            ) 
+                variables={},
+            )

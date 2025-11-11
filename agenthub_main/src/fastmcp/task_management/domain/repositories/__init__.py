@@ -11,12 +11,12 @@ from .agent_repository import AgentRepository
 from ..value_objects.pagination import PaginationRequest, PaginationResult
 
 __all__ = [
-    'BaseRepository',
-    'PaginationRequest',
-    'PaginationResult',
-    'TaskRepository',
-    'ProjectRepository',
-    'RuleRepository',
-    'ContextRepository',
-    'AgentRepository'
-] 
+    "BaseRepository",
+    "PaginationRequest",
+    "PaginationResult",
+    "TaskRepository",
+    "ProjectRepository",
+    "RuleRepository",
+    "ContextRepository",
+    "AgentRepository",
+]

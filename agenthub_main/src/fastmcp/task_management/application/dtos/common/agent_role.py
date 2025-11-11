@@ -8,6 +8,7 @@ from dataclasses import dataclass
 @dataclass
 class AgentRole:
     """Definition of an agent role with specific rules and context"""
+
     name: str
     persona: str
     primary_focus: str
@@ -15,4 +16,4 @@ class AgentRole:
     context_instructions: list[str]
     tools_guidance: list[str]
     output_format: str
-    persona_icon: str | None = None 
+    persona_icon: str | None = None

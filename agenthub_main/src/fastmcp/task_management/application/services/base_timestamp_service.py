@@ -102,7 +102,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
     def create_entity(
         self,
         entity_data: dict[str, Any],
-        validation_callback: Callable[[TimestampEntityType], None] | None = None
+        validation_callback: Callable[[TimestampEntityType], None] | None = None,
     ) -> TimestampEntityType:
         """Create a new entity with automatic timestamp management.
 
@@ -118,7 +118,9 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             BusinessLogicException: If business rules are violated
             DatabaseException: If database operation fails
         """
-        logger.info(f"Creating new {self._entity_type} with data: {len(entity_data)} attributes")
+        logger.info(
+            f"Creating new {self._entity_type} with data: {len(entity_data)} attributes"
+        )
 
         try:
             # Create entity instance (timestamps will be set automatically)
@@ -134,7 +136,9 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             # Save entity (repository will handle timestamps and events)
             saved_entity = self._repository.save(entity)
 
-            logger.info(f"Successfully created {self._entity_type} with id {self._get_entity_id(saved_entity)}")
+            logger.info(
+                f"Successfully created {self._entity_type} with id {self._get_entity_id(saved_entity)}"
+            )
             return saved_entity
 
         except (ValidationException, BusinessLogicException):
@@ -145,10 +149,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             raise DatabaseException(f"Failed to create {self._entity_type}: {str(e)}")
 
     def update_entity(
-        self,
-        entity_id: str,
-        updates: dict[str, Any],
-        touch_reason: str = None
+        self, entity_id: str, updates: dict[str, Any], touch_reason: str = None
     ) -> TimestampEntityType:
         """Update entity with automatic timestamp management.
 
@@ -166,12 +167,16 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             BusinessLogicException: If business rules are violated
             DatabaseException: If database operation fails
         """
-        logger.info(f"Updating {self._entity_type} {entity_id} with {len(updates)} changes")
+        logger.info(
+            f"Updating {self._entity_type} {entity_id} with {len(updates)} changes"
+        )
 
         # Get existing entity
         entity = self._repository.get_by_id(entity_id)
         if not entity:
-            raise ResourceNotFoundException(f"{self._entity_type} with id {entity_id} not found")
+            raise ResourceNotFoundException(
+                f"{self._entity_type} with id {entity_id} not found"
+            )
 
         try:
             # Apply updates
@@ -194,7 +199,9 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             # Re-raise business exceptions as-is
             raise
         except Exception as e:
-            logger.error(f"Unexpected error updating {self._entity_type} {entity_id}: {e}")
+            logger.error(
+                f"Unexpected error updating {self._entity_type} {entity_id}: {e}"
+            )
             raise DatabaseException(f"Failed to update {self._entity_type}: {str(e)}")
 
     def get_entity(self, entity_id: str) -> TimestampEntityType | None:
@@ -237,7 +244,9 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
         # Get entity
         entity = self._repository.get_by_id(entity_id)
         if not entity:
-            raise ResourceNotFoundException(f"{self._entity_type} with id {entity_id} not found")
+            raise ResourceNotFoundException(
+                f"{self._entity_type} with id {entity_id} not found"
+            )
 
         try:
             # Check if deletion is allowed (business rules)
@@ -252,7 +261,9 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             # Re-raise business exceptions as-is
             raise
         except Exception as e:
-            logger.error(f"Unexpected error deleting {self._entity_type} {entity_id}: {e}")
+            logger.error(
+                f"Unexpected error deleting {self._entity_type} {entity_id}: {e}"
+            )
             raise DatabaseException(f"Failed to delete {self._entity_type}: {str(e)}")
 
     def touch_entity(self, entity_id: str, reason: str) -> TimestampEntityType:
@@ -281,7 +292,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
         self,
         start_time: datetime,
         end_time: datetime,
-        timestamp_field: str = "updated_at"
+        timestamp_field: str = "updated_at",
     ) -> list[TimestampEntityType]:
         """Find entities within a timestamp range.
 
@@ -304,12 +315,16 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             raise ValidationException("Start time must be before end time")
 
         try:
-            return self._repository.find_by_timestamp_range(start_time, end_time, timestamp_field)
+            return self._repository.find_by_timestamp_range(
+                start_time, end_time, timestamp_field
+            )
         except Exception as e:
             logger.error(f"Error finding {self._entity_type} by timestamp range: {e}")
             raise
 
-    def find_stale_entities(self, max_staleness_hours: int = 24) -> list[TimestampEntityType]:
+    def find_stale_entities(
+        self, max_staleness_hours: int = 24
+    ) -> list[TimestampEntityType]:
         """Find entities that haven't been updated recently.
 
         Args:
@@ -325,7 +340,9 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
         if max_staleness_hours < 1:
             raise ValidationException("Max staleness must be at least 1 hour")
 
-        logger.debug(f"Finding stale {self._entity_type} entities older than {max_staleness_hours} hours")
+        logger.debug(
+            f"Finding stale {self._entity_type} entities older than {max_staleness_hours} hours"
+        )
 
         try:
             return self._repository.find_stale_entities(max_staleness_hours)
@@ -351,9 +368,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
             raise
 
     def cleanup_stale_entities(
-        self,
-        max_staleness_days: int = 30,
-        dry_run: bool = True
+        self, max_staleness_days: int = 30, dry_run: bool = True
     ) -> dict[str, Any]:
         """Clean up very stale entities.
 
@@ -371,7 +386,9 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
         if max_staleness_days < 1:
             raise ValidationException("Max staleness must be at least 1 day")
 
-        logger.info(f"{'Dry-run' if dry_run else 'Executing'} cleanup of {self._entity_type} older than {max_staleness_days} days")
+        logger.info(
+            f"{'Dry-run' if dry_run else 'Executing'} cleanup of {self._entity_type} older than {max_staleness_days} days"
+        )
 
         try:
             stale_entities = self.find_stale_entities(max_staleness_days * 24)
@@ -380,7 +397,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
                 return {
                     "dry_run": True,
                     "entities_to_delete": len(stale_entities),
-                    "entity_ids": [self._get_entity_id(e) for e in stale_entities]
+                    "entity_ids": [self._get_entity_id(e) for e in stale_entities],
                 }
 
             # Actually delete stale entities
@@ -401,7 +418,7 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
                 "dry_run": False,
                 "entities_deleted": deleted_count,
                 "entities_failed": len(errors),
-                "errors": errors
+                "errors": errors,
             }
 
         except Exception as e:
@@ -410,7 +427,9 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
 
     # Abstract methods for subclasses to implement
     @abstractmethod
-    def _create_entity_from_data(self, entity_data: dict[str, Any]) -> TimestampEntityType:
+    def _create_entity_from_data(
+        self, entity_data: dict[str, Any]
+    ) -> TimestampEntityType:
         """Create entity instance from data dictionary.
 
         Args:
@@ -421,7 +440,9 @@ class BaseTimestampService(ABC, Generic[TimestampEntityType]):
         """
         pass
 
-    def _apply_updates_to_entity(self, entity: TimestampEntityType, updates: dict[str, Any]) -> None:
+    def _apply_updates_to_entity(
+        self, entity: TimestampEntityType, updates: dict[str, Any]
+    ) -> None:
         """Apply updates to entity instance.
 
         Default implementation sets attributes directly.

@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class DeleteProjectUseCase:
     """
     Use case for deleting a project with cascade deletion of all related data.
-    
+
     This includes:
     - All git branches in the project
     - All tasks in those branches
@@ -46,34 +46,38 @@ class DeleteProjectUseCase:
     - All agent assignments
     - All task dependencies
     """
-    
-    def __init__(self, project_repo=None, git_branch_repo=None, task_repo=None, context_repo=None):
+
+    def __init__(
+        self, project_repo=None, git_branch_repo=None, task_repo=None, context_repo=None
+    ):
         """Initialize the delete project use case with required repositories."""
         # Use provided repositories or get defaults
         if project_repo is None or git_branch_repo is None or task_repo is None:
-            
             self.project_repo = project_repo or GlobalRepositoryManager.get_default()
-            self.git_branch_repo = git_branch_repo or GitBranchRepositoryFactory.create()
+            self.git_branch_repo = (
+                git_branch_repo or GitBranchRepositoryFactory.create()
+            )
             self.task_repo = task_repo or TaskRepositoryFactory.create()
         else:
             self.project_repo = project_repo
             self.git_branch_repo = git_branch_repo
             self.task_repo = task_repo
-        
+
         # Context repo can be None - it's optional
         self.context_repo = context_repo
-        
+
         # Initialize unified context repositories for hierarchical deletion
         try:
             from ..services.unified_context_facade_factory import (
                 UnifiedContextFacadeFactory,
             )
+
             factory = UnifiedContextFacadeFactory()
             self.unified_context_repo = factory.create_hierarchical_context_repository()
         except Exception as e:
             logger.warning(f"Could not initialize unified context repository: {e}")
             self.unified_context_repo = None
-    
+
     async def execute(self, project_id: str, force: bool = False) -> dict[str, Any]:
         """
         Execute project deletion with cascade deletion.
@@ -99,12 +103,12 @@ class DeleteProjectUseCase:
                 raise ResourceNotFoundException(
                     resource_type="Project",
                     resource_id=project_id,
-                    message=f"Project {project_id} not found"
+                    message=f"Project {project_id} not found",
                 )
 
             # Store project info for WebSocket notification
             project_name = project.name
-            user_id = project.user_id if hasattr(project, 'user_id') else None
+            user_id = project.user_id if hasattr(project, "user_id") else None
 
             logger.info(f"Found project: {project.name}")
 
@@ -115,10 +119,10 @@ class DeleteProjectUseCase:
             # 3. Use cascade deletion service
             cascade_service = CascadeDeletionService(
                 task_repository=self.task_repo,
-                subtask_repository=getattr(self, 'subtask_repo', None),
+                subtask_repository=getattr(self, "subtask_repo", None),
                 branch_repository=self.git_branch_repo,
                 project_repository=self.project_repo,
-                context_repository=self.context_repo
+                context_repository=self.context_repo,
             )
 
             stats = cascade_service.delete_project_cascade(project_id)
@@ -129,7 +133,7 @@ class DeleteProjectUseCase:
                     project_id=project_id,
                     name=project_name,
                     user_id=user_id,
-                    stats=stats
+                    stats=stats,
                 )
 
                 logger.info(
@@ -143,35 +147,37 @@ class DeleteProjectUseCase:
             return {
                 "success": stats["project_deleted"],
                 "message": f"Project '{project_name}' and all related data deleted successfully",
-                "statistics": stats
+                "statistics": stats,
             }
 
         except Exception as e:
             logger.error(f"Error during project deletion: {e}")
 
-            if isinstance(e, (ResourceNotFoundException, ValidationException, DatabaseException)):
+            if isinstance(
+                e, (ResourceNotFoundException, ValidationException, DatabaseException)
+            ):
                 raise
 
             raise DatabaseException(
                 message=f"Failed to delete project: {str(e)}",
                 operation="delete",
-                table="projects"
+                table="projects",
             )
-    
+
     async def _validate_deletion_safety(self, project: Project) -> None:
         """
         Validate if it's safe to delete the project.
         Only allow deletion if project has only 'main' branch with 0 tasks.
-        
+
         Args:
             project: The project to validate
-            
+
         Raises:
             ValidationException: If deletion is not safe
         """
         try:
             branches = await self.git_branch_repo.find_by_project(project.id)
-            
+
             # Check if project has only one branch and it's 'main'
             if len(branches) > 1:
                 branch_names = [b.name for b in branches]
@@ -179,9 +185,9 @@ class DeleteProjectUseCase:
                     field="project",
                     value=project.id,
                     message=f"Cannot delete project with multiple branches ({len(branches)} branches: {', '.join(branch_names)}). "
-                            f"Delete other branches first, or use force=True"
+                    f"Delete other branches first, or use force=True",
                 )
-            
+
             if len(branches) == 1:
                 main_branch = branches[0]
                 if main_branch.name != "main":
@@ -189,9 +195,9 @@ class DeleteProjectUseCase:
                         field="project",
                         value=project.id,
                         message=f"Cannot delete project with non-main branch '{main_branch.name}'. "
-                                f"Project must have only 'main' branch, or use force=True"
+                        f"Project must have only 'main' branch, or use force=True",
                     )
-                
+
                 # Check if main branch has any tasks
                 tasks = await self.task_repo.find_by_git_branch(main_branch.id)
                 if tasks and len(tasks) > 0:
@@ -199,21 +205,23 @@ class DeleteProjectUseCase:
                         field="project",
                         value=project.id,
                         message=f"Cannot delete project with {len(tasks)} tasks in main branch. "
-                                f"Delete all tasks first, or use force=True"
+                        f"Delete all tasks first, or use force=True",
                     )
-            
+
             # If no branches at all, it's safe to delete
-            logger.info(f"Project {project.id} is safe to delete (only main branch with 0 tasks)")
-            
+            logger.info(
+                f"Project {project.id} is safe to delete (only main branch with 0 tasks)"
+            )
+
         except Exception as e:
             if isinstance(e, ValidationException):
                 raise
             logger.warning(f"Error checking deletion safety: {e}")
-    
+
     async def _delete_contexts(self, project_id: str, stats: dict[str, Any]) -> None:
         """
         Delete all contexts related to the project (hierarchical).
-        
+
         Args:
             project_id: The project ID
             stats: Statistics dictionary to update
@@ -229,8 +237,7 @@ class DeleteProjectUseCase:
                         if self.unified_context_repo:
                             # Use unified context system
                             deleted = await self.unified_context_repo.delete_context(
-                                level="task",
-                                context_id=task.id
+                                level="task", context_id=task.id
                             )
                             if deleted:
                                 stats["contexts_deleted"] += 1
@@ -242,26 +249,24 @@ class DeleteProjectUseCase:
                     except Exception as e:
                         logger.warning(f"Error deleting task context {task.id}: {e}")
                         stats["errors"].append(f"Task context {task.id}: {str(e)}")
-                
+
                 # Delete branch context
                 try:
                     if self.unified_context_repo:
                         deleted = await self.unified_context_repo.delete_context(
-                            level="branch",
-                            context_id=branch.id
+                            level="branch", context_id=branch.id
                         )
                         if deleted:
                             stats["contexts_deleted"] += 1
                 except Exception as e:
                     logger.warning(f"Error deleting branch context {branch.id}: {e}")
                     stats["errors"].append(f"Branch context {branch.id}: {str(e)}")
-            
+
             # Delete project context
             try:
                 if self.unified_context_repo:
                     deleted = await self.unified_context_repo.delete_context(
-                        level="project",
-                        context_id=project_id
+                        level="project", context_id=project_id
                     )
                     if deleted:
                         stats["contexts_deleted"] += 1
@@ -273,30 +278,30 @@ class DeleteProjectUseCase:
             except Exception as e:
                 logger.warning(f"Error deleting project context: {e}")
                 stats["errors"].append(f"Project context: {str(e)}")
-                
+
         except Exception as e:
             logger.error(f"Error during context deletion: {e}")
             stats["errors"].append(f"Context deletion: {str(e)}")
-    
+
     async def _delete_tasks(self, project_id: str, stats: dict[str, Any]) -> None:
         """
         Delete all tasks and subtasks in the project.
-        
+
         Args:
             project_id: The project ID
             stats: Statistics dictionary to update
         """
         try:
             branches = await self.git_branch_repo.find_by_project(project_id)
-            
+
             for branch in branches:
                 tasks = await self.task_repo.find_by_git_branch(branch.id)
-                
+
                 for task in tasks:
                     # Count subtasks before deletion
-                    if hasattr(task, 'subtasks') and task.subtasks:
+                    if hasattr(task, "subtasks") and task.subtasks:
                         stats["subtasks_deleted"] += len(task.subtasks)
-                    
+
                     # Delete the task (subtasks cascade automatically)
                     try:
                         deleted = await self.task_repo.delete(task.id)
@@ -305,27 +310,29 @@ class DeleteProjectUseCase:
                     except Exception as e:
                         logger.warning(f"Error deleting task {task.id}: {e}")
                         stats["errors"].append(f"Task {task.id}: {str(e)}")
-                        
+
         except Exception as e:
             logger.error(f"Error during task deletion: {e}")
             stats["errors"].append(f"Task deletion: {str(e)}")
-    
-    async def _delete_git_branches(self, project_id: str, stats: dict[str, Any]) -> None:
+
+    async def _delete_git_branches(
+        self, project_id: str, stats: dict[str, Any]
+    ) -> None:
         """
         Delete all git branches in the project.
-        
+
         Args:
             project_id: The project ID
             stats: Statistics dictionary to update
         """
         try:
             branches = await self.git_branch_repo.find_by_project(project_id)
-            
+
             for branch in branches:
                 # Count agent assignments before deletion
-                if hasattr(branch, 'assigned_agent_id') and branch.assigned_agent_id:
+                if hasattr(branch, "assigned_agent_id") and branch.assigned_agent_id:
                     stats["agent_assignments_removed"] += 1
-                
+
                 # Delete the branch
                 try:
                     deleted = await self.git_branch_repo.delete(branch.id)
@@ -334,13 +341,14 @@ class DeleteProjectUseCase:
                 except Exception as e:
                     logger.warning(f"Error deleting git branch {branch.id}: {e}")
                     stats["errors"].append(f"Git branch {branch.id}: {str(e)}")
-                    
+
         except Exception as e:
             logger.error(f"Error during git branch deletion: {e}")
             stats["errors"].append(f"Git branch deletion: {str(e)}")
 
-    async def _send_websocket_notification(self, project_id: str, name: str,
-                                          user_id: str | None, stats: dict[str, Any]) -> None:
+    async def _send_websocket_notification(
+        self, project_id: str, name: str, user_id: str | None, stats: dict[str, Any]
+    ) -> None:
         """Send WebSocket notification for project deletion."""
         try:
             # Import WebSocket service
@@ -356,15 +364,17 @@ class DeleteProjectUseCase:
                     "branches_deleted": stats.get("branches_deleted", 0),
                     "tasks_deleted": stats.get("tasks_deleted", 0),
                     "subtasks_deleted": stats.get("subtasks_deleted", 0),
-                    "contexts_deleted": stats.get("contexts_deleted", 0)
-                }
+                    "contexts_deleted": stats.get("contexts_deleted", 0),
+                },
             }
 
             # Send via WebSocket
             websocket_service = WebSocketService()
             await websocket_service.broadcast(notification)
 
-            logger.info(f"Sent WebSocket notification for project {project_id} deletion")
+            logger.info(
+                f"Sent WebSocket notification for project {project_id} deletion"
+            )
 
         except Exception as e:
             logger.warning(f"Failed to send WebSocket notification: {e}")

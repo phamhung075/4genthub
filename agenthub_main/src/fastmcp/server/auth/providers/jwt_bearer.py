@@ -20,14 +20,14 @@ from fastmcp.server.auth.providers.bearer import BearerAuthProvider
 class JWTBearerAuthProvider(BearerAuthProvider):
     """
     JWT Bearer token provider that validates tokens from our token management system.
-    
+
     This provider:
     1. Validates JWT signatures using the shared secret
     2. Checks if the token exists and is active in the database
     3. Validates token expiration and rate limits
     4. Maps token scopes to MCP permissions
     """
-    
+
     def __init__(
         self,
         secret_key: str | None = None,
@@ -38,7 +38,7 @@ class JWTBearerAuthProvider(BearerAuthProvider):
     ):
         """
         Initialize the JWT Bearer auth provider.
-        
+
         Args:
             secret_key: JWT secret key (defaults to JWT_SECRET_KEY env var)
             issuer: Expected token issuer
@@ -49,7 +49,7 @@ class JWTBearerAuthProvider(BearerAuthProvider):
         self.secret_key = secret_key or os.getenv("JWT_SECRET_KEY")
         if not self.secret_key:
             raise ValueError("JWT_SECRET_KEY must be provided or set in environment")
-        
+
         # Initialize parent without public_key or jwks_uri
         # We'll override the verification methods
         super().__init__(
@@ -58,49 +58,51 @@ class JWTBearerAuthProvider(BearerAuthProvider):
             audience=audience,
             required_scopes=required_scopes or ["mcp:access"],
         )
-        
+
         self.check_database = check_database
-        
+
         # Create properly configured JWT backend using factory
         self.jwt_backend = create_jwt_auth_backend(
             required_scopes=required_scopes or ["mcp:access"]
         )
-        
+
     async def verify_token(self, token: str) -> AccessToken | None:
         """
         Verify the provided JWT bearer token (MCP TokenVerifier protocol).
-        
+
         Args:
             token: The JWT token string to validate
-            
+
         Returns:
             AccessToken object if valid, None if invalid
         """
         # Delegate to the properly configured JWT backend
         # This will handle both Supabase and local JWT tokens
         return await self.jwt_backend.verify_token(token)
-    
+
     async def load_access_token(self, token: str) -> AccessToken | None:
         """
         Validate the provided JWT bearer token (FastMCP OAuthProvider protocol).
-        
+
         Args:
             token: The JWT token string to validate
-            
+
         Returns:
             AccessToken object if valid, None if invalid
         """
         # Delegate to verify_token for consistency
         return await self.verify_token(token)
-    
-    async def _validate_user_token(self, token: str, payload: dict) -> AccessToken | None:
+
+    async def _validate_user_token(
+        self, token: str, payload: dict
+    ) -> AccessToken | None:
         """
         Validate a regular user JWT token (not API token).
-        
+
         Args:
             token: The JWT token string
             payload: Decoded token payload
-            
+
         Returns:
             AccessToken if valid, None otherwise
         """
@@ -108,96 +110,98 @@ class JWTBearerAuthProvider(BearerAuthProvider):
             # Check if it's an access token
             if payload.get("token_type") != "access":
                 return None
-            
+
             user_id = payload.get("sub") or payload.get("user_id")
             payload.get("email")
             roles = payload.get("roles", [])
-            
+
             if not user_id:
                 return None
-            
+
             # Map user roles to MCP scopes
             mcp_scopes = ["mcp:access"]
-            
+
             if "admin" in roles:
                 mcp_scopes.extend(["mcp:admin", "mcp:write", "mcp:read"])
             elif "developer" in roles:
                 mcp_scopes.extend(["mcp:write", "mcp:read"])
             elif "user" in roles:
                 mcp_scopes.append("mcp:read")
-            
+
             return AccessToken(
                 token=token,
                 client_id=user_id,
                 scopes=mcp_scopes,
-                expires_at=payload.get("exp")
+                expires_at=payload.get("exp"),
             )
-            
+
         except Exception:
             return None
-    
+
     async def _validate_token_in_database(self, token_id: str) -> bool:
         """
         Check if token exists and is active in the database.
-        
+
         Args:
             token_id: The token ID to validate
-            
+
         Returns:
             True if token is valid and active, False otherwise
         """
         try:
             # Import here to avoid circular dependency
             from fastmcp.server.routes.token_router import APIToken
-            
+
             # Get database session
             db = next(get_db())
-            
+
             # Query token
-            token = db.query(APIToken).filter(
-                APIToken.id == token_id,
-                APIToken.is_active
-            ).first()
-            
+            token = (
+                db.query(APIToken)
+                .filter(APIToken.id == token_id, APIToken.is_active)
+                .first()
+            )
+
             if not token:
                 return False
-            
+
             # Check if token has expired
             from datetime import datetime
+
             if token.expires_at < datetime.now(UTC):
                 return False
-            
+
             # Update usage statistics
             token.last_used_at = datetime.now(UTC)
             token.usage_count += 1
-            
+
             # Check rate limit
             if token.rate_limit:
                 # Simple rate limit check (could be enhanced with Redis)
                 # For now, just track in database
                 pass
-            
+
             db.commit()
             return True
-            
+
         except Exception:
             return False
         finally:
-            if 'db' in locals():
+            if "db" in locals():
                 db.close()
-    
+
     def _map_scopes_to_mcp(self, scopes: list[str]) -> list[str]:
         """
         Map API token scopes to MCP permissions.
-        
+
         Args:
             scopes: List of API token scopes
-            
+
         Returns:
             List of MCP scopes
         """
         mcp_scopes = []
-        
+
         # Direct mappings
         scope_mappings = {
             "read:tasks": "mcp:read",
@@ -209,11 +213,11 @@ class JWTBearerAuthProvider(BearerAuthProvider):
             "execute:mcp": "mcp:execute",
             # Note: admin scope removed - admin privileges must be set directly in database
         }
-        
+
         for scope in scopes:
             if scope in scope_mappings:
                 mcp_scope = scope_mappings[scope]
                 if mcp_scope not in mcp_scopes:
                     mcp_scopes.append(mcp_scope)
-        
+
         return mcp_scopes

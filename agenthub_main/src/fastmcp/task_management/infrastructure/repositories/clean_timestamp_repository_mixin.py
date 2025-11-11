@@ -20,16 +20,15 @@ T = TypeVar("T", bound=BaseTimestampEntity)
 class CleanTimestampRepository(ABC, Generic[T]):
     """Mixin that encapsulates clean timestamp persistence patterns."""
 
-    def save_with_clean_timestamp(self, entity: T, *, reason: str = "repository_save") -> T:
+    def save_with_clean_timestamp(
+        self, entity: T, *, reason: str = "repository_save"
+    ) -> T:
         """Persist a single entity with automatic timestamp management."""
         entity.touch(reason)
         return self._perform_save(entity)
 
     def save_bulk_with_consistent_timestamp(
-        self,
-        entities: Sequence[T],
-        *,
-        reason: str = "repository_bulk_save"
+        self, entities: Sequence[T], *, reason: str = "repository_bulk_save"
     ) -> list[T]:
         """Persist multiple entities with a consistent timestamp."""
         if not entities:
@@ -50,4 +49,3 @@ class CleanTimestampRepository(ABC, Generic[T]):
     @abstractmethod
     def _perform_bulk_save(self, entities: Iterable[T]) -> list[T]:
         """Concrete bulk persistence logic implemented by repositories."""
-

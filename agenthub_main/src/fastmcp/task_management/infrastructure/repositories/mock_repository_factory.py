@@ -1,7 +1,7 @@
 """Mock Repository Factory - Production Mock Implementations
 
 This module provides mock repository implementations for testing and development.
-Since the system now uses Keycloak for authentication and PostgreSQL as the 
+Since the system now uses Keycloak for authentication and PostgreSQL as the
 source of truth, these mocks are simplified and focused on core functionality.
 """
 
@@ -24,54 +24,55 @@ logger = logging.getLogger(__name__)
 
 class MockProjectRepository(ProjectRepository):
     """Mock project repository for testing and development"""
+
     def __init__(self):
         self._projects = {}
         logger.info("MockProjectRepository initialized")
-    
+
     async def save(self, project: Project) -> Project:
         self._projects[project.id] = project
         return project
-    
+
     async def find_by_id(self, project_id: str) -> Project | None:
         return self._projects.get(project_id)
-    
+
     async def find_by_name(self, name: str) -> Project | None:
         for project in self._projects.values():
             if project.name == name:
                 return project
         return None
-    
+
     async def find_all(self) -> list[Project]:
         return list(self._projects.values())
-    
+
     async def delete(self, project_id: str) -> bool:
         if project_id in self._projects:
             del self._projects[project_id]
             return True
         return False
-    
+
     async def count(self) -> int:
         return len(self._projects)
-    
+
     async def exists(self, project_id: str) -> bool:
         return project_id in self._projects
-    
+
     async def find_projects_with_agent(self, agent_id: str) -> list[Project]:
         return []
-    
+
     async def find_projects_by_status(self, status: str) -> list[Project]:
         results = []
         for project in self._projects.values():
-            if hasattr(project, 'status') and project.status == status:
+            if hasattr(project, "status") and project.status == status:
                 results.append(project)
         return results
-    
+
     async def get_project_health_summary(self, project_id: str) -> dict[str, Any]:
         return {"health": "good", "project_id": project_id}
-    
+
     async def unassign_agent_from_tree(self, project_id: str) -> bool:
         return True
-    
+
     async def update(self, project: Project) -> Project:
         """Update a project"""
         if project.id in self._projects:
@@ -82,45 +83,48 @@ class MockProjectRepository(ProjectRepository):
 
 class MockGitBranchRepository(GitBranchRepository):
     """Mock git branch repository for testing and development"""
+
     def __init__(self):
         self._branches = {}
         logger.info("MockGitBranchRepository initialized")
-    
+
     async def save(self, branch: GitBranch) -> GitBranch:
         self._branches[branch.id] = branch
         return branch
-    
+
     async def find_by_id(self, branch_id: str) -> GitBranch | None:
         return self._branches.get(branch_id)
-    
+
     async def find_all(self) -> list[GitBranch]:
         return list(self._branches.values())
-    
+
     async def delete(self, branch_id: str) -> bool:
         if branch_id in self._branches:
             del self._branches[branch_id]
             return True
         return False
-    
+
     async def find_by_project_id(self, project_id: str) -> list[GitBranch]:
         results = []
         for branch in self._branches.values():
             if branch.project_id == project_id:
                 results.append(branch)
         return results
-    
-    async def find_by_name_and_project(self, name: str, project_id: str) -> GitBranch | None:
+
+    async def find_by_name_and_project(
+        self, name: str, project_id: str
+    ) -> GitBranch | None:
         for branch in self._branches.values():
             if branch.name == name and branch.project_id == project_id:
                 return branch
         return None
-    
+
     async def count(self) -> int:
         return len(self._branches)
-    
+
     async def exists(self, branch_id: str) -> bool:
         return branch_id in self._branches
-    
+
     async def update(self, branch: GitBranch) -> GitBranch:
         """Update a git branch"""
         if branch.id in self._branches:
@@ -131,102 +135,135 @@ class MockGitBranchRepository(GitBranchRepository):
 
 class MockTaskRepository(TaskRepository):
     """Mock task repository for testing and development"""
+
     def __init__(self):
         self._tasks = {}
         self._next_id = 1
         logger.info("MockTaskRepository initialized")
-    
+
     def save(self, task: Task) -> Task:
         # Normalize key to string for consistent lookups
-        task_id_str = str(task.id.value) if hasattr(task.id, 'value') else str(task.id)
+        task_id_str = str(task.id.value) if hasattr(task.id, "value") else str(task.id)
         self._tasks[task_id_str] = task
         return task
-    
+
     def find_by_id(self, task_id) -> Task | None:
-        if hasattr(task_id, 'value'):
+        if hasattr(task_id, "value"):
             task_id = task_id.value
         return self._tasks.get(str(task_id))
-    
+
     def find_all(self) -> list[Task]:
         return list(self._tasks.values())
-    
+
     def delete(self, task_id) -> bool:
-        if hasattr(task_id, 'value'):
+        if hasattr(task_id, "value"):
             task_id = task_id.value
         task_id_str = str(task_id)
         if task_id_str in self._tasks:
             del self._tasks[task_id_str]
             return True
         return False
-    
+
     def find_by_status(self, status: str) -> list[Task]:
         return [t for t in self._tasks.values() if t.status == status]
-    
+
     def find_by_git_branch_id(self, git_branch_id: str) -> list[Task]:
         return [t for t in self._tasks.values() if t.git_branch_id == git_branch_id]
-    
+
     def count(self) -> int:
         return len(self._tasks)
-    
+
     def exists(self, task_id) -> bool:
-        if hasattr(task_id, 'value'):
+        if hasattr(task_id, "value"):
             task_id = task_id.value
         return str(task_id) in self._tasks
-    
+
     def search(self, query: str) -> list[Task]:
         results = []
         query_lower = query.lower()
         for task in self._tasks.values():
-            if query_lower in task.title.lower() or query_lower in (task.description or '').lower():
+            if (
+                query_lower in task.title.lower()
+                or query_lower in (task.description or "").lower()
+            ):
                 results.append(task)
         return results
-    
+
     def update(self, task: Task) -> Task:
         """Update a task"""
         # Normalize key to string for consistent lookups
-        task_id_str = str(task.id.value) if hasattr(task.id, 'value') else str(task.id)
+        task_id_str = str(task.id.value) if hasattr(task.id, "value") else str(task.id)
         if task_id_str in self._tasks:
             self._tasks[task_id_str] = task
             return task
         raise ValueError(f"Task with id {task.id} not found")
-    
+
     def find_by_assignee(self, assignee: str) -> list[Task]:
         """Find tasks by assignee"""
-        return [t for t in self._tasks.values() if hasattr(t, 'assignee') and t.assignee == assignee]
-    
+        return [
+            t
+            for t in self._tasks.values()
+            if hasattr(t, "assignee") and t.assignee == assignee
+        ]
+
     def find_by_priority(self, priority) -> list[Task]:
         """Find tasks by priority"""
-        return [t for t in self._tasks.values() if hasattr(t, 'priority') and t.priority == priority]
-    
+        return [
+            t
+            for t in self._tasks.values()
+            if hasattr(t, "priority") and t.priority == priority
+        ]
+
     def find_by_labels(self, labels: list[str]) -> list[Task]:
         """Find tasks containing any of the specified labels"""
         results = []
         for task in self._tasks.values():
-            if hasattr(task, 'labels') and task.labels:
+            if hasattr(task, "labels") and task.labels:
                 if any(label in task.labels for label in labels):
                     results.append(task)
         return results
-    
+
     def get_next_id(self):
         """Get next available task ID"""
         from ...domain.value_objects import TaskId
+
         next_id = len(self._tasks) + 1
         return TaskId(f"task-{next_id}")
-    
+
     def get_statistics(self) -> dict[str, Any]:
         """Get task statistics"""
         total = len(self._tasks)
-        pending = len([t for t in self._tasks.values() if hasattr(t, 'status') and t.status == 'pending'])
-        in_progress = len([t for t in self._tasks.values() if hasattr(t, 'status') and t.status == 'in_progress'])
-        completed = len([t for t in self._tasks.values() if hasattr(t, 'status') and t.status == 'completed'])
+        pending = len(
+            [
+                t
+                for t in self._tasks.values()
+                if hasattr(t, "status") and t.status == "pending"
+            ]
+        )
+        in_progress = len(
+            [
+                t
+                for t in self._tasks.values()
+                if hasattr(t, "status") and t.status == "in_progress"
+            ]
+        )
+        completed = len(
+            [
+                t
+                for t in self._tasks.values()
+                if hasattr(t, "status") and t.status == "completed"
+            ]
+        )
         return {
             "total": total,
             "pending": pending,
             "in_progress": in_progress,
-            "completed": completed
+            "completed": completed,
         }
-    
-    def find_by_criteria(self, filters: dict[str, Any], limit: int | None = None) -> list[Task]:
+
+    def find_by_criteria(
+        self, filters: dict[str, Any], limit: int | None = None
+    ) -> list[Task]:
         """Find tasks by multiple criteria"""
         results = []
         for task in self._tasks.values():
@@ -240,7 +277,7 @@ class MockTaskRepository(TaskRepository):
                 if limit and len(results) >= limit:
                     break
         return results
-    
+
     def find_by_id_all_states(self, task_id) -> Task | None:
         """Find task by ID across all states (active, completed, archived)"""
         return self.find_by_id(task_id)
@@ -260,7 +297,7 @@ class MockTaskRepository(TaskRepository):
         """
         task = self.find_by_id(task_id)
         if task:
-            if hasattr(task, 'completed_subtasks'):
+            if hasattr(task, "completed_subtasks"):
                 task.completed_subtasks = (task.completed_subtasks or 0) + 1
             else:
                 task.completed_subtasks = 1
@@ -271,127 +308,164 @@ class MockTaskRepository(TaskRepository):
 
 class MockSubtaskRepository(SubtaskRepository):
     """Mock subtask repository for testing and development"""
+
     def __init__(self):
         self._subtasks = {}
         self._next_id = 1
         logger.info("MockSubtaskRepository initialized")
-    
+
     def save(self, subtask: Subtask) -> Subtask:
         # Normalize key to string for consistent lookups
-        subtask_id_str = str(subtask.id.value) if hasattr(subtask.id, 'value') else str(subtask.id)
+        subtask_id_str = (
+            str(subtask.id.value) if hasattr(subtask.id, "value") else str(subtask.id)
+        )
         self._subtasks[subtask_id_str] = subtask
         return subtask
-    
+
     def find_by_id(self, subtask_id) -> Subtask | None:
-        if hasattr(subtask_id, 'value'):
+        if hasattr(subtask_id, "value"):
             subtask_id = subtask_id.value
         return self._subtasks.get(str(subtask_id))
-    
+
     def find_by_task_id(self, task_id: str) -> list[Subtask]:
         return [s for s in self._subtasks.values() if s.task_id == task_id]
-    
+
     def delete(self, subtask_id) -> bool:
-        if hasattr(subtask_id, 'value'):
+        if hasattr(subtask_id, "value"):
             subtask_id = subtask_id.value
         subtask_id_str = str(subtask_id)
         if subtask_id_str in self._subtasks:
             del self._subtasks[subtask_id_str]
             return True
         return False
-    
+
     def count_by_task_id(self, task_id: str) -> int:
         return len([s for s in self._subtasks.values() if s.task_id == task_id])
-    
+
     def delete_by_task_id(self, task_id: str) -> int:
         to_delete = [s.id for s in self._subtasks.values() if s.task_id == task_id]
         for subtask_id in to_delete:
             del self._subtasks[subtask_id]
         return len(to_delete)
-    
+
     def update(self, subtask: Subtask) -> Subtask:
         """Update a subtask"""
         # Normalize key to string for consistent lookups
-        subtask_id_str = str(subtask.id.value) if hasattr(subtask.id, 'value') else str(subtask.id)
+        subtask_id_str = (
+            str(subtask.id.value) if hasattr(subtask.id, "value") else str(subtask.id)
+        )
         if subtask_id_str in self._subtasks:
             self._subtasks[subtask_id_str] = subtask
             return subtask
         raise ValueError(f"Subtask with id {subtask.id} not found")
-    
+
     def find_by_parent_task_id(self, parent_task_id) -> list[Subtask]:
         """Find all subtasks for a parent task"""
         task_id_str = str(parent_task_id)
-        return [s for s in self._subtasks.values() if str(s.parent_task_id) == task_id_str]
-    
+        return [
+            s for s in self._subtasks.values() if str(s.parent_task_id) == task_id_str
+        ]
+
     def find_by_assignee(self, assignee: str) -> list[Subtask]:
         """Find subtasks by assignee"""
-        return [s for s in self._subtasks.values() if hasattr(s, 'assignee') and s.assignee == assignee]
-    
+        return [
+            s
+            for s in self._subtasks.values()
+            if hasattr(s, "assignee") and s.assignee == assignee
+        ]
+
     def find_by_status(self, status: str) -> list[Subtask]:
         """Find subtasks by status"""
-        return [s for s in self._subtasks.values() if hasattr(s, 'status') and s.status == status]
-    
+        return [
+            s
+            for s in self._subtasks.values()
+            if hasattr(s, "status") and s.status == status
+        ]
+
     def find_completed(self, parent_task_id) -> list[Subtask]:
         """Find completed subtasks for a parent task"""
         task_id_str = str(parent_task_id)
-        return [s for s in self._subtasks.values() 
-                if str(s.task_id) == task_id_str and hasattr(s, 'status') and s.status == 'completed']
-    
+        return [
+            s
+            for s in self._subtasks.values()
+            if str(s.task_id) == task_id_str
+            and hasattr(s, "status")
+            and s.status == "completed"
+        ]
+
     def find_pending(self, parent_task_id) -> list[Subtask]:
         """Find pending subtasks for a parent task"""
         task_id_str = str(parent_task_id)
-        return [s for s in self._subtasks.values() 
-                if str(s.task_id) == task_id_str and hasattr(s, 'status') and s.status == 'pending']
-    
+        return [
+            s
+            for s in self._subtasks.values()
+            if str(s.task_id) == task_id_str
+            and hasattr(s, "status")
+            and s.status == "pending"
+        ]
+
     def exists(self, subtask_id) -> bool:
         """Check if a subtask exists by its id"""
-        if hasattr(subtask_id, 'value'):
+        if hasattr(subtask_id, "value"):
             subtask_id = subtask_id.value
         return str(subtask_id) in self._subtasks
-    
+
     def count_by_parent_task_id(self, parent_task_id) -> int:
         """Count subtasks for a parent task"""
         task_id_str = str(parent_task_id)
-        return len([s for s in self._subtasks.values() if str(s.task_id) == task_id_str])
-    
+        return len(
+            [s for s in self._subtasks.values() if str(s.task_id) == task_id_str]
+        )
+
     def count_completed_by_parent_task_id(self, parent_task_id) -> int:
         """Count completed subtasks for a parent task"""
         task_id_str = str(parent_task_id)
-        return len([s for s in self._subtasks.values() 
-                   if str(s.task_id) == task_id_str and hasattr(s, 'status') and s.status == 'completed'])
-    
+        return len(
+            [
+                s
+                for s in self._subtasks.values()
+                if str(s.task_id) == task_id_str
+                and hasattr(s, "status")
+                and s.status == "completed"
+            ]
+        )
+
     def get_next_id(self, parent_task_id):
         """Get next available subtask ID for a parent task"""
         from ...domain.value_objects.task_id import TaskId
+
         next_id = len(self._subtasks) + 1
         return TaskId(f"subtask-{next_id}")
-    
+
     def get_subtask_progress(self, parent_task_id) -> dict[str, Any]:
         """Get subtask progress statistics for a parent task"""
         subtasks = self.find_by_parent_task_id(parent_task_id)
-        completed = len([s for s in subtasks if hasattr(s, 'status') and s.status == 'completed'])
+        completed = len(
+            [s for s in subtasks if hasattr(s, "status") and s.status == "completed"]
+        )
         total = len(subtasks)
         return {
             "total": total,
             "completed": completed,
             "pending": total - completed,
-            "progress_percentage": (completed / total * 100) if total > 0 else 0
+            "progress_percentage": (completed / total * 100) if total > 0 else 0,
         }
-    
+
     def bulk_update_status(self, parent_task_id, status: str) -> bool:
         """Update status of all subtasks for a parent task"""
         task_id_str = str(parent_task_id)
         updated = False
         for subtask in self._subtasks.values():
             if str(subtask.task_id) == task_id_str:
-                if hasattr(subtask, 'status'):
+                if hasattr(subtask, "status"):
                     subtask.status = status
                     updated = True
         return updated
-    
+
     def bulk_complete(self, parent_task_id) -> bool:
         """Mark all subtasks as completed for a parent task"""
-        return self.bulk_update_status(parent_task_id, 'completed')
-    
+        return self.bulk_update_status(parent_task_id, "completed")
+
     def remove_subtask(self, parent_task_id: str, subtask_id: str) -> bool:
         """Remove a subtask from a parent task by subtask ID"""
         if subtask_id in self._subtasks:
@@ -400,11 +474,13 @@ class MockSubtaskRepository(SubtaskRepository):
                 del self._subtasks[subtask_id]
                 return True
         return False
-    
+
     def delete_by_parent_task_id(self, parent_task_id) -> bool:
         """Delete all subtasks for a parent task"""
         task_id_str = str(parent_task_id)
-        to_delete = [s_id for s_id, s in self._subtasks.items() if str(s.task_id) == task_id_str]
+        to_delete = [
+            s_id for s_id, s in self._subtasks.items() if str(s.task_id) == task_id_str
+        ]
         for subtask_id in to_delete:
             del self._subtasks[subtask_id]
         return len(to_delete) > 0
@@ -412,6 +488,7 @@ class MockSubtaskRepository(SubtaskRepository):
 
 class MockAgentRepository:
     """Mock agent repository for testing and development"""
+
     def __init__(self):
         self._agents = {}
         logger.info("MockAgentRepository initialized")
@@ -419,25 +496,30 @@ class MockAgentRepository:
 
 class MockRepositoryFactory:
     """Factory for creating mock repositories"""
+
     def __init__(self):
         self._project_repo = MockProjectRepository()
         self._git_branch_repo = MockGitBranchRepository()
         self._task_repo = MockTaskRepository()
         self._subtask_repo = MockSubtaskRepository()
         self._agent_repo = MockAgentRepository()
-    
+
     def get_project_repository(self) -> MockProjectRepository:
         return self._project_repo
-    
+
     def get_git_branch_repository(self) -> MockGitBranchRepository:
         return self._git_branch_repo
-    
-    def get_task_repository(self, project_id: str = None, git_branch_id: str = None, user_id: str = None) -> MockTaskRepository:
+
+    def get_task_repository(
+        self, project_id: str = None, git_branch_id: str = None, user_id: str = None
+    ) -> MockTaskRepository:
         return self._task_repo
-    
-    def get_subtask_repository(self, project_id: str = None, git_branch_id: str = None, user_id: str = None) -> MockSubtaskRepository:
+
+    def get_subtask_repository(
+        self, project_id: str = None, git_branch_id: str = None, user_id: str = None
+    ) -> MockSubtaskRepository:
         return self._subtask_repo
-    
+
     def get_agent_repository(self) -> MockAgentRepository:
         return self._agent_repo
 
@@ -445,21 +527,21 @@ class MockRepositoryFactory:
 def create_mock_repositories():
     """Create a set of mock repositories for testing"""
     return {
-        'project': MockProjectRepository(),
-        'git_branch': MockGitBranchRepository(),
-        'task': lambda p, b, u: MockTaskRepository(),
-        'subtask': lambda p, b, u: MockSubtaskRepository(),
-        'agent': MockAgentRepository()
+        "project": MockProjectRepository(),
+        "git_branch": MockGitBranchRepository(),
+        "task": lambda p, b, u: MockTaskRepository(),
+        "subtask": lambda p, b, u: MockSubtaskRepository(),
+        "agent": MockAgentRepository(),
     }
 
 
 # Export all mock classes
 __all__ = [
-    'MockProjectRepository',
-    'MockGitBranchRepository',
-    'MockTaskRepository',
-    'MockSubtaskRepository',
-    'MockAgentRepository',
-    'MockRepositoryFactory',
-    'create_mock_repositories'
+    "MockProjectRepository",
+    "MockGitBranchRepository",
+    "MockTaskRepository",
+    "MockSubtaskRepository",
+    "MockAgentRepository",
+    "MockRepositoryFactory",
+    "create_mock_repositories",
 ]

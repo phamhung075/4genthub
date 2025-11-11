@@ -40,6 +40,7 @@ class TaskDTO(BaseModel):
             "assignees_count": 2
         }
     """
+
     id: str
     title: str
     description: str | None = None
@@ -102,6 +103,7 @@ class SubtaskDTO(BaseModel):
             "progress_percentage": 100
         }
     """
+
     id: str
     task_id: str  # In frontend this is parent_task_id
     title: str
@@ -111,7 +113,9 @@ class SubtaskDTO(BaseModel):
     assignees: list[str] | None = None
     assignees_count: int
     progress_percentage: int | None = None
-    progress_history: dict[str, Any] | None = None  # Detailed progress tracking with timestamped entries
+    progress_history: dict[str, Any] | None = (
+        None  # Detailed progress tracking with timestamped entries
+    )
     progress_count: int | None = None  # Number of progress entries
     created_at: str | None = None
     updated_at: str | None = None
@@ -123,6 +127,7 @@ class SubtaskDTO(BaseModel):
 
 class ProjectDTO(BaseModel):
     """Project model matching frontend Project interface"""
+
     id: str
     name: str
     description: str | None = None
@@ -132,7 +137,9 @@ class ProjectDTO(BaseModel):
     status: str | None = None
     branch_count: int | None = None
     task_count: int | None = None
-    git_branchs: dict[str, BranchDTO] | None = None  # API returns Record<string, Branch>
+    git_branchs: dict[str, BranchDTO] | None = (
+        None  # API returns Record<string, Branch>
+    )
     branches: list[BranchDTO] | None = None  # Legacy array format
 
     model_config = ConfigDict(from_attributes=True)
@@ -140,6 +147,7 @@ class ProjectDTO(BaseModel):
 
 class BranchDTO(BaseModel):
     """Branch model matching frontend Branch interface"""
+
     id: str
     project_id: str
     name: str
@@ -157,6 +165,7 @@ class BranchDTO(BaseModel):
 
 class RuleDTO(BaseModel):
     """Rule model matching frontend Rule interface"""
+
     id: str
     name: str
     description: str | None = None
@@ -167,5 +176,3 @@ class RuleDTO(BaseModel):
     updated_at: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
-
-

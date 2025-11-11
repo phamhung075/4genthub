@@ -76,19 +76,21 @@ def configure_logging(
                 filename=log_file_path,
                 maxBytes=10 * 1024 * 1024,  # 10MB
                 backupCount=5,
-                encoding='utf-8'
+                encoding="utf-8",
             )
 
             # Use detailed formatter for file logs
             file_formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S'
+                "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
             )
             file_handler.setFormatter(file_formatter)
             logger.addHandler(file_handler)
 
             # Log successful file handler setup
-            logger.info(f"File logging enabled: {log_file_path} (environment: {environment})")
+            logger.info(
+                f"File logging enabled: {log_file_path} (environment: {environment})"
+            )
 
         except Exception as e:
             # If file logging fails, log error but continue with console logging
@@ -114,7 +116,7 @@ def setup_comprehensive_logging(
     configure_logging(
         level=log_level,
         enable_file_logging=enable_file_logging,
-        log_file_name=f"{app_name.lower()}.log"
+        log_file_name=f"{app_name.lower()}.log",
     )
 
     # Configure root logger for any other loggers
@@ -125,7 +127,7 @@ def setup_comprehensive_logging(
         # Add console handler to root logger
         console_handler = logging.StreamHandler()
         console_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         console_handler.setFormatter(console_formatter)
         root_logger.addHandler(console_handler)
@@ -140,18 +142,20 @@ def setup_comprehensive_logging(
                     filename=log_file_path,
                     maxBytes=10 * 1024 * 1024,  # 10MB
                     backupCount=3,
-                    encoding='utf-8'
+                    encoding="utf-8",
                 )
                 file_formatter = logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S'
+                    "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
                 )
                 file_handler.setFormatter(file_formatter)
                 root_logger.addHandler(file_handler)
 
             except Exception as e:
                 # Log to console if file logging setup fails
-                console_handler.stream.write(f"WARNING: Failed to set up root file logging: {e}\n")
+                console_handler.stream.write(
+                    f"WARNING: Failed to set up root file logging: {e}\n"
+                )
 
 
 def get_logging_info() -> dict:
@@ -176,11 +180,13 @@ def get_logging_info() -> dict:
                     {
                         "type": type(handler).__name__,
                         "level": logging.getLevelName(handler.level),
-                        "formatter": str(handler.formatter._fmt) if hasattr(handler.formatter, '_fmt') else None
+                        "formatter": str(handler.formatter._fmt)
+                        if hasattr(handler.formatter, "_fmt")
+                        else None,
                     }
                     for handler in fastmcp_logger.handlers
                 ],
-                "propagate": fastmcp_logger.propagate
+                "propagate": fastmcp_logger.propagate,
             },
             "root": {
                 "level": logging.getLevelName(root_logger.level),
@@ -188,10 +194,12 @@ def get_logging_info() -> dict:
                     {
                         "type": type(handler).__name__,
                         "level": logging.getLevelName(handler.level),
-                        "formatter": str(handler.formatter._fmt) if hasattr(handler.formatter, '_fmt') else None
+                        "formatter": str(handler.formatter._fmt)
+                        if hasattr(handler.formatter, "_fmt")
+                        else None,
                     }
                     for handler in root_logger.handlers
-                ]
-            }
-        }
+                ],
+            },
+        },
     }

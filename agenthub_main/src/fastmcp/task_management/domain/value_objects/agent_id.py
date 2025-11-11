@@ -15,4 +15,5 @@ class AgentId(EntityId):
 
     Inherits all functionality from EntityId base class.
     """
+
     pass

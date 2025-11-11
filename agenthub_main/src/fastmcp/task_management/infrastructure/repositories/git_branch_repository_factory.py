@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class GitBranchRepositoryType(Enum):
     """Available git branch repository types"""
+
     JSON = "json"
     ORM = "orm"
     MEMORY = "memory"
@@ -25,60 +26,65 @@ class GitBranchRepositoryType(Enum):
 
 class GitBranchRepositoryFactory:
     """Factory for creating git branch repositories"""
-    
+
     _repository_types: dict[GitBranchRepositoryType, type[GitBranchRepository]] = {}
     _instances: dict[str, GitBranchRepository] = {}
-    
+
     @classmethod
     def create(
         cls,
         repository_type: GitBranchRepositoryType | None = None,
         user_id: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> GitBranchRepository:
         """
         Create a git branch repository instance.
-        
+
         Args:
             repository_type: Type of repository to create
             user_id: User identifier for repository isolation
             **kwargs: Additional configuration parameters
-            
+
         Returns:
             GitBranchRepository instance
         """
         if repository_type is None:
             repository_type = cls._get_default_type()
-        
+
         # Create cache key
         cache_key = f"{repository_type.value}_{user_id}"
-        
+
         # Return cached instance if available
         if cache_key in cls._instances:
             return cls._instances[cache_key]
-        
+
         # Create repository instance based on type
         try:
             # Use central RepositoryFactory for consistent environment-based selection
             from .repository_factory import RepositoryFactory
+
             repository = RepositoryFactory.get_git_branch_repository(user_id=user_id)
-            
+
             # Cache the instance
             cls._instances[cache_key] = repository
-            logger.info(f"Created git branch repository: {repository_type.value} for user: {user_id}")
-            
+            logger.info(
+                f"Created git branch repository: {repository_type.value} for user: {user_id}"
+            )
+
             return repository
-            
+
         except Exception as e:
-            logger.error(f"Failed to create git branch repository {repository_type.value}: {e}")
+            logger.error(
+                f"Failed to create git branch repository {repository_type.value}: {e}"
+            )
             raise
-    
+
     @classmethod
     def _get_default_type(cls) -> GitBranchRepositoryType:
         """Get default repository type from environment or fallback"""
         # Check environment variables properly
-        env = os.getenv('ENVIRONMENT', 'production')
-        db_type = os.getenv('DATABASE_TYPE')
+        env = os.getenv("ENVIRONMENT", "production")
+        db_type = os.getenv("DATABASE_TYPE")
 
         if not db_type:
             raise ValueError(
@@ -86,30 +92,30 @@ class GitBranchRepositoryFactory:
                 "Please set DATABASE_TYPE to 'postgresql', 'sqlite', or 'supabase'"
             )
 
-        if env == 'test':
+        if env == "test":
             return GitBranchRepositoryType.MEMORY
-        elif db_type in ['sqlite', 'supabase', 'postgresql']:
+        elif db_type in ["sqlite", "supabase", "postgresql"]:
             return GitBranchRepositoryType.ORM
         else:
             logger.warning(f"Unknown DATABASE_TYPE: {db_type}, defaulting to ORM")
             return GitBranchRepositoryType.ORM
-    
+
     @classmethod
     def register_type(
         cls,
         repository_type: GitBranchRepositoryType,
-        repository_class: type[GitBranchRepository]
+        repository_class: type[GitBranchRepository],
     ) -> None:
         """Register a new repository type"""
         cls._repository_types[repository_type] = repository_class
         logger.info(f"Registered git branch repository type: {repository_type.value}")
-    
+
     @classmethod
     def clear_cache(cls) -> None:
         """Clear all cached instances"""
         cls._instances.clear()
         logger.info("Git branch repository cache cleared")
-    
+
     @classmethod
     def get_info(cls) -> dict[str, Any]:
         """Get factory information"""
@@ -118,22 +124,27 @@ class GitBranchRepositoryFactory:
             "cached_instances": len(cls._instances),
             "default_type": cls._get_default_type().value,
             "environment": {
-                "MCP_GIT_BRANCH_REPOSITORY_TYPE": os.getenv("MCP_GIT_BRANCH_REPOSITORY_TYPE"),
-            }
+                "MCP_GIT_BRANCH_REPOSITORY_TYPE": os.getenv(
+                    "MCP_GIT_BRANCH_REPOSITORY_TYPE"
+                ),
+            },
         }
 
 
 # Register default repository types
 try:
     from .orm.git_branch_repository import ORMGitBranchRepository
-    GitBranchRepositoryFactory.register_type(GitBranchRepositoryType.ORM, ORMGitBranchRepository)
+
+    GitBranchRepositoryFactory.register_type(
+        GitBranchRepositoryType.ORM, ORMGitBranchRepository
+    )
 except ImportError:
     logger.warning("ORMGitBranchRepository not available")
 
 # Register mock/memory repository
-GitBranchRepositoryFactory.register_type(GitBranchRepositoryType.MEMORY, MockGitBranchRepository)
-
-
+GitBranchRepositoryFactory.register_type(
+    GitBranchRepositoryType.MEMORY, MockGitBranchRepository
+)
 
 
 # Convenience functions
@@ -145,16 +156,12 @@ def get_default_repository(user_id: str | None = None) -> GitBranchRepository:
 def get_sqlite_repository(user_id: str | None = None, **kwargs) -> GitBranchRepository:
     """Get ORM git branch repository (legacy compatibility method)"""
     return GitBranchRepositoryFactory.create(
-        repository_type=GitBranchRepositoryType.ORM,
-        user_id=user_id,
-        **kwargs
+        repository_type=GitBranchRepositoryType.ORM, user_id=user_id, **kwargs
     )
 
 
 def get_orm_repository(user_id: str | None = None, **kwargs) -> GitBranchRepository:
     """Get ORM git branch repository"""
     return GitBranchRepositoryFactory.create(
-        repository_type=GitBranchRepositoryType.ORM,
-        user_id=user_id,
-        **kwargs
+        repository_type=GitBranchRepositoryType.ORM, user_id=user_id, **kwargs
     )

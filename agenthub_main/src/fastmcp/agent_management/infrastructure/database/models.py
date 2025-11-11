@@ -35,9 +35,7 @@ class AgentTemplateORM(Base):
 
     # Primary key
     id: Mapped[str] = mapped_column(
-        UnifiedUUID,
-        primary_key=True,
-        doc="UUID identifier for the template"
+        UnifiedUUID, primary_key=True, doc="UUID identifier for the template"
     )
 
     # Core identification fields
@@ -46,84 +44,63 @@ class AgentTemplateORM(Base):
         nullable=False,
         unique=True,
         index=True,
-        doc="URL-friendly identifier (e.g., 'coding-agent', 'debugger-agent')"
+        doc="URL-friendly identifier (e.g., 'coding-agent', 'debugger-agent')",
     )
 
     name: Mapped[str] = mapped_column(
-        String(200),
-        nullable=False,
-        doc="Human-readable name (e.g., 'Coding Agent')"
+        String(200), nullable=False, doc="Human-readable name (e.g., 'Coding Agent')"
     )
 
     description: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        doc="Description of agent's purpose and capabilities"
+        Text, nullable=False, doc="Description of agent's purpose and capabilities"
     )
 
     category: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
         index=True,
-        doc="Category (e.g., 'development', 'testing', 'security')"
+        doc="Category (e.g., 'development', 'testing', 'security')",
     )
 
     version: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        index=True,
-        doc="Version string (e.g., '1.0.0')"
+        String(50), nullable=False, index=True, doc="Version string (e.g., '1.0.0')"
     )
 
     # Configuration (JSON fields)
     system_prompt: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        doc="Complete system prompt/instructions for the agent"
+        Text, nullable=False, doc="Complete system prompt/instructions for the agent"
     )
 
     tools: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        doc="JSON array of tool names the agent can use"
+        Text, nullable=False, doc="JSON array of tool names the agent can use"
     )
 
     capabilities: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        doc="JSON object describing agent capabilities"
+        Text, nullable=False, doc="JSON object describing agent capabilities"
     )
 
     rules: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-        doc="JSON array of rules and constraints"
+        Text, nullable=True, doc="JSON array of rules and constraints"
     )
 
     output_format: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-        doc="JSON object for output formatting preferences"
+        Text, nullable=True, doc="JSON object for output formatting preferences"
     )
 
     metadata_json: Mapped[str | None] = mapped_column(
         "metadata",  # Column name in DB
         Text,
         nullable=True,
-        doc="JSON object for additional metadata (includes source info)"
+        doc="JSON object for additional metadata (includes source info)",
     )
 
     # Timestamps (managed automatically)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        doc="Creation timestamp"
+        DateTime(timezone=True), nullable=False, doc="Creation timestamp"
     )
 
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        doc="Last update timestamp"
+        DateTime(timezone=True), nullable=False, doc="Last update timestamp"
     )
 
     # Indexes for common queries
@@ -149,9 +126,7 @@ class UserAgentInstanceORM(Base):
 
     # Primary key
     id: Mapped[str] = mapped_column(
-        UnifiedUUID,
-        primary_key=True,
-        doc="UUID identifier for the instance"
+        UnifiedUUID, primary_key=True, doc="UUID identifier for the instance"
     )
 
     # Ownership
@@ -159,7 +134,7 @@ class UserAgentInstanceORM(Base):
         UnifiedUUID,
         nullable=False,
         index=True,
-        doc="UUID of the user who owns this instance"
+        doc="UUID of the user who owns this instance",
     )
 
     # Template relationship
@@ -167,14 +142,12 @@ class UserAgentInstanceORM(Base):
         UnifiedUUID,
         nullable=False,
         index=True,
-        doc="UUID of the agent template this instance is based on"
+        doc="UUID of the agent template this instance is based on",
     )
 
     # Instance naming
     agent_name: Mapped[str] = mapped_column(
-        String(200),
-        nullable=False,
-        doc="User-visible name for this instance"
+        String(200), nullable=False, doc="User-visible name for this instance"
     )
 
     # Customization tracking
@@ -182,7 +155,7 @@ class UserAgentInstanceORM(Base):
         Boolean,
         nullable=False,
         default=False,
-        doc="Whether user has customized the configuration"
+        doc="Whether user has customized the configuration",
     )
 
     # Agent selection/activation
@@ -190,51 +163,39 @@ class UserAgentInstanceORM(Base):
         Boolean,
         nullable=False,
         default=True,
-        doc="Whether this agent instance is enabled for use in call_agent tools"
+        doc="Whether this agent instance is enabled for use in call_agent tools",
     )
 
     customization_notes: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-        doc="User notes about customizations made"
+        Text, nullable=True, doc="User notes about customizations made"
     )
 
     # Configuration (JSON fields)
     system_prompt: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        doc="System prompt (may be customized from template)"
+        Text, nullable=False, doc="System prompt (may be customized from template)"
     )
 
     tools: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        doc="JSON array of tool names"
+        Text, nullable=False, doc="JSON array of tool names"
     )
 
     capabilities: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        doc="JSON object of capabilities"
+        Text, nullable=False, doc="JSON object of capabilities"
     )
 
     rules: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-        doc="JSON array of rules"
+        Text, nullable=True, doc="JSON array of rules"
     )
 
     output_format: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-        doc="JSON object for output format"
+        Text, nullable=True, doc="JSON object for output format"
     )
 
     metadata_json: Mapped[str | None] = mapped_column(
         "metadata",  # Column name in DB
         Text,
         nullable=True,
-        doc="JSON object for metadata"
+        doc="JSON object for metadata",
     )
 
     # Sharing
@@ -243,7 +204,7 @@ class UserAgentInstanceORM(Base):
         nullable=False,
         default="private",
         index=True,
-        doc="Visibility: 'private' or 'public'"
+        doc="Visibility: 'private' or 'public'",
     )
 
     share_token: Mapped[str | None] = mapped_column(
@@ -251,61 +212,51 @@ class UserAgentInstanceORM(Base):
         nullable=True,
         unique=True,
         index=True,
-        doc="Unique token for sharing (64 characters)"
+        doc="Unique token for sharing (64 characters)",
     )
 
     share_created_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        doc="When the share token was generated"
+        DateTime(timezone=True), nullable=True, doc="When the share token was generated"
     )
 
     # Import tracking
     original_creator_id: Mapped[str | None] = mapped_column(
         UnifiedUUID,
         nullable=True,
-        doc="User ID of the original creator if this was imported"
+        doc="User ID of the original creator if this was imported",
     )
 
     imported_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        doc="When this instance was imported"
+        DateTime(timezone=True), nullable=True, doc="When this instance was imported"
     )
 
     # Timestamps (managed automatically)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        doc="Creation timestamp"
+        DateTime(timezone=True), nullable=False, doc="Creation timestamp"
     )
 
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        doc="Last update timestamp"
+        DateTime(timezone=True), nullable=False, doc="Last update timestamp"
     )
 
     last_used_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
-        doc="Last time this agent instance was used"
+        doc="Last time this agent instance was used",
     )
 
     usage_count: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         default=0,
-        doc="Number of times this agent has been used"
+        doc="Number of times this agent has been used",
     )
 
     # Constraints and indexes
     __table_args__ = (
         # UNIQUE constraint: one instance per template per user
         UniqueConstraint(
-            "user_id",
-            "template_id",
-            name="uq_user_agent_instances_user_template"
+            "user_id", "template_id", name="uq_user_agent_instances_user_template"
         ),
         # Composite index for user queries
         Index("ix_user_agent_instances_user_visibility", "user_id", "visibility"),
@@ -333,17 +284,12 @@ class AgentImportHistoryORM(Base):
 
     # Primary key
     id: Mapped[str] = mapped_column(
-        UnifiedUUID,
-        primary_key=True,
-        doc="UUID identifier for the import record"
+        UnifiedUUID, primary_key=True, doc="UUID identifier for the import record"
     )
 
     # User who imported the agent
     importer_user_id: Mapped[str] = mapped_column(
-        UnifiedUUID,
-        nullable=False,
-        index=True,
-        doc="User who performed the import"
+        UnifiedUUID, nullable=False, index=True, doc="User who performed the import"
     )
 
     # Source agent instance (the shared agent being imported)
@@ -351,14 +297,12 @@ class AgentImportHistoryORM(Base):
         UnifiedUUID,
         nullable=False,
         index=True,
-        doc="Original agent instance that was shared"
+        doc="Original agent instance that was shared",
     )
 
     # Imported agent instance (the copy created for importer)
     imported_instance_id: Mapped[str] = mapped_column(
-        UnifiedUUID,
-        nullable=False,
-        doc="New agent instance created for the importer"
+        UnifiedUUID, nullable=False, doc="New agent instance created for the importer"
     )
 
     # Timestamp of import
@@ -366,14 +310,12 @@ class AgentImportHistoryORM(Base):
         DateTime(timezone=True),
         nullable=False,
         index=True,
-        doc="When the agent was imported"
+        doc="When the agent was imported",
     )
 
     # Share token used for import
     share_token: Mapped[str | None] = mapped_column(
-        String(64),
-        nullable=True,
-        doc="Share token that was used for the import"
+        String(64), nullable=True, doc="Share token that was used for the import"
     )
 
     # Constraints and indexes
@@ -400,43 +342,31 @@ class UserAgentConfigurationMdORM(Base):
 
     # Primary key
     id: Mapped[str] = mapped_column(
-        UnifiedUUID,
-        primary_key=True,
-        doc="UUID identifier for the configuration"
+        UnifiedUUID, primary_key=True, doc="UUID identifier for the configuration"
     )
 
     # Agent instance this configuration belongs to
     instance_id: Mapped[str] = mapped_column(
-        UnifiedUUID,
-        nullable=False,
-        doc="Agent instance this configuration documents"
+        UnifiedUUID, nullable=False, doc="Agent instance this configuration documents"
     )
 
     # Configuration type (e.g., 'usage', 'customization', 'examples')
     configuration_type: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        doc="Type of configuration documentation"
+        String(50), nullable=False, doc="Type of configuration documentation"
     )
 
     # Markdown content
     content_markdown: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        doc="Markdown-formatted documentation content"
+        Text, nullable=False, doc="Markdown-formatted documentation content"
     )
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        doc="Creation timestamp"
+        DateTime(timezone=True), nullable=False, doc="Creation timestamp"
     )
 
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        doc="Last update timestamp"
+        DateTime(timezone=True), nullable=False, doc="Last update timestamp"
     )
 
     # Constraints and indexes
@@ -445,7 +375,7 @@ class UserAgentConfigurationMdORM(Base):
         UniqueConstraint(
             "instance_id",
             "configuration_type",
-            name="user_agent_configurations_md_instance_type_key"
+            name="user_agent_configurations_md_instance_type_key",
         ),
         # Composite index for lookups
         Index("idx_configurations_md_instance", "instance_id", "configuration_type"),

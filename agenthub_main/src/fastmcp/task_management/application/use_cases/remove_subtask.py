@@ -9,21 +9,35 @@ from ...domain.repositories.subtask_repository import SubtaskRepository
 
 
 class RemoveSubtaskUseCase:
-    def __init__(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository = None):
+    def __init__(
+        self,
+        task_repository: TaskRepository,
+        subtask_repository: SubtaskRepository = None,
+    ):
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
 
-    def execute(self, task_id: str | int, id: str | int, user_id: str = None) -> dict[str, Any]:
+    def execute(
+        self, task_id: str | int, id: str | int, user_id: str = None
+    ) -> dict[str, Any]:
         subtask = self._subtask_repository.find_by_id(id)
         if not subtask:
             raise ValueError(f"Subtask {id} not found in task {task_id}")
 
         # Get branch ID, status, and title before deletion for event and WebSocket payload
-        parent_task_obj = self._task_repository.find_by_id(self._convert_to_task_id(task_id))
-        branch_id = parent_task_obj.git_branch_id if parent_task_obj and hasattr(parent_task_obj, 'git_branch_id') else None
-        subtask_status = 'done' if subtask.is_completed else 'todo'
+        parent_task_obj = self._task_repository.find_by_id(
+            self._convert_to_task_id(task_id)
+        )
+        branch_id = (
+            parent_task_obj.git_branch_id
+            if parent_task_obj and hasattr(parent_task_obj, "git_branch_id")
+            else None
+        )
+        subtask_status = "done" if subtask.is_completed else "todo"
         is_subtask_completed = subtask.is_completed
-        subtask_title = subtask.title  # ✅ FIX: Capture title before deletion for WebSocket payload
+        subtask_title = (
+            subtask.title
+        )  # ✅ FIX: Capture title before deletion for WebSocket payload
 
         # Remove the subtask
         success = self._subtask_repository.remove_subtask(task_id, id)
@@ -40,7 +54,10 @@ class RemoveSubtaskUseCase:
 
             self._task_repository.save(parent_task_obj)
             import logging
-            logging.info(f"Removed subtask {id} from parent task {task_id}, subtask_count now {parent_task_obj.subtask_count}")
+
+            logging.info(
+                f"Removed subtask {id} from parent task {task_id}, subtask_count now {parent_task_obj.subtask_count}"
+            )
 
             self._update_parent_task_progress(str(task_id))
 
@@ -58,15 +75,16 @@ class RemoveSubtaskUseCase:
                         task_id=str(id),
                         branch_id=branch_id,
                         status=subtask_status,
-                        title=subtask.title
+                        title=subtask.title,
                     )
 
                     dispatch_domain_event("task_deleted", event)
                     logging.info(f"Dispatched task_deleted event for subtask {id}")
             except Exception as e:
                 import logging
+
                 logging.warning(f"Failed to dispatch subtask deletion event: {e}")
-        
+
         # Calculate progress after deletion
         progress = {}
         if success and self._subtask_repository:
@@ -78,9 +96,9 @@ class RemoveSubtaskUseCase:
                 progress = {
                     "total_subtasks": 0,
                     "completed_subtasks": 0,
-                    "completion_percentage": 0
+                    "completion_percentage": 0,
                 }
-        
+
         # Use dataclass for clean response structure
         from dataclasses import asdict, dataclass
 
@@ -92,8 +110,11 @@ class RemoveSubtaskUseCase:
 
         response = RemoveSubtaskResponse(
             success=success,
-            subtask={"id": str(id), "title": subtask_title},  # ✅ FIX: Include title for WebSocket notification
-            progress=progress
+            subtask={
+                "id": str(id),
+                "title": subtask_title,
+            },  # ✅ FIX: Include title for WebSocket notification
+            progress=progress,
         )
         return asdict(response)
 
@@ -107,8 +128,12 @@ class RemoveSubtaskUseCase:
         """Update parent task progress based on subtask completion."""
         try:
             from ..services.task_progress_service import TaskProgressService
-            progress_service = TaskProgressService(self._task_repository, self._subtask_repository)
+
+            progress_service = TaskProgressService(
+                self._task_repository, self._subtask_repository
+            )
             progress_service.update_task_progress_from_subtasks(task_id)
         except Exception as e:
             import logging
-            logging.warning(f"Failed to update parent task progress: {e}") 
+
+            logging.warning(f"Failed to update parent task progress: {e}")

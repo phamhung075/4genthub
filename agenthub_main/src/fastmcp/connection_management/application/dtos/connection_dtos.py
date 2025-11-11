@@ -9,12 +9,14 @@ from typing import Any
 @dataclass
 class HealthCheckRequest:
     """Request DTO for health check operation"""
+
     include_details: bool = True
 
 
 @dataclass
 class HealthCheckResponse:
     """Response DTO for health check operation"""
+
     success: bool
     status: str
     server_name: str
@@ -32,12 +34,14 @@ class HealthCheckResponse:
 @dataclass
 class ServerCapabilitiesRequest:
     """Request DTO for server capabilities operation"""
+
     include_details: bool = True
 
 
 @dataclass
 class ServerCapabilitiesResponse:
     """Response DTO for server capabilities operation"""
+
     success: bool
     core_features: list
     available_actions: dict[str, list]
@@ -51,6 +55,7 @@ class ServerCapabilitiesResponse:
 @dataclass
 class ConnectionHealthRequest:
     """Request DTO for connection health check operation"""
+
     connection_id: str | None = None
     include_details: bool = True
 
@@ -58,6 +63,7 @@ class ConnectionHealthRequest:
 @dataclass
 class ConnectionHealthResponse:
     """Response DTO for connection health check operation"""
+
     success: bool
     status: str
     connection_info: dict[str, Any]
@@ -69,12 +75,14 @@ class ConnectionHealthResponse:
 @dataclass
 class ServerStatusRequest:
     """Request DTO for server status operation"""
+
     include_details: bool = True
 
 
 @dataclass
 class ServerStatusResponse:
     """Response DTO for server status operation"""
+
     success: bool
     server_info: dict[str, Any]
     connection_stats: dict[str, Any]
@@ -86,6 +94,7 @@ class ServerStatusResponse:
 @dataclass
 class RegisterUpdatesRequest:
     """Request DTO for register status updates operation"""
+
     session_id: str
     client_info: dict[str, Any] | None = None
 
@@ -93,8 +102,9 @@ class RegisterUpdatesRequest:
 @dataclass
 class RegisterUpdatesResponse:
     """Response DTO for register status updates operation"""
+
     success: bool
     session_id: str
     registered: bool
     update_info: dict[str, Any]
-    error: str | None = None 
+    error: str | None = None

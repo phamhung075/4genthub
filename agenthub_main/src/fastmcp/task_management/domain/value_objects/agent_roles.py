@@ -16,107 +16,106 @@ import yaml
 
 class AgentRole(Enum):
     """Enumeration of all available agent roles - matches agenthub_main/agent-library/agents"""
-    
+
     # Development & Coding (4)
     ANALYTICS_SETUP = "analytics-setup-agent"
     CODING = "coding-agent"
     CODE_REVIEWER = "code-reviewer-agent"
     DEBUGGER = "debugger-agent"
-    
+
     # Architecture & Design (4)
     CORE_CONCEPT = "core-concept-agent"
     DESIGN_SYSTEM = "design-system-agent"
     SYSTEM_ARCHITECT = "system-architect-agent"
     UI_SPECIALIST = "shadcn-ui-expert-agent"
-    
+
     # Testing & QA (3)
     PERFORMANCE_LOAD_TESTER = "performance-load-tester-agent"
     TEST_ORCHESTRATOR = "test-orchestrator-agent"
     UAT_COORDINATOR = "uat-coordinator-agent"
-    
+
     # DevOps & Infrastructure (1)
     DEVOPS = "devops-agent"
-    
+
     # Documentation (1)
     DOCUMENTATION = "documentation-agent"
-    
+
     # Project & Planning (4)
     ELICITATION = "elicitation-agent"
     MASTER_ORCHESTRATOR = "master-orchestrator-agent"
     PROJECT_INITIATOR = "project-initiator-agent"
     TASK_PLANNING = "task-planning-agent"
-    
+
     # Security & Compliance (3)
     COMPLIANCE_SCOPE = "compliance-scope-agent"
     ETHICAL_REVIEW = "ethical-review-agent"
     SECURITY_AUDITOR = "security-auditor-agent"
-    
+
     # Analytics & Optimization (2)
     EFFICIENCY_OPTIMIZATION = "efficiency-optimization-agent"
     HEALTH_MONITOR = "health-monitor-agent"
-    
+
     # Marketing & Branding (3)
     BRANDING = "branding-agent"
     COMMUNITY_STRATEGY = "community-strategy-agent"
     MARKETING_STRATEGY_ORCHESTRATOR = "marketing-strategy-orchestrator-agent"
-    
+
     # Research & Analysis (4)
     DEEP_RESEARCH = "deep-research-agent"
     LLM_AI_AGENTS_RESEARCH = "llm-ai-agents-research"
     ROOT_CAUSE_ANALYSIS = "root-cause-analysis-agent"
     TECHNOLOGY_ADVISOR = "technology-advisor-agent"
-    
+
     # AI & Machine Learning (1)
     ML_SPECIALIST = "ml-specialist-agent"
-    
+
     # Creative & Ideation (1)
     CREATIVE_IDEATION = "creative-ideation-agent"
-    
+
     # Prototyping (1)
     PROTOTYPING = "prototyping-agent"
-
 
     @classmethod
     def get_all_roles(cls) -> list[str]:
         """Get list of all available role slugs"""
         return [role.value for role in cls]
-    
+
     @classmethod
-    def get_role_by_slug(cls, slug: str) -> Optional['AgentRole']:
+    def get_role_by_slug(cls, slug: str) -> Optional["AgentRole"]:
         """Get role enum by slug"""
         for role in cls:
             if role.value == slug:
                 return role
         return None
-    
+
     @classmethod
     def is_valid_role(cls, slug: str) -> bool:
         """Check if a slug is a valid role"""
         return slug in cls.get_all_roles()
-    
+
     @property
     def folder_name(self) -> str:
         """Get the folder name for this role"""
-        return self.value.replace('-', '_')
-    
+        return self.value.replace("-", "_")
+
     @property
     def display_name(self) -> str:
         """Get the display name for this role"""
         metadata = get_role_metadata_from_yaml(self)
         return metadata.get("name", "") if metadata else ""
-    
+
     @property
     def description(self) -> str:
         """Get the role definition"""
         metadata = get_role_metadata_from_yaml(self)
         return metadata.get("role_definition", "") if metadata else ""
-    
+
     @property
     def when_to_use(self) -> str:
         """Get usage guidelines"""
         metadata = get_role_metadata_from_yaml(self)
         return metadata.get("when_to_use", "") if metadata else ""
-    
+
     @property
     def groups(self) -> list[str]:
         """Get role groups"""
@@ -148,10 +147,10 @@ def get_role_folder_name(role_slug: str) -> str | None:
 
 def get_yaml_lib_path(role_input) -> str | None:
     """Get relative path to agent-library directory for a role
-    
+
     Args:
         role_input: Either a role slug (string) or AgentRole enum
-        
+
     Returns:
         Relative path to agent-library directory (e.g., "agent-library/coding-agent")
         or None if role is invalid
@@ -162,7 +161,7 @@ def get_yaml_lib_path(role_input) -> str | None:
         role = role_input
     else:
         return None
-    
+
     if role:
         return f"cursor_agent/agent-library/{role.folder_name}"
     return None
@@ -170,10 +169,10 @@ def get_yaml_lib_path(role_input) -> str | None:
 
 def get_role_metadata_from_yaml(role_input) -> dict[str, any] | None:
     """Get role metadata by reading from YAML files
-    
+
     Args:
         role_input: Either a role slug (string) or AgentRole enum
-        
+
     Returns:
         Dictionary containing role metadata or None if role is invalid or file not found
     """
@@ -183,30 +182,32 @@ def get_role_metadata_from_yaml(role_input) -> dict[str, any] | None:
         role = role_input
     else:
         return None
-    
+
     if not role:
         return None
-    
+
     # Calculate folder name from role slug
-    folder_name = role.value.replace('-', '_')
-    
+    folder_name = role.value.replace("-", "_")
+
     # Build path to job_desc.yaml file
-    yaml_path = os.path.join("cursor_agent", "agent-library", folder_name, "job_desc.yaml")
-    
+    yaml_path = os.path.join(
+        "cursor_agent", "agent-library", folder_name, "job_desc.yaml"
+    )
+
     try:
-        with open(yaml_path, encoding='utf-8') as file:
+        with open(yaml_path, encoding="utf-8") as file:
             yaml_data = yaml.safe_load(file)
-            
+
         if yaml_data:
             # Add folder_name and slug to the metadata
-            yaml_data['folder_name'] = folder_name
-            yaml_data['slug'] = role.value
+            yaml_data["folder_name"] = folder_name
+            yaml_data["slug"] = role.value
             return yaml_data
-            
+
     except (OSError, FileNotFoundError, yaml.YAMLError):
         # Return None if file doesn't exist or can't be parsed
         pass
-    
+
     return None
 
 
@@ -223,7 +224,7 @@ LEGACY_ROLE_MAPPINGS = {
     "context_engineer": "core-concept-agent",
     "cache_engineer": "efficiency-optimization-agent",
     "metrics_engineer": "analytics-setup-agent",
-    "cli_engineer": "coding-agent"
+    "cli_engineer": "coding-agent",
 }
 
 
@@ -231,31 +232,31 @@ def resolve_legacy_role(legacy_role: str) -> str | None:
     """Resolve legacy role names to current slugs"""
     if not legacy_role:
         return None
-    
+
     # Clean up the role name (remove @ prefix, strip whitespace)
-    clean_role = legacy_role.strip().lstrip('@')
-    
+    clean_role = legacy_role.strip().lstrip("@")
+
     # First check if it's already a valid role
     if AgentRole.is_valid_role(clean_role):
         return clean_role
-    
+
     # Check legacy mappings
     resolved = LEGACY_ROLE_MAPPINGS.get(clean_role)
     if resolved:
         # Validate that the resolved role is actually valid
         if AgentRole.is_valid_role(resolved):
             return resolved
-    
+
     # Try converting hyphens to underscores for common variants
-    underscore_variant = clean_role.replace('-', '_')
+    underscore_variant = clean_role.replace("-", "_")
     if AgentRole.is_valid_role(underscore_variant):
         return underscore_variant
-    
+
     # Try converting underscores to hyphens (less common but possible)
-    hyphen_variant = clean_role.replace('_', '-')
+    hyphen_variant = clean_role.replace("_", "-")
     if AgentRole.is_valid_role(hyphen_variant):
         return hyphen_variant
-    
+
     # Return None if no valid resolution found
     return None
 
@@ -265,5 +266,3 @@ def get_all_role_slugs_with_legacy() -> list[str]:
     current_roles = AgentRole.get_all_roles()
     legacy_roles = list(LEGACY_ROLE_MAPPINGS.keys())
     return current_roles + legacy_roles
-
-

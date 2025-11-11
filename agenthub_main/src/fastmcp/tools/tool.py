@@ -146,13 +146,14 @@ class FunctionTool(Tool):
         """Run the tool with arguments."""
         from fastmcp.server.context import Context
         from fastmcp.server.dependencies import get_context
-        
+
         # Import user context middleware for authentication context propagation
         try:
             from fastmcp.auth.middleware.request_context_middleware import (
                 current_user_context,
                 get_current_user_id,
             )
+
             # Ensure user context propagates to tool execution
             user_id = get_current_user_id()
             if user_id:
@@ -186,7 +187,7 @@ class FunctionTool(Tool):
                 # handle simple type conversions (int, float, bool) and Optional types
                 annotation = signature.parameters[param_name].annotation
                 target_type = self._extract_target_type(annotation)
-                
+
                 if target_type in (int, float, bool):
                     # Try to convert string to the appropriate simple type
                     try:
@@ -196,7 +197,12 @@ class FunctionTool(Tool):
                             arguments[param_name] = float(arg)
                         elif target_type is bool:
                             # Handle common boolean string representations
-                            arguments[param_name] = arg.lower() in ('true', '1', 'yes', 'on')
+                            arguments[param_name] = arg.lower() in (
+                                "true",
+                                "1",
+                                "yes",
+                                "on",
+                            )
                     except ValueError:
                         # If conversion fails, leave as string and let Pydantic handle validation
                         pass
@@ -213,35 +219,38 @@ class FunctionTool(Tool):
             result = await result
 
         return _convert_to_content(result, serializer=self.serializer)
-    
+
     def _extract_target_type(self, annotation: Any) -> type:
         """
         Extract the target type from an annotation, handling Optional types.
-        
+
         Args:
             annotation: Type annotation (e.g., int, int | None, Annotated[int | None, ...])
-            
+
         Returns:
             The inner type for type conversion (e.g., int from int | None)
         """
         import typing
-        
+
         # Handle Annotated types first (e.g., Annotated[int | None, Field(...)])
-        if hasattr(annotation, '__origin__') and getattr(annotation, '__origin__', None) is typing.Annotated:
+        if (
+            hasattr(annotation, "__origin__")
+            and getattr(annotation, "__origin__", None) is typing.Annotated
+        ):
             # Extract the first argument which is the actual type
-            args = getattr(annotation, '__args__', ())
+            args = getattr(annotation, "__args__", ())
             if args:
                 annotation = args[0]
-        
+
         # Handle Optional types (Union[T, None])
-        origin = getattr(annotation, '__origin__', None)
-        args = getattr(annotation, '__args__', ())
-        
+        origin = getattr(annotation, "__origin__", None)
+        args = getattr(annotation, "__args__", ())
+
         if origin is typing.Union and len(args) == 2 and type(None) in args:
             # This is T | None which is Union[T, None]
             inner_type = args[0] if args[1] is type(None) else args[1]
             return inner_type
-        
+
         # Return the annotation as-is for simple types
         return annotation
 

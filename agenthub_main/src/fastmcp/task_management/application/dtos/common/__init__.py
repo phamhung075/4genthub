@@ -1,6 +1,7 @@
 """
 Common DTOs for Task Management
 """
+
 from .agent_role import AgentRole
 from .task_context import TaskContext
 from .task_progress_info import TaskProgressInfo

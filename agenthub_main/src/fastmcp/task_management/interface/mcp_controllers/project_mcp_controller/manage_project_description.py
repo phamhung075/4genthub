@@ -61,9 +61,7 @@ MANAGE_PROJECT_PARAMS = {
             "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["force"],
         },
     },
-    "required": [
-        "action"
-    ],
+    "required": ["action"],
     "additionalProperties": False,
     "_validation_note": "Only action required at schema level - business logic validates per action",
 }

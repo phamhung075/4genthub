@@ -33,7 +33,7 @@ class AgentSharingService:
     def __init__(
         self,
         instance_repository: UserAgentInstanceRepository,
-        template_repository: AgentTemplateRepository
+        template_repository: AgentTemplateRepository,
     ):
         """Initialize the service with repository dependencies.
 
@@ -45,9 +45,7 @@ class AgentSharingService:
         self.template_repository = template_repository
 
     def generate_share_token(
-        self,
-        instance_id: UserAgentInstanceId,
-        user_id: UserId
+        self, instance_id: UserAgentInstanceId, user_id: UserId
     ) -> str | None:
         """Generate a share token and make the instance public.
 
@@ -78,16 +76,13 @@ class AgentSharingService:
         self.instance_repository.save(instance)
 
         logger.info(
-            f"Generated share token for instance {instance_id} "
-            f"(user: {user_id})"
+            f"Generated share token for instance {instance_id} (user: {user_id})"
         )
 
         return share_token
 
     def revoke_share_token(
-        self,
-        instance_id: UserAgentInstanceId,
-        user_id: UserId
+        self, instance_id: UserAgentInstanceId, user_id: UserId
     ) -> bool:
         """Revoke the share token and make the instance private.
 
@@ -114,10 +109,7 @@ class AgentSharingService:
         # Save updated instance
         self.instance_repository.save(instance)
 
-        logger.info(
-            f"Revoked share token for instance {instance_id} "
-            f"(user: {user_id})"
-        )
+        logger.info(f"Revoked share token for instance {instance_id} (user: {user_id})")
 
         return True
 
@@ -125,7 +117,7 @@ class AgentSharingService:
         self,
         share_token: str,
         importer_user_id: UserId,
-        creator_email: str | None = None
+        creator_email: str | None = None,
     ) -> UserAgentInstance | None:
         """Import a shared agent into the importer's account.
 
@@ -162,15 +154,13 @@ class AgentSharingService:
 
         if not source_instance.is_public():
             logger.warning(
-                f"Instance {source_instance.id} is not public, "
-                f"cannot import with token"
+                f"Instance {source_instance.id} is not public, cannot import with token"
             )
             return None
 
         # Check if user already has instance for this template
         existing_instance = self.instance_repository.find_by_user_and_template(
-            user_id=importer_user_id,
-            template_id=source_instance.template_id
+            user_id=importer_user_id, template_id=source_instance.template_id
         )
 
         if existing_instance:
@@ -184,12 +174,13 @@ class AgentSharingService:
         final_agent_name = self._resolve_name_collision(
             base_name=source_instance.agent_name,
             importer_user_id=importer_user_id,
-            creator_email=creator_email
+            creator_email=creator_email,
         )
 
         # Generate new unique share token for imported instance
         # This allows imported agents to stay public and be independently shareable
         import secrets
+
         new_share_token = secrets.token_urlsafe(48)[:64]
 
         # Create new instance (public reference) for the importer
@@ -201,19 +192,19 @@ class AgentSharingService:
             agent_name=final_agent_name,
             is_customized=source_instance.is_customized,
             configuration=source_instance.configuration,  # Copy configuration
-            visibility='public',  # Public with own share token
+            visibility="public",  # Public with own share token
             share_token=new_share_token,  # New unique share token
             original_creator_id=source_instance.user_id,  # Track original creator
             usage_count=0,  # Reset usage
             last_used_at=None,  # Reset usage timestamp
             metadata={
-                'imported_from': str(source_instance.id),
-                'imported_via_token': share_token,
-                'original_agent_name': source_instance.agent_name,
-                'is_imported': True,  # Flag as imported (read-only for non-owner)
-                'source_instance_id': str(source_instance.id),  # Link to original
-                'source_share_token': share_token  # Track original share token
-            }
+                "imported_from": str(source_instance.id),
+                "imported_via_token": share_token,
+                "original_agent_name": source_instance.agent_name,
+                "is_imported": True,  # Flag as imported (read-only for non-owner)
+                "source_instance_id": str(source_instance.id),  # Link to original
+                "source_share_token": share_token,  # Track original share token
+            },
         )
 
         # Save the new instance
@@ -227,10 +218,7 @@ class AgentSharingService:
         return saved_instance
 
     def _resolve_name_collision(
-        self,
-        base_name: str,
-        importer_user_id: UserId,
-        creator_email: str | None = None
+        self, base_name: str, importer_user_id: UserId, creator_email: str | None = None
     ) -> str:
         """Resolve name collision by appending creator attribution.
 
@@ -248,8 +236,7 @@ class AgentSharingService:
         """
         # Check if base name exists
         count = self.instance_repository.count_by_agent_name_for_user(
-            user_id=importer_user_id,
-            agent_name=base_name
+            user_id=importer_user_id, agent_name=base_name
         )
 
         # If no collision, use base name as-is
@@ -262,8 +249,7 @@ class AgentSharingService:
 
         # Check if attributed name exists
         count = self.instance_repository.count_by_agent_name_for_user(
-            user_id=importer_user_id,
-            agent_name=candidate_name
+            user_id=importer_user_id, agent_name=candidate_name
         )
 
         # If still collision, append number
@@ -272,8 +258,7 @@ class AgentSharingService:
             while True:
                 numbered_name = f"{candidate_name} ({counter})"
                 count = self.instance_repository.count_by_agent_name_for_user(
-                    user_id=importer_user_id,
-                    agent_name=numbered_name
+                    user_id=importer_user_id, agent_name=numbered_name
                 )
                 if count == 0:
                     return numbered_name
@@ -282,10 +267,7 @@ class AgentSharingService:
         return candidate_name
 
     def get_public_instances(
-        self,
-        limit: int = 50,
-        offset: int = 0,
-        order_by: InstanceOrdering = None
+        self, limit: int = 50, offset: int = 0, order_by: InstanceOrdering = None
     ) -> list[UserAgentInstance]:
         """Get list of publicly shared instances for marketplace.
 
@@ -315,9 +297,7 @@ class AgentSharingService:
 
         # Retrieve instances using domain-defined criteria
         instances = self.instance_repository.find_public_instances(
-            limit=limit,
-            offset=offset,
-            order_by=order_by
+            limit=limit, offset=offset, order_by=order_by
         )
 
         # Business validation: double-check all returned instances are shareable
@@ -325,9 +305,7 @@ class AgentSharingService:
         return [inst for inst in instances if inst.is_public()]
 
     def _get_and_verify_ownership(
-        self,
-        instance_id: UserAgentInstanceId,
-        user_id: UserId
+        self, instance_id: UserAgentInstanceId, user_id: UserId
     ) -> UserAgentInstance | None:
         """Get instance and verify the user owns it.
 

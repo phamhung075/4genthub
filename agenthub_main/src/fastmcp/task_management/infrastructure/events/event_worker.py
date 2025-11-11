@@ -40,6 +40,7 @@ RETRY_BACKOFF_SCHEDULE = [0, 1, 5, 15, 30]  # 5 attempts total
 @dataclass
 class EventQueueItem:
     """Item in the event processing queue with retry tracking."""
+
     event: BaseDomainEvent
     attempt_number: int = 0
     first_attempt_at: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -50,6 +51,7 @@ class EventQueueItem:
 @dataclass
 class DeadLetterEvent:
     """Failed event for Dead Letter Queue storage."""
+
     event_id: str
     event_type: str
     payload: dict[str, Any]
@@ -82,7 +84,7 @@ class EventWorker:
         self,
         event_handlers: dict[type, list[Callable]],
         max_queue_size: int = 10000,
-        heartbeat_interval: int = 10
+        heartbeat_interval: int = 10,
     ):
         """
         Initialize the EventWorker.
@@ -100,10 +102,10 @@ class EventWorker:
         self._last_heartbeat: datetime | None = None
         self._dead_letter_queue: list[DeadLetterEvent] = []
         self._stats = {
-            'events_processed': 0,
-            'events_failed': 0,
-            'events_retried': 0,
-            'queue_overflow_count': 0
+            "events_processed": 0,
+            "events_failed": 0,
+            "events_retried": 0,
+            "queue_overflow_count": 0,
         }
         self._stats_lock = threading.Lock()
 
@@ -116,12 +118,12 @@ class EventWorker:
         self._running = True
         # daemon=False ensures graceful shutdown (processes queue before exit)
         self._worker_thread = threading.Thread(
-            target=self._process_events,
-            name="EventWorker",
-            daemon=False
+            target=self._process_events, name="EventWorker", daemon=False
         )
         self._worker_thread.start()
-        logger.info(f"EventWorker started (queue_size={self._queue.maxsize}, daemon=False)")
+        logger.info(
+            f"EventWorker started (queue_size={self._queue.maxsize}, daemon=False)"
+        )
 
     def stop(self, timeout: int = 30) -> None:
         """
@@ -163,11 +165,13 @@ class EventWorker:
         try:
             queue_item = EventQueueItem(event=event)
             self._queue.put(queue_item, block=False)
-            logger.debug(f"Enqueued event: {event.event_type} (queue_size={self._queue.qsize()})")
+            logger.debug(
+                f"Enqueued event: {event.event_type} (queue_size={self._queue.qsize()})"
+            )
             return True
         except queue.Full:
             with self._stats_lock:
-                self._stats['queue_overflow_count'] += 1
+                self._stats["queue_overflow_count"] += 1
             logger.error(
                 f"Event queue full! Dropping event {event.event_type}. "
                 f"Consider increasing queue size or scaling workers."
@@ -197,7 +201,9 @@ class EventWorker:
                 self._process_single_event(queue_item)
 
             except Exception as e:
-                logger.error(f"Unexpected error in EventWorker loop: {e}", exc_info=True)
+                logger.error(
+                    f"Unexpected error in EventWorker loop: {e}", exc_info=True
+                )
 
         # Drain remaining events before shutdown
         self._drain_queue()
@@ -217,9 +223,11 @@ class EventWorker:
         handlers = self._event_handlers.get(event_type, [])
 
         if not handlers:
-            logger.debug(f"No handlers registered for event type: {event_type.__name__}")
+            logger.debug(
+                f"No handlers registered for event type: {event_type.__name__}"
+            )
             with self._stats_lock:
-                self._stats['events_processed'] += 1
+                self._stats["events_processed"] += 1
             return
 
         # Execute all handlers for this event
@@ -232,10 +240,12 @@ class EventWorker:
                 handler(event)
 
                 # Success!
-                handler_name = getattr(handler, '__name__', str(handler))
-                logger.debug(f"Handler {handler_name} processed event {event.event_type}")
+                handler_name = getattr(handler, "__name__", str(handler))
+                logger.debug(
+                    f"Handler {handler_name} processed event {event.event_type}"
+                )
                 with self._stats_lock:
-                    self._stats['events_processed'] += 1
+                    self._stats["events_processed"] += 1
 
             except Exception as e:
                 # Handler failed - apply retry logic
@@ -268,10 +278,7 @@ class EventWorker:
         return self._running
 
     def _handle_event_failure(
-        self,
-        queue_item: EventQueueItem,
-        handler: Callable,
-        error: Exception
+        self, queue_item: EventQueueItem, handler: Callable, error: Exception
     ) -> None:
         """
         Handle event processing failure with retry logic.
@@ -293,7 +300,7 @@ class EventWorker:
         attempt = queue_item.attempt_number
         max_attempts = len(RETRY_BACKOFF_SCHEDULE)
 
-        handler_name = getattr(handler, '__name__', str(handler))
+        handler_name = getattr(handler, "__name__", str(handler))
         try:
             logger.warning(
                 f"Handler {handler_name} failed for event {queue_item.event.event_type} "
@@ -309,7 +316,7 @@ class EventWorker:
             backoff_delay = RETRY_BACKOFF_SCHEDULE[attempt]
 
             with self._stats_lock:
-                self._stats['events_retried'] += 1
+                self._stats["events_retried"] += 1
 
             try:
                 logger.info(
@@ -326,7 +333,9 @@ class EventWorker:
                 if not still_running:
                     # Worker is shutting down, don't re-enqueue
                     try:
-                        logger.info(f"Worker shutdown during retry backoff, discarding event {queue_item.event.event_type}")
+                        logger.info(
+                            f"Worker shutdown during retry backoff, discarding event {queue_item.event.event_type}"
+                        )
                     except (ValueError, OSError):
                         # File handle closed during test teardown - ignore gracefully
                         pass
@@ -351,7 +360,7 @@ class EventWorker:
             queue_item: Failed event to move to DLQ
         """
         with self._stats_lock:
-            self._stats['events_failed'] += 1
+            self._stats["events_failed"] += 1
 
         dead_letter_event = DeadLetterEvent(
             event_id=str(queue_item.event.event_id),
@@ -360,7 +369,7 @@ class EventWorker:
             error_message=queue_item.last_error or "Unknown error",
             attempt_count=queue_item.attempt_number + 1,
             first_attempt_at=queue_item.first_attempt_at,
-            final_failure_at=datetime.now(UTC)
+            final_failure_at=datetime.now(UTC),
         )
 
         self._dead_letter_queue.append(dead_letter_event)
@@ -406,13 +415,17 @@ class EventWorker:
         with self._stats_lock:
             stats = self._stats.copy()
 
-        stats.update({
-            'queue_size': self._queue.qsize(),
-            'queue_max_size': self._queue.maxsize,
-            'is_running': self._running,
-            'last_heartbeat': self._last_heartbeat.isoformat() if self._last_heartbeat else None,
-            'dead_letter_queue_size': len(self._dead_letter_queue)
-        })
+        stats.update(
+            {
+                "queue_size": self._queue.qsize(),
+                "queue_max_size": self._queue.maxsize,
+                "is_running": self._running,
+                "last_heartbeat": self._last_heartbeat.isoformat()
+                if self._last_heartbeat
+                else None,
+                "dead_letter_queue_size": len(self._dead_letter_queue),
+            }
+        )
 
         return stats
 
@@ -436,7 +449,9 @@ class EventWorker:
             return False
 
         # Check if heartbeat is recent (within 2x interval)
-        time_since_heartbeat = (datetime.now(UTC) - self._last_heartbeat).total_seconds()
+        time_since_heartbeat = (
+            datetime.now(UTC) - self._last_heartbeat
+        ).total_seconds()
         return time_since_heartbeat < (self._heartbeat_interval * 2)
 
 
@@ -446,8 +461,7 @@ _worker_lock = threading.Lock()
 
 
 def get_event_worker(
-    event_handlers: dict[type, list[Callable]] | None = None,
-    **kwargs
+    event_handlers: dict[type, list[Callable]] | None = None, **kwargs
 ) -> EventWorker:
     """
     Get or create the global EventWorker instance.

@@ -13,5 +13,5 @@ __all__ = [
     "DependencieApplicationService",
     "GitBranchService",
     "UnifiedContextService",
-    "ParameterTransformationService"
-] 
+    "ParameterTransformationService",
+]

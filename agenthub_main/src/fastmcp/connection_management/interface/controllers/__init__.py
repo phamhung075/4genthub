@@ -2,4 +2,4 @@
 
 from .connection_mcp_controller import ConnectionMCPController
 
-__all__ = ["ConnectionMCPController"] 
+__all__ = ["ConnectionMCPController"]

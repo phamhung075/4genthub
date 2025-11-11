@@ -9,9 +9,4 @@ __version__ = "2.0.2.dev"
 __author__ = "FastMCP Task Management Team"
 
 # Package information
-__all__ = [
-    "domain",
-    "application", 
-    "infrastructure",
-    "interface"
-]
+__all__ = ["domain", "application", "infrastructure", "interface"]

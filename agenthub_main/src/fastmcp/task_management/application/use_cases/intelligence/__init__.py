@@ -10,7 +10,7 @@ from .context_learning import ContextLearningUseCase
 from .intelligence_monitoring import IntelligenceMonitoringUseCase
 
 __all__ = [
-    'IntelligentContextSelectionUseCase',
-    'ContextLearningUseCase', 
-    'IntelligenceMonitoringUseCase'
+    "IntelligentContextSelectionUseCase",
+    "ContextLearningUseCase",
+    "IntelligenceMonitoringUseCase",
 ]

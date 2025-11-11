@@ -93,7 +93,11 @@ class GitBranchMCPController(ContextPropagationMixin):
     maintaining the same interface while improving maintainability and separation of concerns.
     """
 
-    def __init__(self, facade_service: FacadeService | None = None, config: ToolConfig | None = None):
+    def __init__(
+        self,
+        facade_service: FacadeService | None = None,
+        config: ToolConfig | None = None,
+    ):
         """Initialize the modular git branch MCP controller."""
 
         # Store configuration
@@ -113,31 +117,57 @@ class GitBranchMCPController(ContextPropagationMixin):
         # Initialize workflow guidance only if enabled
         if self._config.is_workflow_guidance_enabled():
             self._workflow_guidance = GitBranchWorkflowFactory.create()
-            logger.info("GitBranchMCPController initialized with workflow guidance enabled")
+            logger.info(
+                "GitBranchMCPController initialized with workflow guidance enabled"
+            )
         else:
             self._workflow_guidance = None
-            logger.info("GitBranchMCPController initialized with workflow guidance disabled (token optimization)")
+            logger.info(
+                "GitBranchMCPController initialized with workflow guidance disabled (token optimization)"
+            )
 
     def register_tools(self, mcp: "FastMCP"):
         """Register MCP tools with the server."""
 
         @mcp.tool(description=get_manage_git_branch_description())
         def manage_git_branch(
-            action: Annotated[str, Field(description="[OPTIONAL] " + params["action"]["description"])],
+            action: Annotated[
+                str, Field(description="[OPTIONAL] " + params["action"]["description"])
+            ],
             project_id: Annotated[
-                str, Field(description="[REQUIRED for all actions] " + params["project_id"]["description"])
+                str,
+                Field(
+                    description="[REQUIRED for all actions] "
+                    + params["project_id"]["description"]
+                ),
             ] = None,
             git_branch_id: Annotated[
-                str, Field(description="[REQUIRED for most actions except 'create' and 'list'] " + params["git_branch_id"]["description"])
+                str,
+                Field(
+                    description="[REQUIRED for most actions except 'create' and 'list'] "
+                    + params["git_branch_id"]["description"]
+                ),
             ] = None,
             git_branch_name: Annotated[
-                str, Field(description="[REQUIRED for 'create' action] " + params["git_branch_name"]["description"])
+                str,
+                Field(
+                    description="[REQUIRED for 'create' action] "
+                    + params["git_branch_name"]["description"]
+                ),
             ] = None,
             git_branch_description: Annotated[
-                str, Field(description="[OPTIONAL] " + params["git_branch_description"]["description"])
+                str,
+                Field(
+                    description="[OPTIONAL] "
+                    + params["git_branch_description"]["description"]
+                ),
             ] = None,
             agent_id: Annotated[
-                str, Field(description="[REQUIRED for 'assign_agent' and 'unassign_agent' actions] " + params["agent_id"]["description"])
+                str,
+                Field(
+                    description="[REQUIRED for 'assign_agent' and 'unassign_agent' actions] "
+                    + params["agent_id"]["description"]
+                ),
             ] = None,
             user_id: Annotated[
                 str, Field(description="[OPTIONAL] " + params["user_id"]["description"])

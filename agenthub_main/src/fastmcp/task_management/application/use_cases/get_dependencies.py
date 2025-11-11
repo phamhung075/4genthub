@@ -24,17 +24,21 @@ class GetDependenciesUseCase:
             raise TaskNotFoundError(f"Task {task_id} not found")
         dependency_details = []
         for dep_id in task.get_dependency_ids():
-            dep_task = self._task_repository.find_by_id(self._convert_to_task_id(str(dep_id)))
+            dep_task = self._task_repository.find_by_id(
+                self._convert_to_task_id(str(dep_id))
+            )
             if dep_task:
-                dependency_details.append({
-                    "id": str(dep_id),
-                    "title": dep_task.title,
-                    "status": str(dep_task.status),
-                    "priority": str(dep_task.priority)
-                })
+                dependency_details.append(
+                    {
+                        "id": str(dep_id),
+                        "title": dep_task.title,
+                        "status": str(dep_task.status),
+                        "priority": str(dep_task.priority),
+                    }
+                )
         return {
             "task_id": str(task_id),
             "dependency_ids": task.get_dependency_ids(),
             "dependencies": dependency_details,
-            "can_start": task.can_be_started()
-        } 
+            "can_start": task.can_be_started(),
+        }

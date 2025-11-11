@@ -14,7 +14,7 @@ from pathlib import Path
 
 class JSONFormatter(logging.Formatter):
     """Custom JSON formatter for structured logging."""
-    
+
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_data = {
@@ -26,7 +26,7 @@ class JSONFormatter(logging.Formatter):
             "function": record.funcName,
             "line": record.lineno,
         }
-        
+
         # Add extra fields if present
         if hasattr(record, "user_id"):
             log_data["user_id"] = record.user_id
@@ -38,20 +38,20 @@ class JSONFormatter(logging.Formatter):
             log_data["operation"] = record.operation
         if hasattr(record, "error_code"):
             log_data["error_code"] = record.error_code
-            
+
         # Add exception info if present
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
-            
+
         return json.dumps(log_data)
 
 
 class TaskManagementLogger:
     """Centralized logger configuration for task management system."""
-    
+
     _configured = False
     _loggers: dict[str, logging.Logger] = {}
-    
+
     @classmethod
     def configure(
         cls,
@@ -61,11 +61,11 @@ class TaskManagementLogger:
         enable_file: bool = True,
         enable_json: bool = False,
         max_bytes: int = 10 * 1024 * 1024,  # 10MB
-        backup_count: int = 5
+        backup_count: int = 5,
     ) -> None:
         """
         Configure the logging system.
-        
+
         Args:
             log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
             log_dir: Directory for log files (default: logs/)
@@ -77,27 +77,30 @@ class TaskManagementLogger:
         """
         if cls._configured:
             return
-            
+
         # Set up log directory
         if log_dir is None:
             from ....dual_mode_config import dual_mode_config
+
             log_dir = str(dual_mode_config.get_logs_directory())
-        
+
         log_path = Path(log_dir)
         try:
             log_path.mkdir(parents=True, exist_ok=True)
         except PermissionError:
             # If we can't create the log directory, disable file logging
-            print(f"Warning: Cannot create log directory {log_path}, disabling file logging")
+            print(
+                f"Warning: Cannot create log directory {log_path}, disabling file logging"
+            )
             enable_file = False
-        
+
         # Configure root logger
         root_logger = logging.getLogger()
         root_logger.setLevel(getattr(logging, log_level.upper()))
-        
+
         # Remove existing handlers
         root_logger.handlers.clear()
-        
+
         # Console handler
         if enable_console:
             console_handler = logging.StreamHandler(sys.stdout)
@@ -105,11 +108,11 @@ class TaskManagementLogger:
                 console_handler.setFormatter(JSONFormatter())
             else:
                 console_formatter = logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
                 )
                 console_handler.setFormatter(console_formatter)
             root_logger.addHandler(console_handler)
-        
+
         # File handlers
         if enable_file:
             # Main log file with rotation
@@ -117,19 +120,21 @@ class TaskManagementLogger:
                 file_handler = logging.handlers.RotatingFileHandler(
                     log_path / "agenthub.log",
                     maxBytes=max_bytes,
-                    backupCount=backup_count
+                    backupCount=backup_count,
                 )
                 if enable_json:
                     file_handler.setFormatter(JSONFormatter())
                 else:
                     file_formatter = logging.Formatter(
-                        '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s'
+                        "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s"
                     )
                     file_handler.setFormatter(file_formatter)
                 root_logger.addHandler(file_handler)
             except PermissionError:
                 # If we can't create the main log file handler, disable file logging
-                print(f"Warning: Cannot create main log file {log_path / 'agenthub.log'}, permission denied")
+                print(
+                    f"Warning: Cannot create main log file {log_path / 'agenthub.log'}, permission denied"
+                )
                 enable_file = False
 
             # Error log file (only if main file handler was successful)
@@ -138,66 +143,68 @@ class TaskManagementLogger:
                     error_handler = logging.handlers.RotatingFileHandler(
                         log_path / "agenthub_errors.log",
                         maxBytes=max_bytes,
-                        backupCount=backup_count
+                        backupCount=backup_count,
                     )
                     error_handler.setLevel(logging.ERROR)
                     if enable_json:
                         error_handler.setFormatter(JSONFormatter())
                     else:
                         error_formatter = logging.Formatter(
-                            '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s\n%(exc_info)s'
+                            "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s\n%(exc_info)s"
                         )
                         error_handler.setFormatter(error_formatter)
                     root_logger.addHandler(error_handler)
                 except PermissionError:
                     # If we can't create the error log file handler, just continue without it
-                    print(f"Warning: Cannot create error log file {log_path / 'agenthub_errors.log'}, permission denied")
-        
+                    print(
+                        f"Warning: Cannot create error log file {log_path / 'agenthub_errors.log'}, permission denied"
+                    )
+
         # Configure specific loggers
         cls._configure_module_loggers(log_level)
-        
+
         cls._configured = True
-        
+
     @classmethod
     def _configure_module_loggers(cls, log_level: str) -> None:
         """Configure logging levels for specific modules."""
         # Task management modules
         logging.getLogger("fastmcp.task_management").setLevel(log_level)
-        
+
         # Database operations - more verbose
-        logging.getLogger("fastmcp.task_management.infrastructure.repositories").setLevel(
-            logging.DEBUG if log_level == "DEBUG" else logging.INFO
-        )
-        
+        logging.getLogger(
+            "fastmcp.task_management.infrastructure.repositories"
+        ).setLevel(logging.DEBUG if log_level == "DEBUG" else logging.INFO)
+
         # Cache operations
-        logging.getLogger("fastmcp.task_management.application.services.context_cache_service").setLevel(
-            logging.DEBUG if log_level == "DEBUG" else logging.INFO
-        )
-        
+        logging.getLogger(
+            "fastmcp.task_management.application.services.context_cache_service"
+        ).setLevel(logging.DEBUG if log_level == "DEBUG" else logging.INFO)
+
         # External libraries - less verbose
         logging.getLogger("httpx").setLevel(logging.WARNING)
         logging.getLogger("httpcore").setLevel(logging.WARNING)
         logging.getLogger("uvicorn").setLevel(logging.INFO)
-        
+
     @classmethod
     def get_logger(cls, name: str) -> logging.Logger:
         """
         Get a logger instance with the given name.
-        
+
         Args:
             name: Logger name (usually __name__)
-            
+
         Returns:
             Configured logger instance
         """
         if not cls._configured:
             cls.configure()
-            
+
         if name not in cls._loggers:
             cls._loggers[name] = logging.getLogger(name)
-            
+
         return cls._loggers[name]
-    
+
     @classmethod
     def add_context(
         cls,
@@ -205,18 +212,18 @@ class TaskManagementLogger:
         user_id: str | None = None,
         task_id: str | None = None,
         project_id: str | None = None,
-        operation: str | None = None
+        operation: str | None = None,
     ) -> logging.LoggerAdapter:
         """
         Add contextual information to logger.
-        
+
         Args:
             logger: Base logger
             user_id: User identifier
             task_id: Task identifier
             project_id: Project identifier
             operation: Current operation name
-            
+
         Returns:
             Logger adapter with context
         """
@@ -229,35 +236,38 @@ class TaskManagementLogger:
             extra["project_id"] = project_id
         if operation:
             extra["operation"] = operation
-            
+
         return logging.LoggerAdapter(logger, extra)
 
 
 def log_operation(operation: str):
     """
     Decorator to log operation execution with timing.
-    
+
     Usage:
         @log_operation("create_task")
         async def create_task(...):
             ...
     """
+
     def decorator(func):
         async def async_wrapper(*args, **kwargs):
             logger = TaskManagementLogger.get_logger(func.__module__)
             start_time = datetime.now(UTC)
-            
+
             # Extract context from arguments if available
             context = {}
             if "task_id" in kwargs:
                 context["task_id"] = kwargs["task_id"]
             if "project_id" in kwargs:
                 context["project_id"] = kwargs["project_id"]
-                
-            ctx_logger = TaskManagementLogger.add_context(logger, operation=operation, **context)
-            
+
+            ctx_logger = TaskManagementLogger.add_context(
+                logger, operation=operation, **context
+            )
+
             ctx_logger.info(f"Starting {operation}")
-            
+
             try:
                 result = await func(*args, **kwargs)
                 duration = (datetime.now(UTC) - start_time).total_seconds()
@@ -268,25 +278,27 @@ def log_operation(operation: str):
                 ctx_logger.error(
                     f"Failed {operation} after {duration:.3f}s: {str(e)}",
                     exc_info=True,
-                    extra={"error_code": getattr(e, "error_code", "UNKNOWN")}
+                    extra={"error_code": getattr(e, "error_code", "UNKNOWN")},
                 )
                 raise
-                
+
         def sync_wrapper(*args, **kwargs):
             logger = TaskManagementLogger.get_logger(func.__module__)
             start_time = datetime.now(UTC)
-            
+
             # Extract context from arguments if available
             context = {}
             if "task_id" in kwargs:
                 context["task_id"] = kwargs["task_id"]
             if "project_id" in kwargs:
                 context["project_id"] = kwargs["project_id"]
-                
-            ctx_logger = TaskManagementLogger.add_context(logger, operation=operation, **context)
-            
+
+            ctx_logger = TaskManagementLogger.add_context(
+                logger, operation=operation, **context
+            )
+
             ctx_logger.info(f"Starting {operation}")
-            
+
             try:
                 result = func(*args, **kwargs)
                 duration = (datetime.now(UTC) - start_time).total_seconds()
@@ -297,16 +309,16 @@ def log_operation(operation: str):
                 ctx_logger.error(
                     f"Failed {operation} after {duration:.3f}s: {str(e)}",
                     exc_info=True,
-                    extra={"error_code": getattr(e, "error_code", "UNKNOWN")}
+                    extra={"error_code": getattr(e, "error_code", "UNKNOWN")},
                 )
                 raise
-                
+
         # Return appropriate wrapper based on function type
         if inspect.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper
-            
+
     return decorator
 
 
@@ -319,7 +331,5 @@ def init_logging():
     enable_json = os.environ.get("LOG_FORMAT", "text").lower() == "json"
 
     TaskManagementLogger.configure(
-        log_level=log_level,
-        log_dir=log_dir,
-        enable_json=enable_json
+        log_level=log_level, log_dir=log_dir, enable_json=enable_json
     )

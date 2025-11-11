@@ -12,6 +12,7 @@ from ...domain.repositories.project_repository import ProjectRepository
 # compatibility while keeping the convenience of auto-generated IDs when the
 # caller does not provide one.
 
+
 class CreateProjectUseCase:
     """Use case for creating a new project"""
 
@@ -53,10 +54,7 @@ class CreateProjectUseCase:
         try:
             # Create project entity using the domain factory method
             # This automatically handles timestamps via BaseTimestampEntity
-            project = Project.create(
-                name=name,
-                description=description
-            )
+            project = Project.create(name=name, description=description)
             # Override the auto-generated ID if one was provided
             if project_id:
                 project.id = project_id
@@ -70,10 +68,9 @@ class CreateProjectUseCase:
 
             # Persist via repository (allows duplicate detection etc.)
             await self._project_repository.save(project)
-            
+
             # Auto-create project context for hierarchical context inheritance
             try:
-                
                 # Use unified context facade for project context creation
                 from ...application.factories.unified_context_facade_factory import (
                     UnifiedContextFacadeFactory,
@@ -82,18 +79,18 @@ class CreateProjectUseCase:
                 from ...domain.exceptions.authentication_exceptions import (
                     UserAuthenticationRequiredError,
                 )
-                
+
                 # Get user_id from repository context or handle authentication
                 # Note: The repository should already be user-scoped by the service layer
                 user_id = None
-                if hasattr(self._project_repository, 'user_id'):
-                    user_context = getattr(self._project_repository, 'user_id', None)
-                    
+                if hasattr(self._project_repository, "user_id"):
+                    user_context = getattr(self._project_repository, "user_id", None)
+
                     # Extract actual user ID string from user context object
                     if user_context is not None:
-                        if hasattr(user_context, 'user_id'):
+                        if hasattr(user_context, "user_id"):
                             user_id = user_context.user_id
-                        elif hasattr(user_context, 'id'):
+                        elif hasattr(user_context, "id"):
                             user_id = user_context.id
                         elif isinstance(user_context, str):
                             user_id = user_context
@@ -103,32 +100,37 @@ class CreateProjectUseCase:
                                 from ....auth.middleware.request_context_middleware import (
                                     get_current_user_id,
                                 )
+
                                 user_id = get_current_user_id()
                             except Exception:
                                 pass
-                
+
                 if user_id is None:
                     # NO FALLBACKS ALLOWED - user authentication is required
                     raise UserAuthenticationRequiredError("Project context creation")
-                
+
                 user_id = validate_user_id(user_id, "Project context creation")
-                
+
                 # Create unified context facade factory and ensure global context exists
                 factory = UnifiedContextFacadeFactory()
-                
+
                 # Auto-create user-scoped global context if it doesn't exist
                 # This is required for the hierarchical context system to function properly
-                global_context_created = factory.auto_create_global_context(user_id=user_id)
+                global_context_created = factory.auto_create_global_context(
+                    user_id=user_id
+                )
                 if not global_context_created:
                     import logging
+
                     logger = logging.getLogger(__name__)
-                    logger.warning(f"Failed to ensure global context exists for user {user_id} - proceeding with project context creation")
-                
+                    logger.warning(
+                        f"Failed to ensure global context exists for user {user_id} - proceeding with project context creation"
+                    )
+
                 context_facade = factory.create_facade(
-                    user_id=user_id,
-                    project_id=project.id
+                    user_id=user_id, project_id=project.id
                 )
-                
+
                 # Create default project context
                 # Timestamps handled by context system
                 context_data = {
@@ -137,31 +139,38 @@ class CreateProjectUseCase:
                     "description": project.description,
                     "configuration": {},
                     "standards": {},
-                    "team_settings": {}
+                    "team_settings": {},
                 }
-                
+
                 context_response = context_facade.create_context(
-                    level="project",
-                    context_id=project.id,
-                    data=context_data
+                    level="project", context_id=project.id, data=context_data
                 )
-                
+
                 if not context_response["success"]:
                     # Log warning but don't fail project creation
                     import logging
+
                     logger = logging.getLogger(__name__)
-                    logger.warning(f"Failed to create project context for {project.id}: {context_response.get('error')}")
+                    logger.warning(
+                        f"Failed to create project context for {project.id}: {context_response.get('error')}"
+                    )
                 else:
                     # Log success for debugging
                     import logging
+
                     logger = logging.getLogger(__name__)
-                    logger.info(f"Successfully created project context for {project.id}")
-                    
+                    logger.info(
+                        f"Successfully created project context for {project.id}"
+                    )
+
             except Exception as context_error:
                 # Log context creation error but don't fail project creation
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.warning(f"Error creating project context for {project.id}: {context_error}")
+                logger.warning(
+                    f"Error creating project context for {project.id}: {context_error}"
+                )
 
         except ValueError as e:
             return {"success": False, "error": str(e)}
@@ -177,12 +186,12 @@ class CreateProjectUseCase:
 
             # Get user_id for WebSocket broadcast
             user_id = None
-            if hasattr(self._project_repository, 'user_id'):
-                user_context = getattr(self._project_repository, 'user_id', None)
+            if hasattr(self._project_repository, "user_id"):
+                user_context = getattr(self._project_repository, "user_id", None)
                 if user_context is not None:
-                    if hasattr(user_context, 'user_id'):
+                    if hasattr(user_context, "user_id"):
                         user_id = user_context.user_id
-                    elif hasattr(user_context, 'id'):
+                    elif hasattr(user_context, "id"):
                         user_id = user_context.id
                     elif isinstance(user_context, str):
                         user_id = user_context
@@ -198,16 +207,22 @@ class CreateProjectUseCase:
                         "description": project.description,
                         "created_at": project.created_at.isoformat(),
                         "updated_at": project.updated_at.isoformat(),
-                    }
+                    },
                 )
                 import logging
+
                 logger = logging.getLogger(__name__)
-                logger.info(f"✅ Broadcasted WebSocket notification for project creation: {project.id}")
+                logger.info(
+                    f"✅ Broadcasted WebSocket notification for project creation: {project.id}"
+                )
         except Exception as ws_error:
             # Log WebSocket errors but don't fail project creation
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.warning(f"Failed to broadcast WebSocket notification for project {project.id}: {ws_error}")
+            logger.warning(
+                f"Failed to broadcast WebSocket notification for project {project.id}: {ws_error}"
+            )
 
         return {
             "success": True,

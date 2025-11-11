@@ -105,7 +105,7 @@ class Client(Generic[ClientTransportT]):
     @overload
     def __new__(
         cls, transport: AnyUrl, **kwargs
-    ) -> Client[SSETransport|StreamableHttpTransport]: ...
+    ) -> Client[SSETransport | StreamableHttpTransport]: ...
 
     @overload
     def __new__(
@@ -115,7 +115,7 @@ class Client(Generic[ClientTransportT]):
     @overload
     def __new__(
         cls, transport: Path, **kwargs
-    ) -> Client[PythonStdioTransport|NodeStdioTransport]: ...
+    ) -> Client[PythonStdioTransport | NodeStdioTransport]: ...
 
     @overload
     def __new__(
@@ -125,7 +125,12 @@ class Client(Generic[ClientTransportT]):
     @overload
     def __new__(
         cls, transport: str, **kwargs
-    ) -> Client[PythonStdioTransport|NodeStdioTransport|SSETransport|StreamableHttpTransport]: ...
+    ) -> Client[
+        PythonStdioTransport
+        | NodeStdioTransport
+        | SSETransport
+        | StreamableHttpTransport
+    ]: ...
 
     def __new__(cls, transport, **kwargs) -> Client:
         instance = super().__new__(cls)

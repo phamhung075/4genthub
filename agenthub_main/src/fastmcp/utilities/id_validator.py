@@ -48,7 +48,9 @@ class ValidationResult:
 class IDValidationError(Exception):
     """Exception raised when ID validation fails critically."""
 
-    def __init__(self, message: str, id_value: str, expected_type: IDType | None = None):
+    def __init__(
+        self, message: str, id_value: str, expected_type: IDType | None = None
+    ):
         self.id_value = id_value
         self.expected_type = expected_type
         super().__init__(message)
@@ -73,14 +75,13 @@ class IDValidator:
 
     # UUID v4 format regex (strict validation)
     UUID_PATTERN = re.compile(
-        r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
-        re.IGNORECASE
+        r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+        re.IGNORECASE,
     )
 
     # Relaxed UUID pattern for backwards compatibility
     UUID_RELAXED_PATTERN = re.compile(
-        r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-        re.IGNORECASE
+        r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE
     )
 
     def __init__(self, strict_uuid_validation: bool = True):
@@ -92,7 +93,9 @@ class IDValidator:
                                   If False, allows any valid UUID format.
         """
         self.strict_uuid_validation = strict_uuid_validation
-        self._uuid_pattern = self.UUID_PATTERN if strict_uuid_validation else self.UUID_RELAXED_PATTERN
+        self._uuid_pattern = (
+            self.UUID_PATTERN if strict_uuid_validation else self.UUID_RELAXED_PATTERN
+        )
 
     def _sanitize_for_error_message(self, value: str, max_length: int = 50) -> str:
         """
@@ -114,60 +117,63 @@ class IDValidator:
 
         # Normalize Unicode to prevent normalization attacks
         try:
-            sanitized = unicodedata.normalize('NFKC', value)
+            sanitized = unicodedata.normalize("NFKC", value)
         except Exception:
             sanitized = value
 
         # Remove control characters and format characters
-        sanitized = ''.join(char for char in sanitized
-                          if unicodedata.category(char) not in ['Cc', 'Cf', 'Cs', 'Co'])
+        sanitized = "".join(
+            char
+            for char in sanitized
+            if unicodedata.category(char) not in ["Cc", "Cf", "Cs", "Co"]
+        )
 
         # HTML escape to prevent XSS
         sanitized = html.escape(sanitized)
 
         # Remove dangerous patterns that could still be problematic
         dangerous_patterns = [
-            'javascript:',
-            'vbscript:',
-            'data:',
-            'onload=',
-            'onerror=',
-            'onclick=',
-            'onmouseover=',
-            'onfocus=',
-            'onblur=',
+            "javascript:",
+            "vbscript:",
+            "data:",
+            "onload=",
+            "onerror=",
+            "onclick=",
+            "onmouseover=",
+            "onfocus=",
+            "onblur=",
         ]
 
         for pattern in dangerous_patterns:
-            sanitized = sanitized.replace(pattern, '[removed]')
-            sanitized = sanitized.replace(pattern.upper(), '[removed]')
+            sanitized = sanitized.replace(pattern, "[removed]")
+            sanitized = sanitized.replace(pattern.upper(), "[removed]")
 
         # Remove sensitive information patterns to prevent information disclosure
         sensitive_patterns = [
-            '/etc/',
-            '/root/',
-            '/home/',
-            '/var/',
-            '/usr/',
-            'c:\\',
-            'windows\\',
-            'system32\\',
-            'delete from',
-            'drop table',
-            'insert into',
-            'select *',
-            'union select',
-            'password',
-            'passwd',
-            'secret',
-            'key',
-            'token',
-            'auth',
-            'credential',
-            'api_key',
-            'database',
-            'config',
-            'admin',
+            "/etc/",
+            "/root/",
+            "/home/",
+            "/var/",
+            "/usr/",
+            "c:\\",
+            "windows\\",
+            "system32\\",
+            "delete from",
+            "drop table",
+            "insert into",
+            "select *",
+            "union select",
+            "password",
+            "passwd",
+            "secret",
+            "key",
+            "token",
+            "auth",
+            "credential",
+            "api_key",
+            "database",
+            "config",
+            "admin",
         ]
 
         sanitized_lower = sanitized.lower()
@@ -198,7 +204,7 @@ class IDValidator:
                 is_valid=False,
                 id_type=IDType.UNKNOWN,
                 original_value=value or "",
-                error_message="ID value cannot be empty or None"
+                error_message="ID value cannot be empty or None",
             )
 
         # Security check: Reject if contains any non-ASCII characters
@@ -209,7 +215,7 @@ class IDValidator:
                 is_valid=False,
                 id_type=IDType.UNKNOWN,
                 original_value=value,
-                error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
             )
 
         # Security check: Reject if contains any control characters
@@ -219,7 +225,7 @@ class IDValidator:
                 is_valid=False,
                 id_type=IDType.UNKNOWN,
                 original_value=value,
-                error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
             )
 
         # Normalize the value
@@ -232,7 +238,9 @@ class IDValidator:
                 id_type=IDType.UUID,
                 original_value=value,
                 normalized_value=normalized,
-                metadata={"uuid_version": "v4" if self.strict_uuid_validation else "any"}
+                metadata={
+                    "uuid_version": "v4" if self.strict_uuid_validation else "any"
+                },
             )
         else:
             sanitized_value = self._sanitize_for_error_message(value)
@@ -240,10 +248,12 @@ class IDValidator:
                 is_valid=False,
                 id_type=IDType.UNKNOWN,
                 original_value=value,
-                error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
             )
 
-    def detect_id_type(self, value: str, context_hint: str | None = None) -> ValidationResult:
+    def detect_id_type(
+        self, value: str, context_hint: str | None = None
+    ) -> ValidationResult:
         """
         Detect the type of ID based on format and context hints.
 
@@ -270,7 +280,9 @@ class IDValidator:
                 detected_type = IDType.APPLICATION_TASK_ID
             elif "task" in hint_lower and "mcp" in hint_lower:
                 detected_type = IDType.MCP_TASK_ID
-                warnings.append("MCP task ID detected - ensure not used as application task ID")
+                warnings.append(
+                    "MCP task ID detected - ensure not used as application task ID"
+                )
             elif "git_branch" in hint_lower or "branch" in hint_lower:
                 detected_type = IDType.GIT_BRANCH_ID
             elif "project" in hint_lower:
@@ -288,15 +300,17 @@ class IDValidator:
             warnings=warnings if warnings else None,
             metadata={
                 "context_hint": context_hint,
-                "uuid_version": "v4" if self.strict_uuid_validation else "any"
-            }
+                "uuid_version": "v4" if self.strict_uuid_validation else "any",
+            },
         )
 
-    def validate_parameter_mapping(self,
-                                 task_id: str | None = None,
-                                 git_branch_id: str | None = None,
-                                 project_id: str | None = None,
-                                 user_id: str | None = None) -> ValidationResult:
+    def validate_parameter_mapping(
+        self,
+        task_id: str | None = None,
+        git_branch_id: str | None = None,
+        project_id: str | None = None,
+        user_id: str | None = None,
+    ) -> ValidationResult:
         """
         Validate that parameters are not confused with each other.
 
@@ -316,7 +330,7 @@ class IDValidator:
             "task_id": task_id,
             "git_branch_id": git_branch_id,
             "project_id": project_id,
-            "user_id": user_id
+            "user_id": user_id,
         }
 
         # Filter out None values
@@ -327,7 +341,7 @@ class IDValidator:
                 is_valid=False,
                 id_type=IDType.UNKNOWN,
                 original_value="",
-                error_message="At least one parameter must be provided"
+                error_message="At least one parameter must be provided",
             )
 
         validation_errors = []
@@ -343,7 +357,10 @@ class IDValidator:
                 validation_errors.append(f"{param_name}: {param_result.error_message}")
 
             # Check for potential confusion
-            if param_name == "git_branch_id" and param_result.id_type == IDType.MCP_TASK_ID:
+            if (
+                param_name == "git_branch_id"
+                and param_result.id_type == IDType.MCP_TASK_ID
+            ):
                 all_valid = False
                 sanitized_param_value = self._sanitize_for_error_message(param_value)
                 validation_errors.append(
@@ -364,7 +381,9 @@ class IDValidator:
         # Check for same ID used in multiple parameters (potential copy-paste error)
         unique_values = set(provided_params.values())
         if len(unique_values) < len(provided_params):
-            warnings.append("Same ID value used for multiple parameters - verify this is intentional")
+            warnings.append(
+                "Same ID value used for multiple parameters - verify this is intentional"
+            )
 
         return ValidationResult(
             is_valid=all_valid,
@@ -374,11 +393,13 @@ class IDValidator:
             warnings=warnings if warnings else None,
             metadata={
                 "validated_parameters": list(provided_params.keys()),
-                "parameter_count": len(provided_params)
-            }
+                "parameter_count": len(provided_params),
+            },
         )
 
-    def validate_task_context(self, task_id: str, expected_git_branch_id: str | None = None) -> ValidationResult:
+    def validate_task_context(
+        self, task_id: str, expected_git_branch_id: str | None = None
+    ) -> ValidationResult:
         """
         Validate task context to ensure task_id corresponds to correct git_branch_id.
 
@@ -412,18 +433,22 @@ class IDValidator:
             branch_result = self.detect_id_type(expected_git_branch_id, "git_branch_id")
             if not branch_result.is_valid:
                 sanitized_task_id = self._sanitize_for_error_message(task_id)
-                sanitized_git_branch_id = self._sanitize_for_error_message(expected_git_branch_id)
+                sanitized_git_branch_id = self._sanitize_for_error_message(
+                    expected_git_branch_id
+                )
                 return ValidationResult(
                     is_valid=False,
                     id_type=IDType.UNKNOWN,
                     original_value=f"task_id: {sanitized_task_id}, git_branch_id: {sanitized_git_branch_id}",
-                    error_message=f"Invalid git_branch_id: {branch_result.error_message}"
+                    error_message=f"Invalid git_branch_id: {branch_result.error_message}",
                 )
 
             # Critical check: ensure task_id != git_branch_id
             if task_id == expected_git_branch_id:
                 sanitized_task_id = self._sanitize_for_error_message(task_id)
-                sanitized_git_branch_id = self._sanitize_for_error_message(expected_git_branch_id)
+                sanitized_git_branch_id = self._sanitize_for_error_message(
+                    expected_git_branch_id
+                )
                 return ValidationResult(
                     is_valid=False,
                     id_type=IDType.UNKNOWN,
@@ -431,7 +456,7 @@ class IDValidator:
                     error_message=(
                         "CRITICAL: task_id and git_branch_id are identical. "
                         "This indicates parameter confusion that leads to data integrity issues."
-                    )
+                    ),
                 )
 
             metadata["git_branch_id_validated"] = True
@@ -442,12 +467,12 @@ class IDValidator:
             original_value=task_id,
             normalized_value=task_result.normalized_value,
             warnings=warnings if warnings else None,
-            metadata=metadata
+            metadata=metadata,
         )
 
-    def suggest_fix_for_confusion(self,
-                                confused_task_id: str,
-                                context: str = "unknown") -> dict[str, str]:
+    def suggest_fix_for_confusion(
+        self, confused_task_id: str, context: str = "unknown"
+    ) -> dict[str, str]:
         """
         Provide suggestions for fixing ID confusion issues.
 
@@ -466,7 +491,7 @@ class IDValidator:
                 "Look up the correct git_branch_id from the task record before "
                 "passing to facade service"
             ),
-            "code_example": '''
+            "code_example": """
 # WRONG (causes data integrity issues):
 facade = self._facade_service.get_subtask_facade(
     user_id=user_id,
@@ -482,17 +507,18 @@ facade = self._facade_service.get_subtask_facade(
     user_id=user_id,
     git_branch_id=git_branch_id  # FIXED: Use correct git_branch_id
 )
-            ''',
+            """,
             "prevention": (
                 "Use IDValidator.validate_parameter_mapping() before facade calls "
                 "to catch parameter confusion early"
-            )
+            ),
         }
 
         return suggestions
 
 
 # Convenience functions for common validation scenarios
+
 
 def validate_uuid(value: str, strict: bool = True) -> bool:
     """
@@ -510,10 +536,12 @@ def validate_uuid(value: str, strict: bool = True) -> bool:
     return result.is_valid
 
 
-def prevent_id_confusion(task_id: str | None = None,
-                        git_branch_id: str | None = None,
-                        project_id: str | None = None,
-                        user_id: str | None = None) -> None:
+def prevent_id_confusion(
+    task_id: str | None = None,
+    git_branch_id: str | None = None,
+    project_id: str | None = None,
+    user_id: str | None = None,
+) -> None:
     """
     Validate parameters to prevent ID confusion (raises exception on failure).
 
@@ -534,13 +562,13 @@ def prevent_id_confusion(task_id: str | None = None,
         task_id=task_id,
         git_branch_id=git_branch_id,
         project_id=project_id,
-        user_id=user_id
+        user_id=user_id,
     )
 
     if not result.is_valid:
         raise IDValidationError(
             message=result.error_message or "ID validation failed",
-            id_value=result.original_value
+            id_value=result.original_value,
         )
 
     # Log warnings for monitoring
