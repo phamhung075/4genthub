@@ -115,8 +115,10 @@ if [ -f .env.test ]; then
     set +a
 fi
 
-# Set PYTHONPATH
-export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$(pwd)/src"
+# Set Python environment (matching production Docker)
+export PYTHONPATH="$(pwd)/src:$(pwd):${PYTHONPATH}"
+export PYTHONUNBUFFERED=1
+export PYTHONDONTWRITEBYTECODE=1
 export TESTING=true
 export FASTMCP_TEST_MODE=1
 
