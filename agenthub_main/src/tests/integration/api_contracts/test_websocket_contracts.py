@@ -36,6 +36,12 @@ from uuid import uuid4
 
 import pytest
 
+from fastmcp.task_management.domain.value_objects import (
+    GitBranchId,
+    ProjectId,
+    UserId,
+)
+
 
 # Mock WebSocket broadcast function for testing
 class MockWebSocketBroadcaster:

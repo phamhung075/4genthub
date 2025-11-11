@@ -28,7 +28,7 @@ class MCPTestClient:
         self.session_id = None
         self.client = httpx.AsyncClient(timeout=30.0)
         
-    async def connect(self) -> Dict:
+    async def connect(self) -> dict:
         """Establish connection to MCP server"""
         try:
             # Test basic connectivity
@@ -73,7 +73,7 @@ class MCPTestClient:
             logger.error(f"MCP connection failed: {e}")
             return {"success": False, "error": str(e)}
     
-    async def list_tools(self) -> Dict:
+    async def list_tools(self) -> dict:
         """List available tools from MCP server"""
         try:
             response = await self.client.post(
@@ -103,7 +103,7 @@ class MCPTestClient:
             logger.error(f"Failed to list tools: {e}")
             return {"success": False, "error": str(e)}
     
-    async def call_tool(self, tool_name: str, arguments: Dict = None) -> Dict:
+    async def call_tool(self, tool_name: str, arguments: dict = None) -> dict:
         """Call a specific MCP tool"""
         try:
             if arguments is None:
@@ -151,7 +151,7 @@ class MCPTestClient:
             logger.error(f"Failed to call tool {tool_name}: {e}")
             return {"success": False, "tool_name": tool_name, "error": str(e)}
     
-    async def test_tool_suite(self) -> Dict:
+    async def test_tool_suite(self) -> dict:
         """Test all available tools with basic operations"""
         try:
             # First get list of tools
@@ -213,7 +213,7 @@ class MCPTestClient:
             logger.error(f"Tool suite test failed: {e}")
             return {"success": False, "error": str(e)}
     
-    async def test_project_workflow(self) -> Dict:
+    async def test_project_workflow(self) -> dict:
         """Test complete project management workflow"""
         try:
             workflow_results = []
@@ -271,7 +271,7 @@ class MCPTestClient:
             logger.error(f"Project workflow test failed: {e}")
             return {"success": False, "error": str(e)}
     
-    async def test_error_scenarios(self) -> Dict:
+    async def test_error_scenarios(self) -> dict:
         """Test error handling and edge cases"""
         try:
             error_tests = []
@@ -319,7 +319,7 @@ class MCPTestClient:
             logger.error(f"Error scenario testing failed: {e}")
             return {"success": False, "error": str(e)}
     
-    async def test_performance_under_load(self, num_requests: int = 10) -> Dict:
+    async def test_performance_under_load(self, num_requests: int = 10) -> dict:
         """Test performance under concurrent load"""
         try:
             start_time = time.time()
@@ -367,7 +367,7 @@ class MCPTestClient:
             logger.error(f"Load testing failed: {e}")
             return {"success": False, "error": str(e)}
     
-    async def generate_cursor_config(self, output_path: Path = None) -> Dict:
+    async def generate_cursor_config(self, output_path: Path = None) -> dict:
         """Generate Cursor MCP configuration file"""
         try:
             if output_path is None:
@@ -426,7 +426,7 @@ class MCPProtocolValidator:
     """Validates MCP protocol compliance"""
     
     @staticmethod
-    def validate_tool_response(response: Dict) -> Dict:
+    def validate_tool_response(response: dict) -> dict:
         """Validate that a tool response follows MCP protocol"""
         errors = []
         
@@ -451,7 +451,7 @@ class MCPProtocolValidator:
         }
     
     @staticmethod
-    def validate_tool_list(tools: list[Dict]) -> Dict:
+    def validate_tool_list(tools: list[dict]) -> dict:
         """Validate tool list structure"""
         errors = []
         

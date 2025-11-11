@@ -105,7 +105,7 @@ def task_repository(db_session, test_git_branch_id):
 @pytest.fixture
 def test_git_branch_id(db_adapter):
     """Provides a test git branch ID with actual database records"""
-    from datetime import UTC, datetime
+from datetime import UTC, datetime, timezone
 
     from fastmcp.task_management.infrastructure.database.models import (
         Project,

@@ -43,7 +43,7 @@ from fastmcp.task_management.infrastructure.events.event_worker import (
 # ========================
 
 @dataclass(frozen=True)
-class _Mock_MockTestEvent(BaseDomainEvent):
+class _MockTestEvent(BaseDomainEvent):
     """Mock event for testing (underscore prefix prevents pytest collection)."""
     data: str = "test-data"
 

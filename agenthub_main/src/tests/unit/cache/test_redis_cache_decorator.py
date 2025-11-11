@@ -413,7 +413,7 @@ class TestSerialization:
         }
 
         @redis_cache(ttl=300)
-        async def func() -> Dict:
+        async def func() -> dict:
             return complex_dict
 
         cache_manager._client.get = AsyncMock(return_value=None)
@@ -446,7 +446,7 @@ class TestSerialization:
         cached_json = json.dumps(original_value)
 
         @redis_cache(ttl=300)
-        async def func() -> Dict:
+        async def func() -> dict:
             return original_value
 
         # Simulate cache hit

@@ -99,7 +99,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                     git_branch_id=git_branch_id  # FIXED: Use actual git_branch_id
                 )
 
-            def create_subtask(self, task_id: str, title: str, user_id: str, **kwargs) -> Dict:
+            def create_subtask(self, task_id: str, title: str, user_id: str, **kwargs) -> dict:
                 """Create subtask with validation."""
                 # Get validated facade
                 facade = self._get_facade_for_request(task_id=task_id, user_id=user_id)
@@ -113,7 +113,7 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                 return result
 
-            def get_subtask(self, task_id: str, subtask_id: str, user_id: str) -> Dict:
+            def get_subtask(self, task_id: str, subtask_id: str, user_id: str) -> dict:
                 """Get subtask with validation."""
                 # Validate all parameters
                 self._validate_request_parameters(
@@ -198,7 +198,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                 self.validator = validator
                 self.controller = Mock()
 
-            def handle_create_subtask(self, request_data: Dict) -> Dict:
+            def handle_create_subtask(self, request_data: dict) -> dict:
                 """Handle POST /api/v2/tasks/{task_id}/subtasks with validation."""
                 task_id = request_data.get("task_id")
                 user_id = request_data.get("user_id")
@@ -248,7 +248,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                         "error": f"Internal error: {str(e)}"
                     }
 
-            def handle_get_subtask(self, request_data: Dict) -> Dict:
+            def handle_get_subtask(self, request_data: dict) -> dict:
                 """Handle GET /api/v2/tasks/{task_id}/subtasks/{subtask_id} with validation."""
                 task_id = request_data.get("task_id")
                 subtask_id = request_data.get("subtask_id")
@@ -348,7 +348,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                 self.tasks = {}
                 self.subtasks = {}
 
-            def create_task(self, task_data: Dict) -> str:
+            def create_task(self, task_data: dict) -> str:
                 """Create task with validation."""
                 task_id = task_data.get("id") or str(uuid4())
                 git_branch_id = task_data["git_branch_id"]
@@ -375,7 +375,7 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                 return task_id
 
-            def create_subtask(self, subtask_data: Dict) -> str:
+            def create_subtask(self, subtask_data: dict) -> str:
                 """Create subtask with validation."""
                 subtask_id = subtask_data.get("id") or str(uuid4())
                 parent_task_id = subtask_data["parent_task_id"]
@@ -421,7 +421,7 @@ class TestSubtaskAPIIntegrationWithValidation:
 
                 return subtask_id
 
-            def get_subtasks_for_task(self, task_id: str, user_id: str) -> list[Dict]:
+            def get_subtasks_for_task(self, task_id: str, user_id: str) -> list[dict]:
                 """Get subtasks with validation."""
                 # Validate task exists and user has access
                 if task_id not in self.tasks:
@@ -443,7 +443,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                     if subtask["parent_task_id"] == task_id and subtask["user_id"] == user_id
                 ]
 
-            def update_subtask(self, subtask_id: str, update_data: Dict, user_id: str) -> Dict:
+            def update_subtask(self, subtask_id: str, update_data: dict, user_id: str) -> dict:
                 """Update subtask with validation."""
                 # Validate subtask exists
                 if subtask_id not in self.subtasks:
@@ -542,7 +542,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                 self.validator = validator
                 self.db = {}  # Simple in-memory database
 
-            def api_create_subtask(self, api_request: Dict) -> Dict:
+            def api_create_subtask(self, api_request: dict) -> dict:
                 """Full API endpoint simulation."""
                 try:
                     # 1. API Layer Validation
@@ -587,7 +587,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                         "error": f"Internal server error: {str(e)}"
                     }
 
-            def _controller_create_subtask(self, task_id: str, user_id: str, subtask_data: Dict) -> Dict:
+            def _controller_create_subtask(self, task_id: str, user_id: str, subtask_data: dict) -> dict:
                 """Controller layer with business logic."""
                 try:
                     # Validate task exists
@@ -619,7 +619,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                 except Exception as e:
                     return {"success": False, "error": str(e)}
 
-            def _service_create_subtask(self, parent_task_id: str, user_id: str, subtask_data: Dict) -> Dict:
+            def _service_create_subtask(self, parent_task_id: str, user_id: str, subtask_data: dict) -> dict:
                 """Service layer with database operations."""
                 # Validate service parameters
                 try:
@@ -649,7 +649,7 @@ class TestSubtaskAPIIntegrationWithValidation:
                 self.db[f"subtask:{subtask_id}"] = subtask
                 return subtask
 
-            def _get_task(self, task_id: str, user_id: str) -> Dict:
+            def _get_task(self, task_id: str, user_id: str) -> dict:
                 """Get task from database."""
                 # Simulate task lookup
                 return {

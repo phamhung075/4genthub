@@ -62,7 +62,7 @@ class EnhancedDependencyController:
 
         logger.info("EnhancedDependencyController initialized with AI capabilities")
 
-    def register_tools(self, mcp: "FastMCP"):
+    def register_tools(self, mcp: FastMCP):
         """Register enhanced dependency management tools with MCP server"""
 
         # Main AI-enhanced dependency analysis tool

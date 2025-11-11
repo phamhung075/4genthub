@@ -157,7 +157,7 @@ class TestIDConfusionScenarios:
                 }
                 return app_task_id
 
-            def get_app_task_incorrectly(self, mcp_task_id: str) -> Dict:
+            def get_app_task_incorrectly(self, mcp_task_id: str) -> dict:
                 """Simulate incorrect usage - treating MCP ID as app task ID."""
                 # This is the BUG: trying to use MCP task ID as application task ID
                 if mcp_task_id in self.app_tasks:
@@ -166,7 +166,7 @@ class TestIDConfusionScenarios:
                     # This would fail in real scenario
                     raise ValueError(f"Application task {mcp_task_id} not found")
 
-            def get_app_task_correctly(self, app_task_id: str) -> Dict:
+            def get_app_task_correctly(self, app_task_id: str) -> dict:
                 """Simulate correct usage - using proper application task ID."""
                 if app_task_id in self.app_tasks:
                     return self.app_tasks[app_task_id]
@@ -255,7 +255,7 @@ class TestIDConfusionScenarios:
             def __init__(self, validator: IDValidator):
                 self.validator = validator
 
-            def get_subtask(self, task_id: str, subtask_id: str, user_id: str) -> Dict:
+            def get_subtask(self, task_id: str, subtask_id: str, user_id: str) -> dict:
                 """Simulate GET /api/v2/tasks/{task_id}/subtasks/{subtask_id}"""
                 # Validate all IDs before processing
                 validation_result = self.validator.validate_parameter_mapping(
@@ -284,7 +284,7 @@ class TestIDConfusionScenarios:
                     "title": "Test Subtask"
                 }
 
-            def create_subtask(self, task_id: str, subtask_data: Dict, user_id: str) -> Dict:
+            def create_subtask(self, task_id: str, subtask_data: dict, user_id: str) -> dict:
                 """Simulate POST /api/v2/tasks/{task_id}/subtasks"""
                 # Validate parent task exists and user has access
                 validation_result = self.validator.validate_parameter_mapping(
@@ -345,7 +345,7 @@ class TestIDConfusionScenarios:
                 self.tasks = {}
                 self.subtasks = {}
 
-            def insert_task(self, task_data: Dict) -> str:
+            def insert_task(self, task_data: dict) -> str:
                 """Insert task with ID validation."""
                 task_id = task_data.get("id") or str(uuid4())
                 git_branch_id = task_data["git_branch_id"]
@@ -369,7 +369,7 @@ class TestIDConfusionScenarios:
                 }
                 return task_id
 
-            def insert_subtask(self, subtask_data: Dict) -> str:
+            def insert_subtask(self, subtask_data: dict) -> str:
                 """Insert subtask with parent validation."""
                 subtask_id = subtask_data.get("id") or str(uuid4())
                 parent_task_id = subtask_data["parent_task_id"]
@@ -399,7 +399,7 @@ class TestIDConfusionScenarios:
                 }
                 return subtask_id
 
-            def get_subtasks_for_task(self, task_id: str) -> list[Dict]:
+            def get_subtasks_for_task(self, task_id: str) -> list[dict]:
                 """Get all subtasks for a task."""
                 # Validate task exists
                 if task_id not in self.tasks:

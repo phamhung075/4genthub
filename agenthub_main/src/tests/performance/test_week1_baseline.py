@@ -23,7 +23,7 @@ import inspect
 import statistics
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest

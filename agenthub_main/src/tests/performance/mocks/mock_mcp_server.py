@@ -61,12 +61,12 @@ class MockKeycloakServer:
     """Mock Keycloak server for authentication testing."""
     
     def __init__(self):
-        self.tokens: dict[str, Dict] = {}
+        self.tokens: dict[str, dict] = {}
         self.client_credentials = {
             "claude-hooks": "test-secret"
         }
         
-    def authenticate_client(self, client_id: str, client_secret: str) -> Dict | None:
+    def authenticate_client(self, client_id: str, client_secret: str) -> dict | None:
         """Simulate client credentials authentication."""
         if self.client_credentials.get(client_id) == client_secret:
             # Generate mock JWT token
@@ -121,7 +121,7 @@ class MockMCPServer:
         
         self.keycloak = MockKeycloakServer()
         self.request_count = 0
-        self.request_history: list[Dict] = []
+        self.request_history: list[dict] = []
         self.performance_metrics = {
             "total_requests": 0,
             "avg_response_time": 0.0,
@@ -172,7 +172,7 @@ class MockMCPServer:
         """Determine if we should simulate token failure.""" 
         return self.token_failure_rate > 0 and time.time() % 1.0 < self.token_failure_rate
     
-    async def handle_manage_task(self, payload: Dict) -> Dict:
+    async def handle_manage_task(self, payload: dict) -> dict:
         """Handle manage_task requests."""
         start_time = time.time()
         
@@ -253,7 +253,7 @@ class MockMCPServer:
         
         return response
     
-    async def handle_token_request(self, payload: Dict) -> Dict:
+    async def handle_token_request(self, payload: dict) -> dict:
         """Handle Keycloak token requests."""
         if self.should_simulate_token_failure():
             self.performance_metrics["token_failures"] += 1
@@ -268,12 +268,12 @@ class MockMCPServer:
         else:
             return {"error": "unauthorized"}
     
-    def get_performance_metrics(self) -> Dict:
+    def get_performance_metrics(self) -> dict:
         """Get accumulated performance metrics."""
         with self.lock:
             return self.performance_metrics.copy()
     
-    def get_request_history(self) -> list[Dict]:
+    def get_request_history(self) -> list[dict]:
         """Get request history for analysis."""
         with self.lock:
             return self.request_history.copy()
