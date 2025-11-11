@@ -58,32 +58,33 @@ Fixed final test collection errors preventing CI test execution.
    - Type annotation used at runtime but import was inside `TYPE_CHECKING` block
    - Affected 6 test files importing the controller
 2. `ModuleNotFoundError: No module named 'freezegun'` in websocket notification tests
-   - Incorrect uv sync syntax: `uv sync --dev` (invalid flag)
-   - Correct syntax: `uv sync` (dev group is synced by default in uv)
+   - Dev dependencies not installing reliably in CI despite correct basic syntax
+   - Required explicit flags for deterministic lock file reproduction
 
 **Root Causes**:
 1. **TYPE_CHECKING Pattern Without Future Annotations**:
    - `TaskApplicationFacade` imported inside `if TYPE_CHECKING:` block (line 16)
    - Used as type hint without quotes: `def __init__(self, task_facade: TaskApplicationFacade)`
    - TYPE_CHECKING imports only active during static type checking, not at runtime
-2. **Invalid uv Flag**:
-   - Used `uv sync --dev` but `--dev` flag doesn't exist in uv
-   - Per uv docs: "The dev group is special-cased and synced by default"
-   - Correct command is just `uv sync` (no flags needed for dev dependencies)
+2. **Implicit uv Dependency Group Behavior**:
+   - While `dev` group should sync by default, CI environment needed explicit flags
+   - Missing `--frozen` flag allowed version resolution instead of lock file reproduction
+   - Missing `--all-groups` flag relied on implicit dev group inclusion
 
 **Solutions Applied**:
 1. **Added Future Annotations Import**:
    - Added `from __future__ import annotations` to `dependency_mcp_controller.py:8`
    - Makes all type annotations strings automatically, eliminating runtime import errors
-2. **Fixed uv Sync Command**:
-   - Changed `uv sync --dev` → `uv sync` in CI workflow
-   - Applied to test-matrix job (line 96) and performance-tests job (line 230)
-   - Dev dependency group installs automatically (no flag needed)
+2. **Enhanced uv Sync with Explicit Flags**:
+   - Changed `uv sync --dev` → `uv sync --frozen --all-groups`
+   - `--frozen`: Forces exact lock file reproduction (no version resolution)
+   - `--all-groups`: Explicitly installs all dependency groups including dev
+   - Applied to test-matrix job (line 96), performance-tests job (line 230), and run-static.yml (line 53)
 
 **Files Modified**:
 - `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/dependency_mcp_controller/dependency_mcp_controller.py:8` - Added future annotations
-- `.github/workflows/test_coverage.yml:96,230` - Removed invalid `--dev` flag from uv sync
-- `agenthub_main/.github/workflows/run-static.yml:53` - Removed invalid `--dev` flag from uv sync
+- `.github/workflows/test_coverage.yml:96,230` - Added --frozen --all-groups flags to uv sync
+- `agenthub_main/.github/workflows/run-static.yml:53` - Added --frozen --all-groups flags to uv sync
 
 **Impact**:
 - ✅ All 7 test collection errors resolved
@@ -208,9 +209,10 @@ Fixed 4 additional pytest collection errors discovered during CI test runs, brin
    - Moved pytestmark to line 20 (before imports) and sys.path.insert to line 23 (before utils import)
 
 **Files Modified**:
-- `src/tests/integration/client/test_mcp_client.py:20-31` - Mock before imports
-- `src/tests/integration/client/test_mcp_transports.py:22-34` - Mock before imports
-- `src/tests/test_agent_role_display.py:18-30` - Import order reorganization
+- `src/tests/integration/client/test_mcp_client.py:20-40` - Mock before imports with noqa suppressions
+- `src/tests/integration/client/test_mcp_transports.py:22-59` - Mock before imports with noqa suppressions
+- `src/tests/test_agent_role_display.py:18-30` - Import order reorganization with noqa suppressions
+- `src/tests/security/agent_management/test_agent_security.py:53` - Removed unused exception variable
 
 **Verification**:
 - ✅ All 8 collection error files now import successfully
@@ -218,10 +220,17 @@ Fixed 4 additional pytest collection errors discovered during CI test runs, brin
 - ✅ E2E test suite: 37/7968 tests with 0 collection errors
 - ✅ Full test suite: 7968 tests with 0 collection errors
 
+**Linting Suppressions Applied**:
+- Added `# noqa: E402, I001` to imports that must follow sys.modules mocks (test_mcp_client.py, test_mcp_transports.py)
+- Added `# noqa: E402` to imports requiring runtime path modifications (test_agent_role_display.py)
+- Added `# fmt: off/on` blocks to prevent auto-formatting of intentionally ordered imports
+- All suppressions justified with inline comments explaining the necessity
+
 **Key Insights**:
 - **Import Order Matters**: `sys.modules` mocks must be set BEFORE any imports that trigger the import chain
 - **pytestmark Timing**: Skip markers must be evaluated BEFORE pytest parses imports and function signatures
 - **Standalone Scripts**: Both pytestmark AND path setup must precede imports from non-standard paths
+- **Linting Suppressions**: E402/I001 exceptions necessary when imports require runtime setup
 
 **Impact**:
 - 🧪 Restored test discovery for 125+ MCP client/transport integration tests
