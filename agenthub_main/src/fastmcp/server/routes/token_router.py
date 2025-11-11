@@ -17,8 +17,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-logger = logging.getLogger(__name__)
-
 # Import authentication using unified auth (handles all auth methods properly)
 from fastmcp.auth.domain.entities.user import User
 
@@ -30,6 +28,8 @@ from fastmcp.auth.interface.unified_auth import get_current_user
 from fastmcp.task_management.interface.api_controllers.token_api_controller import (
     TokenAPIController,
 )
+
+logger = logging.getLogger(__name__)
 
 # Initialize token controller for DDD compliance
 token_controller = TokenAPIController()

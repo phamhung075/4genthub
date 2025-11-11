@@ -28,13 +28,14 @@ from fastmcp.utilities.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Import WebSocket and broadcast routes if available
+# WebSocket availability flag (routes imported locally where needed)
+WEBSOCKET_AVAILABLE = False
 try:
-    from fastmcp.server.routes import broadcast_routes, websocket_routes
+    # Test import to check availability
+    from fastmcp.server.routes import websocket_routes as _test_ws  # noqa: F401
     WEBSOCKET_AVAILABLE = True
 except ImportError:
     logger.info("WebSocket routes not available - real-time updates disabled")
-    WEBSOCKET_AVAILABLE = False
 
 # Import Keycloak request context middleware
 try:
@@ -807,13 +808,11 @@ def create_streamable_http_app(
         import uuid
         from typing import Any
 
-        import fastapi
-        
+        from fastapi import Request  # noqa: F401
+
         # Store active registrations (in production, use Redis or database)
         active_registrations: dict[str, dict[str, Any]] = {}
-        
-        from fastapi import Request
-        
+
         @v2_app.post("/register")
         async def register_mcp_client(request: Request):
             """Handle MCP client registration requests."""

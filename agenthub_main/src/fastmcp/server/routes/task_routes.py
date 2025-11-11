@@ -29,9 +29,6 @@ from fastmcp.task_management.interface.api_controllers.task_api_controller impor
     TaskAPIController,
 )
 
-# Initialize logger first (needed by error handlers below)
-logger = logging.getLogger(__name__)
-
 # Use Supabase authentication
 try:
     from fastmcp.auth.interface.supabase_fastapi_auth import get_current_user
@@ -45,19 +42,25 @@ from fastmcp.auth.middleware.dual_auth_middleware import DualAuthMiddleware
 # Import Redis caching decorator
 try:
     from fastmcp.server.cache.redis_cache_decorator import (
-        CacheInvalidator,
         cache_metrics,
         redis_cache,
     )
     REDIS_CACHE_ENABLED = True
 except ImportError:
-    logger.warning("Redis cache module not available, running without caching")
     REDIS_CACHE_ENABLED = False
+    cache_metrics = None  # Will be checked before use
     # Dummy decorator if Redis not available
     def redis_cache(**kwargs):
         def decorator(func):
             return func
         return decorator
+
+# Initialize logger (after imports to avoid issues with conditional imports)
+logger = logging.getLogger(__name__)
+
+# Log warning about Redis cache if not available
+if not REDIS_CACHE_ENABLED:
+    logger.warning("Redis cache module not available, running without caching")
 
 # Create dual auth handler
 dual_auth = DualAuthMiddleware(None)
@@ -463,7 +466,7 @@ async def get_performance_metrics(
     Useful for monitoring and optimization.
     """
     # Get actual cache metrics if Redis is enabled
-    if REDIS_CACHE_ENABLED:
+    if REDIS_CACHE_ENABLED and cache_metrics:
         actual_metrics = cache_metrics.stats
         cache_status = "enabled"
         hit_rate = actual_metrics.get("hit_rate", "0.00%")  # stats is a dict, keep .get()

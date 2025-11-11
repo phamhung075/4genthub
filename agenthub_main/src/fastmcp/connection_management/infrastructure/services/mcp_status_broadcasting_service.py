@@ -105,8 +105,10 @@ class MCPStatusBroadcastingService(StatusBroadcastingService):
         """Validate status broadcasting infrastructure"""
         try:
             # Check if status broadcaster is available
-            from ....server.connection_status_broadcaster import get_status_broadcaster
-            
+            from ....server.connection_status_broadcaster import (
+                get_status_broadcaster,  # noqa: F401
+            )
+
             return {
                 "status_broadcaster_available": True,
                 "registered_clients": len(self._registered_clients),
