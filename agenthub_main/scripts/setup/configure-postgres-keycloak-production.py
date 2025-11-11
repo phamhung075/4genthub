@@ -278,7 +278,6 @@ CORS_ALLOW_CREDENTIALS=true
         try:
             # Try to connect using psycopg2
             import psycopg2
-            from psycopg2 import sql
 
             # Get database configuration from environment
             db_host = os.getenv("DATABASE_HOST", "localhost")

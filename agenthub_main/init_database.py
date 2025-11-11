@@ -28,9 +28,6 @@ try:
     from fastmcp.task_management.infrastructure.database.database_config import (
         get_db_config,
     )
-    from fastmcp.task_management.infrastructure.database.db_initializer import (
-        DatabaseInitializer,
-    )
 except ImportError as e:
     print(f"Error importing database modules: {e}")
     print("Make sure you're running this from the agenthub_main directory")
